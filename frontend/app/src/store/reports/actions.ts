@@ -1,11 +1,12 @@
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
-import { createTask } from '@/model/task';
+import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { api } from '@/services/rotkehlchen-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { ReportState } from '@/store/reports/state';
+import { TradeHistory } from '@/store/reports/types';
 import { Message, RotkehlchenState } from '@/store/types';
 import { ProfitLossPeriod } from '@/typing/types';
 
@@ -14,13 +15,44 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
     commit('accountingSettings', rootState.session!.accountingSettings);
     try {
       const { start, end } = payload;
-      const result = await api.processTradeHistoryAsync(start, end);
+      const { taskId } = await api.processTradeHistoryAsync(start, end);
       commit('reportPeriod', { start, end });
-      const task = createTask(result.task_id, TaskType.TRADE_HISTORY, {
+      const task = createTask(taskId, TaskType.TRADE_HISTORY, {
         title: i18n.t('actions.reports.generate.task.title').toString(),
+        numericKeys: [
+          'paid_in_asset',
+          'taxable_amount',
+          'paid_in_profit_currency',
+          'taxable_bought_cost_in_profit_currency',
+          'taxable_received_in_profit_currency',
+          'received_in_asset',
+          'net_profit_or_loss',
+          'loan_profit',
+          'defi_profit_loss',
+          'margin_positions_profit_loss',
+          'ledger_actions_profit_loss',
+          'settlement_losses',
+          'ethereum_transaction_gas_costs',
+          'asset_movement_fees',
+          'general_trade_profit_loss',
+          'taxable_trade_profit_loss',
+          'total_taxable_profit_loss',
+          'total_profit_loss'
+        ],
         ignoreResult: false
       });
       commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<TradeHistory, TaskMeta>(
+        TaskType.TRADE_HISTORY
+      );
+      const { overview, allEvents } = result;
+
+      const report = {
+        overview: overview,
+        events: allEvents
+      };
+      commit('set', report);
     } catch (e) {
       notify(
         e.message,

@@ -1,110 +1,102 @@
-import map from 'lodash/map';
 import i18n from '@/i18n';
 import { Task, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
-import {
-  ApiEventEntry,
-  convertEventEntry,
-  convertTradeHistoryOverview,
-  TradeHistory
-} from '@/model/trade-history-types';
 import { api } from '@/services/rotkehlchen-api';
 import { ActionResult, TaskNotFoundError } from '@/services/types-api';
-import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
 import { TaskMap } from '@/store/tasks/state';
+import { assert } from '@/utils/assertions';
+
+const error: (task: Task<TaskMeta>, message?: string) => ActionResult<{}> = (
+  task,
+  error
+) => ({
+  result: {},
+  message: i18n
+    .t('task_manager.error', {
+      taskId: task.id,
+      title: task.meta.title,
+      error
+    })
+    .toString()
+});
 
 class TaskManager {
-  onTradeHistory(data: ActionResult<TradeHistory>, _meta: TaskMeta) {
-    const { message, result } = data;
+  private isRunning: boolean = false;
 
-    if (message) {
-      notify(
-        `During trade history query we got:${message}. History report is probably not complete.`,
-        'Trade History Query Warning',
-        Severity.ERROR,
-        true
-      );
-    }
+  private locked(): number[] {
+    return store.state.tasks!.locked;
+  }
 
-    const { overview, all_events } = result;
+  private tasks(): TaskMap<TaskMeta> {
+    return store.state.tasks!.tasks;
+  }
 
-    const payload = {
-      overview: convertTradeHistoryOverview(overview),
-      events: map(all_events, (event: ApiEventEntry) =>
-        convertEventEntry(event)
-      )
-    };
-    store.commit('reports/set', payload);
+  private noTasks(): boolean {
+    return Object.keys(this.tasks()).length === 0;
+  }
+
+  private remove(id: number) {
+    store.commit('tasks/remove', id);
+  }
+
+  private lock(id: number) {
+    store.commit('tasks/lock', id);
+  }
+
+  private unlock(id: number) {
+    store.commit('tasks/unlock', id);
+  }
+
+  private filterOutUnprocessable(taskIds: number[]): number[] {
+    const locked = this.locked();
+    const tasks = this.tasks();
+    return taskIds.filter(
+      id => !locked.includes(id) || !tasks[id] || tasks[id].id === null
+    );
   }
 
   monitor() {
-    const state = store.state;
-    const taskState = state.tasks!;
-    const { tasks: taskMap, locked } = taskState;
-
-    if (Object.keys(taskMap).length === 0) {
+    if (this.noTasks() || this.isRunning) {
       return;
     }
 
+    this.isRunning = true;
+
     api
       .queryTasks()
-      .then(({ completed }) => this.handleTasks(completed, taskMap, locked));
+      .then(({ completed }) =>
+        this.handleTasks(this.filterOutUnprocessable(completed))
+      )
+      .finally(() => {
+        this.isRunning = false;
+      });
   }
 
-  private async handleTasks(
-    complete: number[],
-    taskMap: TaskMap<TaskMeta>,
-    locked: number[]
-  ) {
-    for (const id of complete) {
-      const task = taskMap[id];
-      if (task.id === null) {
-        notify(
-          `Task ${task.type} -> ${task.meta.description} had a null identifier`,
-          'Invalid task found',
-          Severity.WARNING
-        );
-        continue;
+  private async handleTasks(ids: number[]) {
+    const tasks = this.tasks();
+    return Promise.all(ids.map(id => this.processTask(tasks[id])));
+  }
+
+  private async processTask(task: Task<TaskMeta>) {
+    this.lock(task.id);
+
+    try {
+      const result = await api.queryTaskResult(task.id, task.meta.numericKeys);
+      assert(result !== null);
+      this.handleResult(result, task);
+    } catch (e) {
+      if (e instanceof TaskNotFoundError) {
+        this.remove(task.id);
+        this.handleResult(error(task, e.message), task);
       }
-
-      if (locked.indexOf(task.id) > -1) {
-        continue;
-      }
-
-      store.commit('tasks/lock', task.id);
-
-      api
-        .queryTaskResult(task.id, task.meta.numericKeys)
-        .then(result => this.handleResult(result, task))
-        .catch(e => {
-          // When the request fails for any reason (pending or network error) then we unlock it
-          store.commit('tasks/unlock', task.id);
-          if (e instanceof TaskNotFoundError) {
-            store.commit('tasks/remove', task.id);
-            this.handleResult(
-              {
-                result: {},
-                message: i18n.tc('task_manager.not_found', 0, {
-                  taskId: task.id,
-                  title: task.meta.title
-                })
-              },
-              task
-            );
-          }
-        });
     }
+    this.unlock(task.id);
   }
 
   private handleResult(result: ActionResult<any>, task: Task<TaskMeta>) {
     if (task.meta.ignoreResult) {
-      store.commit('tasks/remove', task.id);
-      return;
-    }
-
-    if (result === null) {
+      this.remove(task.id);
       return;
     }
 
@@ -112,38 +104,23 @@ class TaskManager {
       this.handler[task.type] ?? this.handler[`${task.type}-${task.id}`];
 
     if (!handler) {
-      notify(
-        `No handler found for task '${task.type}' with id ${task.id}`,
-        'Tasks',
-        Severity.INFO
-      );
-      store.commit('tasks/remove', task.id);
+      // eslint-disable-next-line no-console
+      console.warn(`missing handler for ${task.type} with ${task.id}`);
+      this.remove(task.id);
       return;
     }
 
     try {
       handler(result, task.meta);
     } catch (e) {
-      handler(
-        {
-          result: {},
-          message: i18n.tc('task_manager.error', 0, {
-            taskId: task.id,
-            title: task.meta.title,
-            error: e.message
-          })
-        },
-        task.meta
-      );
+      handler(error(task, e.message), task.meta);
     }
-    store.commit('tasks/remove', task.id);
+    this.remove(task.id);
   }
 
   private handler: {
     [type: string]: (result: any, meta: any) => void;
-  } = {
-    [TaskType.TRADE_HISTORY]: this.onTradeHistory
-  };
+  } = {};
 
   registerHandler<R, M extends TaskMeta>(
     task: TaskType,
