@@ -55,6 +55,8 @@ For an exhaustive guide read `this <http://chris.beams.io/posts/git-commit/>`_ g
 4. Commits should do one thing, if two commits both do the same thing, that's a good sign they should be combined.
 5. **Never** merge master on the branch, always rebase on master. To delete/amend/edit/combine commits follow `this tutorial <https://robots.thoughtbot.com/git-interactive-rebase-squash-amend-rewriting-history>`_.
 
+When pushing on a PR the tags ``[skip ci]`` or ``[ci skip]`` can be used a part of the commit message to skip the run of all the CI jobs (lint, test etc).
+
 Adding new assets to Rotki
 ============================
 
