@@ -25,6 +25,7 @@ from rotkehlchen.api.v1.encoding import (
     BlockchainAccountsPatchSchema,
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
+    CurrentAssetsPriceSchema,
     DataImportSchema,
     EditSettingsSchema,
     EthereumTransactionQuerySchema,
@@ -1230,3 +1231,19 @@ class AssetIconsResource(BaseResource):
             match_header = match_header[1:-1]  # remove enclosing quotes
 
         return self.rest_api.get_asset_icon(asset, size, match_header)
+
+
+class CurrentAssetsPriceResource(BaseResource):
+
+    get_schema = CurrentAssetsPriceSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(
+        self,
+        assets: List[Asset],
+        async_query: bool,
+    ) -> Response:
+        return self.rest_api.get_current_assets_price(
+            assets=assets,
+            async_query=async_query,
+        )

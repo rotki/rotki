@@ -2297,6 +2297,30 @@ class RestAPI():
 
         return response
 
+    @staticmethod
+    def _get_current_assets_price(assets: List[Asset]) -> Dict[str, Any]:
+        """Return the current USD price of the assets.
+        """
+        log.info(
+            f'Querying the current prices for: {",".join(asset.identifier for asset in assets)}',
+        )
+        assets_price = {asset: Inquirer().find_usd_price(asset) for asset in assets}
+        return _wrap_in_ok_result(process_result(assets_price))
+
+    def get_current_assets_price(
+            self,
+            assets: List[Asset],
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_current_assets_price',
+                assets=assets,
+            )
+
+        response = self._get_current_assets_price(assets)
+        return api_response(_wrap_in_ok_result(response['result']), status_code=HTTPStatus.OK)
+
     def _sync_data(self, action: Literal['upload', 'download']) -> Dict[str, Any]:
         try:
             success, msg = self.rotkehlchen.premium_sync_manager.sync_data(action)

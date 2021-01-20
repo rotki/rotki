@@ -788,6 +788,50 @@ Query the result of an ongoing backend task
    :statuscode 409: No user is currently logged in
    :statuscode 500: Internal Rotki error
 
+Query the current price of assets
+===================================
+
+.. http:get:: /api/(version)/assets/prices/current
+
+   Querying this endpoint with a list of strings representing some assets will return a dictionary of their current USD price. Providing an empty list is an error.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/prices/current HTTP/1.1
+      Host: localhost:5042
+
+      {"assets": ["BTC", "ETH", "LINK", "USD", "EUR"]}
+
+   :reqjson list currencies: A list of assets to query
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "BTC": "34758.11",
+              "ETH": "1302.62",
+              "EUR": "1.209",
+              "GBP": "1.362",
+              "LINK": "20.29",
+              "USD": "1"
+          }
+          "message": "",
+      }
+
+
+   :resjson object result: A JSON object with each element being an asset symbol and each value its USD price.
+   :statuscode 200: The USD prices have been sucesfully returned
+   :statuscode 400: Provided JSON is in some way malformed. Empty currencies list given
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
+
 Query the current exchange rate for select assets
 ======================================================
 
@@ -827,7 +871,6 @@ Query the current exchange rate for select assets
    :statuscode 400: Provided JSON is in some way malformed. Empty currencies list given
    :statuscode 500: Internal Rotki error
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
-
 
 Get a list of setup exchanges
 ==============================

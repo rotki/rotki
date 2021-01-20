@@ -1313,3 +1313,12 @@ class AssetIconsSchema(Schema):
         validate=webargs.validate.OneOf(choices=('thumb', 'small', 'large')),
         missing='thumb',
     )
+
+
+class CurrentAssetsPriceSchema(Schema):
+    assets = fields.List(
+        AssetField(),
+        required=True,
+        validate=webargs.validate.Length(min=1),
+    )
+    async_query = fields.Boolean(missing=False)
