@@ -30,7 +30,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 # eth transactions, external trades, ledger actions, uniswap trades, makerDAO DSR,
 # makerDAO vaults, yearn vaults, compound, adex staking, aave lending
-HISTORY_QUERY_STEPS = 3
+HISTORY_QUERY_STEPS = 10
 FREE_LEDGER_ACTIONS_LIMIT = 50
 
 HistoryResult = Tuple[
@@ -90,7 +90,7 @@ class EventsHistorian():
 
     def _increase_progress(self, step: int, total_steps: int) -> int:
         step += 1
-        self.progress = FVal(step / total_steps)
+        self.progress = FVal(step / total_steps) * 100
         return step
 
     def query_ledger_actions(

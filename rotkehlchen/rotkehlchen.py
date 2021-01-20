@@ -524,10 +524,10 @@ class Rotkehlchen():
         else:
             processing_state = 'Processing all retrieved historical events'
             diff = self.accountant.events.query_end_ts - self.accountant.events.query_start_ts
-            progress = 50 + FVal(
+            progress = 50 + (FVal(
                 self.accountant.currently_processing_timestamp -
                 self.accountant.events.query_start_ts,
-            ) / FVal(diff) / 2
+            ) / FVal(diff) / 2) * 100
 
         return {'processing_state': str(processing_state), 'total_progress': str(progress)}
 
