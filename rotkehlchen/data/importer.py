@@ -1,4 +1,5 @@
 import csv
+import functools
 from itertools import count
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -310,7 +311,7 @@ class DataImporter():
             # supercharger actions
             'supercharger_deposit',
             'supercharger_withdrawal',
-            # already handled using _import_cryptocom_double_entries
+            # already handled using _import_cryptocom_associated_entries
             'dynamic_coin_swap_debited',
             'dynamic_coin_swap_credited',
             'dust_conversion_debited',
@@ -325,67 +326,96 @@ class DataImporter():
                 f'cryptocom data import. Ignoring entry',
             )
 
-    def _import_cryptocom_double_entries(self, data: Any, double_type: str) -> None:
-        """Look for events that have double entries and handle them as trades.
+    def _import_cryptocom_associated_entries(self, data: Any, tx_kind: str) -> None:
+        """Look for events that have associated entries and handle them as trades.
 
         This method looks for `*_debited` and `*_credited` entries using the
         same timestamp to handle them as one trade.
 
-        Known double_type: 'dynamic_coin_swap' or 'dust_conversion'
+        Known kind: 'dynamic_coin_swap' or 'dust_conversion'
         """
-        double_rows: Dict[Any, Dict[str, Any]] = {}
+        multiple_rows: Dict[Any, Dict[str, Any]] = {}
         debited_row = None
         credited_row = None
         for row in data:
-            if row['Transaction Kind'] == f'{double_type}_debited':
+            if row['Transaction Kind'] == f'{tx_kind}_debited':
                 timestamp = deserialize_timestamp_from_date(
                     date=row['Timestamp (UTC)'],
                     formatstr='%Y-%m-%d %H:%M:%S',
                     location='crypto.com',
                 )
-                if timestamp not in double_rows:
-                    double_rows[timestamp] = {}
-                double_rows[timestamp]['debited'] = row
-            elif row['Transaction Kind'] == f'{double_type}_credited':
+                if timestamp not in multiple_rows:
+                    multiple_rows[timestamp] = {}
+                if 'debited' not in multiple_rows[timestamp]:
+                    multiple_rows[timestamp]['debited'] = []
+                multiple_rows[timestamp]['debited'].append(row)
+            elif row['Transaction Kind'] == f'{tx_kind}_credited':
+                # They only is one credited row
                 timestamp = deserialize_timestamp_from_date(
                     date=row['Timestamp (UTC)'],
                     formatstr='%Y-%m-%d %H:%M:%S',
                     location='crypto.com',
                 )
-                if timestamp not in double_rows:
-                    double_rows[timestamp] = {}
-                double_rows[timestamp]['credited'] = row
+                if timestamp not in multiple_rows:
+                    multiple_rows[timestamp] = {}
+                multiple_rows[timestamp]['credited'] = row
 
-        for timestamp in double_rows:
-            credited_row = double_rows[timestamp]['credited']
-            debited_row = double_rows[timestamp]['debited']
-            if credited_row is not None and debited_row is not None:
-                description = credited_row['Transaction Description']
-                notes = f'{description}\nSource: crypto.com (CSV import)'
-                # No fees here
-                fee = Fee(ZERO)
-                fee_currency = A_USD
+        for timestamp in multiple_rows:
+            # When we convert multiple assets dust to CRO
+            # in one time, it will create multiple debited rows with
+            # the same timestamp
+            debited_rows = multiple_rows[timestamp]['debited']
+            credited_row = multiple_rows[timestamp]['credited']
+            total_debited_usd = functools.reduce(
+                lambda acc, row:
+                    acc +
+                    deserialize_asset_amount(row['Native Amount (in USD)']),
+                debited_rows,
+                0,
+            )
 
-                base_asset = Asset(credited_row['Currency'])
-                quote_asset = Asset(debited_row['Currency'])
-                pair = TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
-                base_amount_bought = deserialize_asset_amount(credited_row['Amount'])
-                quote_amount_sold = deserialize_asset_amount(debited_row['Amount'])
-                rate = Price(abs(base_amount_bought / quote_amount_sold))
+            # If the value of the transaction is too small (< 0,01$),
+            # crypto.com will display 0 as native amount
+            # if we have multiple debited rows, we can't import them
+            # since we can't compute their dedicated rates, so we skip them
+            if len(debited_rows) > 1 and total_debited_usd == 0:
+                return
 
-                trade = Trade(
-                    timestamp=timestamp,
-                    location=Location.CRYPTOCOM,
-                    pair=pair,
-                    trade_type=TradeType.BUY,
-                    amount=base_amount_bought,
-                    rate=rate,
-                    fee=fee,
-                    fee_currency=fee_currency,
-                    link='',
-                    notes=notes,
-                )
-                self.db.add_trades([trade])
+            if credited_row is not None and len(debited_rows) != 0:
+                for debited_row in debited_rows:
+                    description = credited_row['Transaction Description']
+                    notes = f'{description}\nSource: crypto.com (CSV import)'
+                    # No fees here
+                    fee = Fee(ZERO)
+                    fee_currency = A_USD
+
+                    base_asset = Asset(credited_row['Currency'])
+                    quote_asset = Asset(debited_row['Currency'])
+                    pair = TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
+                    part_of_total = 1 if len(debited_rows) == 1 else deserialize_asset_amount(
+                        debited_row['Native Amount (in USD)'],
+                    ) / total_debited_usd
+                    quote_amount_sold = deserialize_asset_amount(
+                        debited_row['Amount'],
+                    ) * part_of_total
+                    base_amount_bought = deserialize_asset_amount(
+                        credited_row['Amount'],
+                    ) * part_of_total
+                    rate = Price(abs(base_amount_bought / quote_amount_sold))
+
+                    trade = Trade(
+                        timestamp=timestamp,
+                        location=Location.CRYPTOCOM,
+                        pair=pair,
+                        trade_type=TradeType.BUY,
+                        amount=base_amount_bought,
+                        rate=rate,
+                        fee=fee,
+                        fee_currency=fee_currency,
+                        link='',
+                        notes=notes,
+                    )
+                    self.db.add_trades([trade])
 
     def import_cryptocom_csv(self, filepath: Path) -> Tuple[bool, str]:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
@@ -393,13 +423,13 @@ class DataImporter():
             try:
                 #  Notice: Crypto.com csv export gathers all swapping entries (`lockup_swap_*`,
                 # `crypto_wallet_swap_*`, ...) into one entry named `dynamic_coin_swap_*`.
-                self._import_cryptocom_double_entries(data, 'dynamic_coin_swap')
+                self._import_cryptocom_associated_entries(data, 'dynamic_coin_swap')
                 # reset the iterator
                 csvfile.seek(0)
                 # pass the header since seek(0) make the first row to be the header
                 next(data)
 
-                self._import_cryptocom_double_entries(data, 'dust_conversion')
+                self._import_cryptocom_associated_entries(data, 'dust_conversion')
                 csvfile.seek(0)
                 next(data)
             except KeyError as e:
