@@ -1,10 +1,10 @@
 import { MutationTree } from 'vuex';
+import { defaultState, ReportState } from '@/store/reports/state';
 import {
   ProfitLossEvent,
-  ProfitLossOverviewData
-} from '@/model/trade-history-types';
-import { defaultState, ReportState } from '@/store/reports/state';
-import { ReportPeriod } from '@/store/reports/types';
+  ProfitLossOverviewData,
+  ReportPeriod
+} from '@/store/reports/types';
 import { AccountingSettings } from '@/typing/types';
 
 export const mutations: MutationTree<ReportState> = {

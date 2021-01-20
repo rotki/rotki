@@ -1,11 +1,10 @@
 import { currencies } from '@/data/currencies';
+import { emptyPeriod, tradeHistoryPlaceholder } from '@/store/reports/const';
 import {
   ProfitLossEvent,
   ProfitLossOverviewData,
-  tradeHistoryPlaceholder
-} from '@/model/trade-history-types';
-import { emptyPeriod } from '@/store/reports/const';
-import { ReportPeriod } from '@/store/reports/types';
+  ReportPeriod
+} from '@/store/reports/types';
 import { AccountingSettings } from '@/typing/types';
 
 export interface ReportState {

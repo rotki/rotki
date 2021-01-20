@@ -2,11 +2,11 @@ import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
-import { TradeHistory } from '@/model/trade-history-types';
 import { api } from '@/services/rotkehlchen-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { ReportState } from '@/store/reports/state';
+import { TradeHistory } from '@/store/reports/types';
 import { Message, RotkehlchenState } from '@/store/types';
 import { ProfitLossPeriod } from '@/typing/types';
 

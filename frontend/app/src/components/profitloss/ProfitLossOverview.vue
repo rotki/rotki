@@ -145,7 +145,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Currency } from '@/model/currency';
-import { ProfitLossOverviewData } from '@/model/trade-history-types';
+import { ProfitLossOverviewData } from '@/store/reports/types';
 
 @Component({
   components: {

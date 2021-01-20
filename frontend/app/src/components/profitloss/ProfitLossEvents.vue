@@ -72,7 +72,7 @@ import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import { footerProps } from '@/config/datatable.common';
-import { ProfitLossEvent } from '@/model/trade-history-types';
+import { ProfitLossEvent } from '@/store/reports/types';
 
 @Component({
   components: {
