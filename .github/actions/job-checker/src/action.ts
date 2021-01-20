@@ -18,6 +18,26 @@ export async function getPullRequestFiles(): Promise<string[] | null> {
   return data.map(value => value.filename)
 }
 
+export async function shouldSkip(): Promise<boolean> {
+  const token = core.getInput('token', {required: true})
+  const client = github.getOctokit(token)
+  const {context} = github
+  if (!context.payload.pull_request) {
+    // eslint-disable-next-line no-console
+    console.info(`Didn't detect a PR`)
+    return false
+  }
+  const {sha} = context.payload.pull_request.head
+
+  const response = await client.git.getCommit({
+    ...context.repo,
+    commit_sha: sha
+  })
+
+  const {message} = response.data
+  return !!message && /\[skip ci]|\[ci skip]/gm.exec(message) !== null
+}
+
 export function changeDetected(
   monitored: string[],
   changed: string[]

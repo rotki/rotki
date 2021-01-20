@@ -1,32 +1,52 @@
 import * as core from '@actions/core'
-import {changeDetected, getInputAsArray, getPullRequestFiles} from './action'
+import {
+  changeDetected,
+  getInputAsArray,
+  getPullRequestFiles,
+  shouldSkip
+} from './action'
+
+const BACKEND_PATHS = 'backend_paths'
+const FRONTEND_PATHS = 'frontend_paths'
+const DOCUMENTATION_PATHS = 'documentation_paths'
+
+const FRONTEND_TASKS = 'frontend_tasks'
+const BACKEND_TASKS = 'backend_tasks'
+const DOCUMENTATION_TASKS = 'documentation_tasks'
 
 async function run(): Promise<void> {
   try {
     const options = {required: true}
-    const backendPaths = getInputAsArray('backend_paths', options)
-    const frontendPaths = getInputAsArray('frontend_paths', options)
-    const documentationPaths = getInputAsArray('documentation_paths', options)
+    const backendPaths = getInputAsArray(BACKEND_PATHS, options)
+    const frontendPaths = getInputAsArray(FRONTEND_PATHS, options)
+    const documentationPaths = getInputAsArray(DOCUMENTATION_PATHS, options)
+
+    const skip = await shouldSkip()
+    if (skip) {
+      // eslint-disable-next-line no-console
+      console.info(`[skip ci] or [ci skip] detected, skipping all tasks`)
+      return
+    }
 
     const changes = await getPullRequestFiles()
 
     if (changes === null) {
-      core.setOutput('frontend_tasks', true)
-      core.setOutput('backend_tasks', true)
-      core.setOutput('documentation_tasks', true)
+      core.setOutput(FRONTEND_TASKS, true)
+      core.setOutput(BACKEND_TASKS, true)
+      core.setOutput(DOCUMENTATION_TASKS, true)
       return
     }
 
     if (changeDetected(frontendPaths, changes)) {
-      core.setOutput('frontend_tasks', true)
+      core.setOutput(FRONTEND_TASKS, true)
     }
 
     if (changeDetected(backendPaths, changes)) {
-      core.setOutput('backend_tasks', true)
+      core.setOutput(BACKEND_TASKS, true)
     }
 
     if (changeDetected(documentationPaths, changes)) {
-      core.setOutput('documentation_tasks', true)
+      core.setOutput(DOCUMENTATION_TASKS, true)
     }
   } catch (error) {
     core.setFailed(error.message)
