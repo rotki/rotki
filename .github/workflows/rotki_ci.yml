@@ -256,3 +256,21 @@ jobs:
         with:
           name: videos-${{ runner.os }}
           path: ./frontend/app/tests/e2e/videos
+  done:
+    if: ${{ always() }}
+    needs: [ 'check-changes', 'check-frontend', 'docs', 'lint-backend', 'test-backend', 'test-e2e' ]
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check if any task failed
+        run: |
+          data=($(echo "${{ toJSON(needs.*.result) }}" | sed 's/[][,]//g'))
+          for i in "${data[@]}"
+          do
+            if [[ $i == "failure" ]]; then
+                echo "::error::At least one required task failed"
+                exit 1;
+            fi
+          done
