@@ -828,7 +828,7 @@ Query the current price of assets
 
    :resjson object result: A JSON object with each element being an asset symbol and each value its USD price.
    :statuscode 200: The USD prices have been sucesfully returned
-   :statuscode 400: Provided JSON is in some way malformed. Empty currencies list given
+   :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal Rotki error
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
@@ -846,7 +846,7 @@ Query the current exchange rate for select assets
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/fiat_exchange_rates HTTP/1.1
+      GET /api/1/exchange_rates HTTP/1.1
       Host: localhost:5042
 
       {"currencies": ["EUR", "CNY", "GBP", "BTC"]}
@@ -869,6 +869,56 @@ Query the current exchange rate for select assets
    :resjson object result: A JSON object with each element being an asset symbol and each value its USD exchange rate.
    :statuscode 200: The exchange rates have been sucesfully returned
    :statuscode 400: Provided JSON is in some way malformed. Empty currencies list given
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
+
+Query the historical price of assets
+===================================
+
+.. http:get:: /api/(version)/assets/prices/historical
+
+   Querying this endpoint with a list of asset-timestamp lists (composed by two items: asset and timestamp) will return a dictionary with the USD price of the asset at the given timestamp. Providing an empty list is an error.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/prices/historical HTTP/1.1
+      Host: localhost:5042
+
+      {"assets_timestamp": [["BTC", 1611166335], ["GBP", 1579543935], ["EUR", 1548007935]]}
+
+   :reqjson list currencies: A list of assets to query
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "BTC": {
+                  "timestamp": 1611166335,
+                  "usd_price": "34966.64"
+              },
+              "EUR": {
+                  "timestamp": 1548007935,
+                  "usd_price": "1.1402"
+              },
+              "GBP": {
+                  "timestamp": 1579543935,
+                  "usd_price": "1.2999120493"
+              }
+          }
+          "message": "",
+      }
+
+
+   :resjson object result: A JSON object with each element being an asset symbol and each value and object that contains the timestamp and the USD price.
+   :statuscode 200: The historical USD prices have been sucesfully returned
+   :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal Rotki error
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 

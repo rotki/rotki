@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from flask import Blueprint, Request, Response, request as flask_request
 from flask_restful import Resource
@@ -36,6 +36,7 @@ from rotkehlchen.api.v1.encoding import (
     ExchangesResourceRemoveSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
+    HistoricalAssetsPriceSchema,
     HistoryExportingSchema,
     HistoryProcessingSchema,
     IgnoredActionsGetSchema,
@@ -1245,5 +1246,21 @@ class CurrentAssetsPriceResource(BaseResource):
     ) -> Response:
         return self.rest_api.get_current_assets_price(
             assets=assets,
+            async_query=async_query,
+        )
+
+
+class HistoricalAssetsPriceResource(BaseResource):
+
+    get_schema = HistoricalAssetsPriceSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(
+        self,
+        assets_timestamp: List[Tuple[Asset, Timestamp]],
+        async_query: bool,
+    ) -> Response:
+        return self.rest_api.get_historical_assets_price(
+            assets_timestamp=assets_timestamp,
             async_query=async_query,
         )

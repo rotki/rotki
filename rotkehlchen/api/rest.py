@@ -7,7 +7,7 @@ from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import gevent
 from flask import Response, make_response, send_file
@@ -60,6 +60,7 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -2302,7 +2303,7 @@ class RestAPI():
         """Return the current USD price of the assets.
         """
         log.info(
-            f'Querying the current prices for: {",".join(asset.identifier for asset in assets)}',
+            f'Querying the current prices for: {", ".join(asset.identifier for asset in assets)}',
         )
         assets_price = {asset: Inquirer().find_usd_price(asset) for asset in assets}
         return _wrap_in_ok_result(process_result(assets_price))
@@ -2319,6 +2320,49 @@ class RestAPI():
             )
 
         response = self._get_current_assets_price(assets)
+        return api_response(_wrap_in_ok_result(response['result']), status_code=HTTPStatus.OK)
+
+    def _get_historical_assets_price(
+            self,
+            assets_timestamp: List[Tuple[Asset, Timestamp]],
+    ) -> Dict[str, Any]:
+        """Return the USD price of the assets at the given timestamps.
+
+        NB: the current implementation only returns one price per asset. Given
+        an asset that appears multiple times in `assets_timestamp`, the returned
+        price will belong to the last timestamp.
+        """
+        log.info(
+            f'Querying the historical prices for: '
+            f'{", ".join(f"{asset.identifier} at {ts}" for asset, ts in assets_timestamp)}',
+        )
+        assets_price: Dict[Asset, Dict[str, Union[Price, Timestamp]]] = {}
+        for asset, timestamp in assets_timestamp:
+            usd_price = query_usd_price_zero_if_error(
+                asset=asset,
+                time=timestamp,
+                location='historical assets price',
+                msg_aggregator=self.rotkehlchen.msg_aggregator,
+            )
+            assets_price[asset] = {
+                'timestamp': timestamp,
+                'usd_price': usd_price,
+            }
+
+        return _wrap_in_ok_result(process_result(assets_price))
+
+    def get_historical_assets_price(
+            self,
+            assets_timestamp: List[Tuple[Asset, Timestamp]],
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_historical_assets_price',
+                assets_timestamp=assets_timestamp,
+            )
+
+        response = self._get_historical_assets_price(assets_timestamp)
         return api_response(_wrap_in_ok_result(response['result']), status_code=HTTPStatus.OK)
 
     def _sync_data(self, action: Literal['upload', 'download']) -> Dict[str, Any]:
