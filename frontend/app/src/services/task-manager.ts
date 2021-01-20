@@ -104,6 +104,7 @@ class TaskManager {
       this.handler[task.type] ?? this.handler[`${task.type}-${task.id}`];
 
     if (!handler) {
+      // eslint-disable-next-line no-console
       console.warn(`missing handler for ${task.type} with ${task.id}`);
       this.remove(task.id);
       return;
