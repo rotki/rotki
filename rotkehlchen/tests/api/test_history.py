@@ -227,14 +227,12 @@ def test_query_history_timerange(rotkehlchen_api_server_with_exchanges):
     assert len(all_events) == 4
 
     response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, "periodicdataresource"),
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historystatusresource'),
     )
     assert_proper_response(response)
     data = response.json()
-    assert data['result']['last_balance_save'] == 0
-    assert data['result']['eth_node_connection'] is False
-    assert data['result']['history_process_start_ts'] == 1428994442
-    assert data['result']['history_process_current_ts'] == end_ts
+    assert FVal(data['result']['total_progress']) == 100
+    assert data['result']['processing_state'] == 'Processing all retrieved historical events'
 
 
 def test_query_history_errors(rotkehlchen_api_server):

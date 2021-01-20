@@ -59,7 +59,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.trades import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -794,7 +794,7 @@ class RestAPI():
             to_ts: Optional[Timestamp],
             location: Optional[Location],
     ) -> Dict[str, Any]:
-        actions, original_length = self.rotkehlchen.trades_historian.query_ledger_actions(
+        actions, original_length = self.rotkehlchen.events_historian.query_ledger_actions(
             has_premium=self.rotkehlchen.premium is not None,
             from_ts=from_ts,
             to_ts=to_ts,
@@ -1313,6 +1313,11 @@ class RestAPI():
                 wrap_in_fail_result('No file was found'),
                 status_code=HTTPStatus.NOT_FOUND,
             )
+
+    @require_loggedin_user()
+    def get_history_status(self) -> Response:
+        result = self.rotkehlchen.get_history_query_status()
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def query_periodic_data(self) -> Response:

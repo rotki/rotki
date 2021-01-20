@@ -692,6 +692,12 @@ class MessagesResource(BaseResource):
         return self.rest_api.get_messages()
 
 
+class HistoryStatusResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.get_history_status()
+
+
 class HistoryProcessingResource(BaseResource):
 
     get_schema = HistoryProcessingSchema()

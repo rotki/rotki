@@ -2733,6 +2733,42 @@ Export action history to CSV
    :statuscode 409: No user is currently logged in. No history has been processed. No permissions to write in the given directory. Check error message.
    :statuscode 500: Internal Rotki error.
 
+Querying history progress status
+=================================
+
+.. http:get:: /api/(version)/history/status
+
+
+   Doing a GET on the history's query current status will return information about the progress of the current historical query process.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/status HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "processing_state": "Querying kraken exchange history",
+	      "total_progress": "50%"
+          }
+          "message": ""
+      }
+
+   :resjson str processing_state: The name of the task that is currently being executed for the history query and profit/loss report.
+   :resjson str total_progress: A percentage showing the total progress of the profit/loss report.
+   :statuscode 200: Data were queried succesfully.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal Rotki error.
+
 Querying periodic data
 ======================
 
@@ -2759,8 +2795,6 @@ Querying periodic data
           "result": {
               "last_balance_save": 1572345881,
               "eth_node_connection": true,
-              "history_process_start_ts": 1572325881,
-              "history_process_current_ts": 1572345881,
               "last_data_upload_ts": 0
           }
           "message": ""
@@ -2768,8 +2802,6 @@ Querying periodic data
 
    :resjson int last_balance_save: The last time (unix timestamp) at which balances were saved in the database.
    :resjson bool eth_node_connection: A boolean denoting if the application is connected to an ethereum node. If ``false`` that means we fall back to etherscan.
-   :resjson int history_process_start_ts: A unix timestamp indicating the time that the last history processing started. Meant to be queried frequently so that a progress bar can be provided to the user.
-   :resjson int history_process_current_ts: A unix timestamp indicating the current time as far as the last history processing is concerned. Meant to be queried frequently so that a progress bar can be provided to the user.
    :statuscode 200: Data were queried succesfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal Rotki error.
