@@ -4,6 +4,7 @@ from itertools import count
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+from rotkehlchen.fval import FVal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
@@ -371,7 +372,7 @@ class DataImporter():
                     acc +
                     deserialize_asset_amount(row['Native Amount (in USD)']),
                 debited_rows,
-                0,
+                FVal('0'),
             )
 
             # If the value of the transaction is too small (< 0,01$),
@@ -392,9 +393,13 @@ class DataImporter():
                     base_asset = Asset(credited_row['Currency'])
                     quote_asset = Asset(debited_row['Currency'])
                     pair = TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
-                    part_of_total = 1 if len(debited_rows) == 1 else deserialize_asset_amount(
-                        debited_row['Native Amount (in USD)'],
-                    ) / total_debited_usd
+                    part_of_total = (
+                        FVal(1)
+                        if len(debited_rows) == 1
+                        else deserialize_asset_amount(
+                            debited_row["Native Amount (in USD)"],
+                        ) / total_debited_usd
+                    )
                     quote_amount_sold = deserialize_asset_amount(
                         debited_row['Amount'],
                     ) * part_of_total
@@ -408,7 +413,7 @@ class DataImporter():
                         location=Location.CRYPTOCOM,
                         pair=pair,
                         trade_type=TradeType.BUY,
-                        amount=base_amount_bought,
+                        amount=AssetAmount(base_amount_bought),
                         rate=rate,
                         fee=fee,
                         fee_currency=fee_currency,
