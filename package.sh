@@ -4,6 +4,10 @@ WORKDIR=$PWD
 # cleanup before starting to package stuff
 make clean
 
+if [[ -n "${CI-}" ]]; then
+  echo "::group::Pip install"
+fi
+
 # Perform sanity checks before pip install
 pip install packaging  # required for the following script
 # We use npm ci. That needs npm >= 5.7.0
@@ -16,6 +20,10 @@ fi
 # Install the rotki package and pyinstaller. Needed by the pyinstaller
 pip install -e .
 pip install pyinstaller==3.5
+
+if [[ -n "${CI-}" ]]; then
+  echo "::endgroup::"
+fi
 
 # Perform sanity checks that need pip install
 python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)"
@@ -48,9 +56,16 @@ else
     exit 1
 fi
 
+if [[ -n "${CI-}" ]]; then
+  echo "::group::PyInstaller"
+fi
 # Use pyinstaller to package the python app
 rm -rf build rotkehlchen_py_dist
 pyinstaller --noconfirm --clean --distpath rotkehlchen_py_dist rotkehlchen.spec
+
+if [[ -n "${CI-}" ]]; then
+  echo "::endgroup::"
+fi
 
 ROTKEHLCHEN_VERSION=$(python setup.py --version)
 export ROTKEHLCHEN_VERSION
@@ -59,6 +74,7 @@ if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: pyinstaller step failed"
     exit 1
 fi
+
 
 # Sanity check that the generated python executable works
 PYINSTALLER_GENERATED_EXECUTABLE=$(ls rotkehlchen_py_dist | head -n 1)
@@ -72,6 +88,9 @@ fi
 # From here and on we go into the frontend/app directory
 cd frontend/app || exit 1
 
+if [[ -n "${CI-}" ]]; then
+  echo "::group::npm ci"
+fi
 # Let's make sure all npm dependencies are installed.
 echo "Installing node dependencies"
 npm ci
@@ -86,6 +105,13 @@ if [[ $? -ne 0 ]]; then
     fi
 fi
 
+if [[ -n "${CI-}" ]]; then
+  echo "::endgroup::"
+fi
+
+if [[ -n "${CI-}" ]]; then
+  echo "::group::electron:build"
+fi
 # Finally run the packaging
 echo "Packaging Rotki ${ROTKEHLCHEN_VERSION}"
 npm run electron:build
@@ -93,6 +119,11 @@ if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: electron builder step failed"
     exit 1
 fi
+
+if [[ -n "${CI-}" ]]; then
+  echo "::endgroup::"
+fi
+
 echo "Packaging finished for Rotki ${ROTKEHLCHEN_VERSION}"
 
 # Go back to root directory
