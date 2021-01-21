@@ -1,10 +1,13 @@
 import { MutationTree } from 'vuex';
+import { MUTATION_PROGRESS } from '@/store/reports/const';
 import { defaultState, ReportState } from '@/store/reports/state';
 import {
   ProfitLossEvent,
   ProfitLossOverviewData,
-  ReportPeriod
+  ReportPeriod,
+  ReportProgress
 } from '@/store/reports/types';
+
 import { AccountingSettings } from '@/typing/types';
 
 export const mutations: MutationTree<ReportState> = {
@@ -26,23 +29,16 @@ export const mutations: MutationTree<ReportState> = {
     state.currency = currency;
   },
 
-  historyProcess(
-    state: ReportState,
-    payload: { start: number; current: number }
-  ) {
-    state.historyStart = payload.start;
-    state.historyProcess = payload.current;
-  },
-
   reportPeriod(state: ReportState, payload: ReportPeriod) {
-    state.historyProcess = payload.start;
-    state.historyStart = payload.start;
-    state.historyEnd = payload.end;
     state.reportPeriod = payload;
   },
 
   accountingSettings(state: ReportState, payload: AccountingSettings) {
     state.accountingSettings = payload;
+  },
+
+  [MUTATION_PROGRESS](state: ReportState, payload: ReportProgress) {
+    state.progress = payload;
   },
 
   reset(state: ReportState) {

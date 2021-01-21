@@ -1,11 +1,11 @@
 <template>
   <v-col cols="12" class="progress-screen__progress">
     <v-row
-      v-if="progress !== -1"
+      v-if="progress"
       align="center"
       justify="center"
       class="font-weight-light progress-screen__progress__percentage"
-      v-text="$t('progress_screen.progress', { progress })"
+      v-text="$t('progress_screen.progress', { progress: percentage })"
     />
     <v-row
       align="center"
@@ -14,7 +14,7 @@
     >
       <v-col cols="10">
         <v-progress-linear
-          v-if="progress !== -1"
+          v-if="progress"
           class="text-center"
           rounded
           height="16"
@@ -59,8 +59,17 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 
 @Component({})
 export default class ProgressScreen extends Vue {
-  @Prop({ required: false, default: -1 })
-  progress!: number;
+  @Prop({ required: false, default: '' })
+  progress!: string;
+
+  get percentage(): string {
+    try {
+      const number = parseFloat(this.progress);
+      return number.toFixed(2);
+    } catch (e) {
+      return this.progress;
+    }
+  }
 }
 </script>
 <style scoped lang="scss">

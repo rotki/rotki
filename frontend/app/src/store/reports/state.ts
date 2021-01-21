@@ -3,8 +3,10 @@ import { emptyPeriod, tradeHistoryPlaceholder } from '@/store/reports/const';
 import {
   ProfitLossEvent,
   ProfitLossOverviewData,
-  ReportPeriod
+  ReportPeriod,
+  ReportProgress
 } from '@/store/reports/types';
+
 import { AccountingSettings } from '@/typing/types';
 
 export interface ReportState {
@@ -14,9 +16,7 @@ export interface ReportState {
   reportPeriod: ReportPeriod;
   currency: string;
   loaded: boolean;
-  historyStart: number;
-  historyEnd: number;
-  historyProcess: number;
+  progress: ReportProgress;
 }
 
 export const defaultState = (): ReportState => ({
@@ -26,9 +26,10 @@ export const defaultState = (): ReportState => ({
   reportPeriod: emptyPeriod(),
   currency: currencies[0].ticker_symbol,
   loaded: false,
-  historyStart: -1,
-  historyEnd: -1,
-  historyProcess: -1
+  progress: {
+    processingState: '',
+    totalProgress: ''
+  }
 });
 
 export const state: ReportState = defaultState();

@@ -64,6 +64,9 @@
     </div>
     <progress-screen v-if="isRunning" :progress="progress">
       <template #message>
+        <div v-if="processingState" class="medium title mb-4">
+          {{ processingState }}
+        </div>
         {{ $t('profit_loss_report.loading_message') }}
       </template>
       {{ $t('profit_loss_report.loading_hint') }}
@@ -97,7 +100,7 @@ import { AccountingSettings, ProfitLossPeriod } from '@/typing/types';
   },
   computed: {
     ...mapGetters('tasks', ['isTaskRunning']),
-    ...mapGetters('reports', ['progress']),
+    ...mapGetters('reports', ['progress', 'processingState']),
     ...mapState('reports', ['loaded', 'accountingSettings', 'reportPeriod']),
     ...mapGetters('session', ['currency'])
   }
@@ -106,7 +109,8 @@ export default class ProfitLossReport extends Vue {
   isTaskRunning!: (type: TaskType) => boolean;
   loaded!: boolean;
   currency!: Currency;
-  progress!: number;
+  progress!: string;
+  processingState!: string;
   accountingSettings!: AccountingSettings;
   reportPeriod!: ReportPeriod;
 
