@@ -1,5 +1,5 @@
 <template>
-  <v-card class="notification" outlined>
+  <v-card class="notification" :outlined="!popup" :elevation="0">
     <v-list-item class="notification__body">
       <v-list-item-avatar>
         <v-icon
@@ -25,24 +25,25 @@
         <span class="text-caption text--secondary">
           {{ timeDisplay(notification.date) }}
         </span>
+        <slot />
       </v-list-item-content>
       <v-col cols="auto">
         <div class="d-flex flex-column">
-          <v-tooltip bottom>
+          <v-tooltip bottom open-delay="400">
             <template #activator="{ on }">
               <v-btn
                 text
                 icon
                 class="notification__dismiss"
                 v-on="on"
-                @click="dismiss(notification)"
+                @click="dismiss(notification.id)"
               >
                 <v-icon>mdi-close</v-icon>
               </v-btn>
             </template>
             <span v-text="$t('notification.dismiss_tooltip')" />
           </v-tooltip>
-          <v-tooltip bottom>
+          <v-tooltip bottom open-delay="400">
             <template #activator="{ on }">
               <v-btn
                 class="notification__copy"
@@ -73,6 +74,8 @@ import { NotificationData } from '@/store/notifications/types';
 export default class Notification extends Vue {
   @Prop({ required: true })
   notification!: NotificationData;
+  @Prop({ required: false, type: Boolean, default: false })
+  popup!: boolean;
 
   @Emit()
   dismiss(_notificationId: number) {}
@@ -115,6 +118,7 @@ export default class Notification extends Vue {
 <style scoped lang="scss">
 .notification {
   height: 120px;
+  max-width: 400px;
 
   &__body {
     height: 100% !important;
