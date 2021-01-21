@@ -35,27 +35,23 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: '3.7'
-      - uses: actions/cache@v2
+      - name: Store python Cache (linux)
+        uses: actions/cache@v2
         if: startsWith(runner.os, 'Linux')
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - uses: actions/cache@v2
+      - name: Store python Cache (macOS)
+        uses: actions/cache@v2
         if: startsWith(runner.os, 'macOS')
         with:
           path: ~/Library/Caches/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - uses: actions/cache@v2
+      - name: Store test dir
+        uses: actions/cache@v2
         with:
           path: ~/.cache/.rotkehlchen-test-dir
-          key: ${{ runner.os }}-testdir-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-testdir-
+          key: ${{ runner.os }}-testdir
       - name: Install dependencies
         run: |
           pip install --upgrade "pip<19.0.0" wheel
@@ -90,23 +86,21 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: '3.7'
-      - uses: actions/cache@v2
+      - name: Store python cache
+        uses: actions/cache@v2
         with:
           path: |
             ~/.cache/pip
             ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - uses: actions/cache@v2
+      - name: Store npm cache
+        uses: actions/cache@v2
         if: contains(steps.check.outputs.ui-tests, true)
         with:
           path: |
             ~/.npm
             ~/.cache/Cypress
-          key: ${{ runner.os }}-node-${{ hashFiles('**/app/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          key: ${{ runner.os }}-node-${{ hashFiles('**/requirements.txt') }}
       - name: Setup SQLCipher
         run: |
           sudo apt-get update
@@ -165,8 +159,6 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-packaging-
       - name: npm cache persistence
         uses: actions/cache@v2
         with:
@@ -174,8 +166,6 @@ jobs:
             ~/.npm
             ~/cache/Cypress
           key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node--packaging-
       - name: Setup SQLCipher
         run: |
           sudo apt-get update
@@ -218,8 +208,6 @@ jobs:
         with:
           path: ~/Library/Caches/pip
           key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-packaging-
       - name: npm cache persistence
         uses: actions/cache@v2
         with:
@@ -227,8 +215,6 @@ jobs:
             ~/.npm
             ~/Library/Caches/Cypress
           key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node--packaging-
       - name: Setup SQLCipher
         run: |
           cd "$(brew --repo homebrew/core)"
@@ -279,8 +265,6 @@ jobs:
         with:
           path: ~\AppData\Local\pip\Cache
           key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-packaging-
       - name: Get npm cache directory
         id: npm-cache
         run: |
@@ -292,8 +276,6 @@ jobs:
             ${{ steps.npm-cache.outputs.dir }}
             ~\AppData\Local\Cypress
           key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node--packaging-
       - name: Persist Build Dependencies
         uses: actions/cache@v2
         with:
@@ -301,8 +283,6 @@ jobs:
             ~\${{ env.BUILD_DEPENDENCIES }}\
             ~\AppData\Local\Temp\chocolatey\
           key: ${{ runner.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
-          restore-keys: |
-            ${{ runner.os }}-build-dependencies
       - name: Build rotki
         id: packaging
         run: .\package.ps1
