@@ -33,6 +33,7 @@ import {
   AAVE,
   COMPOUND,
   getProtcolIcon,
+  GETTER_UNISWAP_ASSETS,
   MAKERDAO,
   YEARN_FINANCE_VAULTS
 } from '@/store/defi/const';
@@ -54,6 +55,7 @@ import {
   TokenInfo,
   UniswapBalance,
   UniswapEventDetails,
+  UniswapPool,
   UniswapPoolProfit,
   UniswapTrade
 } from '@/store/defi/types';
@@ -125,6 +127,7 @@ interface DefiGetters {
   dexTrades: (addresses: string[]) => UniswapTrade[];
   airdrops: (addresses: string[]) => Airdrop[];
   airdropAddresses: string[];
+  [GETTER_UNISWAP_ASSETS]: UniswapPool[];
 }
 
 export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
@@ -1367,5 +1370,40 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     }
     return data;
   },
-  airdropAddresses: ({ airdrops }) => Object.keys(airdrops)
+  airdropAddresses: ({ airdrops }) => Object.keys(airdrops),
+  [GETTER_UNISWAP_ASSETS]: ({ uniswapEvents, uniswapBalances }) => {
+    const pools: UniswapPool[] = [];
+    const known: { [address: string]: boolean } = {};
+    for (const account in uniswapBalances) {
+      const accountBalances = uniswapBalances[account];
+      if (!accountBalances || accountBalances.length === 0) {
+        continue;
+      }
+      for (const { assets, address } of accountBalances) {
+        if (known[address]) {
+          continue;
+        }
+        known[address] = true;
+        pools.push({
+          address,
+          assets: assets.map(({ asset }) => asset)
+        });
+      }
+    }
+
+    for (const address in uniswapEvents) {
+      const details = uniswapEvents[address];
+      for (const { poolAddress, token0, token1 } of details) {
+        if (known[poolAddress]) {
+          continue;
+        }
+        known[poolAddress] = true;
+        pools.push({
+          address: poolAddress,
+          assets: [token0, token1]
+        });
+      }
+    }
+    return pools;
+  }
 };

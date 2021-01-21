@@ -327,6 +327,11 @@ interface UniswapPoolDetails {
   readonly usdProfitLoss: BigNumber;
 }
 
+export interface UniswapPool {
+  readonly address: string;
+  readonly assets: TokenDetails[];
+}
+
 export interface UniswapEvents {
   readonly [address: string]: UniswapPoolDetails[];
 }
