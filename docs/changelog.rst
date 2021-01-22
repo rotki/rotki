@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`2117` Users can now properly dismiss notifications with long tiles, or dismiss all the pending notifications at once.
+* :bug:`2024` Multiple crypto.com csv import debited entries with same timestamp will be handled correctly.
 * :bug:`2135` Users will now properly see the correct accounting settings when creating a profit/loss report.
 
 * :release:`1.12.2 <2021-01-18>`
