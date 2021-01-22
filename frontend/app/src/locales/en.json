@@ -541,6 +541,7 @@
       "balance_saving_frequency": "Balance data saving frequency in hours",
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
+      "display_date_in_localtime": "Display date in localtime and not in UTC in CSV export, backend logs and other locations",
       "rpc_endpoint": "Ethereum Node RPC Endpoint",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint"
     },
@@ -558,6 +559,10 @@
       },
       "anonymized_logs": {
         "error": "Error setting anonymized logs"
+      },
+      "display_date_in_localtime": {
+          "success": "Succesfully set the display date in local time setting",
+        "error": "Error setting the display date in local time setting"
       },
       "balance_frequency": {
         "error": "Error setting balance save frequency to {frequency}",

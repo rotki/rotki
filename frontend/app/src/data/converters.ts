@@ -29,7 +29,8 @@ export const convertToGeneralSettings = (
   anonymousUsageAnalytics: settings.submit_usage_analytics,
   krakenAccountType: settings.kraken_account_type,
   activeModules: settings.active_modules,
-  btcDerivationGapLimit: settings.btc_derivation_gap_limit
+  btcDerivationGapLimit: settings.btc_derivation_gap_limit,
+  displayDateInLocaltime: settings.display_date_in_localtime
 });
 
 export const convertToAccountingSettings = (

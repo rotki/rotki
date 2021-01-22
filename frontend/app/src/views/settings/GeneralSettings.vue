@@ -50,6 +50,20 @@
               @change="onDateDisplayFormatChange($event)"
             />
 
+            <v-switch
+              v-model="displayDateInLocaltime"
+              class="general-settings__fields__display-date-in-localtime"
+              color="primary"
+              :label="$t('general_settings.labels.display_date_in_localtime')"
+              :success-messages="
+                settingsMessages[DISPLAY_DATE_IN_LOCALTIME].success
+              "
+              :error-messages="
+                settingsMessages[DISPLAY_DATE_IN_LOCALTIME].error
+              "
+              @change="onDisplayDateInLocaltimeChange($event)"
+            />
+
             <v-text-field
               v-model="btcDerivationGapLimit"
               class="general-settings__fields__btc-derivation-gap"
@@ -284,6 +298,7 @@ const SETTING_SCRAMBLE_DATA = 'scrambleData';
 const SETTING_TIMEFRAME = 'timeframe';
 const SETTING_QUERY_PERIOD = 'queryPeriod';
 const SETTING_BTC_DERIVATION_GAP_LIMIT = 'btcDerivationGapLimit';
+const SETTING_DISPLAY_DATE_IN_LOCALTIME = 'displayDateInLocaltime';
 
 const SETTINGS = [
   SETTING_FLOATING_PRECISION,
@@ -300,7 +315,8 @@ const SETTINGS = [
   SETTING_SCRAMBLE_DATA,
   SETTING_TIMEFRAME,
   SETTING_QUERY_PERIOD,
-  SETTING_BTC_DERIVATION_GAP_LIMIT
+  SETTING_BTC_DERIVATION_GAP_LIMIT,
+  SETTING_DISPLAY_DATE_IN_LOCALTIME
 ] as const;
 
 type SettingsEntries = typeof SETTINGS[number];
@@ -349,6 +365,7 @@ export default class General extends Settings {
   updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
   queryPeriod: string = '5';
   btcDerivationGapLimit: string = '20';
+  displayDateInLocaltime: boolean = true;
 
   readonly settingsMessages: GeneralSettingsMessages = settingsMessages();
   readonly FLOATING_PRECISION = SETTING_FLOATING_PRECISION;
@@ -366,6 +383,7 @@ export default class General extends Settings {
   readonly TIMEFRAME = SETTING_TIMEFRAME;
   readonly QUERY_PERIOD = SETTING_QUERY_PERIOD;
   readonly BTC_DERIVATION_GAP_LIMIT = SETTING_BTC_DERIVATION_GAP_LIMIT;
+  readonly DISPLAY_DATE_IN_LOCALTIME = SETTING_DISPLAY_DATE_IN_LOCALTIME;
 
   historicDateMenu: boolean = false;
   date: string = '';
@@ -628,6 +646,21 @@ export default class General extends Settings {
     await this.update(
       { submit_usage_analytics: enabled },
       SETTING_ANONYMOUS_USAGE_ANALYTICS,
+      message
+    );
+  }
+
+  async onDisplayDateInLocaltimeChange(enabled: boolean) {
+    const message: BaseMessage = {
+      success: '',
+      error: `${this.$t(
+        'general_settings.validation.display_date_in_localtime.error'
+      )}`
+    };
+
+    await this.update(
+      { display_date_in_localtime: enabled },
+      SETTING_DISPLAY_DATE_IN_LOCALTIME,
       message
     );
   }

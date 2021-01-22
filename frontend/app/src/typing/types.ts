@@ -25,6 +25,7 @@ export interface GeneralSettings {
   readonly krakenAccountType: string;
   readonly activeModules: SupportedModules[];
   readonly btcDerivationGapLimit: number;
+  readonly displayDateInLocaltime: boolean;
 }
 
 export interface AccountingSettings {
@@ -127,6 +128,7 @@ interface SettingsPayload {
   account_for_assets_movements: boolean;
   btc_derivation_gap_limit: number;
   calculate_past_cost_basis: boolean;
+  display_date_in_localtime: boolean;
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare';
