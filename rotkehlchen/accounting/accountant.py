@@ -65,6 +65,7 @@ class Accountant():
         self.asset_movement_fees = FVal(0)
         self.last_gas_price = 0
         self.currently_processing_timestamp = -1
+        self.first_processed_timestamp = -1
 
     def __del__(self) -> None:
         del self.events
@@ -310,6 +311,7 @@ class Accountant():
         # The first ts is the ts of the first action we have in history or 0 for empty history
         first_ts = Timestamp(0) if len(actions) == 0 else action_get_timestamp(actions[0])
         self.currently_processing_timestamp = first_ts
+        self.first_processed_timestamp = first_ts
 
         prev_time = Timestamp(0)
         count = 0

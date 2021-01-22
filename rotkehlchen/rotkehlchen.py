@@ -519,16 +519,21 @@ class Rotkehlchen():
         if self.events_historian.progress < FVal('100'):
             processing_state = self.events_historian.processing_state_name
             progress = self.events_historian.progress / 2
-        elif self.accountant.currently_processing_timestamp == -1:
+        elif self.accountant.first_processed_timestamp == -1:
             processing_state = 'Processing all retrieved historical events'
             progress = FVal(50)
         else:
             processing_state = 'Processing all retrieved historical events'
-            diff = self.accountant.events.query_end_ts - self.accountant.events.query_start_ts
-            progress = 50 + (FVal(
-                self.accountant.currently_processing_timestamp -
+            # start_ts is min of the query start or the first action timestamp since action
+            # processing can start well before query start to calculate cost basis
+            start_ts = min(
                 self.accountant.events.query_start_ts,
-            ) / FVal(diff) / 2) * 100
+                self.accountant.first_processed_timestamp,
+            )
+            diff = self.accountant.events.query_end_ts - start_ts
+            progress = 50 + 100 * (
+                FVal(self.accountant.currently_processing_timestamp - start_ts) /
+                FVal(diff) / 2)
 
         return {'processing_state': str(processing_state), 'total_progress': str(progress)}
 
