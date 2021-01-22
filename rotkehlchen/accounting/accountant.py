@@ -59,7 +59,11 @@ class Accountant():
         self.db = db
         profit_currency = db.get_main_currency()
         self.msg_aggregator = msg_aggregator
-        self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
+        self.csvexporter = CSVExporter(
+            database=db,
+            user_directory=user_directory,
+            create_csv=create_csv,
+        )
         self.events = TaxableEvents(self.csvexporter, profit_currency)
 
         self.asset_movement_fees = FVal(0)
@@ -283,7 +287,7 @@ class Accountant():
         self.start_ts = start_ts
         self.eth_transactions_gas_costs = FVal(0)
         self.asset_movement_fees = FVal(0)
-        self.csvexporter.reset_csv_lists()
+        self.csvexporter.reset()
 
         # Ask the DB for the settings once at the start of processing so we got the
         # same settings through the entire task

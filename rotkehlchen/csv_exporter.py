@@ -33,6 +33,7 @@ from rotkehlchen.typing import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
+from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -66,18 +67,22 @@ class CSVExporter():
 
     def __init__(
             self,
-            profit_currency: Asset,
+            database: DBHandler,
             user_directory: Path,
             create_csv: bool,
     ):
         self.user_directory = user_directory
-        self.profit_currency = profit_currency
+        self.database = database
         self.create_csv = create_csv
         self.all_events: List[Dict[str, Any]] = []
-        self.reset_csv_lists()
+        self.reset()
 
-    def reset_csv_lists(self) -> None:
+    def reset(self) -> None:
+        """Resets the CSVExporter and prepares it for a new profit/loss run"""
         # TODO: Further specify the types here in more detail. Get rid of "Any"
+        self.profit_currency = self.database.get_main_currency()
+        db_settings = self.database.get_settings()
+        self.dateformat = db_settings.date_display_format
         if self.create_csv:
             self.trades_csv: List[Dict[str, Any]] = []
             self.loan_profits_csv: List[Dict[str, Any]] = []
@@ -89,6 +94,9 @@ class CSVExporter():
             self.ledger_actions_csv: List[Dict[str, Any]] = []
             self.all_events_csv: List[Dict[str, Any]] = []
             self.all_events = []
+
+    def _timestamp_to_date(self, timestamp: Timestamp) -> str:
+        return timestamp_to_date(timestamp, formatstr=self.dateformat)
 
     def add_to_allevents(
             self,
@@ -149,7 +157,7 @@ class CSVExporter():
         self.all_events.append(entry)
         new_entry = entry.copy()
         new_entry['net_profit_or_loss'] = net_profit_or_loss_csv
-        new_entry['time'] = timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
+        new_entry['time'] = self._timestamp_to_date(timestamp)
         new_entry[f'paid_in_{self.profit_currency.identifier}'] = paid_in_profit_currency
         key = f'taxable_received_in_{self.profit_currency.identifier}'
         new_entry[key] = taxable_received_in_profit_currency
@@ -191,7 +199,7 @@ class CSVExporter():
             'taxable_bought_cost_in_{}'.format(self.profit_currency.identifier): 'not applicable',
             'taxable_gain_in_{}'.format(self.profit_currency.identifier): FVal(0),
             'taxable_profit_loss_in_{}'.format(self.profit_currency.identifier): FVal(0),
-            'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': self._timestamp_to_date(timestamp),
             'is_virtual': is_virtual,
         })
         self.add_to_allevents(
@@ -254,7 +262,7 @@ class CSVExporter():
             f'taxable_bought_cost_in_{self.profit_currency.identifier}': taxable_bought_cost,
             f'taxable_gain_in_{self.profit_currency.identifier}': taxable_profit_received,
             f'taxable_profit_loss_in_{self.profit_currency.identifier}': taxable_profit_formula,
-            'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': self._timestamp_to_date(timestamp),
             'is_virtual': is_virtual,
         })
         paid_in_profit_currency = ZERO
@@ -294,7 +302,7 @@ class CSVExporter():
             f'price_in_{self.profit_currency.identifier}': rate_in_profit_currency,
             f'fee_in_{self.profit_currency.identifier}': total_fee_in_profit_currency,
             f'loss_in_{self.profit_currency.identifier}': loss_formula,
-            'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': self._timestamp_to_date(timestamp),
         })
         paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency
         self.add_to_allevents(
@@ -324,8 +332,8 @@ class CSVExporter():
 
         self.loan_profits_csv.append({
             'location': str(location),
-            'open_time': timestamp_to_date(open_time, formatstr='%d/%m/%Y %H:%M:%S'),
-            'close_time': timestamp_to_date(close_time, formatstr='%d/%m/%Y %H:%M:%S'),
+            'open_time': self._timestamp_to_date(open_time),
+            'close_time': self._timestamp_to_date(close_time),
             'gained_asset': gained_asset.identifier,
             'gained_amount': gained_amount,
             'lent_amount': lent_amount,
@@ -361,7 +369,7 @@ class CSVExporter():
         self.margin_positions_csv.append({
             'name': margin_notes,
             'location': str(location),
-            'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': self._timestamp_to_date(timestamp),
             'gain_loss_asset': gain_loss_asset.identifier,
             'gain_loss_amount': gain_loss_amount,
             f'profit_loss_in_{self.profit_currency.identifier}': gain_loss_in_profit_currency,
@@ -391,7 +399,7 @@ class CSVExporter():
             return
 
         self.asset_movements_csv.append({
-            'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': self._timestamp_to_date(timestamp),
             'exchange': str(exchange),
             'type': str(category),
             'moving_asset': asset.identifier,
@@ -421,7 +429,7 @@ class CSVExporter():
             return
 
         self.tx_gas_costs_csv.append({
-            'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': self._timestamp_to_date(timestamp),
             'transaction_hash': transaction_hash.hex(),
             'eth_burned_as_gas': eth_burned_as_gas,
             f'cost_in_{self.profit_currency.identifier}': eth_burned_as_gas * rate,
@@ -443,7 +451,7 @@ class CSVExporter():
             return
 
         self.defi_events_csv.append({
-            'time': timestamp_to_date(event.timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': self._timestamp_to_date(event.timestamp),
             'type': str(event.event_type),
             'asset': str(event.asset),
             'amount': str(event.amount),
@@ -488,7 +496,7 @@ class CSVExporter():
             return
 
         self.ledger_actions_csv.append({
-            'time': timestamp_to_date(action.timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': self._timestamp_to_date(action.timestamp),
             'type': str(action.action_type),
             'location': str(action.location),
             'asset': str(action.asset),
