@@ -54,7 +54,7 @@ def is_valid_substrate_address(
 def get_kusama_address_from_public_key(public_key: SubstratePublicKey) -> KusamaAddress:
     """Return a valid Kusama address given a Substrate public key.
 
-    Public key: 32 len str, leading '0x' not needed.
+    Public key: 32 len str, leading '0x' is optional.
 
     May raise:
     - AttributeError: if public key is not a string.
@@ -74,10 +74,7 @@ def get_substrate_address_from_public_key(
 ) -> SubstrateAddress:
     """Return a valid address for the given Substrate chain and public key.
 
-    Public key: 32 len str, leading '0x' not needed.
-
-    Utils:
-    https://www.shawntabrizi.com/substrate-js-utilities/
+    Public key: 32 len str, leading '0x' is optional.
 
     May raise:
     - AttributeError: if public key is not a string.

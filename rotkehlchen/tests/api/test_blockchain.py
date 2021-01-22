@@ -1749,7 +1749,7 @@ def test_add_ksm_blockchain_account_invalid_ens_domain(rotkehlchen_api_server):
             "blockchainsaccountsresource",
             blockchain=SupportedBlockchain.KUSAMA.value,
         ),
-        json={'accounts': [{'address': 'craigwright.eth'}]},
+        json={'accounts': [{'address': invalid_ens_domain}]},
     )
     assert_error_response(
         response=response,

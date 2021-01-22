@@ -1,11 +1,10 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import marshmallow
 import webargs
 from eth_utils import to_checksum_address
-from hexbytes import HexBytes
 from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from webargs.compat import MARSHMALLOW_VERSION_INFO
@@ -1102,7 +1101,7 @@ def _transform_eth_address(
     except ValueError:
         # Validation will only let .eth names come here.
         # So let's see if it resolves to anything
-        resolved_address = cast(ChecksumEthAddress, ethereum.ens_lookup(given_address))
+        resolved_address = ethereum.ens_lookup(given_address)
         if resolved_address is None:
             raise ValidationError(
                 f'Given ENS address {given_address} could not be resolved',
@@ -1125,7 +1124,7 @@ def _transform_ksm_address(
 
     NB: ENS domains for Substrate chains (e.g. KSM, DOT) store the Substrate
     public key. It requires to encode it with a specific ss58 format for
-    obtainint the specific chain address.
+    obtaining the specific chain address.
 
     Kusama/Polkadot ENS domain accounts:
     https://guide.kusama.network/docs/en/mirror-ens
@@ -1136,27 +1135,26 @@ def _transform_ksm_address(
     if not given_address.endswith('.eth'):
         return KusamaAddress(given_address)
 
-    resolved_address = cast(HexBytes, ethereum.ens_lookup(
+    resolved_address = ethereum.ens_lookup(
         given_address,
         blockchain=SupportedBlockchain.KUSAMA,
-    ))
+    )
     if resolved_address is None:
         raise ValidationError(
             f'Given ENS address {given_address} could not be resolved for Kusama',
             field_name='address',
         ) from None
 
-    public_key = SubstratePublicKey(resolved_address.hex())
     try:
-        address = get_kusama_address_from_public_key(public_key)
+        address = get_kusama_address_from_public_key(SubstratePublicKey(resolved_address))
     except (TypeError, ValueError) as e:
         raise ValidationError(
-            f"Given ENS address {given_address} does not contain a valid "
-            f"Substrate public key: {public_key}. Kusama address can't be obtained.",
+            f'Given ENS address {given_address} does not contain a valid '
+            f"Substrate public key: {resolved_address}. Kusama address can't be obtained.",
             field_name='address',
         ) from e
 
-    log.info(f'Resolved ENS {given_address} to {address}')
+    log.debug(f'Resolved KSM ENS {given_address} to {address}')
 
     return address
 

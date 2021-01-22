@@ -1,7 +1,7 @@
 import json
 import logging
 import random
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, overload
 from urllib.parse import urlparse
 
 import requests
@@ -9,9 +9,8 @@ from ens import ENS
 from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
-from eth_typing import BlockNumber
+from eth_typing import BlockNumber, HexStr
 from eth_utils.address import to_checksum_address
-from hexbytes import HexBytes
 from typing_extensions import Literal
 from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types
@@ -42,7 +41,7 @@ from rotkehlchen.typing import ChecksumEthAddress, SupportedBlockchain, Timestam
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str, request_get_dict
 
-from .typing import EnsAddress, NodeName
+from .typing import NodeName
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
 
 logger = logging.getLogger(__name__)
@@ -526,12 +525,33 @@ class EthereumManager():
 
         return hex_or_bytes_to_str(web3.eth.getCode(account))
 
+    @overload
     def ens_lookup(
             self,
             name: str,
+            blockchain: Literal[SupportedBlockchain.ETHEREUM] = SupportedBlockchain.ETHEREUM,
             call_order: Optional[Sequence[NodeName]] = None,
+    ) -> Optional[ChecksumEthAddress]:
+        ...
+
+    @overload
+    def ens_lookup(
+            self,
+            name: str,
+            blockchain: Literal[
+                SupportedBlockchain.BITCOIN,
+                SupportedBlockchain.KUSAMA,
+            ],
+            call_order: Optional[Sequence[NodeName]] = None,
+    ) -> Optional[HexStr]:
+        ...
+
+    def ens_lookup(
+            self,
+            name: str,
             blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
-    ) -> Optional[EnsAddress]:
+            call_order: Optional[Sequence[NodeName]] = None,
+    ) -> Optional[Union[ChecksumEthAddress, HexStr]]:
         return self.query(
             method=self._ens_lookup,
             call_order=call_order if call_order is not None else self.default_call_order(),
@@ -539,15 +559,36 @@ class EthereumManager():
             blockchain=blockchain,
         )
 
+    @overload
+    def _ens_lookup(
+            self,
+            web3: Optional[Web3],
+            name: str,
+            blockchain: Literal[SupportedBlockchain.ETHEREUM],
+    ) -> Optional[ChecksumEthAddress]:
+        ...
+
+    @overload
+    def _ens_lookup(
+            self,
+            web3: Optional[Web3],
+            name: str,
+            blockchain: Literal[
+                SupportedBlockchain.BITCOIN,
+                SupportedBlockchain.KUSAMA,
+            ],
+    ) -> Optional[HexStr]:
+        ...
+
     def _ens_lookup(
             self,
             web3: Optional[Web3],
             name: str,
             blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
-    ) -> Optional[EnsAddress]:
+    ) -> Optional[Union[ChecksumEthAddress, HexStr]]:
         """Performs an ENS lookup and returns address if found else None
 
-        TODO: currently web3.py 5.11.1 does not support multichain ENS domains
+        TODO: currently web3.py 5.15.0 does not support multichain ENS domains
         (EIP-2304), therefore requesting a non-Ethereum address won't use the
         web3 ens library and will require to extend the library resolver ABI.
         An issue in their repo (#1839) reporting the lack of support has been
@@ -555,35 +596,14 @@ class EthereumManager():
         support for EIP-2304.
         https://github.com/ethereum/web3.py/issues/1839
 
-        Param 'blockchain' logic for supporting multichain:
-
-        - ETHEREUM: either via 'web3.ens.resolve()' or '_call_contract_etherscan()'
-        it will call 'addr(bytes32)' of the resolver. Internally the resolver
-        may call addr(bytes32,uint356)' passing COIN_TYPE_ETH as coinType. Due to
-        the ABI output type is 'address' the result is checksummed.
-
-        - Other supported blockchain (e.g. KUSAMA, BITCOIN): '_call_contract_etherscan()'
-        calls 'addr(bytes32,uint256)'. Due to the ABI output are bytes the
-        result instantiates HexBytes. The resulting <HexBytes> requires further
-        processing for obtaining the expected blockchain address (out of the scope).
-
-        List of supported cryptocurrencies and their address format:
-        https://github.com/ensdomains/address-encoder
-
-        ENS domains encoding/decoding per address format:
-        https://github.com/ensdomains/address-encoder/blob/master/src/index.ts
-
         May raise:
         - RemoteError if Etherscan is used and there is a problem querying it or
         parsing its response
         """
-        if web3 is not None and blockchain == SupportedBlockchain.ETHEREUM:
-            return web3.ens.resolve(name)
-
-        # else we gotta manually query contracts via etherscan
         normal_name = normalize_name(name)
-        resolver_addr = self._call_contract_etherscan(
-            ENS_MAINNET_ADDR,
+        resolver_addr = self._call_contract(
+            web3=web3,
+            contract_address=ENS_MAINNET_ADDR,
             abi=ENS_ABI,
             method_name='resolver',
             arguments=[normal_name_to_hash(normal_name)],
@@ -591,14 +611,15 @@ class EthereumManager():
         if is_none_or_zero_address(resolver_addr):
             return None
 
-        ens_resolver_abi = list(ENS_RESOLVER_ABI)
+        ens_resolver_abi = ENS_RESOLVER_ABI.copy()
         arguments = [normal_name_to_hash(normal_name)]
         if blockchain != SupportedBlockchain.ETHEREUM:
             ens_resolver_abi.extend(ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS)
             arguments.append(blockchain.ens_coin_type())
 
-        address = self._call_contract_etherscan(
-            to_checksum_address(resolver_addr),
+        address = self._call_contract(
+            web3=web3,
+            contract_address=to_checksum_address(resolver_addr),
             abi=ens_resolver_abi,
             method_name='addr',
             arguments=arguments,
@@ -607,7 +628,7 @@ class EthereumManager():
             return None
 
         if blockchain != SupportedBlockchain.ETHEREUM:
-            return HexBytes(address)
+            return HexStr(address.hex())
 
         return to_checksum_address(address)
 

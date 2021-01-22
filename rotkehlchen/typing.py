@@ -229,10 +229,6 @@ class SupportedBlockchain(Enum):
         resolution for ENS domains.
 
         https://eips.ethereum.org/EIPS/eip-2304
-
-        ENS CoinType numbers:
-        https://github.com/ensdomains/address-encoder/blob/master/src/index.ts
-        https://github.com/satoshilabs/slips/blob/master/slip-0044.md
         """
         if self == SupportedBlockchain.ETHEREUM:
             return 60

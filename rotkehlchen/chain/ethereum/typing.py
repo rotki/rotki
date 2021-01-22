@@ -1,11 +1,4 @@
 from enum import Enum
-from typing import Union
-
-from hexbytes import HexBytes
-
-from rotkehlchen.typing import ChecksumEthAddress
-
-EnsAddress = Union[ChecksumEthAddress, HexBytes]
 
 
 class NodeName(Enum):
