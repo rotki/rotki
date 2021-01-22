@@ -2,7 +2,10 @@ import os
 import pkg_resources
 
 datas = []
-processed = []
+# eth-hash, and eth-utils seem to have a cyclic dependency and they keep adding
+# each other to the required_packages resulting in a while loop that never terminates.
+# This set keeps track of the already processed packages to avoid re-adding them.
+processed = set()
 
 
 # This is only needed until https://github.com/pyinstaller/pyinstaller/issues/3033 is fixed
@@ -23,6 +26,6 @@ while required_packages:
         required_packages.append((req.project_name, list(req.extras)))
     try:
         datas.extend(copy_metadata(req_name))
-        processed.append(req_name)
+        processed.add(req_name)
     except AssertionError as e:
         pass
