@@ -1,9 +1,8 @@
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.externalapis.coingecko import CoingeckoAssetData, CoingeckoImageURLs
-from rotkehlchen.typing import Price
 from rotkehlchen.fval import FVal
-from rotkehlchen.constants.assets import A_ETH, A_EUR
+from rotkehlchen.typing import Price
 
 
 def assert_coin_data_same(given, expected, compare_description=False):
@@ -46,7 +45,7 @@ def test_asset_data(session_coingecko):
         ),
     )
     data = session_coingecko.asset_data(Asset('YFI'))
-    assert_coin_data_same(data, expected_data, compare_description=True)
+    assert_coin_data_same(data, expected_data, compare_description=False)
 
 
 def test_coingecko_historical_price(session_coingecko):
