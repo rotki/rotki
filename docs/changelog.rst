@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2146` Date format will now respect user choice in CSV export, logging output and other backend related locations. Also adding a new option to control whether those dates should be displayed/exported in local or UTC time.
 * :feature:`2159` Users now won't see empty tables for blockchains without accounts.
 * :feature:`2155` Users can now additionally filter the uniswap liquidity pools using a pool filter.
 * :feature:`1865` Users will now see an explanation of the current stage of the profit/loss report's progress along with the completion percentage.
