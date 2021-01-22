@@ -1,8 +1,11 @@
 import os
-
 import pkg_resources
 
 datas = []
+# eth-hash, and eth-utils seem to have a cyclic dependency and they keep adding
+# each other to the required_packages resulting in a while loop that never terminates.
+# This set keeps track of the already processed packages to avoid re-adding them.
+processed = set()
 
 
 # This is only needed until https://github.com/pyinstaller/pyinstaller/issues/3033 is fixed
@@ -18,8 +21,11 @@ required_packages = [("rotkehlchen", [])]
 while required_packages:
     req_name, req_extras = required_packages.pop()
     for req in pkg_resources.get_distribution(req_name).requires(req_extras):
+        if req.project_name in processed:
+            continue
         required_packages.append((req.project_name, list(req.extras)))
     try:
         datas.extend(copy_metadata(req_name))
-    except AssertionError:
+        processed.add(req_name)
+    except AssertionError as e:
         pass

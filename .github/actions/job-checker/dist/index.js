@@ -36,7 +36,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getInputAsArray = exports.changeDetected = exports.shouldSkip = exports.getPullRequestFiles = void 0;
+exports.getInputAsArray = exports.changeDetected = exports.shouldSkip = exports.shouldRun = exports.getPullRequestFiles = void 0;
 const core = __importStar(__nccwpck_require__(186));
 const github = __importStar(__nccwpck_require__(438));
 function getPullRequestFiles() {
@@ -53,7 +53,7 @@ function getPullRequestFiles() {
     });
 }
 exports.getPullRequestFiles = getPullRequestFiles;
-function shouldSkip() {
+function tagInCommitMessage(tag) {
     return __awaiter(this, void 0, void 0, function* () {
         const token = core.getInput('token', { required: true });
         const client = github.getOctokit(token);
@@ -66,7 +66,18 @@ function shouldSkip() {
         const { sha } = context.payload.pull_request.head;
         const response = yield client.git.getCommit(Object.assign(Object.assign({}, context.repo), { commit_sha: sha }));
         const { message } = response.data;
-        return !!message && /\[skip ci]|\[ci skip]/gm.exec(message) !== null;
+        return !!message && tag.exec(message) !== null;
+    });
+}
+function shouldRun() {
+    return __awaiter(this, void 0, void 0, function* () {
+        return tagInCommitMessage(/\[run all]/gm);
+    });
+}
+exports.shouldRun = shouldRun;
+function shouldSkip() {
+    return __awaiter(this, void 0, void 0, function* () {
+        return tagInCommitMessage(/\[skip ci]|\[ci skip]/gm);
     });
 }
 exports.shouldSkip = shouldSkip;
@@ -142,6 +153,12 @@ function run() {
             const backendPaths = action_1.getInputAsArray(BACKEND_PATHS, options);
             const frontendPaths = action_1.getInputAsArray(FRONTEND_PATHS, options);
             const documentationPaths = action_1.getInputAsArray(DOCUMENTATION_PATHS, options);
+            if (yield action_1.shouldRun()) {
+                core.setOutput(FRONTEND_TASKS, true);
+                core.setOutput(BACKEND_TASKS, true);
+                core.setOutput(DOCUMENTATION_TASKS, true);
+                return;
+            }
             const skip = yield action_1.shouldSkip();
             if (skip) {
                 // eslint-disable-next-line no-console

@@ -3,6 +3,7 @@ import {
   changeDetected,
   getInputAsArray,
   getPullRequestFiles,
+  shouldRun,
   shouldSkip
 } from './action'
 
@@ -20,6 +21,13 @@ async function run(): Promise<void> {
     const backendPaths = getInputAsArray(BACKEND_PATHS, options)
     const frontendPaths = getInputAsArray(FRONTEND_PATHS, options)
     const documentationPaths = getInputAsArray(DOCUMENTATION_PATHS, options)
+
+    if (await shouldRun()) {
+      core.setOutput(FRONTEND_TASKS, true)
+      core.setOutput(BACKEND_TASKS, true)
+      core.setOutput(DOCUMENTATION_TASKS, true)
+      return
+    }
 
     const skip = await shouldSkip()
     if (skip) {

@@ -92,8 +92,6 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-packaging-
       - name: npm cache persistence
         uses: actions/cache@v2
         with:
@@ -101,8 +99,6 @@ jobs:
             ~/.npm
             ~/cache/Cypress
           key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node--packaging-
       - name: Setup SQLCipher
         run: |
           sudo apt-get update
@@ -175,8 +171,6 @@ jobs:
         with:
           path: ~/Library/Caches/pip
           key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-packaging-
       - name: npm cache persistence
         uses: actions/cache@v2
         with:
@@ -184,8 +178,6 @@ jobs:
             ~/.npm
             ~/Library/Caches/Cypress
           key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node--packaging-
       - name: Setup SQLCipher
         run: |
           cd "$(brew --repo homebrew/core)"
@@ -249,7 +241,7 @@ jobs:
           path: ~\AppData\Local\pip\Cache
           key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-packaging-
+            ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
       - name: Get npm cache directory
         id: npm-cache
         run: |
@@ -262,7 +254,7 @@ jobs:
             ~\AppData\Local\Cypress
           key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node--packaging-
+            ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
       - name: Persist Build Dependencies
         uses: actions/cache@v2        
         with:
@@ -271,7 +263,7 @@ jobs:
             ~\AppData\Local\Temp\chocolatey\
           key: ${{ runner.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
           restore-keys: |
-            ${{ runner.os }}-build-dependencies
+            ${{ runner.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
       - name: Build rotki
         id: build
         run: .\package.ps1

@@ -18,7 +18,7 @@ export async function getPullRequestFiles(): Promise<string[] | null> {
   return data.map(value => value.filename)
 }
 
-export async function shouldSkip(): Promise<boolean> {
+async function tagInCommitMessage(tag: RegExp): Promise<boolean> {
   const token = core.getInput('token', {required: true})
   const client = github.getOctokit(token)
   const {context} = github
@@ -35,7 +35,15 @@ export async function shouldSkip(): Promise<boolean> {
   })
 
   const {message} = response.data
-  return !!message && /\[skip ci]|\[ci skip]/gm.exec(message) !== null
+  return !!message && tag.exec(message) !== null
+}
+
+export async function shouldRun(): Promise<boolean> {
+  return tagInCommitMessage(/\[run all]/gm)
+}
+
+export async function shouldSkip(): Promise<boolean> {
+  return tagInCommitMessage(/\[skip ci]|\[ci skip]/gm)
 }
 
 export function changeDetected(
