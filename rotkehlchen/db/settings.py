@@ -26,6 +26,7 @@ DEFAULT_ACTIVE_MODULES = AVAILABLE_MODULES
 DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS = True
 DEFAULT_BTC_DERIVATION_GAP_LIMIT = 20
 DEFAULT_CALCULATE_PAST_COST_BASIS = True
+DEFAULT_DISPLAY_DATE_IN_LOCALTIME = True
 
 
 class DBSettings(NamedTuple):
@@ -52,6 +53,7 @@ class DBSettings(NamedTuple):
     account_for_assets_movements: bool = DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS
     btc_derivation_gap_limit: int = DEFAULT_BTC_DERIVATION_GAP_LIMIT
     calculate_past_cost_basis: bool = DEFAULT_CALCULATE_PAST_COST_BASIS
+    display_date_in_localtime: bool = DEFAULT_DISPLAY_DATE_IN_LOCALTIME
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -73,6 +75,7 @@ class ModifiableDBSettings(NamedTuple):
     account_for_assets_movements: Optional[bool] = None
     btc_derivation_gap_limit: Optional[int] = None
     calculate_past_cost_basis: Optional[bool] = None
+    display_date_in_localtime: Optional[bool] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}
@@ -118,6 +121,7 @@ BOOLEAN_KEYS = (
     'submit_usage_analytics',
     'account_for_assets_movements',
     'calculate_past_cost_basis',
+    'display_date_in_localtime',
 )
 INTEGER_KEYS = (
     'version',

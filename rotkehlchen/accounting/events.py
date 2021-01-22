@@ -200,7 +200,7 @@ class TaxableEvents():
             if not self.reduce_asset_amount(asset=A_ETC, amount=sold_amount):
                 log.critical(
                     'No documented buy found for ETC (ETH equivalent) before {}'.format(
-                        timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                        self.csv_exporter.timestamp_to_date(timestamp),
                     ),
                 )
 
@@ -208,7 +208,7 @@ class TaxableEvents():
             if not self.reduce_asset_amount(asset=A_BCH, amount=sold_amount):
                 log.critical(
                     'No documented buy found for BCH (BTC equivalent) before {}'.format(
-                        timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                        self.csv_exporter.timestamp_to_date(timestamp),
                     ),
                 )
 
@@ -724,7 +724,7 @@ class TaxableEvents():
             log.critical(
                 'No documented buy found for "{}" before {}'.format(
                     selling_asset,
-                    timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                    self.csv_exporter.timestamp_to_date(timestamp),
                 ),
             )
             # That means we had no documented buy for that asset. This is not good
@@ -743,7 +743,7 @@ class TaxableEvents():
             adjusted_amount = selling_amount - taxfree_amount
             log.critical(
                 f'Not enough documented buys found for "{selling_asset}" before '
-                f'{timestamp_to_date(timestamp, formatstr="%d/%m/%Y %H:%M:%S")}.'
+                f'{self.csv_exporter.timestamp_to_date(timestamp)}.'
                 f'Only found buys for {taxable_amount + taxfree_amount} {selling_asset}',
             )
             return adjusted_amount, taxable_bought_cost, taxfree_bought_cost
@@ -850,7 +850,7 @@ class TaxableEvents():
             if not result:
                 log.critical(
                     f'No documented buy found for {margin.pl_currency} before '
-                    f'{timestamp_to_date(margin.close_time, formatstr="%d/%m/%Y %H:%M:%S")}',
+                    f'{self.csv_exporter.timestamp_to_date(margin.close_time),}',
                 )
 
         # Reduce the fee_currency asset
@@ -935,7 +935,7 @@ class TaxableEvents():
             if not result:
                 log.critical(
                     f'No documented buy found for {action.asset} before '
-                    f'{timestamp_to_date(action.timestamp, formatstr="%d/%m/%Y %H:%M:%S")}',
+                    f'{self.csv_exporter.timestamp_to_date(action.timestamp)}',
                 )
 
         if action.timestamp > self.query_start_ts:

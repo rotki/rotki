@@ -40,7 +40,6 @@ from rotkehlchen.utils.accounting import (
     action_get_timestamp,
     action_get_type,
 )
-from rotkehlchen.utils.misc import timestamp_to_date
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -55,7 +54,6 @@ class Accountant():
             msg_aggregator: MessagesAggregator,
             create_csv: bool,
     ) -> None:
-        log.debug('Initializing Accountant')
         self.db = db
         profit_currency = db.get_main_currency()
         self.msg_aggregator = msg_aggregator
@@ -337,7 +335,7 @@ class Accountant():
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
                     f'Skipping action at '
-                    f'{timestamp_to_date(ts, formatstr="%d/%m/%Y, %H:%M:%S")} '
+                    f'{self.csvexporter.timestamp_to_date(ts)} '
                     f'during history processing due to an asset unknown to '
                     f'cryptocompare being involved. Check logs for details',
                 )
@@ -350,7 +348,7 @@ class Accountant():
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
                     f'Skipping action at '
-                    f'{timestamp_to_date(ts, formatstr="%d/%m/%Y, %H:%M:%S")} '
+                    f'{self.csvexporter.timestamp_to_date(ts)} '
                     f'during history processing due to inability to find a price '
                     f'at that point in time: {str(e)}. Check the logs for more details',
                 )
@@ -363,7 +361,7 @@ class Accountant():
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
                     f'Skipping action at '
-                    f'{timestamp_to_date(ts, formatstr="%d/%m/%Y, %H:%M:%S")} '
+                    f'{self.csvexporter.timestamp_to_date(ts)} '
                     f'during history processing due to inability to reach an external '
                     f'service at that point in time: {str(e)}. Check the logs for more details',
                 )

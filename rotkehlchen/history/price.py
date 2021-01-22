@@ -159,5 +159,5 @@ class PriceHistorian():
         raise NoPriceForGivenTimestamp(
             from_asset=from_asset,
             to_asset=to_asset,
-            date=timestamp_to_date(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
+            date=timestamp_to_date(timestamp, formatstr='%d/%m/%Y, %H:%M:%S', treat_as_local=True),
         )
