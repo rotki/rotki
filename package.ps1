@@ -19,6 +19,10 @@ function ExitOnFailure {
 }
 
 if ($Env:CI) {
+    echo "::group::Setup Build dependencies"
+}
+
+if ($Env:CI) {
     cd ~\
 } else {
     cd ..
@@ -45,6 +49,10 @@ if ($Env:CI) {
     $env:Path += ";$PWD\$TCLTK\bin"
 }
 
+if ($Env:CI) {
+    echo "::endgroup::"
+    echo "::group::Build SQLCipher"
+}
 
 if (-not (Test-Path sqlcipher -PathType Container)) {
     echo "Cloning SQLCipher"
@@ -131,6 +139,11 @@ $BACKUP_ENV | Foreach-Object {
 
 $env:Path += ";$SQLCIPHER_DIR"
 
+if ($Env:CI) {
+    echo "::endgroup::"
+    echo "::group::Setup PySQLCipher"
+}
+
 cd $BUILD_DEPS_DIR
 
 if (-not (Test-Path pysqlcipher3 -PathType Container)) {
@@ -151,6 +164,10 @@ if (-not (git status --porcelain)) {
     echo "Applying setup patch"
     git apply $PROJECT_DIR\packaging\pysqlcipher3_win.diff
     ExitOnFailure("Failed to apply pysqlcipher3 patch")
+}
+
+if ($Env:CI) {
+    echo "::endgroup::"
 }
 
 if ((-not ($env:VIRTUAL_ENV)) -and (-not ($Env:CI))) {
@@ -187,6 +204,10 @@ if (-not (Test-Path libcrypto-1_1-x64.dll -PathType Leaf)) {
     Copy-Item "$OPENSSL_PATH\bin\libcrypto-1_1-x64.dll" .\
 }
 
+if ($Env:CI) {
+    echo "::group::pip install"
+}
+
 pip install pyinstaller==3.5
 pip install -r requirements.txt
 pip install -e.
@@ -202,6 +223,10 @@ ExitOnFailure("SQLCipher version verification failed")
 
 $SETUP_VERSION = (python setup.py --version) | Out-String
 
+if ($Env:CI) {
+    echo "::endgroup::"
+}
+
 if (Test-Path build -PathType Container) {
     Remove-Item -Recurse -Force build
 }
@@ -210,6 +235,9 @@ if (Test-Path rotkehlchen_py_dist -PathType Container) {
     Remove-Item -Recurse -Force rotkehlchen_py_dist
 }
 
+if ($Env:CI) {
+    echo "::group::PyInstaller"
+}
 
 pyinstaller --noconfirm --clean --distpath rotkehlchen_py_dist rotkehlchen.spec
 ExitOnFailure("PyInstaller execution was not sucessful")
@@ -220,14 +248,31 @@ ExitOnFailure("The backend binary was not found")
 Invoke-Expression "$PWD\rotkehlchen_py_dist\$BACKEND_BINARY version" | Out-String
 ExitOnFailure("The backend test start failed")
 
+if ($Env:CI) {
+    echo "::endgroup::"
+}
+
 echo "Packaging the electron application"
+
+if ($Env:CI) {
+    echo "::group::npm ci"
+}
 
 cd frontend\app
 npm ci
 ExitOnFailure("Restoring the node dependencies with npm ci failed")
 
+if ($Env:CI) {
+    echo "::endgroup::"
+    echo "::group::electron build"
+}
+
 npm run electron:build
 ExitOnFailure("Building the electron app failed")
+
+if ($Env:CI) {
+    echo "::endgroup::"
+}
 
 $BINARY_NAME = @(Get-ChildItem -Path $PWD\dist -Filter *.exe -Recurse -File -Name)[0]
 
