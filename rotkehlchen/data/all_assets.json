@@ -7377,6 +7377,16 @@
         "symbol": "MCI",
         "type": "ethereum token"
     },
+    "MUST": {
+        "coingecko": "Must",
+        "cryptocompare": "",
+        "ethereum_address": "0x9C78EE466D6Cb57A4d01Fd887D2b5dFb2D46288f",
+        "ethereum_token_decimals": 18,
+        "name": "MUST (Cometh)",
+        "started": 1610742361,
+        "symbol": "MUST",
+        "type": "ethereum token"
+    },
     "MCN": {
         "active": false,
         "coingecko": "moneta-verde",

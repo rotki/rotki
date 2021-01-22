@@ -7,6 +7,10 @@ Changelog
 * :feature:`1865` Users will now see an explanation of the current stage of the profit/loss report's progress along with the completion percentage.
 * :bug:`2135` Users will now properly see the correct accounting settings when creating a profit/loss report.
 
+* :feature:`-` Added support for the following tokens:
+
+  - `MUST (Cometh) <https://www.coingecko.com/en/coins/must>`__
+
 * :release:`1.12.2 <2021-01-18>`
 * :bug:`2120` Rotki should now display the action datetime when editing a ledger action.
 * :bug:`2116` Kusama user balance query should now work properly in all cases.
