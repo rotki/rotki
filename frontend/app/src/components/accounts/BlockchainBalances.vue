@@ -26,6 +26,7 @@
     </v-card>
 
     <account-balances
+      v-if="ethAccounts.length > 0"
       class="mt-4"
       :title="$t('blockchain_balances.balances.eth')"
       blockchain="ETH"
@@ -34,6 +35,7 @@
     />
 
     <account-balances
+      v-if="btcAccounts.length > 0"
       class="mt-4"
       :title="$t('blockchain_balances.balances.btc')"
       blockchain="BTC"
@@ -42,6 +44,7 @@
     />
 
     <account-balances
+      v-if="kusamaBalances.length > 0"
       class="mt-4"
       :title="$t('blockchain_balances.balances.ksm')"
       blockchain="KSM"
