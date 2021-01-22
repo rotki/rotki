@@ -131,13 +131,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         return;
       }
 
-      const {
-        lastBalanceSave,
-        ethNodeConnection,
-        historyProcessCurrentTs,
-        historyProcessStartTs,
-        lastDataUploadTs
-      } = result;
+      const { lastBalanceSave, ethNodeConnection, lastDataUploadTs } = result;
 
       if (lastBalanceSave !== lastKnownBalanceSave) {
         commit('updateLastBalanceSave', lastBalanceSave);
@@ -149,19 +143,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
 
       if (lastDataUploadTs !== lastDataUpload) {
         commit('updateLastDataUpload', lastDataUploadTs);
-      }
-
-      if (historyProcessCurrentTs > 0) {
-        commit(
-          'reports/historyProcess',
-          {
-            start: historyProcessStartTs,
-            current: historyProcessCurrentTs
-          },
-          {
-            root: true
-          }
-        );
       }
     } catch (e) {
       notify(

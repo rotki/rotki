@@ -20,9 +20,11 @@ import {
 import {
   handleResponse,
   validStatus,
-  validWithParamsSessionAndExternalService
+  validWithParamsSessionAndExternalService,
+  validWithSessionStatus
 } from '@/services/utils';
 import { LedgerAction } from '@/store/history/types';
+import { ReportProgress } from '@/store/reports/types';
 import { assert } from '@/utils/assertions';
 
 export class HistoryApi {
@@ -171,6 +173,15 @@ export class HistoryApi {
           transformResponse: setupTransformer(balanceKeys)
         }
       )
+      .then(handleResponse);
+  }
+
+  async getProgress(): Promise<ReportProgress> {
+    return this.axios
+      .get<ActionResult<ReportProgress>>(`/history/status`, {
+        validateStatus: validWithSessionStatus,
+        transformResponse: basicAxiosTransformer
+      })
       .then(handleResponse);
   }
 }

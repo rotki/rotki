@@ -79,8 +79,6 @@ export interface DBAssetBalance {
 export interface PeriodicClientQueryResult {
   readonly lastBalanceSave: number;
   readonly ethNodeConnection: boolean;
-  readonly historyProcessStartTs: number;
-  readonly historyProcessCurrentTs: number;
   readonly lastDataUploadTs: number;
 }
 

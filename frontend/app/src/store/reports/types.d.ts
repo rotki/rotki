@@ -39,3 +39,8 @@ export interface ProfitLossEvent {
   readonly time: number;
   readonly isVirtual: boolean;
 }
+
+export interface ReportProgress {
+  readonly processingState: string;
+  readonly totalProgress: string;
+}

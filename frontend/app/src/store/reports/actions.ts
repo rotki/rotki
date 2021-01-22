@@ -5,14 +5,26 @@ import { TaskType } from '@/model/task-type';
 import { api } from '@/services/rotkehlchen-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
+import { MUTATION_PROGRESS } from '@/store/reports/const';
 import { ReportState } from '@/store/reports/state';
-import { TradeHistory } from '@/store/reports/types';
+import { ReportProgress, TradeHistory } from '@/store/reports/types';
+
 import { Message, RotkehlchenState } from '@/store/types';
 import { ProfitLossPeriod } from '@/typing/types';
 
 export const actions: ActionTree<ReportState, RotkehlchenState> = {
   async generate({ commit, rootState }, payload: ProfitLossPeriod) {
     commit('accountingSettings', rootState.session!.accountingSettings);
+    commit(MUTATION_PROGRESS, {
+      processingState: '',
+      totalProgress: '0'
+    } as ReportProgress);
+
+    const interval = setInterval(async () => {
+      const progress = await api.history.getProgress();
+      commit(MUTATION_PROGRESS, progress);
+    }, 2000);
+
     try {
       const { start, end } = payload;
       const { taskId } = await api.processTradeHistoryAsync(start, end);
@@ -61,6 +73,13 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
         true
       );
     }
+
+    clearInterval(interval);
+
+    commit(MUTATION_PROGRESS, {
+      processingState: '',
+      totalProgress: '0'
+    } as ReportProgress);
   },
 
   async createCSV({ commit }, path: string) {
