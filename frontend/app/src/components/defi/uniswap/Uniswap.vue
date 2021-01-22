@@ -19,13 +19,19 @@
       :loading="anyRefreshing"
       @refresh="refresh()"
     />
-    <blockchain-account-selector
-      v-model="selectedAccount"
-      class="mt-4"
-      hint
-      :chains="[ETH]"
-      :usable-addresses="uniswapAddresses"
-    />
+    <v-row class="mt-4">
+      <v-col>
+        <blockchain-account-selector
+          v-model="selectedAccount"
+          hint
+          :chains="[ETH]"
+          :usable-addresses="uniswapAddresses"
+        />
+      </v-col>
+      <v-col>
+        <uniswap-pool-filter v-model="selectedPools" />
+      </v-col>
+    </v-row>
     <v-row class="mt-4">
       <v-col
         v-for="entry in balances"
@@ -141,14 +147,18 @@
                   tag="div"
                   path="uniswap.asset_price"
                   class="text--secondary ms-2"
-                  :places="{ asset: assetName(asset.asset) }"
                 >
-                  <amount-display
-                    class="font-weight-medium"
-                    :value="asset.usdPrice"
-                    show-currency="symbol"
-                    fiat-currency="USD"
-                  />
+                  <template #asset>
+                    {{ assetName(asset.asset) }}
+                  </template>
+                  <template #price>
+                    <amount-display
+                      class="font-weight-medium"
+                      :value="asset.usdPrice"
+                      show-currency="symbol"
+                      fiat-currency="USD"
+                    />
+                  </template>
                 </i18n>
               </v-col>
             </v-row>
@@ -160,6 +170,7 @@
       v-if="premium"
       :loading="secondaryLoading"
       :selected-addresses="selectedAddresses"
+      :selected-pool-address="selectedPools"
     />
   </v-container>
 </template>
@@ -169,6 +180,7 @@ import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
+import UniswapPoolFilter from '@/components/defi/uniswap/UniswapPoolFilter.vue';
 import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -185,6 +197,7 @@ import { UniswapDetails } from '@/utils/premium';
 
 @Component({
   components: {
+    UniswapPoolFilter,
     BaseExternalLink,
     ModuleNotActive,
     UniswapDetails,
@@ -214,6 +227,7 @@ export default class Uniswap extends Mixins(
   uniswapBalances!: (addresses: string[]) => UniswapBalance[];
   uniswapAddresses!: string[];
   selectedAccount: GeneralAccount | null = null;
+  selectedPools: string[] = [];
   fetchUniswapBalances!: (refresh: boolean) => Promise<void>;
   fetchUniswapEvents!: (refresh: boolean) => Promise<void>;
 
@@ -222,7 +236,13 @@ export default class Uniswap extends Mixins(
   }
 
   get balances(): UniswapBalance[] {
-    return this.uniswapBalances(this.selectedAddresses);
+    const balances = this.uniswapBalances(this.selectedAddresses);
+    if (this.selectedPools.length === 0) {
+      return balances;
+    }
+    return balances.filter(({ poolAddress }) =>
+      this.selectedPools.includes(poolAddress)
+    );
   }
 
   assetAddress(asset: UnknownToken | string) {
