@@ -19,6 +19,7 @@ from rotkehlchen.utils.misc import (
     combine_stat_dicts,
     convert_to_int,
     iso8601ts_to_timestamp,
+    timestamp_to_date,
 )
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
@@ -338,3 +339,8 @@ def test_generate_address_via_create2(
         init_code=HexStr(init_code),
     )
     assert contract_address == to_checksum_address(expected_contract_address)
+
+
+def test_timestamp_to_date():
+    date = timestamp_to_date(1611395717, formatstr='%d/%m/%Y %H:%M:%S %Z')
+    assert not date.endswith(' '), 'Make sure %Z empty string is removed'

@@ -103,9 +103,12 @@ def timestamp_to_date(
 ) -> str:
     """Transforms a timestamp to a datesring depending on given formatstr and UTC/local choice"""
     if treat_as_local is False:
-        return datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
-    # else localtime
-    return datetime.datetime.fromtimestamp(ts).strftime(formatstr)
+        date = datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
+    else:  # localtime
+        date = datetime.datetime.fromtimestamp(ts).strftime(formatstr)
+
+    # Depending on the formatstr we could have empty strings at the end. Strip them.
+    return date.rstrip()
 
 
 def from_wei(wei_value: FVal) -> FVal:
