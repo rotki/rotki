@@ -94,6 +94,9 @@ def test_cryptocompare_asset_support(cryptocompare):
         'TOK',     # TOKOK but Tokugawa Coin in CC
         'VD',      # Bitcoin card but Vindax Coin in CC
         'DT',      # Dragon Token but Dark Token in CC
+        'MUST',    # Must (Cometh) but Must protocol in CC
+        'SDT-2',   # Stake DAO token but TerraSDT in CC
+        'BAC',     # Basis Cash but BACoin in CC
     )
     for identifier, asset_data in AssetResolver().assets.items():
         potential_support = (
@@ -217,6 +220,18 @@ def test_coingecko_identifiers_are_reachable(data_dir):
         'DT',
         'CZR',
         'ROCK2',
+        'ATMI',
+        'BKC',
+        'CREDO',
+        'ETK',
+        'FNKOS',
+        'FTT',
+        'GIM',
+        'IVY',
+        'KORE',
+        'NBAI',
+        'PAL',
+        'XEL',
     ]
     coingecko = Coingecko(data_directory=data_dir)
     all_coins = coingecko.all_coins()
@@ -266,7 +281,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '5e804a610447126c9569a45c74a3cf5e', 'version': 42}
+    last_meta = {'md5': 'f0d9f47ea63ac7a52dcb295825463daa', 'version': 43}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 

@@ -3574,6 +3574,16 @@
         "symbol": "DIEM",
         "type": "own chain"
     },
+    "DIGG": {
+        "cryptocompare": "",
+        "coingecko": "digg",
+        "ethereum_address": "0x798D1bE841a82a273720CE31c822C61a67a601C3",
+        "ethereum_token_decimals": 9,
+        "name": "Digg",
+        "started": 1610829712,
+        "symbol": "DIGG",
+        "type": "ethereum token"
+    },
     "DIME": {
         "coingecko": "dimecoin",
         "name": "Dimecoin",
@@ -7378,7 +7388,7 @@
         "type": "ethereum token"
     },
     "MUST": {
-        "coingecko": "Must",
+        "coingecko": "must",
         "cryptocompare": "",
         "ethereum_address": "0x9C78EE466D6Cb57A4d01Fd887D2b5dFb2D46288f",
         "ethereum_token_decimals": 18,
@@ -10214,6 +10224,16 @@
         "started": 1569456000,
         "symbol": "SDT",
         "type": "own chain"
+    },
+    "SDT-2": {
+        "cryptocompare": "",
+        "coingecko": "stake-dao",
+        "ethereum_address": "0x73968b9a57c6E53d41345FD57a6E6ae27d6CDB2F",
+        "ethereum_token_decimals": 18,
+        "name": "Stake DAO Token",
+        "started": 1611140237,
+        "symbol": "SDT",
+        "type": "ethereum token"
     },
     "SEELE": {
         "coingecko": "seele",
