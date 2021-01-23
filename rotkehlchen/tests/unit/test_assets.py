@@ -217,6 +217,18 @@ def test_coingecko_identifiers_are_reachable(data_dir):
         'DT',
         'CZR',
         'ROCK2',
+        'ATMI',
+        'BKC',
+        'CREDO',
+        'ETK',
+        'FNKOS',
+        'FTT',
+        'GIM',
+        'IVY',
+        'KORE',
+        'NBAI',
+        'PAL',
+        'XEL',
     ]
     coingecko = Coingecko(data_directory=data_dir)
     all_coins = coingecko.all_coins()
