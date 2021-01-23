@@ -80,7 +80,7 @@ As an example look above. The key should be unique as it's the unique identifier
 - ``coingecko``: The CoinGecko identifier for the asset. It's used to pull CoinGecko logo and prices. If not supported by CoinGecko it should be an empty string. To see how to get the CoinGecko identifier go to :ref:`get CoinGecko asset identifier <get_cryptocompare_asset_identifier>`.
 - ``cryptocompare``: The CryptoCompare identifier for the asset. It's used to pull historical prices. This is an optional entry. If missing, the identifier is considered the same as as the asset key. If not supported by CryptoCompare it should be an empty string. To see how to get the CryptoCompare identifier go to :ref:`get CryptoCompare asset identifier <get_cryptocompare_asset_identifier>`.
 - ``ethereum_address``: If this is an ethereum token give the checksummed ethereum address here.
-- ``ethereum_token_decimal``: If this is an ethereum token give the ERC20 decimals here.
+- ``ethereum_token_decimal``: If this is an ethereum token give the ERC20 decimals here (see `helpful commands here<helpful commands>`).
 - ``name``: Give the name of the asset here.
 - ``started``: The UNIX timestamp (in seconds) where data for the assets should first be available. Use the appropriate blockchain explorer for getting the date of the token deployment or the launch of the chain. In case of a leveraged token (e.g. "BCHDOWN") either use the date when CryptoCompare/CoinGecko started to track it or when the exchange opened its trade. Please, in case of `converting a date to a UNIX timestamp <https://www.epochconverter.com/>`__ make sure the date is in UTC/GMT.
 - ``symbol``: The token symbol. Does not need to be unique (identifier should be).
@@ -89,6 +89,8 @@ As an example look above. The key should be unique as it's the unique identifier
 - ``swapped_for``: This is an optional field. Given to specify if an asset is swapped for another asset. For example ``LEND`` should have ``AAVE`` here.
 
 Once an asset is added and both CoinGecko and CryptoCompare identifiers have been validated (if existing), the md5sum of the file should be regenerated and added to the `meta file <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/data/all_assets.meta>`__. And the version in the meta file should also be bumped. The same changes should be done in the unit test that checks exactly for the md5 sum of the assets file.
+
+You can find some `helpful commands here<helpful commands>` about if your need.
 
 .. _get_coingecko_asset_identifier:
 
@@ -109,6 +111,20 @@ The test also warns about any asset delisted from CoinGecko. In that case, add t
 
 .. _get_cryptocompare_asset_identifier:
 
+Helpful commands
+------------------------------------
+
+- To get the checksummed ethereum address, you can get from the Python console using our code simply by doing:
+
+::
+    >>> from eth_utils.address import to_checksum_address
+    >>> to_checksum_address("0x9c78ee466d6cb57a4d01fd887d2b5dfb2d46288f")
+    '0x9C78EE466D6Cb57A4d01Fd887D2b5dFb2D46288f'
+
+- To get the md5sm of the assets file, you can do (from the root directory):
+    - on Linux: ``md5sum rotkehlchen/data/all_assets.json``
+    - on MacOS: ``md5 rotkehlchen/data/all_assets.json``
+
 Get CryptoCompare asset identifier
 ------------------------------------
 
@@ -119,6 +135,7 @@ One important gotcha is to check for CryptoCompare asset prices. Unfortunately y
    {"Response":"Error","Message":"There is no data for any of the toSymbols USD .","HasWarning":true,"Type":2,"RateLimit":{},"Data":{},"Warning":"There is no data for the toSymbol/s USD ","ParamWithError":"tsyms"}
 
 Then that means you have to check the CryptoCompare page and compare directly with the asset they have listed there. Like `so <https://min-api.cryptocompare.com/data/pricehistorical?fsym=$BASED&tsyms=WETH&ts=1611915600>`__ and see that it works. Then you need to edit the CryptoCompare mappings in the code to add that special mapping `here <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/externalapis/cryptocompare.py#L45>`__.
+If you don't find your asset on CryptoCompare just put an empty string like `cryptocompare: ""`.
 
 Hopefully this situation with CryptoCompare is temporary and they will remove the need for these special mappings soon.
 
