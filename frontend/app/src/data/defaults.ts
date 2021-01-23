@@ -14,6 +14,7 @@ export class Defaults {
   static KRAKEN_DEFAULT_ACCOUNT_TYPE = 'starter';
   static DEFAULT_QUERY_PERIOD = 5;
   static BTC_DERIVATION_GAP_LIMIT = 20;
+  static DISPLAY_DATE_IN_LOCALTIME = true;
 }
 
 export const EXCHANGE_POLONIEX = 'poloniex';

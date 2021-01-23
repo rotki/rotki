@@ -96,8 +96,19 @@ def satoshis_to_btc(satoshis: Union[int, FVal]) -> FVal:
     return satoshis * FVal('0.00000001')
 
 
-def timestamp_to_date(ts: Timestamp, formatstr: str = '%d/%m/%Y %H:%M:%S') -> str:
-    return datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
+def timestamp_to_date(
+        ts: Timestamp,
+        formatstr: str = '%d/%m/%Y %H:%M:%S',
+        treat_as_local: bool = False,
+) -> str:
+    """Transforms a timestamp to a datesring depending on given formatstr and UTC/local choice"""
+    if treat_as_local is False:
+        date = datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
+    else:  # localtime
+        date = datetime.datetime.fromtimestamp(ts).strftime(formatstr)
+
+    # Depending on the formatstr we could have empty strings at the end. Strip them.
+    return date.rstrip()
 
 
 def from_wei(wei_value: FVal) -> FVal:

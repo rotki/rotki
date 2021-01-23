@@ -788,6 +788,7 @@ class ModifiableSettingsSchema(Schema):
         missing=None,
     )
     calculate_past_cost_basis = fields.Bool(missing=None)
+    display_date_in_localtime = fields.Bool(missing=None)
 
     @validates_schema  # type: ignore
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -828,6 +829,7 @@ class ModifiableSettingsSchema(Schema):
             account_for_assets_movements=data['account_for_assets_movements'],
             btc_derivation_gap_limit=data['btc_derivation_gap_limit'],
             calculate_past_cost_basis=data['calculate_past_cost_basis'],
+            display_date_in_localtime=data['display_date_in_localtime'],
         )
 
 

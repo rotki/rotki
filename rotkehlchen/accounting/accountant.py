@@ -40,7 +40,6 @@ from rotkehlchen.utils.accounting import (
     action_get_timestamp,
     action_get_type,
 )
-from rotkehlchen.utils.misc import timestamp_to_date
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -55,11 +54,14 @@ class Accountant():
             msg_aggregator: MessagesAggregator,
             create_csv: bool,
     ) -> None:
-        log.debug('Initializing Accountant')
         self.db = db
         profit_currency = db.get_main_currency()
         self.msg_aggregator = msg_aggregator
-        self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
+        self.csvexporter = CSVExporter(
+            database=db,
+            user_directory=user_directory,
+            create_csv=create_csv,
+        )
         self.events = TaxableEvents(self.csvexporter, profit_currency)
 
         self.asset_movement_fees = FVal(0)
@@ -283,7 +285,7 @@ class Accountant():
         self.start_ts = start_ts
         self.eth_transactions_gas_costs = FVal(0)
         self.asset_movement_fees = FVal(0)
-        self.csvexporter.reset_csv_lists()
+        self.csvexporter.reset()
 
         # Ask the DB for the settings once at the start of processing so we got the
         # same settings through the entire task
@@ -333,7 +335,7 @@ class Accountant():
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
                     f'Skipping action at '
-                    f'{timestamp_to_date(ts, formatstr="%d/%m/%Y, %H:%M:%S")} '
+                    f'{self.csvexporter.timestamp_to_date(ts)} '
                     f'during history processing due to an asset unknown to '
                     f'cryptocompare being involved. Check logs for details',
                 )
@@ -346,7 +348,7 @@ class Accountant():
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
                     f'Skipping action at '
-                    f'{timestamp_to_date(ts, formatstr="%d/%m/%Y, %H:%M:%S")} '
+                    f'{self.csvexporter.timestamp_to_date(ts)} '
                     f'during history processing due to inability to find a price '
                     f'at that point in time: {str(e)}. Check the logs for more details',
                 )
@@ -359,7 +361,7 @@ class Accountant():
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
                     f'Skipping action at '
-                    f'{timestamp_to_date(ts, formatstr="%d/%m/%Y, %H:%M:%S")} '
+                    f'{self.csvexporter.timestamp_to_date(ts)} '
                     f'during history processing due to inability to reach an external '
                     f'service at that point in time: {str(e)}. Check the logs for more details',
                 )

@@ -34,6 +34,7 @@ export interface DBSettings {
   readonly account_for_assets_movements: boolean;
   readonly btc_derivation_gap_limit: number;
   readonly calculate_past_cost_basis: boolean;
+  readonly display_date_in_localtime: boolean;
 }
 
 interface ApiKey {

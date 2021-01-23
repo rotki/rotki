@@ -21,6 +21,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_BTC_DERIVATION_GAP_LIMIT,
     DEFAULT_CALCULATE_PAST_COST_BASIS,
+    DEFAULT_DISPLAY_DATE_IN_LOCALTIME,
     DEFAULT_DATE_DISPLAY_FORMAT,
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
     DEFAULT_INCLUDE_GAS_COSTS,
@@ -284,6 +285,7 @@ def test_writing_fetching_data(data_dir, username):
         'account_for_assets_movements': DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
         'btc_derivation_gap_limit': DEFAULT_BTC_DERIVATION_GAP_LIMIT,
         'calculate_past_cost_basis': DEFAULT_CALCULATE_PAST_COST_BASIS,
+        'display_date_in_localtime': DEFAULT_DISPLAY_DATE_IN_LOCALTIME,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 
