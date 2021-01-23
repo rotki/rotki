@@ -11,6 +11,7 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `MUST (Cometh) <https://www.coingecko.com/en/coins/must>`__
+  - `StakeDao Token (SDT) <https://www.coingecko.com/en/coins/stake-dao>`__
 
 * :release:`1.12.2 <2021-01-18>`
 * :bug:`2120` Rotki should now display the action datetime when editing a ledger action.

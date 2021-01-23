@@ -10215,6 +10215,16 @@
         "symbol": "SDT",
         "type": "own chain"
     },
+    "SDT-2": {
+        "cryptocompare": "",
+        "coingecko": "stake-dao",
+        "ethereum_address": "0x73968b9a57c6E53d41345FD57a6E6ae27d6CDB2F",
+        "ethereum_token_decimals": 18,
+        "name": "Stake DAO Token",
+        "started": 1611140237,
+        "symbol": "SDT",
+        "type": "ethereum token"
+    },
     "SEELE": {
         "coingecko": "seele",
         "ethereum_address": "0xB1eeF147028E9f480DbC5ccaA3277D417D1b85F0",
