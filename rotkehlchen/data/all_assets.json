@@ -3574,6 +3574,16 @@
         "symbol": "DIEM",
         "type": "own chain"
     },
+    "DIGG": {
+        "cryptocompare": "",
+        "coingecko": "digg",
+        "ethereum_address": "0x798D1bE841a82a273720CE31c822C61a67a601C3",
+        "ethereum_token_decimals": 9,
+        "name": "Digg",
+        "started": 1610829712,
+        "symbol": "DIGG",
+        "type": "ethereum token"
+    },
     "DIME": {
         "coingecko": "dimecoin",
         "name": "Dimecoin",
