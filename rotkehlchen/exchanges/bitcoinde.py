@@ -10,7 +10,7 @@ import requests
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import RemoteError, DeserializationError
+from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Location,
@@ -290,7 +290,7 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 continue
             try:
                 trades.append(trade_from_bitcoinde(tx))
-            except UnknownAsset as e: 
+            except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found bitcoin.de trade with unknown asset '
                     f'{e.asset_name}. Ignoring it.',
