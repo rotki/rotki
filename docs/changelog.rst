@@ -5,7 +5,7 @@ Changelog
 * :bug:`2117` Users can now properly dismiss notifications with long tiles, or dismiss all the pending notifications at once.
 * :bug:`2024` Multiple crypto.com csv import debited entries with same timestamp will be handled correctly.
 * :bug:`2135` Users will now properly see the correct accounting settings when creating a profit/loss report.
-* :bug:`2168` Rokti was not able to import IOTA trades from Bitcoin.de.
+* :bug:`2168` Bitcoin.de users will now be able to properly import IOTA trades.
 
 * :release:`1.12.2 <2021-01-18>`
 * :bug:`2120` Rotki should now display the action datetime when editing a ledger action.
