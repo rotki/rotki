@@ -413,7 +413,7 @@ def test_eth2_deposits_serialization():
 def _create_beacon_mock(beaconchain):
     def mock_requests_get(url, *args, **kwargs):  # pylint: disable=unused-argument
         if 'eth1' in url:
-            response = '{"status":"OK","data":[{"publickey":"0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b","valid_signature":true,"validatorindex":9},{"publickey":"0xa016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b","valid_signature":true,"validatorindex":1507}]}'  # noqa: E501
+            response = '{"status":"OK","data":[{"publickey":"0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b","valid_signature":true,"validatorindex":9},{"publickey":"0x8b242e5cdb0a7740a605f3c39262253eb2b5e7ee514a544e823f996e8de9961db7d5264d08c5ce13a65efa82b868accc","valid_signature":true,"validatorindex":1507}]}'  # noqa: E501
         elif 'performance' in url:
             response = '{"status":"OK","data":{"balance":32143716247,"performance1d":14437802,"performance31d":143716247,"performance365d":143716247,"performance7d":105960750,"validatorindex":9}}'  # noqa: E501
         else:
@@ -447,6 +447,7 @@ def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer):  # py
     expected_details = [
         ValidatorDetails(
             validator_index=9,
+            public_key='0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
             eth1_depositor=ADDR1,
             performance=ValidatorPerformance(
                 balance=32143716247,
@@ -457,6 +458,7 @@ def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer):  # py
             ),
         ), ValidatorDetails(
             validator_index=1507,
+            public_key='0x8b242e5cdb0a7740a605f3c39262253eb2b5e7ee514a544e823f996e8de9961db7d5264d08c5ce13a65efa82b868accc',  # noqa: E501
             eth1_depositor=ADDR1,
             performance=DEPOSITING_VALIDATOR_PERFORMANCE,
         ),

@@ -47,12 +47,14 @@ Eth2DepositDBTuple = (
 
 class ValidatorDetails(NamedTuple):
     validator_index: int
+    public_key: str
     eth1_depositor: ChecksumEthAddress
     performance: ValidatorPerformance
 
     def serialize(self, eth_usd_price: FVal) -> Dict[str, Any]:
         return {
             'index': self.validator_index,
+            'public_key': self.public_key,
             'eth1_depositor': self.eth1_depositor,
             **self.performance.serialize(eth_usd_price),
         }
@@ -302,11 +304,13 @@ def get_eth2_details(
     May raise RemoteError due to beaconcha.in API"""
     indices = []
     index_to_address = {}
+    index_to_pubkey = {}
     # and for each address get the validator info (to get the index) -- this could be avoided
     for address in addresses:
         validators = beaconchain.get_eth1_address_validators(address)
         for validator in validators:
             index_to_address[validator.validator_index] = address
+            index_to_pubkey[validator.validator_index] = validator.public_key
             indices.append(validator.validator_index)
 
     # Get current balance of all validator indices
@@ -315,6 +319,7 @@ def get_eth2_details(
     for validator_index, entry in performance_result.items():
         result.append(ValidatorDetails(
             validator_index=validator_index,
+            public_key=index_to_pubkey[validator_index],
             eth1_depositor=index_to_address[validator_index],
             performance=entry,
         ))
@@ -324,6 +329,7 @@ def get_eth2_details(
     for index in depositing_indices:
         result.append(ValidatorDetails(
             validator_index=index,
+            public_key=index_to_pubkey[index],
             eth1_depositor=index_to_address[index],
             performance=DEPOSITING_VALIDATOR_PERFORMANCE,
         ))
