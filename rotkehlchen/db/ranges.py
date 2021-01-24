@@ -19,7 +19,11 @@ class DBQueryRanges():
     ) -> List[Tuple[Timestamp, Timestamp]]:
         """Takes in the start/end ts for a location query and after checking the
         last query ranges of the DB provides a list of timestamp ranges that still
-        need to be queried."""
+        need to be queried.
+
+        May return a bit more liberal ranges so that we can avoid further queries
+        in the future.
+        """
         queried_range = self.db.get_used_query_range(location_string)
         if not queried_range:
             ranges_to_query = [(start_ts, end_ts)]
@@ -41,10 +45,17 @@ class DBQueryRanges():
             ranges_to_query: List[Tuple[Timestamp, Timestamp]],
     ) -> None:
         """Depending on the ranges to query and the given start and end ts update the DB"""
+        if len(ranges_to_query) == 0:
+            return
+
         starts = [x[0] for x in ranges_to_query]
         starts.append(start_ts)
         ends = [x[1] for x in ranges_to_query]
         ends.append(end_ts)
+        saved_range = self.db.get_used_query_range(location_string)
+        if saved_range:
+            starts.append(saved_range[0])
+            ends.append(saved_range[1])
 
         self.db.update_used_query_range(
             name=location_string,
