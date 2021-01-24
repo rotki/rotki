@@ -19,8 +19,11 @@ def test_backend():
     timeout = 10
     with gevent.Timeout(timeout):
         try:
-            output = proc.stdout.readline().decode('utf-8')
-            assert 'Rotki API server is running at' in output
+            while True:
+                output = proc.stdout.readline().decode('utf-8')
+                if 'Rotki API server is running at' in output:
+                    break
+
             url = f'http://{output.split()[-1]}/api/1/version'
             response = requests.get(url)
             assert response.status_code == HTTPStatus.OK
