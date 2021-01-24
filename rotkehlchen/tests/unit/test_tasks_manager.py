@@ -124,7 +124,7 @@ def test_maybe_schedule_xpub_derivation(task_manager, database):
 
 def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex):
     now = ts_now()
-    task_manager.potential_tasks = [task_manager._maybe_schedule_exchange_trade_query]
+    task_manager.potential_tasks = [task_manager._maybe_schedule_exchange_history_query]
 
     def mock_query_history(start_ts, end_ts):
         assert start_ts == 0
