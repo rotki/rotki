@@ -10,7 +10,7 @@ import requests
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Location,
@@ -41,7 +41,8 @@ log = RotkehlchenLogsAdapter(logger)
 # This corresponds to md5('') and is used in signature generation
 MD5_EMPTY_STR = 'd41d8cd98f00b204e9800998ecf8427e'
 
-# Pairs can be found in Basic API doc: https://www.bitcoin.de/de/api/marketplace
+# Pairs can be found in Basic API doc:
+# https://www.bitcoin.de/en/api/tapi/v4/docu#handelspaarliste_c2f
 BITCOINDE_TRADING_PAIRS = (
     'btceur',
     'bcheur',
@@ -49,6 +50,10 @@ BITCOINDE_TRADING_PAIRS = (
     'etheur',
     'bsveur',
     'ltceur',
+    'iotabtc',
+    'dashbtc',
+    'gntbtc',
+    'ltcbtc',
 )
 
 
@@ -57,8 +62,14 @@ def bitcoinde_asset(asset: str) -> Asset:
 
 
 def bitcoinde_pair_to_world(pair: str) -> Tuple[Asset, Asset]:
-    tx_asset = bitcoinde_asset(pair[:3])
-    native_asset = bitcoinde_asset(pair[3:])
+    if len(pair) == 6:
+        tx_asset = bitcoinde_asset(pair[:3])
+        native_asset = bitcoinde_asset(pair[3:])
+    elif len(pair) in (7, 8):
+        tx_asset = bitcoinde_asset(pair[:4])
+        native_asset = bitcoinde_asset(pair[4:])
+    else:
+        raise DeserializationError(f'Could not parse pair: {pair}')
     return tx_asset, native_asset
 
 
@@ -277,7 +288,28 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 continue
             if timestamp < start_ts or timestamp > end_ts:
                 continue
-            trades.append(trade_from_bitcoinde(tx))
+            try:
+                trades.append(trade_from_bitcoinde(tx))
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found bitcoin.de trade with unknown asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
+                continue
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_error(
+                    'Error processing a Bitcoin.de trade. Check logs '
+                    'for details. Ignoring it.',
+                )
+                log.error(
+                    'Error processing a Bitcoin.de trade',
+                    trade=tx,
+                    error=msg,
+                )
+                continue
 
         return trades
 
