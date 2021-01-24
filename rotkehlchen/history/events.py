@@ -154,9 +154,9 @@ class EventsHistorian():
                 loans.extend(process_polo_loans(
                     msg_aggregator=self.msg_aggregator,
                     data=polo_loans_data,
-                    # We need to have full history of loans available
+                    # We need to have history of loans since before the range
                     start_ts=Timestamp(0),
-                    end_ts=now,
+                    end_ts=end_ts,
                 ))
 
         def fail_history_cb(error_msg: str) -> None:
@@ -167,9 +167,9 @@ class EventsHistorian():
         for name, exchange in self.exchange_manager.connected_exchanges.items():
             self.processing_state_name = f'Querying {name} exchange history'
             exchange.query_history_with_callbacks(
-                # We need to have full history of exchanges available
+                # We need to have history of exchanges since before the range
                 start_ts=Timestamp(0),
-                end_ts=now,
+                end_ts=end_ts,
                 success_callback=populate_history_cb,
                 fail_callback=fail_history_cb,
             )
@@ -179,9 +179,9 @@ class EventsHistorian():
             self.processing_state_name = 'Querying ethereum transactions history'
             eth_transactions = self.chain_manager.ethereum.transactions.query(
                 addresses=None,  # all addresses
-                # We need to have full history of transactions available
+                # We need to have history of transactions since before the range
                 from_ts=Timestamp(0),
-                to_ts=now,
+                to_ts=end_ts,
                 with_limit=False,  # at the moment ignore the limit for historical processing,
                 recent_first=False,  # for history processing we need oldest first
             )
@@ -198,9 +198,9 @@ class EventsHistorian():
         # Include the external trades in the history
         self.processing_state_name = 'Querying external trades history'
         external_trades = self.db.get_trades(
-            # We need to have full history of trades available
+            # We need to have history of trades since before the range
             from_ts=Timestamp(0),
-            to_ts=now,
+            to_ts=end_ts,
             location=Location.EXTERNAL,
         )
         history.extend(external_trades)
@@ -217,7 +217,7 @@ class EventsHistorian():
             uniswap_trades = self.chain_manager.uniswap.get_trades(
                 addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
                 from_timestamp=Timestamp(0),
-                to_timestamp=now,
+                to_timestamp=end_ts,
             )
             history.extend(uniswap_trades)
         step = self._increase_progress(step, total_steps)
