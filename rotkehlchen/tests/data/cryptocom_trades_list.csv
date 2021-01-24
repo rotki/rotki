@@ -1,4 +1,7 @@
 ﻿Timestamp (UTC),Transaction Description,Currency,Amount,To Currency,To Amount,Native Currency,Native Amount,Native Amount (in USD),Transaction Kind
+2020-12-15 09:25:14,Convert Dust,CRO,193.02779901061902311,,,EUR,10.59,12.8794521,dust_conversion_credited
+2020-12-15 09:25:14,Convert Dust,UNI,-1.3387887,,,EUR,-5.84,-7.1025496,dust_conversion_debited
+2020-12-15 09:25:14,Convert Dust,DOT,-0.6295092,,,EUR,-4.8,-5.837712,dust_conversion_debited
 2020-12-01 14:39:25,Convert Dust,CRO,0.007231228760408149,,,EUR,0.0,0,dust_conversion_credited
 2020-12-01 14:39:25,Convert Dust,DAI,-0.00050680380674961,,,EUR,0.0,0,dust_conversion_debited
 2020-10-12 19:10:36,Transfer: Exchange -> App wallet,ETH,0.033,,,EUR,10.75,12.7743325,exchange_to_crypto_transfer

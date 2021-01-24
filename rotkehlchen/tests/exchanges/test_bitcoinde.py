@@ -1,7 +1,10 @@
 from unittest.mock import patch
 
+import pytest
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.bitcoinde import (
     BITCOINDE_TRADING_PAIRS,
     Bitcoinde,
@@ -80,3 +83,11 @@ def test_query_trade_history(function_scope_bitcoinde):
 def test_bitcoinde_trading_pairs():
     for pair in BITCOINDE_TRADING_PAIRS:
         _ = bitcoinde_pair_to_world(pair)
+
+
+def test_bitcoinde_invalid_trading_pair():
+    with pytest.raises(UnknownAsset):
+        _ = bitcoinde_pair_to_world('000btc')
+
+    with pytest.raises(DeserializationError):
+        _ = bitcoinde_pair_to_world('invalidpair')

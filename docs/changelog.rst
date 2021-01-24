@@ -6,7 +6,10 @@ Changelog
 * :feature:`2159` Users now won't see empty tables for blockchains without accounts.
 * :feature:`2155` Users can now additionally filter the uniswap liquidity pools using a pool filter.
 * :feature:`1865` Users will now see an explanation of the current stage of the profit/loss report's progress along with the completion percentage.
+* :bug:`2117` Users can now properly dismiss notifications with long tiles, or dismiss all the pending notifications at once.
+* :bug:`2024` Multiple crypto.com csv import debited entries with same timestamp will be handled correctly.
 * :bug:`2135` Users will now properly see the correct accounting settings when creating a profit/loss report.
+* :bug:`2168` Bitcoin.de users will now be able to properly import IOTA trades.
 
 * :feature:`-` Added support for the following tokens:
 

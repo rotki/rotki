@@ -220,6 +220,28 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee_currency=A_USD,
         link='',
         notes=get_trade_note('Convert Dust'),
+    ), Trade(
+        timestamp=Timestamp(1608024314),
+        location=Location.CRYPTOCOM,
+        pair=TradePair('CRO_UNI'),
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('105.9475889306405164438345865')),
+        rate=Price(FVal('144.1809293808791657040427665')),
+        fee=Fee(ZERO),
+        fee_currency=A_USD,
+        link='',
+        notes=get_trade_note('Convert Dust'),
+    ), Trade(
+        timestamp=Timestamp(1608024314),
+        location=Location.CRYPTOCOM,
+        pair=TradePair('CRO_DOT'),
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('87.08021007997850666616541352')),
+        rate=Price(FVal('306.6322128582378511862892551')),
+        fee=Fee(ZERO),
+        fee_currency=A_USD,
+        link='',
+        notes=get_trade_note('Convert Dust'),
     )]
     assert expected_trades == trades
 

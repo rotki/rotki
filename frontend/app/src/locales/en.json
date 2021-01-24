@@ -401,6 +401,7 @@
     "tooltip": "Notifications"
   },
   "notification_popup": {
+    "dismiss_all": "Dismiss all the pending notifications",
     "tooltip": "Number of Pending notifications"
   },
   "notification_sidebar": {

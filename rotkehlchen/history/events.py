@@ -273,12 +273,14 @@ class EventsHistorian():
                 for _, vault_history in vault_mappings.items():
                     # For the vaults since we can't get historical values of vault tokens
                     # yet, for the purposes of the tax report count everything as USD
-                    defi_events.append(DefiEvent(
-                        timestamp=Timestamp(end_ts - 1),
-                        event_type=DefiEventType.YEARN_VAULTS_PNL,
-                        asset=A_USD,
-                        amount=vault_history.profit_loss.usd_value,
-                    ))
+                    for yearn_event in vault_history.events:
+                        if start_ts <= yearn_event.timestamp <= end_ts and yearn_event.realized_pnl is not None:  # noqa: E501
+                            defi_events.append(DefiEvent(
+                                timestamp=yearn_event.timestamp,
+                                event_type=DefiEventType.YEARN_VAULTS_PNL,
+                                asset=A_USD,
+                                amount=yearn_event.realized_pnl.usd_value,
+                            ))
         step = self._increase_progress(step, total_steps)
 
         # include compound events
