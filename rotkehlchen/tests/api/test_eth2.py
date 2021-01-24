@@ -71,10 +71,11 @@ def test_query_eth2_info(rotkehlchen_api_server, ethereum_accounts):
         else:
             deposits = assert_proper_response_with_result(response)
 
+    expected_pubkey = '0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b'  # noqa: E501
     assert deposits[0] == {
         'from_address': '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397',
         'log_index': 22,
-        'pubkey': '0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b',  # noqa: E501
+        'pubkey': expected_pubkey,
         'timestamp': 1604506685,
         'tx_hash': '0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1',
         'deposit_index': 9,
@@ -85,6 +86,7 @@ def test_query_eth2_info(rotkehlchen_api_server, ethereum_accounts):
     assert FVal(details[0]['balance']['usd_value']) >= ZERO
     assert details[0]['eth1_depositor'] == '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397'  # noqa: E501
     assert details[0]['index'] == 9
+    assert details[0]['public_key'] == expected_pubkey
     for duration in ('1d', '1w', '1m', '1y'):
         performance = details[0][f'performance_{duration}']
         assert FVal(performance['amount']) >= ZERO
