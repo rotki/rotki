@@ -248,10 +248,27 @@ class Cryptocompare(ExternalServiceWithApiKey):
             cache_key = PairCacheKey(match.group(1))
             self.price_history_file[cache_key] = file_
 
+    def can_query_history(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+            seconds: int = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
+    ) -> bool:
+        """Checks if it's okay to query cryptocompare historical price. This is determined by:
+
+        - Existence of a cached price
+        - Last rate limit
+        """
+        cached_data = self._got_cached_data_at_timestamp(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+        )
+        return cached_data is not None or not self.rate_limited_in_last(seconds)
+
     def rate_limited_in_last(self, seconds: int = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME) -> bool:
-        """
-        Checks when we were last rate limited by CC and if it was within the given seconds
-        """
+        """Checks when we were last rate limited by CC and if it was within the given seconds"""
         return ts_now() - self.last_rate_limit <= seconds
 
     def set_database(self, database: DBHandler) -> None:
