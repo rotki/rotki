@@ -1901,8 +1901,8 @@ class DBHandler:
                         continue
 
                     string_repr = db_tuple_to_str(entry, tuple_type)
-                    self.msg_aggregator.add_warning(
-                        f'Failed to add "{string_repr}" to the DB. It already exists.',
+                    logger.warning(
+                        f'Did not add "{string_repr}" to the DB. It already exists.',
                     )
                 except sqlcipher.InterfaceError:  # pylint: disable=no-member
                     log.critical(f'Interface error with tuple: {entry}')
