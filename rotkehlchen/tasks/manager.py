@@ -78,7 +78,7 @@ class TaskManager():
             self.premium_sync_manager.maybe_upload_data_to_server,
             self._maybe_schedule_xpub_derivation,
             self._maybe_query_ethereum_transactions,
-            self._maybe_schedule_exchange_trade_query,
+            self._maybe_schedule_exchange_history_query,
         ]
 
     def _prepare_cryptocompare_queries(self) -> None:
@@ -202,8 +202,8 @@ class TaskManager():
         )
         self.last_eth_tx_query_ts[address] = now
 
-    def _maybe_schedule_exchange_trade_query(self) -> None:
-        """Schedules the exchange trades history query task if enough time has passed"""
+    def _maybe_schedule_exchange_history_query(self) -> None:
+        """Schedules the exchange history query task if enough time has passed"""
         if len(self.exchange_manager.connected_exchanges) == 0:
             return
 
@@ -216,7 +216,7 @@ class TaskManager():
             return
 
         exchange = random.choice(queriable_exchanges)
-        task_name = f'Query trades of {exchange.name} exchange'
+        task_name = f'Query history of {exchange.name} exchange'
         logger.debug(f'Scheduling task to {task_name}')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,

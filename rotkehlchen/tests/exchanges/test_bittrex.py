@@ -364,6 +364,65 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert movements[3].fee == FVal('0.0015')
 
 
+def test_bittrex_query_asset_movement_int_transaction_id(bittrex):
+    """Test that if an integer is returned for bittrex transaction id we handle it properly
+
+    Bittrex deposit withdrawals SHOULD NOT return an integer for transaction id
+    according to their docs https://bittrex.github.io/api/v3#definition-Order
+    but as we saw in practise they sometimes can.
+
+    Regression test for https://github.com/rotki/rotki/issues/2175
+    """
+
+    problematic_deposit = """
+[
+    {
+      "id": 1,
+      "status": "COMPLETED",
+      "quantity": 2.12345678,
+      "currencySymbol": "RISE",
+      "confirmations": 2,
+      "completedAt": "2014-02-13T07:38:53.883Z",
+      "txId": 9875231951530679373,
+      "cryptoAddress": "15VyEAT4uf7ycrNWZVb1eGMzrs21BH95Va",
+      "source": "foo"
+    }
+]
+"""
+
+    def mock_get_deposit_withdrawal(url, method, json):  # pylint: disable=unused-argument
+        if 'deposit' in url:
+            response_str = problematic_deposit
+        else:
+            response_str = '[]'
+
+        return MockResponse(200, response_str)
+
+    with patch.object(bittrex.session, 'request', side_effect=mock_get_deposit_withdrawal):
+        movements = bittrex.query_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
+
+    errors = bittrex.msg_aggregator.consume_errors()
+    warnings = bittrex.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+    assert len(movements) == 1
+
+    assert movements[0].location == Location.BITTREX
+    assert movements[0].category == AssetMovementCategory.DEPOSIT
+    assert movements[0].timestamp == 1392277134
+    assert isinstance(movements[0].asset, Asset)
+    assert movements[0].asset == Asset('RISE')
+    assert movements[0].amount == FVal('2.12345678')
+    assert movements[0].fee == ZERO
+    assert movements[0].transaction_id == '9875231951530679373'
+
+    # also make sure they are written in the db
+    db_movements = bittrex.db.get_asset_movements(from_ts=0, to_ts=TEST_END_TS)
+    assert len(db_movements) == 1
+    assert db_movements[0] == movements[0]
+
+
 def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
     """Test that we handle unexpected bittrex deposit withdrawal data gracefully"""
 

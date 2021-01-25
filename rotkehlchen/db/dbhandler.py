@@ -1907,6 +1907,16 @@ class DBHandler:
                 except sqlcipher.InterfaceError:  # pylint: disable=no-member
                     log.critical(f'Interface error with tuple: {entry}')
 
+        except OverflowError:
+            self.msg_aggregator.add_error(
+                f'Failed to add "{tuple_type}" to the DB with overflow error. '
+                f'Check the logs for more details',
+            )
+            log.error(
+                f'Overflow error while trying to add "{tuple_type}" tuples to the'
+                f' DB. Tuples: {tuples} with query: {query}',
+            )
+
         self.conn.commit()
         self.update_last_write()
 

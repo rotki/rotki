@@ -11,6 +11,7 @@ Changelog
 * :bug:`2024` Multiple crypto.com csv import debited entries with same timestamp will be handled correctly.
 * :bug:`2135` Users will now properly see the correct accounting settings when creating a profit/loss report.
 * :bug:`2168` Bitcoin.de users will now be able to properly import IOTA trades.
+* :bug:`2175` Bittrex users with deposits/withdrawals of some edge case assets will now be able to properly process them.
 
 * :feature:`-` Added support for the following tokens:
 
