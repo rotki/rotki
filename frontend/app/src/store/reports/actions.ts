@@ -3,9 +3,10 @@ import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { api } from '@/services/rotkehlchen-api';
-import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
-import { MUTATION_PROGRESS } from '@/store/reports/const';
+import {
+  MUTATION_PROGRESS,
+  MUTATION_REPORT_ERROR
+} from '@/store/reports/const';
 import { ReportState } from '@/store/reports/state';
 import { ReportProgress, TradeHistory } from '@/store/reports/types';
 
@@ -19,6 +20,7 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
       processingState: '',
       totalProgress: '0'
     } as ReportProgress);
+    commit(MUTATION_REPORT_ERROR, '');
 
     const interval = setInterval(async () => {
       const progress = await api.history.getProgress();
@@ -58,6 +60,15 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
       const { result } = await taskCompletion<TradeHistory, TaskMeta>(
         TaskType.TRADE_HISTORY
       );
+
+      if (!result || !result.overview || !result.allEvents) {
+        commit(
+          MUTATION_REPORT_ERROR,
+          i18n.t('actions.reports.generate.error.description', { error: '' })
+        );
+        return;
+      }
+
       const { overview, allEvents } = result;
 
       const report = {
@@ -66,11 +77,11 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
       };
       commit('set', report);
     } catch (e) {
-      notify(
-        e.message,
-        i18n.t('actions.reports.generate.error.title').toString(),
-        Severity.ERROR,
-        true
+      commit(
+        MUTATION_REPORT_ERROR,
+        i18n.t('actions.reports.generate.error.description', {
+          error: e.message
+        })
       );
     }
 

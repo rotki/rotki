@@ -2,6 +2,7 @@ import { ProfitLossOverviewData, ReportPeriod } from '@/store/reports/types';
 import { Zero } from '@/utils/bignumbers';
 
 export const MUTATION_PROGRESS = 'progress' as const;
+export const MUTATION_REPORT_ERROR = 'reportError' as const;
 
 export const emptyPeriod: () => ReportPeriod = () => ({
   start: 0,

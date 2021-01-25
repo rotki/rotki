@@ -18,7 +18,14 @@
       </v-tooltip>
     </base-page-header>
     <generate v-show="!isRunning" @generate="generate($event)" />
-    <div v-if="loaded && !isRunning">
+    <error-screen
+      v-if="!isRunning && reportError"
+      class="mt-12"
+      :message="reportError"
+      :title="$t('profit_loss_report.error.title')"
+      :subtitle="$t('profit_loss_report.error.subtitle')"
+    />
+    <div v-if="loaded && !isRunning && !reportError">
       <v-row>
         <v-col>
           <i18n
@@ -78,6 +85,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
+import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
 import Generate from '@/components/profitloss/Generate.vue';
@@ -91,6 +99,7 @@ import { AccountingSettings, ProfitLossPeriod } from '@/typing/types';
 
 @Component({
   components: {
+    ErrorScreen,
     ProfitLossOverview,
     ProfitLossEvents,
     AccountingSettingsDisplay,
@@ -101,7 +110,12 @@ import { AccountingSettings, ProfitLossPeriod } from '@/typing/types';
   computed: {
     ...mapGetters('tasks', ['isTaskRunning']),
     ...mapGetters('reports', ['progress', 'processingState']),
-    ...mapState('reports', ['loaded', 'accountingSettings', 'reportPeriod']),
+    ...mapState('reports', [
+      'loaded',
+      'accountingSettings',
+      'reportPeriod',
+      'reportError'
+    ]),
     ...mapGetters('session', ['currency'])
   }
 })
@@ -113,6 +127,7 @@ export default class ProfitLossReport extends Vue {
   processingState!: string;
   accountingSettings!: AccountingSettings;
   reportPeriod!: ReportPeriod;
+  reportError!: String;
 
   get isRunning(): boolean {
     return this.isTaskRunning(TaskType.TRADE_HISTORY);
@@ -127,7 +142,7 @@ export default class ProfitLossReport extends Vue {
     try {
       if (this.$interop.isPackaged) {
         const directory = await this.$interop.openDirectory(
-          this.$tc('profit_loss_report.select_directory')
+          this.$t('profit_loss_report.select_directory').toString()
         );
         if (!directory) {
           return;
@@ -137,7 +152,7 @@ export default class ProfitLossReport extends Vue {
         const { success, message } = await this.$api.downloadCSV();
         if (!success) {
           this.showMessage(
-            message ?? this.$tc('profit_loss_report.download_failed')
+            message ?? this.$t('profit_loss_report.download_failed').toString()
           );
         }
       }
@@ -149,7 +164,7 @@ export default class ProfitLossReport extends Vue {
 
   private showMessage(description: string) {
     this.$store.commit('setMessage', {
-      title: this.$tc('profit_loss_report.csv_export_error'),
+      title: this.$t('profit_loss_report.csv_export_error').toString(),
       description: description
     } as Message);
   }

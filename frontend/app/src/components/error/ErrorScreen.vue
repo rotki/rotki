@@ -3,20 +3,17 @@
     <div>
       <v-icon size="120" color="error">mdi-alert-circle</v-icon>
     </div>
-    <div class="error-screen__title">
-      <div class="text-h1" v-text="$t('error_screen.start_failure')" />
+    <div v-if="header" class="error-screen__title">
+      <div class="text-h1">
+        {{ header }}
+      </div>
     </div>
 
-    <v-btn
-      depressed
-      color="primary"
-      @click="terminate()"
-      v-text="$t('error_screen.terminate')"
-    />
+    <slot />
 
     <v-card outlined class="error-screen__message mt-3">
       <v-card-title>
-        <span v-text="$t('error_screen.backend_error')" />
+        {{ title }}
         <v-spacer />
         <v-tooltip top>
           <template #activator="{ on, attrs }">
@@ -27,9 +24,15 @@
           <span v-text="$t('error_screen.copy_tooltip')" />
         </v-tooltip>
       </v-card-title>
-      <v-card-subtitle v-text="$t('error_screen.message')" />
+      <v-card-subtitle>
+        {{ subtitle }}
+      </v-card-subtitle>
       <v-card-text class="font-weight-light error-screen__description">
-        <pre class="font-weight-regular text-caption">{{ message }}</pre>
+        <pre
+          class="font-weight-regular text-caption text-wrap error-screen__description__message"
+        >
+          {{ message }}
+        </pre>
         <textarea
           ref="copy"
           v-model="message"
@@ -45,12 +48,14 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 
 @Component({})
 export default class ErrorScreen extends Vue {
-  @Prop({ required: true })
+  @Prop({ required: false, type: String, default: '' })
+  header!: string;
+  @Prop({ required: true, type: String })
+  title!: string;
+  @Prop({ required: true, type: String })
+  subtitle!: string;
+  @Prop({ required: true, type: String })
   message!: string;
-
-  terminate() {
-    this.$interop.closeApp();
-  }
 
   copy() {
     const copy = this.$refs.copy as HTMLTextAreaElement;
@@ -66,7 +71,6 @@ export default class ErrorScreen extends Vue {
 @import '~@/scss/scroll';
 
 .error-screen {
-  background-color: white;
   height: 100%;
   width: 100%;
   z-index: 99999;
@@ -93,6 +97,11 @@ export default class ErrorScreen extends Vue {
   &__description {
     height: 300px;
     overflow: auto;
+
+    &__message {
+      max-width: 500px;
+      width: 100%;
+    }
   }
 }
 </style>

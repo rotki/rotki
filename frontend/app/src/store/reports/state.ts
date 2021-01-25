@@ -17,6 +17,7 @@ export interface ReportState {
   currency: string;
   loaded: boolean;
   progress: ReportProgress;
+  reportError: string;
 }
 
 export const defaultState = (): ReportState => ({
@@ -29,7 +30,8 @@ export const defaultState = (): ReportState => ({
   progress: {
     processingState: '',
     totalProgress: ''
-  }
+  },
+  reportError: ''
 });
 
 export const state: ReportState = defaultState();
