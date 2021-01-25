@@ -5115,6 +5115,8 @@ Adding blockchain accounts
    .. note::
       Supported blockchains: ``"BTC", "ETH", "KSM"``
 
+      Supported blockchains with ENS domains: ``"ETH", "KSM"``
+
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a PUT on the the blockchains endpoint with a specific blockchain URL and a list of account data in the json data will add these accounts to the tracked accounts for the given blockchain and the current user. The updated balances after the account additions are returned.
@@ -5503,6 +5505,8 @@ Editing blockchain account data
    .. note::
       Supported blockchains: ``"BTC", "ETH", "KSM"``
 
+      Supported blockchains with ENS domains: ``"ETH", "KSM"``
+
    Doing a PATCH on the the blockchains endpoint with a specific blockchain URL and a list of accounts to edit will edit the label and tags for those accounts.
 
 
@@ -5563,6 +5567,8 @@ Removing blockchain accounts
 
    .. note::
       Supported blockchains: ``"BTC", "ETH", "KSM"``
+
+      Supported blockchains with ENS domains: ``"ETH", "KSM"``
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 

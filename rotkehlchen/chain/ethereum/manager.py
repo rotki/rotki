@@ -1,7 +1,7 @@
 import json
 import logging
 import random
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, overload
 from urllib.parse import urlparse
 
 import requests
@@ -9,7 +9,7 @@ from ens import ENS
 from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
-from eth_typing import BlockNumber
+from eth_typing import BlockNumber, HexStr
 from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
 from web3 import HTTPProvider, Web3
@@ -37,11 +37,12 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int_from_hex
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import ChecksumEthAddress, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str, request_get_dict
 
 from .typing import NodeName
+from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -524,46 +525,111 @@ class EthereumManager():
 
         return hex_or_bytes_to_str(web3.eth.getCode(account))
 
+    @overload
     def ens_lookup(
             self,
             name: str,
+            blockchain: Literal[SupportedBlockchain.ETHEREUM] = SupportedBlockchain.ETHEREUM,
             call_order: Optional[Sequence[NodeName]] = None,
     ) -> Optional[ChecksumEthAddress]:
+        ...
+
+    @overload
+    def ens_lookup(
+            self,
+            name: str,
+            blockchain: Literal[
+                SupportedBlockchain.BITCOIN,
+                SupportedBlockchain.KUSAMA,
+            ],
+            call_order: Optional[Sequence[NodeName]] = None,
+    ) -> Optional[HexStr]:
+        ...
+
+    def ens_lookup(
+            self,
+            name: str,
+            blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
+            call_order: Optional[Sequence[NodeName]] = None,
+    ) -> Optional[Union[ChecksumEthAddress, HexStr]]:
         return self.query(
             method=self._ens_lookup,
             call_order=call_order if call_order is not None else self.default_call_order(),
             name=name,
+            blockchain=blockchain,
         )
 
-    def _ens_lookup(self, web3: Optional[Web3], name: str) -> Optional[ChecksumEthAddress]:
+    @overload
+    def _ens_lookup(
+            self,
+            web3: Optional[Web3],
+            name: str,
+            blockchain: Literal[SupportedBlockchain.ETHEREUM],
+    ) -> Optional[ChecksumEthAddress]:
+        ...
+
+    @overload
+    def _ens_lookup(
+            self,
+            web3: Optional[Web3],
+            name: str,
+            blockchain: Literal[
+                SupportedBlockchain.BITCOIN,
+                SupportedBlockchain.KUSAMA,
+            ],
+    ) -> Optional[HexStr]:
+        ...
+
+    def _ens_lookup(
+            self,
+            web3: Optional[Web3],
+            name: str,
+            blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
+    ) -> Optional[Union[ChecksumEthAddress, HexStr]]:
         """Performs an ENS lookup and returns address if found else None
+
+        TODO: currently web3.py 5.15.0 does not support multichain ENS domains
+        (EIP-2304), therefore requesting a non-Ethereum address won't use the
+        web3 ens library and will require to extend the library resolver ABI.
+        An issue in their repo (#1839) reporting the lack of support has been
+        created. This function will require refactoring once they include
+        support for EIP-2304.
+        https://github.com/ethereum/web3.py/issues/1839
 
         May raise:
         - RemoteError if Etherscan is used and there is a problem querying it or
         parsing its response
         """
-        if web3 is not None:
-            return web3.ens.resolve(name)
-
-        # else we gotta manually query contracts via etherscan
         normal_name = normalize_name(name)
-        resolver_addr = self._call_contract_etherscan(
-            ENS_MAINNET_ADDR,
+        resolver_addr = self._call_contract(
+            web3=web3,
+            contract_address=ENS_MAINNET_ADDR,
             abi=ENS_ABI,
             method_name='resolver',
             arguments=[normal_name_to_hash(normal_name)],
         )
         if is_none_or_zero_address(resolver_addr):
             return None
-        address = self._call_contract_etherscan(
-            to_checksum_address(resolver_addr),
-            abi=ENS_RESOLVER_ABI,
-            method_name='addr',
-            arguments=[normal_name_to_hash(normal_name)],
-        )
 
+        ens_resolver_abi = ENS_RESOLVER_ABI.copy()
+        arguments = [normal_name_to_hash(normal_name)]
+        if blockchain != SupportedBlockchain.ETHEREUM:
+            ens_resolver_abi.extend(ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS)
+            arguments.append(blockchain.ens_coin_type())
+
+        address = self._call_contract(
+            web3=web3,
+            contract_address=to_checksum_address(resolver_addr),
+            abi=ens_resolver_abi,
+            method_name='addr',
+            arguments=arguments,
+        )
         if is_none_or_zero_address(address):
             return None
+
+        if blockchain != SupportedBlockchain.ETHEREUM:
+            return HexStr(address.hex())
+
         return to_checksum_address(address)
 
     def _call_contract_etherscan(

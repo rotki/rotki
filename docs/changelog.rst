@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2032` You can now add Kusama addresses by ENS name. Simply use an ENS name in the KSM address field and if it can be resolved it will be appended to the tracked accounts.
 * :feature:`2146` Date format will now respect user choice in CSV export, logging output and other backend related locations. Also adding a new option to control whether those dates should be displayed/exported in local or UTC time.
 * :feature:`2159` Users now won't see empty tables for blockchains without accounts.
 * :feature:`2155` Users can now additionally filter the uniswap liquidity pools using a pool filter.

@@ -5,6 +5,7 @@ from substrateinterface import SubstrateInterface
 
 KusamaAddress = NewType('KusamaAddress', str)
 SubstrateAddress = Union[KusamaAddress]
+SubstratePublicKey = NewType('SubstratePublicKey', str)
 
 SubstrateChainId = NewType('SubstrateChainId', str)
 BlockNumber = NewType('BlockNumber', int)

@@ -15,9 +15,9 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.substrate import (
-    DOT_ADDRESS_1,
-    KSM_ADDRESS_1,
-    KSM_ADDRESS_2,
+    SUBSTRATE_ACC1_DOT_ADDR,
+    SUBSTRATE_ACC1_KSM_ADDR,
+    SUBSTRATE_ACC2_KSM_ADDR,
     attempt_connect_test_nodes,
 )
 
@@ -41,11 +41,11 @@ def test_get_account_balance_invalid_account(kusama_manager):
     node. RemoteError is raised by `request_available_nodes()`.
     """
     with pytest.raises(RemoteError) as e:
-        kusama_manager.get_account_balance(DOT_ADDRESS_1)
+        kusama_manager.get_account_balance(SUBSTRATE_ACC1_DOT_ADDR)
 
     errors = kusama_manager.msg_aggregator.consume_errors()
     user_error_msg = (
-        f'Got remote error while querying Kusama KSM balance for account {DOT_ADDRESS_1}'
+        f'Got remote error while querying Kusama KSM balance for account {SUBSTRATE_ACC1_DOT_ADDR}'
     )
     account_balance_errors = [error for error in errors if error.startswith(user_error_msg)]
     for error in account_balance_errors:
@@ -55,7 +55,7 @@ def test_get_account_balance_invalid_account(kusama_manager):
 
 
 def test_get_account_balance(kusama_manager):
-    balance = kusama_manager.get_account_balance(KSM_ADDRESS_1)
+    balance = kusama_manager.get_account_balance(SUBSTRATE_ACC1_KSM_ADDR)
     assert balance >= ZERO
 
 
@@ -65,11 +65,11 @@ def test_get_accounts_balance_invalid_account(kusama_manager):
     node. RemoteError is raised by `request_available_nodes()`.
     """
     with pytest.raises(RemoteError) as e:
-        kusama_manager.get_accounts_balance([KSM_ADDRESS_1, DOT_ADDRESS_1])
+        kusama_manager.get_accounts_balance([SUBSTRATE_ACC1_KSM_ADDR, SUBSTRATE_ACC1_DOT_ADDR])
 
     errors = kusama_manager.msg_aggregator.consume_errors()
     user_error_msg = (
-        f'Got remote error while querying Kusama KSM balance for account {DOT_ADDRESS_1}'
+        f'Got remote error while querying Kusama KSM balance for account {SUBSTRATE_ACC1_DOT_ADDR}'
     )
     account_balance_errors = [error for error in errors if error.startswith(user_error_msg)]
     for error in account_balance_errors:
@@ -79,9 +79,12 @@ def test_get_accounts_balance_invalid_account(kusama_manager):
 
 
 def test_get_accounts_balance(kusama_manager):
-    account_balance = kusama_manager.get_accounts_balance([KSM_ADDRESS_1, KSM_ADDRESS_2])
-    assert account_balance[KSM_ADDRESS_1] >= ZERO
-    assert account_balance[KSM_ADDRESS_2] >= ZERO
+    account_balance = kusama_manager.get_accounts_balance([
+        SUBSTRATE_ACC1_KSM_ADDR,
+        SUBSTRATE_ACC2_KSM_ADDR,
+    ])
+    assert account_balance[SUBSTRATE_ACC1_KSM_ADDR] >= ZERO
+    assert account_balance[SUBSTRATE_ACC2_KSM_ADDR] >= ZERO
 
 
 def test_get_chain_id(kusama_manager):
@@ -120,7 +123,7 @@ def test_get_account_balance_calculation(kusama_manager):
         },
     )
     balance = kusama_manager._get_account_balance(
-        account=KSM_ADDRESS_1,
+        account=SUBSTRATE_ACC1_KSM_ADDR,
         node_interface=mock_node_interface,
     )
     assert balance == FVal(111.004701754251)  # (free + reserved)/10**12
