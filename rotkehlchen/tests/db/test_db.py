@@ -63,6 +63,9 @@ from rotkehlchen.typing import (
     SupportedBlockchain,
     Timestamp,
     TradeType,
+    AssetAmount,
+    TradePair,
+    Price,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
@@ -574,8 +577,79 @@ def test_query_owned_assets(data_dir, username):
     )
     data.db.conn.commit()
 
+    # also make sure that assets from trades are included
+    data.db.add_trades([
+        Trade(
+            timestamp=Timestamp(1),
+            location=Location.EXTERNAL,
+            pair=TradePair('ETH_BTC'),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal(1)),
+            rate=Price(FVal(1)),
+            fee=Fee(FVal('0.1')),
+            fee_currency=A_BTC,
+            link='',
+            notes='',
+        ), Trade(
+            timestamp=Timestamp(99),
+            location=Location.EXTERNAL,
+            pair=TradePair('ETH_BTC'),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal(2)),
+            rate=Price(FVal(1)),
+            fee=Fee(FVal('0.1')),
+            fee_currency=A_BTC,
+            link='',
+            notes='',
+        ), Trade(
+            timestamp=Timestamp(1),
+            location=Location.EXTERNAL,
+            pair=TradePair('SDC_SDT-2'),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal(1)),
+            rate=Price(FVal(1)),
+            fee=Fee(FVal('0.1')),
+            fee_currency=A_BTC,
+            link='',
+            notes='',
+        ), Trade(
+            timestamp=Timestamp(1),
+            location=Location.EXTERNAL,
+            pair=TradePair('SUSHI_1INCH'),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal(1)),
+            rate=Price(FVal(1)),
+            fee=Fee(FVal('0.1')),
+            fee_currency=A_BTC,
+            link='',
+            notes='',
+        ), Trade(
+            timestamp=Timestamp(3),
+            location=Location.EXTERNAL,
+            pair=TradePair('SUSHI_1INCH'),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal(2)),
+            rate=Price(FVal(1)),
+            fee=Fee(FVal('0.1')),
+            fee_currency=A_BTC,
+            link='',
+            notes='',
+        ), Trade(
+            timestamp=Timestamp(1),
+            location=Location.EXTERNAL,
+            pair=TradePair('UNKNOWNTOKEN_BTC'),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal(1)),
+            rate=Price(FVal(1)),
+            fee=Fee(FVal('0.1')),
+            fee_currency=A_BTC,
+            link='',
+            notes='',
+        ),
+    ])
+
     assets_list = data.db.query_owned_assets()
-    assert assets_list == [A_USD, A_ETH, A_DAI, A_BTC, A_XMR]
+    assert set(assets_list) == {A_USD, A_ETH, A_DAI, A_BTC, A_XMR, Asset('SDC'), Asset('SDT-2'), Asset('SUSHI'), Asset('1INCH')}  # noqa: E501
     assert all(isinstance(x, Asset) for x in assets_list)
     warnings = data.db.msg_aggregator.consume_warnings()
     assert len(warnings) == 1

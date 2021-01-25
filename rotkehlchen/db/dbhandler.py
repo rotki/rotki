@@ -13,6 +13,7 @@ from eth_typing import HexStr
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
+from rotkehlchen.serialization.deserialize import pair_get_assets
 from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -77,6 +78,7 @@ from rotkehlchen.errors import (
     TagConstraintError,
     UnknownAsset,
     UnsupportedAsset,
+    UnprocessableTradePair,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
@@ -2735,17 +2737,22 @@ class DBHandler:
     def query_owned_assets(self) -> List[Asset]:
         """Query the DB for a list of all assets ever owned
 
-        This list will also include liabilities as owned assets
+        The assets are taken from:
+        - Balance snapshots
+        - Trades the user made
         """
+        # TODO: Perhaps also add amm swaps here
+        # but think on the performance. This is a synchronous api call so if
+        # it starts taking too much time the calling logic needs to change
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT DISTINCT currency FROM timed_balances ORDER BY time ASC;',
         )
 
-        results = []
+        results = set()
         for result in query:
             try:
-                results.append(Asset(result[0]))
+                results.add(Asset(result[0]))
             except UnknownAsset:
                 self.msg_aggregator.add_warning(
                     f'Unknown/unsupported asset {result[0]} found in the database. '
@@ -2759,7 +2766,22 @@ class DBHandler:
                 )
                 continue
 
-        return results
+        query = cursor.execute(
+            'SELECT DISTINCT pair FROM trades ORDER BY time ASC;',
+        )
+        for result in query:
+            try:
+                asset1, asset2 = pair_get_assets(result[0])
+            except (UnprocessableTradePair, UnknownAsset) as e:
+                logger.warning(
+                    f'At processing owned assets from pair could not deserialize '
+                    f'pair {result[0]} due to {str(e)}',
+                )
+                continue
+            results.add(asset1)
+            results.add(asset2)
+
+        return list(results)
 
     def get_latest_location_value_distribution(self) -> List[LocationData]:
         """Gets the latest location data
