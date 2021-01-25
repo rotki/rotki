@@ -6293,6 +6293,16 @@
         "symbol": "IGNIS",
         "type": "ardor token"
     },
+    "IHF": {
+        "coingecko": "invictus-hyprion-fund",
+        "cryptocompare": "",
+        "ethereum_address": "0xaF1250fa68D7DECD34fD75dE8742Bc03B29BD58e",
+        "ethereum_token_decimals": 18,
+        "name": "Invictus Hyperion Fund",
+        "started": 1526394640,
+        "symbol": "IHF",
+        "type": "ethereum token"
+    },
     "IHT": {
         "coingecko": "iht-real-estate-protocol",
         "ethereum_address": "0xEda8B016efA8b1161208Cf041cD86972eeE0F31E",
