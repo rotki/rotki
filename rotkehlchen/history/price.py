@@ -1,20 +1,27 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import NoPriceForGivenTimestamp, RemoteError, PriceQueryUnsupportedAsset
+from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
+
+from .typing import (
+    DEFAULT_HISTORICAL_PRICE_ORACLE_ORDER,
+    HistoricalPriceOracle,
+    HistoricalPriceOracleInstance,
+)
+
 if TYPE_CHECKING:
-    from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.coingecko import Coingecko
+    from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -68,27 +75,66 @@ class PriceHistorian():
     __instance: Optional['PriceHistorian'] = None
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
+    _oracle_instances: List[Tuple[HistoricalPriceOracle, HistoricalPriceOracleInstance]]
+    _oracle_order: Sequence[HistoricalPriceOracle]
 
     def __new__(
             cls,
             data_directory: Path = None,
             cryptocompare: 'Cryptocompare' = None,
             coingecko: 'Coingecko' = None,
+            oracle_order: Sequence[HistoricalPriceOracle] = None,
     ) -> 'PriceHistorian':
         if PriceHistorian.__instance is not None:
             return PriceHistorian.__instance
+
         assert data_directory, 'arguments should be given at the first instantiation'
         assert cryptocompare, 'arguments should be given at the first instantiation'
         assert coingecko, 'arguments should be given at the first instantiation'
 
+        if oracle_order is None:
+            oracle_order = DEFAULT_HISTORICAL_PRICE_ORACLE_ORDER
+
+        if set(oracle_order) != set(HistoricalPriceOracle):
+            raise AssertionError('All historical price oracles are required')
+
+        oracle_instances = cls.get_oracle_instances(
+            oracle_order=oracle_order,
+            cryptocompare=cryptocompare,
+            coingecko=coingecko,
+        )
         PriceHistorian.__instance = object.__new__(cls)
         PriceHistorian._cryptocompare = cryptocompare
         PriceHistorian._coingecko = coingecko
+        PriceHistorian._oracle_instances = oracle_instances
+        PriceHistorian._oracle_order = oracle_order
 
         return PriceHistorian.__instance
 
     @staticmethod
-    def query_historical_price(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+    def get_oracle_instances(
+            oracle_order: Sequence[HistoricalPriceOracle],
+            cryptocompare: 'Cryptocompare',
+            coingecko: 'Coingecko',
+    ) -> List[Tuple[HistoricalPriceOracle, HistoricalPriceOracleInstance]]:
+        oracle_instances: List[Tuple[HistoricalPriceOracle, HistoricalPriceOracleInstance]]
+        oracle_instances = []
+        for oracle in oracle_order:
+            if oracle == HistoricalPriceOracle.COINGECKO:
+                oracle_instances.append((oracle, coingecko))
+            elif oracle == HistoricalPriceOracle.CRYPTOCOMPARE:
+                oracle_instances.append((oracle, cryptocompare))
+            else:
+                raise AssertionError(f'Unexpected HistoricalPriceOracle: {oracle}')
+
+        return oracle_instances
+
+    @staticmethod
+    def query_historical_price(
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> Price:
         """
         Query the historical price on `timestamp` for `from_asset` in `to_asset`.
         So how much `to_asset` does 1 unit of `from_asset` cost.
@@ -101,11 +147,8 @@ class PriceHistorian():
             timestamp: The timestamp at which to query the price
 
         May raise:
-        - PriceQueryUnsupportedAsset if from/to asset is missing from price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from the external service.
-        - RemoteError if there is a problem reaching the price oracle server
-        or with reading the response returned by the server
         """
         log.debug(
             'Querying historical price',
@@ -113,12 +156,13 @@ class PriceHistorian():
             to_asset=to_asset,
             timestamp=timestamp,
         )
-
         if from_asset == to_asset:
             return Price(FVal('1'))
 
-        if from_asset.is_fiat() and to_asset.is_fiat():
-            # if we are querying historical forex data then try something other than cryptocompare
+        is_from_fiat_to_fiat = from_asset.is_fiat() and to_asset.is_fiat()
+        # Querying historical forex data is attempted first via exchangerates API,
+        # and then via any price oracle that has fiat to fiat.
+        if is_from_fiat_to_fiat:
             price = Inquirer().query_historical_fiat_exchange_rates(
                 from_fiat_currency=from_asset,
                 to_fiat_currency=to_asset,
@@ -126,36 +170,68 @@ class PriceHistorian():
             )
             if price is not None:
                 return price
-            # else cryptocompare also has historical fiat to fiat data
 
         instance = PriceHistorian()
-        price = None
-        if Inquirer()._cryptocompare.can_query_history(from_asset=from_asset, to_asset=to_asset, timestamp=timestamp):  # noqa: E501
+        price = Price(ZERO)
+        for oracle, oracle_instance in instance._oracle_instances:
+            oracle_properties = oracle.properties()
+
+            if is_from_fiat_to_fiat and not oracle_properties.has_fiat_to_fiat:
+                log.debug(
+                    f"Historical price oracle {oracle} can't be used "
+                    f"for fiat to fiat. Skipping",
+                )
+                continue
+
+            if oracle_instance.rate_limited_in_last() is True:
+                log.debug(
+                    f"Historical price oracle {oracle} can't be used "
+                    f"due to rate limits. Skipping",
+                )
+                continue
+
+            can_query_history = oracle_instance.can_query_history(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                timestam=timestamp,
+            )
+            if can_query_history is False:
+                pass
+
             try:
-                price = instance._cryptocompare.query_historical_price(
+                price = oracle_instance.query_historical_price(
                     from_asset=from_asset,
                     to_asset=to_asset,
                     timestamp=timestamp,
                 )
-            except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
-                # then use coingecko
-                pass
+            except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError) as e:
+                log.warning(
+                    f'Historical price oracle {oracle} failed to request '
+                    f'due to: {str(e)}.',
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                    timestamp=timestamp,
+                )
+                continue
 
-        if price and price != Price(ZERO):
-            return price
+            if price != Price(ZERO):
+                log.debug(
+                    f'Historical price oracle {oracle} got price',
+                    price=price,
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                    timestamp=timestamp,
+                )
+                return price
 
-        try:
-            price = instance._coingecko.historical_price(
+            log.error(
+                f'Historical price oracle {oracle} failed to request and got zero price',
+                price=price,
                 from_asset=from_asset,
                 to_asset=to_asset,
-                time=timestamp,
+                timestamp=timestamp,
             )
-            if price != Price(ZERO):
-                return price
-        except RemoteError:
-            pass
 
-        # nothing found in any price oracle
         raise NoPriceForGivenTimestamp(
             from_asset=from_asset,
             to_asset=to_asset,

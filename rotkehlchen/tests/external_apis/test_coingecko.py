@@ -49,5 +49,9 @@ def test_asset_data(session_coingecko):
 
 
 def test_coingecko_historical_price(session_coingecko):
-    price = session_coingecko.historical_price(from_asset=A_ETH, to_asset=A_EUR, time=1483056100)
+    price = session_coingecko.query_historical_price(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        timestamp=1483056100,
+    )
     assert price == Price(FVal('7.7478028375650725'))

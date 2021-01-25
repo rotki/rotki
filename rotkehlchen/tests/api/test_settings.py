@@ -1,3 +1,4 @@
+import random
 from http import HTTPStatus
 from typing import Dict, List
 from unittest.mock import patch
@@ -6,7 +7,12 @@ import pytest
 import requests
 
 from rotkehlchen.constants.assets import A_JPY
-from rotkehlchen.db.settings import DEFAULT_KRAKEN_ACCOUNT_TYPE, ROTKEHLCHEN_DB_VERSION, DBSettings
+from rotkehlchen.db.settings import (
+    DEFAULT_HISTORICAL_PRICE_ORACLES,
+    DEFAULT_KRAKEN_ACCOUNT_TYPE,
+    ROTKEHLCHEN_DB_VERSION,
+    DBSettings,
+)
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -92,6 +98,8 @@ def test_set_settings(rotkehlchen_api_server):
             value = ''
         elif setting == 'ksm_rpc_endpoint':
             value = 'http://kusama.node.com:9933'
+        elif setting == 'historical_price_oracles':
+            value = ['coingecko', 'cryptocompare']
         else:
             raise AssertionError(f'Unexpected settting {setting} encountered')
 
@@ -582,3 +590,23 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
         'aave': [address1, address2],
         'makerdao_vaults': [address2],
     })
+
+
+def test_set_historical_price_oracles(rotkehlchen_api_server):
+    historical_price_oracles = list(DEFAULT_HISTORICAL_PRICE_ORACLES)
+    random.shuffle(historical_price_oracles)
+
+    data = {'settings': {'historical_price_oracles': historical_price_oracles}}
+    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    assert_proper_response(response)
+
+    # Check response
+    json_data = response.json()
+    result = json_data['result']
+    assert json_data['message'] == ''
+    assert result['historical_price_oracles'] == historical_price_oracles
+
+    # Check db settings
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    settings = rotki.data.db.get_settings()
+    assert settings.historical_price_oracles == historical_price_oracles

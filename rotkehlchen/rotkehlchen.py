@@ -50,6 +50,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history import EventsHistorian, PriceHistorian
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import (
@@ -237,10 +238,15 @@ class Rotkehlchen():
         self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)
         eth_rpc_endpoint = settings.eth_rpc_endpoint
         # Initialize the price historian singleton
+        historical_price_oracle_order = [
+            HistoricalPriceOracle.deserialize(oracle)
+            for oracle in settings.historical_price_oracles
+        ]
         PriceHistorian(
             data_directory=self.data_dir,
             cryptocompare=self.cryptocompare,
             coingecko=self.coingecko,
+            oracle_order=historical_price_oracle_order,
         )
         self.accountant = Accountant(
             db=self.data.db,

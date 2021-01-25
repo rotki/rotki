@@ -1,30 +1,29 @@
 import json
 import logging
-import gevent
+from json.decoder import JSONDecodeError
+from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Union, overload
 from urllib.parse import urlencode
 
+import gevent
 import requests
 from typing_extensions import Literal
-from json.decoder import JSONDecodeError
-from pathlib import Path
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsondumps, rlk_jsonloads
-from rotkehlchen.utils.misc import timestamp_to_date
-from rotkehlchen.utils.misc import get_or_make_price_history_dir
-from rotkehlchen.errors import UnsupportedAsset
+from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date, ts_now
+from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 PRICE_HISTORY_FILE_PREFIX = 'gecko_price_history_'
 COINGECKO_QUERY_RETRY_TIMES = 4
+COINGECKO_RATE_LIMIT_WAIT_TIME = 60  # rate limit is 100 requests/minute
 
 
 class CoingeckoImageURLs(NamedTuple):
@@ -109,6 +108,7 @@ class Coingecko():
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.data_directory = data_directory
+        self.last_rate_limit = 0
 
     @overload  # noqa: F811
     def _query(
@@ -157,6 +157,7 @@ class Coingecko():
                 # Coingecko allows only 100 calls per minute. If you get 429 it means you
                 # exceeded this and are throttled until the next minute window
                 # backoff and retry 4 times =  2.5 + 3.33 + 5 + 10 = at most 20.8 secs
+                self.last_rate_limit = ts_now()
                 if tries >= 1:
                     backoff_seconds = 10 / tries
                     log.debug(
@@ -297,6 +298,12 @@ class Coingecko():
             )
             return Price(ZERO)
 
+    def rate_limited_in_last(self, seconds: int = COINGECKO_RATE_LIMIT_WAIT_TIME) -> bool:
+        """
+        Checks when we were last rate limited by CG and if it was within the given seconds
+        """
+        return ts_now() - self.last_rate_limit <= seconds
+
     def _get_cached_price(self, from_asset: Asset, to_asset: Asset, date: str) -> Optional[Price]:
         price_history_dir = get_or_make_price_history_dir(self.data_directory)
         filename = (
@@ -344,7 +351,12 @@ class Coingecko():
         with open(filename, 'w') as outfile:
             outfile.write(rlk_jsondumps(data))
 
-    def historical_price(self, from_asset: Asset, to_asset: Asset, time: Timestamp) -> Price:
+    def query_historical_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> Price:
         vs_currency = Coingecko.check_vs_currencies(
             from_asset=from_asset,
             to_asset=to_asset,
@@ -362,7 +374,7 @@ class Coingecko():
             )
             return Price(ZERO)
 
-        date = timestamp_to_date(time, formatstr='%d-%m-%Y')
+        date = timestamp_to_date(timestamp, formatstr='%d-%m-%Y')
         cached_price = self._get_cached_price(from_asset=from_asset, to_asset=to_asset, date=date)
         if cached_price is not None:
             return cached_price
