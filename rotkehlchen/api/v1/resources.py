@@ -1242,10 +1242,12 @@ class CurrentAssetsPriceResource(BaseResource):
     def get(
         self,
         assets: List[Asset],
+        target_asset: Asset,
         async_query: bool,
     ) -> Response:
         return self.rest_api.get_current_assets_price(
             assets=assets,
+            target_asset=target_asset,
             async_query=async_query,
         )
 
@@ -1258,9 +1260,11 @@ class HistoricalAssetsPriceResource(BaseResource):
     def get(
         self,
         assets_timestamp: List[Tuple[Asset, Timestamp]],
+        target_asset: Asset,
         async_query: bool,
     ) -> Response:
         return self.rest_api.get_historical_assets_price(
             assets_timestamp=assets_timestamp,
+            target_asset=target_asset,
             async_query=async_query,
         )

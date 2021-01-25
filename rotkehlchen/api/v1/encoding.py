@@ -1,7 +1,6 @@
 import logging
-from datetime import datetime, time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import marshmallow
 import webargs
@@ -119,11 +118,7 @@ class TimestampField(fields.Field):
     ) -> Timestamp:
         try:
             timestamp = deserialize_timestamp(value)
-            # NB: do not include the statement below in 'deserialize_timestamp()'
-            # as the backend deserializes timestamps in milliseconds across the
-            # app (e.g. exchanges) and it would raise an out of range ValueError
-            datetime.utcfromtimestamp(timestamp)
-        except (DeserializationError, ValueError) as e:
+        except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
         return timestamp
@@ -1326,33 +1321,18 @@ class CurrentAssetsPriceSchema(Schema):
         required=True,
         validate=webargs.validate.Length(min=1),
     )
+    target_asset = AssetField(required=True)
     async_query = fields.Boolean(missing=False)
-
-
-def _validate_historical_assets_price_timestamp(
-        asset_timestamp: Tuple[Asset, Timestamp],
-) -> None:
-    """Check the given timestamp is equal or less than today at 00:00:00 (the
-    reason behind is that some prices APIs like Coingecko take the snapshot at
-    this time).
-    """
-    asset, timestamp = asset_timestamp
-    midnight = int(datetime.combine(datetime.utcnow().date(), time.min).timestamp())
-    if timestamp > Timestamp(midnight):
-        raise ValidationError(
-            f"Invalid timestamp {timestamp} for asset {asset.identifier}. "
-            f"Timestamps must be equal or less than {midnight} (today's at 00:00:00)",
-        )
 
 
 class HistoricalAssetsPriceSchema(Schema):
     assets_timestamp = fields.List(
         fields.Tuple(  # type: ignore # Tuple is not annotated
             (AssetField(required=True), TimestampField(required=True)),
-            validate=_validate_historical_assets_price_timestamp,
             required=True,
         ),
         required=True,
         validate=webargs.validate.Length(min=1),
     )
+    target_asset = AssetField(required=True)
     async_query = fields.Boolean(missing=False)
