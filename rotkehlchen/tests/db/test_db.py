@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from copy import deepcopy
@@ -1162,3 +1163,28 @@ def test_remove_queried_address_on_account_remove(data_dir, username):
     )
     addresses = queried_addresses.get_queried_addresses_for_module('makerdao_vaults')
     assert not addresses
+
+
+def test_int_overflow_at_tuple_insertion(database, caplog):
+    """Test that if somehow an int that will overflow makes it there we handle it
+
+    Related: https://github.com/rotki/rotki/issues/2175
+    """
+    caplog.set_level(logging.INFO)
+    database.add_asset_movements([AssetMovement(
+        location=Location.BITTREX,
+        category=AssetMovementCategory.DEPOSIT,
+        timestamp=177778,
+        address='0xfoo',
+        transaction_id=99999999999999999999999999999999999999999,
+        asset=A_BTC,
+        amount=FVal(1),
+        fee_asset=A_BTC,
+        fee=Fee(FVal('0.0001')),
+        link='a link',
+    )])
+
+    errors = database.msg_aggregator.consume_errors()
+    assert len(errors) == 1
+    assert 'Failed to add "asset_movement" to the DB with overflow error' in errors[0]
+    assert 'Overflow error while trying to add "asset_movement" tuples to the DB. Tuples:' in caplog.text  # noqa: E501
