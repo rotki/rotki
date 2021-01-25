@@ -506,8 +506,8 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         address = None
         transaction_id = None
         if fee_asset.is_fiat() is False:
-            address = raw_result[16]
-            transaction_id = raw_result[20]
+            address = str(raw_result[16])
+            transaction_id = str(raw_result[20])
 
         asset_movement = AssetMovement(
             timestamp=Timestamp(int(raw_result[5] / 1000)),
