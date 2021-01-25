@@ -22,7 +22,6 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
-from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import (
@@ -961,18 +960,6 @@ class Cryptocompare(ExternalServiceWithApiKey):
             )
             price = self.query_endpoint_pricehistorical(from_asset, to_asset, timestamp)
 
-        comparison_to_nonusd_fiat = (
-            (to_asset.is_fiat() and to_asset != A_USD) or
-            (from_asset.is_fiat() and from_asset != A_USD)
-        )
-        if comparison_to_nonusd_fiat:
-            price = self._adjust_to_cryptocompare_price_incosistencies(
-                price=price,
-                from_asset=from_asset,
-                to_asset=to_asset,
-                timestamp=timestamp,
-            )
-
         if price == Price(ZERO):
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
@@ -992,57 +979,6 @@ class Cryptocompare(ExternalServiceWithApiKey):
             price=price,
         )
 
-        return price
-
-    @staticmethod
-    def _adjust_to_cryptocompare_price_incosistencies(
-            price: Price,
-            from_asset: Asset,
-            to_asset: Asset,
-            timestamp: Timestamp,
-    ) -> Price:
-        """Doublecheck against the USD rate, and if incosistencies are found
-        then take the USD adjusted price.
-
-        This is due to incosistencies in the provided historical data from
-        cryptocompare. https://github.com/rotki/rotki/issues/221
-
-        Note: Since 12/01/2019 this seems to no longer be happening, but I will
-        keep the code around just in case a regression is introduced on the side
-        of cryptocompare.
-
-        May raise:
-        - PriceQueryUnsupportedAsset if the from asset is known to miss from cryptocompare
-        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
-        timestamp from cryptocompare
-        - RemoteError if there is a problem reaching the cryptocompare server
-        or with reading the response returned by the server
-        """
-        from_asset_usd = PriceHistorian().query_historical_price(
-            from_asset=from_asset,
-            to_asset=A_USD,
-            timestamp=timestamp,
-        )
-        to_asset_usd = PriceHistorian().query_historical_price(
-            from_asset=to_asset,
-            to_asset=A_USD,
-            timestamp=timestamp,
-        )
-
-        usd_invert_conversion = Price(from_asset_usd / to_asset_usd)
-        abs_diff = abs(usd_invert_conversion - price)
-        relative_difference = abs_diff / max(price, usd_invert_conversion)
-        if relative_difference >= FVal('0.1'):
-            log.warning(
-                'Cryptocompare historical price data are incosistent.'
-                'Taking USD adjusted price. Check github issue #221',
-                from_asset=from_asset,
-                to_asset=to_asset,
-                incosistent_price=price,
-                usd_price=from_asset_usd,
-                adjusted_price=usd_invert_conversion,
-            )
-            return usd_invert_conversion
         return price
 
     def all_coins(self) -> Dict[str, Any]:
