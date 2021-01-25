@@ -181,9 +181,12 @@ class TaskManager():
             return
 
         now = ts_now()
-        queriable_accounts = [
-            x for x in accounts if now - self.last_eth_tx_query_ts[x] > ETH_TX_QUERY_FREQUENCY
-        ]
+        queriable_accounts = []
+        for x in accounts:
+            queried_range = self.database.get_used_query_range(f'ethtxs_{x}')
+            end_ts = queried_range[1] if queried_range else 0
+            if now - max(self.last_eth_tx_query_ts[x], end_ts) > ETH_TX_QUERY_FREQUENCY:
+                queriable_accounts.append(x)
         if len(queriable_accounts) == 0:
             return
 
@@ -208,10 +211,13 @@ class TaskManager():
             return
 
         now = ts_now()
-        queriable_exchanges = [
-            exchange for name, exchange in self.exchange_manager.connected_exchanges.items()
-            if now - self.last_exchange_query_ts[name] > EXCHANGE_QUERY_FREQUENCY
-        ]
+        queriable_exchanges = []
+        for name, exchange in self.exchange_manager.connected_exchanges.items():
+            queried_range = self.database.get_used_query_range(f'{name}_trades')
+            end_ts = queried_range[1] if queried_range else 0
+            if now - max(self.last_exchange_query_ts[name], end_ts) > EXCHANGE_QUERY_FREQUENCY:
+                queriable_exchanges.append(exchange)
+
         if len(queriable_exchanges) == 0:
             return
 
