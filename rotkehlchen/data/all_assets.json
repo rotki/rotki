@@ -404,6 +404,15 @@
         "symbol": "AKRO",
         "type": "ethereum token"
     },
+    "ALBT": {
+        "coingecko": "allianceblock",
+        "ethereum_address": "0x00a8b738E453fFd858a7edf03bcCfe20412f0Eb0",
+        "ethereum_token_decimals": 18,
+        "name": "AllianceBlock Token",
+        "started": 1599479821,
+        "symbol": "ALBT",
+        "type": "ethereum token"
+    },
     "ALGO": {
         "coingecko": "algorand",
         "name": "Algorand",
@@ -1175,6 +1184,16 @@
         "symbol": "BCN",
         "type": "own chain"
     },
+    "BCP": {
+        "coingecko": "piedao-balanced-crypto-pie",
+	"cryptocompare": "",
+        "ethereum_address": "0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO Balanced Crypto Pie",
+        "started": 1606733040,
+        "symbol": "BCP",
+        "type": "ethereum token"
+    },
     "BCPT": {
         "coingecko": "blockmason-credit-protocol",
         "ethereum_address": "0x1c4481750daa5Ff521A2a7490d9981eD46465Dbd",
@@ -1817,6 +1836,16 @@
         "started": 1231006505,
         "symbol": "BTC",
         "type": "own chain"
+    },
+    "BTC++": {
+        "coingecko": "piedao-btc",
+	"cryptocompare": "",
+        "ethereum_address": "0x0327112423F3A68efdF1fcF402F6c5CB9f7C33fd",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO BTC++ ",
+        "started": 1585793406,
+        "symbol": "BTC++",
+        "type": "ethereum token"
     },
     "BTCA": {
         "active": false,
@@ -3411,6 +3440,16 @@
         "name": "Decentr",
         "started": 1593644131,
         "symbol": "DEC",
+        "type": "ethereum token"
+    },
+    "DEFI++": {
+        "coingecko": "piedao-defi",
+	"cryptocompare": "",
+        "ethereum_address": "0x8D1ce361eb68e9E05573443C407D4A3Bed23B033",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO DEFI++ ",
+        "started": 1604311938,
+        "symbol": "DEFI++",
         "type": "ethereum token"
     },
     "DELTA": {
