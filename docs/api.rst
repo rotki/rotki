@@ -145,6 +145,7 @@ Handling user creation, sign-in, log-out and querying
                   "submit_usage_analytics": true,
                   "kraken_account_type": "intermediate",
                   "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
+                  "current_price_oracles": ["cryptocompare", "coingecko"],
                   "historical_price_oracles": ["cryptocompare", "coingecko"]
               }
           },
@@ -208,6 +209,7 @@ Handling user creation, sign-in, log-out and querying
                   "submit_usage_analytics": true,
                   "kraken_account_type": "intermediate",
                   "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
+                  "current_price_oracles": ["cryptocompare", "coingecko"],
                   "historical_price_oracles": ["cryptocompare", "coingecko"]
               }
           },
@@ -574,6 +576,7 @@ Getting or modifying settings
               "submit_usage_analytics": true,
               "kraken_account_type": "intermediate",
               "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
+              "current_price_oracles": ["cryptocompare", "coingecko"],
               "historical_price_oracles": ["cryptocompare", "coingecko"]
           },
           "message": ""
@@ -599,7 +602,8 @@ Getting or modifying settings
    :resjson bool submit_usage_analytics: A boolean denoting wether or not to submit anonymous usage analytics to the Rotki server.
    :resjson string kraken_account_type: The type of the user's kraken account if he has one. Valid values are "starter", "intermediate" and "pro".
    :resjson list active_module: A list of strings denoting the active modules with which Rotki is running.
-   :resjson list historical_price_oracles: A list of strings denoting the price oracles Rotki should query in specific order for requesting historical prices.
+   :resjson list current_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting current prices.
+   :resjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
 
    :statuscode 200: Querying of settings was succesful
    :statuscode 409: There is no logged in user
@@ -637,7 +641,8 @@ Getting or modifying settings
    :reqjson string[optional] date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :reqjson bool[optional] submit_usage_analytics: A boolean denoting wether or not to submit anonymous usage analytics to the Rotki server.
    :reqjson list active_module: A list of strings denoting the active modules with which Rotki should run.
-   :reqjson list historical_price_oracles: A list of strings denoting the price oracles Rotki should query in specific order for requesting historical prices.
+   :reqjson list current_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting current prices.
+   :reqjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
 
    **Example Response**:
 
@@ -667,6 +672,7 @@ Getting or modifying settings
               "submit_usage_analytics": true,
               "kraken_account_type": "intermediate",
               "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
+              "current_price_oracles": ["cryptocompare", "coingecko"],
               "historical_price_oracles": ["cryptocompare", "coingecko"]
           },
           "message": ""

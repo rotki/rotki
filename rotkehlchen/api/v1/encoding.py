@@ -27,6 +27,7 @@ from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.serialization.deserialize import (
     deserialize_action_type,
     deserialize_asset_amount,
@@ -624,6 +625,23 @@ class DerivationPathField(fields.Field):
         return value
 
 
+class CurrentPriceOracleTypeField(fields.Field):
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        try:
+            current_price_oracle = CurrentPriceOracle.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(f'Invalid current price oracle: {value}') from e
+
+        return current_price_oracle.serialize()
+
+
 class HistoricalPriceOracleTypeField(fields.Field):
 
     def _deserialize(
@@ -765,6 +783,21 @@ class TagDeleteSchema(Schema):
     name = fields.String(required=True)
 
 
+def _validate_current_price_oracles(current_price_oracles: str) -> None:
+    """Prevents repeated oracle names and empty list.
+    """
+    current_price_oracle_names = [str(oracle) for oracle in CurrentPriceOracle]
+    if (
+        len(current_price_oracles) != len(current_price_oracle_names) or
+        set(current_price_oracles) != set(current_price_oracle_names)
+    ):
+        raise ValidationError(
+            f'Invalid current price oracles in: {current_price_oracles}. '
+            f'Required oracles are: {", ".join(current_price_oracle_names)}. '
+            f'Check there are no repeated ones.',
+        )
+
+
 def _validate_historical_price_oracles(historical_price_oracles: str) -> None:
     """Prevents repeated oracle names and empty list.
     """
@@ -826,6 +859,11 @@ class ModifiableSettingsSchema(Schema):
     )
     calculate_past_cost_basis = fields.Bool(missing=None)
     display_date_in_localtime = fields.Bool(missing=None)
+    current_price_oracles = fields.List(
+        CurrentPriceOracleTypeField,
+        validate=_validate_current_price_oracles,
+        missing=None,
+    )
     historical_price_oracles = fields.List(
         HistoricalPriceOracleTypeField,
         validate=_validate_historical_price_oracles,
@@ -873,6 +911,7 @@ class ModifiableSettingsSchema(Schema):
             calculate_past_cost_basis=data['calculate_past_cost_basis'],
             display_date_in_localtime=data['display_date_in_localtime'],
             historical_price_oracles=data['historical_price_oracles'],
+            current_price_oracles=data['current_price_oracles'],
         )
 
 

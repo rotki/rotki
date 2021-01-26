@@ -6,7 +6,18 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    overload,
+)
 
 import gevent
 from gevent.lock import Semaphore
@@ -52,7 +63,7 @@ from rotkehlchen.history import EventsHistorian, PriceHistorian
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
-from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import (
     DEFAULT_ANONYMIZED_LOGS,
     LoggingSettings,
@@ -238,10 +249,10 @@ class Rotkehlchen():
         self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)
         eth_rpc_endpoint = settings.eth_rpc_endpoint
         # Initialize the price historian singleton
-        historical_price_oracle_order = [
-            HistoricalPriceOracle.deserialize(oracle)
-            for oracle in settings.historical_price_oracles
-        ]
+        historical_price_oracle_order = self._get_price_oracle_order_from_setting(
+            price_oracle_setting=settings.historical_price_oracles,
+            price_oracle_type=HistoricalPriceOracle,
+        )
         PriceHistorian(
             data_directory=self.data_dir,
             cryptocompare=self.cryptocompare,
@@ -281,7 +292,13 @@ class Rotkehlchen():
             own_rpc_endpoint=settings.ksm_rpc_endpoint,
         )
 
+        current_price_oracle_order = self._get_price_oracle_order_from_setting(
+            price_oracle_setting=settings.current_price_oracles,
+            price_oracle_type=CurrentPriceOracle,
+        )
         Inquirer().inject_ethereum(ethereum_manager)
+        Inquirer().set_oracle_order(current_price_oracle_order)
+
         self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             ethereum_manager=ethereum_manager,
@@ -929,6 +946,30 @@ class Rotkehlchen():
         movements.sort(key=lambda x: x.timestamp, reverse=True)
         return movements
 
+    @overload
+    def _get_price_oracle_order_from_setting(
+            self,
+            price_oracle_setting: List[str],
+            price_oracle_type: Type[CurrentPriceOracle],
+    ) -> List[CurrentPriceOracle]:
+        ...
+
+    @overload
+    def _get_price_oracle_order_from_setting(
+            self,
+            price_oracle_setting: List[str],
+            price_oracle_type: Type[HistoricalPriceOracle],
+    ) -> List[HistoricalPriceOracle]:
+        ...
+
+    # pylint: disable=unused-argument, no-self-use
+    def _get_price_oracle_order_from_setting(  # type: ignore  # TODO fix this
+            self,
+            price_oracle_setting: List[str],
+            price_oracle_type: Union[Type[CurrentPriceOracle], Type[HistoricalPriceOracle]],
+    ) -> List[Union[CurrentPriceOracle, HistoricalPriceOracle]]:
+        return [price_oracle_type.deserialize(oracle) for oracle in price_oracle_setting]
+
     def set_settings(self, settings: ModifiableDBSettings) -> Tuple[bool, str]:
         """Tries to set new settings. Returns True in success or False with message if error"""
         with self.lock:
@@ -949,6 +990,20 @@ class Rotkehlchen():
 
             if settings.btc_derivation_gap_limit is not None:
                 self.chain_manager.btc_derivation_gap_limit = settings.btc_derivation_gap_limit
+
+            if settings.current_price_oracles is not None:
+                current_price_oracle_order = self._get_price_oracle_order_from_setting(
+                    price_oracle_setting=settings.current_price_oracles,
+                    price_oracle_type=CurrentPriceOracle,
+                )
+                Inquirer().set_oracle_order(current_price_oracle_order)
+
+            if settings.historical_price_oracles is not None:
+                historical_price_oracle_order = self._get_price_oracle_order_from_setting(
+                    price_oracle_setting=settings.historical_price_oracles,
+                    price_oracle_type=HistoricalPriceOracle,
+                )
+                PriceHistorian().set_oracle_order(historical_price_oracle_order)
 
             self.data.db.set_settings(settings)
             return True, ''

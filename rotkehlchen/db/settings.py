@@ -8,6 +8,7 @@ from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.history.typing import DEFAULT_HISTORICAL_PRICE_ORACLE_ORDER
+from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLE_ORDER
 from rotkehlchen.typing import AVAILABLE_MODULES, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -28,6 +29,9 @@ DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS = True
 DEFAULT_BTC_DERIVATION_GAP_LIMIT = 20
 DEFAULT_CALCULATE_PAST_COST_BASIS = True
 DEFAULT_DISPLAY_DATE_IN_LOCALTIME = True
+DEFAULT_CURRENT_PRICE_ORACLES = (
+    [str(oracle) for oracle in DEFAULT_CURRENT_PRICE_ORACLE_ORDER]
+)
 DEFAULT_HISTORICAL_PRICE_ORACLES = (
     [str(oracle) for oracle in DEFAULT_HISTORICAL_PRICE_ORACLE_ORDER]
 )
@@ -58,6 +62,7 @@ class DBSettings(NamedTuple):
     btc_derivation_gap_limit: int = DEFAULT_BTC_DERIVATION_GAP_LIMIT
     calculate_past_cost_basis: bool = DEFAULT_CALCULATE_PAST_COST_BASIS
     display_date_in_localtime: bool = DEFAULT_DISPLAY_DATE_IN_LOCALTIME
+    current_price_oracles: List[str] = DEFAULT_CURRENT_PRICE_ORACLES
     historical_price_oracles: List[str] = DEFAULT_HISTORICAL_PRICE_ORACLES
 
 
@@ -81,6 +86,7 @@ class ModifiableDBSettings(NamedTuple):
     btc_derivation_gap_limit: Optional[int] = None
     calculate_past_cost_basis: Optional[bool] = None
     display_date_in_localtime: Optional[bool] = None
+    current_price_oracles: Optional[List[str]] = None
     historical_price_oracles: Optional[List[str]] = None
 
     def serialize(self) -> Dict[str, Any]:
@@ -100,6 +106,8 @@ class ModifiableDBSettings(NamedTuple):
                 elif setting == 'kraken_account_type':
                     value = value.serialize()
                 elif setting == 'active_modules':
+                    value = json.dumps(value)
+                elif setting == 'current_price_oracles':
                     value = json.dumps(value)
                 elif setting == 'historical_price_oracles':
                     value = json.dumps(value)
@@ -183,6 +191,8 @@ def db_settings_from_dict(
         elif key == 'kraken_account_type':
             specified_args[key] = KrakenAccountType.deserialize(value)
         elif key == 'active_modules':
+            specified_args[key] = json.loads(value)
+        elif key == 'current_price_oracles':
             specified_args[key] = json.loads(value)
         elif key == 'historical_price_oracles':
             specified_args[key] = json.loads(value)

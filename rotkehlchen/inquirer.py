@@ -1,9 +1,20 @@
 from __future__ import unicode_literals  # isort:skip
 
 import logging
+from enum import Enum
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, NamedTuple, Optional
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import requests
 
@@ -23,7 +34,12 @@ from rotkehlchen.constants.assets import (
     A_YFI,
     FIAT_CURRENCIES,
 )
-from rotkehlchen.errors import PriceQueryUnsupportedAsset, RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors import (
+    DeserializationError,
+    PriceQueryUnsupportedAsset,
+    RemoteError,
+    UnableToDecryptRemoteData,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
@@ -86,6 +102,44 @@ ASSETS_UNDERLYING_BTC = (
     'crvRenWBTC',
     'crvRenWSBTC',
 )
+
+
+CurrentPriceOracleInstance = Union['Coingecko', 'Cryptocompare']
+
+
+class CurrentPriceOracleProperties(NamedTuple):
+    has_fiat_to_fiat: bool
+
+
+class CurrentPriceOracle(Enum):
+    """Supported oracles for querying current prices
+    """
+    COINGECKO = 1
+    CRYPTOCOMPARE = 2
+
+    def __str__(self) -> str:
+        if self == CurrentPriceOracle.COINGECKO:
+            return 'coingecko'
+        if self == CurrentPriceOracle.CRYPTOCOMPARE:
+            return 'cryptocompare'
+        raise AssertionError(f'Unexpected CurrentPriceOracle: {self}')
+
+    def serialize(self) -> str:
+        return str(self)
+
+    @classmethod
+    def deserialize(cls, name: str) -> 'CurrentPriceOracle':
+        if name == 'coingecko':
+            return cls.COINGECKO
+        if name == 'cryptocompare':
+            return cls.CRYPTOCOMPARE
+        raise DeserializationError(f'Failed to deserialize current price oracle: {name}')
+
+
+DEFAULT_CURRENT_PRICE_ORACLE_ORDER = [
+    CurrentPriceOracle.CRYPTOCOMPARE,
+    CurrentPriceOracle.COINGECKO,
+]
 
 
 def get_underlying_asset_price(token_symbol: str) -> Optional[Price]:
@@ -159,12 +213,15 @@ class Inquirer():
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
     _ethereum: Optional['EthereumManager'] = None
+    _oracle_instances: List[Tuple[CurrentPriceOracle, CurrentPriceOracleInstance]]
+    _oracle_order: Sequence[CurrentPriceOracle]
 
     def __new__(
             cls,
             data_dir: Path = None,
             cryptocompare: 'Cryptocompare' = None,
             coingecko: 'Coingecko' = None,
+            oracle_order: Sequence[CurrentPriceOracle] = None,
     ) -> 'Inquirer':
         if Inquirer.__instance is not None:
             return Inquirer.__instance
@@ -173,11 +230,25 @@ class Inquirer():
         assert cryptocompare, 'arguments should be given at the first instantiation'
         assert coingecko, 'arguments should be given at the first instantiation'
 
+        if oracle_order is None:
+            oracle_order = DEFAULT_CURRENT_PRICE_ORACLE_ORDER
+
+        if set(oracle_order) != set(CurrentPriceOracle):
+            raise AssertionError('All current price oracles are required')
+
+        oracle_instances = cls.get_oracle_instances(
+            oracle_order=oracle_order,
+            cryptocompare=cryptocompare,
+            coingecko=coingecko,
+        )
+
         Inquirer.__instance = object.__new__(cls)
 
         Inquirer.__instance._data_directory = data_dir
         Inquirer._cryptocompare = cryptocompare
         Inquirer._coingecko = coingecko
+        Inquirer._oracle_instances = oracle_instances
+        Inquirer._oracle_order = oracle_order
         Inquirer._cached_current_price = {}
         # Make price history directory if it does not exist
         price_history_dir = get_or_make_price_history_dir(data_dir)
@@ -193,36 +264,39 @@ class Inquirer():
         return Inquirer.__instance
 
     @staticmethod
+    def get_oracle_instances(
+        oracle_order: Sequence[CurrentPriceOracle],
+        cryptocompare: 'Cryptocompare',
+        coingecko: 'Coingecko',
+    ) -> List[Tuple[CurrentPriceOracle, CurrentPriceOracleInstance]]:
+        oracle_instances: List[Tuple[CurrentPriceOracle, CurrentPriceOracleInstance]]
+        oracle_instances = []
+        for oracle in oracle_order:
+            if oracle == CurrentPriceOracle.COINGECKO:
+                oracle_instances.append((oracle, coingecko))
+            elif oracle == CurrentPriceOracle.CRYPTOCOMPARE:
+                oracle_instances.append((oracle, cryptocompare))
+            else:
+                raise AssertionError(f'Unexpected CurrentPriceOracle: {oracle}')
+
+        return oracle_instances
+
+    @staticmethod
     def inject_ethereum(ethereum: 'EthereumManager') -> None:
         Inquirer()._ethereum = ethereum
 
     @staticmethod
-    def _cryptocompare_find_usd_price(asset: Asset) -> Price:
-        """Returns the current USD price of the asset
+    def set_oracle_order(oracle_order: Sequence[CurrentPriceOracle]) -> None:
+        if set(oracle_order) != set(CurrentPriceOracle):
+            raise AssertionError('All current price oracles are required')
 
-        Return Price(ZERO) if price can't be found.
-
-        May raise:
-        - RemoteError if the cryptocompare query has a problem
-        """
-        try:
-            result = Inquirer()._cryptocompare.query_endpoint_price(
-                from_asset=asset,
-                to_asset=A_USD,
-            )
-        except PriceQueryUnsupportedAsset:
-            log.error(
-                'Cryptocompare usd price for asset failed since it is not known to cryptocompare',
-                asset=asset,
-            )
-            return Price(ZERO)
-        if 'USD' not in result:
-            log.error('Cryptocompare usd price query failed', asset=asset)
-            return Price(ZERO)
-
-        price = Price(FVal(result['USD']))
-        log.debug('Got usd price from cryptocompare', asset=asset, price=price)
-        return price
+        oracle_instances = Inquirer().get_oracle_instances(
+            oracle_order=oracle_order,
+            cryptocompare=Inquirer()._cryptocompare,
+            coingecko=Inquirer()._coingecko,
+        )
+        Inquirer()._oracle_order = oracle_order
+        Inquirer()._oracle_instances = oracle_instances
 
     @staticmethod
     def find_usd_price(asset: Asset, ignore_cache: bool = False) -> Price:
@@ -257,20 +331,38 @@ class Inquirer():
             return price
 
         price = Price(ZERO)
-        if Inquirer()._cryptocompare.rate_limited_in_last() is False:
-            try:
-                price = Inquirer()._cryptocompare_find_usd_price(asset)
-            except RemoteError:
-                pass
-
-        if price == Price(ZERO):
-            try:
-                price = Inquirer()._coingecko.simple_price(from_asset=asset, to_asset=A_USD)
-            except RemoteError as e:
-                log.error(
-                    f'Coingecko usd price query for {asset.identifier} failed due to {str(e)}',
+        for oracle, oracle_instance in Inquirer()._oracle_instances:
+            if oracle_instance.rate_limited_in_last() is True:
+                log.debug(
+                    f"Current price oracle {oracle} can't be used for querying "
+                    f'the USD price for {asset.identifier} due to rate limits. Skipping',
                 )
-                price = Price(ZERO)
+                continue
+
+            try:
+                price = oracle_instance.query_current_price(
+                    from_asset=asset,
+                    to_asset=A_USD,
+                )
+            except (PriceQueryUnsupportedAsset, RemoteError) as e:
+                log.error(
+                    f'Current price oracle {oracle} failed to request '
+                    f'USD price for {asset.identifier} due to: {str(e)}.',
+                )
+                continue
+
+            if price != Price(ZERO):
+                log.debug(
+                    f'Current price oracle {oracle} got USD price',
+                    asset=asset,
+                    price=price,
+                )
+                break
+
+            log.error(
+                f'Current price oracle {oracle} failed to request '
+                f'USD price for {asset.identifier} and got zero price.',
+            )
 
         Inquirer._cached_current_price[asset] = CachedPriceEntry(price=price, time=ts_now())
         return price

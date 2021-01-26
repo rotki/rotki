@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2131` Users can now customize the order of the price oracles used by rotki. For example set Coingecko as the first option for requesting prices and Cryptocompare as the fallback one.
 * :feature:`2177` Users now will see a an error screen instead of a notification when there is an issue during the profit and loss report generation.
 * :feature:`2174` Users can now delete all saved data of any of the supported modules.
 * :feature:`-` The profit/loss report generation should now see a lot of improvements in regards to its speed.

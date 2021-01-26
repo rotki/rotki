@@ -254,7 +254,7 @@ class Coingecko():
 
         return vs_currency
 
-    def simple_price(self, from_asset: Asset, to_asset: Asset) -> Price:
+    def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
         """Returns a simple price for from_asset to to_asset in coingecko
 
         Uses the simple/price endpoint of coingecko. If to_asset is not part of the

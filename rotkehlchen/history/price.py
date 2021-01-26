@@ -130,6 +130,19 @@ class PriceHistorian():
         return oracle_instances
 
     @staticmethod
+    def set_oracle_order(oracle_order: Sequence[HistoricalPriceOracle]) -> None:
+        if set(oracle_order) != set(HistoricalPriceOracle):
+            raise AssertionError('All historical price oracles are required')
+
+        oracle_instances = PriceHistorian().get_oracle_instances(
+            oracle_order=oracle_order,
+            cryptocompare=PriceHistorian()._cryptocompare,
+            coingecko=PriceHistorian()._coingecko,
+        )
+        PriceHistorian()._oracle_order = oracle_order
+        PriceHistorian()._oracle_instances = oracle_instances
+
+    @staticmethod
     def query_historical_price(
             from_asset: Asset,
             to_asset: Asset,

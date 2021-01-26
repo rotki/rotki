@@ -26,10 +26,10 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import (
     convert_to_int,
+    get_or_make_price_history_dir,
     timestamp_to_date,
     ts_now,
     write_history_data_in_file,
-    get_or_make_price_history_dir,
 )
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
@@ -513,6 +513,28 @@ class Cryptocompare(ExternalServiceWithApiKey):
         query_path = f'price?fsym={cc_from_asset_symbol}&tsyms={cc_to_asset_symbol}'
         result = self._api_query(path=query_path)
         return result
+
+    def query_current_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            handling_special_case: bool = False,
+    ) -> Price:
+        """Wrapper of `query_endpoint_price()` with a standardized name accross
+        the current price oracles.
+
+        May raise RemoteError and PriceQueryUnsupportedAsset
+        """
+        result = self.query_endpoint_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            handling_special_case=handling_special_case,
+        )
+        cc_to_asset_symbol = to_asset.to_cryptocompare()
+        if cc_to_asset_symbol not in result:
+            return Price(ZERO)
+
+        return Price(FVal(result[cc_to_asset_symbol]))
 
     def query_endpoint_pricehistorical(
             self,
