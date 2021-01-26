@@ -24,6 +24,7 @@ import {
   GeneralAccount,
   KSM
 } from '@/typing/types';
+import { uniqueStrings } from '@/utils/array';
 import { assert } from '@/utils/assertions';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
@@ -438,6 +439,9 @@ export const getters: Getters<
     return false;
   },
   aggregatedAssets: (_, getters) => {
-    return getters.aggregatedBalances.map(({ asset }) => asset);
+    const liabilities = getters.liabilities.map(({ asset }) => asset);
+    const assets = getters.aggregatedBalances.map(({ asset }) => asset);
+    assets.push(...liabilities);
+    return assets.filter(uniqueStrings);
   }
 };

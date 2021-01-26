@@ -18,9 +18,7 @@ import {
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { MUTATION_UPDATE_PRICES } from '@/store/session/mutation-types';
 import {
-  AssetPriceResponse,
   ChangePasswordPayload,
   PremiumCredentialsPayload,
   SessionState
@@ -39,7 +37,6 @@ import {
   Tag,
   UnlockPayload
 } from '@/typing/types';
-import { chunkArray } from '@/utils/array';
 
 export const actions: ActionTree<SessionState, RotkehlchenState> = {
   start({ commit }, payload: { settings: DBSettings }) {
@@ -109,7 +106,9 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         )
       ];
 
-      Promise.all(async).then();
+      Promise.all(async).then(() =>
+        dispatch('balances/refreshPrices', null, options)
+      );
       return { success: true };
     } catch (e) {
       if (e instanceof SyncConflictError) {
@@ -512,57 +511,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const message = i18n.tc('actions.session.force_sync.error.message', 0, {
         error: e.message
       });
-      notify(message, title, Severity.ERROR, true);
-    }
-  },
-
-  async fetchPrices({
-    state,
-    commit,
-    getters,
-    rootGetters: {
-      'tasks/isTaskRunning': isTaskRunning,
-      'balances/aggregatedAssets': assets
-    }
-  }): Promise<void> {
-    const taskType = TaskType.UPDATE_PRICES;
-    if (isTaskRunning(taskType)) {
-      return;
-    }
-    const fetchPrices: (assets: string[]) => Promise<void> = async assets => {
-      const { taskId } = await api.session.prices(
-        assets,
-        getters.currencySymbol
-      );
-      const task = createTask(taskId, taskType, {
-        title: i18n.t('actions.session.fetch_prices.task.title').toString(),
-        ignoreResult: false,
-        numericKeys: null
-      });
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<AssetPriceResponse, TaskMeta>(
-        taskType,
-        `${taskId}`
-      );
-      commit(MUTATION_UPDATE_PRICES, {
-        ...state.prices,
-        ...result.assets
-      });
-    };
-
-    try {
-      await Promise.all(
-        chunkArray<string>(assets, 100).map(value => fetchPrices(value))
-      );
-    } catch (e) {
-      const title = i18n
-        .t('actions.session.fetch_prices.error.title')
-        .toString();
-      const message = i18n
-        .t('actions.session.fetch_prices.error.message', {
-          error: e.message
-        })
-        .toString();
       notify(message, title, Severity.ERROR, true);
     }
   }

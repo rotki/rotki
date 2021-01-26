@@ -8,8 +8,9 @@ import {
 } from '@/services/balances/types';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
+import { MUTATION_UPDATE_PRICES } from '@/store/balances/mutation-types';
 import { defaultState } from '@/store/balances/state';
-import { BalanceState } from '@/store/balances/types';
+import { AssetPrices, BalanceState } from '@/store/balances/types';
 import { ExchangeData, ExchangeInfo, ExchangeRates } from '@/typing/types';
 
 export const mutations: MutationTree<BalanceState> = {
@@ -53,6 +54,9 @@ export const mutations: MutationTree<BalanceState> = {
     state.connectedExchanges = exchanges;
     state.exchangeBalances = balances;
   },
+  updateExchangeBalances(state: BalanceState, data: ExchangeData) {
+    state.exchangeBalances = data;
+  },
   addExchangeBalances(state: BalanceState, data: ExchangeInfo) {
     const update: ExchangeData = {};
     update[data.name] = data.balances;
@@ -75,6 +79,9 @@ export const mutations: MutationTree<BalanceState> = {
     manualBalances: ManualBalanceWithValue[]
   ) {
     state.manualBalances = manualBalances;
+  },
+  [MUTATION_UPDATE_PRICES](state: BalanceState, prices: AssetPrices) {
+    state.prices = prices;
   },
   reset(state: BalanceState) {
     Object.assign(state, defaultState());

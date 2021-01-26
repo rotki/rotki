@@ -32,6 +32,13 @@
             })
           }}
         </template>
+        <template #header.price>
+          {{
+            $t('dashboard_asset_table.headers.price', {
+              symbol: currencySymbol
+            })
+          }}
+        </template>
         <template #item.asset="{ item }">
           <asset-details :asset="item.asset" />
         </template>
@@ -44,6 +51,14 @@
             :fiat-currency="item.asset"
             :amount="item.amount"
             :value="item.usdValue"
+          />
+        </template>
+        <template #item.price="{ item }">
+          <amount-display
+            class="font-weight-medium"
+            show-currency="symbol"
+            fiat-currency="USD"
+            :value="prices[item.asset] ? prices[item.asset] : '-'"
           />
         </template>
         <template #item.percentage="{ item }">
@@ -87,15 +102,17 @@
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapGetters } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import { footerProps } from '@/config/datatable.common';
-import { AssetBalance } from '@/store/balances/types';
+import { CURRENCY_USD } from '@/data/currencies';
+import { AssetBalance, AssetPrices } from '@/store/balances/types';
 
 @Component({
   computed: {
     ...mapGetters('session', ['floatingPrecision', 'currencySymbol']),
     ...mapGetters('balances', ['exchangeRate']),
-    ...mapGetters('statistics', ['totalNetWorthUsd'])
+    ...mapGetters('statistics', ['totalNetWorthUsd']),
+    ...mapState('balances', ['prices'])
   }
 })
 export default class DashboardAssetTable extends Vue {
@@ -109,6 +126,7 @@ export default class DashboardAssetTable extends Vue {
   totalNetWorthUsd!: BigNumber;
   floatingPrecision!: number;
   currencySymbol!: string;
+  prices!: AssetPrices;
   exchangeRate!: (currency: string) => number | undefined;
 
   search: string = '';
@@ -118,6 +136,15 @@ export default class DashboardAssetTable extends Vue {
     {
       text: this.$tc('dashboard_asset_table.headers.asset'),
       value: 'asset'
+    },
+    {
+      text: this.$t('dashboard_asset_table.headers.price', {
+        symbol: CURRENCY_USD
+      }).toString(),
+      value: 'price',
+      align: 'end',
+      sortable: false,
+      width: '150px'
     },
     {
       text: this.$tc('dashboard_asset_table.headers.amount'),
@@ -133,6 +160,7 @@ export default class DashboardAssetTable extends Vue {
       text: this.$tc('dashboard_asset_table.headers.percentage'),
       value: 'percentage',
       align: 'end',
+      width: '120px',
       sortable: false
     }
   ];

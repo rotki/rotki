@@ -1,4 +1,3 @@
-import { BigNumber } from 'bignumber.js';
 import {
   QueriedAddresses,
   Watcher,
@@ -27,7 +26,6 @@ export interface SessionState {
   lastBalanceSave: number;
   lastDataUpload: number;
   timeframe: TimeFramePeriod;
-  prices: AssetPrices;
 }
 
 export interface SyncConflictPayload {
@@ -52,12 +50,3 @@ export interface ChangePasswordPayload {
   readonly currentPassword: string;
   readonly newPassword: string;
 }
-
-export type AssetPrices = {
-  [asset: string]: BigNumber;
-};
-
-export type AssetPriceResponse = {
-  readonly assets: AssetPrices;
-  readonly targetAsset: string;
-};

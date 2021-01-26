@@ -26,6 +26,7 @@
     "headers": {
       "amount": "Amount",
       "asset": "Asset",
+      "price": "Price in {symbol}",
       "value": "{symbol} Value"
     },
     "loading": "Please wait while rotki queries the blockchain...",
@@ -426,6 +427,9 @@
   },
   "premium_lock": {
     "tooltip": "Feature is only supported with a premium subscription"
+  },
+  "price_refresh": {
+    "button": "Refresh Price"
   },
   "progress_indicator": {
     "no_tasks": "No running tasks"
@@ -1830,7 +1834,8 @@
       "asset": "Asset",
       "amount": "Amount",
       "value": "{symbol} value",
-      "percentage": "% of net Value"
+      "percentage": "% of net Value",
+      "price": "Price in {symbol}"
     }
   },
   "accounts_balances": {
@@ -1915,6 +1920,7 @@
     "headers": {
       "asset": "Asset",
       "amount": "Amount",
+      "price": "Price in {symbol}",
       "value": "{symbol} Value"
     }
   },

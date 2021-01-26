@@ -16,8 +16,23 @@
           })
         }}
       </template>
+      <template #header.price>
+        {{
+          $t('asset_balances.headers.price', {
+            symbol
+          })
+        }}
+      </template>
       <template #item.asset="{ item }">
         <asset-details :asset="item.asset" />
+      </template>
+      <template #item.price="{ item }">
+        <amount-display
+          class="font-weight-medium"
+          show-currency="symbol"
+          fiat-currency="USD"
+          :value="prices[item.asset] ? prices[item.asset] : '-'"
+        />
       </template>
       <template #item.amount="{ item }">
         <amount-display :value="item.amount" />
@@ -49,20 +64,21 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { footerProps } from '@/config/datatable.common';
 import { CURRENCY_USD } from '@/data/currencies';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
-import { AssetBalance } from '@/store/balances/types';
+import { AssetBalance, AssetPrices } from '@/store/balances/types';
 
 @Component({
   components: { AmountDisplay },
   computed: {
     ...mapGetters('tasks', ['isTaskRunning']),
     ...mapGetters('session', ['floatingPrecision', 'currency']),
-    ...mapGetters('balances', ['exchangeRate'])
+    ...mapGetters('balances', ['exchangeRate']),
+    ...mapState('balances', ['prices'])
   }
 })
 export default class AssetBalances extends Vue {
@@ -73,6 +89,7 @@ export default class AssetBalances extends Vue {
 
   currency!: Currency;
   floatingPrecision!: number;
+  prices!: AssetPrices;
   exchangeRate!: (currency: string) => number;
   isTaskRunning!: (type: TaskType) => boolean;
 
@@ -90,6 +107,12 @@ export default class AssetBalances extends Vue {
     {
       text: this.$t('asset_balances.headers.asset').toString(),
       value: 'asset'
+    },
+    {
+      text: this.$t('asset_balances.headers.price', {
+        symbol: CURRENCY_USD
+      }).toString(),
+      value: 'price'
     },
     {
       text: this.$t('asset_balances.headers.amount').toString(),

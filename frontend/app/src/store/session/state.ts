@@ -27,8 +27,7 @@ export const defaultState: () => SessionState = () => ({
   ignoredAssets: [],
   lastBalanceSave: 0,
   lastDataUpload: 0,
-  timeframe: TIMEFRAME_ALL,
-  prices: {}
+  timeframe: TIMEFRAME_ALL
 });
 
 export const state: SessionState = defaultState();
