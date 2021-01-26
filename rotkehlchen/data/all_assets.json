@@ -3423,6 +3423,16 @@
         "symbol": "DEC",
         "type": "ethereum token"
     },
+    "DEFI++": {
+        "coingecko": "piedao-defi",
+	"cryptocompare": "",
+        "ethereum_address": "0x8D1ce361eb68e9E05573443C407D4A3Bed23B033",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO DEFI++ ",
+        "started": 1604311938,
+        "symbol": "DEFI++",
+        "type": "ethereum token"
+    },
     "DELTA": {
         "coingecko": "deltachain",
         "ethereum_address": "0xDE1E0AE6101b46520cF66fDC0B1059c5cC3d106c",

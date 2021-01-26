@@ -20,6 +20,7 @@ Changelog
   - `Digg token (DIGG) <https://www.coingecko.com/en/coins/digg>`__
   - `Edgeware (EDG) <https://www.coingecko.com/en/coins/edgeware>`__
   - `PieDAO Balanced Crypto Pie (BCP) <https://www.coingecko.com/en/coins/piedao-balanced-crypto-pie>`__
+  - `PieDAO DEFI++ (DEFI++) <https://www.coingecko.com/en/coins/piedao-defi>`__
 
 * :release:`1.12.2 <2021-01-18>`
 * :bug:`2120` Rotki should now display the action datetime when editing a ledger action.
