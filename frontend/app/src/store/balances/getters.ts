@@ -37,6 +37,7 @@ export interface BalanceGetters {
   exchanges: ExchangeInfo[];
   exchangeBalances: (exchange: string) => AssetBalance[];
   aggregatedBalances: AssetBalance[];
+  aggregatedAssets: string[];
   liabilities: AssetBalance[];
   manualBalanceByLocation: LocationBalance[];
   blockchainTotal: BigNumber;
@@ -435,5 +436,8 @@ export const getters: Getters<
       return match.type === 'ethereum token';
     }
     return false;
+  },
+  aggregatedAssets: (_, getters) => {
+    return getters.aggregatedBalances.map(({ asset }) => asset);
   }
 };

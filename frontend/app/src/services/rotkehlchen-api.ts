@@ -264,9 +264,10 @@ export class RotkehlchenApi {
 
   queryTaskResult<T>(
     id: number,
-    numericKeys?: string[]
+    numericKeys?: string[] | null
   ): Promise<ActionResult<T>> {
-    const transformer = numericKeys
+    const requiresSetup = numericKeys || numericKeys === null;
+    const transformer = requiresSetup
       ? setupTransformer(numericKeys)
       : this.axios.defaults.transformResponse;
 

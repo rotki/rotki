@@ -4,8 +4,9 @@ import {
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
+import { MUTATION_UPDATE_PRICES } from '@/store/session/mutation-types';
 import { defaultState } from '@/store/session/state';
-import { SessionState, SyncConflict } from '@/store/session/types';
+import { AssetPrices, SessionState, SyncConflict } from '@/store/session/types';
 import { TimeFramePeriod } from '@/store/settings/types';
 import {
   AccountingSettings,
@@ -83,5 +84,8 @@ export const mutations: MutationTree<SessionState> = {
   },
   setTimeframe(state: SessionState, timeframe: TimeFramePeriod) {
     state.timeframe = timeframe;
+  },
+  [MUTATION_UPDATE_PRICES](state: SessionState, prices: AssetPrices) {
+    state.prices = prices;
   }
 };

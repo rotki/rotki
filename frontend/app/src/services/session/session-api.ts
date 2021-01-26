@@ -1,11 +1,13 @@
 import { AxiosInstance } from 'axios';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import { basicAxiosTransformer } from '@/services/consts';
 import {
   QueriedAddresses,
   QueriedAddressPayload,
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
-import { ActionResult } from '@/services/types-api';
+import { ActionResult, PendingTask } from '@/services/types-api';
 import {
   validWithSessionAndExternalService,
   handleResponse,
@@ -93,6 +95,20 @@ export class SessionApi {
       .delete<ActionResult<QueriedAddresses>>('/queried_addresses', {
         data: payload,
         validateStatus: validStatus
+      })
+      .then(handleResponse);
+  }
+
+  async prices(assets: string[], targetAsset: string): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>('/assets/prices/current', {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          assets: assets.join(','),
+          targetAsset
+        }),
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
   }
