@@ -223,6 +223,16 @@ def _check_hourly_data_sanity(
         index += 2
 
 
+def _get_cache_key(from_asset: Asset, to_asset: Asset) -> Optional[PairCacheKey]:
+    try:
+        from_cc_asset = from_asset.to_cryptocompare()
+        to_cc_asset = to_asset.to_cryptocompare()
+    except UnsupportedAsset:
+        return None
+
+    return PairCacheKey(from_cc_asset + '_' + to_cc_asset)
+
+
 class Cryptocompare(ExternalServiceWithApiKey):
     def __init__(self, data_directory: Path, database: Optional[DBHandler]) -> None:
         super().__init__(database=database, service_name=ExternalService.CRYPTOCOMPARE)
@@ -556,8 +566,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         It can be rather slow for big files.
         """
-        cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
-        if cache_key not in self.price_history_file:
+        cache_key = _get_cache_key(from_asset=from_asset, to_asset=to_asset)
+        if cache_key is None or cache_key not in self.price_history_file:
             return None
 
         if cache_key not in self.price_history:
@@ -581,8 +591,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
         Should be a faster way that get_cached_data to check if a cache exists and
         get only its metadata. start and end time.
         """
-        cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
-        if cache_key not in self.price_history_file:
+        cache_key = _get_cache_key(from_asset=from_asset, to_asset=to_asset)
+        if cache_key is None or cache_key not in self.price_history_file:
             return None
 
         memcache = self.price_history.get(cache_key, None)
@@ -783,7 +793,6 @@ class Cryptocompare(ExternalServiceWithApiKey):
             to_asset=to_asset,
             timestamp=timestamp,
         )
-        cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
         cached_data = self._got_cached_data_at_timestamp(
             from_asset=from_asset,
             to_asset=to_asset,
@@ -793,6 +802,10 @@ class Cryptocompare(ExternalServiceWithApiKey):
             return cached_data.data
 
         if only_check_cache:
+            return None
+
+        cache_key = _get_cache_key(from_asset=from_asset, to_asset=to_asset)
+        if cache_key is None:
             return None
 
         now_ts = ts_now()
