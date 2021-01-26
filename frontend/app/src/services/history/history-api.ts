@@ -3,7 +3,10 @@ import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import { balanceKeys, basicAxiosTransformer } from '@/services/consts';
+import {
+  balanceAxiosTransformer,
+  basicAxiosTransformer
+} from '@/services/consts';
 import { tradeNumericKeys } from '@/services/history/const';
 import {
   LedgerActionResult,
@@ -93,7 +96,7 @@ export class HistoryApi {
       .get<ActionResult<PendingTask>>('/asset_movements', {
         params: axiosSnakeCaseTransformer(params),
         validateStatus: validWithParamsSessionAndExternalService,
-        transformResponse: setupTransformer()
+        transformResponse: setupTransformer([])
       })
       .then(handleResponse);
   }
@@ -106,7 +109,7 @@ export class HistoryApi {
         {
           params: axiosSnakeCaseTransformer({ asyncQuery: true }),
           validateStatus: validWithParamsSessionAndExternalService,
-          transformResponse: setupTransformer()
+          transformResponse: setupTransformer([])
         }
       )
       .then(handleResponse);
@@ -140,7 +143,7 @@ export class HistoryApi {
         axiosSnakeCaseTransformer(action),
         {
           validateStatus: validStatus,
-          transformResponse: setupTransformer(balanceKeys)
+          transformResponse: balanceAxiosTransformer
         }
       )
       .then(handleResponse);
@@ -155,7 +158,7 @@ export class HistoryApi {
         axiosSnakeCaseTransformer({ action }),
         {
           validateStatus: validStatus,
-          transformResponse: setupTransformer(balanceKeys)
+          transformResponse: balanceAxiosTransformer
         }
       )
       .then(handleResponse);
@@ -170,7 +173,7 @@ export class HistoryApi {
         {
           data: axiosSnakeCaseTransformer({ identifier }),
           validateStatus: validStatus,
-          transformResponse: setupTransformer(balanceKeys)
+          transformResponse: balanceAxiosTransformer
         }
       )
       .then(handleResponse);

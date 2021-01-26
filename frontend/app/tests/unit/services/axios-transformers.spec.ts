@@ -26,4 +26,24 @@ describe('axios transformers', () => {
       '{"data":[{"usd_value":"10"},{"usd_value":"11"}],"label":"test"}'
     );
   });
+
+  test('null keys transformer converts all numeric keys', () => {
+    const json = '{"amount":"10","test_label":"1","data":[{"amount":"2"}]}';
+    const parsed = setupJsonTransformer(null)(json);
+    expect(axiosCamelCaseTransformer(parsed)).toMatchObject({
+      amount: bigNumberify(10),
+      testLabel: bigNumberify(1),
+      data: [{ amount: bigNumberify(2) }]
+    });
+  });
+
+  test('empty array transformer converts nothing', () => {
+    const json = '{"amount":"10","test_label":"1","data":[{"amount":"2"}]}';
+    const parsed = setupJsonTransformer([])(json);
+    expect(axiosCamelCaseTransformer(parsed)).toMatchObject({
+      amount: '10',
+      testLabel: '1',
+      data: [{ amount: '2' }]
+    });
+  });
 });
