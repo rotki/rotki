@@ -130,7 +130,6 @@ class EventsHistorian():
             start_ts=start_ts,
             end_ts=end_ts,
         )
-        now = ts_now()
         # start creating the all trades history list
         history: List[Union[Trade, MarginPosition, AMMTrade]] = []
         asset_movements = []
