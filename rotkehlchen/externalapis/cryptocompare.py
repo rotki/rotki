@@ -264,7 +264,15 @@ class Cryptocompare(ExternalServiceWithApiKey):
             to_asset=to_asset,
             timestamp=timestamp,
         )
-        return cached_data is not None or not self.rate_limited_in_last(seconds)
+        rate_limited = self.rate_limited_in_last(seconds)
+        can_query = cached_data is not None or not rate_limited
+        logger.debug(
+            f'{"Will" if can_query else "Will not"} query '
+            f'Cryptocompare history for {from_asset.identifier} -> '
+            f'{to_asset.identifier} @ {timestamp}. Cached data: {cached_data is not None}'
+            f' rate_limited in last {seconds} seconds: {rate_limited}',
+        )
+        return can_query
 
     def rate_limited_in_last(self, seconds: int = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME) -> bool:
         """Checks when we were last rate limited by CC and if it was within the given seconds"""
