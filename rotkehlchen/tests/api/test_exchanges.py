@@ -8,7 +8,6 @@ import pytest
 import requests
 
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import SystemClockNotSyncedError
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
@@ -745,11 +744,10 @@ def test_query_asset_movements_over_limit(
     server = rotkehlchen_api_server_with_exchanges
     rotki = server.rest_api.rotkehlchen
     # Make sure online kraken is not queried by setting query ranges
-    DBQueryRanges(rotki.data.db).update_used_query_range(
-        location_string='kraken_asset_movements',
+    rotki.data.db.update_used_query_range(
+        name='kraken_asset_movements',
         start_ts=start_ts,
         end_ts=end_ts,
-        ranges_to_query=[],
     )
     polo_entries_num = 4
     # Set a ton of kraken asset movements in the DB

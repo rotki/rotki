@@ -726,7 +726,7 @@ def test_get_netvalue_data_from_date(data_dir, username):
     assert values[0] == '10700.5'
 
 
-def test_add_trades(data_dir, username):
+def test_add_trades(data_dir, username, caplog):
     """Test that adding and retrieving trades from the DB works fine.
 
     Also duplicates should be ignored and an error returned
@@ -782,17 +782,17 @@ def test_add_trades(data_dir, username):
     assert returned_trades == [trade1, trade2]
 
     # Add the last 2 trades. Since trade2 already exists in the DB it should be
-    # ignored and a warning should be shown
+    # ignored and a warning should be logged
     data.db.add_trades([trade2, trade3])
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 1
+    assert (
+        'Did not add "buy trade with id 38d56b6c435894fe1faaf19c5aec4f817de'
+        'dd6b0a26afc41be4748daf36a5a5c'
+    ) in caplog.text
     returned_trades = data.db.get_trades()
     assert returned_trades == [trade1, trade2, trade3]
 
 
-def test_add_margin_positions(data_dir, username):
+def test_add_margin_positions(data_dir, username, caplog):
     """Test that adding and retrieving margin positions from the DB works fine.
 
     Also duplicates should be ignored and an error returned
@@ -845,17 +845,17 @@ def test_add_margin_positions(data_dir, username):
     assert returned_margins == [margin1, margin2]
 
     # Add the last 2 margins. Since margin2 already exists in the DB it should be
-    # ignored and a warning should be shown
+    # ignored and a warning should be logged
     data.db.add_margin_positions([margin2, margin3])
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 1
+    assert (
+        'Did not add "Margin position with id 0a57acc1f4c09da0f194c59c4cd240e6'
+        '8e2d36e56c05b3f7115def9b8ee3943f'
+    ) in caplog.text
     returned_margins = data.db.get_margin_positions()
     assert returned_margins == [margin1, margin2, margin3]
 
 
-def test_add_asset_movements(data_dir, username):
+def test_add_asset_movements(data_dir, username, caplog):
     """Test that adding and retrieving asset movements from the DB works fine.
 
     Also duplicates should be ignored and an error returned
@@ -911,12 +911,12 @@ def test_add_asset_movements(data_dir, username):
     assert returned_movements == [movement1, movement2]
 
     # Add the last 2 movements. Since movement2 already exists in the DB it should be
-    # ignored and a warning should be shown
+    # ignored and a warning should be logged
     data.db.add_asset_movements([movement2, movement3])
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 1
+    assert (
+        'Did not add "withdrawal of ETH with id 94405f38c7b86dd2e7943164d'
+        '67ff44a32d56cef25840b3f5568e23c037fae0a'
+    ) in caplog.text
     returned_movements = data.db.get_asset_movements()
     assert returned_movements == [movement1, movement2, movement3]
 

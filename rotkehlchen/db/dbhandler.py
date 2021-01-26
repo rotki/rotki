@@ -175,7 +175,7 @@ def db_tuple_to_str(
     if tuple_type == 'asset_movement':
         return (
             f'{deserialize_asset_movement_category_from_db(data[2])} of '
-            f' {data[4]} with id {data[0]} '
+            f'{data[4]} with id {data[0]} '
             f'in {deserialize_location_from_db(data[1])} at timestamp {data[3]}'
         )
     if tuple_type == 'margin_position':
