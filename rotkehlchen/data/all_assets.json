@@ -404,6 +404,15 @@
         "symbol": "AKRO",
         "type": "ethereum token"
     },
+    "ALBT": {
+        "coingecko": "allianceblock",
+        "ethereum_address": "0x00a8b738E453fFd858a7edf03bcCfe20412f0Eb0",
+        "ethereum_token_decimals": 18,
+        "name": "AllianceBlock Token",
+        "started": 1599479821,
+        "symbol": "ALBT",
+        "type": "ethereum token"
+    },
     "ALGO": {
         "coingecko": "algorand",
         "name": "Algorand",
