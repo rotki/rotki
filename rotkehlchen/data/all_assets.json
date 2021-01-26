@@ -1175,6 +1175,16 @@
         "symbol": "BCN",
         "type": "own chain"
     },
+    "BCP": {
+        "coingecko": "piedao-balanced-crypto-pie",
+	"cryptocompare": "",
+        "ethereum_address": "0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO Balanced Crypto Pie",
+        "started": 1606733040,
+        "symbol": "BCP",
+        "type": "ethereum token"
+    },
     "BCPT": {
         "coingecko": "blockmason-credit-protocol",
         "ethereum_address": "0x1c4481750daa5Ff521A2a7490d9981eD46465Dbd",
