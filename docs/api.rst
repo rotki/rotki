@@ -788,6 +788,61 @@ Query the result of an ongoing backend task
    :statuscode 409: No user is currently logged in
    :statuscode 500: Internal Rotki error
 
+Query the current price of assets
+===================================
+
+.. http:get:: /api/(version)/assets/prices/current
+
+   Querying this endpoint with a list of assets and a target asset will return a dictionary with the the price of the assets in the target asset currency. Providing an empty list or no target asset is an error.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/prices/current HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "assets": ["BTC", "ETH", "LINK", "USD", "EUR"],
+          "target_asset": "USD"
+      }
+
+   :reqjson list assets: A list of assets to query their current price
+   :reqjson string target_asset: The asset of the price currency
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "assets": {
+                  "BTC": "34758.11",
+                  "ETH": "1302.62",
+                  "EUR": "1.209",
+                  "GBP": "1.362",
+                  "LINK": "20.29",
+                  "USD": "1"
+              },
+              "target_asset": "USD"
+          },
+          "message": ""
+      }
+
+   :resjson object result: A JSON object that contains the price of the assets in the target asset currency.
+   :resjson object assets: A map between an asset and its price.
+   :resjson string target_asset: The currency of the prices.
+   :statuscode 200: The USD prices have been sucesfully returned
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
+
 Query the current exchange rate for select assets
 ======================================================
 
@@ -802,7 +857,7 @@ Query the current exchange rate for select assets
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/fiat_exchange_rates HTTP/1.1
+      GET /api/1/exchange_rates HTTP/1.1
       Host: localhost:5042
 
       {"currencies": ["EUR", "CNY", "GBP", "BTC"]}
@@ -828,6 +883,64 @@ Query the current exchange rate for select assets
    :statuscode 500: Internal Rotki error
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
+Query the historical price of assets
+======================================
+
+.. http:get:: /api/(version)/assets/prices/historical
+
+   Querying this endpoint with a list of asset\/timestamp lists and a target asset will return a dictionary with the price of the assets at the given timestamp in the target asset currency. Providing an empty list or no target asset is an error.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/prices/historical HTTP/1.1
+      Host: localhost:5042
+
+       {
+          "assets_timestamp": [["BTC", 1579543935], ["BTC", 1611166335], ["GBP", 1579543935], ["EUR", 1548007935]],
+          "target_asset": "USD"
+       }
+
+   :reqjson list assets_timestamp: A list of asset\/timestamp lists
+   :reqjson string target_asset: The asset of the price currency
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "assets": {
+                  "BTC": {
+                      "1579543935": "24361.55",
+                      "1611166335": "34966.64"
+                  },
+                  "EUR": {
+                      "1548007935": "1.1402"
+                  },
+                  "GBP": {
+                      "1579543935": "1.2999120493"
+                  }
+              },
+              "target_asset": "USD"
+          },
+          "message": ""
+      }
+
+   :resjson object result: A JSON object that contains the price of each asset for the given timestamp in the target asset currency.
+   :resjson object assets: A map between an asset and a map that contains the asset price at the specific timestamp.
+   :resjson string target_asset: The currency of the prices.
+   :statuscode 200: The historical USD prices have been sucesfully returned
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
 Get a list of setup exchanges
 ==============================

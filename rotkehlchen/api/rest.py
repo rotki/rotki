@@ -3,11 +3,23 @@ import hashlib
 import json
 import logging
 import traceback
+from collections import defaultdict
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    overload,
+)
 
 import gevent
 from flask import Response, make_response, send_file
@@ -36,7 +48,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -48,6 +60,7 @@ from rotkehlchen.errors import (
     EthSyncError,
     IncorrectApiKeyFormat,
     InputError,
+    NoPriceForGivenTimestamp,
     PremiumApiError,
     PremiumAuthenticationError,
     RemoteError,
@@ -60,6 +73,7 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -2296,6 +2310,106 @@ class RestAPI():
             response.set_etag(hashlib.md5(image_data).hexdigest())
 
         return response
+
+    @staticmethod
+    def _get_current_assets_price(
+            assets: List[Asset],
+            target_asset: Asset,
+    ) -> Dict[str, Any]:
+        """Return the current price of the assets in the target asset currency.
+        """
+        log.debug(
+            f'Querying the current {target_asset.identifier} price of these assets: '
+            f'{", ".join([asset.identifier for asset in assets])}',
+        )
+        assets_price = {asset: Inquirer().find_usd_price(asset) for asset in assets}
+        if target_asset != A_USD:
+            target_asset_price = Inquirer().find_usd_price(target_asset)
+            for asset in assets_price.keys():
+                if asset != target_asset:
+                    assets_price[asset] = Price(assets_price[asset] / target_asset_price)
+                else:
+                    assets_price[asset] = Price(FVal('1'))
+
+        result = {
+            'assets': assets_price,
+            'target_asset': target_asset,
+        }
+        return _wrap_in_ok_result(process_result(result))
+
+    def get_current_assets_price(
+            self,
+            assets: List[Asset],
+            target_asset: Asset,
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_current_assets_price',
+                assets=assets,
+                target_asset=target_asset,
+            )
+
+        response = self._get_current_assets_price(
+            assets=assets,
+            target_asset=target_asset,
+        )
+        return api_response(_wrap_in_ok_result(response['result']), status_code=HTTPStatus.OK)
+
+    def _get_historical_assets_price(
+            self,
+            assets_timestamp: List[Tuple[Asset, Timestamp]],
+            target_asset: Asset,
+    ) -> Dict[str, Any]:
+        """Return the price of the assets at the given timestamps in the target
+        asset currency.
+        """
+        log.debug(
+            f'Querying the historical {target_asset.identifier} price of these assets: '
+            f'{", ".join(f"{asset.identifier} at {ts}" for asset, ts in assets_timestamp)}',
+            assets_timestamp=assets_timestamp,
+        )
+        assets_price: DefaultDict[Asset, DefaultDict] = defaultdict(lambda: defaultdict(int))
+        for asset, timestamp in assets_timestamp:
+            try:
+                price = PriceHistorian().query_historical_price(
+                    from_asset=asset,
+                    to_asset=target_asset,
+                    timestamp=timestamp,
+                )
+            except (RemoteError, NoPriceForGivenTimestamp) as e:
+                self.rotkehlchen.msg_aggregator.add_error(
+                    f'Could query the historical {target_asset.identifier} price for '
+                    f'{asset.identifier} at time {timestamp} due to: {str(e)}. Using zero price',
+                )
+                price = Price(ZERO)
+
+            assets_price[asset][timestamp] = price
+
+        result = {
+            'assets': {k: dict(v) for k, v in assets_price.items()},
+            'target_asset': target_asset,
+        }
+        return _wrap_in_ok_result(process_result(result))
+
+    def get_historical_assets_price(
+            self,
+            assets_timestamp: List[Tuple[Asset, Timestamp]],
+            target_asset: Asset,
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_historical_assets_price',
+                assets_timestamp=assets_timestamp,
+                target_asset=target_asset,
+            )
+
+        response = self._get_historical_assets_price(
+            assets_timestamp=assets_timestamp,
+            target_asset=target_asset,
+        )
+        return api_response(_wrap_in_ok_result(response['result']), status_code=HTTPStatus.OK)
 
     def _sync_data(self, action: Literal['upload', 'download']) -> Dict[str, Any]:
         try:
