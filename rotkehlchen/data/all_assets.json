@@ -1828,6 +1828,16 @@
         "symbol": "BTC",
         "type": "own chain"
     },
+    "BTC++": {
+        "coingecko": "piedao-btc",
+	"cryptocompare": "",
+        "ethereum_address": "0x0327112423F3A68efdF1fcF402F6c5CB9f7C33fd",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO BTC++ ",
+        "started": 1585793406,
+        "symbol": "BTC++",
+        "type": "ethereum token"
+    },
     "BTCA": {
         "active": false,
         "coingecko": "",
