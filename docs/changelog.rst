@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2177` Users now will see a an error screen instead of a notification when there is an issue during the profit and loss report generation.
 * :feature:`2174` Users can now delete all saved data of any of the supported modules.
 * :feature:`-` The profit/loss report generation should now see a lot of improvements in regards to its speed.
 * :feature:`2032` You can now add Kusama addresses by ENS name. Simply use an ENS name in the KSM address field and if it can be resolved it will be appended to the tracked accounts.

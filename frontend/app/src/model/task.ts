@@ -42,6 +42,11 @@ export function taskCompletion<R, M extends TaskMeta>(
       task,
       (actionResult, meta) => {
         taskManager.unregisterHandler(task, taskId);
+        if (task === TaskType.TRADE_HISTORY) {
+          // @ts-ignore
+          resolve({ result: null, meta });
+          return;
+        }
         const { result, message } = actionResult;
         if (message) {
           reject(new Error(message));

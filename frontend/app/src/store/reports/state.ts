@@ -1,8 +1,13 @@
 import { currencies } from '@/data/currencies';
-import { emptyPeriod, tradeHistoryPlaceholder } from '@/store/reports/const';
+import {
+  emptyError,
+  emptyPeriod,
+  tradeHistoryPlaceholder
+} from '@/store/reports/const';
 import {
   ProfitLossEvent,
   ProfitLossOverviewData,
+  ReportError,
   ReportPeriod,
   ReportProgress
 } from '@/store/reports/types';
@@ -17,6 +22,7 @@ export interface ReportState {
   currency: string;
   loaded: boolean;
   progress: ReportProgress;
+  reportError: ReportError;
 }
 
 export const defaultState = (): ReportState => ({
@@ -29,7 +35,8 @@ export const defaultState = (): ReportState => ({
   progress: {
     processingState: '',
     totalProgress: ''
-  }
+  },
+  reportError: emptyError()
 });
 
 export const state: ReportState = defaultState();

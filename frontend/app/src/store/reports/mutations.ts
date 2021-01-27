@@ -1,9 +1,13 @@
 import { MutationTree } from 'vuex';
-import { MUTATION_PROGRESS } from '@/store/reports/const';
+import {
+  MUTATION_PROGRESS,
+  MUTATION_REPORT_ERROR
+} from '@/store/reports/const';
 import { defaultState, ReportState } from '@/store/reports/state';
 import {
   ProfitLossEvent,
   ProfitLossOverviewData,
+  ReportError,
   ReportPeriod,
   ReportProgress
 } from '@/store/reports/types';
@@ -41,6 +45,9 @@ export const mutations: MutationTree<ReportState> = {
     state.progress = payload;
   },
 
+  [MUTATION_REPORT_ERROR](state: ReportState, payload: ReportError) {
+    state.reportError = payload;
+  },
   reset(state: ReportState) {
     Object.assign(state, defaultState());
   }

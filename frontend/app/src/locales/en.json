@@ -893,6 +893,7 @@
       },
       "generate": {
         "error": {
+          "description": "An unexpected response was received while generating the profit and loss report. This might indicate an issue with the generation mechanism. Please check the logs for any error messages (you might have to enable debug logging first) and create an issue.",
           "title": "Trade History Report"
         },
         "task": {
@@ -1743,6 +1744,10 @@
   "profit_loss_report": {
     "download_csv": "Download CSV",
     "download_failed": "Download of report is not possible",
+    "error": {
+      "subtitle": "The report generation was not possible due to an error",
+      "title": "Profit and Loss Report Generation"
+    },
     "settings_tooltip": "Open the accounting settings",
     "title": "Profit and Loss Report",
     "export_csv": "Export CSV",

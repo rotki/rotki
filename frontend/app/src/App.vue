@@ -61,7 +61,11 @@
       :success="message.success"
       @dismiss="dismiss()"
     />
-    <error-screen v-if="startupError.length > 0" :message="startupError" />
+    <startup-error-screen
+      v-if="startupError.length > 0"
+      :message="startupError"
+      fatal
+    />
     <v-fade-transition>
       <account-management
         v-if="startupError.length === 0 && !loginIn"
@@ -79,6 +83,8 @@ import { mapGetters, mapMutations, mapState } from 'vuex';
 import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import ErrorScreen from '@/components/error/ErrorScreen.vue';
+import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
@@ -90,12 +96,12 @@ import '@/services/task-manager';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import DevApp from '@/DevApp.vue';
-import ErrorScreen from '@/ErrorScreen.vue';
 import { monitor } from '@/services/monitoring';
 import { Message } from '@/store/types';
 
 @Component({
   components: {
+    StartupErrorScreen,
     DevApp,
     NotificationPopup,
     NotificationSidebar,
