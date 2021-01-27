@@ -57,6 +57,7 @@
           <amount-display
             show-currency="symbol"
             fiat-currency="USD"
+            tooltip
             :value="prices[item.asset] ? prices[item.asset] : '-'"
           />
         </template>
@@ -177,7 +178,8 @@ export default class DashboardAssetTable extends Vue {
         text: this.$tc('dashboard_asset_table.headers.amount'),
         value: 'amount',
         align: 'end',
-        width: '60%'
+        width: '100%',
+        cellClass: 'user-holding'
       },
       {
         text: this.$t('dashboard_asset_table.headers.value', {
@@ -185,14 +187,15 @@ export default class DashboardAssetTable extends Vue {
         }).toString(),
         value: 'usdValue',
         align: 'end',
-        width: '40%'
+        cellClass: 'user-holding user-asset-value'
       },
       {
         text: this.$tc('dashboard_asset_table.headers.percentage'),
         value: 'percentage',
         align: 'end',
         width: '120px',
-        sortable: false
+        sortable: false,
+        cellClass: 'user-holding'
       }
     ];
   }
@@ -204,6 +207,16 @@ export default class DashboardAssetTable extends Vue {
 </script>
 
 <style scoped lang="scss">
+::v-deep {
+  .user-holding {
+    background-color: #f9fafb88;
+  }
+
+  .user-asset-value {
+    min-width: 150px;
+  }
+}
+
 .dashboard-asset-table {
   &__search {
     max-width: 450px;

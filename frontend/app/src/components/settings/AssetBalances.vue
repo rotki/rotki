@@ -28,6 +28,7 @@
       </template>
       <template #item.price="{ item }">
         <amount-display
+          tooltip
           show-currency="symbol"
           fiat-currency="USD"
           :value="prices[item.asset] ? prices[item.asset] : '-'"
@@ -137,7 +138,8 @@ export default class AssetBalances extends Vue {
         text: this.$t('asset_balances.headers.amount').toString(),
         value: 'amount',
         align: 'end',
-        width: '60%'
+        width: '100%',
+        cellClass: 'user-holding'
       },
       {
         text: this.$t('asset_balances.headers.value', {
@@ -145,7 +147,7 @@ export default class AssetBalances extends Vue {
         }).toString(),
         value: 'usdValue',
         align: 'end',
-        width: '40%'
+        cellClass: 'user-holding user-asset-value'
       }
     ];
   }
@@ -153,6 +155,16 @@ export default class AssetBalances extends Vue {
 </script>
 
 <style scoped lang="scss">
+::v-deep {
+  .user-holding {
+    background-color: #f9fafb88;
+  }
+
+  .user-asset-value {
+    min-width: 150px;
+  }
+}
+
 .asset-balances {
   margin-top: 16px;
   margin-bottom: 16px;
