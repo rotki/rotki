@@ -11,7 +11,7 @@ from rotkehlchen.config import default_data_directory
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, Inquirer
 
 
 @pytest.fixture(name='use_clean_caching_directory')
@@ -138,7 +138,22 @@ def fixture_session_mocked_current_prices():
     return {}
 
 
-def create_inquirer(data_directory, should_mock_current_price_queries, mocked_prices) -> Inquirer:
+@pytest.fixture(name='current_price_oracles_order')
+def fixture_current_price_oracles_order():
+    return DEFAULT_CURRENT_PRICE_ORACLES_ORDER
+
+
+@pytest.fixture(scope='session', name='session_current_price_oracles_order')
+def fixture_session_current_price_oracles_order():
+    return DEFAULT_CURRENT_PRICE_ORACLES_ORDER
+
+
+def create_inquirer(
+        data_directory,
+        should_mock_current_price_queries,
+        mocked_prices,
+        current_price_oracles_order,
+) -> Inquirer:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
     Inquirer._Inquirer__instance = None  # type: ignore
@@ -146,7 +161,13 @@ def create_inquirer(data_directory, should_mock_current_price_queries, mocked_pr
     # of existing user for some tests
     cryptocompare = Cryptocompare(data_directory=data_directory, database=None)
     gecko = Coingecko(data_directory=data_directory)
-    inquirer = Inquirer(data_dir=data_directory, cryptocompare=cryptocompare, coingecko=gecko)
+    inquirer = Inquirer(
+        data_dir=data_directory,
+        cryptocompare=cryptocompare,
+        coingecko=gecko,
+    )
+    inquirer.set_oracles_order(current_price_oracles_order)
+
     if not should_mock_current_price_queries:
         return inquirer
 
@@ -164,8 +185,18 @@ def create_inquirer(data_directory, should_mock_current_price_queries, mocked_pr
 
 
 @pytest.fixture(name='inquirer')
-def fixture_inquirer(data_dir, should_mock_current_price_queries, mocked_current_prices):
-    return create_inquirer(data_dir, should_mock_current_price_queries, mocked_current_prices)
+def fixture_inquirer(
+        data_dir,
+        should_mock_current_price_queries,
+        mocked_current_prices,
+        current_price_oracles_order,
+):
+    return create_inquirer(
+        data_directory=data_dir,
+        should_mock_current_price_queries=should_mock_current_price_queries,
+        mocked_prices=mocked_current_prices,
+        current_price_oracles_order=current_price_oracles_order,
+    )
 
 
 @pytest.fixture(scope='session')
@@ -173,9 +204,11 @@ def session_inquirer(
         session_data_dir,
         session_should_mock_current_price_queries,
         session_mocked_current_prices,
+        session_current_price_oracles_order,
 ):
     return create_inquirer(
-        session_data_dir,
-        session_should_mock_current_price_queries,
-        session_mocked_current_prices,
+        data_directory=session_data_dir,
+        should_mock_current_price_queries=session_should_mock_current_price_queries,
+        mocked_prices=session_mocked_current_prices,
+        current_price_oracles_order=session_current_price_oracles_order,
     )

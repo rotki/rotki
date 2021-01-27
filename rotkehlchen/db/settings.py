@@ -7,6 +7,11 @@ from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.exchanges.kraken import KrakenAccountType
+from rotkehlchen.history.typing import (
+    DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER,
+    HistoricalPriceOracle,
+)
+from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.typing import AVAILABLE_MODULES, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -27,6 +32,8 @@ DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS = True
 DEFAULT_BTC_DERIVATION_GAP_LIMIT = 20
 DEFAULT_CALCULATE_PAST_COST_BASIS = True
 DEFAULT_DISPLAY_DATE_IN_LOCALTIME = True
+DEFAULT_CURRENT_PRICE_ORACLES = DEFAULT_CURRENT_PRICE_ORACLES_ORDER
+DEFAULT_HISTORICAL_PRICE_ORACLES = DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
 
 
 class DBSettings(NamedTuple):
@@ -54,6 +61,8 @@ class DBSettings(NamedTuple):
     btc_derivation_gap_limit: int = DEFAULT_BTC_DERIVATION_GAP_LIMIT
     calculate_past_cost_basis: bool = DEFAULT_CALCULATE_PAST_COST_BASIS
     display_date_in_localtime: bool = DEFAULT_DISPLAY_DATE_IN_LOCALTIME
+    current_price_oracles: List[CurrentPriceOracle] = DEFAULT_CURRENT_PRICE_ORACLES
+    historical_price_oracles: List[HistoricalPriceOracle] = DEFAULT_HISTORICAL_PRICE_ORACLES
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -76,6 +85,8 @@ class ModifiableDBSettings(NamedTuple):
     btc_derivation_gap_limit: Optional[int] = None
     calculate_past_cost_basis: Optional[bool] = None
     display_date_in_localtime: Optional[bool] = None
+    current_price_oracles: Optional[List[CurrentPriceOracle]] = None
+    historical_price_oracles: Optional[List[HistoricalPriceOracle]] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}
@@ -95,6 +106,8 @@ class ModifiableDBSettings(NamedTuple):
                     value = value.serialize()
                 elif setting == 'active_modules':
                     value = json.dumps(value)
+                elif setting in ('current_price_oracles', 'historical_price_oracles'):
+                    value = json.dumps([oracle.serialize() for oracle in value])
 
                 settings_dict[setting] = value
 
@@ -176,6 +189,12 @@ def db_settings_from_dict(
             specified_args[key] = KrakenAccountType.deserialize(value)
         elif key == 'active_modules':
             specified_args[key] = json.loads(value)
+        elif key == 'current_price_oracles':
+            oracles = json.loads(value)
+            specified_args[key] = [CurrentPriceOracle.deserialize(oracle) for oracle in oracles]
+        elif key == 'historical_price_oracles':
+            oracles = json.loads(value)
+            specified_args[key] = [HistoricalPriceOracle.deserialize(oracle) for oracle in oracles]
         else:
             msg_aggregator.add_warning(
                 f'Unknown DB setting {key} given. Ignoring it. Should not '

@@ -242,6 +242,8 @@ class Rotkehlchen():
             cryptocompare=self.cryptocompare,
             coingecko=self.coingecko,
         )
+        PriceHistorian().set_oracles_order(settings.historical_price_oracles)
+
         self.accountant = Accountant(
             db=self.data.db,
             user_directory=self.user_directory,
@@ -276,6 +278,8 @@ class Rotkehlchen():
         )
 
         Inquirer().inject_ethereum(ethereum_manager)
+        Inquirer().set_oracles_order(settings.current_price_oracles)
+
         self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             ethereum_manager=ethereum_manager,
@@ -943,6 +947,12 @@ class Rotkehlchen():
 
             if settings.btc_derivation_gap_limit is not None:
                 self.chain_manager.btc_derivation_gap_limit = settings.btc_derivation_gap_limit
+
+            if settings.current_price_oracles is not None:
+                Inquirer().set_oracles_order(settings.current_price_oracles)
+
+            if settings.historical_price_oracles is not None:
+                PriceHistorian().set_oracles_order(settings.historical_price_oracles)
 
             self.data.db.set_settings(settings)
             return True, ''

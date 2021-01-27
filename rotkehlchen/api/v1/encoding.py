@@ -26,6 +26,8 @@ from rotkehlchen.errors import DeserializationError, UnknownAsset, XPUBError
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.serialization.deserialize import (
     deserialize_action_type,
     deserialize_asset_amount,
@@ -623,6 +625,40 @@ class DerivationPathField(fields.Field):
         return value
 
 
+class CurrentPriceOracleTypeField(fields.Field):
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> CurrentPriceOracle:
+        try:
+            current_price_oracle = CurrentPriceOracle.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(f'Invalid current price oracle: {value}') from e
+
+        return current_price_oracle
+
+
+class HistoricalPriceOracleTypeField(fields.Field):
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> HistoricalPriceOracle:
+        try:
+            historical_price_oracle = HistoricalPriceOracle.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(f'Invalid historical price oracle: {value}') from e
+
+        return historical_price_oracle
+
+
 class AsyncQueryArgumentSchema(Schema):
     """A schema for getters that only have one argument enabling async query"""
     async_query = fields.Boolean(missing=False)
@@ -747,6 +783,40 @@ class TagDeleteSchema(Schema):
     name = fields.String(required=True)
 
 
+def _validate_current_price_oracles(
+        current_price_oracles: List[CurrentPriceOracle],
+) -> None:
+    """Prevents repeated oracle names and empty list"""
+    if (
+        len(current_price_oracles) == 0 or
+        len(current_price_oracles) != len(set(current_price_oracles))
+    ):
+        oracle_names = [str(oracle) for oracle in current_price_oracles]
+        supported_oracle_names = [str(oracle) for oracle in CurrentPriceOracle]
+        raise ValidationError(
+            f'Invalid current price oracles in: {", ".join(oracle_names)}. '
+            f'Supported oracles are: {", ".join(supported_oracle_names)}. '
+            f'Check there are no repeated ones.',
+        )
+
+
+def _validate_historical_price_oracles(
+        historical_price_oracles: List[HistoricalPriceOracle],
+) -> None:
+    """Prevents repeated oracle names and empty list"""
+    if (
+        len(historical_price_oracles) == 0 or
+        len(historical_price_oracles) != len(set(historical_price_oracles))
+    ):
+        oracle_names = [str(oracle) for oracle in historical_price_oracles]
+        supported_oracle_names = [str(oracle) for oracle in HistoricalPriceOracle]
+        raise ValidationError(
+            f'Invalid historical price oracles in: {", ".join(oracle_names)}. '
+            f'Supported oracles are: {", ".join(supported_oracle_names)}. '
+            f'Check there are no repeated ones.',
+        )
+
+
 class ModifiableSettingsSchema(Schema):
     """This is the Schema for the settings that can be modified via the API"""
     premium_should_sync = fields.Bool(missing=None)
@@ -793,6 +863,16 @@ class ModifiableSettingsSchema(Schema):
     )
     calculate_past_cost_basis = fields.Bool(missing=None)
     display_date_in_localtime = fields.Bool(missing=None)
+    current_price_oracles = fields.List(
+        CurrentPriceOracleTypeField,
+        validate=_validate_current_price_oracles,
+        missing=None,
+    )
+    historical_price_oracles = fields.List(
+        HistoricalPriceOracleTypeField,
+        validate=_validate_historical_price_oracles,
+        missing=None,
+    )
 
     @validates_schema  # type: ignore
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -834,6 +914,8 @@ class ModifiableSettingsSchema(Schema):
             btc_derivation_gap_limit=data['btc_derivation_gap_limit'],
             calculate_past_cost_basis=data['calculate_past_cost_basis'],
             display_date_in_localtime=data['display_date_in_localtime'],
+            historical_price_oracles=data['historical_price_oracles'],
+            current_price_oracles=data['current_price_oracles'],
         )
 
 

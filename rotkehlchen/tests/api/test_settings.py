@@ -92,6 +92,10 @@ def test_set_settings(rotkehlchen_api_server):
             value = ''
         elif setting == 'ksm_rpc_endpoint':
             value = 'http://kusama.node.com:9933'
+        elif setting == 'current_price_oracles':
+            value = ['coingecko', 'cryptocompare']
+        elif setting == 'historical_price_oracles':
+            value = ['coingecko', 'cryptocompare']
         else:
             raise AssertionError(f'Unexpected settting {setting} encountered')
 

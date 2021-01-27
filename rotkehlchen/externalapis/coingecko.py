@@ -1,24 +1,22 @@
 import json
 import logging
-import gevent
+from json.decoder import JSONDecodeError
+from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Union, overload
 from urllib.parse import urlencode
 
+import gevent
 import requests
 from typing_extensions import Literal
-from json.decoder import JSONDecodeError
-from pathlib import Path
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsondumps, rlk_jsonloads
-from rotkehlchen.utils.misc import timestamp_to_date
-from rotkehlchen.utils.misc import get_or_make_price_history_dir
-from rotkehlchen.errors import UnsupportedAsset
+from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date
+from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -253,7 +251,7 @@ class Coingecko():
 
         return vs_currency
 
-    def simple_price(self, from_asset: Asset, to_asset: Asset) -> Price:
+    def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
         """Returns a simple price for from_asset to to_asset in coingecko
 
         Uses the simple/price endpoint of coingecko. If to_asset is not part of the
@@ -296,6 +294,21 @@ class Coingecko():
                 f'processing the result.',
             )
             return Price(ZERO)
+
+    def can_query_history(  # pylint: disable=no-self-use
+            self,
+            from_asset: Asset,  # pylint: disable=unused-argument
+            to_asset: Asset,  # pylint: disable=unused-argument
+            timestamp: Timestamp,  # pylint: disable=unused-argument
+            seconds: Optional[int] = None,  # pylint: disable=unused-argument
+    ) -> bool:
+        return True  # noop for coingecko
+
+    def rate_limited_in_last(  # pylint: disable=no-self-use
+            self,
+            seconds: Optional[int] = None,  # pylint: disable=unused-argument
+    ) -> bool:
+        return False  # noop for coingecko
 
     def _get_cached_price(self, from_asset: Asset, to_asset: Asset, date: str) -> Optional[Price]:
         price_history_dir = get_or_make_price_history_dir(self.data_directory)
@@ -344,7 +357,12 @@ class Coingecko():
         with open(filename, 'w') as outfile:
             outfile.write(rlk_jsondumps(data))
 
-    def historical_price(self, from_asset: Asset, to_asset: Asset, time: Timestamp) -> Price:
+    def query_historical_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> Price:
         vs_currency = Coingecko.check_vs_currencies(
             from_asset=from_asset,
             to_asset=to_asset,
@@ -362,7 +380,7 @@ class Coingecko():
             )
             return Price(ZERO)
 
-        date = timestamp_to_date(time, formatstr='%d-%m-%Y')
+        date = timestamp_to_date(timestamp, formatstr='%d-%m-%Y')
         cached_price = self._get_cached_price(from_asset=from_asset, to_asset=to_asset, date=date)
         if cached_price is not None:
             return cached_price

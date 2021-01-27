@@ -4,7 +4,8 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
-from rotkehlchen.history import PriceHistorian, EventsHistorian
+from rotkehlchen.history import EventsHistorian, PriceHistorian
+from rotkehlchen.history.typing import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 
 
@@ -23,6 +24,11 @@ def fixture_session_coingecko(session_data_dir):
     return Coingecko(data_directory=session_data_dir)
 
 
+@pytest.fixture(name='historical_price_oracles_order')
+def fixture_historical_price_oracles_order():
+    return DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
+
+
 @pytest.fixture
 def price_historian(
         data_dir,
@@ -32,6 +38,7 @@ def price_historian(
         cryptocompare,
         session_coingecko,
         default_mock_price_value,
+        historical_price_oracles_order,
 ):
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
@@ -41,6 +48,7 @@ def price_historian(
         cryptocompare=cryptocompare,
         coingecko=session_coingecko,
     )
+    historian.set_oracles_order(historical_price_oracles_order)
     maybe_mock_historical_price_queries(
         historian=historian,
         should_mock_price_queries=should_mock_price_queries,
