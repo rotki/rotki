@@ -34,14 +34,14 @@
     </template>
     <template v-if="blockchain === 'ETH'" #header.balance.usdValue>
       {{
-        $t('account_balances.headers.usd-value-eth', {
+        $t('account_balances.headers.usd_value_eth', {
           symbol: currency.ticker_symbol
         })
       }}
     </template>
     <template v-else #header.balance.usdValue>
       {{
-        $t('account_balances.headers.usd-value', {
+        $t('account_balances.headers.usd_value', {
           symbol: currency.ticker_symbol
         })
       }}
@@ -83,15 +83,16 @@
     </template>
     <template v-if="balances.length > 0" #body.append>
       <tr class="account-balance-table__total">
-        <td />
-        <td>{{ $t('account_balances.total') }}</td>
-        <td class="text-end">
+        <td :class="mobileClass" />
+        <td :class="mobileClass">{{ $t('account_balances.total') }}</td>
+        <td class="text-end" :class="mobileClass">
           <amount-display
             :loading="loading"
             :value="visibleBalances.map(val => val.balance.amount) | balanceSum"
+            :asset="$vuetify.breakpoint.xsOnly ? blockchain : null"
           />
         </td>
-        <td class="text-end">
+        <td class="text-end" :class="mobileClass">
           <amount-display
             :loading="loading"
             fiat-currency="USD"
@@ -151,6 +152,7 @@ import RowExpander from '@/components/helper/RowExpander.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { footerProps } from '@/config/datatable.common';
+import { CURRENCY_USD } from '@/data/currencies';
 import StatusMixin from '@/mixins/status-mixin';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
@@ -214,6 +216,10 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   expanded = [];
 
   collapsedXpubs: XpubPayload[] = [];
+
+  get mobileClass(): string | null {
+    return this.$vuetify.breakpoint.xsOnly ? 'v-data-table__mobile-row' : null;
+  }
 
   setSelected(selected: boolean) {
     const selection = [...this.selected];
@@ -300,13 +306,16 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   }
 
   readonly footerProps = footerProps;
+
   get headers(): DataTableHeader[] {
     const headers: DataTableHeader[] = [
       { text: '', value: 'accountSelection', width: '34px', sortable: false },
       { text: this.$tc('account_balances.headers.account'), value: 'label' },
       { text: this.blockchain, value: 'balance.amount', align: 'end' },
       {
-        text: this.$tc('account_balances.headers.usd-value-default'),
+        text: this.$t('account_balances.headers.usd_value', {
+          symbol: this.currency.ticker_symbol ?? CURRENCY_USD
+        }).toString(),
         value: 'balance.usdValue',
         align: 'end'
       },

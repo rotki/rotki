@@ -1464,9 +1464,8 @@
     "headers": {
       "account": "Account",
       "actions": "Actions",
-      "usd-value-eth": "Total {symbol} value of account's assets",
-      "usd-value": "{symbol} value",
-      "usd-value-default": "USD value"
+      "usd_value_eth": "Total {symbol} value of account's assets",
+      "usd_value": "{symbol} value"
     },
     "total": "Total",
     "confirm_delete": {

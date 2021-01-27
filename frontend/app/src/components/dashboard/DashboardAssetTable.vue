@@ -177,14 +177,15 @@ export default class DashboardAssetTable extends Vue {
         text: this.$tc('dashboard_asset_table.headers.amount'),
         value: 'amount',
         align: 'end',
-        width: '100%'
+        width: '60%'
       },
       {
         text: this.$t('dashboard_asset_table.headers.value', {
           symbol: this.currencySymbol ?? CURRENCY_USD
         }).toString(),
         value: 'usdValue',
-        align: 'end'
+        align: 'end',
+        width: '40%'
       },
       {
         text: this.$tc('dashboard_asset_table.headers.percentage'),

@@ -2,7 +2,15 @@
   <div class="d-flex flex-row labeled-address-display align-center">
     <v-tooltip top open-delay="400" :disabled="!truncated">
       <template #activator="{ on }">
-        <span class="labeled-address-display__address" v-on="on">
+        <span
+          class="labeled-address-display__address"
+          :class="
+            $vuetify.breakpoint.xsOnly
+              ? 'labeled-address-display__address--mobile'
+              : null
+          "
+          v-on="on"
+        >
           <v-chip label outlined>
             <span v-if="!!account.label" class="pr-1">
               {{
@@ -120,6 +128,10 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
     padding-top: 6px;
     padding-bottom: 6px;
     background-color: white;
+
+    &--mobile {
+      max-width: 120px;
+    }
 
     ::v-deep {
       .v-chip {

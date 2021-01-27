@@ -22,7 +22,7 @@
     </v-card-title>
     <v-card-text>
       <v-row align="center">
-        <v-col cols="6">
+        <v-col cols="12" sm="6">
           <v-tooltip top>
             <template #activator="{ on, attrs }">
               <span v-bind="attrs" v-on="on">
@@ -45,7 +45,7 @@
             <span>{{ $t('account_balances.delete_tooltip') }}</span>
           </v-tooltip>
         </v-col>
-        <v-col cols="6">
+        <v-col cols="12" sm="6">
           <tag-filter v-model="visibleTags" />
         </v-col>
       </v-row>

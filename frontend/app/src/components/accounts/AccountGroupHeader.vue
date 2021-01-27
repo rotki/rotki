@@ -1,9 +1,15 @@
 <template>
-  <td v-if="!group" class="font-weight-medium" colspan="5">
+  <td v-if="!group" class="font-weight-medium" colspan="5" :class="mobileClass">
     {{ $t('account_group_header.standalone') }}
   </td>
   <fragment v-else>
-    <td class="pa-2" colspan="2">
+    <td
+      :colspan="$vuetify.breakpoint.xsOnly ? 1 : 2"
+      :class="{
+        'v-data-table__mobile-row': $vuetify.breakpoint.xsOnly,
+        'pa-2': !$vuetify.breakpoint.xsOnly
+      }"
+    >
       <div class="ps-8">
         <span class="subtitle-2">{{ label }}</span>
       </div>
@@ -44,10 +50,14 @@
         />
       </div>
     </td>
-    <td class="text-end">
-      <amount-display :value="sum" :loading="loading" />
+    <td class="text-end" :class="mobileClass">
+      <amount-display
+        :value="sum"
+        :loading="loading"
+        :asset="$vuetify.breakpoint.xsOnly ? 'BTC' : null"
+      />
     </td>
-    <td class="text-end">
+    <td class="text-end" :class="mobileClass">
       <amount-display
         fiat-currency="USD"
         show-currency="symbol"
@@ -55,7 +65,7 @@
         :loading="loading"
       />
     </td>
-    <td class="text-end">
+    <td class="text-end" :class="mobileClass">
       <v-tooltip top>
         <template #activator="{ on, attrs }">
           <v-btn
@@ -113,6 +123,10 @@ export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
   loading!: boolean;
 
   tags!: Tags;
+
+  get mobileClass(): string | null {
+    return this.$vuetify.breakpoint.xsOnly ? 'v-data-table__mobile-row' : null;
+  }
 
   get xpub(): XpubAccountWithBalance {
     return this.items.filter(item => !item.address)[0];
