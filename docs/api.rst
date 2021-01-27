@@ -1201,6 +1201,69 @@ Purging locally saved ethereum transactions
    :statuscode 500: Internal Rotki error
 
 
+Purging locally saved data for ethereum modules
+====================================================
+
+.. http:delete:: /api/(version)/blockchains/ETH/modules/(name)/data
+
+   Doing a DELETE on the data of a specific ETH module will purge all locally saved data for the module. Can also purge all module data by doing a ``DELETE`` on ``/api/(version)/blockchains/ETH/modules/data`` in which case all module data will be purged.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/blockchains/ETH/modules/uniswap/data HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   :reqjson string name: The name of the module whose data to delete. Can be one of the supported ethereum modules. The name can be omitted by doing a ``DELETE`` on ``/api/(version)/blockchains/ETH/modules/data`` in which case all module data will be purged.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": true, "message": "" }
+
+   :statuscode 200: Data succesfully purged.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
+Query supported ethereum modules
+=====================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/
+
+   Doing a GET on this endpoint will return all supported ethereum modules
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/blockchains/ETH/modules HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": ["uniswap", "yearn_vault", "makerdao_dsr"], "message": "" }
+
+   :statuscode 200: Data succesfully purged.
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
 Querying ethereum transactions
 =================================
 

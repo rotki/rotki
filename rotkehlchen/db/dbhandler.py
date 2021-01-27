@@ -13,7 +13,6 @@ from eth_typing import HexStr
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
-from rotkehlchen.serialization.deserialize import pair_get_assets
 from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -77,8 +76,8 @@ from rotkehlchen.errors import (
     SystemPermissionError,
     TagConstraintError,
     UnknownAsset,
-    UnsupportedAsset,
     UnprocessableTradePair,
+    UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
@@ -96,6 +95,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp,
     deserialize_trade_type_from_db,
+    pair_get_assets,
 )
 from rotkehlchen.typing import (
     ApiCredentials,
@@ -110,6 +110,7 @@ from rotkehlchen.typing import (
     HexColorCode,
     ListOfBlockchainAddresses,
     Location,
+    ModuleName,
     SupportedBlockchain,
     Timestamp,
 )
@@ -1053,6 +1054,31 @@ class DBHandler:
             events.append(event)
 
         return events
+
+    def purge_module_data(self, module_name: Optional[ModuleName]) -> None:
+        if module_name is None:
+            self.delete_uniswap_trades_data()
+            self.delete_uniswap_events_data()
+            self.delete_aave_data()
+            self.delete_adex_events_data()
+            self.delete_yearn_vaults_data()
+            logger.debug('Purged all module data from the DB')
+            return
+
+        if module_name == 'uniswap':
+            self.delete_uniswap_trades_data()
+            self.delete_uniswap_events_data()
+        elif module_name == 'aave':
+            self.delete_aave_data()
+        elif module_name == 'adex':
+            self.delete_adex_events_data()
+        elif module_name == 'yearn_vaults':
+            self.delete_yearn_vaults_data()
+        else:
+            logger.debug(f'Requested to purge {module_name} data from the DB but nothing to do')
+            return
+
+        logger.debug(f'Purged {module_name} data from the DB')
 
     def delete_uniswap_trades_data(self) -> None:
         """Delete all historical Uniswap trades data"""

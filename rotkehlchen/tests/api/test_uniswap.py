@@ -23,6 +23,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
@@ -739,6 +740,17 @@ def test_get_uniswap_exotic_history(
     for idx, trade in enumerate(BOTH_IN_TRADES):
         assert trade.serialize() == result[CRAZY_UNISWAP_ADDRESS][found_idx + idx]
 
+    # Make sure they end up in the DB
+    assert len(rotki.data.db.get_amm_swaps()) != 0
+    # test uniswap data purging from the db works
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'namedethereummoduledataresource',
+        module_name='uniswap',
+    ))
+    assert_simple_ok_response(response)
+    assert len(rotki.data.db.get_amm_swaps()) == 0
+
 
 # Get events history tests
 
@@ -957,6 +969,17 @@ def test_get_events_history_filtering_by_timestamp_case1(
     assert len(events_balances) == 1
     assert EXPECTED_EVENTS_BALANCES_1[0].serialize() == events_balances[0]
 
+    # Make sure they end up in the DB
+    assert len(rotki.data.db.get_uniswap_events()) != 0
+    # test uniswap data purging from the db works
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'namedethereummoduledataresource',
+        module_name='uniswap',
+    ))
+    assert_simple_ok_response(response)
+    assert len(rotki.data.db.get_uniswap_events()) == 0
+
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_EVENTS_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
@@ -1027,6 +1050,16 @@ def test_get_events_history_filtering_by_timestamp_case2(
     assert len(events_balances) == 4
     assert EXPECTED_EVENTS_BALANCES_2[0].serialize() == events_balances[0]
     assert EXPECTED_EVENTS_BALANCES_2[1].serialize() == events_balances[3]
+
+    # Make sure they end up in the DB
+    assert len(rotki.data.db.get_uniswap_events()) != 0
+    # test all data purging from the db works and also deletes uniswap data
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'ethereummoduledataresource',
+    ))
+    assert_simple_ok_response(response)
+    assert len(rotki.data.db.get_uniswap_events()) == 0
 
 
 PNL_TEST_ACC = '0x1F9fbD2F6a8754Cd56D4F56ED35338A63C5Bfd1f'

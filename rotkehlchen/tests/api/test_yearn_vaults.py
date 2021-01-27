@@ -20,6 +20,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
@@ -448,6 +449,20 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
         check_vault_history('YUSDC Vault', EXPECTED_HISTORY, result)
         check_vault_history('YUSDT Vault', EXPECTED_HISTORY, result)
         check_vault_history('YYFI Vault', EXPECTED_HISTORY, result)
+
+    # Make sure events end up in the DB
+    # test yearn vault data purging from the db works
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'ethereummoduledataresource',
+        module_name='yearn_vaults',
+    ))
+    assert_simple_ok_response(response)
+    events = rotki.data.db.get_yearn_vaults_events(
+        TEST_ACC1,
+        YEARN_VAULTS['yyDAI+yUSDC+yUSDT+yTUSD'],
+    )
+    assert len(events) == 0
 
 
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults']])

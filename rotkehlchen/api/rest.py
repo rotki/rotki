@@ -84,6 +84,7 @@ from rotkehlchen.typing import (
     ApiSecret,
     AssetAmount,
     BlockchainAccountData,
+    AVAILABLE_MODULES,
     ChecksumEthAddress,
     EthereumTransaction,
     ExternalService,
@@ -1189,6 +1190,15 @@ class RestAPI():
             log_result=False,
         )
 
+    @staticmethod
+    def supported_modules() -> Response:
+        """Returns all supported modules"""
+        return api_response(
+            _wrap_in_ok_result(AVAILABLE_MODULES),
+            status_code=HTTPStatus.OK,
+            log_result=False,
+        )
+
     @require_loggedin_user()
     def query_owned_assets(self) -> Response:
         result = process_result_list(self.rotkehlchen.data.db.query_owned_assets())
@@ -1859,6 +1869,11 @@ class RestAPI():
         # success
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def purge_module_data(self, module_name: Optional[ModuleName]) -> Response:
+        self.rotkehlchen.data.db.purge_module_data(module_name)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _eth_module_query(
             self,

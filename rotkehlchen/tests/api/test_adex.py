@@ -6,6 +6,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
+from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.api import (
@@ -13,9 +14,13 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
     wait_for_async_task,
 )
+from rotkehlchen.constants.assets import A_ADX
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
+from rotkehlchen.chain.ethereum.adex.typing import Bond, ChannelWithdraw, Unbond
 
 ADEX_TEST_ADDR = deserialize_ethereum_address('0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d')
 
@@ -92,3 +97,92 @@ def test_get_balances_premium(
         assert staking_balance['adx_balance']['usd_value']
         assert staking_balance['dai_unclaimed_balance']['amount']
         assert staking_balance['dai_unclaimed_balance']['usd_value']
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[ADEX_TEST_ADDR]])
+@pytest.mark.parametrize('ethereum_modules', [['adex']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(2)])
+def test_get_events(
+        rotkehlchen_api_server,
+        ethereum_accounts,  # pylint: disable=unused-argument
+        rotki_premium_credentials,  # pylint: disable=unused-argument
+        start_with_valid_premium,  # pylint: disable=unused-argument
+):
+    async_query = random.choice([False, True])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    # Set module premium is required for calling `get_balances()`
+    premium = None
+    if start_with_valid_premium:
+        premium = Premium(rotki_premium_credentials)
+
+    rotki.chain_manager.adex.premium = premium
+
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        original_queries=['zerion', 'logs', 'blocknobytime'],
+    )
+
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server, 'adexhistoryresource'),
+            json={'async_query': async_query, 'to_timestamp': 1611747322},
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+            assert outcome['message'] == ''
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+
+    identity_address = '0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204'
+    tom_pool_id = '0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28'
+    bond_id = '0x540cab9883923c01e657d5da4ca5674b6e4626b4a148224635495502d674c7c5'
+    result = result[ADEX_TEST_ADDR]
+    expected_events = [Bond(
+        tx_hash='0x9989f47c6c0a761f98f910ac24e2438d858be96c12124a13be4bb4b3150c55ea',
+        address=ADEX_TEST_ADDR,
+        identity_address=identity_address,
+        timestamp=1604366004,
+        bond_id=bond_id,
+        pool_id=tom_pool_id,
+        value=Balance(FVal(100000), FVal(200000)),
+        nonce=0,
+        slashed_at=0,
+    ), ChannelWithdraw(
+        tx_hash='0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13',
+        address=ADEX_TEST_ADDR,
+        identity_address=identity_address,
+        timestamp=1607453764,
+        channel_id='',
+        pool_id=tom_pool_id,
+        value=Balance(FVal('5056.894263641728544592'), FVal('10113.788527283457089184')),
+        token=A_ADX,
+    ), Unbond(
+        tx_hash='0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13',
+        address=ADEX_TEST_ADDR,
+        identity_address=identity_address,
+        timestamp=1607453764,
+        bond_id=bond_id,
+        pool_id=tom_pool_id,
+        value=Balance(FVal(100000), FVal(200000)),
+    )]
+    assert len(result['events']) == 8
+    assert result['events'][:len(expected_events)] == [x.serialize() for x in expected_events]
+    assert 'staking_details' in result
+    # Make sure events end up in the DB
+    assert len(rotki.data.db.get_adex_events()) != 0
+    # test adex data purging from the db works
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'namedethereummoduledataresource',
+        module_name='adex',
+    ))
+    assert_simple_ok_response(response)
+    assert len(rotki.data.db.get_adex_events()) == 0
