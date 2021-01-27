@@ -56,6 +56,7 @@ export default class AssetDetails extends Vue {
 
     &__subtitle {
       font-size: 0.8rem;
+      white-space: nowrap;
     }
   }
 }

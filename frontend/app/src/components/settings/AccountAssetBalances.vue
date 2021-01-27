@@ -19,18 +19,22 @@
           :footer-props="footerProps"
         >
           <template #header.usdValue>
-            {{
-              $t('account_asset_balance.headers.value', {
-                symbol: currencySymbol
-              })
-            }}
+            <div class="text-no-wrap">
+              {{
+                $t('account_asset_balance.headers.value', {
+                  symbol: currencySymbol
+                })
+              }}
+            </div>
           </template>
           <template #header.price>
-            {{
-              $t('account_asset_balance.headers.price', {
-                symbol: currencySymbol
-              })
-            }}
+            <div class="text-no-wrap">
+              {{
+                $t('account_asset_balance.headers.price', {
+                  symbol: currencySymbol
+                })
+              }}
+            </div>
           </template>
           <template #item.asset="{ item }">
             <asset-details :asset="item.asset" />
@@ -84,15 +88,13 @@ export default class AccountAssetBalances extends Vue {
       text: this.$t('account_asset_balance.headers.price', {
         symbol: CURRENCY_USD
       }).toString(),
-      value: 'price',
-      width: '250px'
+      value: 'price'
     },
     {
       text: this.$tc('account_asset_balance.headers.amount'),
       value: 'amount',
       width: '100%',
-      align: 'end',
-      cellClass: 'user-holding'
+      align: 'end'
     },
     {
       text: this.$tc('account_asset_balance.headers.value'),

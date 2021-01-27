@@ -10,18 +10,22 @@
       :footer-props="footerProps"
     >
       <template #header.usdValue>
-        {{
-          $t('asset_balances.headers.value', {
-            symbol
-          })
-        }}
+        <div class="text-no-wrap">
+          {{
+            $t('asset_balances.headers.value', {
+              symbol
+            })
+          }}
+        </div>
       </template>
       <template #header.price>
-        {{
-          $t('asset_balances.headers.price', {
-            symbol
-          })
-        }}
+        <div class="text-no-wrap">
+          {{
+            $t('asset_balances.headers.price', {
+              symbol
+            })
+          }}
+        </div>
       </template>
       <template #item.asset="{ item }">
         <asset-details :asset="item.asset" />
@@ -124,22 +128,19 @@ export default class AssetBalances extends Vue {
     return [
       {
         text: this.$t('asset_balances.headers.asset').toString(),
-        value: 'asset',
-        width: '250px'
+        value: 'asset'
       },
       {
         text: this.$t('asset_balances.headers.price', {
           symbol: this.symbol ?? CURRENCY_USD
         }).toString(),
-        value: 'price',
-        width: '150px'
+        value: 'price'
       },
       {
         text: this.$t('asset_balances.headers.amount').toString(),
         value: 'amount',
         align: 'end',
-        width: '100%',
-        cellClass: 'user-holding'
+        width: '100%'
       },
       {
         text: this.$t('asset_balances.headers.value', {
@@ -147,7 +148,7 @@ export default class AssetBalances extends Vue {
         }).toString(),
         value: 'usdValue',
         align: 'end',
-        cellClass: 'user-holding user-asset-value'
+        cellClass: 'user-asset-value'
       }
     ];
   }
@@ -156,10 +157,6 @@ export default class AssetBalances extends Vue {
 
 <style scoped lang="scss">
 ::v-deep {
-  .user-holding {
-    background-color: #f9fafb88;
-  }
-
   .user-asset-value {
     min-width: 150px;
   }

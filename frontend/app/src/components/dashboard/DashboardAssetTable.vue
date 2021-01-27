@@ -26,18 +26,22 @@
         :footer-props="footerProps"
       >
         <template #header.usdValue>
-          {{
-            $t('dashboard_asset_table.headers.value', {
-              symbol: currencySymbol
-            })
-          }}
+          <div class="text-no-wrap">
+            {{
+              $t('dashboard_asset_table.headers.value', {
+                symbol: currencySymbol
+              })
+            }}
+          </div>
         </template>
         <template #header.price>
-          {{
-            $t('dashboard_asset_table.headers.price', {
-              symbol: currencySymbol
-            })
-          }}
+          <div class="text-no-wrap">
+            {{
+              $t('dashboard_asset_table.headers.price', {
+                symbol: currencySymbol
+              })
+            }}
+          </div>
         </template>
         <template #item.asset="{ item }">
           <asset-details :asset="item.asset" />
@@ -162,8 +166,7 @@ export default class DashboardAssetTable extends Vue {
     return [
       {
         text: this.$tc('dashboard_asset_table.headers.asset'),
-        value: 'asset',
-        width: '250px'
+        value: 'asset'
       },
       {
         text: this.$t('dashboard_asset_table.headers.price', {
@@ -171,31 +174,27 @@ export default class DashboardAssetTable extends Vue {
         }).toString(),
         value: 'price',
         align: 'end',
-        sortable: false,
-        width: '150px'
+        sortable: false
       },
       {
         text: this.$tc('dashboard_asset_table.headers.amount'),
         value: 'amount',
         align: 'end',
-        width: '100%',
-        cellClass: 'user-holding'
+        width: '100%'
       },
       {
         text: this.$t('dashboard_asset_table.headers.value', {
           symbol: this.currencySymbol ?? CURRENCY_USD
         }).toString(),
         value: 'usdValue',
-        align: 'end',
-        cellClass: 'user-holding user-asset-value'
+        align: 'end'
       },
       {
         text: this.$tc('dashboard_asset_table.headers.percentage'),
         value: 'percentage',
         align: 'end',
         width: '120px',
-        sortable: false,
-        cellClass: 'user-holding'
+        sortable: false
       }
     ];
   }
@@ -207,16 +206,6 @@ export default class DashboardAssetTable extends Vue {
 </script>
 
 <style scoped lang="scss">
-::v-deep {
-  .user-holding {
-    background-color: #f9fafb88;
-  }
-
-  .user-asset-value {
-    min-width: 150px;
-  }
-}
-
 .dashboard-asset-table {
   &__search {
     max-width: 450px;
