@@ -239,10 +239,10 @@ class Inquirer():
         Inquirer()._ethereum = ethereum
 
     @staticmethod
-    def set_oracles(oracles: List[CurrentPriceOracle]) -> None:
-        if len(oracles) == 0 or len(oracles) != len(set(oracles)):
-            raise AssertionError("Oracles can't be empty or have repeated items")
-
+    def set_oracles_order(oracles: List[CurrentPriceOracle]) -> None:
+        assert len(oracles) != 0 and len(oracles) == len(set(oracles)), (
+            'Oracles can\'t be empty or have repeated items'
+        )
         instance = Inquirer()
         instance._oracles = oracles
         instance._oracle_instances = [getattr(instance, f'_{str(oracle)}') for oracle in oracles]

@@ -48,7 +48,7 @@ def price_historian(
         cryptocompare=cryptocompare,
         coingecko=session_coingecko,
     )
-    historian.set_oracles(historical_price_oracles_order)
+    historian.set_oracles_order(historical_price_oracles_order)
     maybe_mock_historical_price_queries(
         historian=historian,
         should_mock_price_queries=should_mock_price_queries,

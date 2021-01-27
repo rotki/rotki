@@ -169,25 +169,11 @@ def test_all_common_methods_implemented():
         assert callable(instance.query_current_price)
 
 
-def test_set_oracles_default_order(inquirer):
-    """Tested via fixture call to 'set_oracles'"""
-    expected_oracles = [CurrentPriceOracle.CRYPTOCOMPARE, CurrentPriceOracle.COINGECKO]
-    expected_oracle_instances = [inquirer._cryptocompare, inquirer._coingecko]
+def test_set_oracles_order(inquirer):
+    inquirer.set_oracles_order([CurrentPriceOracle.COINGECKO])
 
-    assert inquirer._oracles == expected_oracles
-    assert inquirer._oracle_instances == expected_oracle_instances
-
-
-@pytest.mark.parametrize('current_price_oracles_order', [
-    [CurrentPriceOracle.COINGECKO],
-])
-def test_set_oracles_custom_order(inquirer):
-    """Tested via fixture call to 'set_oracles'"""
-    expected_oracles = [CurrentPriceOracle.COINGECKO]
-    expected_oracle_instances = [inquirer._coingecko]
-
-    assert inquirer._oracles == expected_oracles
-    assert inquirer._oracle_instances == expected_oracle_instances
+    assert inquirer._oracles == [CurrentPriceOracle.COINGECKO]
+    assert inquirer._oracle_instances == [inquirer._coingecko]
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

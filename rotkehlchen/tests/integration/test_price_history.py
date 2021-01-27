@@ -29,7 +29,7 @@ def test_price_queries(price_historian, data_dir, database):
         data_directory=data_dir,
         database=database,
     )
-    price_historian.set_oracles(price_historian._oracles)
+    price_historian.set_oracles_order(price_historian._oracles)
     assert price_historian.query_historical_price(A_DASH, A_USD, 1438387700) == FVal('10')
     # this should hit coingecko, since cornichon is not in cryptocompare
     cornichon = Asset('CORN-2')

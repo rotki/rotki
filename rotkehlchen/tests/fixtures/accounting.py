@@ -166,7 +166,7 @@ def create_inquirer(
         cryptocompare=cryptocompare,
         coingecko=gecko,
     )
-    inquirer.set_oracles(current_price_oracles_order)
+    inquirer.set_oracles_order(current_price_oracles_order)
 
     if not should_mock_current_price_queries:
         return inquirer

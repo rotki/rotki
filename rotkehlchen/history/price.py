@@ -94,10 +94,10 @@ class PriceHistorian():
         return PriceHistorian.__instance
 
     @staticmethod
-    def set_oracles(oracles: List[HistoricalPriceOracle]) -> None:
-        if len(oracles) == 0 or len(oracles) != len(set(oracles)):
-            raise AssertionError("Oracles can't be empty or have repeated items")
-
+    def set_oracles_order(oracles: List[HistoricalPriceOracle]) -> None:
+        assert len(oracles) != 0 and len(oracles) == len(set(oracles)), (
+            'Oracles can\'t be empty or have repeated items'
+        )
         instance = PriceHistorian()
         instance._oracles = oracles
         instance._oracle_instances = [getattr(instance, f'_{str(oracle)}') for oracle in oracles]
@@ -150,7 +150,6 @@ class PriceHistorian():
         assert isinstance(oracles, list) and isinstance(oracle_instances, list), (
             'PriceHistorian should never be called before the setting the oracles'
         )
-        price = Price(ZERO)
         for oracle, oracle_instance in zip(oracles, oracle_instances):
             can_query_history = oracle_instance.can_query_history(
                 from_asset=from_asset,

@@ -789,7 +789,7 @@ def _validate_current_price_oracles(
     """Prevents repeated oracle names and empty list"""
     if (
         len(current_price_oracles) == 0 or
-        len(current_price_oracles) != len(set(current_price_oracles))  # check uniqueness
+        len(current_price_oracles) != len(set(current_price_oracles))
     ):
         oracle_names = [str(oracle) for oracle in current_price_oracles]
         supported_oracle_names = [str(oracle) for oracle in CurrentPriceOracle]
@@ -806,7 +806,7 @@ def _validate_historical_price_oracles(
     """Prevents repeated oracle names and empty list"""
     if (
         len(historical_price_oracles) == 0 or
-        len(historical_price_oracles) != len(set(historical_price_oracles))  # check uniqueness
+        len(historical_price_oracles) != len(set(historical_price_oracles))
     ):
         oracle_names = [str(oracle) for oracle in historical_price_oracles]
         supported_oracle_names = [str(oracle) for oracle in HistoricalPriceOracle]

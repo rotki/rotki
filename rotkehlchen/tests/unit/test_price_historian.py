@@ -28,7 +28,7 @@ def fixture_fake_price_historian(historical_price_oracles_order):
         cryptocompare=MagicMock(spec=Cryptocompare),
         coingecko=MagicMock(spec=Coingecko),
     )
-    price_historian.set_oracles(historical_price_oracles_order)
+    price_historian.set_oracles_order(historical_price_oracles_order)
     return price_historian
 
 
@@ -53,29 +53,13 @@ def test_all_common_methods_implemented():
         assert callable(instance.query_historical_price)
 
 
-def test_set_oracles_default_order(fake_price_historian):
-    """Tested via fixture call to 'set_oracles'"""
-    price_historian = fake_price_historian
-
-    expected_oracles = [HistoricalPriceOracle.CRYPTOCOMPARE, HistoricalPriceOracle.COINGECKO]
-    expected_oracle_instances = [price_historian._cryptocompare, price_historian._coingecko]
-
-    assert price_historian._oracles == expected_oracles
-    assert price_historian._oracle_instances == expected_oracle_instances
-
-
-@pytest.mark.parametrize('historical_price_oracles_order', [
-    [HistoricalPriceOracle.COINGECKO],
-])
 def test_set_oracles_custom_order(fake_price_historian):
-    """Tested via fixture call to 'set_oracles'"""
     price_historian = fake_price_historian
 
-    expected_oracles = [HistoricalPriceOracle.COINGECKO]
-    expected_oracle_instances = [price_historian._coingecko]
+    price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
 
-    assert price_historian._oracles == expected_oracles
-    assert price_historian._oracle_instances == expected_oracle_instances
+    assert price_historian._oracles == [HistoricalPriceOracle.COINGECKO]
+    assert price_historian._oracle_instances == [price_historian._coingecko]
 
 
 def test_fiat_to_fiat(fake_price_historian):
