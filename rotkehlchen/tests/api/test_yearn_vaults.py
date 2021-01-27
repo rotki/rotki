@@ -451,7 +451,7 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
         check_vault_history('YYFI Vault', EXPECTED_HISTORY, result)
 
     # Make sure events end up in the DB
-    # test adex data purging from the db works
+    # test yearn vault data purging from the db works
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
         'ethereummoduledataresource',

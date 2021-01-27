@@ -262,7 +262,7 @@ def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_acco
 
     # Make sure events end up in the DB
     assert len(rotki.data.db.get_aave_events(AAVE_TEST_ACC_3)) != 0
-    # test adex data purging from the db works
+    # test aave data purging from the db works
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
         'namedethereummoduledataresource',
