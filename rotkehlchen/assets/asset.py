@@ -135,6 +135,7 @@ WORLD_TO_KRAKEN = {
     'AAVE': 'AAVE',
     'MANA': 'MANA',
     'GRT': 'GRT',
+    'FLOW': 'FLOW',
 }
 
 WORLD_TO_BINANCE = {

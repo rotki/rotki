@@ -4967,6 +4967,14 @@
         "symbol": "FLOT",
         "type": "ethereum token"
     },
+    "FLOW": {
+        "coingecko": "flow",
+        "cryptocompare": "",
+        "name": "Flow",
+        "started": 1611619200,
+        "symbol": "FLOW",
+        "type": "own chain"
+    },
     "FLP": {
         "coingecko": "gameflip",
         "ethereum_address": "0x3a1Bda28AdB5B0a812a7CF10A1950c920F79BcD3",
