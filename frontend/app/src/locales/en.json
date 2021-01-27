@@ -136,6 +136,10 @@
     "subtitle": "Allows you to purge data cached by rotki",
     "title": "Manage Data"
   },
+  "date_time_picker": {
+    "default_format": "Date should be in DD/MM/YYYY or DD/MM/YYYY HH:MM format",
+    "seconds_format": "Date should be in DD/MM/YYYY HH:MM:ss format"
+  },
   "defi_address_selector": {
     "back": "Back",
     "next": "Next"

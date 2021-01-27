@@ -14,18 +14,29 @@
           :value="value"
           :label="label"
           :hint="hint"
+          prepend-inner-icon="mdi-calendar"
           :persistent-hint="persistentHint"
           :rules="allRules"
           append-icon="mdi-clock-outline"
-          @input="input($event)"
+          @change="emitIfValid($event)"
           @click:append="setNow()"
           v-on="on"
         />
       </template>
 
       <div class="menu-body">
-        <v-date-picker v-model="dateModel" :max="maxDate" />
-        <v-time-picker v-model="timeModel" :max="maxTime" format="24hr" />
+        <v-date-picker
+          :value="dateModel"
+          :max="maxDate"
+          @change="onDateChange($event)"
+        />
+        <v-time-picker
+          :value="timeModel"
+          :max="maxTime"
+          format="24hr"
+          :use-seconds="seconds"
+          @change="onTimeChange($event)"
+        />
       </div>
     </v-menu>
   </div>
@@ -38,7 +49,6 @@ import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 @Component({})
 export default class DateTimePicker extends Vue {
   private static dateFormat = 'YYYY-MM-DD';
-  private static timeFormat = 'HH:mm';
 
   @Prop({ required: true })
   label!: string;
@@ -52,17 +62,26 @@ export default class DateTimePicker extends Vue {
   rules!: ((v: string) => boolean | string)[];
   @Prop({ required: false, default: false, type: Boolean })
   limitNow!: boolean;
+  @Prop({ required: false, default: false, type: Boolean })
+  seconds!: boolean;
 
   private date = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))?$/;
+  private withSeconds = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d)(:[0-5]\d))$/;
 
   private dateFormatRule(v: string) {
+    if (this.seconds) {
+      return (
+        (v && this.withSeconds.test(v)) ||
+        this.$t('date_time_picker.seconds_format').toString()
+      );
+    }
     return (
       (v && this.date.test(v)) ||
-      'Date should be in DD/MM/YYYY or DD/MM/YYYY HH:MM format'
+      this.$t('date_time_picker.default_format').toString()
     );
   }
 
-  timeModel: string = moment().format(DateTimePicker.timeFormat);
+  timeModel: string = moment().format(this.timeFormat);
   dateModel: string = '';
 
   maxDate: string = '';
@@ -70,13 +89,21 @@ export default class DateTimePicker extends Vue {
 
   menu: boolean = false;
 
+  private get timeFormat(): string {
+    let format = 'HH:mm';
+    if (this.seconds) {
+      format += ':ss';
+    }
+    return format;
+  }
+
   get allRules(): ((v: string) => boolean | string)[] {
     return this.rules.concat([this.dateFormatRule.bind(this)]);
   }
 
   private setMaxTime() {
     if (this.limitNow) {
-      this.maxTime = moment().format(DateTimePicker.timeFormat);
+      this.maxTime = moment().format(this.timeFormat);
     }
   }
 
@@ -91,7 +118,17 @@ export default class DateTimePicker extends Vue {
     if (this.timeModel) {
       value += ` ${this.timeModel}`;
     }
-    this.input(value);
+    this.emitIfValid(value);
+  }
+
+  private emitIfValid(value: string) {
+    if (this.isValid(value)) {
+      this.input(value);
+    }
+  }
+
+  private isValid(date: string): boolean {
+    return this.seconds ? this.withSeconds.test(date) : this.date.test(date);
   }
 
   created() {
@@ -99,25 +136,25 @@ export default class DateTimePicker extends Vue {
     this.setMaxTime();
   }
 
-  @Watch('timeModel')
-  onTimeChange() {
+  onTimeChange(time: string) {
+    this.timeModel = time;
     this.updateActualDate();
     this.setMaxTime();
   }
 
-  @Watch('dateModel')
-  onDateChange() {
+  onDateChange(date: string) {
+    this.dateModel = date;
     this.updateActualDate();
     this.setMaxDate();
   }
 
   @Watch('value')
-  onValueChange() {
-    if (!this.value) {
+  onValueChange(value?: string) {
+    if (!value) {
       this.dateModel = '';
       this.timeModel = '';
-    } else if (this.date.test(this.value)) {
-      const [date, time] = this.value.split(' ');
+    } else if (this.isValid(value)) {
+      const [date, time] = value.split(' ');
       const [day, month, year] = date.split('/');
       const formattedDate = `${year}-${month}-${day}`;
       if (formattedDate !== this.dateModel) {
@@ -141,8 +178,9 @@ export default class DateTimePicker extends Vue {
 
   setNow() {
     const now = moment();
-    this.timeModel = now.format(DateTimePicker.timeFormat);
+    this.timeModel = now.format(this.timeFormat);
     this.dateModel = now.format(DateTimePicker.dateFormat);
+    this.updateActualDate();
   }
 }
 </script>
@@ -162,6 +200,24 @@ export default class DateTimePicker extends Vue {
 
     .v-card {
       box-shadow: none;
+    }
+  }
+
+  &:first-child {
+    ::v-deep {
+      .v-picker {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+    }
+  }
+
+  &:last-child {
+    ::v-deep {
+      .v-picker {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+      }
     }
   }
 }

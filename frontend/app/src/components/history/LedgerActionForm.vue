@@ -10,10 +10,11 @@
 
     <date-time-picker
       :error-messages="errors['timestamp']"
-      :value="convertFromTs(action.timestamp)"
+      :value="action.timestamp > 0 ? convertFromTs(action.timestamp) : ''"
       :label="$t('ledger_action_form.date.label')"
       persistent-hint
       required
+      seconds
       :hint="$t('ledger_action_form.date.hint')"
       @input="onDateChange($event)"
     />
@@ -80,7 +81,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { ledgerActionsData } from '@/store/history/consts';
 import { LedgerAction, UnsavedAction } from '@/store/history/types';
@@ -106,16 +107,10 @@ export default class LedgerActionForm extends Vue {
   @Emit('action:update')
   actionUpdate(_action: Action) {}
 
-  @Watch('action')
-  onActionUpdate(action: Action) {
-    if (action.timestamp === 0) {
-      this.datetime = '';
-    } else {
-      this.datetime = convertFromTimestamp(action.timestamp);
-    }
-  }
-
   onDateChange(date: string) {
+    if (!date) {
+      return;
+    }
     this.actionUpdate({ ...this.action, timestamp: convertToTimestamp(date) });
   }
 
@@ -124,7 +119,7 @@ export default class LedgerActionForm extends Vue {
   }
 
   convertFromTs(timestamp: number) {
-    return convertFromTimestamp(timestamp);
+    return convertFromTimestamp(timestamp, true);
   }
 
   datetime = '';
