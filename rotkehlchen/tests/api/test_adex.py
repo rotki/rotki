@@ -6,6 +6,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
+from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.api import (
@@ -13,6 +14,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
@@ -92,3 +94,60 @@ def test_get_balances_premium(
         assert staking_balance['adx_balance']['usd_value']
         assert staking_balance['dai_unclaimed_balance']['amount']
         assert staking_balance['dai_unclaimed_balance']['usd_value']
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[ADEX_TEST_ADDR]])
+@pytest.mark.parametrize('ethereum_modules', [['adex']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(2)])
+def test_get_events(
+        rotkehlchen_api_server,
+        ethereum_accounts,  # pylint: disable=unused-argument
+        rotki_premium_credentials,  # pylint: disable=unused-argument
+        start_with_valid_premium,  # pylint: disable=unused-argument
+):
+    async_query = random.choice([False, True])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    # Set module premium is required for calling `get_balances()`
+    premium = None
+    if start_with_valid_premium:
+        premium = Premium(rotki_premium_credentials)
+
+    rotki.chain_manager.adex.premium = premium
+
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        original_queries=['zerion', 'logs', 'blocknobytime'],
+    )
+
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server, 'adexhistoryresource'),
+            json={'async_query': async_query, 'to_timestamp': 1611747322},
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+            assert outcome['message'] == ''
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+
+    # TODO: Test for a bit more details in this test.
+    assert len(result['events']) == 8
+    assert 'staking_details' in result
+    # Make sure events end up in the DB
+    assert len(rotki.data.db.get_adex_events()) != 0
+    # test adex data purging from the db works
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'ethereummoduledataresource',
+        module_name='adex',
+    ))
+    assert_simple_ok_response(response)
+    assert len(rotki.data.db.get_adex_events()) == 0
