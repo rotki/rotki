@@ -6,6 +6,7 @@
           <v-col cols="12" sm="3">
             <date-time-picker
               v-model="datetime"
+              seconds
               class="otc-form__date"
               :label="$t('otc_form.date.label')"
               persistent-hint
@@ -73,7 +74,8 @@
         />
         <v-textarea
           v-model="notes"
-          class="otc-form__notes"
+          outlined
+          class="otc-form__notes mt-4"
           :label="$t('otc_form.notes.label')"
           persistent-hint
           :hint="$t('otc_form.notes.hint')"
@@ -114,7 +116,7 @@ export default class OtcForm extends Vue {
     trade: Omit<Trade, 'ignoredInAccounting'>
   ) => Promise<ActionStatus>;
 
-  private static format = 'DD/MM/YYYY HH:mm';
+  private static format = 'DD/MM/YYYY HH:mm:ss';
   readonly assetRules = [
     (v: string) => !!v || this.$t('otc_form.validation.non_empty_fee')
   ];
