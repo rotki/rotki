@@ -819,11 +819,14 @@ Query the current price of assets
 
       {
           "assets": ["BTC", "ETH", "LINK", "USD", "EUR"],
-          "target_asset": "USD"
+          "target_asset": "USD",
+	  "ignore_cache": true,
       }
 
    :reqjson list assets: A list of assets to query their current price
    :reqjson string target_asset: The asset of the price currency
+   :reqjson bool async_query: A boolean denoting whether the query should be made asynchronously or not. Missing defaults to false.
+   :reqjson bool ignore_cache: A boolean denoting whether to ignore the current price query cache. Missing defaults to false.
 
    **Example Response**:
 
