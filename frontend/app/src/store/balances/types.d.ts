@@ -48,6 +48,7 @@ export interface BalanceState {
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalanceWithValue[];
   manualBalanceByLocation: ManualBalanceByLocation;
+  prices: AssetPrices;
 }
 
 export interface ExchangePayload {
@@ -121,4 +122,13 @@ export interface BlockchainTotal {
 
 export type ChainSections = {
   readonly [chain in Blockchain]: Section;
+};
+
+export type AssetPrices = {
+  [asset: string]: BigNumber;
+};
+
+export type AssetPriceResponse = {
+  readonly assets: AssetPrices;
+  readonly targetAsset: string;
 };

@@ -12,7 +12,7 @@ export interface TaskMeta {
   readonly title: string;
   readonly description?: string;
   readonly ignoreResult: boolean;
-  readonly numericKeys?: string[];
+  readonly numericKeys?: string[] | null;
 }
 
 export interface ExchangeMeta extends TaskMeta {

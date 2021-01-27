@@ -25,7 +25,9 @@
         top
         open-delay="400ms"
         :disabled="
-          !!fiatCurrency || renderValue.decimalPlaces() <= floatingPrecision
+          (!!fiatCurrency ||
+            renderValue.decimalPlaces() <= floatingPrecision) &&
+          !tooltip
         "
       >
         <template #activator="{ on, attrs }">
@@ -106,6 +108,8 @@ export default class AmountDisplay extends Vue {
   assetPadding!: number;
   @Prop({ required: false, type: Boolean, default: false })
   pnl!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  tooltip!: boolean;
 
   currency!: Currency;
   privacyMode!: boolean;
@@ -156,7 +160,10 @@ export default class AmountDisplay extends Vue {
   }
 
   get fullValue(): string {
-    return this.renderValue.toFormat(this.renderValue.decimalPlaces());
+    const value = this.convertFiat
+      ? this.convertValue(this.renderValue)
+      : this.renderValue;
+    return value.toFormat(value.decimalPlaces());
   }
 
   private convertValue(value: BigNumber): BigNumber {

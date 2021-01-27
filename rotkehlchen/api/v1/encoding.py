@@ -1398,12 +1398,13 @@ class AssetIconsSchema(Schema):
 
 
 class CurrentAssetsPriceSchema(Schema):
-    assets = fields.List(
+    assets = DelimitedOrNormalList(
         AssetField(required=True),
         required=True,
         validate=webargs.validate.Length(min=1),
     )
     target_asset = AssetField(required=True)
+    ignore_cache = fields.Boolean(missing=False)
     async_query = fields.Boolean(missing=False)
 
 

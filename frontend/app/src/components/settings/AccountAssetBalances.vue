@@ -19,14 +19,33 @@
           :footer-props="footerProps"
         >
           <template #header.usdValue>
-            {{
-              $t('account_asset_balance.headers.value', {
-                symbol: currencySymbol
-              })
-            }}
+            <div class="text-no-wrap">
+              {{
+                $t('account_asset_balance.headers.value', {
+                  symbol: currencySymbol
+                })
+              }}
+            </div>
+          </template>
+          <template #header.price>
+            <div class="text-no-wrap">
+              {{
+                $t('account_asset_balance.headers.price', {
+                  symbol: currencySymbol
+                })
+              }}
+            </div>
           </template>
           <template #item.asset="{ item }">
             <asset-details :asset="item.asset" />
+          </template>
+          <template #item.price="{ item }">
+            <amount-display
+              tooltip
+              show-currency="symbol"
+              fiat-currency="USD"
+              :value="prices[item.asset] ? prices[item.asset] : '-'"
+            />
           </template>
           <template #item.amount="{ item }">
             <amount-display :value="item.amount" />
@@ -46,17 +65,19 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import Fragment from '@/components/helper/Fragment';
 import { footerProps } from '@/config/datatable.common';
-import { AssetBalances } from '@/store/balances/types';
+import { CURRENCY_USD } from '@/data/currencies';
+import { AssetBalances, AssetPrices } from '@/store/balances/types';
 
 @Component({
   components: { Fragment, AmountDisplay },
   computed: {
     ...mapGetters('session', ['floatingPrecision', 'currencySymbol']),
-    ...mapGetters('balances', ['exchangeRate'])
+    ...mapGetters('balances', ['exchangeRate']),
+    ...mapState('balances', ['prices'])
   }
 })
 export default class AccountAssetBalances extends Vue {
@@ -64,14 +85,22 @@ export default class AccountAssetBalances extends Vue {
   readonly headers = [
     { text: this.$tc('account_asset_balance.headers.asset'), value: 'asset' },
     {
+      text: this.$t('account_asset_balance.headers.price', {
+        symbol: CURRENCY_USD
+      }).toString(),
+      value: 'price'
+    },
+    {
       text: this.$tc('account_asset_balance.headers.amount'),
       value: 'amount',
+      width: '100%',
       align: 'end'
     },
     {
       text: this.$tc('account_asset_balance.headers.value'),
       value: 'usdValue',
-      align: 'end'
+      align: 'end',
+      cellClass: 'user-holding user-asset-value'
     }
   ];
 
@@ -80,6 +109,7 @@ export default class AccountAssetBalances extends Vue {
   @Prop({ required: true, type: String })
   title!: string;
 
+  prices!: AssetPrices;
   currencySymbol!: string;
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
@@ -87,6 +117,16 @@ export default class AccountAssetBalances extends Vue {
 </script>
 
 <style scoped lang="scss">
+::v-deep {
+  .user-holding {
+    background-color: rgba(226, 226, 227, 0.2);
+  }
+
+  .user-asset-value {
+    min-width: 150px;
+  }
+}
+
 .account-asset-balances {
   background-color: #fafafa;
 

@@ -1,5 +1,6 @@
 <template>
   <v-container>
+    <price-refresh />
     <v-card class="blockchain-balances mt-8">
       <v-card-title>{{ $t('blockchain_balances.title') }}</v-card-title>
       <v-card-text>
@@ -60,6 +61,7 @@ import { mapGetters } from 'vuex';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountForm from '@/components/accounts/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import {
   AccountWithBalance,
@@ -68,6 +70,7 @@ import {
 
 @Component({
   components: {
+    PriceRefresh,
     AccountForm,
     AccountBalances,
     AssetBalances,

@@ -2330,6 +2330,7 @@ class RestAPI():
     def _get_current_assets_price(
             assets: List[Asset],
             target_asset: Asset,
+            ignore_cache: bool,
     ) -> Dict[str, Any]:
         """Return the current price of the assets in the target asset currency.
         """
@@ -2337,9 +2338,11 @@ class RestAPI():
             f'Querying the current {target_asset.identifier} price of these assets: '
             f'{", ".join([asset.identifier for asset in assets])}',
         )
-        assets_price = {asset: Inquirer().find_usd_price(asset) for asset in assets}
+        assets_price = {
+            asset: Inquirer().find_usd_price(asset, ignore_cache=ignore_cache) for asset in assets
+        }
         if target_asset != A_USD:
-            target_asset_price = Inquirer().find_usd_price(target_asset)
+            target_asset_price = Inquirer().find_usd_price(target_asset, ignore_cache=ignore_cache)
             for asset in assets_price.keys():
                 if asset != target_asset:
                     assets_price[asset] = Price(assets_price[asset] / target_asset_price)
@@ -2356,6 +2359,7 @@ class RestAPI():
             self,
             assets: List[Asset],
             target_asset: Asset,
+            ignore_cache: bool,
             async_query: bool,
     ) -> Response:
         if async_query:
@@ -2363,11 +2367,13 @@ class RestAPI():
                 command='_get_current_assets_price',
                 assets=assets,
                 target_asset=target_asset,
+                ignore_cache=ignore_cache,
             )
 
         response = self._get_current_assets_price(
             assets=assets,
             target_asset=target_asset,
+            ignore_cache=ignore_cache,
         )
         return api_response(_wrap_in_ok_result(response['result']), status_code=HTTPStatus.OK)
 

@@ -1261,14 +1261,16 @@ class CurrentAssetsPriceResource(BaseResource):
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(
-        self,
-        assets: List[Asset],
-        target_asset: Asset,
-        async_query: bool,
+            self,
+            assets: List[Asset],
+            target_asset: Asset,
+            ignore_cache: bool,
+            async_query: bool,
     ) -> Response:
         return self.rest_api.get_current_assets_price(
             assets=assets,
             target_asset=target_asset,
+            ignore_cache=ignore_cache,
             async_query=async_query,
         )
 
@@ -1279,10 +1281,10 @@ class HistoricalAssetsPriceResource(BaseResource):
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(
-        self,
-        assets_timestamp: List[Tuple[Asset, Timestamp]],
-        target_asset: Asset,
-        async_query: bool,
+            self,
+            assets_timestamp: List[Tuple[Asset, Timestamp]],
+            target_asset: Asset,
+            async_query: bool,
     ) -> Response:
         return self.rest_api.get_historical_assets_price(
             assets_timestamp=assets_timestamp,

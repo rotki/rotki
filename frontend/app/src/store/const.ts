@@ -38,7 +38,8 @@ export enum Section {
   STAKING_ADEX = 'staking_adex',
   STAKING_ADEX_HISTORY = 'staking_adex_events',
   DEFI_AIRDROPS = 'defi_airdrops',
-  LEDGER_ACTIONS = 'ledger_actions'
+  LEDGER_ACTIONS = 'ledger_actions',
+  PRICES = 'prices'
 }
 
 export const defiSections: Section[] = [

@@ -64,6 +64,7 @@ import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { Writeable } from '@/types';
 import { DefiAccount, ETH } from '@/typing/types';
+import { uniqueStrings } from '@/utils/array';
 import { Zero } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 
@@ -71,14 +72,6 @@ function isLendingEvent(value: AaveHistoryEvents): value is AaveEvent {
   const lending: string[] = [...AAVE_LENDING_EVENTS];
   return lending.indexOf(value.eventType) !== -1;
 }
-
-const unique = function (
-  value: string,
-  index: number,
-  array: string[]
-): boolean {
-  return array.indexOf(value) === index;
-};
 
 interface DefiGetters {
   totalUsdEarned: (
@@ -210,7 +203,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       const uniqueAddresses: string[] = [
         ...Object.keys(aaveBalances),
         ...Object.keys(aaveHistory)
-      ].filter(unique);
+      ].filter(uniqueStrings);
       aaveAddresses.push(...uniqueAddresses);
     }
 
@@ -218,7 +211,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       const uniqueAddresses: string[] = [
         ...Object.keys(dsrHistory),
         ...Object.keys(dsrBalances.balances)
-      ].filter(unique);
+      ].filter(uniqueStrings);
       makerAddresses.push(...uniqueAddresses);
     }
 
@@ -300,7 +293,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
               ? event.principalAsset
               : event.asset
           )
-          .filter(unique)
+          .filter(uniqueStrings)
           .filter(asset => !knownAssets.includes(asset));
 
         for (const asset of historyAssets) {
@@ -1338,7 +1331,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   uniswapAddresses: ({ uniswapEvents, uniswapBalances }) => {
     return Object.keys(uniswapBalances)
       .concat(Object.keys(uniswapEvents))
-      .filter(unique);
+      .filter(uniqueStrings);
   },
   dexTrades: ({ uniswapTrades }) => (addresses): UniswapTrade[] => {
     const trades: UniswapTrade[] = [];

@@ -96,6 +96,11 @@
         </summary-card>
       </v-col>
     </v-row>
+    <v-row justify="end" class="ma-4">
+      <v-col cols="auto">
+        <price-refresh />
+      </v-col>
+    </v-row>
     <v-row>
       <v-col cols="12">
         <dashboard-asset-table
@@ -127,6 +132,7 @@ import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
 import ManualBalanceCardList from '@/components/dashboard/ManualBalanceCardList.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import SummaryCard from '@/components/dashboard/SummaryCard.vue';
+import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import { TaskType } from '@/model/task-type';
 import {
   AssetBalance,
@@ -139,6 +145,7 @@ import { Blockchain, BTC, ETH, ExchangeInfo, KSM } from '@/typing/types';
 
 @Component({
   components: {
+    PriceRefresh,
     DashboardAssetTable,
     BasePageHeader,
     OverallBalances,

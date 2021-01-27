@@ -1,14 +1,14 @@
 import { AxiosInstance } from 'axios';
-import {
-  axiosSnakeCaseTransformer,
-  setupTransformer
-} from '@/services/axios-tranformers';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import {
   ManualBalance,
   ManualBalances,
   SupportedExchange
 } from '@/services/balances/types';
-import { balanceKeys, basicAxiosTransformer } from '@/services/consts';
+import {
+  balanceAxiosTransformer,
+  basicAxiosTransformer
+} from '@/services/consts';
 import { ActionResult, PendingTask } from '@/services/types-api';
 import {
   handleResponse,
@@ -58,7 +58,7 @@ export class BalancesApi {
           balances
         },
         {
-          transformResponse: setupTransformer(balanceKeys),
+          transformResponse: balanceAxiosTransformer,
           validateStatus: validWithParamsSessionAndExternalService
         }
       )
@@ -73,7 +73,7 @@ export class BalancesApi {
           balances
         },
         {
-          transformResponse: setupTransformer(balanceKeys),
+          transformResponse: balanceAxiosTransformer,
           validateStatus: validWithParamsSessionAndExternalService
         }
       )
@@ -84,7 +84,7 @@ export class BalancesApi {
     return this.axios
       .delete<ActionResult<ManualBalances>>('balances/manual', {
         data: { labels },
-        transformResponse: setupTransformer(balanceKeys),
+        transformResponse: balanceAxiosTransformer,
         validateStatus: validWithParamsSessionAndExternalService
       })
       .then(handleResponse);
@@ -105,6 +105,25 @@ export class BalancesApi {
           ignoreCache: ignoreCache ? true : undefined
         }),
         validateStatus: validWithParamsSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async prices(
+    assets: string[],
+    targetAsset: string,
+    ignoreCache: boolean
+  ): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>('/assets/prices/current', {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          assets: assets.join(','),
+          targetAsset,
+          ignoreCache: ignoreCache ? ignoreCache : undefined
+        }),
+        validateStatus: validWithSessionAndExternalService,
         transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);

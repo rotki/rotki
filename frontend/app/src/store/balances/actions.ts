@@ -1,5 +1,5 @@
 import { ActionTree } from 'vuex';
-import { currencies } from '@/data/currencies';
+import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import {
   BlockchainMetadata,
@@ -11,20 +11,26 @@ import {
 import { TaskType } from '@/model/task-type';
 import { blockchainBalanceKeys } from '@/services/balances/consts';
 import {
+  Balances,
   BlockchainBalances,
+  BtcBalances,
   ManualBalance,
-  ManualBalances
+  ManualBalances,
+  ManualBalanceWithValue
 } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { XpubAccountData } from '@/services/types-api';
 import { chainSection } from '@/store/balances/const';
+import { MUTATION_UPDATE_PRICES } from '@/store/balances/mutation-types';
 import {
   AccountPayload,
   AddAccountsPayload,
   AllBalancePayload,
   AssetBalances,
+  AssetPriceResponse,
+  AssetPrices,
   BalanceState,
   BlockchainAccountPayload,
   BlockchainBalancePayload,
@@ -35,8 +41,9 @@ import {
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { RotkehlchenState } from '@/store/types';
+import { RotkehlchenState, StatusPayload } from '@/store/types';
 import { isLoading, setStatus, showError } from '@/store/utils';
+import { Writeable } from '@/types';
 import {
   Blockchain,
   BTC,
@@ -45,6 +52,7 @@ import {
   KSM,
   SupportedBlockchains
 } from '@/typing/types';
+import { chunkArray } from '@/utils/array';
 import { assert } from '@/utils/assertions';
 
 function removeTag(tags: string[] | null, tagName: string): string[] | null {
@@ -81,6 +89,24 @@ function removeTags<T extends { tags: string[] | null }>(
   }
   return accounts;
 }
+
+const updateBalancePrice: (
+  balances: Balances,
+  prices: AssetPrices
+) => Balances = (balances, assetPrices) => {
+  for (const asset in balances) {
+    const assetPrice = assetPrices[asset];
+    if (!assetPrice) {
+      continue;
+    }
+    const assetInfo = balances[asset];
+    balances[asset] = {
+      amount: assetInfo.amount,
+      usdValue: assetInfo.amount.times(assetPrice)
+    };
+  }
+  return balances;
+};
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async fetchBalances(
@@ -783,5 +809,167 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       );
       return false;
     }
+  },
+
+  async updatePrices({ commit, state }, prices: AssetPrices): Promise<void> {
+    const manualBalances = [...state.manualBalances];
+    const totals = { ...state.totals };
+    const eth = { ...state.eth };
+    const btc: BtcBalances = {
+      standalone: state.btc.standalone ? { ...state.btc.standalone } : {},
+      xpubs: state.btc.xpubs ? [...state.btc.xpubs] : []
+    };
+    const kusama = { ...state.ksm };
+    const exchanges = { ...state.exchangeBalances };
+
+    for (const asset in totals) {
+      const assetPrice = prices[asset];
+      if (!assetPrice) {
+        continue;
+      }
+      totals[asset] = {
+        amount: totals[asset].amount,
+        usdValue: totals[asset].amount.times(assetPrice)
+      };
+    }
+    commit('updateTotals', totals);
+
+    for (let i = 0; i < manualBalances.length; i++) {
+      const balance: Writeable<ManualBalanceWithValue> = manualBalances[i];
+      const assetPrice = prices[balance.asset];
+      if (!assetPrice) {
+        continue;
+      }
+      balance.usdValue = balance.amount.times(assetPrice);
+    }
+    commit('manualBalances', manualBalances);
+
+    for (const address in eth) {
+      const balances = eth[address];
+      eth[address] = {
+        assets: updateBalancePrice(balances.assets, prices),
+        liabilities: updateBalancePrice(balances.liabilities, prices)
+      };
+    }
+
+    commit('updateEth', eth);
+
+    const btcPrice = prices[BTC];
+    if (btcPrice) {
+      for (const address in btc.standalone) {
+        const balance = btc.standalone[address];
+        btc.standalone[address] = {
+          amount: balance.amount,
+          usdValue: balance.amount.times(btcPrice)
+        };
+      }
+      for (let i = 0; i < btc.xpubs.length; i++) {
+        const xpub = btc.xpubs[i];
+        for (const address in xpub.addresses) {
+          const balance = xpub.addresses[address];
+          xpub.addresses[address] = {
+            amount: balance.amount,
+            usdValue: balance.amount.times(btcPrice)
+          };
+        }
+      }
+    }
+
+    commit('updateBtc', btc);
+
+    for (const address in kusama) {
+      const balances = kusama[address];
+      kusama[address] = {
+        assets: updateBalancePrice(balances.assets, prices),
+        liabilities: updateBalancePrice(balances.liabilities, prices)
+      };
+    }
+
+    commit('updateKsm', kusama);
+
+    for (const exchange in exchanges) {
+      exchanges[exchange] = updateBalancePrice(exchanges[exchange], prices);
+    }
+
+    commit('updateExchangeBalances', exchanges);
+  },
+
+  async fetchPrices(
+    {
+      state,
+      commit,
+      rootGetters: {
+        'tasks/isTaskRunning': isTaskRunning,
+        'balances/aggregatedAssets': assets
+      }
+    },
+    ignoreCache: boolean
+  ): Promise<void> {
+    const taskType = TaskType.UPDATE_PRICES;
+    if (isTaskRunning(taskType)) {
+      return;
+    }
+    const fetchPrices: (assets: string[]) => Promise<void> = async assets => {
+      const { taskId } = await api.balances.prices(
+        assets,
+        CURRENCY_USD,
+        ignoreCache
+      );
+      const task = createTask(taskId, taskType, {
+        title: i18n.t('actions.session.fetch_prices.task.title').toString(),
+        ignoreResult: false,
+        numericKeys: null
+      });
+      commit('tasks/add', task, { root: true });
+      const { result } = await taskCompletion<AssetPriceResponse, TaskMeta>(
+        taskType,
+        `${taskId}`
+      );
+      commit(MUTATION_UPDATE_PRICES, {
+        ...state.prices,
+        ...result.assets
+      });
+    };
+
+    try {
+      await Promise.all(
+        chunkArray<string>(assets, 100).map(value => fetchPrices(value))
+      );
+    } catch (e) {
+      const title = i18n
+        .t('actions.session.fetch_prices.error.title')
+        .toString();
+      const message = i18n
+        .t('actions.session.fetch_prices.error.message', {
+          error: e.message
+        })
+        .toString();
+      notify(message, title, Severity.ERROR, true);
+    }
+  },
+
+  async refreshPrices(
+    { commit, dispatch, state },
+    ignoreCache: boolean
+  ): Promise<void> {
+    commit(
+      'setStatus',
+      {
+        section: Section.PRICES,
+        status: Status.LOADING
+      } as StatusPayload,
+      { root: true }
+    );
+    await dispatch('fetchExchangeRates');
+    await dispatch('fetchPrices', ignoreCache);
+    await dispatch('updatePrices', state.prices);
+    commit(
+      'setStatus',
+      {
+        section: Section.PRICES,
+        status: Status.LOADED
+      } as StatusPayload,
+      { root: true }
+    );
   }
 };

@@ -4,9 +4,9 @@ import { default as BigNumber } from 'bignumber.js';
 const isNumber = /^-?\d+(\.\d+)?(E-\d{0,2})?$/;
 
 const createReviver = (
-  numericKeys: string[]
+  numericKeys: string[] | null
 ): ((key: string, value: any) => any) => (key: string, value: any) => {
-  const checkForBN = numericKeys.includes(key);
+  const checkForBN = numericKeys === null || numericKeys.includes(key);
   if (
     checkForBN &&
     value &&
@@ -65,7 +65,7 @@ export const axiosCamelCaseTransformer: AxiosTransformer = (data, _headers) =>
   convertKeys(data, true);
 
 export const setupJsonTransformer: (
-  numericKeys: string[]
+  numericKeys: string[] | null
 ) => AxiosTransformer = numericKeys => {
   const reviver = createReviver(numericKeys);
   return (data, _headers) => {
@@ -80,6 +80,6 @@ export const setupJsonTransformer: (
   };
 };
 
-export function setupTransformer(numericKeys: string[] = []) {
+export function setupTransformer(numericKeys: string[] | null = null) {
   return [setupJsonTransformer(numericKeys), axiosCamelCaseTransformer];
 }
