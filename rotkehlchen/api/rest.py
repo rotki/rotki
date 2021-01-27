@@ -1860,6 +1860,11 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
+    def purge_module_data(self, module_name: ModuleName) -> Response:
+        self.rotkehlchen.data.db.purge_module_data(module_name)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
     def _eth_module_query(
             self,
             module: str,

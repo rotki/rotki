@@ -29,6 +29,7 @@ from rotkehlchen.api.v1.encoding import (
     DataImportSchema,
     EditSettingsSchema,
     EthereumTransactionQuerySchema,
+    EthereumModuleDataSchema,
     ExchangeBalanceQuerySchema,
     ExchangeRatesSchema,
     ExchangesDataResourceSchema,
@@ -993,6 +994,14 @@ class DefiBalancesResource(BaseResource):
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_defi_balances(async_query)
+
+
+class EthereumModuleDataResource(BaseResource):
+    delete_schema = EthereumModuleDataSchema()
+
+    @use_kwargs(delete_schema, location='view_args')  # type: ignore
+    def delete(self, module_name: ModuleName) -> Response:
+        return self.rest_api.purge_module_data(module_name)
 
 
 class MakerDAODSRBalanceResource(BaseResource):
