@@ -1061,7 +1061,6 @@ class DBHandler:
             self.delete_uniswap_events_data()
         elif module_name == 'aave':
             self.delete_aave_data()
-            logger.debug('Purging uniswap data from the DB')
         elif module_name == 'adex':
             self.delete_adex_events_data()
         elif module_name == 'yearn_vaults':

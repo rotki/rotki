@@ -24,6 +24,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
@@ -258,6 +259,17 @@ def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_acco
     _query_borrowing_aave_history_test(setup, rotkehlchen_api_server)
     # Run it 2 times to make sure that data can be queried properly from the DB
     _query_borrowing_aave_history_test(setup, rotkehlchen_api_server)
+
+    # Make sure events end up in the DB
+    assert len(rotki.data.db.get_aave_events(AAVE_TEST_ACC_3)) != 0
+    # test adex data purging from the db works
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'ethereummoduledataresource',
+        module_name='aave',
+    ))
+    assert_simple_ok_response(response)
+    assert len(rotki.data.db.get_aave_events(AAVE_TEST_ACC_3)) == 0
 
 
 def _test_for_duplicates_and_negatives(setup: BalancesTestSetup, server: APIServer) -> None:

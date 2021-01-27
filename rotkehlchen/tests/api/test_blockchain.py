@@ -56,7 +56,7 @@ def test_query_empty_blockchain_balances(rotkehlchen_api_server):
     """
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "named_blockchain_balances_resource",
+        'named_blockchain_balances_resource',
         blockchain='ETH',
     ))
     assert_proper_response(response)
