@@ -1186,7 +1186,7 @@
     },
     "BCP": {
         "coingecko": "piedao-balanced-crypto-pie",
-	"cryptocompare": "",
+        "cryptocompare": "",
         "ethereum_address": "0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14",
         "ethereum_token_decimals": 18,
         "name": "PieDAO Balanced Crypto Pie",
@@ -1839,7 +1839,7 @@
     },
     "BTC++": {
         "coingecko": "piedao-btc",
-	"cryptocompare": "",
+        "cryptocompare": "",
         "ethereum_address": "0x0327112423F3A68efdF1fcF402F6c5CB9f7C33fd",
         "ethereum_token_decimals": 18,
         "name": "PieDAO BTC++ ",
@@ -3444,7 +3444,7 @@
     },
     "DEFI++": {
         "coingecko": "piedao-defi",
-	"cryptocompare": "",
+        "cryptocompare": "",
         "ethereum_address": "0x8D1ce361eb68e9E05573443C407D4A3Bed23B033",
         "ethereum_token_decimals": 18,
         "name": "PieDAO DEFI++ ",
@@ -11728,7 +11728,7 @@
     },
     "TORN": {
         "coingecko": "tornado-cash",
-	"cryptocompare": "",
+        "cryptocompare": "",
         "ethereum_address": "0x77777FeDdddFfC19Ff86DB637967013e6C6A116C",
         "ethereum_token_decimals": 18,
         "name": "TornadoCash",
