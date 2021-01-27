@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
@@ -13,11 +13,7 @@ from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
 
-from .typing import (
-    DEFAULT_HISTORICAL_PRICE_ORACLE_ORDER,
-    HistoricalPriceOracle,
-    HistoricalPriceOracleInstance,
-)
+from .typing import HistoricalPriceOracle, HistoricalPriceOracleInstance
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -75,15 +71,14 @@ class PriceHistorian():
     __instance: Optional['PriceHistorian'] = None
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
-    _oracle_instances: List[Tuple[HistoricalPriceOracle, HistoricalPriceOracleInstance]]
-    _oracle_order: Sequence[HistoricalPriceOracle]
+    _oracles: Optional[List[HistoricalPriceOracle]] = None
+    _oracle_instances: Optional[List[HistoricalPriceOracleInstance]] = None
 
     def __new__(
             cls,
             data_directory: Path = None,
             cryptocompare: 'Cryptocompare' = None,
             coingecko: 'Coingecko' = None,
-            oracle_order: Sequence[HistoricalPriceOracle] = None,
     ) -> 'PriceHistorian':
         if PriceHistorian.__instance is not None:
             return PriceHistorian.__instance
@@ -92,55 +87,20 @@ class PriceHistorian():
         assert cryptocompare, 'arguments should be given at the first instantiation'
         assert coingecko, 'arguments should be given at the first instantiation'
 
-        if oracle_order is None:
-            oracle_order = DEFAULT_HISTORICAL_PRICE_ORACLE_ORDER
-
-        if set(oracle_order) != set(HistoricalPriceOracle):
-            raise AssertionError('All historical price oracles are required')
-
-        oracle_instances = cls.get_oracle_instances(
-            oracle_order=oracle_order,
-            cryptocompare=cryptocompare,
-            coingecko=coingecko,
-        )
         PriceHistorian.__instance = object.__new__(cls)
         PriceHistorian._cryptocompare = cryptocompare
         PriceHistorian._coingecko = coingecko
-        PriceHistorian._oracle_instances = oracle_instances
-        PriceHistorian._oracle_order = oracle_order
 
         return PriceHistorian.__instance
 
     @staticmethod
-    def get_oracle_instances(
-            oracle_order: Sequence[HistoricalPriceOracle],
-            cryptocompare: 'Cryptocompare',
-            coingecko: 'Coingecko',
-    ) -> List[Tuple[HistoricalPriceOracle, HistoricalPriceOracleInstance]]:
-        oracle_instances: List[Tuple[HistoricalPriceOracle, HistoricalPriceOracleInstance]]
-        oracle_instances = []
-        for oracle in oracle_order:
-            if oracle == HistoricalPriceOracle.COINGECKO:
-                oracle_instances.append((oracle, coingecko))
-            elif oracle == HistoricalPriceOracle.CRYPTOCOMPARE:
-                oracle_instances.append((oracle, cryptocompare))
-            else:
-                raise AssertionError(f'Unexpected HistoricalPriceOracle: {oracle}')
+    def set_oracles(oracles: List[HistoricalPriceOracle]) -> None:
+        if len(oracles) == 0 or len(oracles) != len(set(oracles)):
+            raise AssertionError("Oracles can't be empty or have repeated items")
 
-        return oracle_instances
-
-    @staticmethod
-    def set_oracle_order(oracle_order: Sequence[HistoricalPriceOracle]) -> None:
-        if set(oracle_order) != set(HistoricalPriceOracle):
-            raise AssertionError('All historical price oracles are required')
-
-        oracle_instances = PriceHistorian().get_oracle_instances(
-            oracle_order=oracle_order,
-            cryptocompare=PriceHistorian()._cryptocompare,
-            coingecko=PriceHistorian()._coingecko,
-        )
-        PriceHistorian()._oracle_order = oracle_order
-        PriceHistorian()._oracle_instances = oracle_instances
+        instance = PriceHistorian()
+        instance._oracles = oracles
+        instance._oracle_instances = [getattr(instance, f'_{str(oracle)}') for oracle in oracles]
 
     @staticmethod
     def query_historical_price(
@@ -172,10 +132,9 @@ class PriceHistorian():
         if from_asset == to_asset:
             return Price(FVal('1'))
 
-        is_from_fiat_to_fiat = from_asset.is_fiat() and to_asset.is_fiat()
         # Querying historical forex data is attempted first via exchangerates API,
         # and then via any price oracle that has fiat to fiat.
-        if is_from_fiat_to_fiat:
+        if from_asset.is_fiat() and to_asset.is_fiat():
             price = Inquirer().query_historical_fiat_exchange_rates(
                 from_fiat_currency=from_asset,
                 to_fiat_currency=to_asset,
@@ -183,33 +142,23 @@ class PriceHistorian():
             )
             if price is not None:
                 return price
+            # else cryptocompare also has historical fiat to fiat data
 
         instance = PriceHistorian()
+        oracles = instance._oracles
+        oracle_instances = instance._oracle_instances
+        assert isinstance(oracles, list) and isinstance(oracle_instances, list), (
+            'PriceHistorian should never be called before the setting the oracles'
+        )
         price = Price(ZERO)
-        for oracle, oracle_instance in instance._oracle_instances:
-            oracle_properties = oracle.properties()
-
-            if is_from_fiat_to_fiat and not oracle_properties.has_fiat_to_fiat:
-                log.debug(
-                    f"Historical price oracle {oracle} can't be used "
-                    f"for fiat to fiat. Skipping",
-                )
-                continue
-
-            if oracle_instance.rate_limited_in_last() is True:
-                log.debug(
-                    f"Historical price oracle {oracle} can't be used "
-                    f"due to rate limits. Skipping",
-                )
-                continue
-
+        for oracle, oracle_instance in zip(oracles, oracle_instances):
             can_query_history = oracle_instance.can_query_history(
                 from_asset=from_asset,
                 to_asset=to_asset,
-                timestam=timestamp,
+                timestamp=timestamp,
             )
             if can_query_history is False:
-                pass
+                continue
 
             try:
                 price = oracle_instance.query_historical_price(
@@ -236,14 +185,6 @@ class PriceHistorian():
                     timestamp=timestamp,
                 )
                 return price
-
-            log.error(
-                f'Historical price oracle {oracle} failed to request and got zero price',
-                price=price,
-                from_asset=from_asset,
-                to_asset=to_asset,
-                timestamp=timestamp,
-            )
 
         raise NoPriceForGivenTimestamp(
             from_asset=from_asset,

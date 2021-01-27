@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING, NamedTuple, Union
+from typing import TYPE_CHECKING, Union
 
 from rotkehlchen.errors import DeserializationError
 
@@ -11,13 +11,8 @@ if TYPE_CHECKING:
 HistoricalPriceOracleInstance = Union['Coingecko', 'Cryptocompare']
 
 
-class HistoricalPriceOracleProperties(NamedTuple):
-    has_fiat_to_fiat: bool
-
-
 class HistoricalPriceOracle(Enum):
-    """Supported oracles for querying historical prices
-    """
+    """Supported oracles for querying historical prices"""
     COINGECKO = 1
     CRYPTOCOMPARE = 2
 
@@ -39,15 +34,8 @@ class HistoricalPriceOracle(Enum):
             return cls.CRYPTOCOMPARE
         raise DeserializationError(f'Failed to deserialize historical price oracle: {name}')
 
-    def properties(self) -> HistoricalPriceOracleProperties:
-        if self == HistoricalPriceOracle.COINGECKO:
-            return HistoricalPriceOracleProperties(has_fiat_to_fiat=False)
-        if self == HistoricalPriceOracle.CRYPTOCOMPARE:
-            return HistoricalPriceOracleProperties(has_fiat_to_fiat=True)
-        raise AssertionError(f'Unexpected HistoricalPriceOracle: {self}')
 
-
-DEFAULT_HISTORICAL_PRICE_ORACLE_ORDER = [
+DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER = [
     HistoricalPriceOracle.CRYPTOCOMPARE,
     HistoricalPriceOracle.COINGECKO,
 ]

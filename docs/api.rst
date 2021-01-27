@@ -576,7 +576,7 @@ Getting or modifying settings
               "submit_usage_analytics": true,
               "kraken_account_type": "intermediate",
               "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
-              "current_price_oracles": ["cryptocompare", "coingecko"],
+              "current_price_oracles": ["coingecko"],
               "historical_price_oracles": ["cryptocompare", "coingecko"]
           },
           "message": ""
@@ -672,8 +672,8 @@ Getting or modifying settings
               "submit_usage_analytics": true,
               "kraken_account_type": "intermediate",
               "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
-              "current_price_oracles": ["cryptocompare", "coingecko"],
-              "historical_price_oracles": ["cryptocompare", "coingecko"]
+              "current_price_oracles": ["cryptocompare"],
+              "historical_price_oracles": ["coingecko", "cryptocompare"]
           },
           "message": ""
       }

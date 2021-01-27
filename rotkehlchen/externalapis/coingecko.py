@@ -15,7 +15,7 @@ from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
-from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 PRICE_HISTORY_FILE_PREFIX = 'gecko_price_history_'
 COINGECKO_QUERY_RETRY_TIMES = 4
-COINGECKO_RATE_LIMIT_WAIT_TIME = 60  # rate limit is 100 requests/minute
 
 
 class CoingeckoImageURLs(NamedTuple):
@@ -108,7 +107,6 @@ class Coingecko():
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.data_directory = data_directory
-        self.last_rate_limit = 0
 
     @overload  # noqa: F811
     def _query(
@@ -157,7 +155,6 @@ class Coingecko():
                 # Coingecko allows only 100 calls per minute. If you get 429 it means you
                 # exceeded this and are throttled until the next minute window
                 # backoff and retry 4 times =  2.5 + 3.33 + 5 + 10 = at most 20.8 secs
-                self.last_rate_limit = ts_now()
                 if tries >= 1:
                     backoff_seconds = 10 / tries
                     log.debug(
@@ -298,11 +295,20 @@ class Coingecko():
             )
             return Price(ZERO)
 
-    def rate_limited_in_last(self, seconds: int = COINGECKO_RATE_LIMIT_WAIT_TIME) -> bool:
-        """
-        Checks when we were last rate limited by CG and if it was within the given seconds
-        """
-        return ts_now() - self.last_rate_limit <= seconds
+    def can_query_history(  # pylint: disable=no-self-use
+            self,
+            from_asset: Asset,  # pylint: disable=unused-argument
+            to_asset: Asset,  # pylint: disable=unused-argument
+            timestamp: Timestamp,  # pylint: disable=unused-argument
+            seconds: Optional[int] = None,  # pylint: disable=unused-argument
+    ) -> bool:
+        return True  # noop for coingecko
+
+    def rate_limited_in_last(  # pylint: disable=no-self-use
+            self,
+            seconds: Optional[int] = None,  # pylint: disable=unused-argument
+    ) -> bool:
+        return False  # noop for coingecko
 
     def _get_cached_price(self, from_asset: Asset, to_asset: Asset, date: str) -> Optional[Price]:
         price_history_dir = get_or_make_price_history_dir(self.data_directory)

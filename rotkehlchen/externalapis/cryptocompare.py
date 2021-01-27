@@ -377,7 +377,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             self,
             method_name: Literal[
                 'query_endpoint_histohour',
-                'query_endpoint_price',
+                'query_current_price',
                 'query_endpoint_pricehistorical',
             ],
             from_asset: Asset,
@@ -428,21 +428,12 @@ class Cryptocompare(ExternalServiceWithApiKey):
                     'conversionSymbol': entry['conversionSymbol'],
                 })
             result['Data'] = data
-        elif method_name == 'query_endpoint_price':
-            result = {
-                to_asset.identifier: _multiply_str_nums(
-                    # up until 23/09/2020 cryptocompare may return {} due to bug. Handle
-                    # that case by assuming 0 if that happens
-                    result1.get(intermediate_asset.identifier, '0'),
-                    result2.get(to_asset.identifier, '0'),
-                ),
-            }
-        elif method_name == 'query_endpoint_pricehistorical':
-            result = result1 * result2
-        else:
-            raise RuntimeError(f'Illegal method_name: {method_name}. Should never happen')
+            return result
 
-        return result
+        if method_name in ('query_current_price', 'query_endpoint_pricehistorical'):
+            return result1 * result2
+
+        raise RuntimeError(f'Illegal method_name: {method_name}. Should never happen')
 
     def query_endpoint_histohour(
             self,
@@ -483,12 +474,12 @@ class Cryptocompare(ExternalServiceWithApiKey):
         result = self._api_query(path=query_path)
         return result
 
-    def query_endpoint_price(
+    def query_current_price(
             self,
             from_asset: Asset,
             to_asset: Asset,
             handling_special_case: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> Price:
         """Returns the current price of an asset compared to another asset
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
@@ -500,7 +491,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         )
         if special_asset and not handling_special_case:
             return self._special_case_handling(
-                method_name='query_endpoint_price',
+                method_name='query_current_price',
                 from_asset=from_asset,
                 to_asset=to_asset,
             )
@@ -512,25 +503,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         query_path = f'price?fsym={cc_from_asset_symbol}&tsyms={cc_to_asset_symbol}'
         result = self._api_query(path=query_path)
-        return result
-
-    def query_current_price(
-            self,
-            from_asset: Asset,
-            to_asset: Asset,
-            handling_special_case: bool = False,
-    ) -> Price:
-        """Wrapper of `query_endpoint_price()` with a standardized name accross
-        the current price oracles.
-
-        May raise RemoteError and PriceQueryUnsupportedAsset
-        """
-        result = self.query_endpoint_price(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            handling_special_case=handling_special_case,
-        )
-        cc_to_asset_symbol = to_asset.to_cryptocompare()
+        # Up until 23/09/2020 cryptocompare may return {} due to bug.
+        # Handle that case by assuming 0 if that happens
         if cc_to_asset_symbol not in result:
             return Price(ZERO)
 
@@ -579,6 +553,14 @@ class Cryptocompare(ExternalServiceWithApiKey):
         if to_asset == 'BTC':
             query_path += '&tryConversion=false'
         result = self._api_query(query_path)
+        # Up until 23/09/2020 cryptocompare may return {} due to bug.
+        # Handle that case by assuming 0 if that happens
+        if (
+            cc_from_asset_symbol not in result or
+            cc_to_asset_symbol not in result[cc_from_asset_symbol]
+        ):
+            return Price(ZERO)
+
         return Price(FVal(result[cc_from_asset_symbol][cc_to_asset_symbol]))
 
     def get_cached_data(self, from_asset: Asset, to_asset: Asset) -> Optional[PriceHistoryData]:

@@ -4,17 +4,7 @@ import logging
 from enum import Enum
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    Iterable,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Union
 
 import requests
 
@@ -107,10 +97,6 @@ ASSETS_UNDERLYING_BTC = (
 CurrentPriceOracleInstance = Union['Coingecko', 'Cryptocompare']
 
 
-class CurrentPriceOracleProperties(NamedTuple):
-    has_fiat_to_fiat: bool
-
-
 class CurrentPriceOracle(Enum):
     """Supported oracles for querying current prices
     """
@@ -136,7 +122,7 @@ class CurrentPriceOracle(Enum):
         raise DeserializationError(f'Failed to deserialize current price oracle: {name}')
 
 
-DEFAULT_CURRENT_PRICE_ORACLE_ORDER = [
+DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
     CurrentPriceOracle.CRYPTOCOMPARE,
     CurrentPriceOracle.COINGECKO,
 ]
@@ -213,15 +199,14 @@ class Inquirer():
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
     _ethereum: Optional['EthereumManager'] = None
-    _oracle_instances: List[Tuple[CurrentPriceOracle, CurrentPriceOracleInstance]]
-    _oracle_order: Sequence[CurrentPriceOracle]
+    _oracles: Optional[List[CurrentPriceOracle]] = None
+    _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
 
     def __new__(
             cls,
             data_dir: Path = None,
             cryptocompare: 'Cryptocompare' = None,
             coingecko: 'Coingecko' = None,
-            oracle_order: Sequence[CurrentPriceOracle] = None,
     ) -> 'Inquirer':
         if Inquirer.__instance is not None:
             return Inquirer.__instance
@@ -230,25 +215,11 @@ class Inquirer():
         assert cryptocompare, 'arguments should be given at the first instantiation'
         assert coingecko, 'arguments should be given at the first instantiation'
 
-        if oracle_order is None:
-            oracle_order = DEFAULT_CURRENT_PRICE_ORACLE_ORDER
-
-        if set(oracle_order) != set(CurrentPriceOracle):
-            raise AssertionError('All current price oracles are required')
-
-        oracle_instances = cls.get_oracle_instances(
-            oracle_order=oracle_order,
-            cryptocompare=cryptocompare,
-            coingecko=coingecko,
-        )
-
         Inquirer.__instance = object.__new__(cls)
 
         Inquirer.__instance._data_directory = data_dir
         Inquirer._cryptocompare = cryptocompare
         Inquirer._coingecko = coingecko
-        Inquirer._oracle_instances = oracle_instances
-        Inquirer._oracle_order = oracle_order
         Inquirer._cached_current_price = {}
         # Make price history directory if it does not exist
         price_history_dir = get_or_make_price_history_dir(data_dir)
@@ -264,39 +235,17 @@ class Inquirer():
         return Inquirer.__instance
 
     @staticmethod
-    def get_oracle_instances(
-        oracle_order: Sequence[CurrentPriceOracle],
-        cryptocompare: 'Cryptocompare',
-        coingecko: 'Coingecko',
-    ) -> List[Tuple[CurrentPriceOracle, CurrentPriceOracleInstance]]:
-        oracle_instances: List[Tuple[CurrentPriceOracle, CurrentPriceOracleInstance]]
-        oracle_instances = []
-        for oracle in oracle_order:
-            if oracle == CurrentPriceOracle.COINGECKO:
-                oracle_instances.append((oracle, coingecko))
-            elif oracle == CurrentPriceOracle.CRYPTOCOMPARE:
-                oracle_instances.append((oracle, cryptocompare))
-            else:
-                raise AssertionError(f'Unexpected CurrentPriceOracle: {oracle}')
-
-        return oracle_instances
-
-    @staticmethod
     def inject_ethereum(ethereum: 'EthereumManager') -> None:
         Inquirer()._ethereum = ethereum
 
     @staticmethod
-    def set_oracle_order(oracle_order: Sequence[CurrentPriceOracle]) -> None:
-        if set(oracle_order) != set(CurrentPriceOracle):
-            raise AssertionError('All current price oracles are required')
+    def set_oracles(oracles: List[CurrentPriceOracle]) -> None:
+        if len(oracles) == 0 or len(oracles) != len(set(oracles)):
+            raise AssertionError("Oracles can't be empty or have repeated items")
 
-        oracle_instances = Inquirer().get_oracle_instances(
-            oracle_order=oracle_order,
-            cryptocompare=Inquirer()._cryptocompare,
-            coingecko=Inquirer()._coingecko,
-        )
-        Inquirer()._oracle_order = oracle_order
-        Inquirer()._oracle_instances = oracle_instances
+        instance = Inquirer()
+        instance._oracles = oracles
+        instance._oracle_instances = [getattr(instance, f'_{str(oracle)}') for oracle in oracles]
 
     @staticmethod
     def find_usd_price(asset: Asset, ignore_cache: bool = False) -> Price:
@@ -304,8 +253,9 @@ class Inquirer():
 
         Returns Price(ZERO) if all options have been exhausted and errors are logged in the logs
         """
+        instance = Inquirer()
         if ignore_cache is False:
-            cache = Inquirer()._cached_current_price.get(asset, None)
+            cache = instance._cached_current_price.get(asset, None)
             cache_is_valid = (
                 cache is not None and
                 ts_now() - cache.time <= CURRENT_PRICE_CACHE_SECS
@@ -314,7 +264,7 @@ class Inquirer():
                 return cache.price
 
         if asset.identifier in SPECIAL_SYMBOLS:
-            ethereum = Inquirer()._ethereum
+            ethereum = instance._ethereum
             assert ethereum, 'Inquirer should never be called before the injection of ethereum'
             underlying_asset_price = get_underlying_asset_price(asset.identifier)
             usd_price = handle_defi_price_query(
@@ -330,13 +280,14 @@ class Inquirer():
             Inquirer._cached_current_price[asset] = CachedPriceEntry(price=price, time=ts_now())
             return price
 
+        oracles = instance._oracles
+        oracle_instances = instance._oracle_instances
+        assert isinstance(oracles, list) and isinstance(oracle_instances, list), (
+            'Inquirer should never be called before the setting the oracles'
+        )
         price = Price(ZERO)
-        for oracle, oracle_instance in Inquirer()._oracle_instances:
+        for oracle, oracle_instance in zip(oracles, oracle_instances):
             if oracle_instance.rate_limited_in_last() is True:
-                log.debug(
-                    f"Current price oracle {oracle} can't be used for querying "
-                    f'the USD price for {asset.identifier} due to rate limits. Skipping',
-                )
                 continue
 
             try:
@@ -358,11 +309,6 @@ class Inquirer():
                     price=price,
                 )
                 break
-
-            log.error(
-                f'Current price oracle {oracle} failed to request '
-                f'USD price for {asset.identifier} and got zero price.',
-            )
 
         Inquirer._cached_current_price[asset] = CachedPriceEntry(price=price, time=ts_now())
         return price

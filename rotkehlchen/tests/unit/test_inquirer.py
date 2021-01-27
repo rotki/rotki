@@ -13,7 +13,7 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import (
     CURRENT_PRICE_CACHE_SECS,
-    DEFAULT_CURRENT_PRICE_ORACLE_ORDER,
+    DEFAULT_CURRENT_PRICE_ORACLES_ORDER,
     CurrentPriceOracle,
     _query_exchanges_rateapi,
 )
@@ -118,7 +118,7 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
         return price
 
     cc_patch = patch.object(
-        inquirer._oracle_instances[0][1],
+        inquirer._cryptocompare,
         'query_current_price',
         wraps=mock_query_price,
     )
@@ -151,7 +151,7 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
 def test_all_common_methods_implemented():
     """Test all current price oracles implement the expected methods.
     """
-    for oracle in DEFAULT_CURRENT_PRICE_ORACLE_ORDER:
+    for oracle in DEFAULT_CURRENT_PRICE_ORACLES_ORDER:
         if oracle == CurrentPriceOracle.COINGECKO:
             instance = Coingecko
         elif oracle == CurrentPriceOracle.CRYPTOCOMPARE:
@@ -169,22 +169,24 @@ def test_all_common_methods_implemented():
         assert callable(instance.query_current_price)
 
 
-def test_oracle_instances_default_order(inquirer):
-    expected_oracle_instances = [
-        (CurrentPriceOracle.CRYPTOCOMPARE, inquirer._cryptocompare),
-        (CurrentPriceOracle.COINGECKO, inquirer._coingecko),
-    ]
+def test_set_oracles_default_order(inquirer):
+    """Tested via fixture call to 'set_oracles'"""
+    expected_oracles = [CurrentPriceOracle.CRYPTOCOMPARE, CurrentPriceOracle.COINGECKO]
+    expected_oracle_instances = [inquirer._cryptocompare, inquirer._coingecko]
+
+    assert inquirer._oracles == expected_oracles
     assert inquirer._oracle_instances == expected_oracle_instances
 
 
-@pytest.mark.parametrize('current_oracle_order', [
-    [CurrentPriceOracle.COINGECKO, CurrentPriceOracle.CRYPTOCOMPARE],
+@pytest.mark.parametrize('current_price_oracles_order', [
+    [CurrentPriceOracle.COINGECKO],
 ])
-def test_oracle_instances_custom_order(inquirer):
-    expected_oracle_instances = [
-        (CurrentPriceOracle.COINGECKO, inquirer._coingecko),
-        (CurrentPriceOracle.CRYPTOCOMPARE, inquirer._cryptocompare),
-    ]
+def test_set_oracles_custom_order(inquirer):
+    """Tested via fixture call to 'set_oracles'"""
+    expected_oracles = [CurrentPriceOracle.COINGECKO]
+    expected_oracle_instances = [inquirer._coingecko]
+
+    assert inquirer._oracles == expected_oracles
     assert inquirer._oracle_instances == expected_oracle_instances
 
 
@@ -194,17 +196,15 @@ def test_find_usd_price_all_rate_limited_in_last(inquirer):  # pylint: disable=u
     """Test zero price is returned when all the oracles have exceeded the rate
     limits requesting the USD price of an asset.
     """
-    inquirer._cryptocompare = MagicMock(spec=Cryptocompare)
-    inquirer._coingecko = MagicMock(spec=Coingecko)
-    inquirer.set_oracle_order(inquirer._oracle_order)
+    inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
 
-    for _, oracle_instance in inquirer._oracle_instances:
+    for oracle_instance in inquirer._oracle_instances:
         oracle_instance.rate_limited_in_last.return_value = True
 
     price = inquirer.find_usd_price(Asset('BTC'))
 
     assert price == Price(ZERO)
-    for _, oracle_instance in inquirer._oracle_instances:
+    for oracle_instance in inquirer._oracle_instances:
         assert oracle_instance.rate_limited_in_last.call_count == 1
         assert oracle_instance.query_current_price.call_count == 0
 
@@ -215,17 +215,15 @@ def test_find_usd_price_no_price_found(inquirer):
     """Test zero price is returned when all the oracles returned zero price
     requesting the USD price of an asset.
     """
-    inquirer._cryptocompare = MagicMock(spec=Cryptocompare)
-    inquirer._coingecko = MagicMock(spec=Coingecko)
-    inquirer.set_oracle_order(inquirer._oracle_order)
+    inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
 
-    for _, oracle_instance in inquirer._oracle_instances:
+    for oracle_instance in inquirer._oracle_instances:
         oracle_instance.query_current_price.return_value = Price(ZERO)
 
     price = inquirer.find_usd_price(Asset('BTC'))
 
     assert price == Price(ZERO)
-    for _, oracle_instance in inquirer._oracle_instances:
+    for oracle_instance in inquirer._oracle_instances:
         assert oracle_instance.query_current_price.call_count == 1
 
 
@@ -235,16 +233,14 @@ def test_find_usd_price_via_second_oracle(inquirer):
     """Test price is returned via the second oracle when the first oracle fails
     requesting the USD price of an asset.
     """
-    inquirer._cryptocompare = MagicMock(spec=Cryptocompare)
-    inquirer._coingecko = MagicMock(spec=Coingecko)
-    inquirer.set_oracle_order(inquirer._oracle_order)
+    inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
 
     expected_price = Price(FVal('30000'))
-    inquirer._oracle_instances[0][1].query_current_price.side_effect = RemoteError
-    inquirer._oracle_instances[1][1].query_current_price.return_value = expected_price
+    inquirer._oracle_instances[0].query_current_price.side_effect = RemoteError
+    inquirer._oracle_instances[1].query_current_price.return_value = expected_price
 
     price = inquirer.find_usd_price(Asset('BTC'))
 
     assert price == expected_price
-    for _, oracle_instance in inquirer._oracle_instances:
+    for oracle_instance in inquirer._oracle_instances[0:2]:
         assert oracle_instance.query_current_price.call_count == 1

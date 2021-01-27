@@ -633,13 +633,13 @@ class CurrentPriceOracleTypeField(fields.Field):
             attr: Optional[str],  # pylint: disable=unused-argument
             data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> str:
+    ) -> CurrentPriceOracle:
         try:
             current_price_oracle = CurrentPriceOracle.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(f'Invalid current price oracle: {value}') from e
 
-        return current_price_oracle.serialize()
+        return current_price_oracle
 
 
 class HistoricalPriceOracleTypeField(fields.Field):
@@ -650,13 +650,13 @@ class HistoricalPriceOracleTypeField(fields.Field):
             attr: Optional[str],  # pylint: disable=unused-argument
             data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> str:
+    ) -> HistoricalPriceOracle:
         try:
             historical_price_oracle = HistoricalPriceOracle.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(f'Invalid historical price oracle: {value}') from e
 
-        return historical_price_oracle.serialize()
+        return historical_price_oracle
 
 
 class AsyncQueryArgumentSchema(Schema):
@@ -783,32 +783,36 @@ class TagDeleteSchema(Schema):
     name = fields.String(required=True)
 
 
-def _validate_current_price_oracles(current_price_oracles: str) -> None:
-    """Prevents repeated oracle names and empty list.
-    """
-    current_price_oracle_names = [str(oracle) for oracle in CurrentPriceOracle]
+def _validate_current_price_oracles(
+        current_price_oracles: List[CurrentPriceOracle],
+) -> None:
+    """Prevents repeated oracle names and empty list"""
     if (
-        len(current_price_oracles) != len(current_price_oracle_names) or
-        set(current_price_oracles) != set(current_price_oracle_names)
+        len(current_price_oracles) == 0 or
+        len(current_price_oracles) != len(set(current_price_oracles))  # check uniqueness
     ):
+        oracle_names = [str(oracle) for oracle in current_price_oracles]
+        supported_oracle_names = [str(oracle) for oracle in CurrentPriceOracle]
         raise ValidationError(
-            f'Invalid current price oracles in: {current_price_oracles}. '
-            f'Required oracles are: {", ".join(current_price_oracle_names)}. '
+            f'Invalid current price oracles in: {", ".join(oracle_names)}. '
+            f'Supported oracles are: {", ".join(supported_oracle_names)}. '
             f'Check there are no repeated ones.',
         )
 
 
-def _validate_historical_price_oracles(historical_price_oracles: str) -> None:
-    """Prevents repeated oracle names and empty list.
-    """
-    historical_price_oracle_names = [str(oracle) for oracle in HistoricalPriceOracle]
+def _validate_historical_price_oracles(
+        historical_price_oracles: List[HistoricalPriceOracle],
+) -> None:
+    """Prevents repeated oracle names and empty list"""
     if (
-        len(historical_price_oracles) != len(historical_price_oracle_names) or
-        set(historical_price_oracles) != set(historical_price_oracle_names)
+        len(historical_price_oracles) == 0 or
+        len(historical_price_oracles) != len(set(historical_price_oracles))  # check uniqueness
     ):
+        oracle_names = [str(oracle) for oracle in historical_price_oracles]
+        supported_oracle_names = [str(oracle) for oracle in HistoricalPriceOracle]
         raise ValidationError(
-            f'Invalid historical price oracles in: {historical_price_oracles}. '
-            f'Required oracles are: {", ".join(historical_price_oracle_names)}. '
+            f'Invalid historical price oracles in: {", ".join(oracle_names)}. '
+            f'Supported oracles are: {", ".join(supported_oracle_names)}. '
             f'Check there are no repeated ones.',
         )
 

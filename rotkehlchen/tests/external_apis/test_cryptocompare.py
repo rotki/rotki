@@ -1,6 +1,7 @@
 import os
 import warnings as test_warnings
 from datetime import datetime
+from typing import List
 from unittest.mock import patch
 
 import pytest
@@ -13,14 +14,13 @@ from rotkehlchen.externalapis.cryptocompare import (
     A_COMP,
     CRYPTOCOMPARE_HOURQUERYLIMIT,
     CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES,
+    PRICE_HISTORY_FILE_PREFIX,
     Cryptocompare,
     PairCacheKey,
-    PRICE_HISTORY_FILE_PREFIX,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_SNGLS, A_XMR
 from rotkehlchen.typing import Price, Timestamp
-from typing import List
 from rotkehlchen.utils.misc import get_or_make_price_history_dir
 
 
@@ -362,7 +362,7 @@ def test_cryptocompare_query_compound_tokens(
         timestamp=1584662400,
     )
     assert price == expected_price2
-    price = cryptocompare.query_endpoint_price(
+    price = cryptocompare.query_current_price(
         from_asset=asset,
         to_asset=A_USD,
     )
