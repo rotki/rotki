@@ -894,20 +894,27 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     commit('updateExchangeBalances', exchanges);
   },
 
-  async fetchPrices({
-    state,
-    commit,
-    rootGetters: {
-      'tasks/isTaskRunning': isTaskRunning,
-      'balances/aggregatedAssets': assets
-    }
-  }): Promise<void> {
+  async fetchPrices(
+    {
+      state,
+      commit,
+      rootGetters: {
+        'tasks/isTaskRunning': isTaskRunning,
+        'balances/aggregatedAssets': assets
+      }
+    },
+    ignoreCache: boolean
+  ): Promise<void> {
     const taskType = TaskType.UPDATE_PRICES;
     if (isTaskRunning(taskType)) {
       return;
     }
     const fetchPrices: (assets: string[]) => Promise<void> = async assets => {
-      const { taskId } = await api.balances.prices(assets, CURRENCY_USD);
+      const { taskId } = await api.balances.prices(
+        assets,
+        CURRENCY_USD,
+        ignoreCache
+      );
       const task = createTask(taskId, taskType, {
         title: i18n.t('actions.session.fetch_prices.task.title').toString(),
         ignoreResult: false,
@@ -941,7 +948,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async refreshPrices({ commit, dispatch, state }): Promise<void> {
+  async refreshPrices(
+    { commit, dispatch, state },
+    ignoreCache: boolean
+  ): Promise<void> {
     commit(
       'setStatus',
       {
@@ -951,7 +961,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       { root: true }
     );
     await dispatch('fetchExchangeRates');
-    await dispatch('fetchPrices');
+    await dispatch('fetchPrices', ignoreCache);
     await dispatch('updatePrices', state.prices);
     commit(
       'setStatus',

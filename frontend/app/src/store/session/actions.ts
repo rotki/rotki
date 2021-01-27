@@ -107,7 +107,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       ];
 
       Promise.all(async).then(() =>
-        dispatch('balances/refreshPrices', null, options)
+        dispatch('balances/refreshPrices', false, options)
       );
       return { success: true };
     } catch (e) {

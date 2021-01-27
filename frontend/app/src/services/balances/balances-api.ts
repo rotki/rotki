@@ -110,13 +110,18 @@ export class BalancesApi {
       .then(handleResponse);
   }
 
-  async prices(assets: string[], targetAsset: string): Promise<PendingTask> {
+  async prices(
+    assets: string[],
+    targetAsset: string,
+    ignoreCache: boolean
+  ): Promise<PendingTask> {
     return this.axios
       .get<ActionResult<PendingTask>>('/assets/prices/current', {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true,
           assets: assets.join(','),
-          targetAsset
+          targetAsset,
+          ignoreCache: ignoreCache ? ignoreCache : undefined
         }),
         validateStatus: validWithSessionAndExternalService,
         transformResponse: basicAxiosTransformer

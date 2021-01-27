@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :feature:`1228` Users can see the current asset price on the dashboard and on the blockchain balances.
+* :feature:`1228` Users can see the current asset price of each asset on the dashboard and on the blockchain balances.
 * :feature:`2053` Users can now refresh the asset prices on demand.
 * :feature:`2188` When adding/editing ledger actions or trades, users can now specify datetime to seconds precision.
 * :feature:`2131` Users can now customize the order of the price oracles used by rotki. For example set Coingecko as the first option for requesting prices and Cryptocompare as the fallback one.

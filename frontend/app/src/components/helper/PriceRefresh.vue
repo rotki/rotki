@@ -4,7 +4,7 @@
     color="primary"
     :loading="refreshing"
     :disabled="refreshing || loadingData"
-    @click="refreshPrices"
+    @click="refreshPrices(true)"
   >
     <v-icon left>mdi-refresh</v-icon>
     {{ $t('price_refresh.button') }}
@@ -29,7 +29,7 @@ import { Section } from '@/store/const';
 export default class PriceRefresh extends Mixins(StatusMixin) {
   readonly section = Section.PRICES;
   isTaskRunning!: (type: TaskType) => boolean;
-  refreshPrices!: () => Promise<void>;
+  refreshPrices!: (ignoreCache: boolean) => Promise<void>;
 
   get loadingData(): boolean {
     return (
