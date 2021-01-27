@@ -3447,9 +3447,29 @@
         "cryptocompare": "",
         "ethereum_address": "0x8D1ce361eb68e9E05573443C407D4A3Bed23B033",
         "ethereum_token_decimals": 18,
-        "name": "PieDAO DEFI++ ",
+        "name": "PieDAO DEFI++",
         "started": 1604311938,
         "symbol": "DEFI++",
+        "type": "ethereum token"
+    },
+    "DEFI+S": {
+        "coingecko": "piedao-defi-small-cap",
+        "cryptocompare": "",
+        "ethereum_address": "0xaD6A626aE2B43DCb1B39430Ce496d2FA0365BA9C",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO DEFI Small Cap",
+        "started": 1602115200,
+        "symbol": "DEFI+S",
+        "type": "ethereum token"
+    },
+    "DEFI+L": {
+        "coingecko": "piedao-defi-large-cap",
+        "cryptocompare": "",
+        "ethereum_address": "0x78F225869c08d478c34e5f645d07A87d3fe8eb78",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO DEFI Large Cap",
+        "started": 1602115200,
+        "symbol": "DEFI+L",
         "type": "ethereum token"
     },
     "DELTA": {

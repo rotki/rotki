@@ -28,6 +28,8 @@ Changelog
   - `Edgeware (EDG) <https://www.coingecko.com/en/coins/edgeware>`__
   - `PieDAO Balanced Crypto Pie (BCP) <https://www.coingecko.com/en/coins/piedao-balanced-crypto-pie>`__
   - `PieDAO DEFI++ (DEFI++) <https://www.coingecko.com/en/coins/piedao-defi>`__
+  - `PieDAO DEFI Small Cap (DEFI+S) <https://www.coingecko.com/en/coins/piedao-defi-small-cap>`__
+  - `PieDAO DEFI Large Cap (DEFI+L) <https://www.coingecko.com/en/coins/piedao-defi-large-cap>`__
   - `PieDAO BTC++ (BTC++) <https://www.coingecko.com/en/coins/piedao-btc>`__
   - `AllianceBlock Token (ALBT) <https://www.coingecko.com/en/coins/allianceblock>`__
 
