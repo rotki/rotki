@@ -429,7 +429,7 @@
     "tooltip": "Feature is only supported with a premium subscription"
   },
   "price_refresh": {
-    "button": "Refresh Price"
+    "button": "Refresh Prices"
   },
   "progress_indicator": {
     "no_tasks": "No running tasks"

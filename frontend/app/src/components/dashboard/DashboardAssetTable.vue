@@ -1,19 +1,19 @@
 <template>
   <v-card>
-    <v-row no-gutters class="pa-3 secondary--text">
-      <v-toolbar-title class="font-weight-medium">
-        {{ title }}
-      </v-toolbar-title>
+    <v-card-title>
+      {{ title }}
       <v-spacer />
       <v-text-field
         v-model="search"
-        append-icon="mdi-magnify"
+        outlined
+        dense
+        prepend-inner-icon="mdi-magnify"
         :label="$t('dashboard_asset_table.search')"
-        class="pa-0 ma-0"
+        class="pa-0 ma-0 dashboard-asset-table__search"
         single-line
         hide-details
       />
-    </v-row>
+    </v-card-title>
     <v-card-text>
       <v-data-table
         class="dashboard-asset-table__balances"
@@ -55,7 +55,6 @@
         </template>
         <template #item.price="{ item }">
           <amount-display
-            class="font-weight-medium"
             show-currency="symbol"
             fiat-currency="USD"
             :value="prices[item.asset] ? prices[item.asset] : '-'"
@@ -74,8 +73,11 @@
           </span>
         </template>
         <template v-if="balances.length > 0 && search.length < 1" #body.append>
-          <tr class="dashboard-asset-table__balances__total font-weight-medium">
-            <td colspan="2">{{ $t('dashboard_asset_table.total') }}</td>
+          <tr
+            v-if="$vuetify.breakpoint.smAndUp"
+            class="dashboard-asset-table__balances__total font-weight-medium"
+          >
+            <td colspan="3">{{ $t('dashboard_asset_table.total') }}</td>
             <td class="text-end">
               <amount-display
                 :fiat-currency="currencySymbol"
@@ -91,6 +93,29 @@
               />
             </td>
             <td />
+          </tr>
+          <tr v-else>
+            <td>
+              <v-row class="justify-space-between">
+                <v-col cols="auto" class="font-weight-medium">
+                  {{ $t('dashboard_asset_table.total') }}
+                </v-col>
+                <v-col cols="auto">
+                  <amount-display
+                    :fiat-currency="currencySymbol"
+                    :value="
+                      balances
+                        | aggregateTotal(
+                          currencySymbol,
+                          exchangeRate(currencySymbol),
+                          floatingPrecision
+                        )
+                    "
+                    show-currency="symbol"
+                  />
+                </v-col>
+              </v-row>
+            </td>
           </tr>
         </template>
       </v-data-table>
@@ -132,38 +157,44 @@ export default class DashboardAssetTable extends Vue {
   search: string = '';
 
   readonly footerProps = footerProps;
-  readonly headers: DataTableHeader[] = [
-    {
-      text: this.$tc('dashboard_asset_table.headers.asset'),
-      value: 'asset'
-    },
-    {
-      text: this.$t('dashboard_asset_table.headers.price', {
-        symbol: CURRENCY_USD
-      }).toString(),
-      value: 'price',
-      align: 'end',
-      sortable: false,
-      width: '150px'
-    },
-    {
-      text: this.$tc('dashboard_asset_table.headers.amount'),
-      value: 'amount',
-      align: 'end'
-    },
-    {
-      text: this.$tc('dashboard_asset_table.headers.value'),
-      value: 'usdValue',
-      align: 'end'
-    },
-    {
-      text: this.$tc('dashboard_asset_table.headers.percentage'),
-      value: 'percentage',
-      align: 'end',
-      width: '120px',
-      sortable: false
-    }
-  ];
+  get headers(): DataTableHeader[] {
+    return [
+      {
+        text: this.$tc('dashboard_asset_table.headers.asset'),
+        value: 'asset',
+        width: '250px'
+      },
+      {
+        text: this.$t('dashboard_asset_table.headers.price', {
+          symbol: this.currencySymbol ?? CURRENCY_USD
+        }).toString(),
+        value: 'price',
+        align: 'end',
+        sortable: false,
+        width: '150px'
+      },
+      {
+        text: this.$tc('dashboard_asset_table.headers.amount'),
+        value: 'amount',
+        align: 'end',
+        width: '100%'
+      },
+      {
+        text: this.$t('dashboard_asset_table.headers.value', {
+          symbol: this.currencySymbol ?? CURRENCY_USD
+        }).toString(),
+        value: 'usdValue',
+        align: 'end'
+      },
+      {
+        text: this.$tc('dashboard_asset_table.headers.percentage'),
+        value: 'percentage',
+        align: 'end',
+        width: '120px',
+        sortable: false
+      }
+    ];
+  }
 
   percentage(value: BigNumber): string {
     return value.div(this.totalNetWorthUsd).multipliedBy(100).toFixed(2);
@@ -173,6 +204,10 @@ export default class DashboardAssetTable extends Vue {
 
 <style scoped lang="scss">
 .dashboard-asset-table {
+  &__search {
+    max-width: 450px;
+  }
+
   &__balances {
     &__total {
       &:hover {
