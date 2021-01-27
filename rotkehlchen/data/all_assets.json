@@ -14302,6 +14302,15 @@
         "symbol": "SHR",
         "type": "ethereum token"
     },
+    "SHROOM": {
+        "coingecko": "shroom-finance",
+        "ethereum_address": "0xEd0439EACf4c4965AE4613D77a5C2Efe10e5f183",
+        "ethereum_token_decimals": 18,
+        "name": "shroom.finance",
+        "started": 1599047104,
+        "symbol": "SHROOM",
+        "type": "ethereum token"
+    },
     "HEGIC": {
         "coingecko": "hegic",
         "ethereum_address": "0x584bC13c7D411c00c01A62e8019472dE68768430",

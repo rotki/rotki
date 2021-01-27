@@ -32,6 +32,7 @@ Changelog
   - `PieDAO DEFI Large Cap (DEFI+L) <https://www.coingecko.com/en/coins/piedao-defi-large-cap>`__
   - `PieDAO BTC++ (BTC++) <https://www.coingecko.com/en/coins/piedao-btc>`__
   - `AllianceBlock Token (ALBT) <https://www.coingecko.com/en/coins/allianceblock>`__
+  - `Shroom.finance (SHROOM) <https://www.coingecko.com/en/coins/shroom-finance>`__
 
 * :release:`1.12.2 <2021-01-18>`
 * :bug:`2120` Rotki should now display the action datetime when editing a ledger action.
