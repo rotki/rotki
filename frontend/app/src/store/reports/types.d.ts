@@ -44,3 +44,8 @@ export interface ReportProgress {
   readonly processingState: string;
   readonly totalProgress: string;
 }
+
+export type ReportError = {
+  readonly error: string;
+  readonly message: string;
+};

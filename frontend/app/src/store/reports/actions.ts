@@ -4,11 +4,16 @@ import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { api } from '@/services/rotkehlchen-api';
 import {
+  emptyError,
   MUTATION_PROGRESS,
   MUTATION_REPORT_ERROR
 } from '@/store/reports/const';
 import { ReportState } from '@/store/reports/state';
-import { ReportProgress, TradeHistory } from '@/store/reports/types';
+import {
+  ReportError,
+  ReportProgress,
+  TradeHistory
+} from '@/store/reports/types';
 
 import { Message, RotkehlchenState } from '@/store/types';
 import { ProfitLossPeriod } from '@/typing/types';
@@ -20,7 +25,7 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
       processingState: '',
       totalProgress: '0'
     } as ReportProgress);
-    commit(MUTATION_REPORT_ERROR, '');
+    commit(MUTATION_REPORT_ERROR, emptyError());
 
     const interval = setInterval(async () => {
       const progress = await api.history.getProgress();
@@ -62,10 +67,12 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
       );
 
       if (!result || !result.overview || !result.allEvents) {
-        commit(
-          MUTATION_REPORT_ERROR,
-          i18n.t('actions.reports.generate.error.description', { error: '' })
-        );
+        commit(MUTATION_REPORT_ERROR, {
+          error: '',
+          message: i18n
+            .t('actions.reports.generate.error.description', { error: '' })
+            .toString()
+        } as ReportError);
         return;
       }
 
@@ -77,12 +84,10 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
       };
       commit('set', report);
     } catch (e) {
-      commit(
-        MUTATION_REPORT_ERROR,
-        i18n.t('actions.reports.generate.error.description', {
-          error: e.message
-        })
-      );
+      commit(MUTATION_REPORT_ERROR, {
+        error: e.message,
+        message: i18n.t('actions.reports.generate.error.description').toString()
+      } as ReportError);
     }
 
     clearInterval(interval);

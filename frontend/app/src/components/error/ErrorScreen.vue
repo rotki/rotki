@@ -32,10 +32,12 @@
           class="font-weight-regular text-caption text-wrap error-screen__description__message"
         >
           {{ message }}
+          <v-divider v-if="error" class="mt-4 mb-2"/>
+          {{ error }}
         </pre>
         <textarea
           ref="copy"
-          v-model="message"
+          v-model="errorText"
           class="error-screen__copy-area"
         />
       </v-card-text>
@@ -56,6 +58,15 @@ export default class ErrorScreen extends Vue {
   subtitle!: string;
   @Prop({ required: true, type: String })
   message!: string;
+  @Prop({ required: false, type: String, default: '' })
+  error!: string;
+
+  get errorText(): string {
+    if (!this.error) {
+      return this.message;
+    }
+    return this.message + '\n\n' + this.error;
+  }
 
   copy() {
     const copy = this.$refs.copy as HTMLTextAreaElement;

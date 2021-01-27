@@ -19,13 +19,14 @@
     </base-page-header>
     <generate v-show="!isRunning" @generate="generate($event)" />
     <error-screen
-      v-if="!isRunning && reportError"
+      v-if="!isRunning && reportError.message"
       class="mt-12"
-      :message="reportError"
+      :message="reportError.message"
+      :error="reportError.error"
       :title="$t('profit_loss_report.error.title')"
       :subtitle="$t('profit_loss_report.error.subtitle')"
     />
-    <div v-if="loaded && !isRunning && !reportError">
+    <div v-if="loaded && !isRunning && !reportError.message">
       <v-row>
         <v-col>
           <i18n
@@ -93,7 +94,7 @@ import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
-import { ReportPeriod } from '@/store/reports/types';
+import { ReportError, ReportPeriod } from '@/store/reports/types';
 import { Message } from '@/store/types';
 import { AccountingSettings, ProfitLossPeriod } from '@/typing/types';
 
@@ -127,7 +128,7 @@ export default class ProfitLossReport extends Vue {
   processingState!: string;
   accountingSettings!: AccountingSettings;
   reportPeriod!: ReportPeriod;
-  reportError!: String;
+  reportError!: ReportError;
 
   get isRunning(): boolean {
     return this.isTaskRunning(TaskType.TRADE_HISTORY);
