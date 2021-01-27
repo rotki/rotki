@@ -97,6 +97,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'MUST',    # Must (Cometh) but Must protocol in CC
         'SDT-2',   # Stake DAO token but TerraSDT in CC
         'BAC',     # Basis Cash but BACoin in CC
+        'IHF',     # waiting until cryptocompare fixes historical price for this. https://github.com/rotki/rotki/pull/2176  # noqa: E501
     )
     for identifier, asset_data in AssetResolver().assets.items():
         potential_support = (
@@ -281,7 +282,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '54627b167cd2eba248e6b39e22201948', 'version': 47}
+    last_meta = {'md5': '8cdbf3dd5c8b112823914edb99ffcec1', 'version': 47}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 

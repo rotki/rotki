@@ -925,7 +925,7 @@
         "type": "ethereum token"
     },
     "B2BX": {
-        "coingecko": "b2b",
+        "coingecko": "b2bcoin-2",
         "cryptocompare": "B2B",
         "ethereum_address": "0x5d51FCceD3114A8bb5E90cDD0f9d682bCbCC5393",
         "ethereum_token_decimals": 18,
