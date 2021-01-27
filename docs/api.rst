@@ -1201,23 +1201,23 @@ Purging locally saved ethereum transactions
    :statuscode 500: Internal Rotki error
 
 
-Purging locally saved data for an ethereum module
+Purging locally saved data for ethereum modules
 ====================================================
 
 .. http:delete:: /api/(version)/blockchains/ETH/modules/(name)/data
 
-   Doing a DELETE on the data of a specific ETH module will purge all locally saved data for the module.
+   Doing a DELETE on the data of a specific ETH module will purge all locally saved data for the module. Can also purge all module data by doing a ``DELETE`` on ``/api/(version)/blockchains/ETH/modules/data`` in which case all module data will be purged.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/blockchains/ETH/modules/uniswap HTTP/1.1
+      DELETE /api/1/blockchains/ETH/modules/uniswap/data HTTP/1.1
       Host: localhost:5042
 
       {}
 
-   :reqjson string name: The name of the module whose data to delete. Can be one of the supported ethereum modules.
+   :reqjson string name: The name of the module whose data to delete. Can be one of the supported ethereum modules. The name can be omitted by doing a ``DELETE`` on ``/api/(version)/blockchains/ETH/modules/data`` in which case all module data will be purged.
 
 
    **Example Response**:

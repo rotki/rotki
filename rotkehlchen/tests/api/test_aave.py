@@ -265,7 +265,7 @@ def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_acco
     # test adex data purging from the db works
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
-        'ethereummoduledataresource',
+        'namedethereummoduledataresource',
         module_name='aave',
     ))
     assert_simple_ok_response(response)

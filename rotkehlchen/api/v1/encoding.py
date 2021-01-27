@@ -1338,7 +1338,7 @@ class HistoricalAssetsPriceSchema(Schema):
     async_query = fields.Boolean(missing=False)
 
 
-class EthereumModuleDataSchema(Schema):
+class NamedEthereumModuleDataSchema(Schema):
     module_name = fields.String(
         validate=webargs.validate.OneOf(choices=AVAILABLE_MODULES),
     )

@@ -146,7 +146,7 @@ def test_get_events(
     # test adex data purging from the db works
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
-        'ethereummoduledataresource',
+        'namedethereummoduledataresource',
         module_name='adex',
     ))
     assert_simple_ok_response(response)

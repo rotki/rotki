@@ -745,7 +745,7 @@ def test_get_uniswap_exotic_history(
     # test uniswap data purging from the db works
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
-        'ethereummoduledataresource',
+        'namedethereummoduledataresource',
         module_name='uniswap',
     ))
     assert_simple_ok_response(response)
@@ -974,7 +974,7 @@ def test_get_events_history_filtering_by_timestamp_case1(
     # test uniswap data purging from the db works
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
-        'ethereummoduledataresource',
+        'namedethereummoduledataresource',
         module_name='uniswap',
     ))
     assert_simple_ok_response(response)
@@ -1050,6 +1050,16 @@ def test_get_events_history_filtering_by_timestamp_case2(
     assert len(events_balances) == 4
     assert EXPECTED_EVENTS_BALANCES_2[0].serialize() == events_balances[0]
     assert EXPECTED_EVENTS_BALANCES_2[1].serialize() == events_balances[3]
+
+    # Make sure they end up in the DB
+    assert len(rotki.data.db.get_uniswap_events()) != 0
+    # test all data purging from the db works and also deletes uniswap data
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'ethereummoduledataresource',
+    ))
+    assert_simple_ok_response(response)
+    assert len(rotki.data.db.get_uniswap_events()) == 0
 
 
 PNL_TEST_ACC = '0x1F9fbD2F6a8754Cd56D4F56ED35338A63C5Bfd1f'

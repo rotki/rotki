@@ -1861,7 +1861,7 @@ class RestAPI():
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
-    def purge_module_data(self, module_name: ModuleName) -> Response:
+    def purge_module_data(self, module_name: Optional[ModuleName]) -> Response:
         self.rotkehlchen.data.db.purge_module_data(module_name)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 

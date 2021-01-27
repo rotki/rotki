@@ -1055,7 +1055,16 @@ class DBHandler:
 
         return events
 
-    def purge_module_data(self, module_name: ModuleName) -> None:
+    def purge_module_data(self, module_name: Optional[ModuleName]) -> None:
+        if module_name is None:
+            self.delete_uniswap_trades_data()
+            self.delete_uniswap_events_data()
+            self.delete_aave_data()
+            self.delete_adex_events_data()
+            self.delete_yearn_vaults_data()
+            logger.debug('Purged all module data from the DB')
+            return
+
         if module_name == 'uniswap':
             self.delete_uniswap_trades_data()
             self.delete_uniswap_events_data()
