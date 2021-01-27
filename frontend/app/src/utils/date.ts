@@ -12,6 +12,14 @@ export function convertToTimestamp(date: string): number {
   return moment(date, format).unix();
 }
 
-export function convertFromTimestamp(timestamp: number): string {
-  return moment(timestamp * 1000).format('DD/MM/YYYY HH:mm');
+export function convertFromTimestamp(
+  timestamp: number,
+  seconds: boolean = false
+): string {
+  let format = 'DD/MM/YYYY HH:mm';
+  if (seconds) {
+    format += ':ss';
+  }
+
+  return moment(timestamp * 1000).format(format);
 }
