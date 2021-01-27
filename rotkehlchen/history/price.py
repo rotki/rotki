@@ -130,7 +130,7 @@ class PriceHistorian():
 
         instance = PriceHistorian()
         price = None
-        if Inquirer()._cryptocompare.rate_limited_in_last() is False:
+        if Inquirer()._cryptocompare.can_query_history(from_asset=from_asset, to_asset=to_asset, timestamp=timestamp):  # noqa: E501
             try:
                 price = instance._cryptocompare.query_historical_price(
                     from_asset=from_asset,

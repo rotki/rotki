@@ -330,6 +330,11 @@ class TaxableEvents():
         if skip_trade:
             return
 
+        logger.debug(
+            f'Processing buy trade of {bought_asset.identifier} with '
+            f'{paid_with_asset.identifier} at {timestamp}',
+        )
+
         paid_with_asset_rate = self.get_rate_in_profit_currency(paid_with_asset, timestamp)
         buy_rate = paid_with_asset_rate * trade_rate
 
@@ -487,6 +492,11 @@ class TaxableEvents():
         )
         if skip_trade:
             return
+
+        logger.debug(
+            f'Processing sell trade of {selling_asset.identifier} for '
+            f'{receiving_asset.identifier if receiving_asset else "nothing"} at {timestamp}',
+        )
 
         if selling_asset not in self.events:
             self.events[selling_asset] = Events([], [])

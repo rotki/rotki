@@ -18,6 +18,7 @@ from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsondumps, rlk_jsonloads
 from rotkehlchen.utils.misc import timestamp_to_date
 from rotkehlchen.utils.misc import get_or_make_price_history_dir
+from rotkehlchen.errors import UnsupportedAsset
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -270,7 +271,9 @@ class Coingecko():
         if not vs_currency:
             return Price(ZERO)
 
-        if from_asset.coingecko is None:
+        try:
+            from_coingecko_id = from_asset.to_coingecko()
+        except UnsupportedAsset:
             log.warning(
                 f'Tried to query coingecko simple price from {from_asset.identifier} '
                 f'to {to_asset.identifier}. But from_asset is not supported in coingecko',
@@ -280,12 +283,12 @@ class Coingecko():
         result = self._query(
             module='simple/price',
             options={
-                'ids': from_asset.coingecko,
+                'ids': from_coingecko_id,
                 'vs_currencies': vs_currency,
             })
 
         try:
-            return Price(FVal(result[from_asset.coingecko][vs_currency]))
+            return Price(FVal(result[from_coingecko_id][vs_currency]))
         except KeyError as e:
             log.warning(
                 f'Queried coingecko simple price from {from_asset.identifier} '
@@ -350,7 +353,9 @@ class Coingecko():
         if not vs_currency:
             return Price(ZERO)
 
-        if from_asset.coingecko is None:
+        try:
+            from_coingecko_id = from_asset.to_coingecko()
+        except UnsupportedAsset:
             log.warning(
                 f'Tried to query coingecko historical price from {from_asset.identifier} '
                 f'to {to_asset.identifier}. But from_asset is not supported in coingecko',
@@ -364,7 +369,7 @@ class Coingecko():
 
         result = self._query(
             module='coins',
-            subpath=f'{from_asset.coingecko}/history',
+            subpath=f'{from_coingecko_id}/history',
             options={
                 'date': date,
                 'localization': False,

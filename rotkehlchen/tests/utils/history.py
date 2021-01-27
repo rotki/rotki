@@ -666,10 +666,21 @@ def mock_history_processing(
         if history_end_ts is not None:
             assert end_ts == history_end_ts, 'should be same as given to process_history'
 
+        # TODO: terrible way to check. Figure out something better
+        # This whole function needs better thinking also on the order it expects
+        # the events to be. It's super brittle right now
+        limited_range_test = False
+        expected_trades_num = 11
+        expected_asset_movements_num = 11
+        if end_ts == 1539713238:
+            limited_range_test = True
+            expected_trades_num = 10
+            expected_asset_movements_num = 10
+
         # TODO: Add more assertions/check for each action
         # OR instead do it in tests for conversion of actions(trades, loans, deposits e.t.c.)
         # from exchange to our format for each exchange
-        assert len(trade_history) == 11
+        assert len(trade_history) == expected_trades_num
         assert isinstance(trade_history[0], Trade)
         assert trade_history[0].location == Location.KRAKEN
         assert trade_history[0].pair == 'ETH_EUR'
@@ -708,8 +719,9 @@ def mock_history_processing(
         assert trade_history[9].location == Location.POLONIEX
         assert trade_history[9].pair == 'XMR_ETH'
         assert trade_history[9].trade_type == TradeType.BUY
-        assert isinstance(trade_history[10], MarginPosition)
-        assert trade_history[10].profit_loss == FVal('5E-9')
+        if not limited_range_test:
+            assert isinstance(trade_history[10], MarginPosition)
+            assert trade_history[10].profit_loss == FVal('5E-9')
 
         assert len(loan_history) == 2
         assert loan_history[0].currency == A_ETH
@@ -717,40 +729,41 @@ def mock_history_processing(
         assert loan_history[1].currency == A_BTC
         assert loan_history[1].earned == AssetAmount(FVal('0.00000005'))
 
-        assert len(asset_movements) == 11
-        assert asset_movements[0].location == Location.POLONIEX
-        assert asset_movements[0].category == AssetMovementCategory.WITHDRAWAL
-        assert asset_movements[0].asset == A_BTC
-        assert asset_movements[1].location == Location.POLONIEX
-        assert asset_movements[1].category == AssetMovementCategory.WITHDRAWAL
-        assert asset_movements[1].asset == A_ETH
-        assert asset_movements[2].location == Location.POLONIEX
-        assert asset_movements[2].category == AssetMovementCategory.DEPOSIT
-        assert asset_movements[2].asset == A_BTC
-        assert asset_movements[3].location == Location.POLONIEX
-        assert asset_movements[3].category == AssetMovementCategory.DEPOSIT
-        assert asset_movements[3].asset == A_ETH
-        assert asset_movements[4].location == Location.BITMEX
-        assert asset_movements[4].category == AssetMovementCategory.DEPOSIT
-        assert asset_movements[4].asset == A_BTC
-        assert asset_movements[5].location == Location.BITMEX
-        assert asset_movements[5].category == AssetMovementCategory.WITHDRAWAL
-        assert asset_movements[5].asset == A_BTC
-        assert asset_movements[6].location == Location.BITMEX
-        assert asset_movements[6].category == AssetMovementCategory.WITHDRAWAL
-        assert asset_movements[6].asset == A_BTC
-        assert asset_movements[7].location == Location.KRAKEN
-        assert asset_movements[7].category == AssetMovementCategory.DEPOSIT
-        assert asset_movements[7].asset == A_BTC
-        assert asset_movements[8].location == Location.KRAKEN
-        assert asset_movements[8].category == AssetMovementCategory.DEPOSIT
-        assert asset_movements[8].asset == A_ETH
-        assert asset_movements[9].location == Location.KRAKEN
-        assert asset_movements[9].category == AssetMovementCategory.WITHDRAWAL
-        assert asset_movements[9].asset == A_BTC
-        assert asset_movements[10].location == Location.KRAKEN
-        assert asset_movements[10].category == AssetMovementCategory.WITHDRAWAL
-        assert asset_movements[10].asset == A_ETH
+        assert len(asset_movements) == expected_asset_movements_num
+        if not limited_range_test:
+            assert asset_movements[0].location == Location.POLONIEX
+            assert asset_movements[0].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[0].asset == A_BTC
+            assert asset_movements[1].location == Location.POLONIEX
+            assert asset_movements[1].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[1].asset == A_ETH
+            assert asset_movements[2].location == Location.POLONIEX
+            assert asset_movements[2].category == AssetMovementCategory.DEPOSIT
+            assert asset_movements[2].asset == A_BTC
+            assert asset_movements[3].location == Location.POLONIEX
+            assert asset_movements[3].category == AssetMovementCategory.DEPOSIT
+            assert asset_movements[3].asset == A_ETH
+            assert asset_movements[4].location == Location.BITMEX
+            assert asset_movements[4].category == AssetMovementCategory.DEPOSIT
+            assert asset_movements[4].asset == A_BTC
+            assert asset_movements[5].location == Location.BITMEX
+            assert asset_movements[5].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[5].asset == A_BTC
+            assert asset_movements[6].location == Location.BITMEX
+            assert asset_movements[6].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[6].asset == A_BTC
+            assert asset_movements[7].location == Location.KRAKEN
+            assert asset_movements[7].category == AssetMovementCategory.DEPOSIT
+            assert asset_movements[7].asset == A_BTC
+            assert asset_movements[8].location == Location.KRAKEN
+            assert asset_movements[8].category == AssetMovementCategory.DEPOSIT
+            assert asset_movements[8].asset == A_ETH
+            assert asset_movements[9].location == Location.KRAKEN
+            assert asset_movements[9].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[9].asset == A_BTC
+            assert asset_movements[10].location == Location.KRAKEN
+            assert asset_movements[10].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[10].asset == A_ETH
 
         # The history creation for these is not yet tested
         assert len(eth_transactions) == 3

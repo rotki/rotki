@@ -487,7 +487,12 @@ def _split_pair(pair: TradePair) -> Tuple[str, str]:
 
 
 def pair_get_assets(pair: TradePair) -> Tuple[Asset, Asset]:
-    """Returns a tuple with the (base, quote) assets"""
+    """Returns a tuple with the (base, quote) assets
+
+    May raise:
+    - UnprocessableTradePair
+    - UnknownAsset
+    """
     base_str, quote_str = _split_pair(pair)
 
     base_asset = Asset(base_str)
