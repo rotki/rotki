@@ -84,6 +84,7 @@ from rotkehlchen.typing import (
     ApiSecret,
     AssetAmount,
     BlockchainAccountData,
+    AVAILABLE_MODULES,
     ChecksumEthAddress,
     EthereumTransaction,
     ExternalService,
@@ -1185,6 +1186,15 @@ class RestAPI():
         assets = AssetResolver().assets
         return api_response(
             _wrap_in_ok_result(assets),
+            status_code=HTTPStatus.OK,
+            log_result=False,
+        )
+
+    @staticmethod
+    def supported_modules() -> Response:
+        """Returns all supported modules"""
+        return api_response(
+            _wrap_in_ok_result(AVAILABLE_MODULES),
             status_code=HTTPStatus.OK,
             log_result=False,
         )

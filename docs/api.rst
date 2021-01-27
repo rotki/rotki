@@ -1234,6 +1234,36 @@ Purging locally saved data for ethereum modules
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal Rotki error
 
+Query supported ethereum modules
+=====================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/
+
+   Doing a GET on this endpoint will return all supported ethereum modules
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/blockchains/ETH/modules HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": ["uniswap", "yearn_vault", "makerdao_dsr"], "message": "" }
+
+   :statuscode 200: Data succesfully purged.
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
 Querying ethereum transactions
 =================================
 

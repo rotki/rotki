@@ -1010,6 +1010,12 @@ class EthereumModuleDataResource(BaseResource):
         return self.rest_api.purge_module_data(module_name=None)
 
 
+class EthereumModuleResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.supported_modules()
+
+
 class MakerDAODSRBalanceResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
