@@ -33,6 +33,7 @@ Changelog
   - `PieDAO BTC++ (BTC++) <https://www.coingecko.com/en/coins/piedao-btc>`__
   - `AllianceBlock Token (ALBT) <https://www.coingecko.com/en/coins/allianceblock>`__
   - `Shroom.finance (SHROOM) <https://www.coingecko.com/en/coins/shroom-finance>`__
+  - `Invictus Hyperoin Fund (IHF) <https://www.coingecko.com/en/coins/invictus-hyperion-fund>`__
 
 * :release:`1.12.2 <2021-01-18>`
 * :bug:`2120` Rotki should now display the action datetime when editing a ledger action.
