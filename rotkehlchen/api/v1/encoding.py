@@ -1436,3 +1436,7 @@ class NamedOracleCacheSchema(Schema):
 class NamedOracleCacheCreateSchema(NamedOracleCacheSchema):
     purge_old = fields.Boolean(missing=False)
     async_query = fields.Boolean(missing=False)
+
+
+class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
+    oracle = HistoricalPriceOracleField(required=True)

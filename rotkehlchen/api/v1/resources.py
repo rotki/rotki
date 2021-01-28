@@ -19,6 +19,7 @@ from rotkehlchen.api.v1.encoding import (
     AssetIconsSchema,
     NamedOracleCacheSchema,
     NamedOracleCacheCreateSchema,
+    NamedOracleCacheGetSchema,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
@@ -1300,6 +1301,11 @@ class NamedOracleCacheResource(BaseResource):
 
     post_schema = NamedOracleCacheCreateSchema()
     delete_schema = NamedOracleCacheSchema()
+    get_schema = NamedOracleCacheGetSchema()
+
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')  # type: ignore
+    def get(self, oracle: HistoricalPriceOracle, async_query: bool) -> Response:
+        return self.rest_api.get_oracle_cache(oracle=oracle, async_query=async_query)
 
     @use_kwargs(post_schema, location='json_and_view_args')  # type: ignore
     def post(

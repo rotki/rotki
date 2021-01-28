@@ -2575,3 +2575,22 @@ class RestAPI():
             to_asset=to_asset,
         )
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+
+    def _get_oracle_cache(self, oracle: HistoricalPriceOracle) -> Dict[str, Any]:
+        cache_data = self.rotkehlchen.get_oracle_cache(oracle)
+        result = _wrap_in_ok_result(cache_data)
+        result['status_code'] = HTTPStatus.OK
+        return result
+
+    @require_loggedin_user()
+    def get_oracle_cache(self, oracle: HistoricalPriceOracle, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_get_oracle_cache', oracle=oracle)
+
+        response = self._get_oracle_cache(oracle=oracle)
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(result_dict, status_code=status_code)

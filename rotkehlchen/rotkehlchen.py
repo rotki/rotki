@@ -1046,3 +1046,9 @@ class Rotkehlchen():
             return  # only for cryptocompare for now
 
         self.cryptocompare.delete_cache(from_asset, to_asset)
+
+    def get_oracle_cache(self, oracle: HistoricalPriceOracle) -> List[Dict[str, Any]]:
+        if oracle != HistoricalPriceOracle.CRYPTOCOMPARE:
+            return []  # only for cryptocompare for now
+
+        return self.cryptocompare.get_all_cache_data()

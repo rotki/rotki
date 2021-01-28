@@ -584,6 +584,36 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         return self.price_history[cache_key]
 
+    def _read_cachefile_metadata(
+            self,
+            cache_key: PairCacheKey,
+    ) -> Optional[Tuple[Timestamp, Timestamp]]:
+        """Read only the start of the json file and get start/end time
+
+        MUCH faster than reading the entire file, since these files can become hundreds of MBs
+        """
+        try:
+            with open(self.price_history_file[cache_key], 'r') as f:
+                f.seek(0)
+                data = f.read(100)  # first 100 bytes, should contain the data
+        except OSError:
+            return None
+
+        match = METADATA_RE.match(data)
+        if not match:
+            return None
+        result = match.group(1, 2)
+        if any(x is None for x in result):
+            return None
+
+        try:
+            start_ts = Timestamp(int(result[0]))
+            end_ts = Timestamp(int(result[1]))
+        except ValueError:
+            return None
+
+        return start_ts, end_ts
+
     def get_cached_data_metadata(
             self,
             from_asset: Asset,
@@ -603,29 +633,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         if memcache is not None:
             return memcache.start_time, memcache.end_time
 
-        # Now read only the start of the json file and get start/end time
-        # It is MUCH faster than reading the entire file, since these files can
-        # become hundreds of MBs
-        try:
-            with open(self.price_history_file[cache_key], 'r') as f:
-                f.seek(0)
-                data = f.read(100)  # first 100 bytes, should contain the data
-        except OSError:
-            return None
-
-        match = METADATA_RE.match(data)
-        if not match:
-            return None
-        result = match.group(1, 2)
-        if any(x is None for x in result):
-            return None
-        try:
-            start_ts = Timestamp(int(result[0]))
-            end_ts = Timestamp(int(result[1]))
-        except ValueError:
-            return None
-
-        return start_ts, end_ts
+        return self._read_cachefile_metadata(cache_key)
 
     def _got_cached_data_at_timestamp(
             self,
@@ -772,6 +780,35 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 break
 
         return calculated_history
+
+    def get_all_cache_data(self) -> List[Dict[str, Any]]:
+        """Returns all current cryptocompare cache data
+
+        Note: The return asset identifiers are the cryptocompare ones and not
+        the canonical ones
+        """
+        cache_data = []
+        for cache_key in self.price_history_file:
+            memcache = self.price_history.get(cache_key, None)
+            if memcache:
+                from_timestamp = memcache.start_time
+                to_timestamp = memcache.end_time
+            else:
+                metadata = self._read_cachefile_metadata(cache_key)
+                if metadata is None:
+                    continue
+                from_timestamp, to_timestamp = metadata
+
+            # cache key has to be valid here. Also note that the assets are
+            from_asset, to_asset = cache_key.split('_')
+            cache_data.append({
+                'from_asset': from_asset,
+                'to_asset': to_asset,
+                'from_timestamp': from_timestamp,
+                'to_timestamp': to_timestamp,
+            })
+
+        return cache_data
 
     def delete_cache(self, from_asset: Asset, to_asset: Asset) -> None:
         """Deletes a cache if it exists. Does nothing if it does not"""
