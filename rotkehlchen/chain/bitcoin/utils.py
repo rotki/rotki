@@ -160,7 +160,7 @@ def is_valid_derivation_path(path: Any) -> Tuple[bool, str]:
 
 
 def scriptpubkey_to_p2pkh_address(data: bytes) -> BTCAddress:
-    """Return a P2PKH  address given a scriptpubkey
+    """Return a P2PKH address given a scriptpubkey
 
     P2PKH: OP_DUP OP_HASH160 <pubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
     """
@@ -179,7 +179,7 @@ def scriptpubkey_to_p2pkh_address(data: bytes) -> BTCAddress:
 
 
 def scriptpubkey_to_p2sh_address(data: bytes) -> BTCAddress:
-    """Return a P2SH  address given a scriptpubkey
+    """Return a P2SH address given a scriptpubkey
 
     P2SH: OP_HASH160 <scriptHash> OP_EQUAL
     """
@@ -192,16 +192,33 @@ def scriptpubkey_to_p2sh_address(data: bytes) -> BTCAddress:
     return BTCAddress(address.decode('ascii'))
 
 
-def scriptpubkey_to_segwit_address(data: bytes) -> BTCAddress:
-    """Return a SegWit address given a scriptpubkey"""
+def scriptpubkey_to_bech32_address(data: bytes) -> BTCAddress:
+    """Return a native SegWit (bech32) address given a scriptpubkey"""
     version = data[0]
     if OpCodes.op_1 <= data[0:1] <= OpCodes.op_16:
         version -= 0x50
     elif data[0:1] != OpCodes.op_0:
-        raise EncodingError(f'Invalid SegWit pubkey: {data.hex()}')
+        raise EncodingError(f'Invalid bech32 scriptpubkey: {data.hex()}')
 
     address = bech32.encode('bc', version, data[2:])
     if not address:  # should not happen
-        raise EncodingError('Could not derive SegWit address from given scriptpubkey')
+        raise EncodingError('Could not derive bech32 address from given scriptpubkey')
 
     return BTCAddress(address)
+
+
+def scriptpubkey_to_btc_address(data: bytes) -> BTCAddress:
+    """Return a Bitcoin address given a scriptpubkey.
+    Supported formats are: P2PKH, P2SH and native SegWit (bech32).
+
+    May raise EncodingError if the scriptpubkey is invalid.
+    """
+    first_op_code = data[0:1]
+
+    if first_op_code == OpCodes.op_dup:
+        return scriptpubkey_to_p2pkh_address(data)
+
+    if first_op_code == OpCodes.op_hash160:
+        return scriptpubkey_to_p2sh_address(data)
+
+    return scriptpubkey_to_bech32_address(data)

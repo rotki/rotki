@@ -27,6 +27,7 @@ from rotkehlchen.tests.utils.blockchain import (
     compare_account_data,
 )
 from rotkehlchen.tests.utils.constants import A_RDN
+from rotkehlchen.tests.utils.ens import ENS_BRUNO, ENS_BRUNO_BTC_ADDR, ENS_BRUNO_KSM_ADDR
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
@@ -35,9 +36,6 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.tests.utils.substrate import (
-    ENS_BRUNO,
-    ENS_BRUNO_BTC_ADDR,
-    ENS_BRUNO_KSM_ADDR,
     KUSAMA_TEST_NODES,
     SUBSTRATE_ACC1_DOT_ADDR,
     SUBSTRATE_ACC1_KSM_ADDR,
@@ -1627,6 +1625,7 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
     assert query[0][1] == 'desktop'
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_add_btc_blockchain_account_ens_domain(rotkehlchen_api_server):
     """Test adding a Bitcoin blockchain account via ENS domain when there is none
     in the db works as expected.

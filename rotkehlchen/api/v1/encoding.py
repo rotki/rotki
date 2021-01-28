@@ -14,12 +14,9 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import (
-    OpCodes,
     is_valid_btc_address,
     is_valid_derivation_path,
-    scriptpubkey_to_p2pkh_address,
-    scriptpubkey_to_p2sh_address,
-    scriptpubkey_to_segwit_address,
+    scriptpubkey_to_btc_address,
 )
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstratePublicKey
@@ -1154,7 +1151,7 @@ def _validate_blockchain_account_schemas(
     elif data['blockchain'] == SupportedBlockchain.BITCOIN:
         for account_data in data['accounts']:
             address = address_getter(account_data)
-            # ENS doimain will be checked in the transformation step
+            # ENS domain will be checked in the transformation step
             if not address.endswith('.eth') and not is_valid_btc_address(address):
                 raise ValidationError(
                     f'Given value {address} is not a valid bitcoin address',
@@ -1189,7 +1186,7 @@ def _transform_btc_address(
         ethereum: EthereumManager,
         given_address: str,
 ) -> BTCAddress:
-    """Returns a SegWit/P2PKH/P2SH address (if exist) given an ENS domain.
+    """Returns a SegWit/P2PKH/P2SH address (if existing) given an ENS domain.
 
     NB: ENS domains for BTC store the scriptpubkey. Check EIP-2304.
     """
@@ -1206,16 +1203,8 @@ def _transform_btc_address(
             field_name='address',
         ) from None
 
-    address: BTCAddress
-    scriptpubkey = bytes.fromhex(resolved_address)
-    first_op_code = scriptpubkey[0:1]
     try:
-        if first_op_code == OpCodes.op_dup:
-            address = scriptpubkey_to_p2pkh_address(scriptpubkey)
-        elif first_op_code == OpCodes.op_hash160:
-            address = scriptpubkey_to_p2sh_address(scriptpubkey)
-        else:
-            address = scriptpubkey_to_segwit_address(scriptpubkey)
+        address = scriptpubkey_to_btc_address(bytes.fromhex(resolved_address))
     except EncodingError as e:
         raise ValidationError(
             f'Given ENS address {given_address} does not contain a valid Bitcoin '

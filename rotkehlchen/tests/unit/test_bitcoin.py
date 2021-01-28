@@ -6,18 +6,18 @@ from rotkehlchen.chain.bitcoin.utils import (
     is_valid_derivation_path,
     pubkey_to_base58_address,
     pubkey_to_bech32_address,
+    scriptpubkey_to_bech32_address,
     scriptpubkey_to_p2pkh_address,
     scriptpubkey_to_p2sh_address,
-    scriptpubkey_to_segwit_address,
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.errors import XPUBError
+from rotkehlchen.tests.utils.ens import ENS_BRUNO_BTC_ADDR, ENS_BRUNO_BTC_BYTES
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
     UNIT_BTC_ADDRESS3,
 )
-from rotkehlchen.tests.utils.substrate import ENS_BRUNO_BTC_ADDR, ENS_BRUNO_BTC_BYTES
 
 
 def test_is_valid_btc_address():
@@ -339,6 +339,6 @@ def test_scriptpubkey_to_p2sh_address():
         'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3',
     ),
 ])
-def test_scriptpubkey_to_segwit_address(scriptpubkey, expected_address):
-    address = scriptpubkey_to_segwit_address(bytes.fromhex(scriptpubkey))
+def test_scriptpubkey_to_bech32_address(scriptpubkey, expected_address):
+    address = scriptpubkey_to_bech32_address(bytes.fromhex(scriptpubkey))
     assert address == expected_address

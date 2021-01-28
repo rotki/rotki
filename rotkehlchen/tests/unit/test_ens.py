@@ -3,15 +3,15 @@ import warnings as test_warnings
 import pytest
 
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
-from rotkehlchen.tests.utils.ethereum import (
-    ETHEREUM_TEST_PARAMETERS,
-    wait_until_all_nodes_connected,
-)
-from rotkehlchen.tests.utils.substrate import (
+from rotkehlchen.tests.utils.ens import (
     ENS_BRUNO,
     ENS_BRUNO_BTC_BYTES,
     ENS_BRUNO_ETH_ADDR,
     ENS_BRUNO_SUBSTRATE_PUBLIC_KEY,
+)
+from rotkehlchen.tests.utils.ethereum import (
+    ETHEREUM_TEST_PARAMETERS,
+    wait_until_all_nodes_connected,
 )
 from rotkehlchen.typing import SupportedBlockchain
 
