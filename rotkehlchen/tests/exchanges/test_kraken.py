@@ -38,9 +38,7 @@ def test_coverage_of_kraken_balances(kraken):
     got_assets.remove('USD.HOLD')
     got_assets.remove('FLOW.S')
     got_assets.remove('FLOWH.S')
-    # Ignore the following assets as well
-    got_assets.remove('FLOW')
-    got_assets.remove('FLOWH')
+    got_assets.remove('FLOWH')  # what is FLOWH?
 
     diff = expected_assets.symmetric_difference(got_assets)
     if len(diff) != 0:

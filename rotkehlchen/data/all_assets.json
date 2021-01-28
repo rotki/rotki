@@ -925,7 +925,7 @@
         "type": "ethereum token"
     },
     "B2BX": {
-        "coingecko": "b2b",
+        "coingecko": "b2bcoin-2",
         "cryptocompare": "B2B",
         "ethereum_address": "0x5d51FCceD3114A8bb5E90cDD0f9d682bCbCC5393",
         "ethereum_token_decimals": 18,
@@ -1186,7 +1186,7 @@
     },
     "BCP": {
         "coingecko": "piedao-balanced-crypto-pie",
-	"cryptocompare": "",
+        "cryptocompare": "",
         "ethereum_address": "0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14",
         "ethereum_token_decimals": 18,
         "name": "PieDAO Balanced Crypto Pie",
@@ -1839,7 +1839,7 @@
     },
     "BTC++": {
         "coingecko": "piedao-btc",
-	"cryptocompare": "",
+        "cryptocompare": "",
         "ethereum_address": "0x0327112423F3A68efdF1fcF402F6c5CB9f7C33fd",
         "ethereum_token_decimals": 18,
         "name": "PieDAO BTC++ ",
@@ -3444,12 +3444,32 @@
     },
     "DEFI++": {
         "coingecko": "piedao-defi",
-	"cryptocompare": "",
+        "cryptocompare": "",
         "ethereum_address": "0x8D1ce361eb68e9E05573443C407D4A3Bed23B033",
         "ethereum_token_decimals": 18,
-        "name": "PieDAO DEFI++ ",
+        "name": "PieDAO DEFI++",
         "started": 1604311938,
         "symbol": "DEFI++",
+        "type": "ethereum token"
+    },
+    "DEFI+S": {
+        "coingecko": "piedao-defi-small-cap",
+        "cryptocompare": "",
+        "ethereum_address": "0xaD6A626aE2B43DCb1B39430Ce496d2FA0365BA9C",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO DEFI Small Cap",
+        "started": 1602115200,
+        "symbol": "DEFI+S",
+        "type": "ethereum token"
+    },
+    "DEFI+L": {
+        "coingecko": "piedao-defi-large-cap",
+        "cryptocompare": "",
+        "ethereum_address": "0x78F225869c08d478c34e5f645d07A87d3fe8eb78",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO DEFI Large Cap",
+        "started": 1602115200,
+        "symbol": "DEFI+L",
         "type": "ethereum token"
     },
     "DELTA": {
@@ -4946,6 +4966,14 @@
         "started": 1512983284,
         "symbol": "FLOT",
         "type": "ethereum token"
+    },
+    "FLOW": {
+        "coingecko": "flow",
+        "cryptocompare": "",
+        "name": "Flow",
+        "started": 1611619200,
+        "symbol": "FLOW",
+        "type": "own chain"
     },
     "FLP": {
         "coingecko": "gameflip",
@@ -11728,7 +11756,7 @@
     },
     "TORN": {
         "coingecko": "tornado-cash",
-	"cryptocompare": "",
+        "cryptocompare": "",
         "ethereum_address": "0x77777FeDdddFfC19Ff86DB637967013e6C6A116C",
         "ethereum_token_decimals": 18,
         "name": "TornadoCash",
@@ -13569,6 +13597,16 @@
         "symbol": "aBAT",
         "type": "ethereum token"
     },
+    "aBATv2": {
+        "coingecko": "aave-bat",
+        "cryptocompare": "BAT",
+        "ethereum_address": "0x05Ec93c0365baAeAbF7AefFb0972ea7ECdD39CF1",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing BAT v2",
+        "started": 1606832522,
+        "symbol": "aBAT",
+        "type": "ethereum token"
+    },
     "aAAVE": {
         "coingecko": "aave",
         "cryptocompare": "AAVE",
@@ -13576,6 +13614,16 @@
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing Aave Token",
         "started": 1603204313,
+        "symbol": "aAAVE",
+        "type": "ethereum token"
+    },
+    "aAAVEv2": {
+        "coingecko": "aave",
+        "cryptocompare": "AAVE",
+        "ethereum_address": "0xFFC97d72E13E01096502Cb8Eb52dEe56f74DAD7B",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing Aave Token v2",
+        "started": 1606832522,
         "symbol": "aAAVE",
         "type": "ethereum token"
     },
@@ -13589,6 +13637,26 @@
         "symbol": "aBUSD",
         "type": "ethereum token"
     },
+    "aBUSDv2": {
+        "coingecko": "aave-busd",
+        "cryptocompare": "BUSD",
+        "ethereum_address": "0xA361718326c15715591c299427c62086F69923D9",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing Binance USD v2",
+        "started": 1606832522,
+        "symbol": "aBUSD",
+        "type": "ethereum token"
+    },
+    "aCRV": {
+        "coingecko": "curve-dao-token",
+        "cryptocompare": "CRV",
+        "ethereum_address": "0x8dAE6Cb04688C62d939ed9B68d32Bc62e49970b1",
+        "ethereum_token_decimals": 18,
+        "name": "Aave interest bearing CRV",
+        "started": 1609105615,
+        "symbol": "aCRV",
+        "type": "ethereum token"
+    },
     "aDAI": {
         "coingecko": "aave-dai",
         "cryptocompare": "DAI",
@@ -13596,6 +13664,16 @@
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing DAI",
         "started": 1578501167,
+        "symbol": "aDAI",
+        "type": "ethereum token"
+    },
+    "aDAIv2": {
+        "coingecko": "aave-dai",
+        "cryptocompare": "DAI",
+        "ethereum_address": "0x028171bCA77440897B824Ca71D1c56caC55b68A3",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing DAI v2",
+        "started": 1606832522,
         "symbol": "aDAI",
         "type": "ethereum token"
     },
@@ -13609,6 +13687,16 @@
         "symbol": "aENJ",
         "type": "ethereum token"
     },
+    "aENJv2": {
+        "coingecko": "aave-enj",
+        "cryptocompare": "ENJ",
+        "ethereum_address": "0xaC6Df26a590F08dcC95D5a4705ae8abbc88509Ef",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing ENJ v2",
+        "started": 1606832588,
+        "symbol": "aENJ",
+        "type": "ethereum token"
+    },
     "aETH": {
         "coingecko": "aave-eth",
         "cryptocompare": "ETH",
@@ -13619,6 +13707,16 @@
         "symbol": "aETH",
         "type": "ethereum token"
     },
+    "aGUSD": {
+        "coingecko": "gemini-dollar",
+        "cryptocompare": "GUSD",
+        "ethereum_address": "0xD37EE7e4f452C6638c96536e68090De8cBcdb583",
+        "ethereum_token_decimals": 2,
+        "name": "Aave Interest bearing GUSD",
+        "started": 1609615002,
+        "symbol": "aGUSD",
+        "type": "ethereum token"
+    },
     "aKNC": {
         "coingecko": "aave-knc",
         "cryptocompare": "KNC",
@@ -13626,6 +13724,16 @@
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing KNC",
         "started": 1578501790,
+        "symbol": "aKNC",
+        "type": "ethereum token"
+    },
+    "aKNCv2": {
+        "coingecko": "aave-knc",
+        "cryptocompare": "KNC",
+        "ethereum_address": "0x39C6b3e42d6A679d7D776778Fe880BC9487C2EDA",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing KNC v2",
+        "started": 1606832588,
         "symbol": "aKNC",
         "type": "ethereum token"
     },
@@ -13649,6 +13757,16 @@
         "symbol": "aLINK",
         "type": "ethereum token"
     },
+    "aLINKv2": {
+        "coingecko": "aave-link",
+        "cryptocompare": "LINK",
+        "ethereum_address": "0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing LINK v2",
+        "started": 1606832588,
+        "symbol": "aLINK",
+        "type": "ethereum token"
+    },
     "aMANA": {
         "coingecko": "aave-mana",
         "cryptocompare": "MANA",
@@ -13656,6 +13774,16 @@
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing MANA",
         "started": 1578502029,
+        "symbol": "aMANA",
+        "type": "ethereum token"
+    },
+    "aMANAv2": {
+        "coingecko": "aave-mana",
+        "cryptocompare": "MANA",
+        "ethereum_address": "0xa685a61171bb30d4072B338c80Cb7b2c865c873E",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing MANA v2",
+        "started": 1606832588,
         "symbol": "aMANA",
         "type": "ethereum token"
     },
@@ -13669,6 +13797,16 @@
         "symbol": "aMKR",
         "type": "ethereum token"
     },
+    "aMKRv2": {
+        "coingecko": "aave-mkr",
+        "cryptocompare": "MKR",
+        "ethereum_address": "0xc713e5E149D5D0715DcD1c156a020976e7E56B88",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing MKR v2",
+        "started": 1606832623,
+        "symbol": "aMKR",
+        "type": "ethereum token"
+    },
     "aREN": {
         "coingecko": "aave-ren",
         "cryptocompare": "REN",
@@ -13676,6 +13814,16 @@
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing REN",
         "started": 1594923128,
+        "symbol": "aREN",
+        "type": "ethereum token"
+    },
+    "aRENv2": {
+        "coingecko": "aave-ren",
+        "cryptocompare": "REN",
+        "ethereum_address": "0xCC12AbE4ff81c9378D670De1b57F8e0Dd228D77a",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing REN v2",
+        "started": 1606832623,
         "symbol": "aREN",
         "type": "ethereum token"
     },
@@ -13699,6 +13847,16 @@
         "symbol": "aSNX",
         "type": "ethereum token"
     },
+    "aSNXv2": {
+        "coingecko": "aave-snx",
+        "cryptocompare": "SNX",
+        "ethereum_address": "0x35f6B052C598d933D69A4EEC4D04c73A191fE6c2",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing SNX v2",
+        "started": 1606832623,
+        "symbol": "aSNX",
+        "type": "ethereum token"
+    },
     "aSUSD": {
         "coingecko": "aave-susd",
         "cryptocompare": "sUSD",
@@ -13706,6 +13864,16 @@
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing SUSD",
         "started": 1578501472,
+        "symbol": "aSUSD",
+        "type": "ethereum token"
+    },
+    "aSUSDv2": {
+        "coingecko": "aave-susd",
+        "cryptocompare": "sUSD",
+        "ethereum_address": "0x6C5024Cd4F8A59110119C56f8933403A539555EB",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing SUSD v2",
+        "started": 1606832623,
         "symbol": "aSUSD",
         "type": "ethereum token"
     },
@@ -13719,6 +13887,16 @@
         "symbol": "aTUSD",
         "type": "ethereum token"
     },
+    "aTUSDv2": {
+        "coingecko": "aave-tusd",
+        "cryptocompare": "TUSD",
+        "ethereum_address": "0x101cc05f4A51C0319f570d5E146a8C625198e636",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing TUSD v2",
+        "started": 1606832636,
+        "symbol": "aTUSD",
+        "type": "ethereum token"
+    },
     "aUSDC": {
         "coingecko": "aave-usdc",
         "cryptocompare": "USDC",
@@ -13726,6 +13904,16 @@
         "ethereum_token_decimals": 6,
         "name": "Aave Interest bearing USDC",
         "started": 1578501407,
+        "symbol": "aUSDC",
+        "type": "ethereum token"
+    },
+    "aUSDCv2": {
+        "coingecko": "aave-usdc",
+        "cryptocompare": "USDC",
+        "ethereum_address": "0xBcca60bB61934080951369a648Fb03DF4F96263C",
+        "ethereum_token_decimals": 6,
+        "name": "Aave Interest bearing USDC v2",
+        "started": 1606832636,
         "symbol": "aUSDC",
         "type": "ethereum token"
     },
@@ -13739,6 +13927,16 @@
         "symbol": "aUSDT",
         "type": "ethereum token"
     },
+    "aUSDTv2": {
+        "coingecko": "aave-usdt",
+        "cryptocompare": "USDT",
+        "ethereum_address": "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811",
+        "ethereum_token_decimals": 6,
+        "name": "Aave Interest bearing USDT v2",
+        "started": 1606774830,
+        "symbol": "aUSDT",
+        "type": "ethereum token"
+    },
     "aWBTC": {
         "coingecko": "aave-wbtc",
         "cryptocompare": "WBTC",
@@ -13749,6 +13947,26 @@
         "symbol": "aWBTC",
         "type": "ethereum token"
     },
+    "aWBTCv2": {
+        "coingecko": "aave-wbtc",
+        "cryptocompare": "WBTC",
+        "ethereum_address": "0x9ff58f4fFB29fA2266Ab25e75e2A8b3503311656",
+        "ethereum_token_decimals": 8,
+        "name": "Aave Interest bearing WBTC v2",
+        "started": 1606774830,
+        "symbol": "aWBTC",
+        "type": "ethereum token"
+    },
+    "aWETH": {
+        "coingecko": "weth",
+        "cryptocompare": "WETH",
+        "ethereum_address": "0x030bA81f1c18d280636F32af80b9AAd02Cf0854e",
+        "ethereum_token_decimals": 18,
+        "name": "Aave interest bearing WETH",
+        "started": 1606774830,
+        "symbol": "aWETH",
+        "type": "ethereum token"
+    },
     "aYFI": {
         "coingecko": "ayfi",
         "cryptocompare": "YFI",
@@ -13756,6 +13974,16 @@
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing YFI",
         "started": 1598605878,
+        "symbol": "aYFI",
+        "type": "ethereum token"
+    },
+    "aYFIv2": {
+        "coingecko": "ayfi",
+        "cryptocompare": "YFI",
+        "ethereum_address": "0x5165d24277cD063F5ac44Efd447B27025e888f37",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing YFI v2",
+        "started": 1606774830,
         "symbol": "aYFI",
         "type": "ethereum token"
     },
@@ -13769,6 +13997,16 @@
         "symbol": "aZRX",
         "type": "ethereum token"
     },
+    "aZRXv2": {
+        "coingecko": "aave-zrx",
+        "cryptocompare": "ZRX",
+        "ethereum_address": "0xDf7FF54aAcAcbFf42dfe29DD6144A69b629f8C9e",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing ZRX v2",
+        "started": 1606774830,
+        "symbol": "aZRX",
+        "type": "ethereum token"
+    },
     "aUNI": {
         "coingecko": "uniswap",
         "cryptocompare": "UNI",
@@ -13776,6 +14014,16 @@
         "ethereum_token_decimals": 18,
         "name": "Aave Interest bearing Uniswap",
         "started": 1603718736,
+        "symbol": "aUNI",
+        "type": "ethereum token"
+    },
+    "aUNIv2": {
+        "coingecko": "uniswap",
+        "cryptocompare": "UNI",
+        "ethereum_address": "0xB9D7CB55f463405CDfBe4E90a6D2Df01C2B92BF1",
+        "ethereum_token_decimals": 18,
+        "name": "Aave Interest bearing Uniswap v2",
+        "started": 1606774858,
         "symbol": "aUNI",
         "type": "ethereum token"
     },
@@ -14280,6 +14528,15 @@
         "name": "ShareToken",
         "started": 1604676299,
         "symbol": "SHR",
+        "type": "ethereum token"
+    },
+    "SHROOM": {
+        "coingecko": "shroom-finance",
+        "ethereum_address": "0xEd0439EACf4c4965AE4613D77a5C2Efe10e5f183",
+        "ethereum_token_decimals": 18,
+        "name": "shroom.finance",
+        "started": 1599047104,
+        "symbol": "SHROOM",
         "type": "ethereum token"
     },
     "HEGIC": {
