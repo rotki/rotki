@@ -625,7 +625,7 @@ class DerivationPathField(fields.Field):
         return value
 
 
-class CurrentPriceOracleTypeField(fields.Field):
+class CurrentPriceOracleField(fields.Field):
 
     def _deserialize(
             self,
@@ -642,7 +642,7 @@ class CurrentPriceOracleTypeField(fields.Field):
         return current_price_oracle
 
 
-class HistoricalPriceOracleTypeField(fields.Field):
+class HistoricalPriceOracleField(fields.Field):
 
     def _deserialize(
             self,
@@ -864,12 +864,12 @@ class ModifiableSettingsSchema(Schema):
     calculate_past_cost_basis = fields.Bool(missing=None)
     display_date_in_localtime = fields.Bool(missing=None)
     current_price_oracles = fields.List(
-        CurrentPriceOracleTypeField,
+        CurrentPriceOracleField,
         validate=_validate_current_price_oracles,
         missing=None,
     )
     historical_price_oracles = fields.List(
-        HistoricalPriceOracleTypeField,
+        HistoricalPriceOracleField,
         validate=_validate_historical_price_oracles,
         missing=None,
     )
