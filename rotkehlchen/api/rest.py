@@ -2355,6 +2355,7 @@ class RestAPI():
         }
         return _wrap_in_ok_result(process_result(result))
 
+    @require_loggedin_user()
     def get_current_assets_price(
             self,
             assets: List[Asset],
@@ -2413,6 +2414,7 @@ class RestAPI():
         }
         return _wrap_in_ok_result(process_result(result))
 
+    @require_loggedin_user()
     def get_historical_assets_price(
             self,
             assets_timestamp: List[Tuple[Asset, Timestamp]],
