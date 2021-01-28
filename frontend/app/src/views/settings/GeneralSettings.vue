@@ -211,6 +211,7 @@
             />
           </v-card-text>
         </v-card>
+        <price-oracle-settings />
         <v-card class="mt-5">
           <v-card-title>
             {{ $t('general_settings.frontend.title') }}
@@ -253,6 +254,8 @@ import { Component } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
+import PriceOracleSettings from '@/components/settings/PriceOracleSettings.vue';
+import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { currencies } from '@/data/currencies';
 import { Defaults } from '@/data/defaults';
 import { Currency } from '@/model/currency';
@@ -332,6 +335,8 @@ const settingsMessages: () => GeneralSettingsMessages = () => {
 
 @Component({
   components: {
+    PriceOracleSettings,
+    SettingCategory,
     TimeFrameSettings,
     AmountDisplay
   },

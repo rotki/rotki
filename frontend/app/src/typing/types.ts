@@ -1,3 +1,4 @@
+import { PriceOracles } from '@/model/action-result';
 import { Currency } from '@/model/currency';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { SupportedModules } from '@/services/session/types';
@@ -26,6 +27,8 @@ export interface GeneralSettings {
   readonly activeModules: SupportedModules[];
   readonly btcDerivationGapLimit: number;
   readonly displayDateInLocaltime: boolean;
+  readonly currentPriceOracles: PriceOracles[];
+  readonly historicalPriceOracles: PriceOracles[];
 }
 
 export interface AccountingSettings {
@@ -129,6 +132,8 @@ interface SettingsPayload {
   btc_derivation_gap_limit: number;
   calculate_past_cost_basis: boolean;
   display_date_in_localtime: boolean;
+  current_price_oracles: string[];
+  historical_price_oracles: string[];
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare';

@@ -1,6 +1,9 @@
 import { SupportedModules } from '@/services/session/types';
 import { GeneralSettings } from '@/typing/types';
 
+const PRICE_ORACLES = ['cryptocompare', 'coingecko'] as const;
+export type PriceOracles = typeof PRICE_ORACLES[number];
+
 export interface AccountState {
   readonly premium: boolean;
   readonly settings: DBSettings;
@@ -35,6 +38,8 @@ export interface DBSettings {
   readonly btc_derivation_gap_limit: number;
   readonly calculate_past_cost_basis: boolean;
   readonly display_date_in_localtime: boolean;
+  readonly current_price_oracles: PriceOracles[];
+  readonly historical_price_oracles: PriceOracles[];
 }
 
 interface ApiKey {

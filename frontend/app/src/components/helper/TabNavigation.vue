@@ -88,6 +88,16 @@ export default class TabNavigation extends Vue {
       .v-tabs-items {
         background-color: transparent !important;
       }
+
+      .v-slide-group {
+        &__prev {
+          display: none !important;
+        }
+
+        &__next {
+          display: none !important;
+        }
+      }
     }
 
     &__tab-item {
