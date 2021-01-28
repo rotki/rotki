@@ -5499,7 +5499,7 @@ Adding blockchain accounts
    .. note::
       Supported blockchains: ``"BTC", "ETH", "KSM"``
 
-      Supported blockchains with ENS domains: ``"ETH", "KSM"``
+      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
@@ -5889,7 +5889,7 @@ Editing blockchain account data
    .. note::
       Supported blockchains: ``"BTC", "ETH", "KSM"``
 
-      Supported blockchains with ENS domains: ``"ETH", "KSM"``
+      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
 
    Doing a PATCH on the the blockchains endpoint with a specific blockchain URL and a list of accounts to edit will edit the label and tags for those accounts.
 
@@ -5952,7 +5952,7 @@ Removing blockchain accounts
    .. note::
       Supported blockchains: ``"BTC", "ETH", "KSM"``
 
-      Supported blockchains with ENS domains: ``"ETH", "KSM"``
+      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 

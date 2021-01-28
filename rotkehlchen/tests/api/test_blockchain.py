@@ -36,6 +36,7 @@ from rotkehlchen.tests.utils.factories import (
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.tests.utils.substrate import (
     ENS_BRUNO,
+    ENS_BRUNO_BTC_ADDR,
     ENS_BRUNO_KSM_ADDR,
     KUSAMA_TEST_NODES,
     SUBSTRATE_ACC1_DOT_ADDR,
@@ -1624,6 +1625,41 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
     assert len(query) == 1
     assert query[0][0] == UNIT_BTC_ADDRESS2
     assert query[0][1] == 'desktop'
+
+
+def test_add_btc_blockchain_account_ens_domain(rotkehlchen_api_server):
+    """Test adding a Bitcoin blockchain account via ENS domain when there is none
+    in the db works as expected.
+    """
+    async_query = random.choice([False, True])
+
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain=SupportedBlockchain.BITCOIN.value,
+        ),
+        json={
+            'accounts': [{'address': ENS_BRUNO}],
+            'async_query': async_query,
+        },
+    )
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+    else:
+        result = assert_proper_response_with_result(response)
+
+    # Check per account
+    asset_btc = result['per_account']['BTC']['standalone'][ENS_BRUNO_BTC_ADDR]
+    assert FVal(asset_btc['amount']) >= ZERO
+    assert FVal(asset_btc['usd_value']) >= ZERO
+
+    # Check totals
+    assert 'liabilities' in result['totals']
+    total_btc = result['totals']['assets']['BTC']
+    assert FVal(total_btc['amount']) >= ZERO
+    assert FVal(total_btc['usd_value']) >= ZERO
 
 
 def test_add_ksm_blockchain_account_invalid(rotkehlchen_api_server):

@@ -10,6 +10,17 @@ from rotkehlchen.typing import BTCAddress
 BIP32_HARDEN: int = 0x80000000
 
 
+class OpCodes:
+    op_0 = b'\x00'
+    op_1 = b'\x51'
+    op_16 = b'\x60'
+    op_dup = b'\x76'
+    op_equal = b'\x87'
+    op_equalverify = b'\x88'
+    op_hash160 = b'\xa9'
+    op_checksig = b'\xac'
+
+
 def is_valid_btc_address(value: str) -> bool:
     return is_valid_base58_address(value) or is_valid_bech32_address(value)
 
@@ -146,3 +157,51 @@ def is_valid_derivation_path(path: Any) -> Tuple[bool, str]:
             return False, f'Found negative integer node {value} in xpub derivation path'
 
     return True, ''
+
+
+def scriptpubkey_to_p2pkh_address(data: bytes) -> BTCAddress:
+    """Return a P2PKH  address given a scriptpubkey
+
+    P2PKH: OP_DUP OP_HASH160 <pubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
+    """
+    if (
+        data[0:1] != OpCodes.op_dup or
+        data[1:2] != OpCodes.op_hash160 or
+        data[-2:-1] != OpCodes.op_equalverify or
+        data[-1:] != OpCodes.op_checksig
+    ):
+        raise EncodingError(f'Invalid P2PKH scriptpubkey: {data.hex()}')
+
+    prefixed_hash = bytes.fromhex('00') + data[3:23]  # 20 byte pubkey hash
+    checksum = hashlib.sha256(hashlib.sha256(prefixed_hash).digest()).digest()
+    address = base58check.b58encode(prefixed_hash + checksum[:4])
+    return BTCAddress(address.decode('ascii'))
+
+
+def scriptpubkey_to_p2sh_address(data: bytes) -> BTCAddress:
+    """Return a P2SH  address given a scriptpubkey
+
+    P2SH: OP_HASH160 <scriptHash> OP_EQUAL
+    """
+    if data[0:1] != OpCodes.op_hash160 or data[-1:] != OpCodes.op_equal:
+        raise EncodingError(f'Invalid P2SH scriptpubkey: {data.hex()}')
+
+    prefixed_hash = bytes.fromhex('05') + data[2:22]  # 20 byte pubkey hash
+    checksum = hashlib.sha256(hashlib.sha256(prefixed_hash).digest()).digest()
+    address = base58check.b58encode(prefixed_hash + checksum[:4])
+    return BTCAddress(address.decode('ascii'))
+
+
+def scriptpubkey_to_segwit_address(data: bytes) -> BTCAddress:
+    """Return a SegWit address given a scriptpubkey"""
+    version = data[0]
+    if OpCodes.op_1 <= data[0:1] <= OpCodes.op_16:
+        version -= 0x50
+    elif data[0:1] != OpCodes.op_0:
+        raise EncodingError(f'Invalid SegWit pubkey: {data.hex()}')
+
+    address = bech32.encode('bc', version, data[2:])
+    if not address:  # should not happen
+        raise EncodingError('Could not derive SegWit address from given scriptpubkey')
+
+    return BTCAddress(address)
