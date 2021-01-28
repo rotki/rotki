@@ -820,7 +820,7 @@ Query the current price of assets
       {
           "assets": ["BTC", "ETH", "LINK", "USD", "EUR"],
           "target_asset": "USD",
-	      "ignore_cache": true
+          "ignore_cache": true
       }
 
    :reqjson list assets: A list of assets to query their current price.
@@ -1597,7 +1597,7 @@ Querying onchain balances
 
 .. http:get:: /api/(version)/balances/blockchains/(blockchain)/
 
-   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC`` and ``ETH``.
+   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH`` and ``KSM``.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
