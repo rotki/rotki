@@ -17,6 +17,7 @@ from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AssetIconsSchema,
+    NamedOracleCacheSchema,
     NamedOracleCacheCreateSchema,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
@@ -1298,6 +1299,7 @@ class HistoricalAssetsPriceResource(BaseResource):
 class NamedOracleCacheResource(BaseResource):
 
     post_schema = NamedOracleCacheCreateSchema()
+    delete_schema = NamedOracleCacheSchema()
 
     @use_kwargs(post_schema, location='json_and_view_args')  # type: ignore
     def post(
@@ -1314,4 +1316,17 @@ class NamedOracleCacheResource(BaseResource):
             to_asset=to_asset,
             purge_old=purge_old,
             async_query=async_query,
+        )
+
+    @use_kwargs(delete_schema, location='json_and_view_args')  # type: ignore
+    def delete(
+            self,
+            oracle: HistoricalPriceOracle,
+            from_asset: Asset,
+            to_asset: Asset,
+    ) -> Response:
+        return self.rest_api.delete_oracle_cache(
+            oracle=oracle,
+            from_asset=from_asset,
+            to_asset=to_asset,
         )

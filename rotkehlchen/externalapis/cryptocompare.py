@@ -773,6 +773,20 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         return calculated_history
 
+    def delete_cache(self, from_asset: Asset, to_asset: Asset) -> None:
+        """Deletes a cache if it exists. Does nothing if it does not"""
+        cache_key = _get_cache_key(from_asset=from_asset, to_asset=to_asset)
+        if cache_key is None:
+            return
+
+        self.price_history.pop(cache_key, None)
+        filename = self.price_history_file.get(cache_key, None)
+        if filename:
+            try:
+                filename.unlink()
+            except FileNotFoundError:  # TODO: In python 3.8 we can add missing_ok=True to unlink  # noqa: E501
+                pass
+
     def create_cache(
             self,
             from_asset: Asset,

@@ -1427,9 +1427,12 @@ class NamedEthereumModuleDataSchema(Schema):
     )
 
 
-class NamedOracleCacheCreateSchema(Schema):
+class NamedOracleCacheSchema(Schema):
     oracle = HistoricalPriceOracleField(required=True)
     from_asset = AssetField(required=True)
     to_asset = AssetField(required=True)
+
+
+class NamedOracleCacheCreateSchema(NamedOracleCacheSchema):
     purge_old = fields.Boolean(missing=False)
     async_query = fields.Boolean(missing=False)
