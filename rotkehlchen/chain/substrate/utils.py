@@ -12,7 +12,6 @@ from .typing import (
 KUSAMA_NODES_TO_CONNECT_AT_START = (
     KusamaNodeName.OWN,
     KusamaNodeName.PARITY,
-    KusamaNodeName.WEB3_FOUNDATION,
 )
 KUSAMA_NODE_CONNECTION_TIMEOUT = 10
 
