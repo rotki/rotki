@@ -240,15 +240,18 @@ def test_cryptocompare_dao_query(cryptocompare):
 def test_get_cached_data_metadata(data_dir, database):
     """Test that the get_cached_data_metadata function works correctly
     and returns just the metadata by reading part ofthe file
+
+    The json cache data in production are saved as one line files.
+    So here we also keep it in one line on purpose. The previous
+    regex we used failed with 1 line json file
     """
-    contents = """{"start_time": 1301536800, "end_time": 1301540400,
-    "data": [{"time": 1301536800, "close": 0.298, "high": 0.298, "low": 0.298, "open": 0.298,
-    "volumefrom": 0.298, "volumeto": 0.298}, {"time": 1301540400, "close": 0.298, "high": 0.298,
-    "low": 0.298, "open": 0.298, "volumefrom": 0.298, "volumeto": 0.298}]}"""
+    contents = """{"start_time": 1301536800, "end_time": 1301540400, "data": [{"time": 1301536800, "close": 0.298, "high": 0.298, "low": 0.298, "open": 0.298, "volumefrom": 0.298, "volumeto": 0.298}, {"time": 1301540400, "close": 0.298, "high": 0.298, "low": 0.298, "open": 0.298, "volumefrom": 0.298, "volumeto": 0.298}]}"""  # noqa: E501
     price_history_dir = get_or_make_price_history_dir(data_dir)
     with open(price_history_dir / f'{PRICE_HISTORY_FILE_PREFIX}BTC_USD.json', 'w') as f:
         f.write(contents)
     cc = Cryptocompare(data_directory=data_dir, database=database)
+    # make sure that _read_cachefile_metadata runs and they are read from file and not from memory
+    cc.price_history = {}
     result = cc.get_cached_data_metadata(
         from_asset=A_BTC,
         to_asset=A_USD,

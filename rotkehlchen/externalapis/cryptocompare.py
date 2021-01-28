@@ -139,7 +139,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 CRYPTOCOMPARE_HOURQUERYLIMIT = 2000
 
-METADATA_RE = re.compile('.*"start_time": *(.*), *"end_time": *(.*),.*')
+METADATA_RE = re.compile('.*"start_time": *(.*), *"end_time": *(.*), "data".*')
 
 
 class PriceHistoryEntry(NamedTuple):
