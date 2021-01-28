@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2181` Users can now force creation of a price oracle's cache (cryptocompare) and also delete and inspect it.
 * :feature:`1228` Users can see the current asset price of each asset on the dashboard and on the blockchain balances.
 * :feature:`2053` Users can now refresh the asset prices on demand.
 * :feature:`2188` When adding/editing ledger actions or trades, users can now specify datetime to seconds precision.
