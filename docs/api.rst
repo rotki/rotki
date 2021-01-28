@@ -1249,6 +1249,187 @@ Purging locally saved data for ethereum modules
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal Rotki error
 
+
+Request creation of oracle price cache
+====================================================
+
+.. http:post:: /api/(version)/oracles/(name)/cache
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a POST on this endpoint with the appropriate arguments will request the creation of a price cache for the oracle. If it already exists it will be appended to or recreated depending on the given arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/oracles/cryptocompare/cache HTTP/1.1
+      Host: localhost:5042
+
+      {"from_asset": "ETH", "to_asset": "EUR", "purge_old": false, "async_query": true}
+
+   :reqjson string name: The name of the oracle for which to create the cache. Valid values are ``"cryptocompare"`` and ``"coingecko"``.
+   :reqjson string from_asset: The from asset of the pair for which to generate the cache
+   :reqjson string to_asset: The to asset of the pair for which to generate the cache
+   :reqjson bool purge_old: If true, and an old cache exists it will be completely removed and the whole cache recreated. If false, only the parts of the time range for which no cache exists will be queried. By default this is false.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": true, "message": "" }
+
+   :statuscode 200: Cache succesfully created.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: The oracle could not be queried due to an error on their side.
+
+Delete an oracle price cache
+================================
+
+.. http:delete:: /api/(version)/oracles/(name)/cache
+
+   Doing a delete on this endpoint with the appropriate arguments will request delete a specific pair's price cache for an oracle.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/oracles/cryptocompare/cache HTTP/1.1
+      Host: localhost:5042
+
+      {"from_asset": "ETH", "to_asset": "EUR"}
+
+   :reqjson string name: The name of the oracle for which to create the cache. Valid values are ``"cryptocompare"`` and ``"coingecko"``.
+   :reqjson string from_asset: The from asset of the pair for which to generate the cache
+   :reqjson string to_asset: The to asset of the pair for which to generate the cache
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": true, "message": "" }
+
+   :statuscode 200: Cache succesfully delete.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
+Get oracle price cache data
+=============================
+
+.. http:get:: /api/(version)/oracles/(name)/cache
+
+   Doing a GET on this endpoint will return information on all cached prices and pairs for the given oracle.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/oracles/cryptocompare/cache HTTP/1.1
+      Host: localhost:5042
+
+      {"async_query": True}
+
+   :reqjson string name: The name of the oracle for which to create the cache. Valid values are ``"cryptocompare"`` and ``"coingecko"``.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+              "from_asset": "ETH",
+              "to_asset": "EUR",
+              "from_timestamp": "1417447629",
+              "to_timestamp": "1611848905",
+          }, {
+              "from_asset": "BTC",
+              "to_asset": "USD",
+              "from_timestamp": "1437457629",
+              "to_timestamp": "1601348905",
+          }],
+          "message": ""
+      }
+
+   :resjson list result: A list of cache results. Each entry contains the from/to asset of the cache pair and the range of the cache.
+   :resjson string from_asset: The identifier of the from asset. For some oracles this is going to be the oracle specific identifier
+   :resjson string to_asset: The identifier of the to asset. For some oracles this is going to be the oracle specific identifier
+   :resjson int from_timestamp: The timestamp at which the price cache for the pair starts
+   :resjson int to_timestamp: The timestamp at which the price cache for the pair ends
+
+   :statuscode 200: Cache succesfully delete.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
+Get supported oracles
+=======================
+
+.. http:get:: /api/(version)/oracles/
+
+   Doing a GET on this endpoint will return information on all supported oracles.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/oracles/ HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "history": [{
+                  "id": "cryptocompare",
+                  "name": "Cryptocompare"
+              }, {
+                  "id": "coingecko",
+                  "name": "Coingecko"
+              }],
+              "current": [{
+                  "id": "cryptocompare",
+                  "name": "Cryptocompare"
+              }, {
+                  "id": "coingecko",
+                  "name": "Coingecko"
+              }],
+
+          "message": ""
+      }
+
+   :resjson object result: A mapping of all supported current and historical oracles
+
+   :statuscode 200: Oracles succesfully queried
+   :statuscode 500: Internal Rotki error
+
 Query supported ethereum modules
 =====================================
 
@@ -1273,7 +1454,19 @@ Query supported ethereum modules
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      { "result": ["uniswap", "yearn_vault", "makerdao_dsr"], "message": "" }
+      { "result": [{
+              "id": "uniswap",
+	      "name": "Uniswap"
+	  }], [{
+	      "id": "yearn_vaults",
+	      "name": "Yearn Vaults"
+	  }], [{
+	      "id": "makerdao_dsr",
+	      "name": "MakerDAO DSR"
+	  }]
+	  "message": "" }
+
+   :resjson object result: A list of all supported module each with its id and human readable name
 
    :statuscode 200: Data succesfully purged.
    :statuscode 409: User is not logged in or some other error. Check error message for details.

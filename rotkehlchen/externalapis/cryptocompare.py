@@ -139,7 +139,7 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 CRYPTOCOMPARE_HOURQUERYLIMIT = 2000
 
-METADATA_RE = re.compile('.*"start_time": *(.*), *"end_time": *(.*),.*')
+METADATA_RE = re.compile('.*"start_time": *(.*), *"end_time": *(.*), "data".*')
 
 
 class PriceHistoryEntry(NamedTuple):
@@ -584,6 +584,36 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         return self.price_history[cache_key]
 
+    def _read_cachefile_metadata(
+            self,
+            cache_key: PairCacheKey,
+    ) -> Optional[Tuple[Timestamp, Timestamp]]:
+        """Read only the start of the json file and get start/end time
+
+        MUCH faster than reading the entire file, since these files can become hundreds of MBs
+        """
+        try:
+            with open(self.price_history_file[cache_key], 'r') as f:
+                f.seek(0)
+                data = f.read(100)  # first 100 bytes, should contain the data
+        except OSError:
+            return None
+
+        match = METADATA_RE.match(data)
+        if not match:
+            return None
+        result = match.group(1, 2)
+        if any(x is None for x in result):
+            return None
+
+        try:
+            start_ts = Timestamp(int(result[0]))
+            end_ts = Timestamp(int(result[1]))
+        except ValueError:
+            return None
+
+        return start_ts, end_ts
+
     def get_cached_data_metadata(
             self,
             from_asset: Asset,
@@ -603,29 +633,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         if memcache is not None:
             return memcache.start_time, memcache.end_time
 
-        # Now read only the start of the json file and get start/end time
-        # It is MUCH faster than reading the entire file, since these files can
-        # become hundreds of MBs
-        try:
-            with open(self.price_history_file[cache_key], 'r') as f:
-                f.seek(0)
-                data = f.read(100)  # first 100 bytes, should contain the data
-        except OSError:
-            return None
-
-        match = METADATA_RE.match(data)
-        if not match:
-            return None
-        result = match.group(1, 2)
-        if any(x is None for x in result):
-            return None
-        try:
-            start_ts = Timestamp(int(result[0]))
-            end_ts = Timestamp(int(result[1]))
-        except ValueError:
-            return None
-
-        return start_ts, end_ts
+        return self._read_cachefile_metadata(cache_key)
 
     def _got_cached_data_at_timestamp(
             self,
@@ -772,6 +780,97 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 break
 
         return calculated_history
+
+    def get_all_cache_data(self) -> List[Dict[str, Any]]:
+        """Returns all current cryptocompare cache data
+
+        Note: The return asset identifiers are the cryptocompare ones and not
+        the canonical ones
+        """
+        cache_data = []
+        for cache_key in self.price_history_file:
+            memcache = self.price_history.get(cache_key, None)
+            if memcache:
+                from_timestamp = memcache.start_time
+                to_timestamp = memcache.end_time
+            else:
+                metadata = self._read_cachefile_metadata(cache_key)
+                if metadata is None:
+                    continue
+                from_timestamp, to_timestamp = metadata
+
+            # cache key has to be valid here. Also note that the assets are
+            from_asset, to_asset = cache_key.split('_')
+            cache_data.append({
+                'from_asset': from_asset,
+                'to_asset': to_asset,
+                'from_timestamp': from_timestamp,
+                'to_timestamp': to_timestamp,
+            })
+
+        return cache_data
+
+    def delete_cache(self, from_asset: Asset, to_asset: Asset) -> None:
+        """Deletes a cache if it exists. Does nothing if it does not"""
+        cache_key = _get_cache_key(from_asset=from_asset, to_asset=to_asset)
+        if cache_key is None:
+            return
+
+        self.price_history.pop(cache_key, None)
+        filename = self.price_history_file.get(cache_key, None)
+        if filename:
+            try:
+                filename.unlink()
+            except FileNotFoundError:  # TODO: In python 3.8 we can add missing_ok=True to unlink  # noqa: E501
+                pass
+
+    def create_cache(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            purge_old: bool,
+    ) -> None:
+        """Creates the cache of the given asset pair from the start of time
+        until now
+
+        if purge_old is true then any old cache in memory and in a file is purged
+
+        May raise:
+            - RemoteError if there is a problem reaching cryptocompare
+            - UnsupportedAsset if any of the two assets is not supported by cryptocompare
+        """
+        now = ts_now()
+
+        # If we got cached data for up to 1 hour ago there is no point doing anything
+        cached_data = self._got_cached_data_at_timestamp(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=Timestamp(now - 3600),
+        )
+        if cached_data and not purge_old:
+            log.debug(
+                'Did not create new cache since we got cache until 1 hour ago',
+                from_asset=from_asset,
+                to_asset=to_asset,
+            )
+            return
+
+        if purge_old:
+            cache_key = _get_cache_key(from_asset=from_asset, to_asset=to_asset)
+            if cache_key and cache_key in self.price_history_file:
+                filename = self.price_history_file[cache_key]
+                self.price_history.pop(cache_key, None)
+                try:
+                    filename.unlink()
+                except FileNotFoundError:  # TODO: In python 3.8 we can add missing_ok=True to unlink  # noqa: E501
+                    pass
+
+        self.get_historical_data(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=now,
+            only_check_cache=False,
+        )
 
     def get_historical_data(
             self,

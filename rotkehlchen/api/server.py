@@ -58,7 +58,9 @@ from rotkehlchen.api.v1.resources import (
     MakerDAOVaultsResource,
     ManuallyTrackedBalancesResource,
     MessagesResource,
+    OraclesResource,
     NamedEthereumModuleDataResource,
+    NamedOracleCacheResource,
     OwnedAssetsResource,
     PeriodicDataResource,
     PingResource,
@@ -106,6 +108,8 @@ URLS_V1: URLS = [
     ('/tasks/<int:task_id>', AsyncTasksResource, 'specific_async_tasks_resource'),
     ('/exchange_rates', ExchangeRatesResource),
     ('/external_services/', ExternalServicesResource),
+    ('/oracles', OraclesResource),
+    ('/oracles/<string:oracle>/cache', NamedOracleCacheResource),
     ('/exchanges', ExchangesResource),
     ('/exchanges/balances', ExchangeBalancesResource),
     (

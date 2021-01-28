@@ -41,7 +41,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_trade_type,
 )
 from rotkehlchen.typing import (
-    AVAILABLE_MODULES,
+    AVAILABLE_MODULES_MAP,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -625,7 +625,7 @@ class DerivationPathField(fields.Field):
         return value
 
 
-class CurrentPriceOracleTypeField(fields.Field):
+class CurrentPriceOracleField(fields.Field):
 
     def _deserialize(
             self,
@@ -642,7 +642,7 @@ class CurrentPriceOracleTypeField(fields.Field):
         return current_price_oracle
 
 
-class HistoricalPriceOracleTypeField(fields.Field):
+class HistoricalPriceOracleField(fields.Field):
 
     def _deserialize(
             self,
@@ -864,12 +864,12 @@ class ModifiableSettingsSchema(Schema):
     calculate_past_cost_basis = fields.Bool(missing=None)
     display_date_in_localtime = fields.Bool(missing=None)
     current_price_oracles = fields.List(
-        CurrentPriceOracleTypeField,
+        CurrentPriceOracleField,
         validate=_validate_current_price_oracles,
         missing=None,
     )
     historical_price_oracles = fields.List(
-        HistoricalPriceOracleTypeField,
+        HistoricalPriceOracleField,
         validate=_validate_historical_price_oracles,
         missing=None,
     )
@@ -882,7 +882,7 @@ class ModifiableSettingsSchema(Schema):
     ) -> None:
         if data['active_modules'] is not None:
             for module in data['active_modules']:
-                if module not in AVAILABLE_MODULES:
+                if module not in AVAILABLE_MODULES_MAP:
                     raise ValidationError(
                         message=f'{module} is not a valid module',
                         field_name='active_modules',
@@ -1333,7 +1333,7 @@ class IgnoredActionsModifySchema(Schema):
 class QueriedAddressesSchema(Schema):
     module = fields.String(
         required=True,
-        validate=webargs.validate.OneOf(choices=AVAILABLE_MODULES),
+        validate=webargs.validate.OneOf(choices=list(AVAILABLE_MODULES_MAP.keys())),
     )
     address = EthereumAddressField(required=True)
 
@@ -1423,5 +1423,20 @@ class HistoricalAssetsPriceSchema(Schema):
 
 class NamedEthereumModuleDataSchema(Schema):
     module_name = fields.String(
-        validate=webargs.validate.OneOf(choices=AVAILABLE_MODULES),
+        validate=webargs.validate.OneOf(choices=list(AVAILABLE_MODULES_MAP.keys())),
     )
+
+
+class NamedOracleCacheSchema(Schema):
+    oracle = HistoricalPriceOracleField(required=True)
+    from_asset = AssetField(required=True)
+    to_asset = AssetField(required=True)
+
+
+class NamedOracleCacheCreateSchema(NamedOracleCacheSchema):
+    purge_old = fields.Boolean(missing=False)
+    async_query = fields.Boolean(missing=False)
+
+
+class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
+    oracle = HistoricalPriceOracleField(required=True)

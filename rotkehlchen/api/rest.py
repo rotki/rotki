@@ -61,6 +61,7 @@ from rotkehlchen.errors import (
     IncorrectApiKeyFormat,
     InputError,
     NoPriceForGivenTimestamp,
+    UnsupportedAsset,
     PremiumApiError,
     PremiumAuthenticationError,
     RemoteError,
@@ -74,13 +75,14 @@ from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.inquirer import Inquirer, CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT, Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
-    AVAILABLE_MODULES,
+    AVAILABLE_MODULES_MAP,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -116,6 +118,10 @@ def _wrap_in_ok_result(result: Any) -> Dict[str, Any]:
 
 def _wrap_in_result(result: Any, message: str) -> Dict[str, Any]:
     return {'result': result, 'message': message}
+
+
+def _get_status_code_from_async_response(response: Dict[str, Any], default: HTTPStatus = HTTPStatus.OK) -> HTTPStatus:  # noqa: E501
+    return response.get('status_code', default)
 
 
 def wrap_in_fail_result(message: str, status_code: Optional[HTTPStatus] = None) -> Dict[str, Any]:
@@ -488,9 +494,12 @@ class RestAPI():
 
         if final_balances == {}:
             result = None
+            status_code = HTTPStatus.CONFLICT
         else:
             result = final_balances
-        return {'result': result, 'message': error_msg}
+            status_code = HTTPStatus.OK
+
+        return {'result': result, 'message': error_msg, 'status_code': status_code}
 
     def _query_exchange_balances(self, name: Optional[str], ignore_cache: bool) -> Dict[str, Any]:
         if name is None:
@@ -503,10 +512,15 @@ class RestAPI():
             return {
                 'result': None,
                 'message': f'Could not query balances for {name} since it is not registered',
+                'status_code': HTTPStatus.CONFLICT,
             }
 
         result, msg = exchange_obj.query_balances(ignore_cache=ignore_cache)
-        return {'result': result, 'message': msg}
+        return {
+            'result': result,
+            'message': msg,
+            'status_code': HTTPStatus.OK if result else HTTPStatus.CONFLICT,
+        }
 
     @require_loggedin_user()
     def query_exchange_balances(
@@ -525,8 +539,9 @@ class RestAPI():
         response = self._query_exchange_balances(name=name, ignore_cache=ignore_cache)
         balances = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
         if balances is None:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
 
@@ -594,8 +609,9 @@ class RestAPI():
             blockchain=blockchain,
             ignore_cache=ignore_cache,
         )
+        status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def _get_trades(
             self,
@@ -660,8 +676,9 @@ class RestAPI():
             to_ts=to_ts,
             location=location,
         )
+        status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
+        return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
     def add_trade(
@@ -801,7 +818,8 @@ class RestAPI():
             location=location,
         )
         result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
+        status_code = _get_status_code_from_async_response(response)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def _get_ledger_actions(
             self,
@@ -854,8 +872,9 @@ class RestAPI():
             to_ts=to_ts,
             location=location,
         )
+        status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
+        return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
     def add_ledger_action(
@@ -1193,8 +1212,9 @@ class RestAPI():
     @staticmethod
     def supported_modules() -> Response:
         """Returns all supported modules"""
+        data = [{'id': x, 'name': y} for x, y in AVAILABLE_MODULES_MAP.items()]
         return api_response(
-            _wrap_in_ok_result(AVAILABLE_MODULES),
+            _wrap_in_ok_result(data),
             status_code=HTTPStatus.OK,
             log_result=False,
         )
@@ -1301,8 +1321,9 @@ class RestAPI():
         )
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
         result_dict = _wrap_in_result(result=process_result(result), message=msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=status_code)
 
     @require_loggedin_user()
     def export_processed_history_csv(self, directory_path: Path) -> Response:
@@ -1372,13 +1393,14 @@ class RestAPI():
         response = self._add_xpub(xpub_data=xpub_data)
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
 
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def _delete_xpub(self, xpub_data: 'XpubData') -> Dict[str, Any]:
         try:
@@ -1399,13 +1421,14 @@ class RestAPI():
         response = self._delete_xpub(xpub_data=xpub_data)
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
 
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
     def edit_xpub(self, xpub_data: 'XpubData') -> Response:
@@ -1467,13 +1490,14 @@ class RestAPI():
         response = self._add_blockchain_accounts(blockchain=blockchain, account_data=account_data)
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
 
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
     def edit_blockchain_accounts(
@@ -1535,13 +1559,14 @@ class RestAPI():
         response = self._remove_blockchain_accounts(blockchain=blockchain, accounts=accounts)
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
 
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def _get_manually_tracked_balances(self) -> Dict[str, Any]:
         balances = process_result(
@@ -1607,7 +1632,8 @@ class RestAPI():
                 data_or_labels=data_or_labels,
             )
         result = self._modify_manually_tracked_balances(function, data_or_labels)  # type: ignore
-        return api_response(result, status_code=result.get('status_code', HTTPStatus.OK))
+        status_code = _get_status_code_from_async_response(result)
+        return api_response(result, status_code=status_code)
 
     @require_loggedin_user()
     def add_manually_tracked_balances(
@@ -1781,12 +1807,13 @@ class RestAPI():
         response = self._get_eth2_stake_deposits()
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=status_code)
 
     def _get_eth2_stake_details(self) -> Dict[str, Any]:
         try:
@@ -1808,12 +1835,13 @@ class RestAPI():
         response = self._get_eth2_stake_details()
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=status_code)
 
     def _get_defi_balances(self) -> Dict[str, Any]:
         """
@@ -1837,12 +1865,13 @@ class RestAPI():
         response = self._get_defi_balances()
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=status_code)
 
     def _get_ethereum_airdrops(self) -> Dict[str, Any]:
         try:
@@ -1863,12 +1892,13 @@ class RestAPI():
         response = self._get_ethereum_airdrops()
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=status_code)
 
     @require_loggedin_user()
     def purge_module_data(self, module_name: Optional[ModuleName]) -> Response:
@@ -1942,7 +1972,8 @@ class RestAPI():
             **kwargs,
         )
         result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
+        status_code = _get_status_code_from_async_response(response)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
     def get_makerdao_dsr_balance(self, async_query: bool) -> Response:
@@ -2284,13 +2315,14 @@ class RestAPI():
         response = self._get_ethereum_transactions(address, from_timestamp, to_timestamp)
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
 
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def get_asset_icon(
             self,
@@ -2355,6 +2387,7 @@ class RestAPI():
         }
         return _wrap_in_ok_result(process_result(result))
 
+    @require_loggedin_user()
     def get_current_assets_price(
             self,
             assets: List[Asset],
@@ -2375,7 +2408,8 @@ class RestAPI():
             target_asset=target_asset,
             ignore_cache=ignore_cache,
         )
-        return api_response(_wrap_in_ok_result(response['result']), status_code=HTTPStatus.OK)
+        status_code = _get_status_code_from_async_response(response)
+        return api_response(_wrap_in_ok_result(response['result']), status_code=status_code)
 
     def _get_historical_assets_price(
             self,
@@ -2413,6 +2447,7 @@ class RestAPI():
         }
         return _wrap_in_ok_result(process_result(result))
 
+    @require_loggedin_user()
     def get_historical_assets_price(
             self,
             assets_timestamp: List[Tuple[Asset, Timestamp]],
@@ -2430,7 +2465,8 @@ class RestAPI():
             assets_timestamp=assets_timestamp,
             target_asset=target_asset,
         )
-        return api_response(_wrap_in_ok_result(response['result']), status_code=HTTPStatus.OK)
+        status_code = _get_status_code_from_async_response(response)
+        return api_response(_wrap_in_ok_result(response['result']), status_code=status_code)
 
     def _sync_data(self, action: Literal['upload', 'download']) -> Dict[str, Any]:
         try:
@@ -2457,11 +2493,7 @@ class RestAPI():
             )
 
         result_dict = self._sync_data(action)
-
-        status_code = result_dict.get('status_code', None)
-        if status_code is None:
-            status_code = HTTPStatus.OK
-
+        status_code = _get_status_code_from_async_response(result_dict)
         return api_response(result_dict, status_code=status_code)
 
     @require_loggedin_user()
@@ -2480,3 +2512,95 @@ class RestAPI():
             response = self.import_data(source, filepath)
             filepath.unlink()
         return response
+
+    def _create_oracle_cache(
+            self,
+            oracle: HistoricalPriceOracle,
+            from_asset: Asset,
+            to_asset: Asset,
+            purge_old: bool,
+    ) -> Dict[str, Any]:
+        try:
+            self.rotkehlchen.create_oracle_cache(oracle, from_asset, to_asset, purge_old)
+        except RemoteError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+        except UnsupportedAsset as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+
+        return _wrap_in_ok_result(True)
+
+    @require_loggedin_user()
+    def create_oracle_cache(
+            self,
+            oracle: HistoricalPriceOracle,
+            from_asset: Asset,
+            to_asset: Asset,
+            purge_old: bool,
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_create_oracle_cache',
+                oracle=oracle,
+                from_asset=from_asset,
+                to_asset=to_asset,
+                purge_old=purge_old,
+            )
+
+        response = self._create_oracle_cache(
+            oracle=oracle,
+            from_asset=from_asset,
+            to_asset=to_asset,
+            purge_old=purge_old,
+        )
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(result_dict, status_code=status_code)
+
+    @require_loggedin_user()
+    def delete_oracle_cache(
+            self,
+            oracle: HistoricalPriceOracle,
+            from_asset: Asset,
+            to_asset: Asset,
+    ) -> Response:
+        self.rotkehlchen.delete_oracle_cache(
+            oracle=oracle,
+            from_asset=from_asset,
+            to_asset=to_asset,
+        )
+        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+
+    def _get_oracle_cache(self, oracle: HistoricalPriceOracle) -> Dict[str, Any]:
+        cache_data = self.rotkehlchen.get_oracle_cache(oracle)
+        result = _wrap_in_ok_result(cache_data)
+        result['status_code'] = HTTPStatus.OK
+        return result
+
+    @require_loggedin_user()
+    def get_oracle_cache(self, oracle: HistoricalPriceOracle, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_get_oracle_cache', oracle=oracle)
+
+        response = self._get_oracle_cache(oracle=oracle)
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(result_dict, status_code=status_code)
+
+    @staticmethod
+    def get_supported_oracles() -> Response:
+        data = {
+            'history': [{'id': str(x), 'name': str(x).capitalize()} for x in HistoricalPriceOracle],  # noqa: E501
+            'current': [{'id': str(x), 'name': str(x).capitalize()} for x in CurrentPriceOracle],  # noqa: E501
+        }
+        result_dict = _wrap_in_ok_result(data)
+        return api_response(result_dict, status_code=HTTPStatus.OK)
