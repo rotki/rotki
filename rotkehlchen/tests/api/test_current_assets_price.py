@@ -13,9 +13,8 @@ from rotkehlchen.tests.utils.api import (
 
 
 @pytest.mark.parametrize('mocked_current_prices', [{
-    'BTC': FVal('33183.98'),
-    'USD': FVal('1'),
-    'GBP': FVal('1.367'),
+    ('BTC', 'USD'): FVal('33183.98'),
+    ('GBP', 'USD'): FVal('1.367'),
 }])
 def test_get_current_assets_price_in_usd(rotkehlchen_api_server):
     async_query = random.choice([False, True])
@@ -44,9 +43,8 @@ def test_get_current_assets_price_in_usd(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('mocked_current_prices', [{
-    'BTC': FVal('33183.98'),
-    'USD': FVal('1'),
-    'GBP': FVal('1.367'),
+    ('USD', 'BTC'): FVal('0.00003013502298398202988309419184'),
+    ('GBP', 'BTC'): FVal('0.00004119457641910343485018976024'),
 }])
 def test_get_current_assets_price_in_btc(rotkehlchen_api_server):
 

@@ -171,6 +171,15 @@ def create_inquirer(
     if not should_mock_current_price_queries:
         return inquirer
 
+    def mock_find_price(
+            from_asset,
+            to_asset,
+            ignore_cache: bool = False,  # pylint: disable=unused-argument
+    ):
+        return mocked_prices.get((from_asset, to_asset), FVal('1.5'))
+
+    inquirer.find_price = mock_find_price  # type: ignore
+
     def mock_find_usd_price(asset, ignore_cache: bool = False):  # pylint: disable=unused-argument
         return mocked_prices.get(asset, FVal('1.5'))
 

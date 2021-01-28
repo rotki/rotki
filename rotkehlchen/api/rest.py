@@ -48,7 +48,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -80,11 +80,11 @@ from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT, Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
+    AVAILABLE_MODULES,
     ApiKey,
     ApiSecret,
     AssetAmount,
     BlockchainAccountData,
-    AVAILABLE_MODULES,
     ChecksumEthAddress,
     EthereumTransaction,
     ExternalService,
@@ -2338,16 +2338,16 @@ class RestAPI():
             f'Querying the current {target_asset.identifier} price of these assets: '
             f'{", ".join([asset.identifier for asset in assets])}',
         )
-        assets_price = {
-            asset: Inquirer().find_usd_price(asset, ignore_cache=ignore_cache) for asset in assets
-        }
-        if target_asset != A_USD:
-            target_asset_price = Inquirer().find_usd_price(target_asset, ignore_cache=ignore_cache)
-            for asset in assets_price.keys():
-                if asset != target_asset:
-                    assets_price[asset] = Price(assets_price[asset] / target_asset_price)
-                else:
-                    assets_price[asset] = Price(FVal('1'))
+        assets_price = {}
+        for asset in assets:
+            if asset != target_asset:
+                assets_price[asset] = Inquirer().find_price(
+                    from_asset=asset,
+                    to_asset=target_asset,
+                    ignore_cache=ignore_cache,
+                )
+            else:
+                assets_price[asset] = Price(FVal('1'))
 
         result = {
             'assets': assets_price,
