@@ -76,7 +76,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import HistoricalPriceOracle
-from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.inquirer import Inquirer, CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT, Rotkehlchen
@@ -2594,3 +2594,12 @@ class RestAPI():
         # success
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
+
+    @staticmethod
+    def get_supported_oracles() -> Response:
+        data = {
+            'history': [{'id': str(x), 'name': str(x).capitalize()} for x in HistoricalPriceOracle],  # noqa: E501
+            'current': [{'id': str(x), 'name': str(x).capitalize()} for x in CurrentPriceOracle],  # noqa: E501
+        }
+        result_dict = _wrap_in_ok_result(data)
+        return api_response(result_dict, status_code=HTTPStatus.OK)

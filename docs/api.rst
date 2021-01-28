@@ -1380,6 +1380,56 @@ Get oracle price cache data
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal Rotki error
 
+Get supported oracles
+=======================
+
+.. http:get:: /api/(version)/oracles/
+
+   Doing a GET on this endpoint will return information on all supported oracles.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/oracles/ HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "history": [{
+                  "id": "cryptocompare",
+                  "name": "Cryptocompare"
+              }, {
+                  "id": "coingecko",
+                  "name": "Coingecko"
+              }],
+              "current": [{
+                  "id": "cryptocompare",
+                  "name": "Cryptocompare"
+              }, {
+                  "id": "coingecko",
+                  "name": "Coingecko"
+              }],
+
+          "message": ""
+      }
+
+   :resjson object result: A mapping of all supported current and historical oracles
+
+   :statuscode 200: Oracles succesfully queried
+   :statuscode 500: Internal Rotki error
+
 Query supported ethereum modules
 =====================================
 

@@ -1336,3 +1336,9 @@ class NamedOracleCacheResource(BaseResource):
             from_asset=from_asset,
             to_asset=to_asset,
         )
+
+
+class OraclesResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.get_supported_oracles()
