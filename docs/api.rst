@@ -805,7 +805,7 @@ Query the current price of assets
 
 .. http:get:: /api/(version)/assets/prices/current
 
-   Querying this endpoint with a list of assets and a target asset will return a dictionary with the the price of the assets in the target asset currency. Providing an empty list or no target asset is an error.
+   Querying this endpoint with a list of assets and a target asset will return an object with the the price of the assets in the target asset currency. Providing an empty list or no target asset is an error.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
@@ -820,11 +820,11 @@ Query the current price of assets
       {
           "assets": ["BTC", "ETH", "LINK", "USD", "EUR"],
           "target_asset": "USD",
-	  "ignore_cache": true,
+	      "ignore_cache": true
       }
 
-   :reqjson list assets: A list of assets to query their current price
-   :reqjson string target_asset: The asset of the price currency
+   :reqjson list assets: A list of assets to query their current price.
+   :reqjson string target_asset: The target asset against which to return the price of each asset in the list.
    :reqjson bool async_query: A boolean denoting whether the query should be made asynchronously or not. Missing defaults to false.
    :reqjson bool ignore_cache: A boolean denoting whether to ignore the current price query cache. Missing defaults to false.
 
@@ -852,7 +852,7 @@ Query the current price of assets
 
    :resjson object result: A JSON object that contains the price of the assets in the target asset currency.
    :resjson object assets: A map between an asset and its price.
-   :resjson string target_asset: The currency of the prices.
+   :resjson string target_asset: The target asset against which to return the price of each asset in the list.
    :statuscode 200: The USD prices have been sucesfully returned
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal Rotki error
@@ -903,7 +903,7 @@ Query the historical price of assets
 
 .. http:get:: /api/(version)/assets/prices/historical
 
-   Querying this endpoint with a list of asset\/timestamp lists and a target asset will return a dictionary with the price of the assets at the given timestamp in the target asset currency. Providing an empty list or no target asset is an error.
+   Querying this endpoint with a list of lists of asset and timestamp, and a target asset will return an object with the price of the assets at the given timestamp in the target asset currency. Providing an empty list or no target asset is an error.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
@@ -920,8 +920,8 @@ Query the historical price of assets
           "target_asset": "USD"
        }
 
-   :reqjson list assets_timestamp: A list of asset\/timestamp lists
-   :reqjson string target_asset: The asset of the price currency
+   :reqjson list assets_timestamp: A list of lists of asset and timestamp
+   :reqjson string target_asset: The target asset against which to return the price of each asset in the list
 
    **Example Response**:
 
@@ -951,7 +951,7 @@ Query the historical price of assets
 
    :resjson object result: A JSON object that contains the price of each asset for the given timestamp in the target asset currency.
    :resjson object assets: A map between an asset and a map that contains the asset price at the specific timestamp.
-   :resjson string target_asset: The currency of the prices.
+   :resjson string target_asset: The target asset against which to return the price of each asset in the list.
    :statuscode 200: The historical USD prices have been sucesfully returned
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal Rotki error

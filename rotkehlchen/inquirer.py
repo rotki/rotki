@@ -239,6 +239,10 @@ class Inquirer():
         Inquirer()._ethereum = ethereum
 
     @staticmethod
+    def is_cache_valid(cache: CachedPriceEntry) -> bool:
+        return ts_now() - cache.time <= CURRENT_PRICE_CACHE_SECS
+
+    @staticmethod
     def set_oracles_order(oracles: List[CurrentPriceOracle]) -> None:
         assert len(oracles) != 0 and len(oracles) == len(set(oracles)), (
             'Oracles can\'t be empty or have repeated items'
@@ -248,19 +252,86 @@ class Inquirer():
         instance._oracle_instances = [getattr(instance, f'_{str(oracle)}') for oracle in oracles]
 
     @staticmethod
-    def find_usd_price(asset: Asset, ignore_cache: bool = False) -> Price:
+    def _query_oracle_instances(
+            from_asset: Asset,
+            to_asset: Asset,
+    ) -> Price:
+        instance = Inquirer()
+        cache_key = (from_asset, to_asset)
+        oracles = instance._oracles
+        oracle_instances = instance._oracle_instances
+        assert isinstance(oracles, list) and isinstance(oracle_instances, list), (
+            'Inquirer should never be called before the setting the oracles'
+        )
+        price = Price(ZERO)
+        for oracle, oracle_instance in zip(oracles, oracle_instances):
+            if oracle_instance.rate_limited_in_last() is True:
+                continue
+
+            try:
+                price = oracle_instance.query_current_price(
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                )
+            except (PriceQueryUnsupportedAsset, RemoteError) as e:
+                log.error(
+                    f'Current price oracle {oracle} failed to request {to_asset.identifier} '
+                    f'price for {from_asset.identifier} due to: {str(e)}.',
+                )
+                continue
+
+            if price != Price(ZERO):
+                log.debug(
+                    f'Current price oracle {oracle} got {to_asset.identifier} price',
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                    price=price,
+                )
+                break
+
+        Inquirer._cached_current_price[cache_key] = CachedPriceEntry(price=price, time=ts_now())
+        return price
+
+    @staticmethod
+    def find_price(
+            from_asset: Asset,
+            to_asset: Asset,
+            ignore_cache: bool = False,
+    ) -> Price:
+        """Returns the current price of 'from_asset' in 'to_asset' valuation.
+        NB: prices for special symbols in any currency but USD are not supported.
+
+        Returns Price(ZERO) if all options have been exhausted and errors are logged in the logs
+        """
+        if from_asset == to_asset:
+            return Price(FVal('1'))
+
+        instance = Inquirer()
+        if to_asset == A_USD:
+            return instance.find_usd_price(asset=from_asset, ignore_cache=ignore_cache)
+
+        cache_key = (from_asset, to_asset)
+        if ignore_cache is False:
+            cache = instance._cached_current_price.get(cache_key, None)
+            if cache is not None and instance.is_cache_valid(cache):
+                return cache.price
+
+        return instance._query_oracle_instances(from_asset=from_asset, to_asset=to_asset)
+
+    @staticmethod
+    def find_usd_price(
+            asset: Asset,
+            ignore_cache: bool = False,
+    ) -> Price:
         """Returns the current USD price of the asset
 
         Returns Price(ZERO) if all options have been exhausted and errors are logged in the logs
         """
         instance = Inquirer()
+        cache_key = (asset, A_USD)
         if ignore_cache is False:
-            cache = instance._cached_current_price.get(asset, None)
-            cache_is_valid = (
-                cache is not None and
-                ts_now() - cache.time <= CURRENT_PRICE_CACHE_SECS
-            )
-            if cache_is_valid:
+            cache = instance._cached_current_price.get(cache_key, None)
+            if cache is not None and instance.is_cache_valid(cache):
                 return cache.price
 
         if asset.identifier in SPECIAL_SYMBOLS:
@@ -277,41 +348,10 @@ class Inquirer():
             else:
                 price = Price(usd_price)
 
-            Inquirer._cached_current_price[asset] = CachedPriceEntry(price=price, time=ts_now())
+            Inquirer._cached_current_price[cache_key] = CachedPriceEntry(price=price, time=ts_now())  # noqa: E501
             return price
 
-        oracles = instance._oracles
-        oracle_instances = instance._oracle_instances
-        assert isinstance(oracles, list) and isinstance(oracle_instances, list), (
-            'Inquirer should never be called before the setting the oracles'
-        )
-        price = Price(ZERO)
-        for oracle, oracle_instance in zip(oracles, oracle_instances):
-            if oracle_instance.rate_limited_in_last() is True:
-                continue
-
-            try:
-                price = oracle_instance.query_current_price(
-                    from_asset=asset,
-                    to_asset=A_USD,
-                )
-            except (PriceQueryUnsupportedAsset, RemoteError) as e:
-                log.error(
-                    f'Current price oracle {oracle} failed to request '
-                    f'USD price for {asset.identifier} due to: {str(e)}.',
-                )
-                continue
-
-            if price != Price(ZERO):
-                log.debug(
-                    f'Current price oracle {oracle} got USD price',
-                    asset=asset,
-                    price=price,
-                )
-                break
-
-        Inquirer._cached_current_price[asset] = CachedPriceEntry(price=price, time=ts_now())
-        return price
+        return instance._query_oracle_instances(from_asset=asset, to_asset=A_USD)
 
     @staticmethod
     def get_fiat_usd_exchange_rates(
