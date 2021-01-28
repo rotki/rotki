@@ -118,6 +118,10 @@ def _wrap_in_result(result: Any, message: str) -> Dict[str, Any]:
     return {'result': result, 'message': message}
 
 
+def _get_status_code_from_async_response(response: Dict[str, Any], default: HTTPStatus = HTTPStatus.OK) -> HTTPStatus:  # noqa: E501
+    return response.get('status_code', default)
+
+
 def wrap_in_fail_result(message: str, status_code: Optional[HTTPStatus] = None) -> Dict[str, Any]:
     result: Dict[str, Any] = {'result': None, 'message': message}
     if status_code:
@@ -488,9 +492,12 @@ class RestAPI():
 
         if final_balances == {}:
             result = None
+            status_code = HTTPStatus.CONFLICT
         else:
             result = final_balances
-        return {'result': result, 'message': error_msg}
+            status_code = HTTPStatus.OK
+
+        return {'result': result, 'message': error_msg, 'status_code': status_code}
 
     def _query_exchange_balances(self, name: Optional[str], ignore_cache: bool) -> Dict[str, Any]:
         if name is None:
@@ -503,10 +510,15 @@ class RestAPI():
             return {
                 'result': None,
                 'message': f'Could not query balances for {name} since it is not registered',
+                'status_code': HTTPStatus.CONFLICT,
             }
 
         result, msg = exchange_obj.query_balances(ignore_cache=ignore_cache)
-        return {'result': result, 'message': msg}
+        return {
+            'result': result,
+            'message': msg,
+            'status_code': HTTPStatus.OK if result else HTTPStatus.CONFLICT,
+        }
 
     @require_loggedin_user()
     def query_exchange_balances(
@@ -525,8 +537,9 @@ class RestAPI():
         response = self._query_exchange_balances(name=name, ignore_cache=ignore_cache)
         balances = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
         if balances is None:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
 
@@ -594,8 +607,9 @@ class RestAPI():
             blockchain=blockchain,
             ignore_cache=ignore_cache,
         )
+        status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def _get_trades(
             self,
@@ -660,8 +674,9 @@ class RestAPI():
             to_ts=to_ts,
             location=location,
         )
+        status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
+        return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
     def add_trade(
@@ -801,7 +816,8 @@ class RestAPI():
             location=location,
         )
         result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
+        status_code = _get_status_code_from_async_response(response)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def _get_ledger_actions(
             self,
@@ -854,8 +870,9 @@ class RestAPI():
             to_ts=to_ts,
             location=location,
         )
+        status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
+        return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
     def add_ledger_action(
@@ -1301,8 +1318,9 @@ class RestAPI():
         )
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
         result_dict = _wrap_in_result(result=process_result(result), message=msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=status_code)
 
     @require_loggedin_user()
     def export_processed_history_csv(self, directory_path: Path) -> Response:
@@ -1372,13 +1390,14 @@ class RestAPI():
         response = self._add_xpub(xpub_data=xpub_data)
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
 
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def _delete_xpub(self, xpub_data: 'XpubData') -> Dict[str, Any]:
         try:
@@ -1399,13 +1418,14 @@ class RestAPI():
         response = self._delete_xpub(xpub_data=xpub_data)
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
 
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
     def edit_xpub(self, xpub_data: 'XpubData') -> Response:
@@ -1467,13 +1487,14 @@ class RestAPI():
         response = self._add_blockchain_accounts(blockchain=blockchain, account_data=account_data)
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
 
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
     def edit_blockchain_accounts(
@@ -1535,13 +1556,14 @@ class RestAPI():
         response = self._remove_blockchain_accounts(blockchain=blockchain, accounts=accounts)
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
 
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def _get_manually_tracked_balances(self) -> Dict[str, Any]:
         balances = process_result(
@@ -1607,7 +1629,8 @@ class RestAPI():
                 data_or_labels=data_or_labels,
             )
         result = self._modify_manually_tracked_balances(function, data_or_labels)  # type: ignore
-        return api_response(result, status_code=result.get('status_code', HTTPStatus.OK))
+        status_code = _get_status_code_from_async_response(result)
+        return api_response(result, status_code=status_code)
 
     @require_loggedin_user()
     def add_manually_tracked_balances(
@@ -1781,12 +1804,13 @@ class RestAPI():
         response = self._get_eth2_stake_deposits()
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=status_code)
 
     def _get_eth2_stake_details(self) -> Dict[str, Any]:
         try:
@@ -1808,12 +1832,13 @@ class RestAPI():
         response = self._get_eth2_stake_details()
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=status_code)
 
     def _get_defi_balances(self) -> Dict[str, Any]:
         """
@@ -1837,12 +1862,13 @@ class RestAPI():
         response = self._get_defi_balances()
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=status_code)
 
     def _get_ethereum_airdrops(self) -> Dict[str, Any]:
         try:
@@ -1863,12 +1889,13 @@ class RestAPI():
         response = self._get_ethereum_airdrops()
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=status_code)
 
     @require_loggedin_user()
     def purge_module_data(self, module_name: Optional[ModuleName]) -> Response:
@@ -1942,7 +1969,8 @@ class RestAPI():
             **kwargs,
         )
         result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=response['status_code'])
+        status_code = _get_status_code_from_async_response(response)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
     def get_makerdao_dsr_balance(self, async_query: bool) -> Response:
@@ -2284,13 +2312,14 @@ class RestAPI():
         response = self._get_ethereum_transactions(address, from_timestamp, to_timestamp)
         result = response['result']
         msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
 
         if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def get_asset_icon(
             self,
@@ -2376,7 +2405,8 @@ class RestAPI():
             target_asset=target_asset,
             ignore_cache=ignore_cache,
         )
-        return api_response(_wrap_in_ok_result(response['result']), status_code=HTTPStatus.OK)
+        status_code = _get_status_code_from_async_response(response)
+        return api_response(_wrap_in_ok_result(response['result']), status_code=status_code)
 
     def _get_historical_assets_price(
             self,
@@ -2432,7 +2462,8 @@ class RestAPI():
             assets_timestamp=assets_timestamp,
             target_asset=target_asset,
         )
-        return api_response(_wrap_in_ok_result(response['result']), status_code=HTTPStatus.OK)
+        status_code = _get_status_code_from_async_response(response)
+        return api_response(_wrap_in_ok_result(response['result']), status_code=status_code)
 
     def _sync_data(self, action: Literal['upload', 'download']) -> Dict[str, Any]:
         try:
@@ -2459,11 +2490,7 @@ class RestAPI():
             )
 
         result_dict = self._sync_data(action)
-
-        status_code = result_dict.get('status_code', None)
-        if status_code is None:
-            status_code = HTTPStatus.OK
-
+        status_code = _get_status_code_from_async_response(result_dict)
         return api_response(result_dict, status_code=status_code)
 
     @require_loggedin_user()
