@@ -428,6 +428,25 @@
   "premium_lock": {
     "tooltip": "Feature is only supported with a premium subscription"
   },
+  "price_oracle_selection": {
+    "add_tooltip": "Add the oracle to the list",
+    "all_added": "No missing price oracles",
+    "header": {
+      "name": "Name",
+      "priority": "Priority"
+    },
+    "hint": "* Removing all the oracles will make it impossible to query prices for assets.",
+    "item": {
+      "delete": "Remove the oracle entry",
+      "empty": "No price oracles found!"
+    }
+  },
+  "price_oracle_settings": {
+    "current_prices": "Current Prices",
+    "historic_prices": "Historic Prices",
+    "subtitle": "Manage which price oracles are used, in which order.",
+    "title": "Price oracle settings"
+  },
   "price_refresh": {
     "button": "Refresh Prices"
   },

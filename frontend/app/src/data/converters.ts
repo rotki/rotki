@@ -30,7 +30,9 @@ export const convertToGeneralSettings = (
   krakenAccountType: settings.kraken_account_type,
   activeModules: settings.active_modules,
   btcDerivationGapLimit: settings.btc_derivation_gap_limit,
-  displayDateInLocaltime: settings.display_date_in_localtime
+  displayDateInLocaltime: settings.display_date_in_localtime,
+  currentPriceOracles: settings.current_price_oracles,
+  historicalPriceOracles: settings.historical_price_oracles
 });
 
 export const convertToAccountingSettings = (

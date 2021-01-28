@@ -17,7 +17,9 @@ export const defaultGeneralSettings = (): GeneralSettings => ({
   krakenAccountType: Defaults.KRAKEN_DEFAULT_ACCOUNT_TYPE,
   activeModules: [],
   btcDerivationGapLimit: Defaults.BTC_DERIVATION_GAP_LIMIT,
-  displayDateInLocaltime: Defaults.DISPLAY_DATE_IN_LOCALTIME
+  displayDateInLocaltime: Defaults.DISPLAY_DATE_IN_LOCALTIME,
+  currentPriceOracles: [],
+  historicalPriceOracles: []
 });
 
 export const defaultAccountingSettings = (): AccountingSettings => ({
