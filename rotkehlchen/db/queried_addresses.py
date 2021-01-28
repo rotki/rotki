@@ -4,7 +4,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import InputError
-from rotkehlchen.typing import AVAILABLE_MODULES, ChecksumAddress, ModuleName
+from rotkehlchen.typing import AVAILABLE_MODULES_MAP, ChecksumAddress, ModuleName
 
 
 class QueriedAddresses():
@@ -65,7 +65,7 @@ class QueriedAddresses():
     def get_queried_addresses_per_module(self) -> Dict[ModuleName, List[ChecksumAddress]]:
         """Get a mapping of modules to addresses to query for that module"""
         mapping: Dict[ModuleName, List[ChecksumAddress]] = {}
-        for module in AVAILABLE_MODULES:
+        for module in AVAILABLE_MODULES_MAP:
             result = self.get_queried_addresses_for_module(module)  # type: ignore
             if result is not None:
                 mapping[module] = result  # type: ignore

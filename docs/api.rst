@@ -1454,7 +1454,19 @@ Query supported ethereum modules
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      { "result": ["uniswap", "yearn_vault", "makerdao_dsr"], "message": "" }
+      { "result": [{
+              "id": "uniswap",
+	      "name": "Uniswap"
+	  }], [{
+	      "id": "yearn_vaults",
+	      "name": "Yearn Vaults"
+	  }], [{
+	      "id": "makerdao_dsr",
+	      "name": "MakerDAO DSR"
+	  }]
+	  "message": "" }
+
+   :resjson object result: A list of all supported module each with its id and human readable name
 
    :statuscode 200: Data succesfully purged.
    :statuscode 409: User is not logged in or some other error. Check error message for details.

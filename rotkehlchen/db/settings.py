@@ -12,7 +12,7 @@ from rotkehlchen.history.typing import (
     HistoricalPriceOracle,
 )
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
-from rotkehlchen.typing import AVAILABLE_MODULES, Timestamp
+from rotkehlchen.typing import AVAILABLE_MODULES_MAP, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 ROTKEHLCHEN_DB_VERSION = 23
@@ -27,7 +27,7 @@ DEFAULT_MAIN_CURRENCY = A_USD
 DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
-DEFAULT_ACTIVE_MODULES = AVAILABLE_MODULES
+DEFAULT_ACTIVE_MODULES = list(AVAILABLE_MODULES_MAP.keys())
 DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS = True
 DEFAULT_BTC_DERIVATION_GAP_LIMIT = 20
 DEFAULT_CALCULATE_PAST_COST_BASIS = True

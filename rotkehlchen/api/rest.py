@@ -82,7 +82,7 @@ from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT, Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
-    AVAILABLE_MODULES,
+    AVAILABLE_MODULES_MAP,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -1212,8 +1212,9 @@ class RestAPI():
     @staticmethod
     def supported_modules() -> Response:
         """Returns all supported modules"""
+        data = [{'id': x, 'name': y} for x, y in AVAILABLE_MODULES_MAP.items()]
         return api_response(
-            _wrap_in_ok_result(AVAILABLE_MODULES),
+            _wrap_in_ok_result(data),
             status_code=HTTPStatus.OK,
             log_result=False,
         )

@@ -41,7 +41,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_trade_type,
 )
 from rotkehlchen.typing import (
-    AVAILABLE_MODULES,
+    AVAILABLE_MODULES_MAP,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -882,7 +882,7 @@ class ModifiableSettingsSchema(Schema):
     ) -> None:
         if data['active_modules'] is not None:
             for module in data['active_modules']:
-                if module not in AVAILABLE_MODULES:
+                if module not in AVAILABLE_MODULES_MAP:
                     raise ValidationError(
                         message=f'{module} is not a valid module',
                         field_name='active_modules',
@@ -1333,7 +1333,7 @@ class IgnoredActionsModifySchema(Schema):
 class QueriedAddressesSchema(Schema):
     module = fields.String(
         required=True,
-        validate=webargs.validate.OneOf(choices=AVAILABLE_MODULES),
+        validate=webargs.validate.OneOf(choices=list(AVAILABLE_MODULES_MAP.keys())),
     )
     address = EthereumAddressField(required=True)
 
@@ -1423,7 +1423,7 @@ class HistoricalAssetsPriceSchema(Schema):
 
 class NamedEthereumModuleDataSchema(Schema):
     module_name = fields.String(
-        validate=webargs.validate.OneOf(choices=AVAILABLE_MODULES),
+        validate=webargs.validate.OneOf(choices=list(AVAILABLE_MODULES_MAP.keys())),
     )
 
 

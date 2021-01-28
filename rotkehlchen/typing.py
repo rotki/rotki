@@ -17,15 +17,17 @@ ModuleName = Literal[
     'uniswap',
     'adex',
 ]
-AVAILABLE_MODULES = [
-    'makerdao_dsr',
-    'makerdao_vaults',
-    'aave',
-    'compound',
-    'yearn_vaults',
-    'uniswap',
-    'adex',
-]
+# TODO: Turn this into some kind of light data structure and not just a mapping
+# This is a mapping of module ids to human readable names
+AVAILABLE_MODULES_MAP = {
+    'makerdao_dsr': 'MakerDAO DSR',
+    'makerdao_vaults': 'MakerDAO Vaults',
+    'aave': 'Aave',
+    'compound': 'Compound',
+    'yearn_vaults': 'Yearn Vaults',
+    'uniswap': 'Uniswap',
+    'adex': 'AdEx',
+}
 
 T_BinaryEthAddress = bytes
 BinaryEthAddress = NewType('BinaryEthAddress', T_BinaryEthAddress)
