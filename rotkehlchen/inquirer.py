@@ -4,7 +4,7 @@ import logging
 from enum import Enum
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 import requests
 
@@ -239,8 +239,12 @@ class Inquirer():
         Inquirer()._ethereum = ethereum
 
     @staticmethod
-    def is_cache_valid(cache: CachedPriceEntry) -> bool:
-        return ts_now() - cache.time <= CURRENT_PRICE_CACHE_SECS
+    def get_cached_price_entry(cache_key: Tuple[Asset, Asset]) -> Optional[CachedPriceEntry]:
+        cache = Inquirer()._cached_current_price.get(cache_key, None)
+        if cache is None or ts_now() - cache.time > CURRENT_PRICE_CACHE_SECS:
+            return None
+
+        return cache
 
     @staticmethod
     def set_oracles_order(oracles: List[CurrentPriceOracle]) -> None:
@@ -282,7 +286,7 @@ class Inquirer():
 
             if price != Price(ZERO):
                 log.debug(
-                    f'Current price oracle {oracle} got {to_asset.identifier} price',
+                    f'Current price oracle {oracle} got price',
                     from_asset=from_asset,
                     to_asset=to_asset,
                     price=price,
@@ -310,10 +314,9 @@ class Inquirer():
         if to_asset == A_USD:
             return instance.find_usd_price(asset=from_asset, ignore_cache=ignore_cache)
 
-        cache_key = (from_asset, to_asset)
         if ignore_cache is False:
-            cache = instance._cached_current_price.get(cache_key, None)
-            if cache is not None and instance.is_cache_valid(cache):
+            cache = instance.get_cached_price_entry(cache_key=(from_asset, to_asset))
+            if cache is not None:
                 return cache.price
 
         return instance._query_oracle_instances(from_asset=from_asset, to_asset=to_asset)
@@ -330,8 +333,8 @@ class Inquirer():
         instance = Inquirer()
         cache_key = (asset, A_USD)
         if ignore_cache is False:
-            cache = instance._cached_current_price.get(cache_key, None)
-            if cache is not None and instance.is_cache_valid(cache):
+            cache = instance.get_cached_price_entry(cache_key=cache_key)
+            if cache is not None:
                 return cache.price
 
         if asset.identifier in SPECIAL_SYMBOLS:
