@@ -773,6 +773,54 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         return calculated_history
 
+    def create_cache(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            purge_old: bool,
+    ) -> None:
+        """Creates the cache of the given asset pair from the start of time
+        until now
+
+        if purge_old is true then any old cache in memory and in a file is purged
+
+        May raise:
+            - RemoteError if there is a problem reaching cryptocompare
+            - UnsupportedAsset if any of the two assets is not supported by cryptocompare
+        """
+        now = ts_now()
+
+        # If we got cached data for up to 1 hour ago there is no point doing anything
+        cached_data = self._got_cached_data_at_timestamp(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=Timestamp(now - 3600),
+        )
+        if cached_data and not purge_old:
+            log.debug(
+                'Did not create new cache since we got cache until 1 hour ago',
+                from_asset=from_asset,
+                to_asset=to_asset,
+            )
+            return
+
+        if purge_old:
+            cache_key = _get_cache_key(from_asset=from_asset, to_asset=to_asset)
+            if cache_key and cache_key in self.price_history_file:
+                filename = self.price_history_file[cache_key]
+                self.price_history.pop(cache_key, None)
+                try:
+                    filename.unlink()
+                except FileNotFoundError:  # TODO: In python 3.8 we can add missing_ok=True to unlink  # noqa: E501
+                    pass
+
+        self.get_historical_data(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=now,
+            only_check_cache=False,
+        )
+
     def get_historical_data(
             self,
             from_asset: Asset,

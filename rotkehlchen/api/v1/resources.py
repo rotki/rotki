@@ -12,10 +12,12 @@ from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.structures import ActionType, LedgerAction, LedgerActionType
+from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AssetIconsSchema,
+    NamedOracleCacheCreateSchema,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
@@ -1289,5 +1291,27 @@ class HistoricalAssetsPriceResource(BaseResource):
         return self.rest_api.get_historical_assets_price(
             assets_timestamp=assets_timestamp,
             target_asset=target_asset,
+            async_query=async_query,
+        )
+
+
+class NamedOracleCacheResource(BaseResource):
+
+    post_schema = NamedOracleCacheCreateSchema()
+
+    @use_kwargs(post_schema, location='json_and_view_args')  # type: ignore
+    def post(
+            self,
+            oracle: HistoricalPriceOracle,
+            from_asset: Asset,
+            to_asset: Asset,
+            purge_old: bool,
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.create_oracle_cache(
+            oracle=oracle,
+            from_asset=from_asset,
+            to_asset=to_asset,
+            purge_old=purge_old,
             async_query=async_query,
         )

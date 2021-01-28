@@ -50,6 +50,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history import EventsHistorian, PriceHistorian
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import (
@@ -1013,3 +1014,24 @@ class Rotkehlchen():
 
     def _connect_ksm_manager_on_startup(self) -> bool:
         return bool(self.data.db.get_blockchain_accounts().ksm)
+
+    def create_oracle_cache(
+            self,
+            oracle: HistoricalPriceOracle,
+            from_asset: Asset,
+            to_asset: Asset,
+            purge_old: bool,
+    ) -> None:
+        """Creates the cache of the given asset pair from the start of time
+        until now for the given oracle.
+
+        if purge_old is true then any old cache in memory and in a file is purged
+
+        May raise:
+            - RemoteError if there is a problem reaching the oracle
+            - UnsupportedAsset if any of the two assets is not supported by the oracle
+        """
+        if oracle != HistoricalPriceOracle.CRYPTOCOMPARE:
+            return  # only for cryptocompare for now
+
+        self.cryptocompare.create_cache(from_asset, to_asset, purge_old)

@@ -1425,3 +1425,11 @@ class NamedEthereumModuleDataSchema(Schema):
     module_name = fields.String(
         validate=webargs.validate.OneOf(choices=AVAILABLE_MODULES),
     )
+
+
+class NamedOracleCacheCreateSchema(Schema):
+    oracle = HistoricalPriceOracleField(required=True)
+    from_asset = AssetField(required=True)
+    to_asset = AssetField(required=True)
+    purge_old = fields.Boolean(missing=False)
+    async_query = fields.Boolean(missing=False)

@@ -1249,6 +1249,47 @@ Purging locally saved data for ethereum modules
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal Rotki error
 
+
+Request creation of oracle price cache
+====================================================
+
+.. http:post:: /api/(version)/oracles/(name)/cache
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a POST on this endpoint with the appropriate arguments will request the creation of a price cache for the oracle. If it already exists it will be appended to or recreated depending on the given arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/oracles/cryptocompare/cache HTTP/1.1
+      Host: localhost:5042
+
+      {"from_asset": "ETH", "to_asset": "EUR", "purge_old": false, "async_query": true}
+
+   :reqjson string name: The name of the oracle for which to create the cache. Valid values are ``"cryptocompare"`` and ``"coingecko"``.
+   :reqjson string from_asset: The from asset of the pair for which to generate the cache
+   :reqjson string to_asset: The to asset of the pair for which to generate the cache
+   :reqjson bool purge_old: If true, and an old cache exists it will be completely removed and the whole cache recreated. If false, only the parts of the time range for which no cache exists will be queried. By default this is false.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": true, "message": "" }
+
+   :statuscode 200: Cache succesfully created.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: The oracle could not be queried due to an error on their side.
+
 Query supported ethereum modules
 =====================================
 

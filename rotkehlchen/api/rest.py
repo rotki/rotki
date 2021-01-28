@@ -61,6 +61,7 @@ from rotkehlchen.errors import (
     IncorrectApiKeyFormat,
     InputError,
     NoPriceForGivenTimestamp,
+    UnsupportedAsset,
     PremiumApiError,
     PremiumAuthenticationError,
     RemoteError,
@@ -74,6 +75,7 @@ from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -2509,3 +2511,53 @@ class RestAPI():
             response = self.import_data(source, filepath)
             filepath.unlink()
         return response
+
+    def _create_oracle_cache(
+            self,
+            oracle: HistoricalPriceOracle,
+            from_asset: Asset,
+            to_asset: Asset,
+            purge_old: bool,
+    ) -> Dict[str, Any]:
+        try:
+            self.rotkehlchen.create_oracle_cache(oracle, from_asset, to_asset, purge_old)
+        except RemoteError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+        except UnsupportedAsset as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+
+        return _wrap_in_ok_result(True)
+
+    @require_loggedin_user()
+    def create_oracle_cache(
+            self,
+            oracle: HistoricalPriceOracle,
+            from_asset: Asset,
+            to_asset: Asset,
+            purge_old: bool,
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_create_oracle_cache',
+                oracle=oracle,
+                from_asset=from_asset,
+                to_asset=to_asset,
+                purge_old=purge_old,
+            )
+
+        response = self._create_oracle_cache(
+            oracle=oracle,
+            from_asset=from_asset,
+            to_asset=to_asset,
+            purge_old=purge_old,
+        )
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(result_dict, status_code=status_code)
