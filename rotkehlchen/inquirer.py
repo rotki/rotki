@@ -123,8 +123,8 @@ class CurrentPriceOracle(Enum):
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
-    CurrentPriceOracle.CRYPTOCOMPARE,
     CurrentPriceOracle.COINGECKO,
+    CurrentPriceOracle.CRYPTOCOMPARE,
 ]
 
 
