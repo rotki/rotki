@@ -515,8 +515,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     );
     Promise.all(additions)
       .then(async () => {
-        commit('defi/reset', undefined, { root: true });
-        await dispatch('resetDefiStatus', {}, { root: true });
+        const options = { root: true };
+        commit('defi/reset', undefined, options);
+        await dispatch('resetDefiStatus', {}, options);
+        await dispatch('refreshPrices', false);
       })
       .catch(e => {
         const title = i18n.tc(
@@ -563,8 +565,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           chain: blockchain,
           balances: result
         });
-        commit('defi/reset', undefined, { root: true });
+        await commit('defi/reset', undefined, { root: true });
         await dispatch('resetDefiStatus', {}, { root: true });
+        await dispatch('refreshPrices', false);
       })
       .catch(e => {
         const title = i18n.tc(
