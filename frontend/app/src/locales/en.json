@@ -100,40 +100,11 @@
   },
   "data_management": {
     "confirm": {
-      "exchange": {
-        "message": "Are you sure you want to purge the cached data for the selected exchange?",
-        "title": "Purge cached exchange data"
-      },
-      "transactions": {
-        "message": "Are you sure you want to purge the cached data for ethereum transactions?",
-        "title": "Purge ethereum transaction data"
-      },
-      "all_exchanges": {
-        "message": "Are you sure you want to purge the cached data for all the exchanges?",
-        "title": "Purge all cached exchange data"
-      }
+      "message": "Are you sure you want to purge the cached data for {source}?",
+      "title": "Confirm cached data purge"
     },
-    "ethereum_transactions": {
-      "purge_button": "Purge transaction cache",
-      "purge_error": "Failed to purge cached ethereum transaction data: {transactionPurgeError}",
-      "purge_success": "Ethereum transaction data were successfully purged.",
-      "purge_tooltip": "Purge the cached ethereum data",
-      "title": "Ethereum Transactions"
-    },
-    "exchange_data": {
-      "purge_all_button": "Purge All Exchanges Cache",
-      "purge_all_error": "Failed to purge cached data for all the exchanges: {allExchangePurgeError}",
-      "purge_all_success": "Cached data for all the available exchanges were successfully purged.",
-      "purge_all_tooltip": "Purge all the cached exchange data. (deposits/withdrawals/trades)",
-      "purge_success": "Cached data for {exchangePurgeSuccess} were successfully purged.",
-      "purge_tooltip": "Purge cached data for the selected exchange",
-      "title": "Exchange Data"
-    },
-    "errors": {
-      "all_exchanges": "Purging the cached data for all the exchanges failed: {message}",
-      "exchange": "Purging cached data for {name} failed: {message}",
-      "transactions": "Purging ethereum transaction cached data failed: {message}"
-    },
+    "success": "Data was successfully deleted",
+    "error": "Purging the cached data for {source} failed: {message}",
     "subtitle": "Allows you to purge data cached by rotki",
     "title": "Manage Data"
   },
@@ -455,6 +426,15 @@
   },
   "progress_screen": {
     "progress": "{progress} %"
+  },
+  "purge_selector": {
+    "label": "Select a data source",
+    "tooltip": "Purge the cached data for the selected source",
+    "exchange": "Exchange: {name}",
+    "module": "Module: {name}",
+    "ethereum_transactions": "Ethereum Transactions",
+    "all_exchanges": "All Exchanges",
+    "all_modules": "All Modules"
   },
   "service_key": {
     "actions": {
