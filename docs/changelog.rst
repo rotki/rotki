@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Add support for Singapore Dollar (SGD) as a fiat currency.
 * :feature:`2022` Users can now see if their accounts are eligible for the Lido LDO airdrop.
 * :feature:`2105` Users can now see if their accounts are eligible for the Furucombo COMBO airdrop.
 * :feature:`2143` You can now add Bitcoin addresses by ENS name. Simply use an ENS name in the BTC address field and if it can be resolved it will be appended to the tracked accounts.
@@ -47,7 +48,6 @@ Changelog
   - `DeXe (DEXE) <https://www.coingecko.com/en/coins/dexe>`__
   - `Trust Wallet Token (TWT) <https://www.coingecko.com/en/coins/trust-wallet-token>`__
   - `Meaconcash (MCH) <https://www.coingecko.com/en/coins/meconcash>`__
-  - Singapore Dollar (SGD)
   - `3X Short Chainlink Token (LINKBEAR) <https://www.coingecko.com/en/coins/3x-short-chainlink-token>`__
   - `3X Long Chainlink Token (LINKBULL) <https://www.coingecko.com/en/coins/3x-long-chainlink-token>`__
   - `3X Short Litecoin Token (LTCBEAR) <https://www.coingecko.com/en/coins/3x-short-litecoin-token>`__

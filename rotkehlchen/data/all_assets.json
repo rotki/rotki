@@ -15009,15 +15009,6 @@
         "symbol": "LDO",
         "type": "ethereum token"
     },
-    "BETH": {
-        "coingecko": "",
-        "ethereum_address": "0xc3501eaAF5E29Aa0529342F409443120fD545ea7",
-        "ethereum_token_decimals": 18,
-        "name": "Binance Beacon ETH",
-        "started": 1608638036,
-        "symbol": "BETH",
-        "type": "ethereum token"
-    },
     "DEXE": {
         "coingecko": "dexe",
         "ethereum_address": "0xde4EE8057785A7e8e800Db58F9784845A5C2Cbd6",
