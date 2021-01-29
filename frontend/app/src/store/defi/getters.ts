@@ -723,7 +723,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           protocol: DEFI_MAKERDAO,
           asset: 'DAI',
           balance: { ...balance },
-          effectiveInterestRate: `${dsrBalances.currentDSR.toFormat(2)}%`
+          effectiveInterestRate: `${dsrBalances.currentDsr.toFormat(2)}%`
         });
       }
     }

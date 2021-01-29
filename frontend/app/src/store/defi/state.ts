@@ -4,7 +4,7 @@ import { Zero } from '@/utils/bignumbers';
 export const defaultState = (): DefiState => ({
   dsrHistory: {},
   dsrBalances: {
-    currentDSR: Zero,
+    currentDsr: Zero,
     balances: {}
   },
   makerDAOVaults: [],
