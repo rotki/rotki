@@ -18,17 +18,21 @@ from rotkehlchen.chain.ethereum.makerdao.common import (
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
+    A_AAVE,
     A_BAL,
     A_BAT,
     A_COMP,
     A_DAI,
     A_ETH,
+    A_GUSD,
     A_KNC,
     A_LINK,
     A_LRC,
     A_MANA,
     A_PAX,
+    A_RENBTC,
     A_TUSD,
+    A_UNI,
     A_USDC,
     A_USDT,
     A_WBTC,
@@ -36,6 +40,7 @@ from rotkehlchen.constants.assets import (
     A_ZRX,
 )
 from rotkehlchen.constants.ethereum import (
+    MAKERDAO_AAVE_A_JOIN,
     MAKERDAO_BAL_A_JOIN,
     MAKERDAO_BAT_A_JOIN,
     MAKERDAO_CAT,
@@ -45,14 +50,17 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_ETH_A_JOIN,
     MAKERDAO_ETH_B_JOIN,
     MAKERDAO_GET_CDPS,
+    MAKERDAO_GUSD_A_JOIN,
     MAKERDAO_JUG,
     MAKERDAO_KNC_A_JOIN,
     MAKERDAO_LINK_A_JOIN,
     MAKERDAO_LRC_A_JOIN,
     MAKERDAO_MANA_A_JOIN,
     MAKERDAO_PAXUSD_A_JOIN,
+    MAKERDAO_RENBTC_A_JOIN,
     MAKERDAO_SPOT,
     MAKERDAO_TUSD_A_JOIN,
+    MAKERDAO_UNI_A_JOIN,
     MAKERDAO_USDC_A_JOIN,
     MAKERDAO_USDC_B_JOIN,
     MAKERDAO_USDT_A_JOIN,
@@ -95,6 +103,10 @@ GEMJOIN_MAPPING = {
     'LINK-A': MAKERDAO_LINK_A_JOIN,
     'BAL-A': MAKERDAO_BAL_A_JOIN,
     'YFI-A': MAKERDAO_YFI_A_JOIN,
+    'GUSD-A': MAKERDAO_GUSD_A_JOIN,
+    'UNI-A': MAKERDAO_UNI_A_JOIN,
+    'RENBTC-A': MAKERDAO_RENBTC_A_JOIN,
+    'AAVE-A': MAKERDAO_AAVE_A_JOIN,
 }
 COLLATERAL_TYPE_MAPPING = {
     'BAT-A': A_BAT,
@@ -114,6 +126,10 @@ COLLATERAL_TYPE_MAPPING = {
     'LINK-A': A_LINK,
     'BAL-A': A_BAL,
     'YFI-A': A_YFI,
+    'GUSD-A': A_GUSD,
+    'UNI-A': A_UNI,
+    'RENBTC-A': A_RENBTC,
+    'AAVE-A': A_AAVE,
 }
 
 
