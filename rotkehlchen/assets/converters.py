@@ -321,9 +321,6 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # YinCoin. No data found except from here:
     # https://coinmarketcap.com/currencies/yincoin/
     'YIN',
-    # LINK, BEAR/BULL. No data found yet but should probably revisit
-    'LINKBULL',
-    'LINKBEAR',
     # Bitcoin and Volatility and Inverse volatility token.
     # No data found yet but should probably revisit. They are
     # in cryptocompare but they have no price
@@ -362,6 +359,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Origo. As of 02/06/2019 no data found outside of bittrex
     # https://international.bittrex.com/Market/Index?MarketName=BTC-OGO
     'OGO',
+    # OriginChain. As of 29/01/2021 no cryptocompare/coingecko data
+    # https://medium.com/bittrexglobal/new-listing-originchain-ogt-b119736dd3f6
+    'OGT',
     # STPT. As of 06/06/2019 no data found outside of bittrex
     # https://twitter.com/BittrexIntl/status/1136045052164227079
     'STPT',
@@ -415,16 +415,23 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'PANDO',  # neither in coingecko nor cryptocompare (own blockchain, released on 2020)
     # bittrex tokenized stocks -- not sure how to handle yet
     'AAPL',
+    'AMC',
     'AMZN',
     'BABA',
+    'BB',
     'BILI',
     'BNTX',
     'BYND',
     'FB',
+    'GME',
     'GOOGL',
+    'MSTR',
     'NFLX',
+    'NOK',
     'PFE',
+    'SLV',  # iShares Silver Trust
     'SPY',
+    'SQ',
     'TSLA',
 )
 
