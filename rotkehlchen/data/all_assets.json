@@ -14999,5 +14999,14 @@
         "started": 1604214421,
         "symbol": "ROOK",
         "type": "ethereum token"
+    },
+    "LDO": {
+        "coingecko": "lido-dao",
+        "ethereum_address": "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
+        "ethereum_token_decimals": 18,
+        "name": "Lido DAO Token",
+        "started": 1608242396,
+        "symbol": "LDO",
+        "type": "ethereum token"
     }
 }

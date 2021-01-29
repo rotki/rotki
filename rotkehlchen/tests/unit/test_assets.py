@@ -283,7 +283,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '7969237a9e90ff27d35c29e2ff2fe895', 'version': 47}
+    last_meta = {'md5': '9eae42f09c6c623aaa1e1907d32e6cfd', 'version': 47}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 

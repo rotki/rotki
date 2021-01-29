@@ -5331,7 +5331,7 @@ Querying ethereum airdrops
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchain/ETH/airdrops HTTP/1.1
+      GET /api/1/blockchains/ETH/airdrops HTTP/1.1
       Host: localhost:5042
 
 

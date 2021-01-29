@@ -1,12 +1,14 @@
-from rotkehlchen.typing import ChecksumEthAddress
-from typing import List, Dict, TextIO, Iterator, Tuple
-from rotkehlchen.constants.assets import A_UNI, A_1INCH, A_TORN, A_CORN, A_GRAIN
 import csv
-import requests
-from pathlib import Path
 from collections import defaultdict
-from rotkehlchen.errors import RemoteError
+from pathlib import Path
+from typing import Dict, Iterator, List, TextIO, Tuple
+
+import requests
+
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.constants.assets import A_1INCH, A_COMBO, A_CORN, A_GRAIN, A_LDO, A_TORN, A_UNI
+from rotkehlchen.errors import RemoteError
+from rotkehlchen.typing import ChecksumEthAddress
 
 AIRDROPS = {
     'uniswap': (
@@ -38,6 +40,18 @@ AIRDROPS = {
         'https://gist.githubusercontent.com/LefterisJP/08d7a5b28876741b300c944650c89280/raw/987ab4a92d5363fdbe262f639565732bd1fd3921/grain_iou.csv',  # noqa: E501
         A_GRAIN,
         'https://claim.harvest.finance/',
+    ),
+    'furucombo': (
+        # is checksummed
+        'https://gist.githubusercontent.com/LefterisJP/69612e155e8063fd6b3422d4efbf22a3/raw/b9023960ab1c478ee2620c456e208e5124115c19/furucombo_airdrop.csv',  # noqa: E501
+        A_COMBO,
+        'https://furucombo.app/',
+    ),
+    'lido': (
+        # is checksummed
+        'https://gist.githubusercontent.com/LefterisJP/57a8d65280a482fed6f3e2cc00c0e540/raw/e6ebac56c438cc8a882585c5f5bfba64eb57c424/lido_airdrop.csv',  # noqa: E501
+        A_LDO,
+        'https://lido.fi/',
     ),
 }
 
@@ -77,7 +91,7 @@ def check_airdrops(
         for addr, amount, *_ in data:
             # not doing to_checksum_address() here since the file addresses are checksummed
             # and doing to_checksum_address() so many times hits performance
-            if protocol_name in ('cornichon', 'tornado', 'grain'):
+            if protocol_name in ('cornichon', 'tornado', 'grain', 'lido'):
                 amount = token_normalized_value_decimals(int(amount), 18)
             if addr in addresses:
                 found_data[addr][protocol_name] = {
