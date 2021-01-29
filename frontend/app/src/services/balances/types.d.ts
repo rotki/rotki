@@ -62,3 +62,15 @@ export interface BlockchainAssetBalances {
 export interface Balances {
   [account: string]: Balance;
 }
+
+export type OracleCacheMeta = {
+  readonly fromAsset: string;
+  readonly toAsset: string;
+  readonly fromTimestamp: string;
+  readonly toTimestamp: string;
+};
+
+export type DataSourceMeta = {
+  readonly id: string;
+  readonly name: string;
+};

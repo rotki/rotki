@@ -390,6 +390,33 @@
     "no_messages": "No messages!",
     "title": "Notifications"
   },
+  "oracle_cache_management": {
+    "clear_error": "Clearing the case for {fromAsset} to {toAsset} failed: {error}",
+    "create_cache": "Cache Pair prices",
+    "notification": {
+      "title":  "Price pair cache creation",
+      "error": "The pair {fromAsset} to {toAsset} failed: {error}",
+      "success": "The pair {fromAsset} to {toAsset} was successfully created"
+    },
+    "create_tooltip": "Fetch and prices for the specified price pair",
+    "delete_confirmation": {
+      "message": "Are you sure you want to delete all prices for the {fromAsset} to {toAsset} pair on {selection}?",
+      "title": "Delete all the cached prices"
+    },
+    "delete_tooltip": "Delete the prices cached for the price oracle",
+    "filter": "Filter",
+    "from_asset": "From Asset",
+    "headers": {
+      "from": "From Asset",
+      "from_date": "From Date",
+      "to": "To Asset",
+      "to_date": "To Date"
+    },
+    "select_oracle": "Select price oracle",
+    "subtitle": "Create/delete and view cached prices",
+    "title": "Oracle cache",
+    "to_asset": "To Asset"
+  },
   "premium_loading_failed": {
     "description": "This might indicate a problem with the premium component service.",
     "open_issue": "If the problem persists open an issue in our issue tracker.",
@@ -1082,6 +1109,11 @@
         "task": {
           "title": "Query All Balances"
         }
+      },
+      "create_oracle_cache": {
+        "already_running": "Task is already running",
+        "failed": "Failed while creating a cache entry from {fromAsset} to {toAsset} on source: {error}",
+        "task": "Creating cache entry from {fromAsset} to {toAsset} on {source}"
       },
       "exchange_rates": {
         "error": {

@@ -1,4 +1,5 @@
 import { BigNumber } from 'bignumber.js';
+import { PriceOracles } from '@/model/action-result';
 import {
   BtcBalances,
   BlockchainAssetBalances,
@@ -131,4 +132,11 @@ export type AssetPrices = {
 export type AssetPriceResponse = {
   readonly assets: AssetPrices;
   readonly targetAsset: string;
+};
+
+export type OracleCachePayload = {
+  readonly source: PriceOracles;
+  readonly fromAsset: string;
+  readonly toAsset: string;
+  readonly purgeOld: boolean;
 };

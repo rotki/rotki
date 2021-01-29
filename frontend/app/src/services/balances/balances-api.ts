@@ -1,8 +1,10 @@
 import { AxiosInstance } from 'axios';
+import { PriceOracles } from '@/model/action-result';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import {
   ManualBalance,
   ManualBalances,
+  OracleCacheMeta,
   SupportedExchange
 } from '@/services/balances/types';
 import {
@@ -21,6 +23,7 @@ import { Blockchain } from '@/typing/types';
 
 export class BalancesApi {
   private readonly axios: AxiosInstance;
+
   constructor(axios: AxiosInstance) {
     this.axios = axios;
   }
@@ -135,6 +138,55 @@ export class BalancesApi {
           targetAsset,
           ignoreCache: ignoreCache ? ignoreCache : undefined
         }),
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async createPriceCache(
+    source: PriceOracles,
+    fromAsset: string,
+    toAsset: string,
+    purgeOld: boolean = false
+  ): Promise<PendingTask> {
+    return this.axios
+      .post<ActionResult<PendingTask>>(
+        `/oracles/${source}/cache`,
+        axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          purgeOld: purgeOld ? purgeOld : undefined,
+          fromAsset,
+          toAsset
+        }),
+        {
+          validateStatus: validWithSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async deletePriceCache(
+    source: PriceOracles,
+    fromAsset: string,
+    toAsset: string
+  ): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>(`/oracles/${source}/cache`, {
+        data: axiosSnakeCaseTransformer({
+          fromAsset,
+          toAsset
+        }),
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async getPriceCache(source: PriceOracles): Promise<OracleCacheMeta[]> {
+    return this.axios
+      .get<ActionResult<OracleCacheMeta[]>>(`/oracles/${source}/cache`, {
         validateStatus: validWithSessionAndExternalService,
         transformResponse: basicAxiosTransformer
       })

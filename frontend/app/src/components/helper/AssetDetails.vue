@@ -3,10 +3,10 @@
     <crypto-icon size="26px" class="asset-details__icon" :symbol="asset" />
     <span class="asset-details__details">
       <span class="asset-details__details__symbol">
-        {{ details.symbol }}
+        {{ symbol }}
       </span>
       <span class="grey--text asset-details__details__subtitle">
-        {{ details.name }}
+        {{ name }}
       </span>
     </span>
   </span>
@@ -33,6 +33,16 @@ export default class AssetDetails extends Vue {
   })
   asset!: string;
   assetInfo!: (key: string) => SupportedAsset;
+
+  get symbol(): string {
+    const details = this.details;
+    return details ? details.symbol : this.asset;
+  }
+
+  get name(): string {
+    const details = this.details;
+    return details ? details.name : this.asset;
+  }
 
   get details(): SupportedAsset {
     return this.assetInfo(this.asset);
