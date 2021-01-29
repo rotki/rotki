@@ -30,5 +30,6 @@ export enum TaskType {
   STAKING_ADEX_HISTORY = 'staking_adex_events',
   DEFI_AIRDROPS = 'defi_airdrops',
   LEDGER_ACTIONS = 'ledger_actions',
-  UPDATE_PRICES = 'update_prices'
+  UPDATE_PRICES = 'update_prices',
+  CREATE_PRICE_CACHE = 'create_price_cache'
 }

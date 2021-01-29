@@ -36,12 +36,13 @@ import {
   BlockchainBalancePayload,
   ExchangeBalancePayload,
   ExchangePayload,
+  OracleCachePayload,
   XpubPayload
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { RotkehlchenState, StatusPayload } from '@/store/types';
+import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
 import { isLoading, setStatus, showError } from '@/store/utils';
 import { Writeable } from '@/types';
 import {
@@ -971,5 +972,59 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       } as StatusPayload,
       { root: true }
     );
+  },
+
+  async createOracleCache(
+    { commit, rootGetters: { 'tasks/isTaskRunning': isTaskRunning } },
+    { fromAsset, purgeOld, source, toAsset }: OracleCachePayload
+  ): Promise<ActionStatus> {
+    const taskType = TaskType.CREATE_PRICE_CACHE;
+    if (isTaskRunning(taskType)) {
+      return {
+        success: false,
+        message: i18n
+          .t('actions.balances.create_oracle_cache.already_running')
+          .toString()
+      };
+    }
+    try {
+      const { taskId } = await api.balances.createPriceCache(
+        source,
+        fromAsset,
+        toAsset,
+        purgeOld
+      );
+      const task = createTask(taskId, taskType, {
+        title: i18n
+          .t('actions.balances.create_oracle_cache.task', {
+            fromAsset,
+            toAsset,
+            source
+          })
+          .toString(),
+        ignoreResult: false,
+        numericKeys: null
+      });
+      commit('tasks/add', task, { root: true });
+      const { result } = await taskCompletion<boolean, TaskMeta>(
+        taskType,
+        `${taskId}`
+      );
+      return {
+        success: result
+      };
+    } catch (e) {
+      return {
+        success: false,
+        message: i18n
+          .t('actions.balances.create_oracle_cache.failed', {
+            fromAsset,
+            toAsset,
+            source,
+            error: e.message
+          })
+          .toString()
+      };
+    }
   }
 };
