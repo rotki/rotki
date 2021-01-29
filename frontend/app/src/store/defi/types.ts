@@ -79,7 +79,7 @@ export interface Airdrops {
 export type AirdropType = typeof AIRDROPS[number];
 
 export interface DSRBalances {
-  readonly currentDSR: BigNumber;
+  readonly currentDsr: BigNumber;
   readonly balances: {
     [account: string]: {
       amount: BigNumber;

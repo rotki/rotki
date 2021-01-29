@@ -46,4 +46,33 @@ describe('axios transformers', () => {
       data: [{ amount: '2' }]
     });
   });
+
+  test('transformer can handle scientific notation', () => {
+    const transformer = setupJsonTransformer(['amount']);
+    expect(
+      axiosCamelCaseTransformer(transformer('{"amount":"0E-27"}'))
+    ).toMatchObject({
+      amount: bigNumberify('0E-27')
+    });
+    expect(
+      axiosCamelCaseTransformer(transformer('{"amount":"1E+2"}'))
+    ).toMatchObject({
+      amount: bigNumberify('1E+2')
+    });
+    expect(
+      axiosCamelCaseTransformer(transformer('{"amount":"2.1E+2"}'))
+    ).toMatchObject({
+      amount: bigNumberify('2.1E+2')
+    });
+    expect(
+      axiosCamelCaseTransformer(transformer('{"amount":"2.1e+2"}'))
+    ).toMatchObject({
+      amount: bigNumberify('2.1e+2')
+    });
+    expect(
+      axiosCamelCaseTransformer(transformer('{"amount":"5.2211e+2"}'))
+    ).toMatchObject({
+      amount: bigNumberify('5.2211e+2')
+    });
+  });
 });
