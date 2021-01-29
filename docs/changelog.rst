@@ -43,6 +43,17 @@ Changelog
   - `Invictus Hyperoin Fund (IHF) <https://www.coingecko.com/en/coins/invictus-hyperion-fund>`__
   - `Flow - Dapper labs (FLOW) <https://www.coingecko.com/en/coins/flow>`__
   - `Lido DAO (LDO) <https://www.coingecko.com/en/coins/lido-dao>`__
+  - `Binance Beacon ETH (BETH) <https://www.cryptocompare.com/coins/beth/overview>`__
+  - `DeXe (DEXE) <https://www.coingecko.com/en/coins/dexe>`__
+  - `Trust Wallet Token (TWT) <https://www.coingecko.com/en/coins/trust-wallet-token>`__
+  - `Meaconcash (MCH) <https://www.coingecko.com/en/coins/meconcash>`__
+  - Singapore Dollar (SGD)
+  - `3X Short Chainlink Token (LINKBEAR) <https://www.coingecko.com/en/coins/3x-short-chainlink-token>`__
+  - `3X Long Chainlink Token (LINKBULL) <https://www.coingecko.com/en/coins/3x-long-chainlink-token>`__
+  - `3X Short Litecoin Token (LTCBEAR) <https://www.coingecko.com/en/coins/3x-short-litecoin-token>`__
+  - `3X Long Litecoin Token (LTCBULL) <https://www.coingecko.com/en/coins/3x-long-litecoin-token>`__
+  - `3X Short Stellar Token (XLMBEAR) <https://www.coingecko.com/en/coins/3x-short-stellar-token>`__
+  - `3X Long Stellar Token (XLMBULL) <https://www.coingecko.com/en/coins/3x-long-stellar-token>`__
 
 * :release:`1.12.2 <2021-01-18>`
 * :bug:`2120` Rotki should now display the action datetime when editing a ledger action.

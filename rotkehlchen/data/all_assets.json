@@ -15008,5 +15008,96 @@
         "started": 1608242396,
         "symbol": "LDO",
         "type": "ethereum token"
+    },
+    "BETH": {
+        "coingecko": "",
+        "ethereum_address": "0xc3501eaAF5E29Aa0529342F409443120fD545ea7",
+        "ethereum_token_decimals": 18,
+        "name": "Binance Beacon ETH",
+        "started": 1608638036,
+        "symbol": "BETH",
+        "type": "ethereum token"
+    },
+    "DEXE": {
+        "coingecko": "dexe",
+        "ethereum_address": "0xde4EE8057785A7e8e800Db58F9784845A5C2Cbd6",
+        "ethereum_token_decimals": 18,
+        "name": "Dexe",
+        "started": 1601302213,
+        "symbol": "DEXE",
+        "type": "ethereum token"
+    },
+    "TWT": {
+        "coingecko": "trust-wallet-token",
+        "name": "Trust Wallet Token",
+        "started": 1582956989,
+        "symbol": "TWT",
+        "type": "binance token"
+    },
+    "MCH": {
+        "coingecko": "meconcash",
+        "name": "Meaconcash",
+        "started": 1603065600,
+        "symbol": "MCH",
+        "type": "own chain"
+    },
+    "SGD": {
+        "name": "Singapore Dollar",
+        "symbol": "SGD",
+        "type": "fiat"
+    },
+    "LINKBEAR": {
+        "coingecko": "3x-short-chainlink-token",
+        "ethereum_address": "0xa209Ba34C01A2713a4453A656630cc9De8A362Bc",
+        "ethereum_token_decimals": 18,
+        "name": "3X Short Chainlink Token",
+        "started": 1580720426,
+        "symbol": "LINKBEAR",
+        "type": "ethereum token"
+    },
+    "LINKBULL": {
+        "coingecko": "3x-long-chainlink-token",
+        "ethereum_address": "0x83aD87C988aC0c6277C0c6234Cc8108b20bB5d9B",
+        "ethereum_token_decimals": 18,
+        "name": "3X Long Chainlink Token",
+        "started": 1580720126,
+        "symbol": "LINKBULL",
+        "type": "ethereum token"
+    },
+    "LTCBEAR": {
+        "coingecko": "3x-short-litecoin-token",
+        "ethereum_address": "0xB422e605fBd765B80D2C4b5d8196C2f94144438B",
+        "ethereum_token_decimals": 18,
+        "name": "3X Short Litecoin Token",
+        "started": 1566117849,
+        "symbol": "LTCBEAR",
+        "type": "ethereum token"
+    },
+    "LTCBULL": {
+        "coingecko": "3x-long-litecoin-token",
+        "ethereum_address": "0xDB61354E9cf2217a29770E9811832B360a8DAad3",
+        "ethereum_token_decimals": 18,
+        "name": "3X Long Litecoin Token",
+        "started": 1566118887,
+        "symbol": "LTCBULL",
+        "type": "ethereum token"
+    },
+    "XLMBEAR": {
+        "coingecko": "3x-short-stellar-token",
+        "ethereum_address": "0x960Efd63aE895F165d874E6cc62501fd0e7Dc50a",
+        "ethereum_token_decimals": 18,
+        "name": "3X Short Stellar Token",
+        "started": 1606581191,
+        "symbol": "XLMBEAR",
+        "type": "ethereum token"
+    },
+    "XLMBULL": {
+        "coingecko": "3x-long-stellar-token",
+        "ethereum_address": "0x3a43a04D80F9881d88080bf9fA8bB720AFb6c966",
+        "ethereum_token_decimals": 18,
+        "name": "3X Long Stellar Token",
+        "started": 1606581191,
+        "symbol": "XLMBULL",
+        "type": "ethereum token"
     }
 }
