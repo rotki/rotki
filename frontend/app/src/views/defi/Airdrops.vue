@@ -82,7 +82,9 @@ import {
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP,
   AIRDROP_CORNICHON,
-  AIRDROP_GRAIN
+  AIRDROP_GRAIN,
+  AIRDROP_LIDO,
+  AIRDROP_FURUCOMBO
 } from '@/store/defi/const';
 import { Airdrop, AirdropType } from '@/store/defi/types';
 import { ETH, GeneralAccount } from '@/typing/types';
@@ -167,6 +169,14 @@ export default class Airdrops extends Mixins(StatusMixin) {
     [AIRDROP_GRAIN]: {
       icon: require(`@/assets/images/grain.png`),
       name: 'Grain'
+    },
+    [AIRDROP_LIDO]: {
+      icon: require(`@/assets/images/airdrops/lido.svg`),
+      name: 'Lido'
+    },
+    [AIRDROP_FURUCOMBO]: {
+      icon: require(`@/assets/images/airdrops/furucombo.png`),
+      name: 'Furucombo'
     }
   };
 

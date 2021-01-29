@@ -285,11 +285,15 @@ export const AIRDROP_1INCH = '1inch';
 export const AIRDROP_TORNADO = 'tornado';
 export const AIRDROP_CORNICHON = 'cornichon';
 export const AIRDROP_GRAIN = 'grain';
+export const AIRDROP_LIDO = 'lido';
+export const AIRDROP_FURUCOMBO = 'furucombo';
 
 export const AIRDROPS = [
   AIRDROP_1INCH,
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP,
   AIRDROP_CORNICHON,
-  AIRDROP_GRAIN
+  AIRDROP_GRAIN,
+  AIRDROP_LIDO,
+  AIRDROP_FURUCOMBO
 ] as const;

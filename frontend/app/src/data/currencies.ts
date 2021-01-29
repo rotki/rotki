@@ -17,6 +17,7 @@ const CURRENCY_TRY = 'TRY';
 const CURRENCY_BTC = 'BTC';
 const CURRENCY_ETH = 'ETH';
 const CURRENCY_CHF = 'CHF';
+const CURRENCY_SGD = 'SGD';
 
 const SUPPORTED_CURRENCIES = [
   CURRENCY_USD,
@@ -33,6 +34,7 @@ const SUPPORTED_CURRENCIES = [
   CURRENCY_ZAR,
   CURRENCY_TRY,
   CURRENCY_CHF,
+  CURRENCY_SGD,
   CURRENCY_BTC,
   CURRENCY_ETH
 ] as const;
@@ -54,6 +56,7 @@ export const currencies: Currency[] = [
   new Currency(i18n.t('currencies.zar').toString(), CURRENCY_ZAR, 'R'),
   new Currency(i18n.t('currencies.try').toString(), CURRENCY_TRY, '₺'),
   new Currency(i18n.t('currencies.chf').toString(), CURRENCY_CHF, 'Fr.'),
+  new Currency(i18n.t('currencies.sgd').toString(), CURRENCY_SGD, 'S$'),
   new Currency('Bitcoin', CURRENCY_BTC, '₿'),
   new Currency('Ether', CURRENCY_ETH, 'Ξ')
 ];
