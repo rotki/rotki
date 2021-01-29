@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.13.0 <2021-01-29>`
 * :feature:`-` Add support for Singapore Dollar (SGD) as a fiat currency.
 * :feature:`2022` Users can now see if their accounts are eligible for the Lido LDO airdrop.
 * :feature:`2105` Users can now see if their accounts are eligible for the Furucombo COMBO airdrop.
