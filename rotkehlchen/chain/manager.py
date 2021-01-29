@@ -64,6 +64,7 @@ from rotkehlchen.typing import (
     ModuleName,
     SupportedBlockchain,
     Timestamp,
+    Price,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import (
@@ -111,6 +112,7 @@ class AccountAction(Enum):
     QUERY = 1
     APPEND = 2
     REMOVE = 3
+    DSR_PROXY_APPEND = 4
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -859,6 +861,42 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         return self.get_balances_update()
 
+    def _update_balances_after_token_query(
+            self,
+            action: AccountAction,
+            balance_result: Dict[ChecksumEthAddress, Dict[EthereumToken, FVal]],
+            token_usd_price: Dict[EthereumToken, Price],
+    ) -> None:
+        token_totals: Dict[EthereumToken, FVal] = defaultdict(FVal)
+        # Update the per account token balance and usd value
+        eth_balances = self.balances.eth
+        for account, token_balances in balance_result.items():
+            for token, token_balance in token_balances.items():
+                if token_usd_price[token] == ZERO:
+                    # skip tokens that have no price
+                    continue
+
+                token_totals[token] += token_balance
+                balance = Balance(
+                    amount=token_balance,
+                    usd_value=token_balance * token_usd_price[token],
+                )
+                if action == AccountAction.DSR_PROXY_APPEND:
+                    eth_balances[account].assets[token] += balance
+                else:
+                    eth_balances[account].assets[token] = balance
+
+        # Update the totals
+        for token, token_total_balance in token_totals.items():
+            balance = Balance(
+                amount=token_total_balance,
+                usd_value=token_total_balance * token_usd_price[token],
+            )
+            if action == AccountAction.QUERY:
+                self.totals.assets[token] = balance
+            else:  # addition
+                self.totals.assets[token] += balance
+
     def _query_ethereum_tokens(
             self,
             action: AccountAction,
@@ -900,34 +938,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 'token balances but the chain is not synced.',
             ) from e
 
-        # Update the per account token balance and usd value
-        token_totals: Dict[EthereumToken, FVal] = defaultdict(FVal)
-        eth_balances = self.balances.eth
-        for account, token_balances in balance_result.items():
-            for token, token_balance in token_balances.items():
-                if token_usd_price[token] == ZERO:
-                    # skip tokens that have no price
-                    continue
-
-                token_totals[token] += token_balance
-                usd_value = token_balance * token_usd_price[token]
-                eth_balances[account].assets[token] = Balance(
-                    amount=token_balance,
-                    usd_value=usd_value,
-                )
-
-        # Update the totals
-        for token, token_total_balance in token_totals.items():
-            if action == AccountAction.QUERY:
-                self.totals.assets[token] = Balance(
-                    amount=token_total_balance,
-                    usd_value=token_total_balance * token_usd_price[token],
-                )
-            else:  # addition
-                self.totals.assets[token] += Balance(
-                    amount=token_total_balance,
-                    usd_value=token_total_balance * token_usd_price[token],
-                )
+        self._update_balances_after_token_query(action, balance_result, token_usd_price)  # noqa: E501
 
     def query_ethereum_tokens(self, force_detection: bool) -> None:
         """Queries the ethereum token balances and populates the state
@@ -1013,7 +1024,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             if additional_total.amount != ZERO:
                 self.totals.assets[A_DAI] += additional_total
 
-        # Also count the vault balance and add it to the totals
+        # Also count the vault balance and defi saver wallets and add it to the totals
         vaults_module = self.makerdao_vaults
         if vaults_module is not None:
             balances = vaults_module.get_balances()
@@ -1026,6 +1037,36 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 else:
                     eth_balances[address] += entry
                     self.totals += entry
+
+            proxy_mappings = vaults_module._get_accounts_having_maker_proxy()
+            proxy_to_address = {}
+            proxy_addresses = []
+            for user_address, proxy_address in proxy_mappings.items():
+                proxy_to_address[proxy_address] = user_address
+                proxy_addresses.append(proxy_address)
+
+            ethtokens = EthTokens(database=self.database, ethereum=self.ethereum)
+            try:
+                balance_result, token_usd_price = ethtokens.query_tokens_for_addresses(
+                    addresses=proxy_addresses,
+                    force_detection=False,
+                )
+            except BadFunctionCallOutput as e:
+                log.error(
+                    'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
+                    'exception: {}'.format(str(e)),
+                )
+                raise EthSyncError(
+                    'Tried to use the ethereum chain of the provided client to query '
+                    'token balances but the chain is not synced.',
+                ) from e
+
+            new_result = {proxy_to_address[x]: v for x, v in balance_result.items()}
+            self._update_balances_after_token_query(
+                action=AccountAction.DSR_PROXY_APPEND,
+                balance_result=new_result,
+                token_usd_price=token_usd_price,
+            )
 
         adex_module = self.adex
         if adex_module is not None and self.premium is not None:
