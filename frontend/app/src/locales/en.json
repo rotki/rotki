@@ -391,19 +391,19 @@
     "title": "Notifications"
   },
   "oracle_cache_management": {
-    "clear_error": "Clearing the case for {fromAsset} to {toAsset} failed: {error}",
+    "clear_error": "Clearing the cache for {fromAsset} to {toAsset} failed: {error}",
     "create_cache": "Cache Pair prices",
     "notification": {
       "title":  "Price pair cache creation",
-      "error": "The pair {fromAsset} to {toAsset} failed: {error}",
-      "success": "The pair {fromAsset} to {toAsset} was successfully created"
+      "error": "The cache creation for pair {fromAsset} to {toAsset} on failed: {error}",
+      "success": "The cache for pair {fromAsset} to {toAsset} on {source} was successfully created"
     },
-    "create_tooltip": "Fetch and prices for the specified price pair",
+    "create_tooltip": "Fetch and cache historical prices for the specified price pair",
     "delete_confirmation": {
-      "message": "Are you sure you want to delete all prices for the {fromAsset} to {toAsset} pair on {selection}?",
+      "message": "Are you sure you want to delete all cached prices for the {fromAsset} to {toAsset} pair on {selection}?",
       "title": "Delete all the cached prices"
     },
-    "delete_tooltip": "Delete the prices cached for the price oracle",
+    "delete_tooltip": "Delete the prices cached for this pair and the selected price oracle",
     "filter": "Filter",
     "from_asset": "From Asset",
     "headers": {
