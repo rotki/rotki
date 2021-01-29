@@ -43,13 +43,13 @@ AIRDROPS = {
     ),
     'furucombo': (
         # is checksummed
-        'https://gist.githubusercontent.com/vnavascues/5f32d53a7ebd1ea844f10cb48e7b7002/raw/fa0c947c6dd1ee2a7b16674a86f0e50cb7bbe631/furucombo_airdrop.csv',  # noqa: E501
+        'https://gist.githubusercontent.com/LefterisJP/69612e155e8063fd6b3422d4efbf22a3/raw/b9023960ab1c478ee2620c456e208e5124115c19/furucombo_airdrop.csv',  # noqa: E501
         A_COMBO,
         'https://furucombo.app/',
     ),
     'lido': (
         # is checksummed
-        'https://gist.githubusercontent.com/vnavascues/6fea5eb631af7e0b8a910e8c62cd471e/raw/fa529e9cc5a90e0970f59f69c649e45b2008bbf9/lido_airdrop.csv',  # noqa: E501
+        'https://gist.githubusercontent.com/LefterisJP/57a8d65280a482fed6f3e2cc00c0e540/raw/e6ebac56c438cc8a882585c5f5bfba64eb57c424/lido_airdrop.csv',  # noqa: E501
         A_LDO,
         'https://lido.fi/',
     ),

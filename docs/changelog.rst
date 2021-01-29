@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`2022` Users can now see if their accounts are eligible for the Lido LDO airdrop.
+* :feature:`2105` Users can now see if their accounts are eligible for the Furucombo COMBO airdrop.
 * :feature:`2143` You can now add Bitcoin addresses by ENS name. Simply use an ENS name in the BTC address field and if it can be resolved it will be appended to the tracked accounts.
 * :feature:`2181` Users can now force creation of a price oracle's cache (cryptocompare) and also delete and inspect it.
 * :feature:`1228` Users can see the current asset price of each asset on the dashboard and on the blockchain balances.
@@ -38,6 +40,7 @@ Changelog
   - `Shroom.finance (SHROOM) <https://www.coingecko.com/en/coins/shroom-finance>`__
   - `Invictus Hyperoin Fund (IHF) <https://www.coingecko.com/en/coins/invictus-hyperion-fund>`__
   - `Flow - Dapper labs (FLOW) <https://www.coingecko.com/en/coins/flow>`__
+  - `Lido DAO (LDO) <https://www.coingecko.com/en/coins/lido-dao>`__
 
 * :release:`1.12.2 <2021-01-18>`
 * :bug:`2120` Rotki should now display the action datetime when editing a ledger action.
