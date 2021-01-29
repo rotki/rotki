@@ -9,6 +9,7 @@ import {
   balanceAxiosTransformer,
   basicAxiosTransformer
 } from '@/services/consts';
+import { SupportedModules } from '@/services/session/types';
 import { ActionResult, PendingTask } from '@/services/types-api';
 import {
   handleResponse,
@@ -35,6 +36,17 @@ export class BalancesApi {
   deleteEthereumTransactions(): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>(`/blockchains/ETH/transactions`, {
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
+  }
+
+  deleteModuleData(module: SupportedModules | null = null): Promise<boolean> {
+    const url = module
+      ? `/blockchains/ETH/modules/${module}/data`
+      : `/blockchains/ETH/modules/data`;
+    return this.axios
+      .delete<ActionResult<boolean>>(url, {
         validateStatus: validStatus
       })
       .then(handleResponse);

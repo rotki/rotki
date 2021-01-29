@@ -50,10 +50,10 @@
       <thead>
         <tr>
           <th class="price-oracle-selection__move" />
-          <th class="price-oracle-selection__priority">
+          <th class="price-oracle-selection__priority text-center">
             {{ $t('price_oracle_selection.header.priority') }}
           </th>
-          <th>{{ $t('price_oracle_selection.header.name') }}</th>
+          <th class="ps-6">{{ $t('price_oracle_selection.header.name') }}</th>
           <th />
         </tr>
       </thead>
@@ -90,7 +90,7 @@
               </div>
             </div>
           </td>
-          <td>{{ index + 1 }}</td>
+          <td class="text-center">{{ index + 1 }}</td>
           <td>
             <oracle-entry :identifier="identifier" />
           </td>
