@@ -122,6 +122,7 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
         'query_current_price',
         wraps=mock_query_price,
     )
+    inquirer.set_oracles_order(oracles=[CurrentPriceOracle.CRYPTOCOMPARE])
 
     with cc_patch as cc:
         price = inquirer.find_usd_price(Asset('ETH'))

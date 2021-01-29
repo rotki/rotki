@@ -6,9 +6,13 @@ from rotkehlchen.chain.bitcoin.utils import (
     is_valid_derivation_path,
     pubkey_to_base58_address,
     pubkey_to_bech32_address,
+    scriptpubkey_to_bech32_address,
+    scriptpubkey_to_p2pkh_address,
+    scriptpubkey_to_p2sh_address,
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.errors import XPUBError
+from rotkehlchen.tests.utils.ens import ENS_BRUNO_BTC_ADDR, ENS_BRUNO_BTC_BYTES
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
@@ -289,3 +293,52 @@ def test_is_valid_derivation_path():
     )
     assert not valid
     assert msg == expected_msg
+
+
+@pytest.mark.parametrize('scriptpubkey, expected_address', [
+    (
+        '76a91462e907b15cbf27d5425399ebf6f0fb50ebb88f1888ac',
+        '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+    ),
+    (
+        ENS_BRUNO_BTC_BYTES,
+        ENS_BRUNO_BTC_ADDR,
+    ),
+])
+def test_scriptpubkey_to_p2pkh_address(scriptpubkey, expected_address):
+    address = scriptpubkey_to_p2pkh_address(bytes.fromhex(scriptpubkey))
+    assert address == expected_address
+
+
+def test_scriptpubkey_to_p2sh_address():
+    scriptpubkey = 'a91462e907b15cbf27d5425399ebf6f0fb50ebb88f1887'
+
+    address = scriptpubkey_to_p2sh_address(bytes.fromhex(scriptpubkey))
+    assert address == '3Ai1JZ8pdJb2ksieUV8FsxSNVJCpoPi8W6'
+
+
+@pytest.mark.parametrize('scriptpubkey, expected_address', [
+    (
+        '0014751e76e8199196d454941c45d1b3a323f1433bd6',
+        'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+    ),
+    (
+        '5128751e76e8199196d454941c45d1b3a323f1433bd6751e76e8199196d454941c45d1b3a323f1433bd6',
+        'bc1pw508d6qejxtdg4y5r3zarvary0c5xw7kw508d6qejxtdg4y5r3zarvary0c5xw7k7grplx',
+    ),
+    (
+        '6002751e',
+        'bc1sw50qa3jx3s',
+    ),
+    (
+        '5210751e76e8199196d454941c45d1b3a323',
+        'bc1zw508d6qejxtdg4y5r3zarvaryvg6kdaj',
+    ),
+    (
+        '00201863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262',
+        'bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3',
+    ),
+])
+def test_scriptpubkey_to_bech32_address(scriptpubkey, expected_address):
+    address = scriptpubkey_to_bech32_address(bytes.fromhex(scriptpubkey))
+    assert address == expected_address

@@ -623,6 +623,7 @@ def test_balances_caching_mixup(
         assert result_btc['totals']['liabilities'] == {}
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
 @pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR, SUBSTRATE_ACC2_KSM_ADDR]])
 def test_query_ksm_balances(rotkehlchen_api_server):
@@ -630,20 +631,29 @@ def test_query_ksm_balances(rotkehlchen_api_server):
     expected.
     """
     async_query = random.choice([False, True])
-
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            "named_blockchain_balances_resource",
-            blockchain=SupportedBlockchain.KUSAMA.value,
-        ),
-        json={'async_query': async_query},
+    setup = setup_balances(
+        rotki=rotkehlchen_api_server.rest_api.rotkehlchen,
+        ethereum_accounts=None,
+        btc_accounts=None,
+        eth_balances=None,
+        token_balances=None,
+        btc_balances=None,
     )
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-    else:
-        result = assert_proper_response_with_result(response)
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                "named_blockchain_balances_resource",
+                blockchain=SupportedBlockchain.KUSAMA.value,
+            ),
+            json={'async_query': async_query},
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+        else:
+            result = assert_proper_response_with_result(response)
 
     # Check per account
     account_1_balances = result['per_account']['KSM'][SUBSTRATE_ACC1_KSM_ADDR]

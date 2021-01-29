@@ -13,7 +13,11 @@ from rotkehlchen.accounting.structures import ActionType, LedgerAction, LedgerAc
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
-from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, is_valid_derivation_path
+from rotkehlchen.chain.bitcoin.utils import (
+    is_valid_btc_address,
+    is_valid_derivation_path,
+    scriptpubkey_to_btc_address,
+)
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
@@ -22,7 +26,7 @@ from rotkehlchen.chain.substrate.utils import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors import DeserializationError, UnknownAsset, XPUBError
+from rotkehlchen.errors import DeserializationError, EncodingError, UnknownAsset, XPUBError
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
@@ -45,6 +49,7 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    BTCAddress,
     ChecksumEthAddress,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -1146,7 +1151,8 @@ def _validate_blockchain_account_schemas(
     elif data['blockchain'] == SupportedBlockchain.BITCOIN:
         for account_data in data['accounts']:
             address = address_getter(account_data)
-            if not is_valid_btc_address(address):
+            # ENS domain will be checked in the transformation step
+            if not address.endswith('.eth') and not is_valid_btc_address(address):
                 raise ValidationError(
                     f'Given value {address} is not a valid bitcoin address',
                     field_name='address',
@@ -1174,6 +1180,41 @@ def _validate_blockchain_account_schemas(
                     field_name='address',
                 )
             given_addresses.add(address)
+
+
+def _transform_btc_address(
+        ethereum: EthereumManager,
+        given_address: str,
+) -> BTCAddress:
+    """Returns a SegWit/P2PKH/P2SH address (if existing) given an ENS domain.
+
+    NB: ENS domains for BTC store the scriptpubkey. Check EIP-2304.
+    """
+    if not given_address.endswith('.eth'):
+        return BTCAddress(given_address)
+
+    resolved_address = ethereum.ens_lookup(
+        given_address,
+        blockchain=SupportedBlockchain.BITCOIN,
+    )
+    if resolved_address is None:
+        raise ValidationError(
+            f'Given ENS address {given_address} could not be resolved for Bitcoin',
+            field_name='address',
+        ) from None
+
+    try:
+        address = scriptpubkey_to_btc_address(bytes.fromhex(resolved_address))
+    except EncodingError as e:
+        raise ValidationError(
+            f'Given ENS address {given_address} does not contain a valid Bitcoin '
+            f"scriptpubkey: {resolved_address}. Bitcoin address can't be obtained.",
+            field_name='address',
+        ) from e
+
+    log.debug(f'Resolved BTC ENS {given_address} to {address}')
+
+    return address
 
 
 def _transform_eth_address(
@@ -1263,6 +1304,12 @@ class BlockchainAccountsPatchSchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
+        if data['blockchain'] == SupportedBlockchain.BITCOIN:
+            for idx, account in enumerate(data['accounts']):
+                data['accounts'][idx]['address'] = _transform_btc_address(
+                    ethereum=self.ethereum_manager,
+                    given_address=account['address'],
+                )
         if data['blockchain'] == SupportedBlockchain.ETHEREUM:
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_eth_address(
@@ -1306,6 +1353,10 @@ class BlockchainAccountsDeleteSchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
+        if data['blockchain'] == SupportedBlockchain.BITCOIN:
+            data['accounts'] = [
+                _transform_btc_address(self.ethereum_manager, x) for x in data['accounts']
+            ]
         if data['blockchain'] == SupportedBlockchain.ETHEREUM:
             data['accounts'] = [
                 _transform_eth_address(self.ethereum_manager, x) for x in data['accounts']
