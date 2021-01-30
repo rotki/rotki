@@ -270,6 +270,12 @@ class TaxableEvents():
             gain_in_profit_currency = with_bought_asset_gain
 
         sold_amount = trade_rate * bought_amount
+        if sold_amount == ZERO:
+            logger.error(
+                f'Not adding a virtual sell event. Could not calculate it from '
+                f'trade_rate * bought_amount = {trade_rate} * {bought_amount}',
+            )
+            return
 
         sold_asset_rate_in_profit_currency = self.get_rate_in_profit_currency(
             paid_with_asset,
@@ -491,6 +497,14 @@ class TaxableEvents():
             receiving_asset and not receiving_asset.is_fiat()
         )
         if skip_trade:
+            return
+
+        if selling_amount == ZERO:
+            logger.error(
+                f'Skipping sell trade of {selling_asset.identifier} for '
+                f'{receiving_asset.identifier if receiving_asset else "nothing"} at {timestamp}'
+                f' since the selling amount is 0',
+            )
             return
 
         logger.debug(

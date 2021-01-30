@@ -34,6 +34,7 @@ jobs:
             - **Linux**
               - [AppImage](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage)
               - [Tar with executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz)
+              - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb)
             - **OSX**
               - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.dmg)
               - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.zip)
@@ -45,6 +46,7 @@ jobs:
             - **Linux**
               - [AppImage checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage.sha512)
               - [Tar with executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz.sha512)
+              - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb.sha512)
             - **OSX**
               - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.dmg.sha512)
               - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.zip.sha512)
