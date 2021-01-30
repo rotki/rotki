@@ -449,6 +449,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         is_result_timesamp_gt_end_ts = True  # prevent extra request
                         break
 
+                    log.debug(f'Attempting to deserialize bitstamp {case_pretty}: {raw_result}')
                     result = deserialization_method(raw_result)
 
                 except DeserializationError as e:
