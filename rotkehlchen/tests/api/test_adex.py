@@ -17,7 +17,6 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
     wait_for_async_task,
 )
-from rotkehlchen.constants.assets import A_ADX
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.chain.ethereum.adex.typing import Bond, ChannelWithdraw, Unbond
@@ -144,6 +143,7 @@ def test_get_events(
     identity_address = '0x2a6c38D16BFdc7b4a20f1F982c058F07BDCe9204'
     tom_pool_id = '0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28'
     bond_id = '0x540cab9883923c01e657d5da4ca5674b6e4626b4a148224635495502d674c7c5'
+    channel_id = '0x30d87bab0ef1e7f8b4c3b894ca2beed41bbd54c481f31e5791c1e855c9dbf4ba'
     result = result[ADEX_TEST_ADDR]
     expected_events = [Bond(
         tx_hash='0x9989f47c6c0a761f98f910ac24e2438d858be96c12124a13be4bb4b3150c55ea',
@@ -160,10 +160,10 @@ def test_get_events(
         address=ADEX_TEST_ADDR,
         identity_address=identity_address,
         timestamp=1607453764,
-        channel_id='',
+        channel_id=channel_id,
         pool_id=tom_pool_id,
-        value=Balance(FVal('5056.894263641728544592'), FVal('10113.788527283457089184')),
-        token=A_ADX,
+        value=Balance(FVal('5056.894263641728544592'), FVal('0')),
+        token=None,
     ), Unbond(
         tx_hash='0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13',
         address=ADEX_TEST_ADDR,

@@ -902,7 +902,14 @@ class Adex(EthereumModule):
 
         # Update token property for each channel withdraw event
         for channel_withdraw in channel_withdraws:
-            channel_withdraw.token = channel_id_token.get(channel_withdraw.channel_id, None)
+            token = channel_id_token.get(channel_withdraw.channel_id, None)
+            if token is None:
+                log.error(
+                    f'Could not find a channel in the channel id to token mapping.'
+                    f'Channel withdraw with tx_hash {channel_withdraw.tx_hash} '
+                    f'will have no token and usd value',
+                )
+            channel_withdraw.token = token
 
         return None
 
