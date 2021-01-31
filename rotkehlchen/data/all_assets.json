@@ -5085,6 +5085,15 @@
         "symbol": "FOTA",
         "type": "ethereum token"
     },
+    "FOX": {
+        "coingecko": "fox-token",
+        "ethereum_address": "0xc770EEfAd204B5180dF6a14Ee197D99d808ee52d",
+        "ethereum_token_decimals": 18,
+        "name": "FOX Token",
+        "started": 1592535600,
+        "symbol": "FOX",
+        "type": "ethereum token"
+    },
     "FRAC": {
         "active": false,
         "coingecko": "",
@@ -12753,6 +12762,15 @@
         "name": "Wings DAO",
         "started": 1483142400,
         "symbol": "WINGS",
+        "type": "ethereum token"
+    },
+    "WIS": {
+        "coingecko": "experty-wisdom-token",
+        "ethereum_address": "0xDecade1c6Bf2cD9fb89aFad73e4a519C867adcF5",
+        "ethereum_token_decimals": 18,
+        "name": "Experty Wisdom Token",
+        "started": 1605558693,
+        "symbol": "WIS",
         "type": "ethereum token"
     },
     "WISH": {
