@@ -168,6 +168,9 @@ class BalanceSheet:
     assets: DefaultDict[Asset, Balance] = field(default_factory=lambda: defaultdict(Balance))
     liabilities: DefaultDict[Asset, Balance] = field(default_factory=lambda: defaultdict(Balance))
 
+    def copy(self) -> 'BalanceSheet':
+        return BalanceSheet(assets=self.assets.copy(), liabilities=self.liabilities.copy())
+
     def serialize(self) -> Dict[str, Dict]:
         return {
             'assets': {k.serialize(): v.serialize() for k, v in self.assets.items()},
