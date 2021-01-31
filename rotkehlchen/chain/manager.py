@@ -122,6 +122,13 @@ class BlockchainBalances:
     btc: Dict[BTCAddress, Balance] = field(init=False)
     ksm: Dict[KusamaAddress, BalanceSheet] = field(init=False)
 
+    def copy(self) -> 'BlockchainBalances':
+        balances = BlockchainBalances(db=self.db)
+        balances.eth = self.eth.copy()
+        balances.btc = self.btc.copy()
+        balances.ksm = self.ksm.copy()
+        return balances
+
     def __post_init__(self) -> None:
         self.eth = defaultdict(BalanceSheet)
         self.btc = defaultdict(Balance)
@@ -413,7 +420,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
         return result if result is not None else self.accounts.eth
 
     def get_balances_update(self) -> BlockchainBalancesUpdate:
-        return BlockchainBalancesUpdate(per_account=self.balances, totals=self.totals)
+        return BlockchainBalancesUpdate(
+            per_account=self.balances.copy(),
+            totals=self.totals.copy(),
+        )
 
     @protect_with_lock(arguments_matter=True)
     @cache_response_timewise()
