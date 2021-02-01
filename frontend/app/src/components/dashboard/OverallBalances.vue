@@ -1,10 +1,10 @@
 <template>
-  <v-card class="overall-balances mt-3 mb-6" :loading="anyLoading">
+  <v-card class="overall-balances mt-3 mb-6">
     <v-row no-gutters class="pa-5">
       <v-col
         cols="12"
-        md="4"
-        lg="4"
+        md="6"
+        lg="5"
         class="d-flex flex-column align-center justify-center"
       >
         <div
@@ -15,6 +15,7 @@
             class="overall-balances__net-worth__loading text-start ms-2"
           />
           <amount-display
+            class="ps-4"
             show-currency="symbol"
             :fiat-currency="currencySymbol"
             :value="totalNetWorth"
@@ -41,7 +42,7 @@
         </div>
         <timeframe-selector v-model="activeTimeframe" />
       </v-col>
-      <v-col cols="12" md="8" lg="8" class="d-flex">
+      <v-col cols="12" md="6" lg="7" class="d-flex">
         <div
           class="d-flex justify-center align-center flex-grow-1 overall-balances__net-worth-chart"
         >
@@ -52,7 +53,11 @@
             :timeframes="timeframes"
           />
           <div v-else class="overall-balances__net-worth-chart__loader">
-            <v-progress-circular indeterminate class="align-self-center" />
+            <v-progress-circular
+              indeterminate
+              class="align-self-center"
+              color="primary"
+            />
             <div class="pt-5 caption">
               {{ $t('overall_balances.loading') }}
             </div>
