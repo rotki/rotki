@@ -1281,10 +1281,10 @@ class CurrentAssetsPriceResource(BaseResource):
 
 class HistoricalAssetsPriceResource(BaseResource):
 
-    get_schema = HistoricalAssetsPriceSchema()
+    post_schema = HistoricalAssetsPriceSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
-    def get(
+    @use_kwargs(post_schema, location='json')  # type: ignore
+    def post(
             self,
             assets_timestamp: List[Tuple[Asset, Timestamp]],
             target_asset: Asset,
