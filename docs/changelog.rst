@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2244` Fix edge case where using a cryptocompare api key could result in the all coins endpoint to error if no cache already existed.
 * :bug:`2215` Ledger action CSV export now contains identifier and not asset name.
 * :bug:`2223` Manual balances with the blockchain tag will no longer be duplicated in the dashboard and blockchain account balances.
 
