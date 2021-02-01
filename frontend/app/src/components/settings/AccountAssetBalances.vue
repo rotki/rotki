@@ -83,24 +83,32 @@ import { AssetBalances, AssetPrices } from '@/store/balances/types';
 export default class AccountAssetBalances extends Vue {
   readonly footerProps = footerProps;
   readonly headers = [
-    { text: this.$tc('account_asset_balance.headers.asset'), value: 'asset' },
+    {
+      text: this.$tc('account_asset_balance.headers.asset'),
+      class: 'text-no-wrap',
+      value: 'asset',
+      cellClass: 'asset-info'
+    },
     {
       text: this.$t('account_asset_balance.headers.price', {
         symbol: CURRENCY_USD
       }).toString(),
+      class: 'text-no-wrap',
+      align: 'end',
       value: 'price'
     },
     {
       text: this.$tc('account_asset_balance.headers.amount'),
       value: 'amount',
-      width: '100%',
+      class: 'text-no-wrap',
+      cellClass: 'asset-divider',
       align: 'end'
     },
     {
       text: this.$tc('account_asset_balance.headers.value'),
       value: 'usdValue',
       align: 'end',
-      cellClass: 'user-holding user-asset-value'
+      class: 'text-no-wrap'
     }
   ];
 
@@ -118,12 +126,18 @@ export default class AccountAssetBalances extends Vue {
 
 <style scoped lang="scss">
 ::v-deep {
-  .user-holding {
-    background-color: rgba(226, 226, 227, 0.2);
+  .asset-divider {
+    width: 100%;
+
+    @media (min-width: 2000px) {
+      width: 50%;
+    }
   }
 
-  .user-asset-value {
-    min-width: 150px;
+  .asset-info {
+    @media (min-width: 2000px) {
+      width: 200px;
+    }
   }
 }
 
