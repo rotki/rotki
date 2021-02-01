@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2215` Ledger action CSV export now contains identifier and not asset name.
 * :bug:`2223` Manual balances with the blockchain tag will no longer be duplicated in the dashboard and blockchain account balances.
 
 * :release:`1.13.0 <2021-01-29>`
