@@ -158,6 +158,22 @@ We require this wrapper as a drop-in replacement of pytest due to quirks of geve
 
 For running the tests with a more specific usage and invocation, please refer to the `pytest <https://docs.pytest.org/en/stable/usage.html>`__ documentation.
 
+
+Linting
+--------
+
+Before each commit you should run the linting checks. They run ``flake8``, ``mypy`` and ``pylint`` in order.
+
+Do that by invoking ``make lint`` from the root directory of the project.
+
+Alternative Linting and Static Analysis Tools
+----------------------------------------------
+
+There is some alternative linting tools that we don't run in the CI since they have a lot of false positives. It's good to run them from time to time so they are listed here.
+
+ - **vulture**: Source and docs `here <https://github.com/jendrikseipp/vulture>`__. Just get via ``pip install vulture``. If you simply run it from the root directory you will get a list of possibly unused code that you can remove. You will have to go through a lot of false positives.
+ - **bandit** Source and docs `here <https://github.com/PyCQA/bandit>`__. Just get via ``pip install bandit``. If you run it you will get a lot of potential issues in the code. You will have to go through a lot of false positives.
+
 Manual Testing
 ***********************
 
