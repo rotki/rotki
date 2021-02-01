@@ -11,7 +11,7 @@ from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.errors import DeserializationError, UnknownAsset
-from rotkehlchen.externalapis.coingecko import Coingecko
+from rotkehlchen.externalapis.coingecko import Coingecko, DELISTED_ASSETS
 from rotkehlchen.typing import AssetType
 from rotkehlchen.utils.hashing import file_md5
 
@@ -140,110 +140,13 @@ def test_coingecko_identifiers_are_reachable(data_dir):
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
-    coins_delisted_from_coingecko = [
-        '1SG',
-        'FLUZ',
-        'EBCH',
-        'GOLOS',
-        'NPER',
-        'BLN',
-        'ADN',
-        'PIX',
-        'MTC-2',
-        'LKY',
-        'ARB',
-        'BBI',
-        'BITCAR',
-        'BTR',
-        'OLE',
-        'ROC',
-        'VIN',
-        'FIH',
-        'WIN-2',
-        'ADH',
-        'AUR',
-        'BAS',
-        'BYC',
-        'DGS',
-        'GMT',
-        'HST',
-        'INS',
-        'IPSX',
-        'SHP',
-        'WDC',
-        'BOST',
-        'FND',
-        'LDC',
-        'ORI',
-        'RIPT',
-        'SGR',
-        'LOCUS',
-        'REDC',
-        'SGN',
-        'SOAR',
-        'YUP',
-        'AC',
-        'APIS',
-        'BITPARK',
-        'CO2',
-        'DAN',
-        'DEC',
-        'DLT',
-        'DROP',
-        'ERD',
-        'ETBS',
-        'GEN',
-        'STP',
-        'SYNC',
-        'TBT',
-        'TNT',
-        'WIC',
-        'XCN',
-        'XTP',
-        'FREC',
-        'PTC',
-        'ACC-3',
-        'J8T',
-        'MRK',
-        'TTV',
-        'ALX',
-        'EBC',
-        'RCN-2',
-        'SKYM',
-        'BTT-2',
-        'GBX-2',
-        'MIC',
-        'SND',
-        '1ST',
-        'aLEND',
-        'aREP',
-        'CRBT',
-        'EXC-2',
-        'DT',
-        'CZR',
-        'ROCK2',
-        'ATMI',
-        'BKC',
-        'CREDO',
-        'ETK',
-        'FNKOS',
-        'FTT',
-        'GIM',
-        'IVY',
-        'KORE',
-        'NBAI',
-        'PAL',
-        'XEL',
-    ]
+
     coingecko = Coingecko(data_directory=data_dir)
     all_coins = coingecko.all_coins()
 
     for identifier, asset_data in AssetResolver().assets.items():
-        if identifier in coins_delisted_from_coingecko:
-            # data = coingecko.asset_data(Asset(identifier))
-            # Figure out if the removed assets can still be queried
-            # for historical prices. If not, then remove their mapping from
-            # all_assets.json and remove them from this tests.
+        if identifier in DELISTED_ASSETS:
+            # delisted assets won't be in the mapping
             continue
 
         asset_type = asset_type_mapping[asset_data['type']]
