@@ -33,7 +33,7 @@ def test_get_historical_assets_price(rotkehlchen_api_server):
     at the given timestamp.
     """
     async_query = random.choice([False, True])
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             "historicalassetspriceresource",

@@ -901,7 +901,7 @@ Query the current exchange rate for select assets
 Query the historical price of assets
 ======================================
 
-.. http:get:: /api/(version)/assets/prices/historical
+.. http:post:: /api/(version)/assets/prices/historical
 
    Querying this endpoint with a list of lists of asset and timestamp, and a target asset will return an object with the price of the assets at the given timestamp in the target asset currency. Providing an empty list or no target asset is an error.
 
@@ -912,7 +912,7 @@ Query the historical price of assets
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/assets/prices/historical HTTP/1.1
+      POST /api/1/assets/prices/historical HTTP/1.1
       Host: localhost:5042
 
        {
