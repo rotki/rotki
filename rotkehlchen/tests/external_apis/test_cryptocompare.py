@@ -429,3 +429,17 @@ def test_keep_special_histohour_cases_up_to_date(cryptocompare):
                 f'with a smaller timestamp.'
             )
             test_warnings.warn(UserWarning(warning_msg))
+
+
+@pytest.mark.parametrize('include_cryptocompare_key', [True])
+def test_cryptocompare_query_with_api_key(cryptocompare):
+    """Just try to query cryptocompare endpoints with an api key
+
+    Regression test for https://github.com/rotki/rotki/issues/2244
+    """
+    # call to an endpoint without any args
+    response = cryptocompare._api_query('v2/news/')
+    assert response and isinstance(response, list)
+    # call to endpoint with args
+    price = cryptocompare.query_current_price(A_ETH, A_USD)
+    assert price is not None

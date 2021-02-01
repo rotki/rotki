@@ -6,7 +6,12 @@
         {{ symbol }}
       </span>
       <span class="grey--text asset-details__details__subtitle">
-        {{ name }}
+        <v-tooltip open-delay="400" top :disabled="$vuetify.breakpoint.lgAndUp">
+          <template #activator="{ on, attrs }">
+            <span v-bind="attrs" v-on="on">{{ name }}</span>
+          </template>
+          <span> {{ fullName }}</span>
+        </v-tooltip>
       </span>
     </span>
   </span>
@@ -39,9 +44,27 @@ export default class AssetDetails extends Vue {
     return details ? details.symbol : this.asset;
   }
 
-  get name(): string {
+  get fullName(): string {
     const details = this.details;
     return details ? details.name : this.asset;
+  }
+
+  get name(): string {
+    const name = this.fullName;
+
+    const truncLength = 7;
+    const xsOnly = this.$vuetify.breakpoint.mdAndDown;
+    const length = name.length;
+
+    if (!xsOnly || (length <= truncLength * 2 && xsOnly)) {
+      return name;
+    }
+
+    return (
+      name.slice(0, truncLength) +
+      '...' +
+      name.slice(length - truncLength, length)
+    );
   }
 
   get details(): SupportedAsset {

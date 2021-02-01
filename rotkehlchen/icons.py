@@ -10,9 +10,10 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
 from rotkehlchen.errors import RemoteError
-from rotkehlchen.externalapis.coingecko import Coingecko
+from rotkehlchen.externalapis.coingecko import Coingecko, DELISTED_ASSETS
 from rotkehlchen.typing import AssetType
 from rotkehlchen.utils.hashing import file_md5
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 
 log = logging.getLogger(__name__)
 
@@ -52,20 +53,27 @@ class IconManager():
 
         If query was okay it returns True, else False
         """
+        # Do not bother querying if asset is delisted. Nothing is returned.
+        # we only keep delisted asset coingecko mappings since historical prices
+        # can still be queried.
+        if asset.identifier in DELISTED_ASSETS:
+            self.failed_assets.add(asset)
+            return False
+
         try:
             data = self.coingecko.asset_data(asset)
         except RemoteError as e:
             log.warning(
                 f'Problem querying coingecko for asset data of {asset.identifier}: {str(e)}',
             )
-            # If a query fails (99$ of fails will be 404s) don't repeat them
+            # If a query fails (99% of fails will be 404s) don't repeat them
             self.failed_assets.add(asset)
             return False
 
         for size in ('thumb', 'small', 'large'):
             url = getattr(data.images, size)
             try:
-                response = requests.get(url)
+                response = requests.get(url, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException:
                 # Any problem getting the image skip it: https://github.com/rotki/rotki/issues/1370
                 continue
@@ -85,7 +93,7 @@ class IconManager():
 
         If the icon is found cached locally it's returned directly.
 
-        If not,all icons of the asset are queried from coingecko and cached
+        If not, all icons of the asset are queried from coingecko and cached
         locally before the requested data are returned.
         """
         if not asset.has_coingecko():
@@ -99,6 +107,9 @@ class IconManager():
 
         # else query coingecko for the icons and cache all of them
         if self._query_coingecko_for_icon(asset) is False:
+            return None
+
+        if not needed_path.is_file():
             return None
 
         with open(needed_path, 'rb') as f:

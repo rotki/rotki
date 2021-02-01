@@ -166,7 +166,8 @@ export default class DashboardAssetTable extends Vue {
     return [
       {
         text: this.$tc('dashboard_asset_table.headers.asset'),
-        value: 'asset'
+        value: 'asset',
+        cellClass: 'asset-info'
       },
       {
         text: this.$t('dashboard_asset_table.headers.price', {
@@ -180,20 +181,22 @@ export default class DashboardAssetTable extends Vue {
         text: this.$tc('dashboard_asset_table.headers.amount'),
         value: 'amount',
         align: 'end',
-        width: '100%'
+        cellClass: 'asset-divider'
       },
       {
         text: this.$t('dashboard_asset_table.headers.value', {
           symbol: this.currencySymbol ?? CURRENCY_USD
         }).toString(),
         value: 'usdValue',
-        align: 'end'
+        align: 'end',
+        class: 'text-no-wrap'
       },
       {
         text: this.$tc('dashboard_asset_table.headers.percentage'),
         value: 'percentage',
         align: 'end',
-        width: '120px',
+        cellClass: 'asset-percentage',
+        class: 'text-no-wrap',
         sortable: false
       }
     ];
@@ -206,6 +209,30 @@ export default class DashboardAssetTable extends Vue {
 </script>
 
 <style scoped lang="scss">
+::v-deep {
+  .asset-divider {
+    width: 100%;
+
+    @media (min-width: 2000px) {
+      width: 50%;
+    }
+  }
+
+  .asset-info {
+    @media (min-width: 2000px) {
+      width: 300px;
+    }
+  }
+
+  .asset-percentage {
+    width: 120px;
+
+    @media (min-width: 2000px) {
+      width: 200px;
+    }
+  }
+}
+
 .dashboard-asset-table {
   &__search {
     max-width: 450px;

@@ -2,6 +2,10 @@
 Changelog
 =========
 
+* :bug:`-` Users will now see the total worth contained in the card for bigger amounts.
+* :bug:`2239` Amounts in the dashboard should now appear in single line for users.
+* :bug:`2244` Fix edge case where using a cryptocompare api key could result in the all coins endpoint to error if no cache already existed.
+* :bug:`2215` Ledger action CSV export now contains identifier and not asset name.
 * :bug:`2223` Manual balances with the blockchain tag will no longer be duplicated in the dashboard and blockchain account balances.
 
 * :feature:`-` Added support for the following tokens:

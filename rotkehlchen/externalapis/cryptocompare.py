@@ -312,7 +312,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
         log.debug('Querying cryptocompare', url=querystr)
         api_key = self._get_api_key()
         if api_key:
-            querystr += f'&api_key={api_key}'
+            querystr += '?' if '?' not in querystr else '&'
+            querystr += f'api_key={api_key}'
 
         tries = CRYPTOCOMPARE_QUERY_RETRY_TIMES
         while tries >= 0:
