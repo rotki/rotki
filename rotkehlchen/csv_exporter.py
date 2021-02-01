@@ -504,7 +504,7 @@ class CSVExporter():
             'time': self.timestamp_to_date(action.timestamp),
             'type': str(action.action_type),
             'location': str(action.location),
-            'asset': str(action.asset),
+            'asset': action.asset.identifier,
             'amount': str(action.amount),
             f'profit_loss_in_{self.profit_currency.identifier}': profit_loss_in_profit_currency,
         })
