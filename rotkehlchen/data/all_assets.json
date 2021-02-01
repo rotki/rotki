@@ -413,6 +413,15 @@
         "symbol": "ALBT",
         "type": "ethereum token"
     },
+    "ALEPH": {
+        "coingecko": "aleph",
+        "ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
+        "ethereum_token_decimals": 18,
+        "name": "aleph.im v2",
+        "started": 1601134720,
+        "symbol": "ALEPH",
+        "type": "ethereum token"
+    },
     "ALGO": {
         "coingecko": "algorand",
         "name": "Algorand",
@@ -9008,6 +9017,15 @@
         "name": "Perlin",
         "started": 1566604800,
         "symbol": "PERL",
+        "type": "ethereum token"
+    },
+    "PERP": {
+        "coingecko": "perpetual-protocol",
+        "ethereum_address": "0xbC396689893D065F41bc2C6EcbeE5e0085233447",
+        "ethereum_token_decimals": 18,
+        "name": "Perpetual",
+        "started": 1599343689,
+        "symbol": "PERP",
         "type": "ethereum token"
     },
     "PERX": {
