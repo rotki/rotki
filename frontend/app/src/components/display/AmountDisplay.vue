@@ -31,7 +31,11 @@
         "
       >
         <template #activator="{ on, attrs }">
-          <span class="amount-display__value" v-bind="attrs" v-on="on">
+          <span
+            class="amount-display__value text-no-wrap"
+            v-bind="attrs"
+            v-on="on"
+          >
             {{ formattedValue }}
           </span>
         </template>

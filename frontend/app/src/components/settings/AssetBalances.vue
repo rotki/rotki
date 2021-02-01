@@ -128,19 +128,24 @@ export default class AssetBalances extends Vue {
     return [
       {
         text: this.$t('asset_balances.headers.asset').toString(),
-        value: 'asset'
+        value: 'asset',
+        class: 'text-no-wrap',
+        cellClass: 'asset-info'
       },
       {
         text: this.$t('asset_balances.headers.price', {
           symbol: this.symbol ?? CURRENCY_USD
         }).toString(),
-        value: 'price'
+        value: 'price',
+        align: 'end',
+        class: 'text-no-wrap'
       },
       {
         text: this.$t('asset_balances.headers.amount').toString(),
         value: 'amount',
         align: 'end',
-        width: '100%'
+        class: 'text-no-wrap',
+        cellClass: 'asset-divider'
       },
       {
         text: this.$t('asset_balances.headers.value', {
@@ -148,7 +153,8 @@ export default class AssetBalances extends Vue {
         }).toString(),
         value: 'usdValue',
         align: 'end',
-        cellClass: 'user-asset-value'
+        cellClass: 'user-asset-value',
+        class: 'text-no-wrap'
       }
     ];
   }
@@ -157,8 +163,18 @@ export default class AssetBalances extends Vue {
 
 <style scoped lang="scss">
 ::v-deep {
-  .user-asset-value {
-    min-width: 150px;
+  .asset-divider {
+    width: 100%;
+
+    @media (min-width: 2000px) {
+      width: 50%;
+    }
+  }
+
+  .asset-info {
+    @media (min-width: 2000px) {
+      width: 200px;
+    }
   }
 }
 
