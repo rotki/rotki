@@ -9,6 +9,7 @@ Changelog
   - `FOX Token (FOX) <https://www.coingecko.com/en/coins/fox-token>`__
   - `Experty Wisdom Token (WIS) <https://www.coingecko.com/en/coins/experty-wisdom-token>`__
   - `aleph.im v2 (ALEPH) <https://www.coingecko.com/en/coins/aleph-im>`__
+  - `Perpetual Protocol (PERP) <https://www.coingecko.com/en/coins/perpetual-protocol>`__
 
 * :release:`1.13.0 <2021-01-29>`
 * :feature:`-` Add support for Singapore Dollar (SGD) as a fiat currency.

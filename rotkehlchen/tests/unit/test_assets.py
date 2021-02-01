@@ -234,6 +234,11 @@ def test_coingecko_identifiers_are_reachable(data_dir):
         'NBAI',
         'PAL',
         'XEL',
+        'ATS',
+        'BCY',
+        'yDAI+yUSDC+yUSDT+yBUSD',
+        'yyDAI+yUSDC+yUSDT+yBUSD',
+        'ypaxCrv',
     ]
     coingecko = Coingecko(data_directory=data_dir)
     all_coins = coingecko.all_coins()
@@ -283,7 +288,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '950c7bc92df863c840a0e7effc0f635c', 'version': 49}
+    last_meta = {'md5': 'acfd8d94b867143cc45017bf2e242e5d', 'version': 50}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 
