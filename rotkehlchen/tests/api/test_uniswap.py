@@ -193,11 +193,7 @@ EXPECTED_TRADES = [AMMTrade(
 ), AMMTrade(
     trade_type=TradeType.BUY,
     base_asset=EthereumToken('DAI'),
-    quote_asset=UnknownEthereumToken(
-        ethereum_address=deserialize_ethereum_address('0x27702a26126e0B3702af63Ee09aC4d1A084EF628'),  # noqa: E501
-        symbol='ALEPH',
-        name='aleph.im v2',
-    ),
+    quote_asset=EthereumToken('ALEPH'),
     amount=AssetAmount(FVal('904.171423330858608178')),
     rate=Price(FVal('6.231222126465350944166830285')),
     trade_index=0,
@@ -209,11 +205,7 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=deserialize_ethereum_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
         timestamp=Timestamp(1602796833),
         location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0x27702a26126e0B3702af63Ee09aC4d1A084EF628'),  # noqa: E501
-            symbol='ALEPH',
-            name='aleph.im v2',
-        ),
+        token0=EthereumToken('ALEPH'),
         token1=EthereumToken('WETH'),
         amount0_in=AssetAmount(FVal('5634.092979176915803392')),
         amount1_in=AssetAmount(ZERO),
