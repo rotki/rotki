@@ -10,6 +10,11 @@ Changelog
 * :bug:`2215` Ledger action CSV export now contains identifier and not asset name.
 * :bug:`2223` Manual balances with the blockchain tag will no longer be duplicated in the dashboard and blockchain account balances.
 
+* :feature:`-` Added support for the following tokens:
+
+  - `FOX Token (FOX) <https://www.coingecko.com/en/coins/fox-token>`__
+  - `Experty Wisdom Token (WIS) <https://www.coingecko.com/en/coins/experty-wisdom-token>`__
+
 * :release:`1.13.0 <2021-01-29>`
 * :feature:`-` Add support for Singapore Dollar (SGD) as a fiat currency.
 * :feature:`2022` Users can now see if their accounts are eligible for the Lido LDO airdrop.
