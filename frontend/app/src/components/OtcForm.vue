@@ -23,14 +23,24 @@
             </v-radio-group>
           </v-col>
           <v-col cols="12" sm="9" class="d-flex flex-column">
-            <v-text-field
-              v-model="pair"
-              class="otc-form__pair"
-              :label="$t('otc_form.pair.label')"
-              persistent-hint
-              :hint="$t('otc_form.pair.hint')"
-              :error-messages="errorMessages['pair']"
-            />
+            <v-row>
+              <v-col cols="12" md="6">
+                <asset-select
+                  v-model="base"
+                  :hint="$t('otc_form.base_asset.hint')"
+                  :label="$t('otc_form.base_asset.label')"
+                  :error-messages="errorMessages['pair']"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <asset-select
+                  v-model="quote"
+                  :hint="$t('otc_form.quote_asset.hint')"
+                  :label="$t('otc_form.quote_asset.label')"
+                  :error-messages="errorMessages['pair']"
+                />
+              </v-col>
+            </v-row>
             <v-text-field
               v-model="amount"
               class="otc-form__amount"
@@ -121,8 +131,10 @@ export default class OtcForm extends Vue {
     (v: string) => !!v || this.$t('otc_form.validation.non_empty_fee')
   ];
 
+  base: string = '';
+  quote: string = '';
+
   id: string = '';
-  pair: string = '';
   datetime: string = '';
   amount: string = '';
   rate: string = '';
@@ -131,6 +143,21 @@ export default class OtcForm extends Vue {
   link: string = '';
   notes: string = '';
   type: TradeType = 'buy';
+
+  get pair(): string {
+    return `${this.base}_${this.quote}`;
+  }
+
+  set pair(pair: string) {
+    if (pair.includes('_')) {
+      const [base, quote] = pair.split('_');
+      this.base = base;
+      this.quote = quote;
+    } else {
+      this.base = '';
+      this.quote = '';
+    }
+  }
 
   mounted() {
     this.setEditMode();

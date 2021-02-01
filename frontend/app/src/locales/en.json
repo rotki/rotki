@@ -832,18 +832,22 @@
     "rotki_premium": "rotki Premium"
   },
   "otc_form": {
+    "base_asset": {
+      "label": "Base Asset",
+      "hint": "The base asset of the trade"
+    },
     "date": {
       "hint": "Time the trade took place",
       "label": "Time"
+    },
+    "quote_asset": {
+      "label": "Quote Asset",
+      "hint": "The quote asset of the trade"
     },
     "trade_type": {
       "label": "Trade type",
       "buy": "Buy",
       "sell": "Sell"
-    },
-    "pair": {
-      "label": "Pair",
-      "hint": "Pair for the trade. BASECURRENCY_QUOTECURRENCY"
     },
     "amount": {
       "label": "Amount",
