@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2261` Users who had STX in Binance should now see it mapped properly to blockstack and not stox.
 * :bug:`-` Users will now see the total worth contained in the card for bigger amounts.
 * :bug:`2239` Amounts in the dashboard should now appear in single line for users.
 * :bug:`2244` Fix edge case where using a cryptocompare api key could result in the all coins endpoint to error if no cache already existed.
