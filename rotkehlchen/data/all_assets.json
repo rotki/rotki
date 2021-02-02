@@ -760,6 +760,16 @@
         "symbol": "ASR",
         "type": "own chain"
     },
+    "ASSY": {
+        "coingecko": "assy-index",
+        "cryptocompare": "",
+        "ethereum_address": "0xFA2562da1Bba7B954f26C74725dF51fb62646313",
+        "ethereum_token_decimals": 18,
+        "name": "ASSY Index",
+        "started": 1611336083,
+        "symbol": "ASSY",
+        "type": "ethereum token"
+    },
     "AST": {
         "coingecko": "airswap",
         "ethereum_address": "0x27054b13b1B798B345b591a4d22e6562d47eA75a",
