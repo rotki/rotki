@@ -51,6 +51,8 @@ def upgrade_v22_to_v23(db: 'DBHandler') -> None:
     db.conn.commit()
 
     # -- Now move forex history to the new directory and remove all old cache files
+    # We botched this. Should have been forex_history_file.json -> price_history_forex.json
+    # and not the other way around
     data_directory = db.user_data_dir.parent
     price_history_dir = get_or_make_price_history_dir(data_directory)
     forex_history_file = data_directory / 'price_history_forex.json'
