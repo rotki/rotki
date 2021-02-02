@@ -2991,7 +2991,7 @@
         "type": "own chain"
     },
     "CREAM": {
-        "coingecko": "cream",
+        "coingecko": "cream-2",
         "ethereum_address": "0x2ba592F78dB6436527729929AAf6c908497cB200",
         "ethereum_token_decimals": 18,
         "name": "Cream",
