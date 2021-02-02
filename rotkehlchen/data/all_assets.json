@@ -6513,6 +6513,15 @@
         "symbol": "IOTX",
         "type": "ethereum token"
     },
+    "IOV": {
+        "coingecko": "starname",
+        "ethereum_address": "0x175D9Dfd6850AA96460E29bC0cEad05756965E91",
+        "ethereum_token_decimals": 18,
+        "name": "Starname",
+        "started": 1607449409,
+        "symbol": "IOV",
+        "type": "ethereum token and more"
+    },
     "IPL": {
         "coingecko": "insurepal",
         "ethereum_address": "0x64CdF819d3E75Ac8eC217B3496d7cE167Be42e80",
