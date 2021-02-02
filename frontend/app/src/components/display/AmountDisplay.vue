@@ -25,9 +25,10 @@
         top
         open-delay="400ms"
         :disabled="
-          (!!fiatCurrency ||
+          ((!!fiatCurrency ||
             renderValue.decimalPlaces() <= floatingPrecision) &&
-          !tooltip
+            !tooltip) ||
+          isPriceAsset
         "
       >
         <template #activator="{ on, attrs }">
@@ -101,6 +102,8 @@ export default class AmountDisplay extends Vue {
   showCurrency!: ShownCurrency;
   @Prop({ required: false, default: '' })
   asset!: string;
+  @Prop({ required: false, type: String, default: '' })
+  priceAsset!: string;
   @Prop({ required: false, type: Boolean, default: false })
   integer!: boolean;
   @Prop({
@@ -128,6 +131,10 @@ export default class AmountDisplay extends Vue {
     return this.showCurrency === 'none' && !!this.fiatCurrency
       ? 'symbol'
       : this.showCurrency;
+  }
+
+  get isPriceAsset(): boolean {
+    return this.currency.ticker_symbol === this.priceAsset;
   }
 
   get renderValue(): BigNumber {
@@ -160,6 +167,9 @@ export default class AmountDisplay extends Vue {
   }
 
   get formattedValue(): string {
+    if (this.isPriceAsset) {
+      return bigNumberify(1).toFormat(this.floatingPrecision);
+    }
     return this.formatValue(this.renderValue);
   }
 
