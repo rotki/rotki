@@ -1,3 +1,4 @@
+import { BigNumber } from 'bignumber.js';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
@@ -36,6 +37,8 @@ import {
   BlockchainBalancePayload,
   ExchangeBalancePayload,
   ExchangePayload,
+  HistoricPricePayload,
+  HistoricPrices,
   OracleCachePayload,
   XpubPayload
 } from '@/store/balances/types';
@@ -55,6 +58,8 @@ import {
 } from '@/typing/types';
 import { chunkArray } from '@/utils/array';
 import { assert } from '@/utils/assertions';
+import { bigNumberify } from '@/utils/bignumbers';
+import { convertFromTimestamp } from '@/utils/date';
 
 function removeTag(tags: string[] | null, tagName: string): string[] | null {
   if (!tags) {
@@ -1028,6 +1033,46 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           })
           .toString()
       };
+    }
+  },
+
+  async fetchHistoricPrice(
+    { commit, rootGetters: { 'tasks/isTaskRunning': isTaskRunning } },
+    { fromAsset, timestamp, toAsset }: HistoricPricePayload
+  ): Promise<BigNumber> {
+    const taskType = TaskType.FETCH_HISTORIC_PRICE;
+    if (isTaskRunning(taskType)) {
+      return bigNumberify(-1);
+    }
+
+    try {
+      const { taskId } = await api.balances.fetchRate(
+        fromAsset,
+        toAsset,
+        timestamp
+      );
+      const task = createTask(taskId, taskType, {
+        title: i18n
+          .t('actions.balances.historic_fetch_price.task.title')
+          .toString(),
+        description: i18n
+          .t('actions.balances.historic_fetch_price.task.description', {
+            fromAsset,
+            toAsset,
+            date: convertFromTimestamp(timestamp)
+          })
+          .toString(),
+        ignoreResult: false,
+        numericKeys: null
+      });
+      commit('tasks/add', task, { root: true });
+      const { result } = await taskCompletion<HistoricPrices, TaskMeta>(
+        taskType,
+        `${taskId}`
+      );
+      return result.assets[fromAsset][timestamp];
+    } catch (e) {
+      return bigNumberify(-1);
     }
   }
 };

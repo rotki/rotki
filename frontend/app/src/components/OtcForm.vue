@@ -64,6 +64,7 @@
             <v-text-field
               v-model="rate"
               class="otc-form__rate"
+              :loading="fetching"
               :label="$t('otc_form.rate.label')"
               persistent-hint
               :hint="$t('otc_form.rate.hint')"
@@ -109,22 +110,29 @@
 </template>
 
 <script lang="ts">
+import { default as BigNumber } from 'bignumber.js';
 import moment from 'moment';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import { TaskType } from '@/model/task-type';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { Trade, TradeType, NewTrade } from '@/services/history/types';
+import { NewTrade, Trade, TradeType } from '@/services/history/types';
+import { HistoricPricePayload } from '@/store/balances/types';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
 @Component({
   components: { AssetSelect, DateTimePicker },
+  computed: {
+    ...mapGetters('tasks', ['isTaskRunning'])
+  },
   methods: {
-    ...mapActions('history', ['addExternalTrade', 'editExternalTrade'])
+    ...mapActions('history', ['addExternalTrade', 'editExternalTrade']),
+    ...mapActions('balances', ['fetchHistoricPrice'])
   }
 })
 export default class OtcForm extends Vue {
@@ -137,6 +145,8 @@ export default class OtcForm extends Vue {
   editExternalTrade!: (
     trade: Omit<Trade, 'ignoredInAccounting'>
   ) => Promise<ActionStatus>;
+  isTaskRunning!: (type: TaskType) => boolean;
+  fetchHistoricPrice!: (payload: HistoricPricePayload) => Promise<BigNumber>;
 
   private static format = 'DD/MM/YYYY HH:mm:ss';
   readonly assetRules = [
@@ -158,6 +168,8 @@ export default class OtcForm extends Vue {
       : this.$t('otc_form.sell_quote').toString();
   }
 
+  rateMessages: string[] = [];
+
   id: string = '';
   datetime: string = '';
   amount: string = '';
@@ -167,6 +179,10 @@ export default class OtcForm extends Vue {
   link: string = '';
   notes: string = '';
   type: TradeType = 'buy';
+
+  get fetching(): boolean {
+    return this.isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
+  }
 
   get pair(): string {
     return `${this.base}_${this.quote}`;
@@ -190,6 +206,47 @@ export default class OtcForm extends Vue {
   @Watch('edit')
   onEdit() {
     this.setEditMode();
+  }
+
+  @Watch('datetime')
+  async onDateChange() {
+    await this.fetchPrice();
+  }
+
+  @Watch('quote')
+  async onQuoteChange() {
+    await this.fetchPrice();
+  }
+
+  @Watch('base')
+  async onBaseChange() {
+    await this.fetchPrice();
+  }
+
+  async fetchPrice() {
+    if (!this.datetime || !this.base || !this.quote) {
+      return;
+    }
+
+    const timestamp = moment(this.datetime, OtcForm.format).unix();
+    const fromAsset = this.base;
+    const toAsset = this.quote;
+
+    const rate = await this.fetchHistoricPrice({
+      timestamp,
+      fromAsset,
+      toAsset
+    });
+    if (rate.gt(0)) {
+      this.rate = rate.toString();
+    } else {
+      this.errorMessages = {
+        rate: [this.$t('otc_form.rate_not_found').toString()]
+      };
+      setTimeout(() => {
+        this.errorMessages = {};
+      }, 4000);
+    }
   }
 
   private setEditMode() {
