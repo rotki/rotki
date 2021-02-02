@@ -8195,6 +8195,16 @@
         "symbol": "NCT",
         "type": "ethereum token"
     },
+    "NCT-2": {
+        "coingecko": "name-changing-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x8A9c4dfe8b9D8962B31e4e16F8321C44d48e246E",
+        "ethereum_token_decimals": 18,
+        "name": "NameChangeToken",
+        "started": 1611828260,
+        "symbol": "NCT",
+        "type": "ethereum token"
+    },
     "NDC": {
         "active": false,
         "coingecko": "",
