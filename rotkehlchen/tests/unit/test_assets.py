@@ -99,6 +99,8 @@ def test_cryptocompare_asset_support(cryptocompare):
         'BAC',     # Basis Cash but BACoin in CC
         'IHF',     # waiting until cryptocompare fixes historical price for this. https://github.com/rotki/rotki/pull/2176  # noqa: E501
         'FLOW',    # FLOW from dapper labs but "Flow Protocol" in CC
+        'NCT-2',    # Name change token but Polyswarm in CC
+        'NDX',    # newdex token but Index token in CC
     )
     for identifier, asset_data in AssetResolver().assets.items():
         potential_support = (
