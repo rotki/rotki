@@ -684,6 +684,16 @@
         "symbol": "ARCH",
         "type": "own chain"
     },
+    "ARCH-2": {
+        "coingecko": "archer-dao-governance-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x1F3f9D3068568F8040775be2e8C03C103C61f3aF",
+        "ethereum_token_decimals": 18,
+        "name": "Archer DAO Governance Token",
+        "started": 1606072001,
+        "symbol": "ARCH",
+        "type": "ethereum token"
+    },
     "ARCT": {
         "coingecko": "arbitragect",
         "ethereum_address": "0x1245ef80F4d9e02ED9425375e8F649B9221b31D8",

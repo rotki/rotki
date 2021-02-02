@@ -18,6 +18,7 @@ Changelog
   - `aleph.im v2 (ALEPH) <https://www.coingecko.com/en/coins/aleph-im>`__
   - `Perpetual Protocol (PERP) <https://www.coingecko.com/en/coins/perpetual-protocol>`__
   - `Name Change Token (NCT) <https://www.coingecko.com/en/coins/name-changing-token>`__
+  - `Archer DAO Governance Token (ARCH) <https://www.coingecko.com/en/coins/archer-dao-governance-token>`__
 
 * :release:`1.13.0 <2021-01-29>`
 * :feature:`-` Add support for Singapore Dollar (SGD) as a fiat currency.
