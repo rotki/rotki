@@ -832,6 +832,10 @@
     "rotki_premium": "rotki Premium"
   },
   "otc_form": {
+    "buy_base": "Buy",
+    "sell_base": "Sell",
+    "buy_quote": "With",
+    "sell_quote": "For",
     "base_asset": {
       "label": "Base Asset",
       "hint": "The base asset of the trade"

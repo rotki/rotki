@@ -9,6 +9,7 @@
     v-else-if="!error"
     :src="url"
     :max-width="size"
+    :min-width="size"
     contain
     @error="error = true"
   />

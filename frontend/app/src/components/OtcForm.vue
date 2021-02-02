@@ -24,7 +24,12 @@
           </v-col>
           <v-col cols="12" sm="9" class="d-flex flex-column">
             <v-row>
-              <v-col cols="12" md="6">
+              <v-col cols="12" md="6" class="d-flex flex-row align-center">
+                <div
+                  class="text--secondary pa-3 external-trade-form__action-hint"
+                >
+                  {{ baseHint }}
+                </div>
                 <asset-select
                   v-model="base"
                   data-cy="base_asset"
@@ -33,7 +38,12 @@
                   :error-messages="errorMessages['pair']"
                 />
               </v-col>
-              <v-col cols="12" md="6">
+              <v-col cols="12" md="6" class="d-flex flex-row align-center">
+                <div
+                  class="text--secondary pa-3 external-trade-form__action-hint"
+                >
+                  {{ quoteHint }}
+                </div>
                 <asset-select
                   v-model="quote"
                   data-cy="quote_asset"
@@ -135,6 +145,18 @@ export default class OtcForm extends Vue {
 
   base: string = '';
   quote: string = '';
+
+  get baseHint(): string {
+    return this.type === 'buy'
+      ? this.$t('otc_form.buy_base').toString()
+      : this.$t('otc_form.sell_base').toString();
+  }
+
+  get quoteHint(): string {
+    return this.type === 'buy'
+      ? this.$t('otc_form.buy_quote').toString()
+      : this.$t('otc_form.sell_quote').toString();
+  }
 
   id: string = '';
   datetime: string = '';
@@ -240,3 +262,11 @@ export default class OtcForm extends Vue {
   }
 }
 </script>
+
+<style scoped lang="scss">
+.external-trade-form {
+  &__action-hint {
+    width: 60px;
+  }
+}
+</style>
