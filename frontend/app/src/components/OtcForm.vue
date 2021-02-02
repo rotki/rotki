@@ -27,6 +27,7 @@
               <v-col cols="12" md="6">
                 <asset-select
                   v-model="base"
+                  data-cy="base_asset"
                   :hint="$t('otc_form.base_asset.hint')"
                   :label="$t('otc_form.base_asset.label')"
                   :error-messages="errorMessages['pair']"
@@ -35,6 +36,7 @@
               <v-col cols="12" md="6">
                 <asset-select
                   v-model="quote"
+                  data-cy="quote_asset"
                   :hint="$t('otc_form.quote_asset.hint')"
                   :label="$t('otc_form.quote_asset.label')"
                   :error-messages="errorMessages['pair']"
