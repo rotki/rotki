@@ -154,6 +154,8 @@ WORLD_TO_BINANCE = {
     'SOL-2': 'SOL',
     # BETH is the eth staked in beacon chain
     'ETH2': 'BETH',
+    # STX is Blockstack in Binance
+    'STX-2': 'STX',
 }
 
 WORLD_TO_BITFINEX = {

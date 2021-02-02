@@ -11167,6 +11167,7 @@
     },
     "STX": {
         "coingecko": "stox",
+        "cryptocompare": "STOX",
         "ethereum_address": "0x006BeA43Baa3f7A6f765F14f10A1a1b08334EF45",
         "ethereum_token_decimals": 18,
         "name": "Stox",
@@ -11176,7 +11177,7 @@
     },
     "STX-2": {
         "coingecko": "blockstack",
-        "cryptocompare": "BSTX",
+        "cryptocompare": "STX",
         "name": "Blockstack",
         "started": 1572048000,
         "symbol": "STX",
