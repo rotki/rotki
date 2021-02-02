@@ -31,5 +31,6 @@ export enum TaskType {
   DEFI_AIRDROPS = 'defi_airdrops',
   LEDGER_ACTIONS = 'ledger_actions',
   UPDATE_PRICES = 'update_prices',
-  CREATE_PRICE_CACHE = 'create_price_cache'
+  CREATE_PRICE_CACHE = 'create_price_cache',
+  FETCH_HISTORIC_PRICE = 'fetch_historic_price'
 }

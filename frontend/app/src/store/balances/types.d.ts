@@ -140,3 +140,18 @@ export type OracleCachePayload = {
   readonly toAsset: string;
   readonly purgeOld: boolean;
 };
+
+type TimedPrices = { [timestamp: string]: BigNumber };
+
+type AssetTimedPrices = { [asset: string]: TimedPrices };
+
+export type HistoricPrices = {
+  readonly assets: AssetTimedPrices;
+  readonly targetAsset: string;
+};
+
+export type HistoricPricePayload = {
+  readonly fromAsset: string;
+  readonly toAsset: string;
+  readonly timestamp: number;
+};

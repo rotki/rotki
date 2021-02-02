@@ -832,6 +832,7 @@
     "rotki_premium": "rotki Premium"
   },
   "otc_form": {
+    "rate_not_found": "We could not find a rate for the specified pair.",
     "buy_base": "Buy",
     "sell_base": "Sell",
     "buy_quote": "With",
@@ -1165,6 +1166,12 @@
         "error": {
           "title": "{name} balance query",
           "message": "Failed to query {name} balances: {error}"
+        }
+      },
+      "historic_fetch_price": {
+        "task": {
+          "description": "Fetching rate from {fromAsset} to {toAsset} on {date}",
+          "title": "Fetching conversion rate"
         }
       },
       "manual_add": {

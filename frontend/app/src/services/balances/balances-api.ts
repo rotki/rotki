@@ -192,4 +192,25 @@ export class BalancesApi {
       })
       .then(handleResponse);
   }
+
+  fetchRate(
+    fromAsset: string,
+    toAsset: string,
+    timestamp: number
+  ): Promise<PendingTask> {
+    return this.axios
+      .post<ActionResult<PendingTask>>(
+        '/assets/prices/historical',
+        axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          assetsTimestamp: [[fromAsset, timestamp]],
+          targetAsset: toAsset
+        }),
+        {
+          validateStatus: validWithSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
+        }
+      )
+      .then(handleResponse);
+  }
 }
