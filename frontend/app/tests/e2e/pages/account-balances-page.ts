@@ -21,6 +21,7 @@ export class AccountBalancesPage {
   }
 
   addBalance(balances: FixtureManualBalance) {
+    cy.get('.big-dialog').should('be.visible');
     cy.get('.manual-balances-form__asset').type(balances.asset);
     cy.get(`#asset-${balances.asset.toLocaleLowerCase()}`).click();
     cy.get('.manual-balances-form__label').type(balances.label);
@@ -31,6 +32,7 @@ export class AccountBalancesPage {
     cy.get('.manual-balances-form__location').click();
     cy.get(`#balance-location__${balances.location}`).click();
     cy.get('.big-dialog__buttons__confirm').click();
+    cy.get('.big-dialog', { timeout: 45000 }).should('not.be.visible');
   }
 
   visibleEntries(visible: number) {
