@@ -26,7 +26,7 @@ class IconManager():
     a point query the same icon but that's fine and not worth of locking mechanism as
     it should be rather rare and worst case scenario once in a blue moon we waste
     an API call. In the end the right file would be written on disk.
-"""
+    """
 
     def __init__(self, data_dir: Path, coingecko: Coingecko) -> None:
         self.icons_dir = data_dir / 'icons'
