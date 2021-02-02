@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`295` When creating external trades, users will now have the trade rate automatically fetched when such a rate exists.
 * :feature:`2240` Users now can select the supported assets from a dropdown when adding or editing external trades.
+* :bug:`2273` CREAM icon and price should now be shown correctly.
 * :bug:`2261` Users who had STX in Binance should now see it mapped properly to blockstack and not stox.
 * :bug:`-` Users will now see the total worth contained in the card for bigger amounts.
 * :bug:`2239` Amounts in the dashboard should now appear in single line for users.
@@ -17,6 +18,8 @@ Changelog
   - `Experty Wisdom Token (WIS) <https://www.coingecko.com/en/coins/experty-wisdom-token>`__
   - `aleph.im v2 (ALEPH) <https://www.coingecko.com/en/coins/aleph-im>`__
   - `Perpetual Protocol (PERP) <https://www.coingecko.com/en/coins/perpetual-protocol>`__
+  - `Name Change Token (NCT) <https://www.coingecko.com/en/coins/name-changing-token>`__
+  - `Archer DAO Governance Token (ARCH) <https://www.coingecko.com/en/coins/archer-dao-governance-token>`__
 
 * :release:`1.13.0 <2021-01-29>`
 * :feature:`-` Add support for Singapore Dollar (SGD) as a fiat currency.

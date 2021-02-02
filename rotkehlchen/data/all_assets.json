@@ -684,6 +684,16 @@
         "symbol": "ARCH",
         "type": "own chain"
     },
+    "ARCH-2": {
+        "coingecko": "archer-dao-governance-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x1F3f9D3068568F8040775be2e8C03C103C61f3aF",
+        "ethereum_token_decimals": 18,
+        "name": "Archer DAO Governance Token",
+        "started": 1606072001,
+        "symbol": "ARCH",
+        "type": "ethereum token"
+    },
     "ARCT": {
         "coingecko": "arbitragect",
         "ethereum_address": "0x1245ef80F4d9e02ED9425375e8F649B9221b31D8",
@@ -2981,7 +2991,7 @@
         "type": "own chain"
     },
     "CREAM": {
-        "coingecko": "cream",
+        "coingecko": "cream-2",
         "ethereum_address": "0x2ba592F78dB6436527729929AAf6c908497cB200",
         "ethereum_token_decimals": 18,
         "name": "Cream",
@@ -3643,7 +3653,6 @@
         "type": "own chain"
     },
     "DIGG": {
-        "cryptocompare": "",
         "coingecko": "digg",
         "ethereum_address": "0x798D1bE841a82a273720CE31c822C61a67a601C3",
         "ethereum_token_decimals": 9,
@@ -8195,6 +8204,16 @@
         "symbol": "NCT",
         "type": "ethereum token"
     },
+    "NCT-2": {
+        "coingecko": "name-changing-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x8A9c4dfe8b9D8962B31e4e16F8321C44d48e246E",
+        "ethereum_token_decimals": 18,
+        "name": "NameChangeToken",
+        "started": 1611828260,
+        "symbol": "NCT",
+        "type": "ethereum token"
+    },
     "NDC": {
         "active": false,
         "coingecko": "",
@@ -11052,7 +11071,6 @@
     },
     "STBU": {
         "coingecko": "stobox-token",
-        "cryptocompare": "",
         "ethereum_address": "0x212DD60D4Bf0DA8372fe8116474602d429E5735F",
         "ethereum_token_decimals": 18,
         "name": "Stobox Token ",
@@ -11901,7 +11919,6 @@
     },
     "TRU": {
         "coingecko": "truefi",
-        "cryptocompare": "",
         "ethereum_address": "0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784",
         "ethereum_token_decimals": 8,
         "name": "TrustToken",
@@ -14787,7 +14804,6 @@
     },
     "UOP": {
         "coingecko": "utopia-genesis-foundation",
-        "cryptocompare": "",
         "ethereum_address": "0xE4AE84448DB5CFE1DaF1e6fb172b469c161CB85F",
         "ethereum_token_decimals": 18,
         "name": "Utopia Genesis Foundation",
@@ -14993,7 +15009,6 @@
     },
     "COMBO": {
         "coingecko": "furucombo",
-        "cryptocompare": "",
         "ethereum_address": "0xfFffFffF2ba8F66D4e51811C5190992176930278",
         "ethereum_token_decimals": 18,
         "name": "Furucombo",
