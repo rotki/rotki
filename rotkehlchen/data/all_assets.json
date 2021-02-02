@@ -3643,7 +3643,6 @@
         "type": "own chain"
     },
     "DIGG": {
-        "cryptocompare": "",
         "coingecko": "digg",
         "ethereum_address": "0x798D1bE841a82a273720CE31c822C61a67a601C3",
         "ethereum_token_decimals": 9,
@@ -11062,7 +11061,6 @@
     },
     "STBU": {
         "coingecko": "stobox-token",
-        "cryptocompare": "",
         "ethereum_address": "0x212DD60D4Bf0DA8372fe8116474602d429E5735F",
         "ethereum_token_decimals": 18,
         "name": "Stobox Token ",
@@ -11911,7 +11909,6 @@
     },
     "TRU": {
         "coingecko": "truefi",
-        "cryptocompare": "",
         "ethereum_address": "0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784",
         "ethereum_token_decimals": 8,
         "name": "TrustToken",
@@ -14797,7 +14794,6 @@
     },
     "UOP": {
         "coingecko": "utopia-genesis-foundation",
-        "cryptocompare": "",
         "ethereum_address": "0xE4AE84448DB5CFE1DaF1e6fb172b469c161CB85F",
         "ethereum_token_decimals": 18,
         "name": "Utopia Genesis Foundation",
@@ -15003,7 +14999,6 @@
     },
     "COMBO": {
         "coingecko": "furucombo",
-        "cryptocompare": "",
         "ethereum_address": "0xfFffFffF2ba8F66D4e51811C5190992176930278",
         "ethereum_token_decimals": 18,
         "name": "Furucombo",
