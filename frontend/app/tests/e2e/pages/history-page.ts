@@ -1,4 +1,5 @@
 import { OTCTrade } from '../support/types';
+import { selectAsset } from '../support/utils';
 
 export class HistoryPage {
   visit() {
@@ -12,13 +13,15 @@ export class HistoryPage {
     cy.get('.otc-form__date')
       .type(`{selectall}{backspace}${otcData.time}`)
       .click(); // Click is needed to hide the popup
-    cy.get('.otc-form__pair').type(otcData.pair);
+
+    const [base, quote] = otcData.pair.split('_');
+    selectAsset('[data-cy=base_asset]', base);
+    selectAsset('[data-cy=quote_asset]', quote);
     cy.get('.otc-form__type input').check(otcData.trade_type, { force: true });
     cy.get('.otc-form__amount').type(otcData.amount);
     cy.get('.otc-form__rate input').type(otcData.rate);
     cy.get('.otc-form__fee').type(otcData.fee);
-    cy.get('.otc-form__fee-currency').type(otcData.fee_currency);
-    cy.get(`#asset-${otcData.fee_currency.toLocaleLowerCase()}`).click();
+    selectAsset('.otc-form__fee-currency', otcData.fee_currency);
     cy.get('.otc-form__link').type(otcData.link);
     cy.get('.otc-form__notes').type(otcData.notes);
     cy.get('.big-dialog__buttons__confirm').click();

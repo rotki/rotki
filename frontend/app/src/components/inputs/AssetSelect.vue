@@ -96,6 +96,24 @@ export default class AssetSelect extends Vue {
 </script>
 
 <style scoped lang="scss">
+::v-deep {
+  .v-select {
+    &__slot {
+      height: 60px;
+
+      .v-label {
+        top: 20px;
+      }
+
+      .v-input {
+        &__icon {
+          padding-top: 20px;
+        }
+      }
+    }
+  }
+}
+
 .asset-select {
   &__details {
     padding-top: 4px;
