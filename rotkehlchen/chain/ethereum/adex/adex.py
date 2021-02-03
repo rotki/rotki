@@ -46,6 +46,7 @@ from .graph import BONDS_QUERY, CHANNEL_WITHDRAWS_QUERY, UNBOND_REQUESTS_QUERY, 
 from .typing import (
     POOL_ID_POOL_NAME,
     TOM_POOL_ID,
+    AdexEvent,
     AdexEventType,
     ADXStakingBalance,
     ADXStakingDetail,
@@ -55,7 +56,6 @@ from .typing import (
     ChannelIdsToken,
     ChannelWithdraw,
     DeserializationMethod,
-    EventCoreData,
     FeeRewards,
     TomPoolIncentive,
     Unbond,
@@ -335,7 +335,7 @@ class Adex(EthereumModule):
 
         It may raise KeyError.
         """
-        event_core_data = self._deserialize_event_core_data(
+        adex_event = self._deserialize_adex_event(
             raw_event=raw_event,
             identity_address_map=identity_address_map,
         )
@@ -344,16 +344,16 @@ class Adex(EthereumModule):
         pool_id = HexStr(raw_event['poolId'])
         nonce = int(raw_event['nonce'])
         bond_id = self._get_bond_id(
-            identity_address=event_core_data.identity_address,
+            identity_address=adex_event.identity_address,
             amount=amount_int,
             pool_id=pool_id,
             nonce=nonce,
         )
         return Bond(
-            tx_hash=event_core_data.tx_hash,
-            address=event_core_data.address,
-            identity_address=event_core_data.identity_address,
-            timestamp=event_core_data.timestamp,
+            tx_hash=adex_event.tx_hash,
+            address=adex_event.address,
+            identity_address=adex_event.identity_address,
+            timestamp=adex_event.timestamp,
             bond_id=bond_id,
             value=Balance(amount=amount),
             pool_id=pool_id,
@@ -395,17 +395,17 @@ class Adex(EthereumModule):
         )
 
     @staticmethod
-    def _deserialize_event_core_data(
+    def _deserialize_adex_event(
             raw_event: Dict[str, Any],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
-    ) -> EventCoreData:
+    ) -> AdexEvent:
         """Deserialize the common event attributes.
 
         It may raise KeyError.
         Id for unbond and unbond request events is 'tx_hash:address'.
         """
         identity_address = to_checksum_address(raw_event['owner'])
-        return EventCoreData(
+        return AdexEvent(
             tx_hash=HexStr(raw_event['id'].split(':')[0]),
             address=identity_address_map[identity_address],
             identity_address=identity_address,
@@ -422,15 +422,15 @@ class Adex(EthereumModule):
 
         It may raise KeyError.
         """
-        event_core_data = self._deserialize_event_core_data(
+        adex_event = self._deserialize_adex_event(
             raw_event=raw_event,
             identity_address_map=identity_address_map,
         )
         return Unbond(
-            tx_hash=event_core_data.tx_hash,
-            address=event_core_data.address,
-            identity_address=event_core_data.identity_address,
-            timestamp=event_core_data.timestamp,
+            tx_hash=adex_event.tx_hash,
+            address=adex_event.address,
+            identity_address=adex_event.identity_address,
+            timestamp=adex_event.timestamp,
             bond_id=HexStr(raw_event['bondId']),
             value=Balance(),
         )
@@ -445,15 +445,15 @@ class Adex(EthereumModule):
 
         It may raise KeyError.
         """
-        event_core_data = self._deserialize_event_core_data(
+        adex_event = self._deserialize_adex_event(
             raw_event=raw_event,
             identity_address_map=identity_address_map,
         )
         return UnbondRequest(
-            tx_hash=event_core_data.tx_hash,
-            address=event_core_data.address,
-            identity_address=event_core_data.identity_address,
-            timestamp=event_core_data.timestamp,
+            tx_hash=adex_event.tx_hash,
+            address=adex_event.address,
+            identity_address=adex_event.identity_address,
+            timestamp=adex_event.timestamp,
             bond_id=HexStr(raw_event['bondId']),
             value=Balance(),
             unlock_at=Timestamp(int(raw_event['willUnlock'])),
@@ -809,7 +809,6 @@ class Adex(EthereumModule):
         total_staked_amount = ZERO
         total_reward_per_second = ZERO
         period_ends_at = Timestamp(0)
-        apr = ZERO
         now = Timestamp(int(datetime.utcnow().timestamp()))
         for entry in fee_rewards:
             try:
