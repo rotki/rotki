@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-form :value="value" @input="input">
     <v-row>
       <v-col>
@@ -241,7 +241,12 @@ export default class ExternalTradeForm extends Vue {
   }
 
   async fetchPrice() {
-    if (!this.datetime || !this.base || !this.quote) {
+    if (
+      (this.rate && this.edit) ||
+      !this.datetime ||
+      !this.base ||
+      !this.quote
+    ) {
       return;
     }
 
