@@ -39,8 +39,10 @@ DAI_AMOUNT_MANTISSA = FVal(10**18)
 
 # Tom pool fee rewards API constants
 TOM_POOL_FEE_REWARDS_API_URL = 'https://tom.adex.network/fee-rewards'
-PERIOD_END_AT_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
+TOM_POOL_FEE_REWARDS_ADX_LEGACY_CHANNEL = '0x30d87bab0ef1e7f8b4c3b894ca2beed41bbd54c481f31e5791c1e855c9dbf4ba'  # noqa: E501
+TOM_POOL_PERIOD_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
+OUTSTANDING_REWARD_THRESHOLD = FVal('0.2')
 ADEX_EVENTS_PREFIX = 'adex_events'
 
 # Defines the expected order of the events given the same timestamp and sorting
@@ -112,7 +114,7 @@ def deserialize_adex_event_from_db(
     if db_event_type == str(AdexEventType.UNBOND):
         if any(event_tuple[idx] is None for idx in (8,)):
             raise DeserializationError(
-                f'Failed to deserialize bond event. Unexpected data: {event_tuple}.',
+                f'Failed to deserialize unbond event. Unexpected data: {event_tuple}.',
             )
 
         return Unbond(
@@ -143,22 +145,19 @@ def deserialize_adex_event_from_db(
         )
 
     if db_event_type == str(AdexEventType.CHANNEL_WITHDRAW):
-        # NB: `token` (event_tuple[13]) could be None, do not check below.
-        if any(event_tuple[idx] is None for idx in (12,)):
+        if any(event_tuple[idx] is None for idx in (12, 13)):
             raise DeserializationError(
-                f'Failed to deserialize unbond request event. Unexpected data: {event_tuple}.',
+                f'Failed to deserialize channel withdraw event. Unexpected data: {event_tuple}.',
             )
 
-        token = None
-        if event_tuple[13] is not None:
-            try:
-                token = EthereumToken(event_tuple[13])
-            except (UnknownAsset, UnsupportedAsset) as e:
-                asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
-                raise DeserializationError(
-                    f'{asset_tag} {e.asset_name} found while processing adex event. '
-                    f'Unexpected data: {event_tuple}',
-                ) from e
+        try:
+            token = EthereumToken(cast(str, event_tuple[13]))
+        except (UnknownAsset, UnsupportedAsset) as e:
+            asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
+            raise DeserializationError(
+                f'{asset_tag} {e.asset_name} found while processing adex event. '
+                f'Unexpected data: {event_tuple}',
+            ) from e
 
         return ChannelWithdraw(
             tx_hash=tx_hash,

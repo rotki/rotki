@@ -189,7 +189,7 @@ class ChannelWithdraw:
     value: Balance
     channel_id: HexStr
     pool_id: HexStr
-    token: Optional[EthereumToken] = None
+    token: EthereumToken
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -200,11 +200,10 @@ class ChannelWithdraw:
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
             'event_type': str(AdexEventType.CHANNEL_WITHDRAW),
-            'token': (self.token.serialize() if self.token is not None else None),
+            'token': self.token.serialize(),
         }
 
     def to_db_tuple(self) -> AdexEventDBTuple:
-        token = self.token.serialize() if self.token is not None else None
         return (
             str(self.tx_hash),
             str(self.address),
@@ -219,7 +218,7 @@ class ChannelWithdraw:
             None,  # slashed_at
             None,  # unlocked_at
             str(self.channel_id),
-            token,
+            self.token.serialize(),
         )
 
 
@@ -272,6 +271,7 @@ class ADXStakingBalance(NamedTuple):
 class TomPoolIncentive(NamedTuple):
     total_staked_amount: FVal  # from sum(currentTotalActiveStake)
     total_reward_per_second: FVal  # from sum(currentRewardPerSecond)
+    period_starts_at: Timestamp  # from periodStart
     period_ends_at: Timestamp  # from periodEnd
     apr: FVal  # from AdEx APY
 
@@ -316,3 +316,4 @@ class ADXStakingHistory(NamedTuple):
 
 DeserializationMethod = Callable[..., Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]
 FeeRewards = List[Dict[str, Any]]
+ChannelIdsToken = Dict[HexStr, EthereumToken]

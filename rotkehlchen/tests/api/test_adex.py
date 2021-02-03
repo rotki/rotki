@@ -6,6 +6,9 @@ from http import HTTPStatus
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.chain.ethereum.adex.typing import Bond, ChannelWithdraw, Unbond
+from rotkehlchen.constants.assets import A_ADX
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
@@ -17,9 +20,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
     wait_for_async_task,
 )
-from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.chain.ethereum.adex.typing import Bond, ChannelWithdraw, Unbond
 
 ADEX_TEST_ADDR = deserialize_ethereum_address('0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d')
 
@@ -163,8 +164,8 @@ def test_get_events(
         timestamp=1607453764,
         channel_id=channel_id,
         pool_id=tom_pool_id,
-        value=Balance(FVal('5056.894263641728544592'), FVal('0')),
-        token=None,
+        value=Balance(FVal('5056.894263641728544592'), FVal('10113.788527283457089184')),
+        token=A_ADX,
     ), Unbond(
         tx_hash='0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13',
         address=ADEX_TEST_ADDR,
