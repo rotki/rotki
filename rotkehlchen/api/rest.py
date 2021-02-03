@@ -2411,8 +2411,8 @@ class RestAPI():
         status_code = _get_status_code_from_async_response(response)
         return api_response(_wrap_in_ok_result(response['result']), status_code=status_code)
 
+    @staticmethod
     def _get_historical_assets_price(
-            self,
             assets_timestamp: List[Tuple[Asset, Timestamp]],
             target_asset: Asset,
     ) -> Dict[str, Any]:
@@ -2433,8 +2433,8 @@ class RestAPI():
                     timestamp=timestamp,
                 )
             except (RemoteError, NoPriceForGivenTimestamp) as e:
-                self.rotkehlchen.msg_aggregator.add_error(
-                    f'Could query the historical {target_asset.identifier} price for '
+                logger.error(
+                    f'Could not query the historical {target_asset.identifier} price for '
                     f'{asset.identifier} at time {timestamp} due to: {str(e)}. Using zero price',
                 )
                 price = Price(ZERO)
