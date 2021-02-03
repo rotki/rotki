@@ -2,7 +2,7 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, DefaultDict, Dict
+from typing import Any, DefaultDict, Dict, Optional, List
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
@@ -86,8 +86,8 @@ class DefiEventType(Enum):
             DefiEventType.DSR_LOAN_GAIN,
             DefiEventType.AAVE_LOAN_INTEREST,
             DefiEventType.COMPOUND_LOAN_INTEREST,
+            DefiEventType.COMPOUND_LIQUIDATION_DEBT_REPAID,
             DefiEventType.COMPOUND_REWARDS,
-            DefiEventType.COMPOUND_DEBT_REPAY,
             DefiEventType.YEARN_VAULTS_PNL,
             DefiEventType.ADEX_STAKE_PROFIT,
         )
@@ -99,9 +99,17 @@ class DefiEvent:
     event_type: DefiEventType
     asset: Asset
     amount: FVal
+    tx_hashes: Optional[List[str]] = None
+    notes: str = ''
 
     def is_profitable(self) -> bool:
         return self.event_type.is_profitable()
+
+    def serialize_tx_hashes(self) -> str:
+        if self.tx_hashes is None:
+            return ''
+
+        return ','.join(self.tx_hashes)
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
