@@ -121,12 +121,18 @@ jobs:
       - name: Upload coverage
         working-directory: ./frontend/app
         run: cd .. && bash <(curl -s https://codecov.io/bash) -F frontend_integration
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: screenshots-${{ runner.os }}
           path: ./frontend/app/tests/e2e/screenshots
-      - uses: actions/upload-artifact@v1
+      - name: Upload backend logs
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: backend-logs-${{ runner.os }}
+          path: ~/rotkehlchen-e2e.log
+      - uses: actions/upload-artifact@v2
         if: always()
         with:
           name: videos-${{ runner.os }}
