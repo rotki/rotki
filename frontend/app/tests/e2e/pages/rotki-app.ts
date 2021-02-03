@@ -33,6 +33,7 @@ export class RotkiApp {
 
   logout() {
     cy.get('.user-dropdown').click();
+    cy.get('[data-cy=user-dropdown]').should('be.visible');
     cy.get('.user-dropdown__logout').click();
     cy.get('.confirm-dialog__buttons__confirm').filter(':visible').click();
     cy.get('.login__fields__username').should('be.visible');

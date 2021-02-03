@@ -1,8 +1,10 @@
 export class AccountingSettingsPage {
   visit() {
     cy.get('.user-dropdown').click();
+    cy.get('[data-cy=user-dropdown]').should('be.visible');
     cy.get('.user-dropdown__settings').click();
     cy.get('a.settings__accounting').click();
+    cy.get('[data-cy=user-dropdown]').should('not.be.visible');
   }
 
   setTaxFreePeriodDays(value: string) {
