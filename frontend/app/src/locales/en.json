@@ -831,7 +831,7 @@
     "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
     "rotki_premium": "rotki Premium"
   },
-  "otc_form": {
+  "external_trade_form": {
     "rate_not_found": "We could not find a rate for the specified pair.",
     "buy_base": "Buy",
     "sell_base": "Sell",

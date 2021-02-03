@@ -173,7 +173,7 @@
         @confirm="save()"
         @cancel="clearDialog()"
       >
-        <otc-form ref="form" :edit="editableItem" />
+        <external-trade-form ref="form" :edit="editableItem" />
       </big-dialog>
       <confirm-dialog
         :display="tradeToDelete !== null"
@@ -196,11 +196,11 @@ import { mapActions, mapGetters, mapMutations } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
+import ExternalTradeForm from '@/components/ExternalTradeForm.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import OtcForm from '@/components/OtcForm.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
@@ -215,7 +215,7 @@ import { ActionStatus, Message } from '@/store/types';
     UpgradeRow,
     DateDisplay,
     LocationDisplay,
-    OtcForm,
+    ExternalTradeForm,
     ConfirmDialog,
     BigDialog
   },
@@ -419,7 +419,7 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   }
 
   async save() {
-    const form = this.$refs.form as OtcForm;
+    const form = this.$refs.form as ExternalTradeForm;
     const success = await form.save();
     if (success) {
       this.clearDialog();
@@ -427,7 +427,7 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   }
 
   clearDialog() {
-    (this.$refs.form as OtcForm).reset();
+    (this.$refs.form as ExternalTradeForm).reset();
     this.openDialog = false;
     this.editableItem = null;
   }

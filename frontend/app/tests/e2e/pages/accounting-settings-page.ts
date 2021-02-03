@@ -1,8 +1,10 @@
 export class AccountingSettingsPage {
   visit() {
     cy.get('.user-dropdown').click();
+    cy.get('[data-cy=user-dropdown]').should('be.visible');
     cy.get('.user-dropdown__settings').click();
     cy.get('a.settings__accounting').click();
+    cy.get('[data-cy=user-dropdown]').should('not.be.visible');
   }
 
   setTaxFreePeriodDays(value: string) {
@@ -39,7 +41,7 @@ export class AccountingSettingsPage {
     ).click();
     cy.get(
       '.accounting-settings__asset-to-ignore div.v-select__selections input'
-    ).type(`${asset}{enter}`);
+    ).type(`{selectall}{backspace}${asset}{enter}`);
     cy.get('.accounting-settings__buttons__add').click();
   }
 
@@ -71,6 +73,7 @@ export class AccountingSettingsPage {
         messageContains
       );
     }
+    cy.get(`${target} .v-messages__message`).should('not.be.visible');
   }
 
   confirmInlineFailure(target: string, messageContains?: string) {
@@ -84,5 +87,6 @@ export class AccountingSettingsPage {
         messageContains
       );
     }
+    cy.get(`${target} .v-messages__message`).should('not.be.visible');
   }
 }

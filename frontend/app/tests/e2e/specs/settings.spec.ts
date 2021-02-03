@@ -140,11 +140,23 @@ describe('Settings', () => {
       });
       it('add another 2 ignored assets and confirm count is 3', () => {
         pageAccounting.addIgnoredAsset('ZIX');
+        pageAccounting.confirmInlineSuccess(
+          '.accounting-settings__asset-to-ignore',
+          'ZIX'
+        );
         pageAccounting.addIgnoredAsset('1CR');
+        pageAccounting.confirmInlineSuccess(
+          '.accounting-settings__asset-to-ignore',
+          '1CR'
+        );
         pageAccounting.ignoredAssetCount('3');
       });
       it('cannot add already ignored asset & validate UI message', () => {
         pageAccounting.addIgnoredAsset('1SG');
+        pageAccounting.confirmInlineFailure(
+          '.accounting-settings__asset-to-ignore',
+          '1SG'
+        );
         pageAccounting.confirmInlineFailure(
           '.accounting-settings__asset-to-ignore',
           '1SG'

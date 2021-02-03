@@ -1,5 +1,5 @@
-<template>
-  <div class="otc-form">
+﻿<template>
+  <v-form :value="value" @input="input">
     <v-row>
       <v-col>
         <v-row>
@@ -7,20 +7,27 @@
             <date-time-picker
               v-model="datetime"
               seconds
-              class="otc-form__date"
-              :label="$t('otc_form.date.label')"
+              data-cy="date"
+              :label="$t('external_trade_form.date.label')"
               persistent-hint
-              :hint="$t('otc_form.date.hint')"
+              :hint="$t('external_trade_form.date.hint')"
               :error-messages="errorMessages['timestamp']"
             />
-            <v-radio-group
-              v-model="type"
-              :label="$t('otc_form.trade_type.label')"
-              class="otc-form__type"
-            >
-              <v-radio :label="$t('otc_form.trade_type.buy')" value="buy" />
-              <v-radio :label="$t('otc_form.trade_type.sell')" value="sell" />
-            </v-radio-group>
+            <div data-cy="type">
+              <v-radio-group
+                v-model="type"
+                :label="$t('external_trade_form.trade_type.label')"
+              >
+                <v-radio
+                  :label="$t('external_trade_form.trade_type.buy')"
+                  value="buy"
+                />
+                <v-radio
+                  :label="$t('external_trade_form.trade_type.sell')"
+                  value="sell"
+                />
+              </v-radio-group>
+            </div>
           </v-col>
           <v-col cols="12" sm="9" class="d-flex flex-column">
             <v-row>
@@ -33,8 +40,8 @@
                 <asset-select
                   v-model="base"
                   data-cy="base_asset"
-                  :hint="$t('otc_form.base_asset.hint')"
-                  :label="$t('otc_form.base_asset.label')"
+                  :hint="$t('external_trade_form.base_asset.hint')"
+                  :label="$t('external_trade_form.base_asset.label')"
                   :error-messages="errorMessages['pair']"
                 />
               </v-col>
@@ -47,41 +54,41 @@
                 <asset-select
                   v-model="quote"
                   data-cy="quote_asset"
-                  :hint="$t('otc_form.quote_asset.hint')"
-                  :label="$t('otc_form.quote_asset.label')"
+                  :hint="$t('external_trade_form.quote_asset.hint')"
+                  :label="$t('external_trade_form.quote_asset.label')"
                   :error-messages="errorMessages['pair']"
                 />
               </v-col>
             </v-row>
             <v-text-field
               v-model="amount"
-              class="otc-form__amount"
-              :label="$t('otc_form.amount.label')"
+              data-cy="amount"
+              :label="$t('external_trade_form.amount.label')"
               persistent-hint
-              :hint="$t('otc_form.amount.hint')"
+              :hint="$t('external_trade_form.amount.hint')"
               :error-messages="errorMessages['amount']"
             />
             <v-text-field
               v-model="rate"
-              class="otc-form__rate"
+              data-cy="rate"
               :loading="fetching"
-              :label="$t('otc_form.rate.label')"
+              :label="$t('external_trade_form.rate.label')"
               persistent-hint
-              :hint="$t('otc_form.rate.hint')"
+              :hint="$t('external_trade_form.rate.hint')"
               :error-messages="errorMessages['rate']"
             />
             <v-text-field
               v-model="fee"
-              class="otc-form__fee"
-              :label="$t('otc_form.fee.label')"
+              data-cy="fee"
+              :label="$t('external_trade_form.fee.label')"
               persistent-hint
-              :hint="$t('otc_form.fee.hint')"
+              :hint="$t('external_trade_form.fee.hint')"
               :error-messages="errorMessages['fee']"
             />
             <asset-select
               v-model="feeCurrency"
-              :label="$t('otc_form.fee_currency.label')"
-              class="otc-form__fee-currency"
+              :label="$t('external_trade_form.fee_currency.label')"
+              data-cy="fee-currency"
               :rules="assetRules"
               :error-messages="errorMessages['feeCurrency']"
             />
@@ -89,30 +96,32 @@
         </v-row>
         <v-text-field
           v-model="link"
-          class="otc-form__link"
-          :label="$t('otc_form.link.label')"
+          data-cy="link"
+          prepend-inner-icon="mdi-link"
+          :label="$t('external_trade_form.link.label')"
           persistent-hint
-          :hint="$t('otc_form.link.hint')"
+          :hint="$t('external_trade_form.link.hint')"
           :error-messages="errorMessages['link']"
         />
         <v-textarea
           v-model="notes"
           outlined
-          class="otc-form__notes mt-4"
-          :label="$t('otc_form.notes.label')"
+          data-cy="notes"
+          class="mt-4"
+          :label="$t('external_trade_form.notes.label')"
           persistent-hint
-          :hint="$t('otc_form.notes.hint')"
+          :hint="$t('external_trade_form.notes.hint')"
           :error-messages="errorMessages['notes']"
         />
       </v-col>
     </v-row>
-  </div>
+  </v-form>
 </template>
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
 import moment from 'moment';
-import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
@@ -135,9 +144,16 @@ import { bigNumberify, Zero } from '@/utils/bignumbers';
     ...mapActions('balances', ['fetchHistoricPrice'])
   }
 })
-export default class OtcForm extends Vue {
+export default class ExternalTradeForm extends Vue {
+  @Prop({ required: false, type: Boolean, default: false })
+  value!: boolean;
+
   @Prop({ required: false, default: null })
   edit!: Trade | null;
+
+  @Emit()
+  input(_valid: boolean) {}
+
   errorMessages: {
     [field: string]: string[];
   } = {};
@@ -150,7 +166,8 @@ export default class OtcForm extends Vue {
 
   private static format = 'DD/MM/YYYY HH:mm:ss';
   readonly assetRules = [
-    (v: string) => !!v || this.$t('otc_form.validation.non_empty_fee')
+    (v: string) =>
+      !!v || this.$t('external_trade_form.validation.non_empty_fee')
   ];
 
   base: string = '';
@@ -158,14 +175,14 @@ export default class OtcForm extends Vue {
 
   get baseHint(): string {
     return this.type === 'buy'
-      ? this.$t('otc_form.buy_base').toString()
-      : this.$t('otc_form.sell_base').toString();
+      ? this.$t('external_trade_form.buy_base').toString()
+      : this.$t('external_trade_form.sell_base').toString();
   }
 
   get quoteHint(): string {
     return this.type === 'buy'
-      ? this.$t('otc_form.buy_quote').toString()
-      : this.$t('otc_form.sell_quote').toString();
+      ? this.$t('external_trade_form.buy_quote').toString()
+      : this.$t('external_trade_form.sell_quote').toString();
   }
 
   rateMessages: string[] = [];
@@ -224,11 +241,16 @@ export default class OtcForm extends Vue {
   }
 
   async fetchPrice() {
-    if (!this.datetime || !this.base || !this.quote) {
+    if (
+      (this.rate && this.edit) ||
+      !this.datetime ||
+      !this.base ||
+      !this.quote
+    ) {
       return;
     }
 
-    const timestamp = moment(this.datetime, OtcForm.format).unix();
+    const timestamp = moment(this.datetime, ExternalTradeForm.format).unix();
     const fromAsset = this.base;
     const toAsset = this.quote;
 
@@ -241,7 +263,7 @@ export default class OtcForm extends Vue {
       this.rate = rate.toString();
     } else {
       this.errorMessages = {
-        rate: [this.$t('otc_form.rate_not_found').toString()]
+        rate: [this.$t('external_trade_form.rate_not_found').toString()]
       };
       setTimeout(() => {
         this.errorMessages = {};
@@ -257,7 +279,9 @@ export default class OtcForm extends Vue {
 
     const trade: Trade = this.edit;
     this.pair = trade.pair;
-    this.datetime = moment(trade.timestamp * 1000).format(OtcForm.format);
+    this.datetime = moment(trade.timestamp * 1000).format(
+      ExternalTradeForm.format
+    );
     this.amount = trade.amount.toString();
     this.rate = trade.rate.toString();
     this.fee = trade.fee.toString();
@@ -271,7 +295,7 @@ export default class OtcForm extends Vue {
   reset() {
     this.id = '';
     this.pair = '';
-    this.datetime = moment().format(OtcForm.format);
+    this.datetime = moment().format(ExternalTradeForm.format);
     this.amount = '';
     this.rate = '';
     this.fee = '';
@@ -296,7 +320,7 @@ export default class OtcForm extends Vue {
       pair: this.pair,
       rate: rate.isNaN() ? Zero : rate,
       location: 'external',
-      timestamp: moment(this.datetime, OtcForm.format).unix(),
+      timestamp: moment(this.datetime, ExternalTradeForm.format).unix(),
       tradeType: this.type
     };
 

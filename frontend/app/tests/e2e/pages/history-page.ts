@@ -1,4 +1,4 @@
-import { OTCTrade } from '../support/types';
+import { ExternalTrade } from '../support/types';
 import { selectAsset } from '../support/utils';
 
 export class HistoryPage {
@@ -8,23 +8,29 @@ export class HistoryPage {
     cy.get('.navigation__history-trades').click();
   }
 
-  addTrade(otcData: OTCTrade) {
+  addTrade(externalTrade: ExternalTrade) {
     cy.get('.closed-trades__add-trade').click();
-    cy.get('.otc-form__date')
-      .type(`{selectall}{backspace}${otcData.time}`)
+    cy.get('.big-dialog').should('be.visible');
+    cy.get('[data-cy=date]')
+      .type(`{selectall}{backspace}${externalTrade.time}`)
       .click(); // Click is needed to hide the popup
 
-    const [base, quote] = otcData.pair.split('_');
+    const [base, quote] = externalTrade.pair.split('_');
     selectAsset('[data-cy=base_asset]', base);
     selectAsset('[data-cy=quote_asset]', quote);
-    cy.get('.otc-form__type input').check(otcData.trade_type, { force: true });
-    cy.get('.otc-form__amount').type(otcData.amount);
-    cy.get('.otc-form__rate input').type(otcData.rate);
-    cy.get('.otc-form__fee').type(otcData.fee);
-    selectAsset('.otc-form__fee-currency', otcData.fee_currency);
-    cy.get('.otc-form__link').type(otcData.link);
-    cy.get('.otc-form__notes').type(otcData.notes);
+    cy.get('[data-cy=type] input').check(externalTrade.trade_type, {
+      force: true
+    });
+    cy.get('[data-cy=amount]').type(externalTrade.amount);
+    cy.get('[data-cy=rate]').type(
+      `{selectall}{backspace}${externalTrade.rate}`
+    );
+    cy.get('[data-cy=fee]').type(externalTrade.fee);
+    selectAsset('[data-cy=fee-currency]', externalTrade.fee_currency);
+    cy.get('[data-cy=link]').type(externalTrade.link);
+    cy.get('[data-cy=notes]').type(externalTrade.notes);
     cy.get('.big-dialog__buttons__confirm').click();
+    cy.get('.big-dialog').should('not.be.visible');
   }
 
   confirmDelete() {
@@ -37,7 +43,7 @@ export class HistoryPage {
     cy.get('.closed-trades tbody').find('tr').should('have.length', visible);
   }
 
-  tradeIsVisible(position: number, otcTrade: OTCTrade) {
+  tradeIsVisible(position: number, otcTrade: ExternalTrade) {
     cy.get('.closed-trades tbody > tr').eq(position).as('row');
 
     cy.get('@row').find('td').eq(3).should('contain', otcTrade.pair);
@@ -55,8 +61,9 @@ export class HistoryPage {
       .find('button.closed-trades__trade__actions__edit')
       .click();
 
-    cy.get('.otc-form__amount input').clear();
-    cy.get('.otc-form__amount').type(amount);
+    cy.get('.big-dialog').should('be.visible');
+    cy.get('[data-cy=amount]').clear();
+    cy.get('[data-cy=amount]').type(amount);
 
     cy.get('.big-dialog__buttons__confirm').click();
     cy.get('.big-dialog').should('not.be.visible');

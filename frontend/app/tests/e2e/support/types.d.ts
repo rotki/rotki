@@ -1,4 +1,4 @@
-export type OTCTrade = {
+export type ExternalTrade = {
   readonly time: string;
   readonly pair: string;
   readonly trade_type: 'buy' | 'sell';

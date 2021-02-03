@@ -15,7 +15,7 @@
           <v-icon>mdi-account-circle</v-icon>
         </menu-tooltip-button>
       </template>
-      <v-list>
+      <v-list data-cy="user-dropdown">
         <v-list-item key="username" class="user-username">
           <v-list-item-title class="font-weight-bold text-center">
             {{ username }}
