@@ -28,7 +28,9 @@ const args = [
   '--api-cors',
   'http://localhost:*',
   '--data-dir',
-  tempPath
+  tempPath,
+  '--logfile',
+  `${path.join(os.homedir(), 'rotkehlchen-e2e.log')}`
 ];
 
 spawn('python', args, {
