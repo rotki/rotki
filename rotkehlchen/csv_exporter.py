@@ -473,7 +473,7 @@ class CSVExporter():
             received_in_asset = event.amount
             received_in_profit_currency = profit_loss_in_profit_currency
         else:
-            paid_in_profit_currency = profit_loss_in_profit_currency
+            paid_in_profit_currency = -1 * profit_loss_in_profit_currency
             paid_in_asset = event.amount
             paid_asset = event.asset
             received_asset = S_EMPTYSTR
