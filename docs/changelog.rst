@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`2249` Users will now properly see the prices of new assets reflected on the dashboard when adding manual balances.
+* :bug:`2258` Users should now see the proper asset price, without rounding errors, for entries of the display asset.
 * :feature:`-` Add support for Swedish Krona (SEK) as a fiat currency.
 * :bug:`2267` DeFi events PnL CSV now properly includes the sign in the PnL column and also includes an extra column with the relevant transaction hashes and an optional note explaining more about the event.
 * :bug:`2258` Users should now the proper asset price, without rounding errors, for entries of the display asset.
