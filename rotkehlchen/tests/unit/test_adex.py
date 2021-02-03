@@ -1,5 +1,3 @@
-from eth_typing import HexStr
-
 from rotkehlchen.chain.ethereum.adex.adex import Adex
 from rotkehlchen.chain.ethereum.adex.typing import TOM_POOL_ID
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
@@ -36,7 +34,7 @@ def test_get_bond_id():
     bond_id = Adex._get_bond_id(
         identity_address=TEST_ADDR_USER_IDENTITY,
         amount=10661562521452745365522,
-        pool_id=HexStr(TOM_POOL_ID),
+        pool_id=TOM_POOL_ID,
         nonce=1596569185,
     )
     assert bond_id == expected_bond_id

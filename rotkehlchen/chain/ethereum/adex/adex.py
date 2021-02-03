@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from datetime import datetime
+from functools import partial
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import (
@@ -17,7 +17,7 @@ from typing import (
 )
 
 import requests
-from eth_typing import ChecksumAddress, HexAddress, HexStr
+from eth_typing import ChecksumAddress
 from eth_utils import to_checksum_address
 from typing_extensions import Literal
 from web3 import Web3
@@ -40,6 +40,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
+from rotkehlchen.utils.misc import create_timestamp, ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads_list
 
 from .graph import BONDS_QUERY, CHANNEL_WITHDRAWS_QUERY, UNBOND_REQUESTS_QUERY, UNBONDS_QUERY
@@ -123,7 +124,8 @@ class Adex(EthereumModule):
             fee_rewards: FeeRewards,
             channel_withdraws: List[ChannelWithdraw],
     ) -> UnclaimedReward:
-        now = int(datetime.utcnow().timestamp())
+        """May raise DeserializationError"""
+        now = ts_now()
         adx_unclaimed_amount = ZERO
         dai_unclaimed_amount = ZERO
         for entry in fee_rewards:
@@ -132,14 +134,17 @@ class Adex(EthereumModule):
                 if valid_until < now:
                     continue
 
-                channel_id = HexStr(entry['channelId'])
+                balances = entry['balances']
+                if address not in balances and user_identity not in balances:
+                    continue
+
+                channel_id = entry['channelId']
                 token_ethereum_address = deserialize_ethereum_address(
                     entry['channelArgs']['tokenAddr'],
                 )
-                balances = entry['balances']
                 if token_ethereum_address == A_ADX.ethereum_address:
                     channel_adx_reward_amount = FVal(
-                        balances.get(address, balances.get(user_identity, ZERO)),
+                        balances.get(address, balances[user_identity]),
                     ) / ADX_AMOUNT_MANTISSA
                     channel_adx_claimed_amount = FVal(sum(
                         channel_withdraw.value.amount
@@ -150,7 +155,7 @@ class Adex(EthereumModule):
 
                 elif token_ethereum_address == A_DAI.ethereum_address:
                     channel_dai_reward_amount = FVal(
-                        balances.get(address, balances.get(user_identity, ZERO)),
+                        balances.get(address, balances[user_identity]),
                     ) / DAI_AMOUNT_MANTISSA
                     channel_dai_claimed_amount = FVal(sum(
                         channel_withdraw.value.amount
@@ -179,8 +184,6 @@ class Adex(EthereumModule):
             staking_events: ADXStakingEvents,
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
             fee_rewards: FeeRewards,
-            # unclaimed_rewards: Dict[ChecksumAddress, UnclaimedReward],
-            # tom_pool_incentive: TomPoolIncentive,
             adx_usd_price: Price,
             dai_usd_price: Price,
     ) -> Dict[ChecksumAddress, List[ADXStakingBalance]]:
@@ -220,6 +223,10 @@ class Adex(EthereumModule):
             pool_ids = {bond.pool_id for bond in bonds}
             for pool_id in pool_ids:
                 if pool_id != TOM_POOL_ID:
+                    log.warning(
+                        'Unexpected AdEx pool. Please update the code for supporting it',
+                        pool_id=pool_id,
+                    )
                     continue
 
                 # ADX amount staked, ADX and DAI claimed amounts
@@ -238,7 +245,7 @@ class Adex(EthereumModule):
                     pool_name=POOL_ID_POOL_NAME[pool_id],
                     adx_balance=Balance(
                         amount=adx_amount,
-                        usd_value=(adx_amount) * adx_usd_price,
+                        usd_value=adx_amount * adx_usd_price,
                     ),
                     adx_unclaimed_balance=Balance(
                         amount=unclaimed_reward.adx_amount,
@@ -287,6 +294,10 @@ class Adex(EthereumModule):
             for adx_staking_balance in adx_staking_balances:
                 # NB: currently it only returns staking details for Tom pool
                 if adx_staking_balance.pool_id != TOM_POOL_ID:
+                    log.warning(
+                        'Unexpected AdEx pool. Please update the code for supporting it',
+                        pool_id=adx_staking_balance.pool_id,
+                    )
                     continue
 
                 adx_total_profit = Balance()
@@ -329,7 +340,6 @@ class Adex(EthereumModule):
             self,
             raw_event: Dict[str, Any],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
-            channel_ids_token: Optional[ChannelIdsToken] = None,  # pylint: disable=unused-argument
     ) -> Bond:
         """Deserialize a bond event.
 
@@ -341,7 +351,7 @@ class Adex(EthereumModule):
         )
         amount_int = int(raw_event['amount'])
         amount = FVal(raw_event['amount']) / ADX_AMOUNT_MANTISSA
-        pool_id = HexStr(raw_event['poolId'])
+        pool_id = raw_event['poolId']
         nonce = int(raw_event['nonce'])
         bond_id = self._get_bond_id(
             identity_address=adex_event.identity_address,
@@ -377,14 +387,14 @@ class Adex(EthereumModule):
         address = to_checksum_address(raw_event['user'])
         identity_address = inverse_identity_address_map[address]
         amount = FVal(raw_event['amount']) / ADX_AMOUNT_MANTISSA
-        channel_id = HexStr(raw_event['channelId'])
+        channel_id = raw_event['channelId']
         if channel_id == TOM_POOL_FEE_REWARDS_ADX_LEGACY_CHANNEL:
             token = A_ADX
         else:
             token = channel_ids_token[channel_id]
 
         return ChannelWithdraw(
-            tx_hash=HexStr(raw_event['id'].split(':')[0]),
+            tx_hash=raw_event['id'].split(':')[0],
             address=address,
             identity_address=identity_address,
             timestamp=Timestamp(raw_event['timestamp']),
@@ -406,7 +416,7 @@ class Adex(EthereumModule):
         """
         identity_address = to_checksum_address(raw_event['owner'])
         return AdexEvent(
-            tx_hash=HexStr(raw_event['id'].split(':')[0]),
+            tx_hash=raw_event['id'].split(':')[0],
             address=identity_address_map[identity_address],
             identity_address=identity_address,
             timestamp=Timestamp(raw_event['timestamp']),
@@ -416,7 +426,6 @@ class Adex(EthereumModule):
             self,
             raw_event: Dict[str, Any],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
-            channel_ids_token: Optional[ChannelIdsToken] = None,  # pylint: disable=unused-argument
     ) -> Unbond:
         """Deserialize an unbond event.
 
@@ -431,7 +440,7 @@ class Adex(EthereumModule):
             address=adex_event.address,
             identity_address=adex_event.identity_address,
             timestamp=adex_event.timestamp,
-            bond_id=HexStr(raw_event['bondId']),
+            bond_id=raw_event['bondId'],
             value=Balance(),
         )
 
@@ -439,7 +448,6 @@ class Adex(EthereumModule):
             self,
             raw_event: Dict[str, Any],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
-            channel_ids_token: Optional[ChannelIdsToken] = None,  # pylint: disable=unused-argument
     ) -> UnbondRequest:
         """Deserialize an unbond request event.
 
@@ -454,14 +462,13 @@ class Adex(EthereumModule):
             address=adex_event.address,
             identity_address=adex_event.identity_address,
             timestamp=adex_event.timestamp,
-            bond_id=HexStr(raw_event['bondId']),
+            bond_id=raw_event['bondId'],
             value=Balance(),
             unlock_at=Timestamp(int(raw_event['willUnlock'])),
         )
 
     def _get_tom_pool_fee_rewards_from_api(self) -> FeeRewards:
-        """Do a GET request to the Tom pool fee rewards API.
-        """
+        """Do a GET request to the Tom pool fee rewards API"""
         try:
             response = self.session.get(TOM_POOL_FEE_REWARDS_API_URL)
         except requests.exceptions.RequestException as e:
@@ -618,7 +625,12 @@ class Adex(EthereumModule):
             from_timestamp: Optional[Timestamp] = None,
             to_timestamp: Optional[Timestamp] = None,
     ) -> Union[List[Bond], List[Unbond], List[UnbondRequest], List[ChannelWithdraw]]:
-        """Get the addresses' events data querying the AdEx subgraph.
+        """Get the addresses' events data querying the AdEx subgraph
+
+        May raise:
+        - DeserializationError: when there is a problem deserializing the
+        events on the subgraph response.
+        - RemoteError: when there is a problem either querying the subgraph.
         """
         user_identities = [str(identity).lower() for identity in identity_address_map.keys()]
         deserialization_method: DeserializationMethod
@@ -644,7 +656,10 @@ class Adex(EthereumModule):
             event_type_pretty = 'unbond request'
         elif event_type == AdexEventType.CHANNEL_WITHDRAW:
             queried_addresses = [address.lower() for address in addresses]
-            deserialization_method = self._deserialize_channel_withdraw
+            deserialization_method = partial(
+                self._deserialize_channel_withdraw,
+                channel_ids_token=channel_ids_token,
+            )
             querystr = format_query_indentation(CHANNEL_WITHDRAWS_QUERY.format())
             schema = 'channelWithdraws'
             event_type_pretty = 'channel withdraws'
@@ -652,7 +667,7 @@ class Adex(EthereumModule):
             raise AssertionError(f'Unexpected AdEx event type: {event_type}.')
 
         start_ts = from_timestamp or 0
-        end_ts = to_timestamp or int(datetime.utcnow().timestamp())
+        end_ts = to_timestamp or ts_now()
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
@@ -669,39 +684,24 @@ class Adex(EthereumModule):
         }
         events = []
         while True:
-            try:
-                result = self.graph.query(  # type: ignore # caller already checks
-                    querystr=querystr,
-                    param_types=param_types,
-                    param_values=param_values,
-                )
-            except RemoteError as e:
-                msg = str(e)
-                self.msg_aggregator.add_error(
-                    f'{msg}. All AdEx balances queries are not functioning until this is fixed.',
-                )
-                raise
-
+            result = self.graph.query(  # type: ignore # caller already checks
+                querystr=querystr,
+                param_types=param_types,
+                param_values=param_values,
+            )
             result_data = result[schema]
             for raw_event in result_data:
                 try:
                     event = deserialization_method(
                         raw_event=raw_event,
                         identity_address_map=identity_address_map,
-                        channel_ids_token=channel_ids_token,
                     )
                 except KeyError as e:
-                    msg = str(e)
-                    log.error(
-                        f'Error processing an AdEx {event_type_pretty}.',
-                        raw_event=raw_event,
-                        error=msg,
-                    )
-                    self.msg_aggregator.add_error(
-                        f'Failed to deserialize an AdEx {event_type_pretty}. '
-                        f'Check logs for details. Ignoring it.',
-                    )
-                    continue
+                    msg = f'Error processing an AdEx {event_type_pretty} due to: {str(e)}.'
+                    log.error(msg, raw_event=raw_event)
+                    raise DeserializationError(
+                        f'Failed to deserialize an AdEx event due to: {str(e)}',
+                    ) from e
 
                 events.append(event)
 
@@ -752,17 +752,17 @@ class Adex(EthereumModule):
     def _get_bond_id(
             identity_address: ChecksumAddress,
             amount: int,
-            pool_id: HexStr,
+            pool_id: str,
             nonce: int,
-    ) -> HexStr:
-        """Given a LogBond event data, return its `bondId`.
-        """
+    ) -> str:
+        """Given a LogBond event data, return its `bondId`"""
         arg_types = ['address', 'address', 'uint', 'bytes32', 'uint']
         args = [STAKING_ADDR, identity_address, amount, pool_id, nonce]
-        return HexStr(Web3.keccak(Web3().codec.encode_abi(arg_types, args)).hex())
+        return Web3.keccak(Web3().codec.encode_abi(arg_types, args)).hex()
 
     @staticmethod
     def _get_channel_ids_token(fee_rewards: FeeRewards) -> ChannelIdsToken:
+        """May raise DeserializationError"""
         channel_id_token: ChannelIdsToken = {}
         for entry in fee_rewards:
             try:
@@ -775,7 +775,7 @@ class Adex(EthereumModule):
                 else:
                     log.error(
                         'Unexpected token address processing AdEx fee rewards for '
-                        'updating channel withdraw events. ',
+                        'updating channel withdraw events.',
                         channel_id=channel_id,
                         token_address=token_address,
                         entry=entry,
@@ -805,23 +805,21 @@ class Adex(EthereumModule):
 
         NB: the APR calculated here is the APY in the AdEx codebase and website stats.
         https://github.com/AdExNetwork/adex-staking/blob/master/src/actions/actions.js#L86
+
+        May raise DeserializationError
         """
         total_staked_amount = ZERO
         total_reward_per_second = ZERO
         period_ends_at = Timestamp(0)
-        now = Timestamp(int(datetime.utcnow().timestamp()))
+        now = ts_now()
         for entry in fee_rewards:
             try:
                 if (
                     entry['channelArgs']['tokenAddr'] == A_ADX.ethereum_address and
                     entry['channelId'] != TOM_POOL_FEE_REWARDS_ADX_LEGACY_CHANNEL
                 ):
-                    starts_at = Timestamp(int(
-                        datetime.strptime(entry['periodStart'], TOM_POOL_PERIOD_FORMAT).timestamp(),  # noqa: E501
-                    ))
-                    ends_at = Timestamp(int(
-                        datetime.strptime(entry['periodEnd'], TOM_POOL_PERIOD_FORMAT).timestamp(),
-                    ))
+                    starts_at = create_timestamp(entry['periodStart'], formatstr=TOM_POOL_PERIOD_FORMAT)  # noqa: E501
+                    ends_at = create_timestamp(entry['periodEnd'], formatstr=TOM_POOL_PERIOD_FORMAT)  # noqa: E501
                     if starts_at < now <= ends_at:
                         total_staked_amount = FVal(entry['stats']['currentTotalActiveStake'])
                         total_reward_per_second = FVal(entry['stats']['currentRewardPerSecond'])
@@ -889,12 +887,11 @@ class Adex(EthereumModule):
 
     @staticmethod
     def _get_user_identity(address: ChecksumAddress) -> ChecksumEthAddress:
-        """Given an address (signer) returns its protocol user identity.
-        """
+        """Given an address (signer) returns its protocol user identity"""
         return generate_address_via_create2(
-            address=HexAddress(HexStr(IDENTITY_FACTORY_ADDR)),
-            salt=HexStr(CREATE2_SALT),
-            init_code=HexStr(IDENTITY_PROXY_INIT_CODE.format(signer_address=address)),
+            address=IDENTITY_FACTORY_ADDR,
+            salt=CREATE2_SALT,
+            init_code=IDENTITY_PROXY_INIT_CODE.format(signer_address=address),
         )
 
     def _update_events_value(
@@ -902,7 +899,7 @@ class Adex(EthereumModule):
             staking_events: ADXStakingEvents,
     ) -> None:
         # Update amounts for unbonds and unbond requests
-        bond_id_bond_map: Dict[HexStr, Optional[Bond]] = {
+        bond_id_bond_map: Dict[str, Optional[Bond]] = {
             bond.bond_id: bond for bond in staking_events.bonds
         }
         for event in (
@@ -931,11 +928,10 @@ class Adex(EthereumModule):
                 has_bond = False
 
             if has_bond is False:
-                msg = (
-                    f'Failed to update AdEx event data. '
-                    f'Unable to find the related bond event: {event}'
+                log.warning(
+                    'Failed to update an AdEx event data. Unable to find its related bond event',
+                    event=event,
                 )
-                self.msg_aggregator.add_error(msg)
 
         # Update usd_value for all events
         for event in staking_events.get_all():  # type: ignore # event can have all types
@@ -954,8 +950,11 @@ class Adex(EthereumModule):
         """Return the addresses' balances (staked amount per pool) in the AdEx
         protocol.
 
-        May raise RemoteError when there is a problem querying the Tom fee rewards
-        API or requesting the AdEx subgraph.
+        May raise:
+        - DeserializationError: when there is a problem deserializing the Tom
+        fee rewards API response.
+        - RemoteError: when there is a problem either querying the Tom fee
+        rewards API or querying the subgraph.
 
         TODO: route non-premium users through on-chain query.
         """
@@ -963,29 +962,25 @@ class Adex(EthereumModule):
         is_graph_mode = self.graph and self.premium
         if not is_graph_mode:
             raise NotImplementedError(
-                'Get AdEx balances for non premium user is not implemented',
+                'Getting AdEx balances for non premium user is not implemented',
             )
-
-        try:
-            fee_rewards = self._get_tom_pool_fee_rewards_from_api()
-            channel_ids_token = self._get_channel_ids_token(fee_rewards)
-        except (DeserializationError, RemoteError) as e:
-            self.msg_aggregator.add_error(
-                f'Got remote error querying AdEx balances due to: {str(e)}',
-            )
-            raise RemoteError(e) from e
 
         identity_address_map = self._get_identity_address_map(addresses)
         all_events: List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]] = []
-        for event_type_ in AdexEventType:
-            # TODO: fix. type -> overload does not work well with enum in this case
-            events = self._get_staking_events_graph(  # type: ignore
-                addresses=addresses,
-                identity_address_map=identity_address_map,
-                event_type=event_type_,
-                channel_ids_token=channel_ids_token,
-            )
-            all_events.extend(events)
+        try:
+            fee_rewards = self._get_tom_pool_fee_rewards_from_api()
+            channel_ids_token = self._get_channel_ids_token(fee_rewards)
+            for event_type_ in AdexEventType:
+                # TODO: fix. type -> overload does not work well with enum in this case
+                events = self._get_staking_events_graph(  # type: ignore
+                    addresses=addresses,
+                    identity_address_map=identity_address_map,
+                    event_type=event_type_,
+                    channel_ids_token=channel_ids_token,
+                )
+                all_events.extend(events)
+        except DeserializationError as e:
+            raise RemoteError(e) from e
 
         staking_events = self._get_addresses_staking_events_grouped_by_type(
             events=all_events,
@@ -1012,8 +1007,11 @@ class Adex(EthereumModule):
     ) -> Dict[ChecksumAddress, ADXStakingHistory]:
         """Get the staking history events of the addresses in the AdEx protocol.
 
-        May raise RemoteError when there is a problem querying the Tom fee rewards
-        API or requesting the AdEx subgraph.
+        May raise:
+        - DeserializationError: when there is a problem deserializing the Tom
+        fee rewards API response.
+        - RemoteError: when there is a problem either querying the Tom fee
+        rewards API or querying the subgraph.
         """
         if self.graph is None:  # could not initialize graph
             return {}
@@ -1021,24 +1019,21 @@ class Adex(EthereumModule):
         if reset_db_data is True:
             self.database.delete_adex_events_data()
 
+        identity_address_map = self._get_identity_address_map(addresses)
         try:
             fee_rewards = self._get_tom_pool_fee_rewards_from_api()
             channel_ids_token = self._get_channel_ids_token(fee_rewards)
             tom_pool_incentive = self._get_tom_pool_incentive(fee_rewards)
-        except (DeserializationError, RemoteError) as e:
-            self.msg_aggregator.add_error(
-                f'Got remote error querying AdEx events history due to: {str(e)}',
+            staking_events = self._get_staking_events(
+                addresses=addresses,
+                identity_address_map=identity_address_map,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                channel_ids_token=channel_ids_token,
             )
+        except DeserializationError as e:
             raise RemoteError(e) from e
 
-        identity_address_map = self._get_identity_address_map(addresses)
-        staking_events = self._get_staking_events(
-            addresses=addresses,
-            identity_address_map=identity_address_map,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            channel_ids_token=channel_ids_token,
-        )
         adx_usd_price = Inquirer().find_usd_price(A_ADX)
         dai_usd_price = Inquirer().find_usd_price(A_DAI)
         staking_balances = self._calculate_staking_balances(

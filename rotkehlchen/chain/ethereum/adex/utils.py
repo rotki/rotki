@@ -1,7 +1,5 @@
 from typing import Union, cast
 
-from eth_typing import HexStr
-
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
@@ -84,11 +82,11 @@ def deserialize_adex_event_from_db(
             f'Failed to deserialize event type. Unknown event: {db_event_type}.',
         )
 
-    tx_hash = HexStr(event_tuple[0])
+    tx_hash = event_tuple[0]
     address = deserialize_ethereum_address(event_tuple[1])
     identity_address = deserialize_ethereum_address(event_tuple[2])
     timestamp = deserialize_timestamp(event_tuple[3])
-    pool_id = HexStr(event_tuple[5])
+    pool_id = event_tuple[5]
     amount = deserialize_asset_amount(event_tuple[6])
     usd_value = deserialize_asset_amount(event_tuple[7])
     value = Balance(amount=amount, usd_value=usd_value)
@@ -106,7 +104,7 @@ def deserialize_adex_event_from_db(
             timestamp=timestamp,
             pool_id=pool_id,
             value=value,
-            bond_id=HexStr(cast(str, event_tuple[8])),
+            bond_id=cast(str, event_tuple[8]),
             nonce=cast(int, event_tuple[9]),
             slashed_at=Timestamp(cast(int, event_tuple[10])),
         )
@@ -124,7 +122,7 @@ def deserialize_adex_event_from_db(
             timestamp=timestamp,
             pool_id=pool_id,
             value=value,
-            bond_id=HexStr(cast(str, event_tuple[8])),
+            bond_id=cast(str, event_tuple[8]),
         )
 
     if db_event_type == str(AdexEventType.UNBOND_REQUEST):
@@ -140,7 +138,7 @@ def deserialize_adex_event_from_db(
             timestamp=timestamp,
             pool_id=pool_id,
             value=value,
-            bond_id=HexStr(cast(str, event_tuple[8])),
+            bond_id=cast(str, event_tuple[8]),
             unlock_at=Timestamp(cast(int, event_tuple[11])),
         )
 
@@ -166,7 +164,7 @@ def deserialize_adex_event_from_db(
             timestamp=timestamp,
             value=value,
             pool_id=pool_id,
-            channel_id=HexStr(cast(str, event_tuple[12])),
+            channel_id=cast(str, event_tuple[12]),
             token=token,
         )
 
