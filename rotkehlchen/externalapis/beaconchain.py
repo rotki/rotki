@@ -2,6 +2,7 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Union, overload
 
 import gevent
+import logging
 import requests
 from typing_extensions import Literal
 
@@ -20,6 +21,9 @@ from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+
+
+logger = logging.getLogger(__name__)
 
 
 class BeaconChain(ExternalServiceWithApiKey):
@@ -58,6 +62,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         times = QUERY_RETRY_TIMES
         backoff_in_seconds = 10
 
+        logger.debug(f'Querying beaconcha.in API for {query_str}')
         while True:
             try:
                 response = self.session.get(query_str)
