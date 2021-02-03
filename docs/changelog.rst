@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Add support for Swedish Krona (SEK) as a fiat currency.
 * :bug:`2267` DeFi events PnL CSV now properly includes the sign in the PnL column and also includes an extra column with the relevant transaction hashes and an optional note explaining more about the event.
 * :bug:`2258` Users should now the proper asset price, without rounding errors, for entries of the display asset.
 * :bug:`2273` CREAM icon and price should now be shown correctly.
