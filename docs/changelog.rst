@@ -21,6 +21,7 @@ Changelog
   - `Name Change Token (NCT) <https://www.coingecko.com/en/coins/name-changing-token>`__
   - `Archer DAO Governance Token (ARCH) <https://www.coingecko.com/en/coins/archer-dao-governance-token>`__
   - `Starname (IOV) <https://www.coingecko.com/en/coins/starname>`__
+  - `ASSY PowerIndex (ASSY) <https://www.coingecko.com/en/coins/assy-index>`__
 
 * :release:`1.13.0 <2021-01-29>`
 * :feature:`-` Add support for Singapore Dollar (SGD) as a fiat currency.
