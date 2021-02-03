@@ -270,9 +270,6 @@ class ADXStakingBalance(NamedTuple):
 
 class TomPoolIncentive(NamedTuple):
     total_staked_amount: FVal  # from sum(currentTotalActiveStake)
-    total_reward_per_second: FVal  # from sum(currentRewardPerSecond)
-    period_starts_at: Timestamp  # from periodStart
-    period_ends_at: Timestamp  # from periodEnd
     apr: FVal  # from AdEx APY
 
 
