@@ -155,3 +155,7 @@ export type HistoricPricePayload = {
   readonly toAsset: string;
   readonly timestamp: number;
 };
+
+export interface AssetPriceInfo extends Balance {
+  readonly usdPrice: BigNumber;
+}

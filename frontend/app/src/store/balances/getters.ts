@@ -7,6 +7,7 @@ import { SupportedAsset } from '@/services/types-model';
 import {
   AccountWithBalance,
   AssetBalance,
+  AssetPriceInfo,
   BalanceState,
   BlockchainAccountWithBalance,
   BlockchainTotal,
@@ -51,6 +52,7 @@ export interface BalanceGetters {
   account: (address: string) => GeneralAccount | undefined;
   assetInfo: (asset: string) => SupportedAsset | undefined;
   isEthereumToken: (asset: string) => boolean;
+  assetPriceInfo: (asset: string) => AssetPriceInfo;
 }
 
 function balances(
@@ -443,5 +445,15 @@ export const getters: Getters<
     const assets = getters.aggregatedBalances.map(({ asset }) => asset);
     assets.push(...liabilities);
     return assets.filter(uniqueStrings);
+  },
+  assetPriceInfo: (state, getters1) => asset => {
+    const assetValue = getters1.aggregatedBalances.find(
+      value => value.asset === asset
+    );
+    return {
+      usdPrice: state.prices[asset] ?? Zero,
+      amount: assetValue?.amount ?? Zero,
+      usdValue: assetValue?.usdValue ?? Zero
+    };
   }
 };

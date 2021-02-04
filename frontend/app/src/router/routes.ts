@@ -11,5 +11,6 @@ export const Routes = {
   STAKING_ADEX: '/staking/adex',
   DEFI_AIRDROPS: '/defi/airdrops',
   PROFIT_LOSS_REPORT: '/profit-loss-report',
-  HISTORY_LEDGER_ACTIONS: '/history/ledger-actions'
+  HISTORY_LEDGER_ACTIONS: '/history/ledger-actions',
+  ASSETS: '/assets/:identifier'
 };

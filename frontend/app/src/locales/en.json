@@ -22,6 +22,9 @@
     "loading": "Please wait while rotki queries the airdrops for your addresses...",
     "title": "Airdrops"
   },
+  "asset-locations": {
+    "title": "asset-locations.title"
+  },
   "asset_balances": {
     "headers": {
       "amount": "Amount",
@@ -31,6 +34,11 @@
     },
     "loading": "Please wait while rotki queries the blockchain...",
     "total": "Total"
+  },
+  "assets": {
+    "amount": "Total Owned",
+    "price": "Price",
+    "value": "Value"
   },
   "blockchain_account_selector": {
     "all": "all",
