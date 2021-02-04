@@ -716,12 +716,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async addManualBalance({ commit }, balance: ManualBalance) {
+  async addManualBalance({ commit, dispatch }, balance: ManualBalance) {
     let result = false;
     try {
       const { balances } = await api.balances.addManualBalances([balance]);
       commit('manualBalances', balances);
       result = true;
+      dispatch('refreshPrices', false);
     } catch (e) {
       showError(
         `${e.message}`,
@@ -731,12 +732,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     return result;
   },
 
-  async editManualBalance({ commit }, balance: ManualBalance) {
+  async editManualBalance({ commit, dispatch }, balance: ManualBalance) {
     let result = false;
     try {
       const { balances } = await api.balances.editManualBalances([balance]);
       commit('manualBalances', balances);
       result = true;
+      dispatch('refreshPrices', false);
     } catch (e) {
       showError(
         `${e.message}`,
