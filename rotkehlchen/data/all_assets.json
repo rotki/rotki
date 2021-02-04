@@ -11783,11 +11783,11 @@
         "type": "ethereum token"
     },
     "TNT": {
-        "coingecko": "titanium-network",
+        "coingecko": "tierion",
         "ethereum_address": "0x08f5a9235B08173b7569F83645d2c7fB55e8cCD8",
         "ethereum_token_decimals": 8,
-        "name": "Tierion",
-        "started": 1500249600,
+        "name": "Tierion Network Token",
+        "started": 1503638643,
         "symbol": "TNT",
         "type": "ethereum token"
     },
