@@ -123,11 +123,18 @@ class Adex(EthereumModule):
             user_identity: ChecksumAddress,
             fee_rewards: FeeRewards,
             channel_withdraws: List[ChannelWithdraw],
+            is_pnl_report: bool = False,
     ) -> UnclaimedReward:
         """May raise DeserializationError"""
-        now = ts_now()
+        if is_pnl_report:
+            return UnclaimedReward(
+                adx_amount=ZERO,
+                dai_amount=ZERO,
+            )
+
         adx_unclaimed_amount = ZERO
         dai_unclaimed_amount = ZERO
+        now = ts_now()
         for entry in fee_rewards:
             try:
                 valid_until = deserialize_timestamp(entry['channelArgs']['validUntil'])
@@ -144,7 +151,7 @@ class Adex(EthereumModule):
                 )
                 if token_ethereum_address == A_ADX.ethereum_address:
                     channel_adx_reward_amount = FVal(
-                        balances.get(address, balances[user_identity]),
+                        balances.get(address, None) or balances[user_identity],
                     ) / ADX_AMOUNT_MANTISSA
                     channel_adx_claimed_amount = FVal(sum(
                         channel_withdraw.value.amount
@@ -155,7 +162,7 @@ class Adex(EthereumModule):
 
                 elif token_ethereum_address == A_DAI.ethereum_address:
                     channel_dai_reward_amount = FVal(
-                        balances.get(address, balances[user_identity]),
+                        balances.get(address, None) or balances[user_identity],
                     ) / DAI_AMOUNT_MANTISSA
                     channel_dai_claimed_amount = FVal(sum(
                         channel_withdraw.value.amount
@@ -186,6 +193,7 @@ class Adex(EthereumModule):
             fee_rewards: FeeRewards,
             adx_usd_price: Price,
             dai_usd_price: Price,
+            is_pnl_report: bool = False,
     ) -> Dict[ChecksumAddress, List[ADXStakingBalance]]:
         """Given a list of bonds, unbonds and unbond requests returns per address
         the balance. The balance is the staked amount plus the unclaimed rewards
@@ -238,6 +246,7 @@ class Adex(EthereumModule):
                     user_identity=inverse_identity_address_map[address],
                     fee_rewards=fee_rewards,
                     channel_withdraws=address_channel_withdraws[address],
+                    is_pnl_report=is_pnl_report,
                 )
                 adx_amount = adx_staked_amount + unclaimed_reward.adx_amount
                 pool_balance = ADXStakingBalance(
@@ -518,7 +527,6 @@ class Adex(EthereumModule):
         for address in addresses:
             entry_name = f'{ADEX_EVENTS_PREFIX}_{address}'
             events_range = self.database.get_used_query_range(name=entry_name)
-
             if not events_range:
                 new_addresses.append(address)
             else:
@@ -800,7 +808,10 @@ class Adex(EthereumModule):
         return {self._get_user_identity(address): address for address in addresses}
 
     @staticmethod
-    def _get_tom_pool_incentive(fee_rewards: FeeRewards) -> TomPoolIncentive:
+    def _get_tom_pool_incentive(
+            fee_rewards: FeeRewards,
+            is_pnl_report: bool = False,
+    ) -> TomPoolIncentive:
         """Get Tom pool incentive data (staking rewards).
 
         NB: the APR calculated here is the APY in the AdEx codebase and website stats.
@@ -808,6 +819,12 @@ class Adex(EthereumModule):
 
         May raise DeserializationError
         """
+        if is_pnl_report is True:
+            return TomPoolIncentive(
+                total_staked_amount=ZERO,
+                apr=ZERO,
+            )
+
         total_staked_amount = ZERO
         total_reward_per_second = ZERO
         period_ends_at = Timestamp(0)
@@ -995,7 +1012,6 @@ class Adex(EthereumModule):
             adx_usd_price=adx_usd_price,
             dai_usd_price=dai_usd_price,
         )
-
         return staking_balances
 
     def get_events_history(
@@ -1004,6 +1020,7 @@ class Adex(EthereumModule):
             reset_db_data: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            is_pnl_report: bool = False,
     ) -> Dict[ChecksumAddress, ADXStakingHistory]:
         """Get the staking history events of the addresses in the AdEx protocol.
 
@@ -1023,7 +1040,10 @@ class Adex(EthereumModule):
         try:
             fee_rewards = self._get_tom_pool_fee_rewards_from_api()
             channel_ids_token = self._get_channel_ids_token(fee_rewards)
-            tom_pool_incentive = self._get_tom_pool_incentive(fee_rewards)
+            tom_pool_incentive = self._get_tom_pool_incentive(
+                fee_rewards=fee_rewards,
+                is_pnl_report=is_pnl_report,
+            )
             staking_events = self._get_staking_events(
                 addresses=addresses,
                 identity_address_map=identity_address_map,
@@ -1042,13 +1062,13 @@ class Adex(EthereumModule):
             fee_rewards=fee_rewards,
             adx_usd_price=adx_usd_price,
             dai_usd_price=dai_usd_price,
+            is_pnl_report=is_pnl_report,
         )
         staking_history = self._get_staking_history(
             staking_balances=staking_balances,
             staking_events=staking_events,
             tom_pool_incentive=tom_pool_incentive,
         )
-
         return staking_history
 
     # -- Methods following the EthereumModule interface -- #
