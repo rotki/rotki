@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`295` When creating external trades, users will now have the trade rate automatically fetched when such a rate exists.
 * :feature:`2240` Users now can select the supported assets from a dropdown when adding or editing external trades.
+* :bug:`2287` Rotki encrypted DB upload for premium users should now respect the user setting.
 
 * :release:`1.13.1 <2021-02-04>`
 * :bug:`2222` Users who have funds in a DeFi Saver smart wallet will now be also able to see their liabilities in said wallet.
@@ -11,7 +12,6 @@ Changelog
 * :bug:`2258` Users should now see the proper asset price, without rounding errors, for entries of the display asset.
 * :feature:`-` Add support for Swedish Krona (SEK) as a fiat currency.
 * :bug:`2267` DeFi events PnL CSV now properly includes the sign in the PnL column and also includes an extra column with the relevant transaction hashes and an optional note explaining more about the event.
-* :bug:`2258` Users should now the proper asset price, without rounding errors, for entries of the display asset.
 * :bug:`2273` CREAM icon and price should now be shown correctly.
 * :bug:`2261` Users who had STX in Binance should now see it mapped properly to blockstack and not stox.
 * :bug:`-` Users will now see the total worth contained in the card for bigger amounts.

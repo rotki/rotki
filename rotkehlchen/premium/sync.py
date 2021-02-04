@@ -149,6 +149,9 @@ class PremiumSyncManager():
         if self.premium is None:
             return False
 
+        if not self.data.db.get_premium_sync() and not force_upload:
+            return False
+
         # upload only once per hour
         diff = ts_now() - self.last_data_upload_ts
         if diff < 3600 and not force_upload:

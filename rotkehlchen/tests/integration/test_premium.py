@@ -27,7 +27,11 @@ from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
+@pytest.mark.parametrize('db_settings', [
+    {'premium_should_sync': True},
+    {'premium_should_sync': False},
+])
+def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_settings):
     """Test our side of uploading data to the server"""
     last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
     assert last_ts == 0
@@ -72,6 +76,11 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     now = ts_now()
     with patched_get, patched_put:
         rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
+
+    if db_settings['premium_should_sync'] is False:
+        assert rotkehlchen_instance.data.db.get_last_data_upload_ts() == 0
+        assert rotkehlchen_instance.premium_sync_manager.last_data_upload_ts == 0
+        return
 
     last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
     msg = 'The last data upload timestamp should have been saved in the db as now'
