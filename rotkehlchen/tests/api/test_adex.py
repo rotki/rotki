@@ -98,6 +98,7 @@ def test_get_balances_premium(
         assert staking_balance['dai_unclaimed_balance']['usd_value']
 
 
+@pytest.mark.skip('Needs to be fixed by Victor after the changes to the subgraph')
 @pytest.mark.parametrize('ethereum_accounts', [[ADEX_TEST_ADDR]])
 @pytest.mark.parametrize('ethereum_modules', [['adex']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
