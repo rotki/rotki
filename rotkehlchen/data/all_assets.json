@@ -565,7 +565,7 @@
     },
     "ANT": {
         "coingecko": "aragon",
-        "ethereum_address": "0x960b236A07cf122663c4303350609A66A7B288C0",
+        "ethereum_address": "0xa117000000f279d81a1d3cc75430faa017fa5a2e",
         "ethereum_token_decimals": 18,
         "name": "Aragon",
         "started": 1493942400,
