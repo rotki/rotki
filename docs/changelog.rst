@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.13.1 <2021-02-04>`
 * :bug:`2222` Users who have funds in a DeFi Saver smart wallet will now be also able to see their liabilities in said wallet.
 * :bug:`2249` Users will now properly see the prices of new assets reflected on the dashboard when adding manual balances.
 * :bug:`2258` Users should now see the proper asset price, without rounding errors, for entries of the display asset.
