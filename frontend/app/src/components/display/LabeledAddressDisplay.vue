@@ -127,7 +127,6 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
     font-weight: 500;
     padding-top: 6px;
     padding-bottom: 6px;
-    background-color: white;
 
     &--mobile {
       max-width: 120px;
@@ -135,6 +134,8 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
 
     ::v-deep {
       .v-chip {
+        background-color: white !important;
+
         &--label {
           border-top-right-radius: 0 !important;
           border-bottom-right-radius: 0 !important;

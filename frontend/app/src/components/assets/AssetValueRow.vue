@@ -1,9 +1,9 @@
 <template>
-  <v-row class="mt-8">
+  <v-row>
     <v-col>
       <v-card>
-        <v-card-title class="title">
-          {{ $t('assets.price') }}
+        <v-card-title>
+          <card-title>{{ $t('assets.price') }}</card-title>
         </v-card-title>
         <v-card-text class="text-end text-h5 font-weight-medium">
           <amount-display
@@ -19,8 +19,8 @@
     </v-col>
     <v-col>
       <v-card>
-        <v-card-title class="title">
-          {{ $t('assets.amount') }}
+        <v-card-title>
+          <card-title>{{ $t('assets.amount') }}</card-title>
         </v-card-title>
         <v-card-text class="text-end text-h5 font-weight-medium">
           <amount-display
@@ -33,8 +33,8 @@
     </v-col>
     <v-col>
       <v-card>
-        <v-card-title class="title">
-          {{ $t('assets.value') }}
+        <v-card-title>
+          <card-title>{{ $t('assets.value') }}</card-title>
         </v-card-title>
         <v-card-text class="text-end text-h5 font-weight-medium">
           <amount-display
@@ -52,9 +52,11 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { AssetPriceInfo } from '@/store/balances/types';
 
 @Component({
+  components: { CardTitle },
   computed: {
     ...mapGetters('balances', ['assetPriceInfo'])
   }
@@ -70,14 +72,4 @@ export default class AssetValueRow extends Vue {
 }
 </script>
 
-<style scoped lang="scss">
-.title {
-  font-size: 14px;
-  line-height: 17px;
-  /* identical to box height */
-
-  text-transform: uppercase;
-
-  color: #447178;
-}
-</style>
+<style scoped lang="scss"></style>

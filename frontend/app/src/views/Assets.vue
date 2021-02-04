@@ -11,7 +11,8 @@
         </span>
       </v-col>
     </v-row>
-    <asset-value-row :identifier="identifier" />
+    <asset-value-row class="mt-8" :identifier="identifier" />
+    <asset-locations class="mt-8" :identifier="identifier" />
   </v-container>
 </template>
 

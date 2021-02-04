@@ -23,7 +23,7 @@
     "title": "Airdrops"
   },
   "asset-locations": {
-    "title": "asset-locations.title"
+    "title": "Asset Location"
   },
   "asset_balances": {
     "headers": {
@@ -34,6 +34,14 @@
     },
     "loading": "Please wait while rotki queries the blockchain...",
     "total": "Total"
+  },
+  "asset_locations": {
+    "header": {
+      "address": "Address",
+      "amount": "Amount",
+      "location": "Location",
+      "value": "{symbol} value"
+    }
   },
   "assets": {
     "amount": "Total Owned",
