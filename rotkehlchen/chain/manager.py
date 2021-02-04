@@ -1078,6 +1078,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 token_usd_price=token_usd_price,
             )
 
+            # also query defi balances to get liabilities
+            defi_balances_map = self.defichad.query_defi_balances(proxy_addresses)
+            for proxy_address, defi_balances in defi_balances_map.items():
+                self._add_account_defi_balances_to_token_and_totals(
+                    account=proxy_to_address[proxy_address],
+                    balances=defi_balances,
+                )
+
         adex_module = self.adex
         if adex_module is not None and self.premium is not None:
             adex_balances = adex_module.get_balances(addresses=self.accounts.eth)
