@@ -2,13 +2,27 @@
 Changelog
 =========
 
+* :feature:`-` Add support for Swedish Krona (SEK) as a fiat currency.
+* :bug:`2267` DeFi events PnL CSV now properly includes the sign in the PnL column and also includes an extra column with the relevant transaction hashes and an optional note explaining more about the event.
 * :bug:`2258` Users should now the proper asset price, without rounding errors, for entries of the display asset.
+* :bug:`2273` CREAM icon and price should now be shown correctly.
 * :bug:`2261` Users who had STX in Binance should now see it mapped properly to blockstack and not stox.
 * :bug:`-` Users will now see the total worth contained in the card for bigger amounts.
 * :bug:`2239` Amounts in the dashboard should now appear in single line for users.
 * :bug:`2244` Fix edge case where using a cryptocompare api key could result in the all coins endpoint to error if no cache already existed.
 * :bug:`2215` Ledger action CSV export now contains identifier and not asset name.
 * :bug:`2223` Manual balances with the blockchain tag will no longer be duplicated in the dashboard and blockchain account balances.
+
+* :feature:`-` Added support for the following tokens:
+
+  - `FOX Token (FOX) <https://www.coingecko.com/en/coins/fox-token>`__
+  - `Experty Wisdom Token (WIS) <https://www.coingecko.com/en/coins/experty-wisdom-token>`__
+  - `aleph.im v2 (ALEPH) <https://www.coingecko.com/en/coins/aleph-im>`__
+  - `Perpetual Protocol (PERP) <https://www.coingecko.com/en/coins/perpetual-protocol>`__
+  - `Name Change Token (NCT) <https://www.coingecko.com/en/coins/name-changing-token>`__
+  - `Archer DAO Governance Token (ARCH) <https://www.coingecko.com/en/coins/archer-dao-governance-token>`__
+  - `Starname (IOV) <https://www.coingecko.com/en/coins/starname>`__
+  - `ASSY PowerIndex (ASSY) <https://www.coingecko.com/en/coins/assy-index>`__
 
 * :release:`1.13.0 <2021-01-29>`
 * :feature:`-` Add support for Singapore Dollar (SGD) as a fiat currency.

@@ -99,6 +99,9 @@ def test_cryptocompare_asset_support(cryptocompare):
         'BAC',     # Basis Cash but BACoin in CC
         'IHF',     # waiting until cryptocompare fixes historical price for this. https://github.com/rotki/rotki/pull/2176  # noqa: E501
         'FLOW',    # FLOW from dapper labs but "Flow Protocol" in CC
+        'NCT-2',   # Name change token but Polyswarm in CC
+        'NDX',     # newdex token but Index token in CC
+        'ARCH-2',  # Archer DAO Governance token but Archcoin in CC
     )
     for identifier, asset_data in AssetResolver().assets.items():
         potential_support = (
@@ -140,7 +143,6 @@ def test_coingecko_identifiers_are_reachable(data_dir):
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
-
     coingecko = Coingecko(data_directory=data_dir)
     all_coins = coingecko.all_coins()
 
@@ -186,7 +188,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '9d34eb6018b8d6013b4cb3fd8af22edf', 'version': 48}
+    last_meta = {'md5': '6ffbfb27e631568c9c43ff09190c192d', 'version': 53}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 

@@ -916,11 +916,10 @@ class TaxableEvents():
         )
         rate = self.get_rate_in_profit_currency(event.asset, event.timestamp)
         profit_loss = event.amount * rate
-        if event.is_profitable():
-            self.defi_profit_loss += profit_loss
-        else:
-            self.defi_profit_loss -= profit_loss
+        if not event.is_profitable():
+            profit_loss *= - 1
 
+        self.defi_profit_loss += profit_loss
         self.csv_exporter.add_defi_event(event=event, profit_loss_in_profit_currency=profit_loss)
 
     def add_ledger_action(self, action: LedgerAction) -> None:

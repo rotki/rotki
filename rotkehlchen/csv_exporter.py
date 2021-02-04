@@ -461,6 +461,8 @@ class CSVExporter():
             'asset': str(event.asset),
             'amount': str(event.amount),
             f'profit_loss_in_{self.profit_currency.identifier}': profit_loss_in_profit_currency,
+            'tx_hashes': event.serialize_tx_hashes(),
+            'notes': event.notes,
         })
 
         paid_asset: Union[EmptyStr, Asset]
@@ -473,7 +475,7 @@ class CSVExporter():
             received_in_asset = event.amount
             received_in_profit_currency = profit_loss_in_profit_currency
         else:
-            paid_in_profit_currency = profit_loss_in_profit_currency
+            paid_in_profit_currency = -1 * profit_loss_in_profit_currency
             paid_in_asset = event.amount
             paid_asset = event.asset
             received_asset = S_EMPTYSTR

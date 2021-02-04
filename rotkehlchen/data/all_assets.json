@@ -413,6 +413,15 @@
         "symbol": "ALBT",
         "type": "ethereum token"
     },
+    "ALEPH": {
+        "coingecko": "aleph",
+        "ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
+        "ethereum_token_decimals": 18,
+        "name": "aleph.im v2",
+        "started": 1601134720,
+        "symbol": "ALEPH",
+        "type": "ethereum token"
+    },
     "ALGO": {
         "coingecko": "algorand",
         "name": "Algorand",
@@ -675,6 +684,16 @@
         "symbol": "ARCH",
         "type": "own chain"
     },
+    "ARCH-2": {
+        "coingecko": "archer-dao-governance-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x1F3f9D3068568F8040775be2e8C03C103C61f3aF",
+        "ethereum_token_decimals": 18,
+        "name": "Archer DAO Governance Token",
+        "started": 1606072001,
+        "symbol": "ARCH",
+        "type": "ethereum token"
+    },
     "ARCT": {
         "coingecko": "arbitragect",
         "ethereum_address": "0x1245ef80F4d9e02ED9425375e8F649B9221b31D8",
@@ -740,6 +759,16 @@
         "started": 1592784000,
         "symbol": "ASR",
         "type": "own chain"
+    },
+    "ASSY": {
+        "coingecko": "assy-index",
+        "cryptocompare": "",
+        "ethereum_address": "0xFA2562da1Bba7B954f26C74725dF51fb62646313",
+        "ethereum_token_decimals": 18,
+        "name": "ASSY Index",
+        "started": 1611336083,
+        "symbol": "ASSY",
+        "type": "ethereum token"
     },
     "AST": {
         "coingecko": "airswap",
@@ -2972,7 +3001,7 @@
         "type": "own chain"
     },
     "CREAM": {
-        "coingecko": "cream",
+        "coingecko": "cream-2",
         "ethereum_address": "0x2ba592F78dB6436527729929AAf6c908497cB200",
         "ethereum_token_decimals": 18,
         "name": "Cream",
@@ -3634,7 +3663,6 @@
         "type": "own chain"
     },
     "DIGG": {
-        "cryptocompare": "",
         "coingecko": "digg",
         "ethereum_address": "0x798D1bE841a82a273720CE31c822C61a67a601C3",
         "ethereum_token_decimals": 9,
@@ -5085,6 +5113,15 @@
         "symbol": "FOTA",
         "type": "ethereum token"
     },
+    "FOX": {
+        "coingecko": "fox-token",
+        "ethereum_address": "0xc770EEfAd204B5180dF6a14Ee197D99d808ee52d",
+        "ethereum_token_decimals": 18,
+        "name": "FOX Token",
+        "started": 1553639047,
+        "symbol": "FOX",
+        "type": "ethereum token"
+    },
     "FRAC": {
         "active": false,
         "coingecko": "",
@@ -6485,6 +6522,15 @@
         "started": 1526860800,
         "symbol": "IOTX",
         "type": "ethereum token"
+    },
+    "IOV": {
+        "coingecko": "starname",
+        "ethereum_address": "0x175D9Dfd6850AA96460E29bC0cEad05756965E91",
+        "ethereum_token_decimals": 18,
+        "name": "Starname",
+        "started": 1607449409,
+        "symbol": "IOV",
+        "type": "ethereum token and more"
     },
     "IPL": {
         "coingecko": "insurepal",
@@ -8177,6 +8223,16 @@
         "symbol": "NCT",
         "type": "ethereum token"
     },
+    "NCT-2": {
+        "coingecko": "name-changing-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x8A9c4dfe8b9D8962B31e4e16F8321C44d48e246E",
+        "ethereum_token_decimals": 18,
+        "name": "NameChangeToken",
+        "started": 1611828260,
+        "symbol": "NCT",
+        "type": "ethereum token"
+    },
     "NDC": {
         "active": false,
         "coingecko": "",
@@ -8999,6 +9055,15 @@
         "name": "Perlin",
         "started": 1566604800,
         "symbol": "PERL",
+        "type": "ethereum token"
+    },
+    "PERP": {
+        "coingecko": "perpetual-protocol",
+        "ethereum_address": "0xbC396689893D065F41bc2C6EcbeE5e0085233447",
+        "ethereum_token_decimals": 18,
+        "name": "Perpetual",
+        "started": 1599343689,
+        "symbol": "PERP",
         "type": "ethereum token"
     },
     "PERX": {
@@ -11025,7 +11090,6 @@
     },
     "STBU": {
         "coingecko": "stobox-token",
-        "cryptocompare": "",
         "ethereum_address": "0x212DD60D4Bf0DA8372fe8116474602d429E5735F",
         "ethereum_token_decimals": 18,
         "name": "Stobox Token ",
@@ -11874,7 +11938,6 @@
     },
     "TRU": {
         "coingecko": "truefi",
-        "cryptocompare": "",
         "ethereum_address": "0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784",
         "ethereum_token_decimals": 8,
         "name": "TrustToken",
@@ -12753,6 +12816,15 @@
         "name": "Wings DAO",
         "started": 1483142400,
         "symbol": "WINGS",
+        "type": "ethereum token"
+    },
+    "WIS": {
+        "coingecko": "experty-wisdom-token",
+        "ethereum_address": "0xDecade1c6Bf2cD9fb89aFad73e4a519C867adcF5",
+        "ethereum_token_decimals": 18,
+        "name": "Experty Wisdom Token",
+        "started": 1604695924,
+        "symbol": "WIS",
         "type": "ethereum token"
     },
     "WISH": {
@@ -14751,7 +14823,6 @@
     },
     "UOP": {
         "coingecko": "utopia-genesis-foundation",
-        "cryptocompare": "",
         "ethereum_address": "0xE4AE84448DB5CFE1DaF1e6fb172b469c161CB85F",
         "ethereum_token_decimals": 18,
         "name": "Utopia Genesis Foundation",
@@ -14957,7 +15028,6 @@
     },
     "COMBO": {
         "coingecko": "furucombo",
-        "cryptocompare": "",
         "ethereum_address": "0xfFffFffF2ba8F66D4e51811C5190992176930278",
         "ethereum_token_decimals": 18,
         "name": "Furucombo",
@@ -15036,6 +15106,11 @@
     "SGD": {
         "name": "Singapore Dollar",
         "symbol": "SGD",
+        "type": "fiat"
+    },
+    "SEK": {
+        "name": "Swedish Krona",
+        "symbol": "SEK",
         "type": "fiat"
     },
     "LINKBEAR": {

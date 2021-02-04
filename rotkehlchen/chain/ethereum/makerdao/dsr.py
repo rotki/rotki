@@ -59,6 +59,17 @@ class DSRCurrentBalances(NamedTuple):
     current_dsr: FVal
 
 
+class DSRGain(NamedTuple):
+    """Represents a DSR gain in a given period
+
+    amount is the total gain and tx_hashes contains all transactions involved
+    """
+    amount: FVal
+    from_timestamp: Timestamp
+    to_timestamp: Timestamp
+    tx_hashes: List[str]
+
+
 class DSRAccountReport(NamedTuple):
     movements: List[DSRMovement]
     gain_so_far: int
@@ -584,7 +595,7 @@ class MakerDAODSR(MakerDAOCommon):
             movements: List[DSRMovement],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> Tuple[FVal, Timestamp]:
+    ) -> Optional[DSRGain]:
         """Get DSR gain for the account in a given period
 
         May raise:
@@ -609,6 +620,7 @@ class MakerDAODSR(MakerDAOCommon):
         gain_at_from_ts_found = False
         gain_at_to_ts_found = False
         last_timestamp = to_ts
+        tx_hashes = []
         for m in movements:
             if not gain_at_from_ts_found and m.timestamp >= from_ts:
                 gain_at_from_ts = normalized_balance * from_chi - amount_in_dsr
@@ -618,6 +630,7 @@ class MakerDAODSR(MakerDAOCommon):
                 gain_at_to_ts = normalized_balance * to_chi - amount_in_dsr
                 gain_at_to_ts_found = True
 
+            tx_hashes.append(m.tx_hash)
             if m.movement_type == 'deposit':
                 normalized_balance += m.normalized_balance
                 amount_in_dsr += m.amount
@@ -630,17 +643,23 @@ class MakerDAODSR(MakerDAOCommon):
                     last_timestamp = m.timestamp
 
         if not gain_at_from_ts_found:
-            return ZERO, last_timestamp
+            return None
+
         if not gain_at_to_ts_found:
             gain_at_to_ts = normalized_balance * to_chi - amount_in_dsr
 
-        return _dsrdai_to_dai(gain_at_to_ts - gain_at_from_ts), last_timestamp
+        return DSRGain(
+            amount=_dsrdai_to_dai(gain_at_to_ts - gain_at_from_ts),
+            from_timestamp=from_ts,
+            to_timestamp=last_timestamp,
+            tx_hashes=tx_hashes,
+        )
 
     def get_dsr_gains_in_period(
             self,
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[Tuple[FVal, Timestamp]]:
+    ) -> List[DSRGain]:
         """Get DSR gains for all accounts in a given period
 
         This is a best effort attempt and may also fail due to inability to find
@@ -651,11 +670,14 @@ class MakerDAODSR(MakerDAOCommon):
         gains = []
         for account, report in history.items():
             try:
-                gains.append(self._get_dsr_account_gain_in_period(
+                gain = self._get_dsr_account_gain_in_period(
                     movements=report.movements,
                     from_ts=from_ts,
                     to_ts=to_ts,
-                ))
+                )
+                if gain is not None:
+                    gains.append(gain)
+
             except (ChiRetrievalError, RemoteError, BlockchainQueryError) as e:
                 self.msg_aggregator.add_warning(
                     f'Failed to get DSR gains for {account} between '
