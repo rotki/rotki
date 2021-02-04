@@ -35,6 +35,7 @@
           tooltip
           show-currency="symbol"
           fiat-currency="USD"
+          :price-asset="item.asset"
           :value="prices[item.asset] ? prices[item.asset] : '-'"
         />
       </template>

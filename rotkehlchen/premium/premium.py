@@ -223,7 +223,9 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT * 10,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Could not connect to rotki server due to {str(e)}') from e
+            msg = f'Could not connect to rotki server due to {str(e)}'
+            logger.error(msg)
+            raise RemoteError(msg) from e
 
         return _process_dict_response(response)
 
@@ -247,7 +249,9 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Could not connect to rotki server due to {str(e)}') from e
+            msg = f'Could not connect to rotki server due to {str(e)}'
+            logger.error(msg)
+            raise RemoteError(msg) from e
 
         return _process_dict_response(response)
 
@@ -270,7 +274,9 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Could not connect to rotki server due to {str(e)}') from e
+            msg = f'Could not connect to rotki server due to {str(e)}'
+            logger.error(msg)
+            raise RemoteError(msg) from e
 
         result = _process_dict_response(response)
         metadata = RemoteMetadata(
@@ -299,7 +305,9 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Could not connect to rotki server due to {str(e)}') from e
+            msg = f'Could not connect to rotki server due to {str(e)}'
+            logger.error(msg)
+            raise RemoteError(msg) from e
 
         result = _process_dict_response(response)
         return result['data']
@@ -325,7 +333,9 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Could not connect to rotki server due to {str(e)}') from e
+            msg = f'Could not connect to rotki server due to {str(e)}'
+            logger.error(msg)
+            raise RemoteError(msg) from e
 
         return _decode_premium_json(response)
 

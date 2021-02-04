@@ -49,18 +49,32 @@ def _get_latest_assets(data_directory: Path) -> Dict[str, Any]:
     root_dir = Path(__file__).resolve().parent.parent
     our_downloaded_meta = data_directory / 'assets' / 'all_assets.meta'
     our_builtin_meta = root_dir / 'data' / 'all_assets.meta'
+    assets_file = root_dir / 'data' / 'all_assets.json'
     try:
         response = requests.get('https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.meta')  # noqa: E501
         remote_meta = response.json()
+
+        with open(our_builtin_meta, 'r') as f:
+            builtin_meta = json.loads(f.read())
+
+        downloaded_meta = None
         if our_downloaded_meta.is_file():
-            local_meta_file = our_downloaded_meta
-        else:
-            local_meta_file = our_builtin_meta
+            with open(our_downloaded_meta, 'r') as f:
+                downloaded_meta = json.loads(f.read())
 
-        with open(local_meta_file, 'r') as f:
-            local_meta = json.loads(f.read())
-
-        if local_meta['version'] < remote_meta['version']:
+        if builtin_meta['version'] >= remote_meta['version']:
+            assets_file = root_dir / 'data' / 'all_assets.json'
+            log.debug(
+                f'Builtin assets file has version {builtin_meta["version"]} greater than '
+                f'the remote one {remote_meta["version"]}. Keeping the built in.',
+            )
+        elif downloaded_meta and downloaded_meta['version'] > remote_meta['version']:
+            assets_file = data_directory / 'assets' / 'all_assets.json'
+            log.debug(
+                f'Downloaded assets file has version {downloaded_meta["version"]} greater than '
+                f'the remote one {remote_meta["version"]}. Keeping the downloaded one.',
+            )
+        elif remote_meta['version'] > builtin_meta['version']:
             # we need to download and save the new assets from github
             response = requests.get('https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.json')  # noqa: E501
             remote_asset_data = response.text
@@ -73,20 +87,15 @@ def _get_latest_assets(data_directory: Path) -> Dict[str, Any]:
             with open(data_directory / 'assets' / 'all_assets.json', 'w') as f:
                 f.write(remote_asset_data)
 
-            log.info(
+            log.debug(
                 f'Found newer remote assets file with version: {remote_meta["version"]} '
                 f' and {remote_meta["md5"]} md5 hash. Replaced local file',
             )
             return json.loads(remote_asset_data)
 
-        # else, same as all error cases use the current one
+        # else, same as all error cases use the built-in one
     except (requests.exceptions.RequestException, KeyError, json.decoder.JSONDecodeError):
         pass
-
-    if our_downloaded_meta.is_file():
-        assets_file = data_directory / 'assets' / 'all_assets.json'
-    else:
-        assets_file = root_dir / 'data' / 'all_assets.json'
 
     with open(assets_file, 'r') as f:
         return json.loads(f.read())
