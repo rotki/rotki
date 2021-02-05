@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from eth_typing import HexAddress, HexStr
 from eth_utils import to_bytes, to_checksum_address
 from web3 import Web3
 from web3._utils.abi import exclude_indexed_event_inputs, normalize_event_input_types
@@ -112,9 +111,9 @@ def decode_event_data(data: str, event_abi: Dict[str, Any]) -> Tuple:
 
 
 def generate_address_via_create2(
-        address: HexAddress,
-        salt: HexStr,
-        init_code: HexStr,
+        address: str,
+        salt: str,
+        init_code: str,
 ) -> ChecksumEthAddress:
     """Python implementation of CREATE2 opcode.
 
