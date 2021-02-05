@@ -236,6 +236,7 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
+        log.debug(f'Bitcoin.de account response: {resp_info}')
         for currency, balance in resp_info['data']['balances'].items():
             asset = bitcoinde_asset(currency)
             try:
@@ -277,9 +278,9 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             page = resp['page']['current'] + 1
 
         log.debug('Bitcoin.de trade history query', results_num=len(resp_trades))
-
         trades = []
         for tx in resp_trades:
+            log.debug(f'Processing raw Bitcoin.de trade: {tx}')
             try:
                 timestamp = iso8601ts_to_timestamp(tx['successfully_finished_at'])
             except KeyError:
@@ -291,7 +292,9 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if timestamp < start_ts or timestamp > end_ts:
                 continue
             try:
-                trades.append(trade_from_bitcoinde(tx))
+                converted_trade = trade_from_bitcoinde(tx)
+                log.debug(f'Deserialized trade from Bitcoin.de: {converted_trade}')
+                trades.append(converted_trade)
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found bitcoin.de trade with unknown asset '
