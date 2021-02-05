@@ -2342,6 +2342,16 @@
         "symbol": "CBT",
         "type": "ethereum token"
     },
+    "CC10": {
+        "coingecko": "cryptocurrency-top-10-tokens-index",
+        "cryptocompare": "",
+        "ethereum_address": "0x17aC188e09A7890a1844E5E65471fE8b0CcFadF3",
+        "ethereum_token_decimals": 18,
+        "name": "Indexed Finance - CC10",
+        "started": 1607251191,
+        "symbol": "CC10",
+        "type": "ethereum token"
+    },
     "CCCX": {
         "coingecko": "",
         "ethereum_address": "0x378903a03FB2C3AC76BB52773e3CE11340377A32",
@@ -3499,6 +3509,16 @@
         "name": "PieDAO DEFI Large Cap",
         "started": 1602115200,
         "symbol": "DEFI+L",
+        "type": "ethereum token"
+    },
+    "DEFI5": {
+        "coingecko": "defi-top-5-tokens-index",
+        "cryptocompare": "",
+        "ethereum_address": "0xfa6de2697D59E88Ed7Fc4dFE5A33daC43565ea41",
+        "ethereum_token_decimals": 18,
+        "name": "Indexed Finance - DEFI5",
+        "started": 1607251313,
+        "symbol": "DEFI5",
         "type": "ethereum token"
     },
     "DELTA": {
@@ -8251,6 +8271,16 @@
         "ethereum_token_decimals": 18,
         "name": "nDEX",
         "started": 1534287453,
+        "symbol": "NDX",
+        "type": "ethereum token"
+    },
+    "NDX-2": {
+        "coingecko": "indexed-finance",
+        "cryptocompare": "",    
+        "ethereum_address": "0x86772b1409b61c639EaAc9Ba0AcfBb6E238e5F83",
+        "ethereum_token_decimals": 18,
+        "name": "NDX",
+        "started": 1608032750,
         "symbol": "NDX",
         "type": "ethereum token"
     },
