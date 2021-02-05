@@ -12,24 +12,32 @@
       </v-col>
     </v-row>
     <asset-value-row class="mt-8" :identifier="identifier" />
+    <asset-amount-and-value-over-time
+      v-if="premium"
+      class="mt-8"
+      :service="$api"
+      :asset="identifier"
+    />
     <asset-locations class="mt-8" :identifier="identifier" />
   </v-container>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
+import PremiumMixin from '@/mixins/premium-mixin';
 import { SupportedAsset } from '@/services/types-model';
+import { AssetAmountAndValueOverTime } from '@/utils/premium';
 
 @Component({
-  components: { AssetLocations, AssetValueRow },
+  components: { AssetLocations, AssetValueRow, AssetAmountAndValueOverTime },
   computed: {
     ...mapGetters('balances', ['assetInfo'])
   }
 })
-export default class Assets extends Vue {
+export default class Assets extends Mixins(PremiumMixin) {
   @Prop({ required: true, type: String })
   identifier!: string;
 

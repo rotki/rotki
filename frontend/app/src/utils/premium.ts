@@ -191,6 +191,10 @@ export const AdexStaking = (): Promise<VueConstructor> => {
   return load('AdexStaking');
 };
 
+export const AssetAmountAndValueOverTime = (): Promise<VueConstructor> => {
+  return load('AssetAmountAndValueOverTime');
+};
+
 declare global {
   interface Window {
     Vue: any;
