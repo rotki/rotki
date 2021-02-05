@@ -463,7 +463,7 @@ class Uniswap(EthereumModule):
                 )
 
         # Request existing DB addresses' events
-        if existing_addresses and min_end_ts <= to_timestamp:
+        if existing_addresses and to_timestamp > min_end_ts:
             for address in existing_addresses:
                 for event_type in EventType:
                     address_new_events = self._get_events_graph(
@@ -659,7 +659,7 @@ class Uniswap(EthereumModule):
                 )
 
         # Request existing DB addresses' trades
-        if existing_addresses and min_end_ts <= to_timestamp:
+        if existing_addresses and to_timestamp > min_end_ts:
             address_new_trades = self._get_trades_graph(
                 addresses=existing_addresses,
                 start_ts=min_end_ts,

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Uniswap module won't query events and trades prior the end date of the last used query range.
 * :bug:`2294` Do not count MakerDAO Oasis proxy assets found by the DeFi SDK as it ends up double counting makerDAO vault deposits.
 * :bug:`2287` Rotki encrypted DB upload for premium users should now respect the user setting.
 
