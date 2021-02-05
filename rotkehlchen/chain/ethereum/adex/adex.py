@@ -482,7 +482,7 @@ class Adex(EthereumModule):
             all_new_events.extend(new_events)
 
         # Request existing DB addresses' events
-        if existing_addresses and min_from_timestamp <= to_timestamp:
+        if existing_addresses and to_timestamp > min_from_timestamp:
             new_events = self._get_new_staking_events_graph(
                 addresses=addresses,
                 from_timestamp=min_from_timestamp,
