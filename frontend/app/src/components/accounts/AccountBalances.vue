@@ -4,11 +4,9 @@
     :class="`${blockchain.toLocaleLowerCase()}-account-balances`"
   >
     <v-card-title>
-      <v-row align="center">
+      <v-row align="center" no-gutters>
         <v-col>
-          <div class="text-h6 account-balances__title">
-            {{ title }}
-          </div>
+          <card-title>{{ title }}</card-title>
         </v-col>
         <v-col cols="auto">
           <refresh-button
@@ -77,6 +75,7 @@ import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { TaskType } from '@/model/task-type';
 import {
   BlockchainAccountWithBalance,
@@ -88,6 +87,7 @@ import { Blockchain } from '@/typing/types';
 
 @Component({
   components: {
+    CardTitle,
     AccountBalanceTable,
     RefreshButton,
     TagFilter,

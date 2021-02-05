@@ -25,7 +25,7 @@
           :tooltip="$t('ledger_actions.refresh_tooltip')"
           @refresh="refresh"
         />
-        {{ $t('ledger_actions.title') }}
+        <card-title class="ms-2">{{ $t('ledger_actions.title') }}</card-title>
         <v-spacer />
       </v-card-title>
       <v-card-text>
@@ -184,6 +184,7 @@ import RowActions from '@/components/helper/RowActions.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { footerProps } from '@/config/datatable.common';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import StatusMixin from '@/mixins/status-mixin';
@@ -220,6 +221,7 @@ const emptyAction: () => UnsavedAction = () => ({
 
 @Component({
   components: {
+    CardTitle,
     IgnoreButtons,
     ConfirmDialog,
     RowActions,

@@ -4,24 +4,24 @@
     :class="`dashboard__summary-card__${name}`"
     class="pb-3"
   >
-    <v-row no-gutters class="pa-3 secondary--text summary-card__header">
-      <v-toolbar-title class="font-weight-medium text-capitalize">
-        {{ $t('summary_card.title', { name }) }}
-        <v-tooltip v-if="this.$slots.tooltip" bottom max-width="300px">
-          <template #activator="{ on }">
-            <v-icon
-              small
-              class="mb-3 ml-1 summary-card__header__tooltip"
-              v-on="on"
-            >
-              mdi-information-circle
-            </v-icon>
-          </template>
-          <div>
-            <slot name="tooltip" />
-          </div>
-        </v-tooltip>
-      </v-toolbar-title>
+    <v-card-title
+      class="font-weight-medium text-capitalize pa-3 secondary--text summary-card__header"
+    >
+      <card-title>{{ $t('summary_card.title', { name }) }}</card-title>
+      <v-tooltip v-if="this.$slots.tooltip" bottom max-width="300px">
+        <template #activator="{ on }">
+          <v-icon
+            small
+            class="mb-3 ml-1 summary-card__header__tooltip"
+            v-on="on"
+          >
+            mdi-information-circle
+          </v-icon>
+        </template>
+        <div>
+          <slot name="tooltip" />
+        </div>
+      </v-tooltip>
       <v-spacer />
       <span>
         <v-tooltip v-if="canRefresh" bottom max-width="300px">
@@ -41,7 +41,7 @@
           <span>{{ $t('summary_card.refresh_tooltip', { name }) }}</span>
         </v-tooltip>
       </span>
-    </v-row>
+    </v-card-title>
     <v-list>
       <slot />
     </v-list>

@@ -10,17 +10,18 @@
       v-model="location"
       :available-locations="availableLocations"
     />
-    <v-row class="mt-1">
+    <v-row class="mt-8">
       <v-col cols="12">
         <v-card>
           <v-card-title>
-            {{ $t('deposits_withdrawals.title') }}
-            <v-spacer />
             <refresh-button
               :loading="refreshing"
               :tooltip="$t('deposits_withdrawals.refresh_tooltip')"
               @refresh="fetchMovements(true)"
             />
+            <card-title class="ms-2">
+              {{ $t('deposits_withdrawals.title') }}
+            </card-title>
           </v-card-title>
           <v-card-text>
             <ignore-buttons
@@ -139,6 +140,7 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import MovementLinks from '@/components/history/MovementLinks.vue';
 import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { SupportedExchange } from '@/services/balances/types';
@@ -150,6 +152,7 @@ import { ActionStatus, Message } from '@/store/types';
 
 @Component({
   components: {
+    CardTitle,
     IgnoreButtons,
     TradeLocationSelector,
     MovementLinks,

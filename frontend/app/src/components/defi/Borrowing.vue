@@ -3,7 +3,7 @@
     <template #message>{{ $t('borrowing.loading') }}</template>
   </progress-screen>
   <v-container v-else>
-    <v-row>
+    <v-row class="mt-8">
       <v-col cols="12">
         <refresh-header
           :title="$t('borrowing.header')"
@@ -12,7 +12,7 @@
         />
       </v-col>
     </v-row>
-    <v-row>
+    <v-row no-gutters class="mt-6">
       <v-col cols="12">
         <stat-card-wide :cols="2">
           <template #first-col>
@@ -42,8 +42,8 @@
         </stat-card-wide>
       </v-col>
     </v-row>
-    <v-row>
-      <v-col cols="6">
+    <v-row no-gutters class="mt-8">
+      <v-col cols="12" md="6" class="pe-md-4">
         <v-card>
           <div class="mx-4 pt-2">
             <v-autocomplete
@@ -69,7 +69,7 @@
           <v-card-text>{{ $t('borrowing.select_loan_hint') }}</v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="6">
+      <v-col cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
         <defi-protocol-selector v-model="protocol" />
       </v-col>
     </v-row>

@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <v-row>
+    <v-row class="mt-8">
       <v-col>
         <refresh-header
           :loading="refreshing"
@@ -16,14 +16,14 @@
       <blockchain-account-selector
         v-model="selectedAccounts"
         multiple
-        class="mt-4"
+        class="mt-6"
         hint
         :chains="[ETH]"
         :usable-addresses="airdropAddresses"
       >
         <div class="caption mt-4" v-text="$t('airdrops.description')" />
       </blockchain-account-selector>
-      <v-card class="mt-4">
+      <v-card class="mt-8">
         <v-card-text>
           <v-data-table
             :items="entries"
@@ -114,7 +114,8 @@ export default class Airdrops extends Mixins(StatusMixin) {
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('airdrops.headers.source').toString(),
-      value: 'source'
+      value: 'source',
+      width: '200px'
     },
     {
       text: this.$t('airdrops.headers.address').toString(),
@@ -128,7 +129,8 @@ export default class Airdrops extends Mixins(StatusMixin) {
     {
       text: '',
       value: 'link',
-      align: 'end'
+      align: 'end',
+      width: '50px'
     }
   ];
   airdrops!: (addresses: string[]) => Airdrop[];

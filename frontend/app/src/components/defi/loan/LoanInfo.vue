@@ -1,19 +1,24 @@
 <template>
   <v-row v-if="!!loan" class="loan-info">
     <v-col cols="12">
-      <loan-header :loan="loan" />
-      <v-row>
-        <v-col cols="12" md="6">
+      <loan-header class="mt-8 mb-6" :loan="loan" />
+      <v-row no-gutters>
+        <v-col cols="12" md="6" class="pe-md-4">
           <loan-collateral :loan="loan" />
         </v-col>
-        <v-col v-if="isVault" cols="12" md="6">
+        <v-col v-if="isVault" cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
           <loan-liquidation :loan="loan" />
         </v-col>
-        <v-col cols="12" :md="isVault ? 12 : 6">
+        <v-col
+          cols="12"
+          :md="isVault ? 12 : 6"
+          class="pt-8 pt-md-0"
+          :class="isVault ? 'pt-md-8' : 'ps-md-4'"
+        >
           <loan-debt :loan="loan" />
         </v-col>
       </v-row>
-      <v-row v-if="isVault" class="mt-6">
+      <v-row v-if="isVault" class="mt-8" no-gutters>
         <v-col cols="12">
           <premium-card v-if="!premium" title="Borrowing History" />
           <vault-events-list
@@ -25,7 +30,7 @@
           />
         </v-col>
       </v-row>
-      <v-row v-if="isCompound" no-gutters>
+      <v-row v-if="isCompound" no-gutters class="mt-8">
         <v-col cols="12">
           <premium-card v-if="!premium" title="Compound History" />
           <compound-borrowing-details
@@ -36,7 +41,7 @@
           />
         </v-col>
       </v-row>
-      <v-row v-if="isAave" no-gutters>
+      <v-row v-if="isAave" no-gutters class="mt-8">
         <v-col cols="12">
           <premium-card v-if="!premium" title="Aave History" />
           <aave-borrowing-details

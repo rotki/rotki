@@ -11,13 +11,12 @@
       <v-col cols="12">
         <v-card>
           <v-card-title>
-            {{ $t('transactions.title') }}
-            <v-spacer />
             <refresh-button
               :loading="refreshing"
               :tooltip="$t('transactions.refresh_tooltip')"
               @refresh="fetchTransactions(true)"
             />
+            <card-title class="ms-2">{{ $t('transactions.title') }}</card-title>
           </v-card-title>
           <v-card-text>
             <ignore-buttons
@@ -129,6 +128,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import TransactionDetails from '@/components/history/TransactionsDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
@@ -143,6 +143,7 @@ import { toUnit, Unit } from '@/utils/calculation';
 
 @Component({
   components: {
+    CardTitle,
     IgnoreButtons,
     BlockchainAccountSelector,
     TransactionDetails,

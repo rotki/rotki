@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title>
-      {{ title }}
+      <card-title>{{ title }}</card-title>
       <v-spacer />
       <v-text-field
         v-model="search"

@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <v-row>
+    <v-row class="mt-6">
       <v-col>
         <refresh-header
           :loading="refreshing"
@@ -12,7 +12,7 @@
     <progress-screen v-if="loading">
       <template #message>{{ $t('decentralized_overview.loading') }}</template>
     </progress-screen>
-    <v-row>
+    <v-row class="mt-4">
       <v-col
         v-for="summary in defiOverview"
         :key="summary.protocol.name"

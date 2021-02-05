@@ -20,7 +20,8 @@
             :tooltip="$t('closed_trades.refresh_tooltip')"
             @refresh="refresh"
           />
-          {{ $t('closed_trades.title') }}
+
+          <card-title class="ms-2">{{ $t('closed_trades.title') }}</card-title>
         </v-card-title>
         <v-card-text>
           <ignore-buttons
@@ -201,6 +202,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
@@ -210,6 +212,7 @@ import { ActionStatus, Message } from '@/store/types';
 
 @Component({
   components: {
+    CardTitle,
     IgnoreButtons,
     RefreshButton,
     UpgradeRow,

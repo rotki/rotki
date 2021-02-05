@@ -1,6 +1,6 @@
 <template>
   <div
-    class="d-flex flex-row balance_display shrink"
+    class="d-flex flex-row balance_display shrink pt-1 pb-1"
     :class="{
       'justify-end': !noJustify,
       'balance-display--gain': mode === 'gain',

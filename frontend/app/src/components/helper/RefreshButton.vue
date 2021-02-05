@@ -4,6 +4,7 @@
       <v-btn
         fab
         text
+        small
         depressed
         :disabled="loading"
         v-bind="attrs"

@@ -16,7 +16,7 @@
     <div class="stat-card__content flex-grow-1">
       <v-card-title class="py-2">
         <span v-if="title">
-          {{ title }}
+          <card-title>{{ title }}</card-title>
         </span>
         <v-spacer v-if="locked" />
         <premium-lock v-if="locked" />

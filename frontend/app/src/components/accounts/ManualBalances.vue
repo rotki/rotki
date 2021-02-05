@@ -1,7 +1,9 @@
 <template>
   <v-container>
     <v-card class="manual-balances mt-8">
-      <v-card-title>{{ $t('manual_balances.title') }}</v-card-title>
+      <v-card-title>
+        <card-title>{{ $t('manual_balances.title') }}</card-title>
+      </v-card-title>
       <v-card-text>
         <v-btn
           absolute
@@ -42,10 +44,12 @@ import { Component, Vue } from 'vue-property-decorator';
 import ManualBalancesForm from '@/components/accounts/ManualBalancesForm.vue';
 import ManualBalancesList from '@/components/accounts/ManualBalancesList.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { ManualBalance } from '@/services/balances/types';
 
 @Component({
   components: {
+    CardTitle,
     ManualBalancesList,
     ManualBalancesForm,
     BigDialog

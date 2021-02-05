@@ -20,5 +20,9 @@ export default class CardTitle extends Vue {}
   text-transform: uppercase;
 
   color: #447178;
+  height: 24px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 </style>

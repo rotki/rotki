@@ -1,6 +1,6 @@
 <template>
   <div
-    class="d-flex justify-space-between"
+    class="d-flex justify-space-between py-1"
     :class="medium ? 'font-weight-medium' : ''"
   >
     <div>

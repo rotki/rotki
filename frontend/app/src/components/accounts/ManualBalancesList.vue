@@ -1,13 +1,15 @@
 <template>
   <v-container>
     <v-row>
-      <v-col cols="6" offset="6" class="d-flex flex-row align-center">
-        <tag-filter v-model="onlyTags" />
+      <v-col>
         <refresh-button
           :loading="loading"
           :tooltip="$t('manual_balances_list.refresh.tooltip')"
           @refresh="refresh()"
         />
+      </v-col>
+      <v-col cols="6" class="d-flex flex-row align-center">
+        <tag-filter v-model="onlyTags" />
       </v-col>
     </v-row>
     <v-row>

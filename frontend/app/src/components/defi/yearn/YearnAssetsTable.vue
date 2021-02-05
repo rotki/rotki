@@ -1,6 +1,8 @@
 <template>
   <v-card>
-    <v-card-title>{{ $t('yearn_asset_table.title') }}</v-card-title>
+    <v-card-title>
+      <card-title> {{ $t('yearn_asset_table.title') }} </card-title>
+    </v-card-title>
     <v-card-text>
       <v-data-table
         :headers="headers"
