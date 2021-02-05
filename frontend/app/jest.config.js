@@ -7,6 +7,6 @@ module.exports = {
     '!**/node_modules/**',
     '!**/vendor/**'
   ],
-  coverageReporters: ['html', 'lcov', 'text', 'text-summary'],
+  coverageReporters: ['html', 'lcov', 'text-summary'],
   reporters: ['default', ['jest-junit', { outputDirectory: 'coverage' }]]
 };

@@ -10,7 +10,7 @@ export class HistoryPage {
 
   addTrade(externalTrade: ExternalTrade) {
     cy.get('.closed-trades__add-trade').click();
-    cy.get('.big-dialog').should('be.visible');
+    cy.get('[data-cy=trade-form]').should('be.visible');
     cy.get('[data-cy=date]')
       .type(`{selectall}{backspace}${externalTrade.time}`)
       .click(); // Click is needed to hide the popup
@@ -30,7 +30,7 @@ export class HistoryPage {
     cy.get('[data-cy=link]').type(externalTrade.link);
     cy.get('[data-cy=notes]').type(externalTrade.notes);
     cy.get('.big-dialog__buttons__confirm').click();
-    cy.get('.big-dialog').should('not.be.visible');
+    cy.get('[data-cy=trade-form]').should('not.be.visible');
   }
 
   confirmDelete() {
@@ -61,12 +61,12 @@ export class HistoryPage {
       .find('button.closed-trades__trade__actions__edit')
       .click();
 
-    cy.get('.big-dialog').should('be.visible');
+    cy.get('[data-cy=trade-form]').should('be.visible');
     cy.get('[data-cy=amount]').clear();
     cy.get('[data-cy=amount]').type(amount);
 
     cy.get('.big-dialog__buttons__confirm').click();
-    cy.get('.big-dialog').should('not.be.visible');
+    cy.get('[data-cy=trade-form]').should('not.be.visible');
   }
 
   deleteTrade(position: number) {
