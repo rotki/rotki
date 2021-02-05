@@ -2,8 +2,10 @@
 Changelog
 =========
 
+* :feature:`1911` AdEx queries for staking balances and historical events now use the new subgraph version.
 * :feature:`295` When creating external trades, users will now have the trade rate automatically fetched when such a rate exists.
 * :feature:`2240` Users now can select the supported assets from a dropdown when adding or editing external trades.
+* :bug:`2228` AdEx claim events now always have the proper token (e.g. ADX, DAI) and usd value.
 * :bug:`2294` Do not count MakerDAO Oasis proxy assets found by the DeFi SDK as it ends up double counting makerDAO vault deposits.
 * :bug:`2287` Rotki encrypted DB upload for premium users should now respect the user setting.
 
