@@ -1,7 +1,9 @@
 <template>
   <v-container>
     <v-card class="exchange-balances mt-8">
-      <v-card-title v-text="$t('exchange_balances.title')" />
+      <v-card-title>
+        <card-title>{{ $t('exchange_balances.title') }}</card-title>
+      </v-card-title>
       <v-card-text>
         <v-btn
           absolute

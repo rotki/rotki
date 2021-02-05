@@ -1,5 +1,5 @@
 <template>
-  <div class="asset-balances">
+  <v-sheet class="asset-balances" rounded outlined>
     <v-data-table
       :headers="headers"
       :items="balances"
@@ -80,7 +80,7 @@
         </tr>
       </template>
     </v-data-table>
-  </div>
+  </v-sheet>
 </template>
 
 <script lang="ts">

@@ -5,9 +5,6 @@
   >
     <v-card-title>
       <v-row align="center" no-gutters>
-        <v-col>
-          <card-title>{{ title }}</card-title>
-        </v-col>
         <v-col cols="auto">
           <refresh-button
             class="account-balances__refresh"
@@ -15,6 +12,9 @@
             :tooltip="$t('account_balances.refresh_tooltip', { blockchain })"
             @refresh="refresh"
           />
+        </v-col>
+        <v-col class="ps-2">
+          <card-title>{{ title }}</card-title>
         </v-col>
       </v-row>
     </v-card-title>
