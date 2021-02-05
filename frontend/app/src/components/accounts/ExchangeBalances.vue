@@ -129,6 +129,7 @@
           <v-col>
             <asset-balances
               v-if="exchange"
+              flat
               :balances="exchangeBalances(exchange)"
             />
             <div

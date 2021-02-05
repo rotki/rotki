@@ -1,5 +1,5 @@
 <template>
-  <v-sheet class="asset-balances" rounded outlined>
+  <v-sheet class="asset-balances" :rounded="!flat" :outlined="!flat">
     <v-data-table
       :headers="headers"
       :items="balances"
@@ -108,6 +108,8 @@ export default class AssetBalances extends Vue {
   balances!: AssetBalance[];
   @Prop({})
   title!: string;
+  @Prop({ required: false, default: false, type: Boolean })
+  flat!: boolean;
 
   currency!: Currency;
   floatingPrecision!: number;
