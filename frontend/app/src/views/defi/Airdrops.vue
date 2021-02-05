@@ -25,44 +25,48 @@
       </blockchain-account-selector>
       <v-card class="mt-8">
         <v-card-text>
-          <v-data-table
-            :items="entries"
-            :footer-props="footerProps"
-            :headers="headers"
-          >
-            <template #item.address="{ item }">
-              <hash-link :text="item.address" />
-            </template>
-            <template #item.amount="{ item }">
-              <amount-display :value="item.amount" :asset="item.asset" />
-            </template>
-            <template #item.source="{ item }">
-              <div class="d-flex flex-row align-center">
-                <v-img
-                  width="24px"
-                  contain
-                  position="left"
-                  max-height="32px"
-                  max-width="32px"
-                  :src="getIcon(item.source)"
-                />
-                <span class="ms-2" v-text="getLabel(item.source)" />
-              </div>
-            </template>
-            <template #item.link="{ item }">
-              <v-btn
-                icon
-                color="primary"
-                :target="$interop.isPackaged ? undefined : '_blank'"
-                :href="$interop.isPackaged ? undefined : item.link"
-                @click="
-                  $interop.isPackaged ? $interop.navigate(item.link) : undefined
-                "
-              >
-                <v-icon>mdi-link</v-icon>
-              </v-btn>
-            </template>
-          </v-data-table>
+          <v-sheet outlined rounded>
+            <v-data-table
+              :items="entries"
+              :footer-props="footerProps"
+              :headers="headers"
+            >
+              <template #item.address="{ item }">
+                <hash-link :text="item.address" />
+              </template>
+              <template #item.amount="{ item }">
+                <amount-display :value="item.amount" :asset="item.asset" />
+              </template>
+              <template #item.source="{ item }">
+                <div class="d-flex flex-row align-center">
+                  <v-img
+                    width="24px"
+                    contain
+                    position="left"
+                    max-height="32px"
+                    max-width="32px"
+                    :src="getIcon(item.source)"
+                  />
+                  <span class="ms-2" v-text="getLabel(item.source)" />
+                </div>
+              </template>
+              <template #item.link="{ item }">
+                <v-btn
+                  icon
+                  color="primary"
+                  :target="$interop.isPackaged ? undefined : '_blank'"
+                  :href="$interop.isPackaged ? undefined : item.link"
+                  @click="
+                    $interop.isPackaged
+                      ? $interop.navigate(item.link)
+                      : undefined
+                  "
+                >
+                  <v-icon>mdi-link</v-icon>
+                </v-btn>
+              </template>
+            </v-data-table>
+          </v-sheet>
         </v-card-text>
       </v-card>
     </v-container>

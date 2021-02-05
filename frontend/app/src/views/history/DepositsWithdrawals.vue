@@ -83,9 +83,9 @@
             </template>
             <template
               v-if="
-                    assetMovementsLimit <= assetMovementsTotal &&
-                    assetMovementsLimit > 0
-                  "
+                assetMovementsLimit <= assetMovementsTotal &&
+                assetMovementsLimit > 0
+              "
               #body.append="{ headers }"
             >
               <upgrade-row
@@ -110,8 +110,8 @@
                       :item="item"
                     />
                     <span v-else class="font-weight-medium">
-                          {{ $t('deposits_withdrawals.details.no_details') }}
-                        </span>
+                      {{ $t('deposits_withdrawals.details.no_details') }}
+                    </span>
                   </v-card-text>
                 </v-card>
               </td>

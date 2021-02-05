@@ -1,68 +1,68 @@
 <template>
-  <v-row>
-    <v-col>
-      <v-card>
-        <v-card-title>{{ $t('profit_loss_events.title') }}</v-card-title>
-        <v-card-text>
-          <v-data-table
-            :headers="headers"
-            :items="events"
-            sort-by="time"
-            sort-desc
-            :footer-props="footerProps"
-          >
-            <template #item.time="{ item }">
-              <date-display :timestamp="item.time" />
-            </template>
-            <template #header.paidInProfitCurrency>
-              {{ $t('profit_loss_events.headers.paid_in', { currency }) }}
-            </template>
-            <template #header.taxableBoughtCostInProfitCurrency>
-              {{
-                $t('profit_loss_events.headers.taxable_bought_cost_in', {
-                  currency
-                })
-              }}
-            </template>
-            <template #header.taxableReceivedInProfitCurrency>
-              {{
-                $t('profit_loss_events.headers.taxable_received_in', {
-                  currency
-                })
-              }}
-            </template>
-            <template #item.paidInProfitCurrency="{ item }">
-              <amount-display :value="item.paidInProfitCurrency" />
-            </template>
-            <template #item.paidInAsset="{ item }">
-              <amount-display :value="item.paidInAsset" />
-            </template>
-            <template #item.taxableAmount="{ item }">
-              <amount-display :value="item.taxableAmount" />
-            </template>
-            <template #item.taxableBoughtCostInProfitCurrency="{ item }">
-              <amount-display :value="item.taxableBoughtCostInProfitCurrency" />
-            </template>
-            <template #item.receivedInAsset="{ item }">
-              <amount-display :value="item.receivedInAsset" />
-            </template>
-            <template #item.taxableReceivedInProfitCurrency="{ item }">
-              <amount-display :value="item.taxableReceivedInProfitCurrency" />
-            </template>
-            <template #item.receivedAsset="{ item }">
-              {{ item.receivedAsset ? item.receivedAsset : '-' }}
-            </template>
-            <template #item.paidAsset="{ item }">
-              {{ item.paidAsset ? item.paidAsset : '-' }}
-            </template>
-            <template #item.isVirtual="{ item }">
-              <v-icon v-if="item.isVirtual" color="success"> mdi-check </v-icon>
-            </template>
-          </v-data-table>
-        </v-card-text>
-      </v-card>
-    </v-col>
-  </v-row>
+  <v-card>
+    <v-card-title>
+      <card-title>{{ $t('profit_loss_events.title') }}</card-title>
+    </v-card-title>
+    <v-card-text>
+      <v-sheet outlined rounded>
+        <v-data-table
+          :headers="headers"
+          :items="events"
+          sort-by="time"
+          sort-desc
+          :footer-props="footerProps"
+        >
+          <template #item.time="{ item }">
+            <date-display :timestamp="item.time" />
+          </template>
+          <template #header.paidInProfitCurrency>
+            {{ $t('profit_loss_events.headers.paid_in', { currency }) }}
+          </template>
+          <template #header.taxableBoughtCostInProfitCurrency>
+            {{
+              $t('profit_loss_events.headers.taxable_bought_cost_in', {
+                currency
+              })
+            }}
+          </template>
+          <template #header.taxableReceivedInProfitCurrency>
+            {{
+              $t('profit_loss_events.headers.taxable_received_in', {
+                currency
+              })
+            }}
+          </template>
+          <template #item.paidInProfitCurrency="{ item }">
+            <amount-display :value="item.paidInProfitCurrency" />
+          </template>
+          <template #item.paidInAsset="{ item }">
+            <amount-display :value="item.paidInAsset" />
+          </template>
+          <template #item.taxableAmount="{ item }">
+            <amount-display :value="item.taxableAmount" />
+          </template>
+          <template #item.taxableBoughtCostInProfitCurrency="{ item }">
+            <amount-display :value="item.taxableBoughtCostInProfitCurrency" />
+          </template>
+          <template #item.receivedInAsset="{ item }">
+            <amount-display :value="item.receivedInAsset" />
+          </template>
+          <template #item.taxableReceivedInProfitCurrency="{ item }">
+            <amount-display :value="item.taxableReceivedInProfitCurrency" />
+          </template>
+          <template #item.receivedAsset="{ item }">
+            {{ item.receivedAsset ? item.receivedAsset : '-' }}
+          </template>
+          <template #item.paidAsset="{ item }">
+            {{ item.paidAsset ? item.paidAsset : '-' }}
+          </template>
+          <template #item.isVirtual="{ item }">
+            <v-icon v-if="item.isVirtual" color="success"> mdi-check </v-icon>
+          </template>
+        </v-data-table>
+      </v-sheet>
+    </v-card-text>
+  </v-card>
 </template>
 
 <script lang="ts">

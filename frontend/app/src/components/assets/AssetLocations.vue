@@ -4,32 +4,34 @@
       <card-title> {{ $t('asset-locations.title') }}</card-title>
     </v-card-title>
     <v-card-text>
-      <v-data-table
-        :headers="headers"
-        :items="assetLocations"
-        :footer-props="footerProps"
-      >
-        <template #item.location="{ item }">
-          <location-display :identifier="item.location" />
-        </template>
-        <template #item.address="{ item }">
-          <labeled-address-display
-            v-if="item.address"
-            :account="account(item.address)"
-          />
-        </template>
-        <template #item.balance.amount="{ item }">
-          <amount-display :value="item.balance.amount" />
-        </template>
-        <template #item.balance.usdValue="{ item }">
-          <amount-display
-            :fiat-currency="identifier"
-            :amount="item.balance.amount"
-            :value="item.balance.usdValue"
-            show-currency="symbol"
-          />
-        </template>
-      </v-data-table>
+      <v-sheet outlined rounded>
+        <v-data-table
+          :headers="headers"
+          :items="assetLocations"
+          :footer-props="footerProps"
+        >
+          <template #item.location="{ item }">
+            <location-display :identifier="item.location" />
+          </template>
+          <template #item.address="{ item }">
+            <labeled-address-display
+              v-if="item.address"
+              :account="account(item.address)"
+            />
+          </template>
+          <template #item.balance.amount="{ item }">
+            <amount-display :value="item.balance.amount" />
+          </template>
+          <template #item.balance.usdValue="{ item }">
+            <amount-display
+              :fiat-currency="identifier"
+              :amount="item.balance.amount"
+              :value="item.balance.usdValue"
+              show-currency="symbol"
+            />
+          </template>
+        </v-data-table>
+      </v-sheet>
     </v-card-text>
   </v-card>
 </template>

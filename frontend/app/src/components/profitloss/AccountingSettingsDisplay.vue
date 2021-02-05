@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title>
-      {{ $t('account_settings_display.title') }}
+      <card-title>{{ $t('account_settings_display.title') }}</card-title>
     </v-card-title>
     <v-card-subtitle>
       {{ $t('account_settings_display.subtitle') }}

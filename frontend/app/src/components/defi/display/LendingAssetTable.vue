@@ -1,39 +1,41 @@
 <template>
-  <v-data-table
-    :items="assets"
-    :headers="headers"
-    :loading="loading"
-    :footer-props="footerProps"
-    sort-desc
-    sort-by="balance.usdValue"
-  >
-    <template #item.asset="{ item }">
-      <span class="d-flex flex-row align-center">
-        <crypto-icon size="26px" :symbol="item.asset" class="mr-2" />
-        {{ item.asset }}
-      </span>
-    </template>
-    <template #item.balance.amount="{ item }">
-      <amount-display :value="item.balance.amount" />
-    </template>
-    <template #item.balance.usdValue="{ item }">
-      <amount-display
-        fiat-currency="USD"
-        :value="item.balance.usdValue"
-        show-currency="symbol"
-      />
-    </template>
-    <template #item.effectiveInterestRate="{ item }">
-      <percentage-display :value="item.effectiveInterestRate" />
-    </template>
-    <template #header.balance.usdValue>
-      {{
-        $t('lending_asset_table.headers.usd_value', {
-          currency: currency.ticker_symbol
-        })
-      }}
-    </template>
-  </v-data-table>
+  <v-sheet outlined rounded>
+    <v-data-table
+      :items="assets"
+      :headers="headers"
+      :loading="loading"
+      :footer-props="footerProps"
+      sort-desc
+      sort-by="balance.usdValue"
+    >
+      <template #item.asset="{ item }">
+        <span class="d-flex flex-row align-center">
+          <crypto-icon size="26px" :symbol="item.asset" class="mr-2" />
+          {{ item.asset }}
+        </span>
+      </template>
+      <template #item.balance.amount="{ item }">
+        <amount-display :value="item.balance.amount" />
+      </template>
+      <template #item.balance.usdValue="{ item }">
+        <amount-display
+          fiat-currency="USD"
+          :value="item.balance.usdValue"
+          show-currency="symbol"
+        />
+      </template>
+      <template #item.effectiveInterestRate="{ item }">
+        <percentage-display :value="item.effectiveInterestRate" />
+      </template>
+      <template #header.balance.usdValue>
+        {{
+          $t('lending_asset_table.headers.usd_value', {
+            currency: currency.ticker_symbol
+          })
+        }}
+      </template>
+    </v-data-table>
+  </v-sheet>
 </template>
 
 <script lang="ts">
