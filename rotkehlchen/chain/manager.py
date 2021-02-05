@@ -101,6 +101,9 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'Synthetix': ['SNX'],
     # Ampleforth's AMPL token is in all_assets.json
     'Ampleforth': ['AMPL'],
+    # MakerDAO vault balances are already detected by our code.
+    # Note that DeFi SDK only detects them for the proxies.
+    'Multi-Collateral Dai': True,  # True means all
 }
 
 
