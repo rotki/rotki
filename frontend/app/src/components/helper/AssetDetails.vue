@@ -1,5 +1,9 @@
 <template>
-  <span class="asset-details pt-3 pb-3" @click="navigate">
+  <span
+    class="asset-details pt-3 pb-3"
+    :class="opensDetails ? 'asset-details--link' : null"
+    @click="navigate"
+  >
     <crypto-icon size="26px" class="asset-details__icon" :symbol="asset" />
     <span class="asset-details__details">
       <span class="asset-details__details__symbol">
@@ -38,6 +42,10 @@ export default class AssetDetails extends Vue {
     }
   })
   asset!: string;
+
+  @Prop({ required: false, type: Boolean, default: false })
+  opensDetails!: boolean;
+
   assetInfo!: (key: string) => SupportedAsset;
 
   get symbol(): string {
@@ -73,6 +81,9 @@ export default class AssetDetails extends Vue {
   }
 
   navigate() {
+    if (!this.opensDetails) {
+      return;
+    }
     this.$router.push({
       path: Routes.ASSETS.replace(':identifier', this.asset)
     });
@@ -85,7 +96,10 @@ export default class AssetDetails extends Vue {
   display: flex;
   flex-direction: row;
   align-items: center;
-  cursor: pointer;
+
+  &--link {
+    cursor: pointer;
+  }
 
   &__icon {
     margin-right: 8px;

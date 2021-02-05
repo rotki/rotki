@@ -45,7 +45,7 @@
             </div>
           </template>
           <template #item.asset="{ item }">
-            <asset-details :asset="item.asset" />
+            <asset-details opens-details :asset="item.asset" />
           </template>
           <template #item.amount="{ item }">
             <amount-display :value="item.amount" />

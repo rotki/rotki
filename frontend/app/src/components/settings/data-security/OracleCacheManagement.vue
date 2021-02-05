@@ -86,10 +86,10 @@
             :items="cacheData"
           >
             <template #item.fromAsset="{ item }">
-              <asset-details :asset="item.fromAsset" />
+              <asset-details opens-details :asset="item.fromAsset" />
             </template>
             <template #item.toAsset="{ item }">
-              <asset-details :asset="item.toAsset" />
+              <asset-details opens-details :asset="item.toAsset" />
             </template>
             <template #item.toTimestamp="{ item }">
               <date-display :timestamp="item.toTimestamp" />
