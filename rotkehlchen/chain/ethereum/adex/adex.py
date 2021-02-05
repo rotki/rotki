@@ -84,6 +84,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+class ChannelTokenAddressError(Exception):
+    pass
+
+
 class Adex(EthereumModule):
     """AdEx integration module
 
@@ -105,13 +109,13 @@ class Adex(EthereumModule):
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         try:
             self.graph: Optional[Graph] = Graph(
-                'https://api.thegraph.com/subgraphs/name/adexnetwork/adex-protocol',
+                'https://api.thegraph.com/subgraphs/name/adexnetwork/adex-protocol-v2',
             )
         except RemoteError as e:
             self.graph = None
             self.msg_aggregator.add_error(
                 f'Could not initialize the AdEx subgraph due to {str(e)}. '
-                f'All AdEx balances and historical queries are not functioning until this is fixed. '  # noqa: E501
+                f'All balances and events history queries are not functioning until this is fixed. '  # noqa: E501
                 f'Probably will get fixed with time. If not report it to Rotki\'s support channel.',  # noqa: E501
             )
 
@@ -398,7 +402,7 @@ class Adex(EthereumModule):
     ) -> ChannelWithdraw:
         """Deserialize a channel withdraw event. Only for Tom pool.
 
-        It may raise KeyError.
+        It may raise KeyError and ChannelTokenAddressError
         """
         inverse_identity_address_map = {
             address: identity for identity, address in identity_address_map.items()
@@ -413,7 +417,9 @@ class Adex(EthereumModule):
         elif token_address == A_DAI.ethereum_address:
             token = A_DAI
         else:
-            raise DeserializationError(f'Unexpected token address: {token_address}')
+            raise ChannelTokenAddressError(
+                f'Unexpected token address: {token_address} on channel: {channel_id}',
+            )
 
         return ChannelWithdraw(
             tx_hash=raw_event['id'].split(':')[0],
@@ -533,6 +539,10 @@ class Adex(EthereumModule):
         For existing addresses it requests all the events since the latest
         request timestamp (the minimum timestamp among all the existing
         addresses).
+
+        May raise:
+        - RemoteError: when there is a problem either querying the subgraph or
+        deserializing the events.
         """
         new_addresses: List[ChecksumEthAddress] = []
         existing_addresses: List[ChecksumEthAddress] = []
@@ -657,25 +667,21 @@ class Adex(EthereumModule):
             deserialization_method = self._deserialize_bond
             querystr = format_query_indentation(BONDS_QUERY.format())
             schema = 'bonds'
-            event_type_pretty = 'bond'
         elif event_type == AdexEventType.UNBOND:
             queried_addresses = user_identities
             deserialization_method = self._deserialize_unbond
             querystr = format_query_indentation(UNBONDS_QUERY.format())
             schema = 'unbonds'
-            event_type_pretty = 'unbond'
         elif event_type == AdexEventType.UNBOND_REQUEST:
             queried_addresses = user_identities
             deserialization_method = self._deserialize_unbond_request
             querystr = format_query_indentation(UNBOND_REQUESTS_QUERY.format())
             schema = 'unbondRequests'
-            event_type_pretty = 'unbond request'
         elif event_type == AdexEventType.CHANNEL_WITHDRAW:
             queried_addresses = [address.lower() for address in addresses]
             deserialization_method = self._deserialize_channel_withdraw
             querystr = format_query_indentation(CHANNEL_WITHDRAWS_QUERY.format())
             schema = 'channelWithdraws'
-            event_type_pretty = 'channel withdraws'
         else:
             raise AssertionError(f'Unexpected AdEx event type: {event_type}.')
 
@@ -697,11 +703,19 @@ class Adex(EthereumModule):
         }
         events = []
         while True:
-            result = self.graph.query(  # type: ignore # caller already checks
-                querystr=querystr,
-                param_types=param_types,
-                param_values=param_values,
-            )
+            try:
+                result = self.graph.query(  # type: ignore # caller already checks
+                    querystr=querystr,
+                    param_types=param_types,
+                    param_values=param_values,
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to request the AdEx subgraph. All balances and events history '
+                    f'queries are not functioning due to: {str(e)}',
+                )
+                raise
+
             result_data = result[schema]
             for raw_event in result_data:
                 try:
@@ -709,12 +723,10 @@ class Adex(EthereumModule):
                         raw_event=raw_event,
                         identity_address_map=identity_address_map,
                     )
-                except KeyError as e:
-                    msg = f'Error processing an AdEx {event_type_pretty} due to: {str(e)}.'
+                except (ChannelTokenAddressError, KeyError) as e:
+                    msg = f'Failed to deserialize an AdEx {schema} event due to: {str(e)}.'
                     log.error(msg, raw_event=raw_event)
-                    raise DeserializationError(
-                        f'Failed to deserialize an AdEx event due to: {str(e)}',
-                    ) from e
+                    raise DeserializationError(msg) from e
 
                 events.append(event)
 
@@ -852,6 +864,10 @@ class Adex(EthereumModule):
     ) -> List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]:
         """Returns events of the addresses within the time range and inserts/updates
         the used query range of the addresses as well.
+
+        May raise:
+        - RemoteError: when there is a problem either querying the subgraph or
+        deserializing the events.
         """
         all_events: List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]] = []
         for event_type_ in AdexEventType:
@@ -864,8 +880,8 @@ class Adex(EthereumModule):
                     from_timestamp=from_timestamp,
                     to_timestamp=to_timestamp,
                 )
-            except RemoteError:
-                return []
+            except DeserializationError as e:
+                raise RemoteError(e) from e
 
             all_events.extend(events)
 
@@ -1005,7 +1021,7 @@ class Adex(EthereumModule):
         """Get the staking history events of the addresses in the AdEx protocol.
 
         May raise:
-        - RemoteError: when there is a problem querying the subgraph.
+        - RemoteError: when there is a problem either querying the subgraph.
         """
         if self.graph is None:  # could not initialize graph
             return {}
@@ -1033,16 +1049,12 @@ class Adex(EthereumModule):
             )
 
         identity_address_map = self._get_identity_address_map(addresses)
-        try:
-            staking_events = self._get_staking_events(
-                addresses=addresses,
-                identity_address_map=identity_address_map,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-            )
-        except DeserializationError as e:
-            raise RemoteError(e) from e
-
+        staking_events = self._get_staking_events(
+            addresses=addresses,
+            identity_address_map=identity_address_map,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
         adx_usd_price = Inquirer().find_usd_price(A_ADX)
         dai_usd_price = Inquirer().find_usd_price(A_DAI)
         staking_balances = self._calculate_staking_balances(

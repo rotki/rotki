@@ -333,7 +333,7 @@ def test_calculate_staking_balances():
 
 @pytest.mark.freeze_time(datetime.fromtimestamp(1612451056))
 def test_calculate_staking_balances_is_pnl_report():
-    """Test 'is_pnl_report' argument is True, unclaimed ADX and DAI amounts are
+    """Test that if 'is_pnl_report' argument is True, unclaimed ADX and DAI amounts are
     not calculated and set to 0.
     """
     with patch('rotkehlchen.chain.ethereum.adex.adex.Graph'):
