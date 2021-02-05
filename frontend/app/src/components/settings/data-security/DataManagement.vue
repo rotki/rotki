@@ -2,7 +2,9 @@
   <v-row no-gutters>
     <v-col>
       <v-card>
-        <v-card-title v-text="$t('data_management.title')" />
+        <v-card-title>
+          <card-title>{{ $t('data_management.title') }}</card-title>
+        </v-card-title>
         <v-card-subtitle v-text="$t('data_management.subtitle')" />
         <v-form ref="form">
           <v-card-text>

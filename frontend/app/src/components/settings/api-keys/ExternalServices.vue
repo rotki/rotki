@@ -1,57 +1,63 @@
 <template>
   <v-container>
     <v-card>
-      <v-card-title v-text="$t('external_services.title')" />
+      <v-card-title>
+        <card-title>{{ $t('external_services.title') }}</card-title>
+      </v-card-title>
       <v-card-subtitle v-text="$t('external_services.subtitle')" />
       <v-card-text>
-        <v-row no-gutters>
+        <v-row no-gutters class="mt-4">
           <v-col cols="12">
-            <service-key
-              v-model="etherscanKey"
-              class="external-services__etherscan-key"
-              :title="$t('external_services.etherscan.title')"
-              :description="$t('external_services.etherscan.description')"
-              :label="$t('external_services.etherscan.label')"
-              :hint="$t('external_services.etherscan.hint')"
-              :loading="loading"
-              :tooltip="$t('external_services.etherscan.delete_tooltip')"
-              @save="save('etherscan', $event)"
-              @delete-key="deleteKey('etherscan')"
-            />
+            <v-sheet outlined rounded>
+              <service-key
+                v-model="etherscanKey"
+                class="external-services__etherscan-key"
+                :title="$t('external_services.etherscan.title')"
+                :description="$t('external_services.etherscan.description')"
+                :label="$t('external_services.etherscan.label')"
+                :hint="$t('external_services.etherscan.hint')"
+                :loading="loading"
+                :tooltip="$t('external_services.etherscan.delete_tooltip')"
+                @save="save('etherscan', $event)"
+                @delete-key="deleteKey('etherscan')"
+              />
+            </v-sheet>
           </v-col>
         </v-row>
-        <v-divider class="mt-3" />
-        <v-row no-gutters>
+        <v-row no-gutters class="mt-8">
           <v-col cols="12">
-            <service-key
-              v-model="cryptocompareKey"
-              class="external-services__cryptocompare-key"
-              :title="$t('external_services.cryptocompare.title')"
-              :description="$t('external_services.cryptocompare.description')"
-              :label="$t('external_services.cryptocompare.label')"
-              :hint="$t('external_services.cryptocompare.hint')"
-              :loading="loading"
-              :tooltip="$t('external_services.cryptocompare.delete_tooltip')"
-              @save="save('cryptocompare', $event)"
-              @delete-key="deleteKey('cryptocompare')"
-            />
+            <v-sheet outlined rounded>
+              <service-key
+                v-model="cryptocompareKey"
+                class="external-services__cryptocompare-key"
+                :title="$t('external_services.cryptocompare.title')"
+                :description="$t('external_services.cryptocompare.description')"
+                :label="$t('external_services.cryptocompare.label')"
+                :hint="$t('external_services.cryptocompare.hint')"
+                :loading="loading"
+                :tooltip="$t('external_services.cryptocompare.delete_tooltip')"
+                @save="save('cryptocompare', $event)"
+                @delete-key="deleteKey('cryptocompare')"
+              />
+            </v-sheet>
           </v-col>
         </v-row>
-        <v-divider class="mt-3" />
-        <v-row no-gutters>
+        <v-row no-gutters class="mt-8">
           <v-col cols="12">
-            <service-key
-              v-model="beaconchainKey"
-              class="external-services__beaconchain-key"
-              :title="$t('external_services.beaconchain.title')"
-              :description="$t('external_services.beaconchain.description')"
-              :label="$t('external_services.beaconchain.label')"
-              :hint="$t('external_services.beaconchain.hint')"
-              :loading="loading"
-              :tooltip="$t('external_services.beaconchain.delete_tooltip')"
-              @save="save('beaconchain', $event)"
-              @delete-key="deleteKey('beaconchain')"
-            />
+            <v-sheet outlined rounded>
+              <service-key
+                v-model="beaconchainKey"
+                class="external-services__beaconchain-key"
+                :title="$t('external_services.beaconchain.title')"
+                :description="$t('external_services.beaconchain.description')"
+                :label="$t('external_services.beaconchain.label')"
+                :hint="$t('external_services.beaconchain.hint')"
+                :loading="loading"
+                :tooltip="$t('external_services.beaconchain.delete_tooltip')"
+                @save="save('beaconchain', $event)"
+                @delete-key="deleteKey('beaconchain')"
+              />
+            </v-sheet>
           </v-col>
         </v-row>
       </v-card-text>

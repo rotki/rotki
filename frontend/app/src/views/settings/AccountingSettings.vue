@@ -3,7 +3,9 @@
     <v-row no-gutters>
       <v-col>
         <v-card>
-          <v-card-title>{{ $t('accounting_settings.title') }}</v-card-title>
+          <v-card-title>
+            <card-title>{{ $t('accounting_settings.title') }}</card-title>
+          </v-card-title>
           <v-card-text>
             <v-switch
               v-model="crypto2CryptoTrades"
@@ -75,11 +77,13 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-row class="mt-4">
+    <v-row class="mt-8" no-gutters>
       <v-col>
         <v-card>
           <v-card-title>
-            {{ $t('account_settings.asset_settings.title') }}
+            <card-title>
+              {{ $t('account_settings.asset_settings.title') }}
+            </card-title>
           </v-card-title>
           <v-card-text>
             <v-row>

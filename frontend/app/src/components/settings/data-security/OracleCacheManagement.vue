@@ -1,8 +1,8 @@
 ﻿<template>
   <fragment>
-    <v-card class="mt-4">
+    <v-card class="mt-8">
       <v-card-title>
-        {{ $t('oracle_cache_management.title') }}
+        <card-title>{{ $t('oracle_cache_management.title') }}</card-title>
       </v-card-title>
       <v-card-subtitle>
         {{ $t('oracle_cache_management.subtitle') }}

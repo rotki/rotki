@@ -1,7 +1,7 @@
 <template>
-  <v-card class="mt-5">
+  <v-card class="mt-8">
     <v-card-title>
-      <slot name="title" />
+      <card-title><slot name="title" /></card-title>
     </v-card-title>
     <v-card-subtitle v-if="$slots.subtitle">
       <slot name="subtitle" />

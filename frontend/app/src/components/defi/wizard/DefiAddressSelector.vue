@@ -1,33 +1,35 @@
 <template>
   <v-stepper v-model="step" class="defi-address-selector">
-    <v-stepper-header>
-      <template v-for="n in steps">
-        <v-stepper-step
-          :key="`${n}-step`"
-          :complete="step > n"
-          :step="n"
-          editable
-        >
-          <span class="d-flex flex-column align-center justify-center">
-            <v-img
-              width="55px"
-              contain
-              max-height="24px"
-              :src="modules[n - 1].icon"
-            />
-            <span v-if="modules[n - 1].name">
-              {{ modules[n - 1].name }}
+    <v-sheet rounded outlined>
+      <v-stepper-header>
+        <template v-for="n in steps">
+          <v-stepper-step
+            :key="`${n}-step`"
+            :complete="step > n"
+            :step="n"
+            editable
+          >
+            <span class="d-flex flex-column align-center justify-center">
+              <v-img
+                width="55px"
+                contain
+                max-height="24px"
+                :src="modules[n - 1].icon"
+              />
+              <span v-if="modules[n - 1].name" class="mt-3 text-center">
+                {{ modules[n - 1].name }}
+              </span>
             </span>
-          </span>
-        </v-stepper-step>
+          </v-stepper-step>
 
-        <v-divider v-if="n !== steps" :key="n" />
-      </template>
-    </v-stepper-header>
+          <v-divider v-if="n !== steps" :key="n" />
+        </template>
+      </v-stepper-header>
+    </v-sheet>
 
     <v-stepper-items>
       <v-stepper-content v-for="n in steps" :key="`${n}-content`" :step="n">
-        <v-row align="center" class="hidden-lg-and-up">
+        <v-row align="center">
           <v-col cols="auto">
             <v-img
               width="30px"
@@ -118,6 +120,8 @@ export default class DefiAddressSelector extends Vue {
 </script>
 
 <style scoped lang="scss">
+@import '~@/scss/scroll';
+
 .defi-address-selector {
   border: none !important;
   box-shadow: none !important;
@@ -128,6 +132,28 @@ export default class DefiAddressSelector extends Vue {
       &__header {
         border: none !important;
         box-shadow: none !important;
+        overflow-x: auto;
+        height: 120px;
+        flex-wrap: nowrap;
+
+        @extend .themed-scrollbar;
+      }
+
+      &__step {
+        &__step {
+          display: none !important;
+        }
+      }
+
+      &__label {
+        min-width: 112px;
+        display: block;
+      }
+
+      &__items {
+        margin-top: 24px;
+        border-radius: 8px;
+        border: thin solid rgba(0, 0, 0, 0.12);
       }
     }
   }

@@ -3,7 +3,9 @@
     <v-row no-gutters>
       <v-col>
         <v-card>
-          <v-card-title>{{ $t('general_settings.title') }}</v-card-title>
+          <v-card-title>
+            <card-title>{{ $t('general_settings.title') }}</card-title>
+          </v-card-title>
           <v-card-text>
             <v-switch
               v-model="anonymizedLogs"
@@ -77,9 +79,9 @@
             />
           </v-card-text>
         </v-card>
-        <v-card class="mt-5">
+        <v-card class="mt-8">
           <v-card-title>
-            {{ $t('general_settings.amount.title') }}
+            <card-title>{{ $t('general_settings.amount.title') }}</card-title>
           </v-card-title>
           <v-card-text>
             <v-text-field
@@ -175,9 +177,11 @@
             <amount-display :value="amountExample" show-currency="symbol" />
           </v-card-text>
         </v-card>
-        <v-card class="mt-5">
+        <v-card class="mt-8">
           <v-card-title>
-            {{ $t('general_settings.local_nodes.title') }}
+            <card-title>
+              {{ $t('general_settings.local_nodes.title') }}
+            </card-title>
           </v-card-title>
           <v-card-text>
             <v-text-field
@@ -212,9 +216,9 @@
           </v-card-text>
         </v-card>
         <price-oracle-settings />
-        <v-card class="mt-5">
+        <v-card class="mt-8">
           <v-card-title>
-            {{ $t('general_settings.frontend.title') }}
+            <card-title>{{ $t('general_settings.frontend.title') }}</card-title>
           </v-card-title>
           <v-card-text>
             <v-switch
