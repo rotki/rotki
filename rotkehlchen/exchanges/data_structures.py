@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
@@ -34,29 +33,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 def hash_id(hashable: str) -> TradeID:
     id_bytes = sha3(hashable.encode())
     return TradeID(id_bytes.hex())
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class BuyEvent:
-    timestamp: Timestamp
-    amount: FVal  # Amount of the asset being bought
-    rate: FVal  # Rate in quote currency for which we buy 1 unit of the buying asset
-    # Fee rate in profit currency which we paid for each unit of the buying asset
-    fee_rate: FVal
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class SellEvent:
-    timestamp: Timestamp
-    amount: FVal  # Amount of the asset we sell
-    rate: FVal  # Rate in 'profit_currency' for which we sell 1 unit of the sold asset
-    fee_rate: FVal  # Fee rate in 'profit_currency' which we paid for each unit of the sold asset
-    gain: FVal  # Gain in profit currency for this trade. Fees are not counted here.
-
-
-class Events(NamedTuple):
-    buys: List[BuyEvent]
-    sells: List[SellEvent]
 
 
 class AssetMovement(NamedTuple):

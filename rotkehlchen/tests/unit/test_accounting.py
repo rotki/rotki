@@ -99,7 +99,7 @@ def test_selling_crypto_bought_with_crypto(accountant):
     }]
     accounting_history_process(accountant, 1436979735, 1495751688, history)
     # Make sure buying XMR with BTC also creates a BTC sell
-    sells = accountant.events.events['BTC'].sells
+    sells = accountant.events.cost_basis.events['BTC'].spends
     assert len(sells) == 1
     assert sells[0].amount == FVal('0.3853125')
     assert sells[0].timestamp == 1449809536
@@ -154,8 +154,8 @@ def test_buying_selling_eth_before_daofork(accountant):
     ]
     accounting_history_process(accountant, 1436979735, 1495751688, history3)
     # make sure that the intermediate ETH sell before the fork reduced our ETC
-    assert accountant.get_calculated_asset_amount('ETC') == FVal(850)
-    assert accountant.get_calculated_asset_amount('ETH') == FVal(1390)
+    assert accountant.events.cost_basis.get_calculated_asset_amount('ETC') == FVal(850)
+    assert accountant.events.cost_basis.get_calculated_asset_amount('ETH') == FVal(1390)
     assert accountant.general_trade_pl.is_close('1304.651527')
     assert accountant.taxable_trade_pl.is_close('381.899035')
 
@@ -203,14 +203,14 @@ def test_buying_selling_btc_before_bchfork(accountant):
 
     amount_bch = FVal(3.9)
     amount_btc = FVal(4.8)
-    buys = accountant.events.events['BCH'].buys
+    buys = accountant.events.cost_basis.events['BCH'].acquisitions
     assert len(buys) == 1
     assert buys[0].amount == amount_bch
     assert buys[0].timestamp == 1491593374
     assert buys[0].rate == FVal('1128.905')
     assert buys[0].fee_rate.is_close(FVal('0.0846153846154'))
-    assert accountant.get_calculated_asset_amount('BCH') == amount_bch
-    assert accountant.get_calculated_asset_amount('BTC') == amount_btc
+    assert accountant.events.cost_basis.get_calculated_asset_amount('BCH') == amount_bch
+    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC') == amount_btc
 
     assert accountant.general_trade_pl.is_close("13876.6464615")
     assert accountant.taxable_trade_pl.is_close("13876.6464615")
@@ -284,7 +284,7 @@ def test_buy_event_creation(accountant):
         'location': 'kraken',
     }]
     accounting_history_process(accountant, 1436979735, 1519693374, history)
-    buys = accountant.events.events['BTC'].buys
+    buys = accountant.events.cost_basis.events['BTC'].acquisitions
     assert len(buys) == 2
     assert buys[0].amount == FVal(5)
     assert buys[0].timestamp == 1476979735
@@ -414,7 +414,7 @@ def test_settlement_buy(accountant):
         1519693374,
         history,
     )
-    assert accountant.get_calculated_asset_amount('BTC').is_close('3.9920725')
+    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.9920725')
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1932.598999')
     assert FVal(result['overview']['settlement_losses']).is_close('8.357159475')
 
@@ -469,7 +469,7 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         history,
         margin_list=margin_history,
     )
-    assert accountant.get_calculated_asset_amount('BTC').is_close('3.748')
+    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.748')
     assert FVal(result['overview']['general_trade_profit_loss']).is_close('1940.9561588')
     assert FVal(result['overview']['margin_positions_profit_loss']).is_close('-162.18738')
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1778.7687788')
@@ -687,9 +687,9 @@ def test_ledger_actions(accountant):
         history_list=[],
         ledger_actions_list=ledger_actions_history,
     )
-    assert accountant.get_calculated_asset_amount(A_BTC).is_close('0.9')
-    assert accountant.get_calculated_asset_amount(A_ETH).is_close('0.9')
-    assert accountant.get_calculated_asset_amount(A_XMR).is_close('10')
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC).is_close('0.9')
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_ETH).is_close('0.9')
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_XMR).is_close('10')
     # 250 * 1 + 0.4 * 10 - 1 * 0.1  - 420 * 0.1 = 211.9
     assert FVal(result['overview']['ledger_actions_profit_loss']).is_close('211.9')
     assert FVal(result['overview']['total_profit_loss']).is_close('211.9')
