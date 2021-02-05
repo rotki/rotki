@@ -300,4 +300,3 @@ class ADXStakingHistory(NamedTuple):
 
 DeserializationMethod = Callable[..., Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]
 FeeRewards = List[Dict[str, Any]]
-ChannelIdsToken = Dict[str, EthereumToken]

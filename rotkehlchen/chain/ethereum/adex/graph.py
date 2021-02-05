@@ -73,7 +73,10 @@ CHANNEL_WITHDRAWS_QUERY = (
     ) {{
         id
         user
-        channelId
+        channel {{
+            channelId
+            tokenAddr
+        }}
         amount
         timestamp
     }}}}

@@ -18,7 +18,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import EthereumTransaction, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
-from rotkehlchen.utils.misc import ts_now, timestamp_to_date
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.manager import ChainManager
@@ -401,6 +401,7 @@ class EventsHistorian():
                 reset_db_data=False,
                 from_timestamp=start_ts,
                 to_timestamp=end_ts,
+                is_pnl_report=True,
             )
             for _, adex_history in adx_mapping.items():
                 # The transaction hashes here are not accurate. Need to figure out
@@ -412,14 +413,14 @@ class EventsHistorian():
                         event_type=DefiEventType.ADEX_STAKE_PROFIT,
                         asset=A_ADX,
                         amount=adx_detail.adx_profit_loss.amount,
-                        tx_hashes=adex_tx_hashes,  # type: ignore
+                        tx_hashes=adex_tx_hashes,
                     ))
                     defi_events.append(DefiEvent(
                         timestamp=end_ts,
                         event_type=DefiEventType.ADEX_STAKE_PROFIT,
                         asset=A_DAI,
                         amount=adx_detail.dai_profit_loss.amount,
-                        tx_hashes=adex_tx_hashes,  # type: ignore
+                        tx_hashes=adex_tx_hashes,
                     ))
         step = self._increase_progress(step, total_steps)
 
