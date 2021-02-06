@@ -22,7 +22,6 @@ from rotkehlchen.constants.assets import (
     A_USDC,
     A_USDT,
     A_YFI,
-    FIAT_CURRENCIES,
 )
 from rotkehlchen.errors import (
     DeserializationError,
@@ -357,12 +356,8 @@ class Inquirer():
         return instance._query_oracle_instances(from_asset=asset, to_asset=A_USD)
 
     @staticmethod
-    def get_fiat_usd_exchange_rates(
-            currencies: Optional[Iterable[Asset]] = None,
-    ) -> Dict[Asset, Price]:
+    def get_fiat_usd_exchange_rates(currencies: Iterable[Asset]) -> Dict[Asset, Price]:
         rates = {A_USD: Price(FVal(1))}
-        if not currencies:
-            currencies = FIAT_CURRENCIES[1:]
         for currency in currencies:
             rates[currency] = Inquirer().query_fiat_pair(A_USD, currency)
         return rates

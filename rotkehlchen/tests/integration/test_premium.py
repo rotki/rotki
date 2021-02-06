@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.constants.assets import A_EUR, A_GBP
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import (
     IncorrectApiKeyFormat,
@@ -11,7 +10,7 @@ from rotkehlchen.errors import (
     RotkehlchenPermissionError,
 )
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
+from rotkehlchen.tests.utils.constants import A_EUR, A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
     INVALID_BUT_BIGGER_REMOTE_DATA,

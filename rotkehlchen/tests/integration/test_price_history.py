@@ -1,10 +1,10 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC, A_EUR, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.externalapis.cryptocompare import PRICE_HISTORY_FILE_PREFIX, Cryptocompare
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_DASH, A_XMR
+from rotkehlchen.tests.utils.constants import A_DASH, A_EUR, A_XMR
 from rotkehlchen.utils.misc import get_or_make_price_history_dir
 
 

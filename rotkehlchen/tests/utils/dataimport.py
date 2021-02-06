@@ -1,9 +1,9 @@
-from rotkehlchen.constants.assets import A_ETH, A_EUR, A_USD, A_DAI
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.tests.utils.constants import A_XMR
+from rotkehlchen.tests.utils.constants import A_EUR, A_XMR
 from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,

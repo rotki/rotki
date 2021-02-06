@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.constants.assets import A_JPY
 from rotkehlchen.db.settings import DEFAULT_KRAKEN_ACCOUNT_TYPE, ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.tests.utils.api import (
@@ -15,6 +14,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
+from rotkehlchen.tests.utils.constants import A_JPY
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockWeb3
 from rotkehlchen.typing import ChecksumEthAddress, ModuleName

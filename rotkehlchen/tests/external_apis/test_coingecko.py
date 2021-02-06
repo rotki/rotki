@@ -1,7 +1,8 @@
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.externalapis.coingecko import CoingeckoAssetData, CoingeckoImageURLs
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.typing import Price
 
 

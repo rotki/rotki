@@ -6,7 +6,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_CNY, A_EUR, A_GBP, A_JPY, A_USD
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -17,6 +17,7 @@ from rotkehlchen.inquirer import (
     CurrentPriceOracle,
     _query_exchanges_rateapi,
 )
+from rotkehlchen.tests.utils.constants import A_CNY, A_EUR, A_GBP, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Price
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now

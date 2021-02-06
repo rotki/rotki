@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from rotkehlchen.constants.assets import A_BTC, A_GBP, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -14,6 +14,7 @@ from rotkehlchen.history.typing import (
     DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER,
     HistoricalPriceOracle,
 )
+from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.typing import Price, Timestamp
 
 

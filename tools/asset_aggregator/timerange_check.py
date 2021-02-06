@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from asset_aggregator.utils import choose_multiple
 
-from rotkehlchen.constants.assets import FIAT_CURRENCIES
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.typing import EthAddress, Timestamp
 from rotkehlchen.utils.misc import (
     create_timestamp,
@@ -101,7 +101,7 @@ def timerange_check(
 
     Then compare to our data and provide choices to clean up the data.
     """
-    if asset_symbol in FIAT_CURRENCIES:
+    if Asset(asset_symbol).is_fiat():
         # Fiat does not have started date (or we don't care about it)
         return our_data
 

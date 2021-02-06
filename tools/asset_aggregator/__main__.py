@@ -23,8 +23,8 @@ from asset_aggregator.timerange_check import timerange_check
 from asset_aggregator.typeinfo_check import typeinfo_check
 
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.config import default_data_directory
-from rotkehlchen.constants.assets import FIAT_CURRENCIES
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.coinmarketcap import Coinmarketcap, find_cmc_coin_data
 from rotkehlchen.externalapis.coinpaprika import (
@@ -54,7 +54,7 @@ def process_asset(
     token_address = None
     our_asset = our_data[asset_symbol]
     # Coin paprika does not have info on FIAT currencies
-    if asset_symbol in FIAT_CURRENCIES:
+    if Asset(asset_symbol).is_fiat():
         return our_data
 
     found_coin_id = find_paprika_coin_id(asset_symbol, paprika_coins_list)
