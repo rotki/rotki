@@ -48,7 +48,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -61,7 +61,6 @@ from rotkehlchen.errors import (
     IncorrectApiKeyFormat,
     InputError,
     NoPriceForGivenTimestamp,
-    UnsupportedAsset,
     PremiumApiError,
     PremiumAuthenticationError,
     RemoteError,
@@ -69,6 +68,7 @@ from rotkehlchen.errors import (
     SystemClockNotSyncedError,
     SystemPermissionError,
     TagConstraintError,
+    UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
@@ -76,7 +76,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import HistoricalPriceOracle
-from rotkehlchen.inquirer import Inquirer, CurrentPriceOracle
+from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT, Rotkehlchen
@@ -360,17 +360,14 @@ class RestAPI():
         return api_response(result=result_dict, status_code=HTTPStatus.NOT_FOUND)
 
     @staticmethod
-    def get_exchange_rates(given_currencies: Optional[List[Asset]]) -> Response:
-        if given_currencies is not None and len(given_currencies) == 0:
+    def get_exchange_rates(given_currencies: List[Asset]) -> Response:
+        if len(given_currencies) == 0:
             return api_response(
                 wrap_in_fail_result('Empty list of currencies provided'),
                 status_code=HTTPStatus.BAD_REQUEST,
             )
 
-        if given_currencies is None:
-            currencies = [A_BTC, A_ETH]
-        else:
-            currencies = given_currencies
+        currencies = given_currencies
         fiat_currencies = []
         asset_rates = {}
         for asset in currencies:
@@ -384,12 +381,10 @@ class RestAPI():
                     wrap_in_fail_result(f'Failed to query usd price of {asset.identifier}'),
                     status_code=HTTPStatus.BAD_GATEWAY,
                 )
-
             asset_rates[asset] = Price(FVal(1) / usd_price)
 
         fiat_rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
         asset_rates.update(fiat_rates)
-
         res = process_result(asset_rates)
         return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
 

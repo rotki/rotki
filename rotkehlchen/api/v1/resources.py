@@ -196,7 +196,7 @@ class ExchangeRatesResource(BaseResource):
     get_schema = ExchangeRatesSchema()
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
-    def get(self, currencies: Optional[List[Asset]]) -> Response:
+    def get(self, currencies: List[Asset]) -> Response:
         return self.rest_api.get_exchange_rates(given_currencies=currencies)
 
 

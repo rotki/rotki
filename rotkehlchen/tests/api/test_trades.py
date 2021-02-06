@@ -4,7 +4,6 @@ from typing import Any, Dict
 import pytest
 import requests
 
-from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import FREE_TRADES_LIMIT
@@ -14,6 +13,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_response_with_result,
 )
+from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.tests.utils.history import (
     assert_binance_trades_result,
     assert_poloniex_trades_result,

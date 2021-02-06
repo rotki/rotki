@@ -1,11 +1,17 @@
 import pytest
 
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
-from rotkehlchen.tests.utils.constants import A_DASH, ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
+from rotkehlchen.tests.utils.constants import (
+    A_DASH,
+    A_EUR,
+    ETH_ADDRESS1,
+    ETH_ADDRESS2,
+    ETH_ADDRESS3,
+)
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.typing import (
     AssetAmount,

@@ -8,10 +8,9 @@ from unittest.mock import patch
 from typing_extensions import Literal
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
-from rotkehlchen.constants.assets import A_GBP
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
+from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.mock import MockResponse
 

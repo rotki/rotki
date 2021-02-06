@@ -11,7 +11,7 @@ from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -43,6 +43,7 @@ from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.constants import (
     A_DAO,
     A_DOGE,
+    A_EUR,
     A_RDN,
     A_XMR,
     DEFAULT_TESTS_MAIN_CURRENCY,
@@ -55,6 +56,7 @@ from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     AssetMovementCategory,
     BlockchainAccountData,
     EthereumTransaction,
@@ -62,12 +64,11 @@ from rotkehlchen.typing import (
     ExternalServiceApiCredentials,
     Fee,
     Location,
+    Price,
     SupportedBlockchain,
     Timestamp,
-    TradeType,
-    AssetAmount,
     TradePair,
-    Price,
+    TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now

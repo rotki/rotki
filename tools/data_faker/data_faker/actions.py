@@ -4,11 +4,12 @@ from typing import Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.assets import A_BTC, A_EUR, A_USD, FIAT_CURRENCIES
+from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.serialization.deserialize import deserialize_location, pair_get_assets
+from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.typing import Location, Timestamp, TradePair
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
@@ -68,7 +69,7 @@ class ActionWriter():
             for exchange in ALLOWED_EXCHANGES:
                 timestamp, _, _ = self.get_next_ts()
 
-                skip_exchange = asset in FIAT_CURRENCIES and exchange != 'kraken'
+                skip_exchange = asset.is_fiat() and exchange != 'kraken'
 
                 if not skip_exchange:
                     getattr(self, exchange).deposit(
@@ -76,7 +77,7 @@ class ActionWriter():
                         amount=amount,
                         time=timestamp,
                     )
-                if asset in FIAT_CURRENCIES:
+                if asset.is_fiat():
                     self.rotki.data.db.add_manually_tracked_balances([ManuallyTrackedBalance(
                         asset=asset,
                         label=f'{asset.identifier} balance {timestamp}',

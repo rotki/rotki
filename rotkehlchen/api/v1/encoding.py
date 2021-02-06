@@ -1398,7 +1398,7 @@ class DataImportSchema(Schema):
 
 
 class ExchangeRatesSchema(Schema):
-    currencies = DelimitedOrNormalList(AssetField(), missing=None)
+    currencies = DelimitedOrNormalList(AssetField(), required=True)
 
 
 class WatcherSchema(Schema):
