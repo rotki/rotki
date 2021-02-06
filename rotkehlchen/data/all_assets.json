@@ -570,6 +570,17 @@
         "name": "Aragon",
         "started": 1493942400,
         "symbol": "ANT",
+        "type": "ethereum token",
+        "swapped_for": "ANTv2"
+    },
+    "ANTv2": {
+        "coingecko": "aragon",
+	"cryptocompare": "ANT",
+        "ethereum_address": "0xa117000000f279D81A1D3cc75430fAA017FA5A2e",
+        "ethereum_token_decimals": 18,
+        "name": "Aragon",
+        "started": 1602761920,
+        "symbol": "ANT",
         "type": "ethereum token"
     },
     "ANY": {
