@@ -90,6 +90,23 @@ USER_TRANSACTION_TRADE_TYPE = {2}
 # Asset movement type int: 0 - deposit, 1 - withdrawal
 USER_TRANSACTION_ASSET_MOVEMENT_TYPE = {0, 1}
 
+# from https://www.bitstamp.net/api/#user-transactions
+BITSTAMP_ASSET_MOVEMENT_SYMBOLS = (
+    'usd',
+    'eur',
+    'btc',
+    'xrp',
+    'gbp',
+    'ltc',
+    'eth',
+    'bch',
+    'xlm',
+    'pax',
+    'link',
+    'omg',
+    'usdc',
+)
+
 
 class TradePairData(NamedTuple):
     pair: str
@@ -494,8 +511,8 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 remote_server='Bitstamp',
             )
 
+    @staticmethod
     def _deserialize_asset_movement(
-            self,
             raw_movement: Dict[str, Any],
     ) -> AssetMovement:
         """Process a deposit/withdrawal user transaction from Bitstamp and
@@ -507,18 +524,8 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         (the amount is expected to be in the currency involved)
         https://www.bitstamp.net/fee-schedule/
 
-        Bitstamp support confirmed the following withdrawal JSON:
-        {
-            "fee": "0.00050000",
-            "btc_usd": "0.00",
-            "datetime": "2020-12-04 09:30:00.000000",
-            "usd": "0.0",
-            "btc": "-0.50000000",
-            "type": "1",
-            "id": 123456789,
-            "eur": "0.0"
-        }
-        NB: any asset key not related with the pair is discarded (e.g. 'eur').
+        Endpoint docs:
+        https://www.bitstamp.net/api/#user-transactions
         """
         type_ = raw_movement['type']
         category: AssetMovementCategory
@@ -530,22 +537,15 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise AssertionError(f'Unexpected Bitstamp asset movement case: {type_}.')
 
         timestamp = deserialize_timestamp_from_bitstamp_date(raw_movement['datetime'])
-        trade_pair_data = self._get_trade_pair_data_from_transaction(raw_movement)
-        base_asset_amount = deserialize_asset_amount(
-            raw_movement[trade_pair_data.base_asset_symbol],
-        )
-        quote_asset_amount = deserialize_asset_amount(
-            raw_movement[trade_pair_data.quote_asset_symbol],
-        )
         amount: FVal
         fee_asset: Asset
-        if base_asset_amount != ZERO and quote_asset_amount == ZERO:
-            amount = base_asset_amount
-            fee_asset = trade_pair_data.base_asset
-        elif base_asset_amount == ZERO and quote_asset_amount != ZERO:
-            amount = quote_asset_amount
-            fee_asset = trade_pair_data.quote_asset
-        else:
+        for symbol in BITSTAMP_ASSET_MOVEMENT_SYMBOLS:
+            amount = deserialize_asset_amount(raw_movement.get(symbol, '0'))
+            if amount != ZERO:
+                fee_asset = Asset(symbol)
+                break
+
+        if amount == ZERO:
             raise DeserializationError(
                 'Could not deserialize Bitstamp asset movement from user transaction. '
                 f'Unexpected asset amount combination found in: {raw_movement}.',
