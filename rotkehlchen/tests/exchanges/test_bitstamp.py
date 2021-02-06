@@ -798,6 +798,33 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
     expected_movement = mock_bitstamp._deserialize_asset_movement(raw_movement)
     assert movement == expected_movement
 
+    raw_movement = {
+        'id': 3,
+        'type': 0,
+        'datetime': '2018-03-21 06:46:06.559877',
+        'btc': '0',
+        'usd': '0.00000000',
+        'btc_usd': '0.00',
+        'fee': '0.1',
+        'order_id': 2,
+        'gbp': '1000.51',
+    }
+    asset = Asset('GBP')
+    movement = AssetMovement(
+        timestamp=1521614766,
+        location=Location.BITSTAMP,
+        category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id=None,
+        asset=asset,
+        amount=FVal('1000.51'),
+        fee_asset=asset,
+        fee=Fee(FVal('0.1')),
+        link='3',
+    )
+    expected_movement = mock_bitstamp._deserialize_asset_movement(raw_movement)
+    assert movement == expected_movement
+
 
 def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
     raw_movement = {
@@ -822,6 +849,33 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
         amount=FVal('10000'),
         fee_asset=asset,
         fee=Fee(FVal('50')),
+        link='5',
+    )
+    expected_movement = mock_bitstamp._deserialize_asset_movement(raw_movement)
+    assert movement == expected_movement
+
+    raw_movement = {
+        'id': 5,
+        'type': 1,
+        'datetime': '2018-03-21 06:46:06.559877',
+        'btc': '0',
+        'usd': '0',
+        'btc_usd': '0.00',
+        'fee': '0.1',
+        'order_id': 2,
+        'eur': '500',
+    }
+    asset = Asset('EUR')
+    movement = AssetMovement(
+        timestamp=1521614766,
+        location=Location.BITSTAMP,
+        category=AssetMovementCategory.WITHDRAWAL,
+        address=None,
+        transaction_id=None,
+        asset=asset,
+        amount=FVal('500'),
+        fee_asset=asset,
+        fee=Fee(FVal('0.1')),
         link='5',
     )
     expected_movement = mock_bitstamp._deserialize_asset_movement(raw_movement)
