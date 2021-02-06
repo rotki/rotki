@@ -387,9 +387,17 @@ class RestAPI():
 
             asset_rates[asset] = Price(FVal(1) / usd_price)
 
-        fiat_rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
-        asset_rates.update(fiat_rates)
+        try:
+            fiat_rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
+        except RemoteError as e:
+            return api_response(
+                wrap_in_fail_result(
+                    f'Failed to query usd price of fiat currencies due to {str(e)}',
+                ),
+                status_code=HTTPStatus.BAD_GATEWAY,
+            )
 
+        asset_rates.update(fiat_rates)
         res = process_result(asset_rates)
         return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
 
