@@ -14,6 +14,7 @@ Changelog
   - `Indexed Finance - NDX Token (NDX) <https://www.coingecko.com/en/coins/indexed-finance>`__
   - `Indexed Finance - DEFI5 (DEFI5) <https://www.coingecko.com/en/coins/defi-top-5-tokens-index>`__
   - `Indexed Finance - CC10 (CC10) <https://www.coingecko.com/en/coins/cryptocurrency-top-10-tokens-index>`__
+  - `PieDAO Yearn Ecosystem Pie (YPIE) <https://www.coingecko.com/en/coins/piedao-yearn-ecosystem-pie>`__
 
 * :release:`1.13.1 <2021-02-04>`
 * :bug:`2222` Users who have funds in a DeFi Saver smart wallet will now be also able to see their liabilities in said wallet.

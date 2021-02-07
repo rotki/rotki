@@ -13527,6 +13527,15 @@
         "symbol": "YOYOW",
         "type": "ethereum token"
     },
+    "YPIE": {
+        "coingecko": "piedao-yearn-ecosystem-pie",
+        "ethereum_address": "0x17525E4f4Af59fbc29551bC4eCe6AB60Ed49CE31",
+        "ethereum_token_decimals": 18,
+        "name": "PieDAO Yearn Ecosystem Pie",
+        "started": 1608299408,
+        "symbol": "YPIE",
+        "type": "ethereum token"
+    },
     "YUP": {
         "active": true,
         "coingecko": "crowdholding",
