@@ -138,6 +138,9 @@ DELISTED_ASSETS = [
     'yDAI+yUSDC+yUSDT+yBUSD',
     'yyDAI+yUSDC+yUSDT+yBUSD',
     'ypaxCrv',
+    'crvRenWBTC',
+    'crvRenWSBTC',
+    'ycrvRenWSBTC',
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [

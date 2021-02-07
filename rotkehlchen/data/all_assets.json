@@ -2355,7 +2355,6 @@
     },
     "CC10": {
         "coingecko": "cryptocurrency-top-10-tokens-index",
-        "cryptocompare": "",
         "ethereum_address": "0x17aC188e09A7890a1844E5E65471fE8b0CcFadF3",
         "ethereum_token_decimals": 18,
         "name": "Indexed Finance - CC10",
@@ -3524,7 +3523,6 @@
     },
     "DEFI5": {
         "coingecko": "defi-top-5-tokens-index",
-        "cryptocompare": "",
         "ethereum_address": "0xfa6de2697D59E88Ed7Fc4dFE5A33daC43565ea41",
         "ethereum_token_decimals": 18,
         "name": "Indexed Finance - DEFI5",
@@ -8287,7 +8285,7 @@
     },
     "NDX-2": {
         "coingecko": "indexed-finance",
-        "cryptocompare": "",    
+        "cryptocompare": "NDX",
         "ethereum_address": "0x86772b1409b61c639EaAc9Ba0AcfBb6E238e5F83",
         "ethereum_token_decimals": 18,
         "name": "NDX",
@@ -11155,7 +11153,7 @@
         "type": "own chain"
     },
     "stETH": {
-        "coingecko": "lido-staked-ether",
+        "coingecko": "staked-ether",
         "ethereum_address": "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
         "ethereum_token_decimals": 18,
         "name": "Liquid staked Ether 2.0",
