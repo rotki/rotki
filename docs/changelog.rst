@@ -8,6 +8,7 @@ Changelog
 * :bug:`2287` Rotki encrypted DB upload for premium users should now respect the user setting.
 * :feature:`-` Added support for the following tokens:
 
+  - `Aragon v2 (ANT) <https://www.coingecko.com/en/coins/aragon>`__
   - `Indexed Finance - NDX Token (NDX) <https://www.coingecko.com/en/coins/indexed-finance>`__
   - `Indexed Finance - DEFI5 (DEFI5) <https://www.coingecko.com/en/coins/defi-top-5-tokens-index>`__
   - `Indexed Finance - CC10 (CC10) <https://www.coingecko.com/en/coins/cryptocurrency-top-10-tokens-index>`__
