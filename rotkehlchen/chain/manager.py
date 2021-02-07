@@ -104,6 +104,8 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     # MakerDAO vault balances are already detected by our code.
     # Note that DeFi SDK only detects them for the proxies.
     'Multi-Collateral Dai': True,  # True means all
+    # We already got some pie dao tokens in all_assets.json
+    'PieDAO': ['BCP', 'BTC++', 'DEFI++', 'DEFI+S', 'DEFI+L', 'YPIE'],
 }
 
 
