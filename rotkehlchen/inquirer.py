@@ -330,12 +330,21 @@ class Inquirer():
 
         Returns Price(ZERO) if all options have been exhausted and errors are logged in the logs
         """
+        if asset == A_USD:
+            return Price(FVal(1))
+
         instance = Inquirer()
         cache_key = (asset, A_USD)
         if ignore_cache is False:
             cache = instance.get_cached_price_entry(cache_key=cache_key)
             if cache is not None:
                 return cache.price
+
+        if asset.is_fiat():
+            try:
+                return instance._query_fiat_pair(base=asset, quote=A_USD)
+            except RemoteError:
+                pass  # continue, a price can be found by one of the oracles (CC for example)
 
         if asset.identifier in SPECIAL_SYMBOLS:
             ethereum = instance._ethereum
@@ -360,11 +369,14 @@ class Inquirer():
     def get_fiat_usd_exchange_rates(
             currencies: Optional[Iterable[Asset]] = None,
     ) -> Dict[Asset, Price]:
+        """Gets the USD exchange rate of any of the given assets
+
+        May raise RemoteError due to _query_fiat_pair"""
         rates = {A_USD: Price(FVal(1))}
         if not currencies:
             currencies = FIAT_CURRENCIES[1:]
         for currency in currencies:
-            rates[currency] = Inquirer().query_fiat_pair(A_USD, currency)
+            rates[currency] = Inquirer()._query_fiat_pair(A_USD, currency)
         return rates
 
     @staticmethod
@@ -478,7 +490,14 @@ class Inquirer():
             outfile.write(rlk_jsondumps(instance._cached_forex_data))
 
     @staticmethod
-    def query_fiat_pair(base: Asset, quote: Asset) -> Price:
+    def _query_fiat_pair(base: Asset, quote: Asset) -> Price:
+        """Queries the current price between two fiat assets
+
+        If a current price is not found but a cached price within 30 days is found
+        then that one is used.
+
+        May raise RemoteError if a price can not be found
+        """
         if base == quote:
             return Price(FVal('1'))
 
@@ -508,8 +527,8 @@ class Inquirer():
                     )
                     return price
 
-            raise ValueError(
-                'Could not find a "{}" price for "{}"'.format(base.identifier, quote.identifier),
+            raise RemoteError(
+                f'Could not find a current {base.identifier} price for {quote.identifier}',
             )
 
         instance._save_forex_rate(date, base, quote, price)

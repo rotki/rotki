@@ -270,8 +270,8 @@ class Asset():
         May raise:
             - UnsupportedAsset() if the asset is not supported by coingecko
         """
-        coingecko_str = self.identifier if self.coingecko is None else self.coingecko
-        # There is an asset which should not be queried in cryptocompare
+        coingecko_str = '' if self.coingecko is None else self.coingecko
+        # This asset has no coingecko mapping
         if coingecko_str == '':
             raise UnsupportedAsset(f'{self.identifier} is not supported by coingecko')
         return coingecko_str
