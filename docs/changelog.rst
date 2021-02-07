@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2295` Bitstamp users should now get all trade amounts and fees properly detected.
 * :bug:`2232` Bitstamp users should now be able to see all their deposit/withdrawals. It's recommended to purge all bitstamp data and re-query it for this to properly work.
 * :bug:`1928` rotki premium DB sync will now work after entering api keys for the first time even without a restart.
 * :bug:`2294` Do not count MakerDAO Oasis proxy assets found by the DeFi SDK as it ends up double counting makerDAO vault deposits.
