@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.13.2 <2021-02-07>`
 * :bug:`2295` Bitstamp users should now get all trade amounts and fees properly detected.
 * :bug:`2232` Bitstamp users should now be able to see all their deposit/withdrawals. It's recommended to purge all bitstamp data and re-query it for this to properly work.
 * :bug:`1928` rotki premium DB sync will now work after entering api keys for the first time even without a restart.
