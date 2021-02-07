@@ -5,6 +5,10 @@ Changelog
 * :feature:`295` When creating external trades, users will now have the trade rate automatically fetched when such a rate exists.
 * :feature:`2240` Users now can select the supported assets from a dropdown when adding or editing external trades.
 
+* :feature:`-` Added support for the following tokens:
+
+  - `Liquid staked Ether 2.0 (stETH) <https://www.coingecko.com/en/coins/lido-staked-ether>`__
+
 * :release:`1.13.2 <2021-02-07>`
 * :bug:`2295` Bitstamp users should now get all trade amounts and fees properly detected.
 * :bug:`2232` Bitstamp users should now be able to see all their deposit/withdrawals. It's recommended to purge all bitstamp data and re-query it for this to properly work.

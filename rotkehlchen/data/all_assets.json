@@ -11154,6 +11154,15 @@
         "symbol": "STEEM",
         "type": "own chain"
     },
+    "stETH": {
+        "coingecko": "lido-staked-ether",
+        "ethereum_address": "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
+        "ethereum_token_decimals": 18,
+        "name": "Liquid staked Ether 2.0",
+        "started": 1608242396,
+        "symbol": "stETH",
+        "type": "ethereum token"
+    },
     "STK": {
         "coingecko": "stk-coin",
         "ethereum_address": "0xaE73B38d1c9A8b274127ec30160a4927C4d71824",
