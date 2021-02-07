@@ -2,10 +2,18 @@
 Changelog
 =========
 
+* :release:`1.13.2 <2021-02-07>`
+* :bug:`2295` Bitstamp users should now get all trade amounts and fees properly detected.
 * :bug:`2232` Bitstamp users should now be able to see all their deposit/withdrawals. It's recommended to purge all bitstamp data and re-query it for this to properly work.
 * :bug:`1928` rotki premium DB sync will now work after entering api keys for the first time even without a restart.
 * :bug:`2294` Do not count MakerDAO Oasis proxy assets found by the DeFi SDK as it ends up double counting makerDAO vault deposits.
 * :bug:`2287` Rotki encrypted DB upload for premium users should now respect the user setting.
+* :feature:`-` Added support for the following tokens:
+
+  - `Aragon v2 (ANT) <https://www.coingecko.com/en/coins/aragon>`__
+  - `Indexed Finance - NDX Token (NDX) <https://www.coingecko.com/en/coins/indexed-finance>`__
+  - `Indexed Finance - DEFI5 (DEFI5) <https://www.coingecko.com/en/coins/defi-top-5-tokens-index>`__
+  - `Indexed Finance - CC10 (CC10) <https://www.coingecko.com/en/coins/cryptocurrency-top-10-tokens-index>`__
 
 * :release:`1.13.1 <2021-02-04>`
 * :bug:`2222` Users who have funds in a DeFi Saver smart wallet will now be also able to see their liabilities in said wallet.

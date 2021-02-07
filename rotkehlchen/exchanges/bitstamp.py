@@ -51,7 +51,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp_from_bitstamp_date,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair, AssetAmount
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
@@ -581,23 +581,25 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         quote_asset_amount = deserialize_asset_amount(
             raw_trade[trade_pair_data.quote_asset_symbol],
         )
-
+        rate = deserialize_price(raw_trade[trade_pair_data.pair])
+        fee_currency = trade_pair_data.quote_asset
         if base_asset_amount >= ZERO:
             trade_type = TradeType.BUY
-            amount = base_asset_amount
-            fee_currency = trade_pair_data.quote_asset
         else:
+            if quote_asset_amount < 0:
+                raise DeserializationError(
+                    f'Unexpected bitstamp trade format. Both base and quote '
+                    f'amounts are negative: {raw_trade}',
+                )
             trade_type = TradeType.SELL
-            amount = quote_asset_amount
-            fee_currency = trade_pair_data.base_asset
 
         trade = Trade(
             timestamp=timestamp,
             location=Location.BITSTAMP,
             pair=trade_pair_data.trade_pair,
             trade_type=trade_type,
-            amount=amount,
-            rate=deserialize_price(raw_trade[trade_pair_data.pair]),
+            amount=AssetAmount(abs(base_asset_amount)),
+            rate=rate,
             fee=deserialize_fee(raw_trade['fee']),
             fee_currency=fee_currency,
             link=str(raw_trade['id']),
