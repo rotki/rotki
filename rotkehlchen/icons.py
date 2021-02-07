@@ -9,7 +9,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.externalapis.coingecko import Coingecko, DELISTED_ASSETS
 from rotkehlchen.typing import AssetType
 from rotkehlchen.utils.hashing import file_md5
@@ -62,7 +62,7 @@ class IconManager():
 
         try:
             data = self.coingecko.asset_data(asset)
-        except RemoteError as e:
+        except (UnsupportedAsset, RemoteError) as e:
             log.warning(
                 f'Problem querying coingecko for asset data of {asset.identifier}: {str(e)}',
             )

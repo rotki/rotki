@@ -188,7 +188,7 @@ def create_inquirer(
     def mock_query_fiat_pair(base, quote):  # pylint: disable=unused-argument
         return FVal(1)
 
-    inquirer.query_fiat_pair = mock_query_fiat_pair  # type: ignore
+    inquirer._query_fiat_pair = mock_query_fiat_pair  # type: ignore
 
     return inquirer
 

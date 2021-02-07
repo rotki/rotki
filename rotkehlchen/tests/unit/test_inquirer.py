@@ -46,7 +46,7 @@ def test_switching_to_backup_api(inquirer):
         return original_get(url)
 
     with patch('requests.get', side_effect=mock_exchanges_rateapi_fail):
-        result = inquirer.query_fiat_pair(A_USD, A_EUR)
+        result = inquirer._query_fiat_pair(A_USD, A_EUR)
         assert result and isinstance(result, FVal)
         assert count > 1, 'requests.get should have been called more than once'
 
@@ -58,11 +58,11 @@ def test_fiat_pair_caching(inquirer):
         return MockResponse(200, '{"rates":{"EUR":0.9165902841},"base":"USD","date":"2020-05-25"}')
 
     with patch('requests.get', side_effect=mock_exchanges_rate_api):
-        result = inquirer.query_fiat_pair(A_USD, A_EUR)
+        result = inquirer._query_fiat_pair(A_USD, A_EUR)
         assert result == FVal('0.9165902841')
 
     # Now outside the mocked response, we should get same value due to caching
-    assert inquirer.query_fiat_pair(A_USD, A_EUR) == FVal('0.9165902841')
+    assert inquirer._query_fiat_pair(A_USD, A_EUR) == FVal('0.9165902841')
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -82,11 +82,11 @@ def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=
 
     with patch('requests.get', side_effect=mock_api_remote_fail):
         # We fail to find a response but then go back 15 days and find the cached response
-        result = inquirer.query_fiat_pair(A_EUR, A_JPY)
+        result = inquirer._query_fiat_pair(A_EUR, A_JPY)
         assert result == eurjpy_val
         # The cached response for EUR CNY is too old so we will fail here
-        with pytest.raises(ValueError):
-            result = inquirer.query_fiat_pair(A_EUR, A_CNY)
+        with pytest.raises(RemoteError):
+            result = inquirer._query_fiat_pair(A_EUR, A_CNY)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

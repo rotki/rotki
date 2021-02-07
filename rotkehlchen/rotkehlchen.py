@@ -362,6 +362,7 @@ class Rotkehlchen():
             self.premium.set_credentials(credentials)
         else:
             self.premium = premium_create_and_verify(credentials)
+            self.premium_sync_manager.premium = self.premium
 
         self.data.db.set_rotkehlchen_premium(credentials)
 
