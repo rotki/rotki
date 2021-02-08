@@ -198,6 +198,39 @@ By choosing the "user & security" section of the settings you can change the use
    :alt: Changing the user's password
    :align: center
 
+Customizing the DeFi settings
+====================================
+
+By choosing the "Defi" section of the settings you can customize the DeFi settings of the application.
+
+The benefit of enabling only the modules you use, and specifying the addresses, is that rotki will only
+query only the specified addresses for the enabled modules. This can improve the query times by a lot.
+
+.. image:: images/defi_settings.png
+   :alt: Changing the user's password
+   :align: center
+
+
+Activating/Deactivating Modules
+----------------------------------
+
+You can activate a module by selecting it from the dropdown menu that appears when you search in the "Select modules" input field.
+An active module be visible in the input. In the screenshot above for example the Compound and MakerDAO DSR modules are active.
+
+To disable a module you need to press the (x) button at the end of the entry.
+
+After enabling or disabling a module you need to re-login again for the changes to take effect.
+
+Selecting Addresses
+----------------------
+
+In order to limit the querying only to selected addresses instead of all the eligible ones you can got to the "Select Accounts"
+and click on the module you are interested in (3). The module address selection (4) for this module should be visible.
+
+Search for each address you are interested and then select each one from the dropdown menu. The selected addresses should
+be visible in the same way as the modules above. To remove an address you need to press the (x) button at the end of the entry.
+
+If no addresses are selected for a module this means that rotki will check all the eligible addresses which can add to the total query duration.
 
 Importing data
 *******************
