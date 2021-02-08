@@ -126,7 +126,7 @@ export default class NotificationSidebar extends Vue {
 <style scoped lang="scss">
 .notification-sidebar {
   top: 64px !important;
-  box-shadow: none !important;
+  box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
   padding-top: 0 !important;
   border-top: var(--v-rotki-light-grey-darken1) solid thin;
 

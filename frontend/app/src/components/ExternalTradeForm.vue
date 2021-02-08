@@ -1,5 +1,5 @@
 ﻿<template>
-  <v-form :value="value" @input="input">
+  <v-form :value="value" data-cy="trade-form" @input="input">
     <v-row>
       <v-col>
         <v-row>

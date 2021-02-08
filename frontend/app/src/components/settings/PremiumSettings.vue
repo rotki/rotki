@@ -3,7 +3,9 @@
     <v-row class="premium-settings">
       <v-col>
         <v-card>
-          <v-card-title>{{ $t('premium_settings.title') }}</v-card-title>
+          <v-card-title>
+            <card-title>{{ $t('premium_settings.title') }}</card-title>
+          </v-card-title>
           <v-card-subtitle>
             <i18n tag="div" path="premium_settings.subtitle">
               <base-external-link

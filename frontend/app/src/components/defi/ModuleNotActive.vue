@@ -13,13 +13,12 @@
           />
         </v-col>
       </v-row>
-      <v-divider class="mt-12" />
-      <v-row align="center" justify="center">
+      <v-row align="center" justify="center" class="mt-16">
         <v-col cols="auto" class="text--secondary">
           <i18n tag="span" path="module_not_active.not_active">
             <template #link>
               <v-btn
-                class="module-not-active__link"
+                class="module-not-active__link font-weight-regular body-1"
                 text
                 to="/settings/defi"
                 small

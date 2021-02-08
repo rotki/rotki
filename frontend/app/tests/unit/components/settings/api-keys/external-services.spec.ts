@@ -29,7 +29,7 @@ describe('ExternalServices.vue', () => {
     return mount(ExternalServices, {
       store,
       vuetify,
-      stubs: ['v-dialog'],
+      stubs: ['v-dialog', 'card-title'],
       propsData: {
         value: ''
       },

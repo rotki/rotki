@@ -1,7 +1,9 @@
 <template>
   <v-container>
     <v-card>
-      <v-card-title v-text="$t('defi_settings.title')" />
+      <v-card-title>
+        <card-title> {{ $t('defi_settings.title') }} </card-title>
+      </v-card-title>
       <v-card-text>
         <div class="title" v-text="$t('defi_settings.active_modules')" />
         <p

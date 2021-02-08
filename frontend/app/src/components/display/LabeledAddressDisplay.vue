@@ -12,19 +12,31 @@
           v-on="on"
         >
           <v-chip label outlined>
-            <span v-if="!!account.label" class="pr-1">
+            <span v-if="!!label" class="text-truncate">
               {{
                 $t('labeled_address_display.label', {
-                  label: account.label
+                  label: label
                 })
               }}
             </span>
-            <span :class="privacyMode ? 'blur-content' : null">
+            <span
+              v-if="!!label && displayAddress && !$vuetify.breakpoint.smAndDown"
+              class="px-1"
+            >
+              {{ $t('labeled_address_display.divider') }}
+            </span>
+            <span
+              v-if="!$vuetify.breakpoint.smAndDown || !label"
+              :class="privacyMode ? 'blur-content' : null"
+            >
               {{ displayAddress }}
             </span>
           </v-chip>
         </span>
       </template>
+      <span v-if="$vuetify.breakpoint.mobile && !!label">
+        {{ account.label }} <br />
+      </span>
       <span> {{ address }} </span>
     </v-tooltip>
     <div class="labeled-address-display__actions">
@@ -56,7 +68,7 @@
               v-on="on"
               @click="openLink"
             >
-              <v-icon small> mdi-launch </v-icon>
+              <v-icon small> mdi-launch</v-icon>
             </v-btn>
           </template>
           <span>{{ $t('labeled_address_display.open_link') }}</span>
@@ -91,15 +103,46 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
     return this.scrambleData ? randomHex() : this.account.address;
   }
 
+  get breakpoint(): string {
+    return this.account.label.length > 0 && this.$vuetify.breakpoint.mdAndDown
+      ? 'sm'
+      : this.$vuetify.breakpoint.name;
+  }
+
+  get truncationLength(): number {
+    return truncationPoints[this.breakpoint] ?? 4;
+  }
+
   get displayAddress(): string {
-    const name =
-      this.account.label.length > 0 && this.$vuetify.breakpoint.mdAndDown
-        ? 'sm'
-        : this.$vuetify.breakpoint.name;
-    const length = truncationPoints[name] ?? 4;
-    const address = truncateAddress(this.address, length);
+    const address = truncateAddress(this.address, this.truncationLength);
+    if (address.length >= this.address.length) {
+      this.truncated = false;
+      return this.address;
+    }
     this.truncated = address.includes('...');
     return address;
+  }
+
+  get label(): string {
+    const bp = this.$vuetify.breakpoint;
+    const label = this.account.label;
+    let length = -1;
+
+    if (bp.xlOnly && label.length > 50) {
+      length = 47;
+    } else if (bp.lgOnly && label.length > 38) {
+      length = 35;
+    } else if (bp.md && label.length > 27) {
+      length = 24;
+    } else if (bp.smOnly && label.length > 19) {
+      length = 16;
+    }
+
+    if (length > 0) {
+      return label.substr(0, length) + '...';
+    }
+
+    return label;
   }
 
   copy(address: string) {
@@ -127,7 +170,6 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
     font-weight: 500;
     padding-top: 6px;
     padding-bottom: 6px;
-    background-color: white;
 
     &--mobile {
       max-width: 120px;
@@ -135,6 +177,8 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
 
     ::v-deep {
       .v-chip {
+        background-color: white !important;
+
         &--label {
           border-top-right-radius: 0 !important;
           border-bottom-right-radius: 0 !important;

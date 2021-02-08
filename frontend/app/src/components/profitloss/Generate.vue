@@ -1,7 +1,9 @@
 <template>
   <v-form v-model="valid">
     <v-card>
-      <v-card-title v-text="$t('generate.title')" />
+      <v-card-title>
+        <card-title>{{ $t('generate.title') }}</card-title>
+      </v-card-title>
       <v-card-text>
         <report-period-selector
           :year="year"

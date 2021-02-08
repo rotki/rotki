@@ -7,6 +7,8 @@ import { SupportedAsset } from '@/services/types-model';
 import {
   AccountWithBalance,
   AssetBalance,
+  AssetBreakdown,
+  AssetPriceInfo,
   BalanceState,
   BlockchainAccountWithBalance,
   BlockchainTotal,
@@ -51,6 +53,8 @@ export interface BalanceGetters {
   account: (address: string) => GeneralAccount | undefined;
   assetInfo: (asset: string) => SupportedAsset | undefined;
   isEthereumToken: (asset: string) => boolean;
+  assetPriceInfo: (asset: string) => AssetPriceInfo;
+  breakdown: (asset: string) => AssetBreakdown[];
 }
 
 function balances(
@@ -443,5 +447,108 @@ export const getters: Getters<
     const assets = getters.aggregatedBalances.map(({ asset }) => asset);
     assets.push(...liabilities);
     return assets.filter(uniqueStrings);
+  },
+  assetPriceInfo: (state, getters1) => asset => {
+    const assetValue = getters1.aggregatedBalances.find(
+      value => value.asset === asset
+    );
+    return {
+      usdPrice: state.prices[asset] ?? Zero,
+      amount: assetValue?.amount ?? Zero,
+      usdValue: assetValue?.usdValue ?? Zero
+    };
+  },
+  breakdown: ({
+    btc: { standalone, xpubs },
+    eth,
+    exchangeBalances,
+    ksm,
+    manualBalances
+  }) => asset => {
+    const breakdown: AssetBreakdown[] = [];
+
+    for (const exchange in exchangeBalances) {
+      const exchangeData = exchangeBalances[exchange];
+      if (!exchangeData[asset]) {
+        continue;
+      }
+
+      breakdown.push({
+        address: '',
+        location: exchange,
+        balance: exchangeData[asset]
+      });
+    }
+
+    for (let i = 0; i < manualBalances.length; i++) {
+      const manualBalance = manualBalances[i];
+      if (manualBalance.asset !== asset) {
+        continue;
+      }
+      breakdown.push({
+        address: '',
+        location: manualBalance.location,
+        balance: {
+          amount: manualBalance.amount,
+          usdValue: manualBalance.usdValue
+        }
+      });
+    }
+
+    for (const address in eth) {
+      const ethBalances = eth[address];
+      const assetBalance = ethBalances.assets[asset];
+      if (!assetBalance) {
+        continue;
+      }
+      breakdown.push({
+        address,
+        location: ETH,
+        balance: assetBalance
+      });
+    }
+
+    if (asset === BTC) {
+      if (standalone) {
+        for (const address in standalone) {
+          const btcBalance = standalone[address];
+          breakdown.push({
+            address,
+            location: BTC,
+            balance: btcBalance
+          });
+        }
+      }
+
+      if (xpubs) {
+        for (let i = 0; i < xpubs.length; i++) {
+          const xpub = xpubs[i];
+          const addresses = xpub.addresses;
+          for (const address in addresses) {
+            const btcBalance = addresses[address];
+            breakdown.push({
+              address,
+              location: BTC,
+              balance: btcBalance
+            });
+          }
+        }
+      }
+    }
+
+    for (const address in ksm) {
+      const balances = ksm[address];
+      const assetBalance = balances.assets[asset];
+      if (!assetBalance) {
+        continue;
+      }
+      breakdown.push({
+        address,
+        location: ETH,
+        balance: assetBalance
+      });
+    }
+
+    return breakdown;
   }
 };

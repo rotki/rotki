@@ -1,120 +1,113 @@
 <template>
   <v-container>
-    <v-row>
-      <v-col cols="6" offset="6" class="d-flex flex-row align-center">
+    <v-row no-gutters justify="end">
+      <v-col cols="6" class="d-flex flex-row align-center">
         <tag-filter v-model="onlyTags" />
-        <refresh-button
-          :loading="loading"
-          :tooltip="$t('manual_balances_list.refresh.tooltip')"
-          @refresh="refresh()"
-        />
       </v-col>
     </v-row>
-    <v-row>
-      <v-col cols="12">
-        <v-data-table
-          :loading="loading"
-          :headers="headers"
-          :items="visibleBalances"
-          class="manual-balances-list"
-          sort-by="usdValue"
-          :footer-props="footerProps"
-          sort-desc
-        >
-          <template #item.label="{ item }">
-            <v-row>
-              <v-col
-                cols="12"
-                class="font-weight-medium manual-balances-list__label"
-                :class="!item.tags ? 'pt-0' : ''"
-              >
-                {{ item.label }}
-              </v-col>
-            </v-row>
-            <v-row v-if="item.tags">
-              <v-col cols="12">
-                <tag-icon
-                  v-for="tag in item.tags"
-                  :key="tag"
-                  class="manual-balances-list__tag"
-                  :tag="tags[tag]"
-                />
-              </v-col>
-            </v-row>
-          </template>
-          <template #header.usdValue>
-            {{
-              $t('manual_balances_list.headers.value', {
-                symbol
-              })
-            }}
-          </template>
-          <template #item.asset="{ item }">
-            <asset-details :asset="item.asset" />
-          </template>
-          <template #item.amount="{ item }">
-            <amount-display
-              class="manual-balances-list__amount"
-              :value="item.amount"
-            />
-          </template>
-          <template #item.usdValue="{ item }">
-            <amount-display
-              show-currency="symbol"
-              :amount="item.amount"
-              :fiat-currency="item.asset"
-              :value="item.usdValue"
-            />
-          </template>
-          <template #item.location="{ item }">
-            <location-display
-              class="manual-balances-list__location"
-              :identifier="item.location"
-            />
-          </template>
-          <template #item.actions="{ item }">
-            <span>
-              <v-icon
-                small
-                class="mr-2 manual-balances-list__actions__edit"
-                @click="editBalance(item)"
-              >
-                mdi-pencil
-              </v-icon>
-              <v-icon
-                small
-                class="manual-balances-list__actions__delete"
-                @click="labelToDelete = item.label"
-              >
-                mdi-delete
-              </v-icon>
-            </span>
-          </template>
-          <template v-if="visibleBalances.length > 0" #body.append>
-            <tr class="manual-balances-list__total">
-              <td v-text="$t('manual_balances_list.total')" />
-              <td />
-              <td />
-              <td class="text-end">
-                <amount-display
-                  show-currency="symbol"
-                  class="manual-balances-list__amount"
-                  :fiat-currency="currency.ticker_symbol"
-                  :value="
-                    visibleBalances
-                      | aggregateTotal(
-                        currency.ticker_symbol,
-                        exchangeRate(currency.ticker_symbol),
-                        floatingPrecision
-                      )
-                  "
-                />
-              </td>
-            </tr>
-          </template>
-        </v-data-table>
-      </v-col>
-    </v-row>
+    <v-sheet outlined rounded>
+      <v-data-table
+        :loading="loading"
+        :headers="headers"
+        :items="visibleBalances"
+        class="manual-balances-list"
+        sort-by="usdValue"
+        :footer-props="footerProps"
+        sort-desc
+      >
+        <template #item.label="{ item }">
+          <v-row>
+            <v-col
+              cols="12"
+              class="font-weight-medium manual-balances-list__label"
+              :class="!item.tags ? 'pt-0' : ''"
+            >
+              {{ item.label }}
+            </v-col>
+          </v-row>
+          <v-row v-if="item.tags">
+            <v-col cols="12">
+              <tag-icon
+                v-for="tag in item.tags"
+                :key="tag"
+                class="manual-balances-list__tag"
+                :tag="tags[tag]"
+              />
+            </v-col>
+          </v-row>
+        </template>
+        <template #header.usdValue>
+          {{
+            $t('manual_balances_list.headers.value', {
+              symbol
+            })
+          }}
+        </template>
+        <template #item.asset="{ item }">
+          <asset-details opens-details :asset="item.asset" />
+        </template>
+        <template #item.amount="{ item }">
+          <amount-display
+            class="manual-balances-list__amount"
+            :value="item.amount"
+          />
+        </template>
+        <template #item.usdValue="{ item }">
+          <amount-display
+            show-currency="symbol"
+            :amount="item.amount"
+            :fiat-currency="item.asset"
+            :value="item.usdValue"
+          />
+        </template>
+        <template #item.location="{ item }">
+          <location-display
+            class="manual-balances-list__location"
+            :identifier="item.location"
+          />
+        </template>
+        <template #item.actions="{ item }">
+          <span>
+            <v-icon
+              small
+              class="mr-2 manual-balances-list__actions__edit"
+              @click="editBalance(item)"
+            >
+              mdi-pencil
+            </v-icon>
+            <v-icon
+              small
+              class="manual-balances-list__actions__delete"
+              @click="labelToDelete = item.label"
+            >
+              mdi-delete
+            </v-icon>
+          </span>
+        </template>
+        <template v-if="visibleBalances.length > 0" #body.append>
+          <tr class="manual-balances-list__total">
+            <td v-text="$t('manual_balances_list.total')" />
+            <td />
+            <td />
+            <td class="text-end">
+              <amount-display
+                show-currency="symbol"
+                class="manual-balances-list__amount"
+                :fiat-currency="currency.ticker_symbol"
+                :value="
+                  visibleBalances
+                    | aggregateTotal(
+                      currency.ticker_symbol,
+                      exchangeRate(currency.ticker_symbol),
+                      floatingPrecision
+                    )
+                "
+              />
+            </td>
+          </tr>
+        </template>
+      </v-data-table>
+    </v-sheet>
     <confirm-dialog
       v-if="labelToDelete !== null"
       display
@@ -127,9 +120,9 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapActions, mapGetters, mapState } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -159,16 +152,12 @@ import { Tags } from '@/typing/types';
     ...mapState('session', ['tags']),
     ...mapGetters('session', ['floatingPrecision', 'currency']),
     ...mapGetters('balances', ['exchangeRate'])
-  },
-  methods: {
-    ...mapActions('balances', ['fetchManualBalances'])
   }
 })
 export default class ManualBalancesList extends Vue {
   labelToDelete: string | null = null;
   onlyTags: string[] = [];
   edited: ManualBalance | null = null;
-  fetchManualBalances!: () => Promise<void>;
 
   get symbol(): string {
     return this.currency.ticker_symbol;
@@ -177,7 +166,9 @@ export default class ManualBalancesList extends Vue {
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('manual_balances_list.headers.location').toString(),
-      value: 'location'
+      value: 'location',
+      align: 'center',
+      width: '120px'
     },
     {
       text: this.$t('manual_balances_list.headers.label').toString(),
@@ -213,6 +204,8 @@ export default class ManualBalancesList extends Vue {
   currency!: Currency;
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
+
+  @Prop({ required: false, type: Boolean, default: false })
   loading: boolean = false;
 
   footerProps = footerProps;
@@ -227,12 +220,6 @@ export default class ManualBalancesList extends Vue {
         return this.onlyTags.every(tag => balance.tags.includes(tag));
       }
     });
-  }
-
-  async refresh() {
-    this.loading = true;
-    await this.fetchManualBalances();
-    this.loading = false;
   }
 
   editBalance(balance: ManualBalance) {
@@ -262,6 +249,16 @@ export default class ManualBalancesList extends Vue {
 
   &__label {
     padding-bottom: 0 !important;
+  }
+}
+
+::v-deep {
+  th {
+    &:first-child {
+      span {
+        padding-left: 16px;
+      }
+    }
   }
 }
 </style>

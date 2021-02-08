@@ -1,28 +1,35 @@
 <template>
   <v-card>
-    <v-card-title>{{ $t('yearn_asset_table.title') }}</v-card-title>
+    <v-card-title>
+      <card-title> {{ $t('yearn_asset_table.title') }} </card-title>
+    </v-card-title>
     <v-card-text>
-      <v-data-table
-        :headers="headers"
-        :items="yearnVaultsAssets(selectedAddresses)"
-        :footer-props="footerProps"
-        sort-by="roi"
-        sort-desc
-        :loading="loading"
-      >
-        <template #item.underlyingValue.usdValue="{ item }">
-          <balance-display
-            :asset="item.underlyingToken"
-            :value="item.underlyingValue"
-          />
-        </template>
-        <template #item.vaultValue.usdValue="{ item }">
-          <balance-display :asset="item.vaultToken" :value="item.vaultValue" />
-        </template>
-        <template #item.roi="{ item }">
-          <percentage-display :value="item.roi" />
-        </template>
-      </v-data-table>
+      <v-sheet outlined rounded>
+        <v-data-table
+          :headers="headers"
+          :items="yearnVaultsAssets(selectedAddresses)"
+          :footer-props="footerProps"
+          sort-by="roi"
+          sort-desc
+          :loading="loading"
+        >
+          <template #item.underlyingValue.usdValue="{ item }">
+            <balance-display
+              :asset="item.underlyingToken"
+              :value="item.underlyingValue"
+            />
+          </template>
+          <template #item.vaultValue.usdValue="{ item }">
+            <balance-display
+              :asset="item.vaultToken"
+              :value="item.vaultValue"
+            />
+          </template>
+          <template #item.roi="{ item }">
+            <percentage-display :value="item.roi" />
+          </template>
+        </v-data-table>
+      </v-sheet>
     </v-card-text>
   </v-card>
 </template>

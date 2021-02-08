@@ -205,6 +205,11 @@ export default new Router({
         }
       ]
     },
+    {
+      path: Routes.ASSETS,
+      component: () => import('../views/Assets.vue'),
+      props: true
+    },
     ...(process.env.NODE_ENV === 'development'
       ? [
           {

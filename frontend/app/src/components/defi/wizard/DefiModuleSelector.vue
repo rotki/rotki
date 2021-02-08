@@ -8,6 +8,7 @@
     hide-no-data
     clearables
     multiple
+    outlined
     chips
     :disabled="loading"
     :loading="loading"

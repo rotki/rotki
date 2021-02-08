@@ -25,7 +25,7 @@ describe('PremiumSettings.vue', () => {
     return mount(PremiumSettings, {
       store,
       vuetify,
-      stubs: ['v-tooltip', 'v-dialog', 'i18n']
+      stubs: ['v-tooltip', 'v-dialog', 'i18n', 'card-title']
     });
   }
 

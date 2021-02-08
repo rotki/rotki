@@ -3,7 +3,7 @@
     <template #message>{{ $t('lending.loading') }}</template>
   </progress-screen>
   <v-container v-else>
-    <v-row>
+    <v-row no-gutters>
       <v-col>
         <refresh-header
           :loading="anyRefreshing"
@@ -40,7 +40,7 @@
         </refresh-header>
       </v-col>
     </v-row>
-    <v-row>
+    <v-row class="mt-8" no-gutters>
       <v-col cols="12">
         <stat-card-wide :cols="3">
           <template #first-col>
@@ -96,8 +96,8 @@
         </stat-card-wide>
       </v-col>
     </v-row>
-    <v-row>
-      <v-col cols="12" sm="6">
+    <v-row class="mt-8" no-gutters>
+      <v-col cols="12" sm="6" class="pe-sm-4">
         <blockchain-account-selector
           v-model="selectedAccount"
           hint
@@ -105,11 +105,11 @@
           :usable-accounts="defiAccounts(selectedProtocols)"
         />
       </v-col>
-      <v-col cols="12" sm="6">
+      <v-col cols="12" sm="6" class="ps-sm-4 pt-4 pt-sm-0">
         <defi-protocol-selector v-model="protocol" />
       </v-col>
     </v-row>
-    <v-row v-if="!isYearnVaults">
+    <v-row v-if="!isYearnVaults" class="mt-8" no-gutters>
       <v-col>
         <stat-card :title="$t('lending.assets')">
           <lending-asset-table
@@ -121,7 +121,11 @@
         </stat-card>
       </v-col>
     </v-row>
-    <v-row v-if="isYearnVaults || selectedProtocols.length === 0">
+    <v-row
+      v-if="isYearnVaults || selectedProtocols.length === 0"
+      class="mt-8"
+      no-gutters
+    >
       <v-col>
         <yearn-assets-table
           :loading="refreshing"
@@ -131,17 +135,20 @@
     </v-row>
     <compound-lending-details
       v-if="premium && isCompound"
+      class="mt-8"
       :addresses="selectedAddresses"
     />
     <yearn-vaults-profit-details
       v-if="premium && (isYearnVaults || selectedProtocols.length === 0)"
+      class="mt-8"
       :profit="yearnVaultsProfit(selectedAddresses)"
     />
     <aave-earned-details
       v-if="premium && (isAave || selectedProtocols.length === 0)"
+      class="mt-8"
       :profit="aaveTotalEarned(selectedAddresses)"
     />
-    <v-row class="loans__history">
+    <v-row class="loans__history mt-8" no-gutters>
       <v-col cols="12">
         <premium-card v-if="!premium" :title="$t('lending.history')" />
         <lending-history

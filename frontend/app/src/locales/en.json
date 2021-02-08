@@ -22,6 +22,9 @@
     "loading": "Please wait while rotki queries the airdrops for your addresses...",
     "title": "Airdrops"
   },
+  "asset-locations": {
+    "title": "Asset Locations"
+  },
   "asset_balances": {
     "headers": {
       "amount": "Amount",
@@ -31,6 +34,19 @@
     },
     "loading": "Please wait while rotki queries the blockchain...",
     "total": "Total"
+  },
+  "asset_locations": {
+    "header": {
+      "address": "Address",
+      "amount": "Amount",
+      "location": "Location",
+      "value": "{symbol} value"
+    }
+  },
+  "assets": {
+    "amount": "Total Owned",
+    "price": "Price",
+    "value": "Value"
   },
   "blockchain_account_selector": {
     "all": "all",
@@ -1480,7 +1496,8 @@
     "total": "Total"
   },
   "labeled_address_display": {
-    "label": "{label} |",
+    "label": "{label}",
+    "divider": "|",
     "copy": "Copy address to clipboard",
     "open_link": "Open in external block explorer"
   },
@@ -1604,7 +1621,7 @@
     "advanced_tooltip": "Display the advanced xpub options | Hide the advanced xpub options"
   },
   "blockchain_balances": {
-    "title": "Blockchain Balances (per asset)",
+    "title": "Blockchain Balances per asset",
     "form_dialog": {
       "save": "Save",
       "cancel": "Cancel",

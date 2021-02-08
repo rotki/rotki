@@ -1,3 +1,5 @@
+jest.mock('@/services/rotkehlchen-api');
+
 import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
@@ -15,7 +17,14 @@ describe('UserSecuritySettings.vue', () => {
     return mount(UserSecuritySettings, {
       store,
       vuetify,
-      stubs: ['v-tooltip']
+      stubs: ['v-tooltip', 'card-title', 'asset-select'],
+      mocks: {
+        $api: {
+          balances: {
+            getPriceCache: () => []
+          }
+        }
+      }
     });
   }
 

@@ -2,7 +2,11 @@
   <v-container>
     <price-refresh />
     <v-card class="blockchain-balances mt-8">
-      <v-card-title>{{ $t('blockchain_balances.title') }}</v-card-title>
+      <v-card-title>
+        <card-title>
+          {{ $t('blockchain_balances.title') }}
+        </card-title>
+      </v-card-title>
       <v-card-text>
         <v-btn absolute fab top right color="primary" @click="newAccount()">
           <v-icon> mdi-plus </v-icon>
@@ -28,7 +32,7 @@
 
     <account-balances
       v-if="ethAccounts.length > 0"
-      class="mt-4"
+      class="mt-8"
       :title="$t('blockchain_balances.balances.eth')"
       blockchain="ETH"
       :balances="ethAccounts"
@@ -37,7 +41,7 @@
 
     <account-balances
       v-if="btcAccounts.length > 0"
-      class="mt-4"
+      class="mt-8"
       :title="$t('blockchain_balances.balances.btc')"
       blockchain="BTC"
       :balances="btcAccounts"
@@ -46,7 +50,7 @@
 
     <account-balances
       v-if="kusamaBalances.length > 0"
-      class="mt-4"
+      class="mt-8"
       :title="$t('blockchain_balances.balances.ksm')"
       blockchain="KSM"
       :balances="kusamaBalances"
@@ -63,6 +67,7 @@ import AccountForm from '@/components/accounts/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import {
   AccountWithBalance,
   BlockchainAccountWithBalance
@@ -70,6 +75,7 @@ import {
 
 @Component({
   components: {
+    CardTitle,
     PriceRefresh,
     AccountForm,
     AccountBalances,

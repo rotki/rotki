@@ -1,110 +1,110 @@
 <template>
-  <v-row class="exchange-settings">
-    <v-col>
-      <v-card>
-        <v-card-title>{{ $t('exchange_settings.title') }}</v-card-title>
-        <v-card-subtitle>
-          <i18n path="exchange_settings.subtitle" tag="div">
-            <base-external-link
-              :text="$t('exchange_settings.usage_guide')"
-              :href="$interop.usageGuideURL + '#adding-an-exchange'"
+  <v-container class="exchange-settings">
+    <v-card>
+      <v-card-title>
+        <card-title> {{ $t('exchange_settings.title') }} </card-title>
+      </v-card-title>
+      <v-card-subtitle>
+        <i18n path="exchange_settings.subtitle" tag="div">
+          <base-external-link
+            :text="$t('exchange_settings.usage_guide')"
+            :href="$interop.usageGuideURL + '#adding-an-exchange'"
+          />
+        </i18n>
+      </v-card-subtitle>
+      <v-card-text>
+        <v-row>
+          <v-col class="text-h6">
+            {{ $t('exchange_settings.connected_exchanges') }}
+          </v-col>
+        </v-row>
+        <v-row class="exchange-settings__connected-exchanges">
+          <exchange-badge
+            v-for="exchange in connectedExchanges"
+            :key="exchange"
+            :identifier="exchange"
+            class="mr-2"
+            removeable
+            @remove="confirmRemoval(exchange)"
+          />
+        </v-row>
+        <v-row class="mt-2">
+          <v-col class="text-h6">
+            {{ $t('exchange_settings.setup_exchange') }}
+          </v-col>
+        </v-row>
+        <v-select
+          v-model="selectedExchange"
+          class="exchange-settings__fields__exchange"
+          :items="exchanges"
+          label="Exchange"
+        >
+          <template #selection="{ item, attrs, on }">
+            <exchange-display
+              :exchange="item"
+              :class="`exchange__${item}`"
+              v-bind="attrs"
+              v-on="on"
             />
-          </i18n>
-        </v-card-subtitle>
-        <v-card-text>
-          <v-row>
-            <v-col class="text-h6">
-              {{ $t('exchange_settings.connected_exchanges') }}
-            </v-col>
-          </v-row>
-          <v-row class="exchange-settings__connected-exchanges">
-            <exchange-badge
-              v-for="exchange in connectedExchanges"
-              :key="exchange"
-              :identifier="exchange"
-              class="mr-2"
-              removeable
-              @remove="confirmRemoval(exchange)"
+          </template>
+          <template #item="{ item, attrs, on }">
+            <exchange-display
+              :exchange="item"
+              :class="`exchange__${item}`"
+              v-bind="attrs"
+              v-on="on"
             />
-          </v-row>
-          <v-row class="mt-2">
-            <v-col class="text-h6">
-              {{ $t('exchange_settings.setup_exchange') }}
-            </v-col>
-          </v-row>
-          <v-select
-            v-model="selectedExchange"
-            class="exchange-settings__fields__exchange"
-            :items="exchanges"
-            label="Exchange"
-          >
-            <template #selection="{ item, attrs, on }">
-              <exchange-display
-                :exchange="item"
-                :class="`exchange__${item}`"
-                v-bind="attrs"
-                v-on="on"
-              />
-            </template>
-            <template #item="{ item, attrs, on }">
-              <exchange-display
-                :exchange="item"
-                :class="`exchange__${item}`"
-                v-bind="attrs"
-                v-on="on"
-              />
-            </template>
-          </v-select>
+          </template>
+        </v-select>
 
-          <revealable-input
-            v-model="apiKey"
-            class="exchange-settings__fields__api-key"
-            :label="$t('exchange_settings.inputs.api_key')"
-            :disabled="isConnected"
-            @paste="onApiKeyPaste"
-          />
+        <revealable-input
+          v-model="apiKey"
+          class="exchange-settings__fields__api-key"
+          :label="$t('exchange_settings.inputs.api_key')"
+          :disabled="isConnected"
+          @paste="onApiKeyPaste"
+        />
 
-          <revealable-input
-            v-model="apiSecret"
-            class="exchange-settings__fields__api-secret"
-            prepend-icon="mdi-lock"
-            :label="$t('exchange_settings.inputs.api_secret')"
-            :disabled="isConnected"
-            @paste="onApiSecretPaste"
-          />
+        <revealable-input
+          v-model="apiSecret"
+          class="exchange-settings__fields__api-secret"
+          prepend-icon="mdi-lock"
+          :label="$t('exchange_settings.inputs.api_secret')"
+          :disabled="isConnected"
+          @paste="onApiSecretPaste"
+        />
 
-          <revealable-input
-            v-if="selectedExchange === 'coinbasepro'"
-            v-model="passphrase"
-            prepend-icon="mdi-key-plus"
-            class="exchange-settings__fields__passphrase"
-            :label="$t('exchange_settings.inputs.passphrase')"
-            :disabled="isConnected"
-          />
+        <revealable-input
+          v-if="selectedExchange === 'coinbasepro'"
+          v-model="passphrase"
+          prepend-icon="mdi-key-plus"
+          class="exchange-settings__fields__passphrase"
+          :label="$t('exchange_settings.inputs.passphrase')"
+          :disabled="isConnected"
+        />
 
-          <v-select
-            v-if="selectedExchange === 'kraken'"
-            v-model="selectedKrakenAccountType"
-            :disabled="isConnected"
-            class="exchange-settings__fields__kraken-account-type"
-            :items="krakenAccountTypes"
-            :label="$t('exchange_settings.inputs.kraken_account')"
-            @change="onChangeKrakenAccountType"
-          />
-        </v-card-text>
-        <v-card-actions v-if="!isConnected">
-          <v-btn
-            class="exchange-settings__buttons__setup"
-            depressed
-            color="primary"
-            type="submit"
-            @click="setup()"
-          >
-            {{ $t('exchange_settings.actions.setup') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-col>
+        <v-select
+          v-if="selectedExchange === 'kraken'"
+          v-model="selectedKrakenAccountType"
+          :disabled="isConnected"
+          class="exchange-settings__fields__kraken-account-type"
+          :items="krakenAccountTypes"
+          :label="$t('exchange_settings.inputs.kraken_account')"
+          @change="onChangeKrakenAccountType"
+        />
+      </v-card-text>
+      <v-card-actions v-if="!isConnected">
+        <v-btn
+          class="exchange-settings__buttons__setup"
+          depressed
+          color="primary"
+          type="submit"
+          @click="setup()"
+        >
+          {{ $t('exchange_settings.actions.setup') }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
     <confirm-dialog
       :display="confirmation"
       :title="$t('exchange_settings.confirmation.title')"
@@ -116,7 +116,7 @@
       @cancel="confirmation = false"
       @confirm="remove()"
     />
-  </v-row>
+  </v-container>
 </template>
 
 <script lang="ts">

@@ -56,7 +56,7 @@
         class="mt-4"
       />
       <v-btn
-        class="profit_loss_report__export-csv mt-4"
+        class="profit_loss_report__export-csv mt-8"
         depressed
         color="primary"
         @click="exportCSV()"
@@ -67,8 +67,8 @@
             : $t('profit_loss_report.download_csv')
         }}
       </v-btn>
-      <profit-loss-overview class="mt-4" />
-      <profit-loss-events class="mt-4" />
+      <profit-loss-overview class="mt-8" />
+      <profit-loss-events class="mt-8" />
     </div>
     <progress-screen v-if="isRunning" :progress="progress">
       <template #message>

@@ -2,7 +2,10 @@
   <v-row no-gutters>
     <v-col>
       <v-card>
-        <v-card-title v-text="$t('change_password.title')" />
+        <v-card-title>
+          <card-title>{{ $t('change_password.title') }}</card-title>
+        </v-card-title>
+
         <v-form ref="form">
           <v-card-text>
             <v-alert

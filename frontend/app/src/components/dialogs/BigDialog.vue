@@ -1,6 +1,7 @@
 <template>
   <v-bottom-sheet
     :value="display"
+    v-bind="$attrs"
     over
     class="big-dialog"
     width="98%"

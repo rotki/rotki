@@ -25,7 +25,7 @@
           :tooltip="$t('ledger_actions.refresh_tooltip')"
           @refresh="refresh"
         />
-        {{ $t('ledger_actions.title') }}
+        <card-title class="ms-2">{{ $t('ledger_actions.title') }}</card-title>
         <v-spacer />
       </v-card-title>
       <v-card-text>
@@ -33,114 +33,116 @@
           :disabled="selected.length === 0 || loading || refreshing"
           @ignore="ignoreLedgerActions"
         />
-        <v-data-table
-          show-expand
-          single-expand
-          item-key="identifier"
-          :items="ledgerActions.data"
-          :headers="headers"
-          :footer-props="footerProps"
-        >
-          <template #header.selection>
-            <v-simple-checkbox
-              :ripple="false"
-              :value="allSelected"
-              color="primary"
-              @input="setSelected($event)"
-            />
-          </template>
-          <template #item.selection="{ item }">
-            <v-simple-checkbox
-              :ripple="false"
-              color="primary"
-              :value="selected.includes(item.identifier)"
-              @input="selectionChanged(item.identifier, $event)"
-            />
-          </template>
-          <template #item.actionType="{ item }">
-            <event-type-display :event-type="item.actionType" />
-          </template>
-          <template #item.timestamp="{ item }">
-            <date-display :timestamp="item.timestamp" />
-          </template>
-          <template #item.location="{ item }">
-            <location-display :identifier="item.location" />
-          </template>
-          <template #item.asset="{ item }">
-            <asset-details :asset="item.asset" />
-          </template>
-          <template #item.amount="{ item }">
-            <amount-display :value="item.amount" />
-          </template>
-          <template #item.ignoredInAccounting="{ item }">
-            <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
-          </template>
-          <template #item.actions="{ item }">
-            <row-actions
-              :disabled="refreshing"
-              :edit-tooltip="$t('ledger_actions.edit_tooltip')"
-              :delete-tooltip="$t('ledger_actions.delete_tooltip')"
-              @edit-click="showForm(item)"
-              @delete-click="deleteIdentifier = item.identifier"
-            />
-          </template>
-          <template
-            v-if="
-              ledgerActions.limit <= ledgerActions.found &&
-              ledgerActions.limit > 0
-            "
-            #body.append="{ headers }"
+        <v-sheet outlined rounded>
+          <v-data-table
+            show-expand
+            single-expand
+            item-key="identifier"
+            :items="ledgerActions.data"
+            :headers="headers"
+            :footer-props="footerProps"
           >
-            <upgrade-row
-              :limit="ledgerActions.limit"
-              :total="ledgerActions.found"
-              :colspan="headers.length"
-              :label="$t('ledger_actions.label')"
-            />
-          </template>
-          <template #expanded-item="{ headers, item }">
-            <td
-              :colspan="headers.length"
-              class="ledger-actions__action__details"
+            <template #header.selection>
+              <v-simple-checkbox
+                :ripple="false"
+                :value="allSelected"
+                color="primary"
+                @input="setSelected($event)"
+              />
+            </template>
+            <template #item.selection="{ item }">
+              <v-simple-checkbox
+                :ripple="false"
+                color="primary"
+                :value="selected.includes(item.identifier)"
+                @input="selectionChanged(item.identifier, $event)"
+              />
+            </template>
+            <template #item.actionType="{ item }">
+              <event-type-display :event-type="item.actionType" />
+            </template>
+            <template #item.timestamp="{ item }">
+              <date-display :timestamp="item.timestamp" />
+            </template>
+            <template #item.location="{ item }">
+              <location-display :identifier="item.location" />
+            </template>
+            <template #item.asset="{ item }">
+              <asset-details opens-details :asset="item.asset" />
+            </template>
+            <template #item.amount="{ item }">
+              <amount-display :value="item.amount" />
+            </template>
+            <template #item.ignoredInAccounting="{ item }">
+              <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
+            </template>
+            <template #item.actions="{ item }">
+              <row-actions
+                :disabled="refreshing"
+                :edit-tooltip="$t('ledger_actions.edit_tooltip')"
+                :delete-tooltip="$t('ledger_actions.delete_tooltip')"
+                @edit-click="showForm(item)"
+                @delete-click="deleteIdentifier = item.identifier"
+              />
+            </template>
+            <template
+              v-if="
+                ledgerActions.limit <= ledgerActions.found &&
+                ledgerActions.limit > 0
+              "
+              #body.append="{ headers }"
             >
-              <v-col cols="12">
-                <v-row class="pt-3 pb-3">
-                  <span class="text-h6">
-                    {{ $t('ledger_actions.details.title') }}
-                  </span>
-                </v-row>
-                <v-row>
-                  <v-col>
-                    <v-card outlined>
-                      <v-card-title class="subtitle-2">
-                        {{ $t('ledger_actions.details.notes') }}
-                      </v-card-title>
-                      <v-card-text>
-                        {{
-                          item.notes
-                            ? item.notes
-                            : $t('ledger_actions.details.note_data')
-                        }}
-                      </v-card-text>
-                    </v-card>
-                  </v-col>
-                </v-row>
-                <v-row class="mt-2">
-                  <v-col cols="auto" class="font-weight-medium">
-                    {{ $t('ledger_actions.details.link') }}
-                  </v-col>
-                  <v-col>
-                    {{
-                      item.link
-                        ? item.link
-                        : $t('ledger_actions.details.link_data')
-                    }}
-                  </v-col>
-                </v-row>
-              </v-col>
-            </td>
-          </template>
-        </v-data-table>
+              <upgrade-row
+                :limit="ledgerActions.limit"
+                :total="ledgerActions.found"
+                :colspan="headers.length"
+                :label="$t('ledger_actions.label')"
+              />
+            </template>
+            <template #expanded-item="{ headers, item }">
+              <td
+                :colspan="headers.length"
+                class="ledger-actions__action__details"
+              >
+                <v-col cols="12">
+                  <v-row class="pt-3 pb-3">
+                    <span class="text-h6">
+                      {{ $t('ledger_actions.details.title') }}
+                    </span>
+                  </v-row>
+                  <v-row>
+                    <v-col>
+                      <v-card outlined>
+                        <v-card-title class="subtitle-2">
+                          {{ $t('ledger_actions.details.notes') }}
+                        </v-card-title>
+                        <v-card-text>
+                          {{
+                            item.notes
+                              ? item.notes
+                              : $t('ledger_actions.details.note_data')
+                          }}
+                        </v-card-text>
+                      </v-card>
+                    </v-col>
+                  </v-row>
+                  <v-row class="mt-2">
+                    <v-col cols="auto" class="font-weight-medium">
+                      {{ $t('ledger_actions.details.link') }}
+                    </v-col>
+                    <v-col>
+                      {{
+                        item.link
+                          ? item.link
+                          : $t('ledger_actions.details.link_data')
+                      }}
+                    </v-col>
+                  </v-row>
+                </v-col>
+              </td>
+            </template>
+          </v-data-table>
+        </v-sheet>
       </v-card-text>
     </v-card>
     <big-dialog
@@ -184,6 +186,7 @@ import RowActions from '@/components/helper/RowActions.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { footerProps } from '@/config/datatable.common';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import StatusMixin from '@/mixins/status-mixin';
@@ -220,6 +223,7 @@ const emptyAction: () => UnsavedAction = () => ({
 
 @Component({
   components: {
+    CardTitle,
     IgnoreButtons,
     ConfirmDialog,
     RowActions,
@@ -251,7 +255,9 @@ export default class LedgerActions extends Mixins(StatusMixin) {
     { text: '', value: 'selection', width: '34px', sortable: false },
     {
       text: this.$t('ledger_actions.headers.location').toString(),
-      value: 'location'
+      value: 'location',
+      width: '120px',
+      align: 'center'
     },
     {
       text: this.$t('ledger_actions.headers.type').toString(),
@@ -450,6 +456,16 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   &__action {
     &__details {
       background-color: var(--v-rotki-light-grey-base);
+    }
+  }
+}
+
+::v-deep {
+  th {
+    &:nth-child(2) {
+      span {
+        padding-left: 16px;
+      }
     }
   }
 }

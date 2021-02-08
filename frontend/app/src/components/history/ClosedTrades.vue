@@ -1,32 +1,33 @@
 <template>
-  <v-row>
-    <v-col cols="12">
-      <v-card>
-        <v-btn
-          absolute
-          fab
-          top
-          right
-          dark
-          color="primary"
-          class="closed-trades__add-trade"
-          @click="newExternalTrade()"
-        >
-          <v-icon> mdi-plus </v-icon>
-        </v-btn>
-        <v-card-title>
-          <refresh-button
-            :loading="refreshing"
-            :tooltip="$t('closed_trades.refresh_tooltip')"
-            @refresh="refresh"
-          />
-          {{ $t('closed_trades.title') }}
-        </v-card-title>
-        <v-card-text>
-          <ignore-buttons
-            :disabled="selected.length === 0 || loading || refreshing"
-            @ignore="ignoreTrades"
-          />
+  <fragment>
+    <v-card class="mt-8">
+      <v-btn
+        absolute
+        fab
+        top
+        right
+        dark
+        color="primary"
+        class="closed-trades__add-trade"
+        @click="newExternalTrade()"
+      >
+        <v-icon> mdi-plus </v-icon>
+      </v-btn>
+      <v-card-title>
+        <refresh-button
+          :loading="refreshing"
+          :tooltip="$t('closed_trades.refresh_tooltip')"
+          @refresh="refresh"
+        />
+
+        <card-title class="ms-2">{{ $t('closed_trades.title') }}</card-title>
+      </v-card-title>
+      <v-card-text>
+        <ignore-buttons
+          :disabled="selected.length === 0 || loading || refreshing"
+          @ignore="ignoreTrades"
+        />
+        <v-sheet outlined rounded>
           <v-data-table
             :items="data"
             :headers="headersClosed"
@@ -163,28 +164,28 @@
               />
             </template>
           </v-data-table>
-        </v-card-text>
-      </v-card>
-      <big-dialog
-        :display="openDialog"
-        :title="dialogTitle"
-        :subtitle="dialogSubtitle"
-        :primary-action="$t('closed_trades.dialog.save')"
-        @confirm="save()"
-        @cancel="clearDialog()"
-      >
-        <external-trade-form ref="form" :edit="editableItem" />
-      </big-dialog>
-      <confirm-dialog
-        :display="tradeToDelete !== null"
-        :title="$t('closed_trades.confirmation.title')"
-        confirm-type="warning"
-        :message="confirmationMessage"
-        @cancel="tradeToDelete = null"
-        @confirm="deleteTrade()"
-      />
-    </v-col>
-  </v-row>
+        </v-sheet>
+      </v-card-text>
+    </v-card>
+    <big-dialog
+      :display="openDialog"
+      :title="dialogTitle"
+      :subtitle="dialogSubtitle"
+      :primary-action="$t('closed_trades.dialog.save')"
+      @confirm="save()"
+      @cancel="clearDialog()"
+    >
+      <external-trade-form ref="form" :edit="editableItem" />
+    </big-dialog>
+    <confirm-dialog
+      :display="tradeToDelete !== null"
+      :title="$t('closed_trades.confirmation.title')"
+      confirm-type="warning"
+      :message="confirmationMessage"
+      @cancel="tradeToDelete = null"
+      @confirm="deleteTrade()"
+    />
+  </fragment>
 </template>
 
 <script lang="ts">
@@ -197,10 +198,12 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import ExternalTradeForm from '@/components/ExternalTradeForm.vue';
+import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
@@ -210,6 +213,8 @@ import { ActionStatus, Message } from '@/store/types';
 
 @Component({
   components: {
+    Fragment,
+    CardTitle,
     IgnoreButtons,
     RefreshButton,
     UpgradeRow,
@@ -236,7 +241,9 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
     { text: '', value: 'selection', width: '34px', sortable: false },
     {
       text: this.$tc('closed_trades.headers.location'),
-      value: 'location'
+      value: 'location',
+      width: '120px',
+      align: 'center'
     },
     {
       text: this.$tc('closed_trades.headers.action'),
@@ -439,6 +446,16 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   &__trade {
     &__details {
       background-color: var(--v-rotki-light-grey-base);
+    }
+  }
+}
+
+::v-deep {
+  th {
+    &:nth-child(2) {
+      span {
+        padding-left: 16px;
+      }
     }
   }
 }

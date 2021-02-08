@@ -21,6 +21,7 @@ import HashLink from '@/components/helper/HashLink.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { DebugSettings, ExposedUtilities } from '@/electron-main/ipc';
 import { api } from '@/services/rotkehlchen-api';
 
@@ -31,7 +32,7 @@ export const setupPremium = () => {
   window.moment = moment;
   window.rotki = {
     useHostComponents: true,
-    version: 7,
+    version: 8,
     utils: {
       date: {
         epoch(): number {
@@ -78,6 +79,8 @@ export const setupPremium = () => {
   Vue.component('AssetSelect', AssetSelect);
   // version 6
   Vue.component('DateTimePicker', DateTimePicker);
+  // version 8
+  Vue.component('CardTitle', CardTitle);
 };
 
 function findComponents(): string[] {
@@ -186,6 +189,10 @@ export const UniswapDetails = (): Promise<VueConstructor> => {
 
 export const AdexStaking = (): Promise<VueConstructor> => {
   return load('AdexStaking');
+};
+
+export const AssetAmountAndValueOverTime = (): Promise<VueConstructor> => {
+  return load('AssetAmountAndValueOverTime');
 };
 
 declare global {

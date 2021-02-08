@@ -1,6 +1,6 @@
 <template>
   <span
-    class="d-flex align-center pt-2 pb-2"
+    class="d-flex align-center py-4"
     :class="horizontal ? 'flex-row' : 'flex-column'"
   >
     <span>

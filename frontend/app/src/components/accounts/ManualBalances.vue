@@ -1,7 +1,14 @@
 <template>
   <v-container>
     <v-card class="manual-balances mt-8">
-      <v-card-title>{{ $t('manual_balances.title') }}</v-card-title>
+      <v-card-title>
+        <refresh-button
+          :loading="loading"
+          :tooltip="$t('manual_balances_list.refresh.tooltip')"
+          @refresh="refresh()"
+        />
+        <card-title class="ms-2">{{ $t('manual_balances.title') }}</card-title>
+      </v-card-title>
       <v-card-text>
         <v-btn
           absolute
@@ -31,7 +38,7 @@
             :edit="balanceToEdit"
           />
         </big-dialog>
-        <manual-balances-list @editBalance="edit($event)" />
+        <manual-balances-list :loading="loading" @editBalance="edit($event)" />
       </v-card-text>
     </v-card>
   </v-container>
@@ -39,16 +46,24 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import { mapActions } from 'vuex';
 import ManualBalancesForm from '@/components/accounts/ManualBalancesForm.vue';
 import ManualBalancesList from '@/components/accounts/ManualBalancesList.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { ManualBalance } from '@/services/balances/types';
 
 @Component({
   components: {
+    RefreshButton,
+    CardTitle,
     ManualBalancesList,
     ManualBalancesForm,
     BigDialog
+  },
+  methods: {
+    ...mapActions('balances', ['fetchManualBalances'])
   }
 })
 export default class ManualBalances extends Vue {
@@ -59,6 +74,9 @@ export default class ManualBalances extends Vue {
   dialogDisabled: boolean = false;
   dialogLoading: boolean = false;
   valid: boolean = false;
+  loading: boolean = false;
+
+  fetchManualBalances!: () => Promise<void>;
 
   newBalance() {
     this.dialogTitle = 'Add Manual Balance';
@@ -71,6 +89,12 @@ export default class ManualBalances extends Vue {
     this.dialogTitle = 'Edit Manual Balance';
     this.dialogSubtitle = 'Modify balance amount, location, and tags';
     this.openDialog = true;
+  }
+
+  async refresh() {
+    this.loading = true;
+    await this.fetchManualBalances();
+    this.loading = false;
   }
 
   async save() {

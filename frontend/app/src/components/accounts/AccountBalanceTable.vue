@@ -1,141 +1,145 @@
 <template>
-  <v-data-table
-    v-bind="$attrs"
-    :headers="headers"
-    :items="visibleBalances"
-    :loading="accountOperation || refreshing"
-    :loading-text="$t('account_balances.data_table.loading')"
-    single-expand
-    item-key="address"
-    :expanded.sync="expanded"
-    sort-by="balance.usdValue"
-    :footer-props="footerProps"
-    :custom-group="groupBy"
-    :group-by="isBtc ? ['xpub', 'derivationPath'] : undefined"
-    sort-desc
-    v-on="$listeners"
-  >
-    <template #header.accountSelection>
-      <v-simple-checkbox
-        :disabled="nonExpandedBalances.length === 0"
-        :ripple="false"
-        :value="allSelected"
-        color="primary"
-        @input="setSelected($event)"
-      />
-    </template>
-    <template #item.accountSelection="{ item }">
-      <v-simple-checkbox
-        :ripple="false"
-        color="primary"
-        :value="selected.includes(item.address)"
-        @input="selectionChanged(item.address, $event)"
-      />
-    </template>
-    <template v-if="blockchain === 'ETH'" #header.balance.usdValue>
-      {{
-        $t('account_balances.headers.usd_value_eth', {
-          symbol: currency.ticker_symbol
-        })
-      }}
-    </template>
-    <template v-else #header.balance.usdValue>
-      {{
-        $t('account_balances.headers.usd_value', {
-          symbol: currency.ticker_symbol
-        })
-      }}
-    </template>
-    <template #item.label="{ item }">
-      <v-row class="pt-3 pb-2">
-        <v-col cols="12" class="account-balance-table__account">
-          <labeled-address-display :account="item" />
-          <span v-if="item.tags.length > 0" class="mt-2">
-            <tag-icon
-              v-for="tag in item.tags"
-              :key="tag"
-              class="account-balance-table__tag"
-              :tag="tags[tag]"
+  <v-sheet rounded outlined>
+    <v-data-table
+      v-bind="$attrs"
+      :headers="headers"
+      :items="visibleBalances"
+      :loading="accountOperation || refreshing"
+      :loading-text="$t('account_balances.data_table.loading')"
+      single-expand
+      item-key="address"
+      :expanded.sync="expanded"
+      sort-by="balance.usdValue"
+      :footer-props="footerProps"
+      :custom-group="groupBy"
+      :group-by="isBtc ? ['xpub', 'derivationPath'] : undefined"
+      sort-desc
+      v-on="$listeners"
+    >
+      <template #header.accountSelection>
+        <v-simple-checkbox
+          :disabled="nonExpandedBalances.length === 0"
+          :ripple="false"
+          :value="allSelected"
+          color="primary"
+          @input="setSelected($event)"
+        />
+      </template>
+      <template #item.accountSelection="{ item }">
+        <v-simple-checkbox
+          :ripple="false"
+          color="primary"
+          :value="selected.includes(item.address)"
+          @input="selectionChanged(item.address, $event)"
+        />
+      </template>
+      <template v-if="blockchain === 'ETH'" #header.balance.usdValue>
+        {{
+          $t('account_balances.headers.usd_value_eth', {
+            symbol: currency.ticker_symbol
+          })
+        }}
+      </template>
+      <template v-else #header.balance.usdValue>
+        {{
+          $t('account_balances.headers.usd_value', {
+            symbol: currency.ticker_symbol
+          })
+        }}
+      </template>
+      <template #item.label="{ item }">
+        <v-row class="pt-3 pb-2">
+          <v-col cols="12" class="account-balance-table__account">
+            <labeled-address-display :account="item" />
+            <span v-if="item.tags.length > 0" class="mt-2">
+              <tag-icon
+                v-for="tag in item.tags"
+                :key="tag"
+                class="account-balance-table__tag"
+                :tag="tags[tag]"
+              />
+            </span>
+          </v-col>
+        </v-row>
+      </template>
+      <template #item.balance.amount="{ item }">
+        <amount-display :value="item.balance.amount" :loading="loading" />
+      </template>
+      <template #item.balance.usdValue="{ item }">
+        <amount-display
+          fiat-currency="USD"
+          :value="item.balance.usdValue"
+          show-currency="symbol"
+          :loading="loading"
+        />
+      </template>
+      <template #item.actions="{ item }">
+        <row-actions
+          class="account-balance-table__actions"
+          :no-delete="true"
+          :edit-tooltip="$t('account_balances.edit_tooltip')"
+          :disabled="accountOperation || refreshing"
+          @edit-click="editClick(item)"
+        />
+      </template>
+      <template v-if="balances.length > 0" #body.append>
+        <tr class="account-balance-table__total">
+          <td :class="mobileClass" />
+          <td :class="mobileClass">{{ $t('account_balances.total') }}</td>
+          <td class="text-end" :class="mobileClass">
+            <amount-display
+              :loading="loading"
+              :value="
+                visibleBalances.map(val => val.balance.amount) | balanceSum
+              "
+              :asset="$vuetify.breakpoint.xsOnly ? blockchain : null"
             />
-          </span>
-        </v-col>
-      </v-row>
-    </template>
-    <template #item.balance.amount="{ item }">
-      <amount-display :value="item.balance.amount" :loading="loading" />
-    </template>
-    <template #item.balance.usdValue="{ item }">
-      <amount-display
-        fiat-currency="USD"
-        :value="item.balance.usdValue"
-        show-currency="symbol"
-        :loading="loading"
-      />
-    </template>
-    <template #item.actions="{ item }">
-      <row-actions
-        class="account-balance-table__actions"
-        :no-delete="true"
-        :edit-tooltip="$t('account_balances.edit_tooltip')"
-        :disabled="accountOperation || refreshing"
-        @edit-click="editClick(item)"
-      />
-    </template>
-    <template v-if="balances.length > 0" #body.append>
-      <tr class="account-balance-table__total">
-        <td :class="mobileClass" />
-        <td :class="mobileClass">{{ $t('account_balances.total') }}</td>
-        <td class="text-end" :class="mobileClass">
-          <amount-display
-            :loading="loading"
-            :value="visibleBalances.map(val => val.balance.amount) | balanceSum"
-            :asset="$vuetify.breakpoint.xsOnly ? blockchain : null"
+          </td>
+          <td class="text-end" :class="mobileClass">
+            <amount-display
+              :loading="loading"
+              fiat-currency="USD"
+              show-currency="symbol"
+              :value="
+                visibleBalances.map(val => val.balance.usdValue) | balanceSum
+              "
+            />
+          </td>
+        </tr>
+      </template>
+      <template #expanded-item="{ headers, item }">
+        <td :colspan="headers.length" class="account-balance-table__expanded">
+          <account-asset-balances
+            :title="$t('account_balance_table.assets')"
+            :assets="accountAssets(item.address)"
+          />
+          <account-asset-balances
+            v-if="accountLiabilities(item.address).length > 0"
+            :title="$t('account_balance_table.liabilities')"
+            :assets="accountLiabilities(item.address)"
           />
         </td>
-        <td class="text-end" :class="mobileClass">
-          <amount-display
-            :loading="loading"
-            fiat-currency="USD"
-            show-currency="symbol"
-            :value="
-              visibleBalances.map(val => val.balance.usdValue) | balanceSum
-            "
-          />
-        </td>
-      </tr>
-    </template>
-    <template #expanded-item="{ headers, item }">
-      <td :colspan="headers.length" class="account-balance-table__expanded">
-        <account-asset-balances
-          :title="$t('account_balance_table.assets')"
-          :assets="accountAssets(item.address)"
+      </template>
+      <template #item.expand="{ item }">
+        <row-expander
+          v-if="expandable && hasDetails(item.address)"
+          :expanded="expanded.includes(item)"
+          @click="expanded = expanded.includes(item) ? [] : [item]"
         />
-        <account-asset-balances
-          v-if="accountLiabilities(item.address).length > 0"
-          :title="$t('account_balance_table.liabilities')"
-          :assets="accountLiabilities(item.address)"
+      </template>
+      <template #group.header="{ group, isOpen, toggle }">
+        <account-group-header
+          :group="group ? group : ''"
+          :items="getItems(group.split(':')[0], group.split(':')[1])"
+          :expanded="isOpen"
+          :loading="loading"
+          @expand-clicked="expandXpub(isOpen, toggle, $event)"
+          @delete-clicked="deleteXpub($event)"
+          @edit-clicked="editClick($event)"
         />
-      </td>
-    </template>
-    <template #item.expand="{ item }">
-      <row-expander
-        v-if="expandable && hasDetails(item.address)"
-        :expanded="expanded.includes(item)"
-        @click="expanded = expanded.includes(item) ? [] : [item]"
-      />
-    </template>
-    <template #group.header="{ group, isOpen, toggle }">
-      <account-group-header
-        :group="group ? group : ''"
-        :items="getItems(group.split(':')[0], group.split(':')[1])"
-        :expanded="isOpen"
-        :loading="loading"
-        @expand-clicked="expandXpub(isOpen, toggle, $event)"
-        @delete-clicked="deleteXpub($event)"
-        @edit-clicked="editClick($event)"
-      />
-    </template>
-  </v-data-table>
+      </template>
+    </v-data-table>
+  </v-sheet>
 </template>
 
 <script lang="ts">

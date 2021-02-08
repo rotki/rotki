@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title>
-      {{ title }}
+      <card-title>{{ title }}</card-title>
       <v-spacer />
       <v-text-field
         v-model="search"
@@ -15,116 +15,121 @@
       />
     </v-card-title>
     <v-card-text>
-      <v-data-table
-        class="dashboard-asset-table__balances"
-        :headers="headers"
-        :items="balances"
-        :search="search"
-        :loading="loading"
-        sort-by="usdValue"
-        sort-desc
-        :footer-props="footerProps"
-      >
-        <template #header.usdValue>
-          <div class="text-no-wrap">
-            {{
-              $t('dashboard_asset_table.headers.value', {
-                symbol: currencySymbol
-              })
-            }}
-          </div>
-        </template>
-        <template #header.price>
-          <div class="text-no-wrap">
-            {{
-              $t('dashboard_asset_table.headers.price', {
-                symbol: currencySymbol
-              })
-            }}
-          </div>
-        </template>
-        <template #item.asset="{ item }">
-          <asset-details :asset="item.asset" />
-        </template>
-        <template #item.amount="{ item }">
-          <amount-display :value="item.amount" />
-        </template>
-        <template #item.usdValue="{ item }">
-          <amount-display
-            show-currency="symbol"
-            :fiat-currency="item.asset"
-            :amount="item.amount"
-            :value="item.usdValue"
-          />
-        </template>
-        <template #item.price="{ item }">
-          <amount-display
-            show-currency="symbol"
-            fiat-currency="USD"
-            tooltip
-            :price-asset="item.asset"
-            :value="prices[item.asset] ? prices[item.asset] : '-'"
-          />
-        </template>
-        <template #item.percentage="{ item }">
-          <percentage-display :value="percentage(item.usdValue)" />
-        </template>
-        <template #no-results>
-          <span class="grey--text text--darken-2">
-            {{
-              $t('dashboard_asset_table.no_search_result', {
-                search
-              })
-            }}
-          </span>
-        </template>
-        <template v-if="balances.length > 0 && search.length < 1" #body.append>
-          <tr
-            v-if="$vuetify.breakpoint.smAndUp"
-            class="dashboard-asset-table__balances__total font-weight-medium"
+      <v-sheet outlined rounded>
+        <v-data-table
+          class="dashboard-asset-table__balances"
+          :headers="headers"
+          :items="balances"
+          :search="search"
+          :loading="loading"
+          sort-by="usdValue"
+          sort-desc
+          :footer-props="footerProps"
+        >
+          <template #header.usdValue>
+            <div class="text-no-wrap">
+              {{
+                $t('dashboard_asset_table.headers.value', {
+                  symbol: currencySymbol
+                })
+              }}
+            </div>
+          </template>
+          <template #header.price>
+            <div class="text-no-wrap">
+              {{
+                $t('dashboard_asset_table.headers.price', {
+                  symbol: currencySymbol
+                })
+              }}
+            </div>
+          </template>
+          <template #item.asset="{ item }">
+            <asset-details opens-details :asset="item.asset" />
+          </template>
+          <template #item.amount="{ item }">
+            <amount-display :value="item.amount" />
+          </template>
+          <template #item.usdValue="{ item }">
+            <amount-display
+              show-currency="symbol"
+              :fiat-currency="item.asset"
+              :amount="item.amount"
+              :value="item.usdValue"
+            />
+          </template>
+          <template #item.price="{ item }">
+            <amount-display
+              show-currency="symbol"
+              fiat-currency="USD"
+              tooltip
+              :price-asset="item.asset"
+              :value="prices[item.asset] ? prices[item.asset] : '-'"
+            />
+          </template>
+          <template #item.percentage="{ item }">
+            <percentage-display :value="percentage(item.usdValue)" />
+          </template>
+          <template #no-results>
+            <span class="grey--text text--darken-2">
+              {{
+                $t('dashboard_asset_table.no_search_result', {
+                  search
+                })
+              }}
+            </span>
+          </template>
+          <template
+            v-if="balances.length > 0 && search.length < 1"
+            #body.append
           >
-            <td colspan="3">{{ $t('dashboard_asset_table.total') }}</td>
-            <td class="text-end">
-              <amount-display
-                :fiat-currency="currencySymbol"
-                :value="
-                  balances
-                    | aggregateTotal(
-                      currencySymbol,
-                      exchangeRate(currencySymbol),
-                      floatingPrecision
-                    )
-                "
-                show-currency="symbol"
-              />
-            </td>
-            <td />
-          </tr>
-          <tr v-else>
-            <td>
-              <v-row class="justify-space-between">
-                <v-col cols="auto" class="font-weight-medium">
-                  {{ $t('dashboard_asset_table.total') }}
-                </v-col>
-                <v-col cols="auto">
-                  <amount-display
-                    :fiat-currency="currencySymbol"
-                    :value="
-                      balances
-                        | aggregateTotal(
-                          currencySymbol,
-                          exchangeRate(currencySymbol),
-                          floatingPrecision
-                        )
-                    "
-                    show-currency="symbol"
-                  />
-                </v-col>
-              </v-row>
-            </td>
-          </tr>
-        </template>
-      </v-data-table>
+            <tr
+              v-if="$vuetify.breakpoint.smAndUp"
+              class="dashboard-asset-table__balances__total font-weight-medium"
+            >
+              <td colspan="3">{{ $t('dashboard_asset_table.total') }}</td>
+              <td class="text-end">
+                <amount-display
+                  :fiat-currency="currencySymbol"
+                  :value="
+                    balances
+                      | aggregateTotal(
+                        currencySymbol,
+                        exchangeRate(currencySymbol),
+                        floatingPrecision
+                      )
+                  "
+                  show-currency="symbol"
+                />
+              </td>
+              <td />
+            </tr>
+            <tr v-else>
+              <td>
+                <v-row class="justify-space-between">
+                  <v-col cols="auto" class="font-weight-medium">
+                    {{ $t('dashboard_asset_table.total') }}
+                  </v-col>
+                  <v-col cols="auto">
+                    <amount-display
+                      :fiat-currency="currencySymbol"
+                      :value="
+                        balances
+                          | aggregateTotal(
+                            currencySymbol,
+                            exchangeRate(currencySymbol),
+                            floatingPrecision
+                          )
+                      "
+                      show-currency="symbol"
+                    />
+                  </v-col>
+                </v-row>
+              </td>
+            </tr>
+          </template>
+        </v-data-table>
+      </v-sheet>
     </v-card-text>
   </v-card>
 </template>

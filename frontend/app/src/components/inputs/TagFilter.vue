@@ -9,6 +9,7 @@
     prepend-inner-icon="mdi-magnify"
     item-text="name"
     :menu-props="{ closeOnContentClick: true }"
+    outlined
     item-value="name"
     multiple
     @input="input"

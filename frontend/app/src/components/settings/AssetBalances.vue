@@ -1,5 +1,5 @@
 <template>
-  <div class="asset-balances">
+  <v-sheet class="asset-balances" :rounded="!flat" :outlined="!flat">
     <v-data-table
       :headers="headers"
       :items="balances"
@@ -28,7 +28,7 @@
         </div>
       </template>
       <template #item.asset="{ item }">
-        <asset-details :asset="item.asset" />
+        <asset-details opens-details :asset="item.asset" />
       </template>
       <template #item.price="{ item }">
         <amount-display
@@ -80,7 +80,7 @@
         </tr>
       </template>
     </v-data-table>
-  </div>
+  </v-sheet>
 </template>
 
 <script lang="ts">
@@ -108,6 +108,8 @@ export default class AssetBalances extends Vue {
   balances!: AssetBalance[];
   @Prop({})
   title!: string;
+  @Prop({ required: false, default: false, type: Boolean })
+  flat!: boolean;
 
   currency!: Currency;
   floatingPrecision!: number;

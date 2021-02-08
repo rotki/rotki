@@ -1,4 +1,4 @@
-import Vue from 'vue';
+﻿import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
 import { VersionCheck } from '@/services/types-api';
@@ -20,6 +20,7 @@ import {
   StatusPayload,
   Version
 } from '@/store/types';
+import { isLoading } from '@/store/utils';
 
 Vue.use(Vuex);
 
@@ -128,6 +129,15 @@ const store: StoreOptions<RotkehlchenState> = {
     },
     status: (state: RotkehlchenState) => (section: Section): Status => {
       return state.status[section] ?? Status.NONE;
+    },
+    detailsLoading: (state: RotkehlchenState) => {
+      return (
+        isLoading(state.status[Section.BLOCKCHAIN_ETH]) ||
+        isLoading(state.status[Section.BLOCKCHAIN_BTC]) ||
+        isLoading(state.status[Section.BLOCKCHAIN_KSM]) ||
+        isLoading(state.status[Section.EXCHANGES]) ||
+        isLoading(state.status[Section.MANUAL_BALANCES])
+      );
     }
   },
   modules: {

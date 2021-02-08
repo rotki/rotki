@@ -1,8 +1,8 @@
 <template>
   <v-container class="user-security-settings">
     <change-password />
-    <data-management class="mt-4" />
-    <oracle-cache-management class="mt-4" />
+    <data-management class="mt-8" />
+    <oracle-cache-management class="mt-8" />
   </v-container>
 </template>
 
