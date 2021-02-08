@@ -851,9 +851,10 @@ class DBHandler:
                 slashed_at,
                 unlock_at,
                 channel_id,
-                token
+                token,
+                log_index
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         )
         cursor = self.conn.cursor()
@@ -897,7 +898,8 @@ class DBHandler:
             'slashed_at, '
             'unlock_at, '
             'channel_id, '
-            'token '
+            'token, '
+            'log_index '
             'FROM adex_events '
         )
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`

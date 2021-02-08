@@ -166,6 +166,7 @@ def test_get_events(
         pool_id=tom_pool_id,
         value=Balance(FVal('5056.894263641728544592'), FVal('10113.788527283457089184')),
         token=A_ADX,
+        log_index=316,
     ), Unbond(
         tx_hash='0xa9ee91af823c0173fc5ada908ff9fe3f4d7c84a2c9da795f0889b3f4ace75b13',
         address=ADEX_TEST_ADDR,

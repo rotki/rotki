@@ -142,6 +142,7 @@ TEST_FIX_STAKING_EVENTS = ADXStakingEvents(
             channel_id='0x30d87bab0ef1e7f8b4c3b894ca2beed41bbd54c481f31e5791c1e855c9dbf4ba',
             pool_id='0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28',
             token=A_ADX,
+            log_index=316,
         ),
         ChannelWithdraw(
             tx_hash='3',
@@ -155,6 +156,7 @@ TEST_FIX_STAKING_EVENTS = ADXStakingEvents(
             channel_id='0x30d87bab0ef1e7f8b4c3b894ca2beed41bbd54c481f31e5791c1e855c9dbf4ba',
             pool_id='0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28',
             token=A_ADX,
+            log_index=213,
         ),
         ChannelWithdraw(
             tx_hash='4',
@@ -168,6 +170,7 @@ TEST_FIX_STAKING_EVENTS = ADXStakingEvents(
             channel_id='0x30d87bab0ef1e7f8b4c3b894ca2beed41bbd54c481f31e5791c1e855c9dbf4ba',
             pool_id='0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28',
             token=A_ADX,
+            log_index=130,
         ),
         # NB: missing from AdEx subgraph. Note channel_id are different
         ChannelWithdraw(
@@ -182,6 +185,7 @@ TEST_FIX_STAKING_EVENTS = ADXStakingEvents(
             channel_id='0xd179d5f8f09812458535f5bf271c2c5affa26329f355537e6d6246879355fcc9',
             pool_id='0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28',
             token=A_ADX,
+            log_index=124,
         ),
         ChannelWithdraw(
             tx_hash='4',
@@ -195,6 +199,7 @@ TEST_FIX_STAKING_EVENTS = ADXStakingEvents(
             channel_id='0xc18bd3ea2b0b6018ac675fc86236e304ad11cbe03e6ce31bb66417a001bd7221',
             pool_id='0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28',
             token=A_DAI,
+            log_index=126,
         ),
         ChannelWithdraw(
             tx_hash='4',
@@ -208,6 +213,7 @@ TEST_FIX_STAKING_EVENTS = ADXStakingEvents(
             channel_id='0xaccd95e386de6650e222495f9f096dc926863c4f1cd786e732eca12b35807e47',
             pool_id='0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28',
             token=A_DAI,
+            log_index=128,
         ),
     ],
 )

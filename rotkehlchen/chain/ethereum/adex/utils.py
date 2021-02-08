@@ -75,6 +75,7 @@ def deserialize_adex_event_from_db(
     11 - unlock_at
     12 - channel_id
     13 - token
+    14 - log_index
     """
     db_event_type = event_tuple[4]
     if db_event_type not in {str(event_type) for event_type in AdexEventType}:
@@ -143,7 +144,7 @@ def deserialize_adex_event_from_db(
         )
 
     if db_event_type == str(AdexEventType.CHANNEL_WITHDRAW):
-        if any(event_tuple[idx] is None for idx in (12, 13)):
+        if any(event_tuple[idx] is None for idx in (12, 13, 14)):
             raise DeserializationError(
                 f'Failed to deserialize channel withdraw event. Unexpected data: {event_tuple}.',
             )
@@ -166,6 +167,7 @@ def deserialize_adex_event_from_db(
             pool_id=pool_id,
             channel_id=cast(str, event_tuple[12]),
             token=token,
+            log_index=cast(int, event_tuple[14]),
         )
 
     raise DeserializationError(

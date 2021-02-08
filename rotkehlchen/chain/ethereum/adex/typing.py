@@ -31,6 +31,7 @@ AdexEventDBTuple = (
         Optional[int],  # unlock_at
         Optional[str],  # channel_id
         Optional[str],  # token
+        Optional[int],  # log_index
     ]
 )
 
@@ -104,6 +105,7 @@ class Bond(AdexEvent):
             None,  # unlock_at
             None,  # channel_id
             None,  # token
+            None,  # log_index
         )
 
 
@@ -140,6 +142,7 @@ class Unbond(AdexEvent):
             None,  # unlock_at
             None,  # channel_id
             None,  # token
+            None,  # log_index
         )
 
 
@@ -177,6 +180,7 @@ class UnbondRequest(AdexEvent):
             int(self.unlock_at),
             None,  # channel_id
             None,  # token
+            None,  # log_index
         )
 
 
@@ -186,6 +190,7 @@ class ChannelWithdraw(AdexEvent):
     channel_id: str
     pool_id: str
     token: EthereumToken
+    log_index: int
 
     def serialize(self) -> Dict[str, Any]:
         common_properties = super().serialize()
@@ -214,6 +219,7 @@ class ChannelWithdraw(AdexEvent):
             None,  # unlocked_at
             str(self.channel_id),
             self.token.serialize(),
+            int(self.log_index),
         )
 
 

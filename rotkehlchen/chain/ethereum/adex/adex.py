@@ -307,6 +307,7 @@ class Adex(EthereumModule):
         # Map addresses with their events
         for event in all_events:
             address_staking_events[event.address].append(event)
+
         # Sort staking events per address by timestamp (older first) and event type
         for address in address_staking_events.keys():
             address_staking_events[address].sort(
@@ -402,11 +403,12 @@ class Adex(EthereumModule):
     ) -> ChannelWithdraw:
         """Deserialize a channel withdraw event. Only for Tom pool.
 
-        It may raise KeyError and ChannelTokenAddressError
+        It may raise ChannelTokenAddressError, KeyError and ValueError.
         """
         inverse_identity_address_map = {
             address: identity for identity, address in identity_address_map.items()
         }
+        tx_hash, _, log_index = raw_event['id'].split(':')
         address = to_checksum_address(raw_event['user'])
         identity_address = inverse_identity_address_map[address]
         amount = FVal(raw_event['amount']) / ADX_AMOUNT_MANTISSA
@@ -422,7 +424,7 @@ class Adex(EthereumModule):
             )
 
         return ChannelWithdraw(
-            tx_hash=raw_event['id'].split(':')[0],
+            tx_hash=tx_hash,
             address=address,
             identity_address=identity_address,
             timestamp=Timestamp(raw_event['timestamp']),
@@ -430,6 +432,7 @@ class Adex(EthereumModule):
             channel_id=channel_id,
             pool_id=TOM_POOL_ID,
             token=token,
+            log_index=int(log_index),
         )
 
     @staticmethod
@@ -723,7 +726,7 @@ class Adex(EthereumModule):
                         raw_event=raw_event,
                         identity_address_map=identity_address_map,
                     )
-                except (ChannelTokenAddressError, KeyError) as e:
+                except (ChannelTokenAddressError, KeyError, ValueError) as e:
                     msg = f'Failed to deserialize an AdEx {schema} event due to: {str(e)}.'
                     log.error(msg, raw_event=raw_event)
                     raise DeserializationError(msg) from e
