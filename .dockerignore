@@ -1,6 +1,5 @@
 .eggs
 .github
-.travis
 .idea
 appveyor
 build
@@ -15,7 +14,6 @@ stubs
 .gitignore
 .ignore
 .pylint.rc
-.travis.yml
 appveyor.yml
 chromedriverlog.txt
 install_deps.sh

@@ -55,12 +55,12 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade "pip<19.0.0" wheel
-          pip install pytest-travis-fold codecov pytest-cov
+          pip install codecov pytest-cov
           pip install -r requirements_dev.txt
           pip install -e .
       - name: Run Test
         run: |
-          COVERAGE_ARGS='--cov=./ --travis-fold=always'
+          COVERAGE_ARGS='--cov=./'
           if [ ${{ matrix.os }} == 'macos-latest' ];
           then
             COVERAGE_ARGS=''
