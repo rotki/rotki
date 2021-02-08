@@ -959,7 +959,8 @@ class Adex(EthereumModule):
         protocol.
 
         May raise:
-        - RemoteError: when there is a problem querying the subgraph.
+        - RemoteError: when there is a problem either querying the subgraph or
+        deserializing the events.
 
         TODO: route non-premium users through on-chain query.
         """
@@ -1021,7 +1022,8 @@ class Adex(EthereumModule):
         """Get the staking history events of the addresses in the AdEx protocol.
 
         May raise:
-        - RemoteError: when there is a problem either querying the subgraph.
+        - RemoteError: when there is a problem either querying the subgraph or
+        deserializing the events.
         """
         if self.graph is None:  # could not initialize graph
             return {}
