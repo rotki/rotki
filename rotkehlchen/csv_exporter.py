@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from zipfile import ZipFile
 
 from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
+from rotkehlchen.accounting.cost_basis import CostBasisInfo
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import (
     EV_ASSET_MOVE,
@@ -117,6 +118,7 @@ class CSVExporter():
             is_virtual: bool = False,
             taxable_amount: FVal = ZERO,
             taxable_bought_cost: FVal = ZERO,
+            cost_basis_info: Optional[CostBasisInfo] = None,
     ) -> None:
         row = len(self.all_events_csv) + 2
         if event_type == EV_BUY:
@@ -156,6 +158,7 @@ class CSVExporter():
             'received_in_asset': received_in_asset,
             'net_profit_or_loss': net_profit_or_loss,
             'time': timestamp,
+            'cost_basis': cost_basis_info.serialize() if cost_basis_info else None,
             'is_virtual': is_virtual,
         }
         log.debug('csv event', **make_sensitive(entry))
@@ -168,6 +171,7 @@ class CSVExporter():
         new_entry[key] = taxable_received_in_profit_currency
         key = f'taxable_bought_cost_in_{self.profit_currency.identifier}'
         new_entry[key] = taxable_bought_cost
+        new_entry['cost_basis'] = cost_basis_info.to_string(self.timestamp_to_date) if cost_basis_info else ''  # noqa: E501
         del new_entry['paid_in_profit_currency']
         del new_entry['taxable_received_in_profit_currency']
         del new_entry['taxable_bought_cost_in_profit_currency']
@@ -235,6 +239,7 @@ class CSVExporter():
             taxable_bought_cost: FVal,
             timestamp: Timestamp,
             is_virtual: bool,
+            cost_basis_info: CostBasisInfo,
     ) -> None:
         if not self.create_csv:
             return
@@ -268,6 +273,7 @@ class CSVExporter():
             f'taxable_gain_in_{self.profit_currency.identifier}': taxable_profit_received,
             f'taxable_profit_loss_in_{self.profit_currency.identifier}': taxable_profit_formula,
             'time': self.timestamp_to_date(timestamp),
+            'cost_basis': cost_basis_info.to_string(self.timestamp_to_date),
             'is_virtual': is_virtual,
         })
         paid_in_profit_currency = ZERO
@@ -284,6 +290,7 @@ class CSVExporter():
             is_virtual=is_virtual,
             taxable_amount=taxable_amount,
             taxable_bought_cost=taxable_bought_cost,
+            cost_basis_info=cost_basis_info,
         )
 
     def add_loan_settlement(
@@ -294,6 +301,7 @@ class CSVExporter():
             rate_in_profit_currency: FVal,
             total_fee_in_profit_currency: FVal,
             timestamp: Timestamp,
+            cost_basis_info: CostBasisInfo,
     ) -> None:
         if not self.create_csv:
             return
@@ -307,6 +315,7 @@ class CSVExporter():
             f'price_in_{self.profit_currency.identifier}': rate_in_profit_currency,
             f'fee_in_{self.profit_currency.identifier}': total_fee_in_profit_currency,
             f'loss_in_{self.profit_currency.identifier}': loss_formula,
+            'cost_basis': cost_basis_info.to_string(self.timestamp_to_date),
             'time': self.timestamp_to_date(timestamp),
         })
         paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency
@@ -320,6 +329,7 @@ class CSVExporter():
             received_in_asset=FVal(0),
             taxable_received_in_profit_currency=FVal(0),
             timestamp=timestamp,
+            cost_basis_info=cost_basis_info,
         )
 
     def add_loan_profit(

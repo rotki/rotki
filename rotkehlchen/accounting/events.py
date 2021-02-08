@@ -444,12 +444,8 @@ class TaxableEvents():
         )
         self.handle_prefork_asset_sells(selling_asset, selling_amount, timestamp)
 
-        # now search the buys for `paid_with_asset` and calculate profit/loss
-        (
-            taxable_amount,
-            taxable_bought_cost,
-            taxfree_bought_cost,
-        ) = self.cost_basis.calculate_spend_cost_basis(
+        # now search the acquisitions for `paid_with_asset` and calculate profit/loss
+        cost_basis_info = self.cost_basis.calculate_spend_cost_basis(
             spending_amount=selling_amount,
             spending_asset=selling_asset,
             timestamp=timestamp,
@@ -464,18 +460,18 @@ class TaxableEvents():
         # calculate profit/loss
         if not loan_settlement or (loan_settlement and self.count_profit_for_settlements):
             taxable_gain = taxable_gain_for_sell(
-                taxable_amount=taxable_amount,
+                taxable_amount=cost_basis_info.taxable_amount,
                 rate_in_profit_currency=rate_in_profit_currency,
                 total_fee_in_profit_currency=total_fee_in_profit_currency,
                 selling_amount=selling_amount,
             )
 
             general_profit_loss = gain_in_profit_currency - (
-                taxfree_bought_cost +
-                taxable_bought_cost +
+                cost_basis_info.taxfree_bought_cost +
+                cost_basis_info.taxable_bought_cost +
                 total_fee_in_profit_currency
             )
-            taxable_profit_loss = taxable_gain - taxable_bought_cost
+            taxable_profit_loss = taxable_gain - cost_basis_info.taxable_bought_cost
 
         # should never happen, should be stopped at the main loop
         assert timestamp <= self.query_end_ts, (
@@ -523,6 +519,7 @@ class TaxableEvents():
                     rate_in_profit_currency=rate_in_profit_currency,
                     total_fee_in_profit_currency=total_fee_in_profit_currency,
                     timestamp=timestamp,
+                    cost_basis_info=cost_basis_info,
                 )
             else:
                 assert receiving_asset, 'Here receiving asset should have a value'
@@ -539,9 +536,10 @@ class TaxableEvents():
                         receiving_asset,
                         timestamp,
                     ),
-                    taxable_amount=taxable_amount,
-                    taxable_bought_cost=taxable_bought_cost,
+                    taxable_amount=cost_basis_info.taxable_amount,
+                    taxable_bought_cost=cost_basis_info.taxable_bought_cost,
                     timestamp=timestamp,
+                    cost_basis_info=cost_basis_info,
                     is_virtual=is_virtual,
                 )
 
