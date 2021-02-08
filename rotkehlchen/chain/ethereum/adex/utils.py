@@ -1,4 +1,4 @@
-from typing import Union, cast
+from typing import Union
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
@@ -9,7 +9,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import Timestamp
 
 from .typing import AdexEventDBTuple, AdexEventType, Bond, ChannelWithdraw, Unbond, UnbondRequest
 
@@ -105,9 +104,9 @@ def deserialize_adex_event_from_db(
             timestamp=timestamp,
             pool_id=pool_id,
             value=value,
-            bond_id=cast(str, event_tuple[8]),
-            nonce=cast(int, event_tuple[9]),
-            slashed_at=Timestamp(cast(int, event_tuple[10])),
+            bond_id=event_tuple[8],  # type: ignore # type already checked
+            nonce=event_tuple[9],  # type: ignore # type already checked
+            slashed_at=deserialize_timestamp(event_tuple[10]),  # type: ignore # already checked
         )
 
     if db_event_type == str(AdexEventType.UNBOND):
@@ -123,7 +122,7 @@ def deserialize_adex_event_from_db(
             timestamp=timestamp,
             pool_id=pool_id,
             value=value,
-            bond_id=cast(str, event_tuple[8]),
+            bond_id=event_tuple[8],  # type: ignore # type already checked
         )
 
     if db_event_type == str(AdexEventType.UNBOND_REQUEST):
@@ -139,8 +138,8 @@ def deserialize_adex_event_from_db(
             timestamp=timestamp,
             pool_id=pool_id,
             value=value,
-            bond_id=cast(str, event_tuple[8]),
-            unlock_at=Timestamp(cast(int, event_tuple[11])),
+            bond_id=event_tuple[8],  # type: ignore # type already checked
+            unlock_at=deserialize_timestamp(event_tuple[11]),  # type: ignore # already checked
         )
 
     if db_event_type == str(AdexEventType.CHANNEL_WITHDRAW):
@@ -150,7 +149,7 @@ def deserialize_adex_event_from_db(
             )
 
         try:
-            token = EthereumToken(cast(str, event_tuple[13]))
+            token = EthereumToken(event_tuple[13])   # type: ignore # type already checked
         except (UnknownAsset, UnsupportedAsset) as e:
             asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
             raise DeserializationError(
@@ -165,9 +164,9 @@ def deserialize_adex_event_from_db(
             timestamp=timestamp,
             value=value,
             pool_id=pool_id,
-            channel_id=cast(str, event_tuple[12]),
+            channel_id=event_tuple[12],  # type: ignore # type already checked
             token=token,
-            log_index=cast(int, event_tuple[14]),
+            log_index=event_tuple[14],  # type: ignore # type already checked
         )
 
     raise DeserializationError(

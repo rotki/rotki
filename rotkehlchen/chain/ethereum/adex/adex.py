@@ -84,10 +84,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ChannelTokenAddressError(Exception):
-    pass
-
-
 class Adex(EthereumModule):
     """AdEx integration module
 
@@ -368,22 +364,34 @@ class Adex(EthereumModule):
     ) -> Bond:
         """Deserialize a bond event.
 
-        It may raise KeyError.
+        May raise DeserializationError.
         """
-        adex_event = self._deserialize_adex_event(
-            raw_event=raw_event,
-            identity_address_map=identity_address_map,
-        )
-        amount_int = int(raw_event['amount'])
-        amount = FVal(raw_event['amount']) / ADX_AMOUNT_MANTISSA
-        pool_id = raw_event['poolId']
-        nonce = int(raw_event['nonce'])
-        bond_id = self._get_bond_id(
-            identity_address=adex_event.identity_address,
-            amount=amount_int,
-            pool_id=pool_id,
-            nonce=nonce,
-        )
+        try:
+            adex_event = self._deserialize_adex_event(
+                raw_event=raw_event,
+                identity_address_map=identity_address_map,
+            )
+            amount_int = int(raw_event['amount'])
+            amount = FVal(raw_event['amount']) / ADX_AMOUNT_MANTISSA
+            pool_id = raw_event['poolId']
+            nonce = int(raw_event['nonce'])
+            bond_id = self._get_bond_id(
+                identity_address=adex_event.identity_address,
+                amount=amount_int,
+                pool_id=pool_id,
+                nonce=nonce,
+            )
+            slashed_at = deserialize_timestamp(raw_event['slashedAtStart'])
+        except (DeserializationError, KeyError, ValueError) as e:
+            msg = 'Failed to deserialize an AdEx bond event. Check logs for more details'
+            log.error(
+                msg,
+                error=str(e),
+                raw_event=raw_event,
+                identity_address_map=identity_address_map,
+            )
+            raise DeserializationError(msg) from e
+
         return Bond(
             tx_hash=adex_event.tx_hash,
             address=adex_event.address,
@@ -393,7 +401,7 @@ class Adex(EthereumModule):
             value=Balance(amount=amount),
             pool_id=pool_id,
             nonce=nonce,
-            slashed_at=Timestamp(int(raw_event['slashedAtStart'])),
+            slashed_at=slashed_at,
         )
 
     @staticmethod
@@ -403,25 +411,42 @@ class Adex(EthereumModule):
     ) -> ChannelWithdraw:
         """Deserialize a channel withdraw event. Only for Tom pool.
 
-        It may raise ChannelTokenAddressError, KeyError and ValueError.
+        May raise DeserializationError.
         """
         inverse_identity_address_map = {
             address: identity for identity, address in identity_address_map.items()
         }
-        tx_hash, _, log_index = raw_event['id'].split(':')
-        address = to_checksum_address(raw_event['user'])
-        identity_address = inverse_identity_address_map[address]
-        amount = FVal(raw_event['amount']) / ADX_AMOUNT_MANTISSA
-        channel_id = raw_event['channel']['channelId']
-        token_address = to_checksum_address(raw_event['channel']['tokenAddr'])
+        try:
+            tx_hash, _, log_index = raw_event['id'].split(':')
+            address = to_checksum_address(raw_event['user'])
+            identity_address = inverse_identity_address_map[address]
+            amount = FVal(raw_event['amount']) / ADX_AMOUNT_MANTISSA
+            channel_id = raw_event['channel']['channelId']
+            token_address = to_checksum_address(raw_event['channel']['tokenAddr'])
+        except (KeyError, ValueError) as e:
+            msg = (
+                'Failed to deserialize an AdEx channel withdraw event. '
+                'Check logs for more details'
+            )
+            log.error(
+                msg,
+                error=str(e),
+                raw_event=raw_event,
+                identity_address_map=identity_address_map,
+            )
+            raise DeserializationError(msg) from e
+
         if token_address == A_ADX.ethereum_address:
             token = A_ADX
         elif token_address == A_DAI.ethereum_address:
             token = A_DAI
         else:
-            raise ChannelTokenAddressError(
-                f'Unexpected token address: {token_address} on channel: {channel_id}',
+            msg = (
+                f'Failed to deserialize an AdEx channel withdraw event. '
+                f'Unexpected token address: {token_address} on channel: {channel_id}'
             )
+            log.error(msg, raw_event=raw_event)
+            raise DeserializationError(msg)
 
         return ChannelWithdraw(
             tx_hash=tx_hash,
@@ -442,15 +467,21 @@ class Adex(EthereumModule):
     ) -> AdexEvent:
         """Deserialize the common event attributes.
 
-        It may raise KeyError.
         Id for unbond and unbond request events is 'tx_hash:address'.
+        May raise:
+        - KeyError
+        - DeserializationError: via `deserialize_timestamp()`.
         """
         identity_address = to_checksum_address(raw_event['owner'])
+        tx_hash = raw_event['id'].split(':')[0]
+        address = identity_address_map[identity_address]
+        timestamp = deserialize_timestamp(raw_event['timestamp'])
+
         return AdexEvent(
-            tx_hash=raw_event['id'].split(':')[0],
-            address=identity_address_map[identity_address],
+            tx_hash=tx_hash,
+            address=address,
             identity_address=identity_address,
-            timestamp=Timestamp(raw_event['timestamp']),
+            timestamp=timestamp,
         )
 
     def _deserialize_unbond(
@@ -460,18 +491,30 @@ class Adex(EthereumModule):
     ) -> Unbond:
         """Deserialize an unbond event.
 
-        It may raise KeyError.
+        May raise DeserializationError.
         """
-        adex_event = self._deserialize_adex_event(
-            raw_event=raw_event,
-            identity_address_map=identity_address_map,
-        )
+        try:
+            adex_event = self._deserialize_adex_event(
+                raw_event=raw_event,
+                identity_address_map=identity_address_map,
+            )
+            bond_id = raw_event['bondId']
+        except (DeserializationError, KeyError) as e:
+            msg = 'Failed to deserialize an AdEx unbond event. Check logs for more details'
+            log.error(
+                msg,
+                error=str(e),
+                raw_event=raw_event,
+                identity_address_map=identity_address_map,
+            )
+            raise DeserializationError(msg) from e
+
         return Unbond(
             tx_hash=adex_event.tx_hash,
             address=adex_event.address,
             identity_address=adex_event.identity_address,
             timestamp=adex_event.timestamp,
-            bond_id=raw_event['bondId'],
+            bond_id=bond_id,
             value=Balance(),
         )
 
@@ -484,18 +527,31 @@ class Adex(EthereumModule):
 
         It may raise KeyError.
         """
-        adex_event = self._deserialize_adex_event(
-            raw_event=raw_event,
-            identity_address_map=identity_address_map,
-        )
+        try:
+            adex_event = self._deserialize_adex_event(
+                raw_event=raw_event,
+                identity_address_map=identity_address_map,
+            )
+            bond_id = raw_event['bondId']
+            unlock_at = deserialize_timestamp(raw_event['willUnlock'])
+        except (DeserializationError, KeyError) as e:
+            msg = 'Failed to deserialize an AdEx unbond request event. Check logs for more details'
+            log.error(
+                msg,
+                error=str(e),
+                raw_event=raw_event,
+                identity_address_map=identity_address_map,
+            )
+            raise DeserializationError(msg) from e
+
         return UnbondRequest(
             tx_hash=adex_event.tx_hash,
             address=adex_event.address,
             identity_address=adex_event.identity_address,
             timestamp=adex_event.timestamp,
-            bond_id=raw_event['bondId'],
+            bond_id=bond_id,
             value=Balance(),
-            unlock_at=Timestamp(int(raw_event['willUnlock'])),
+            unlock_at=unlock_at,
         )
 
     def _get_tom_pool_fee_rewards_from_api(self) -> FeeRewards:
@@ -659,7 +715,7 @@ class Adex(EthereumModule):
         May raise:
         - DeserializationError: when there is a problem deserializing the
         events on the subgraph response.
-        - RemoteError: when there is a problem either querying the subgraph.
+        - RemoteError: when there is a problem querying the subgraph.
         """
         user_identities = [str(identity).lower() for identity in identity_address_map.keys()]
         deserialization_method: DeserializationMethod
@@ -721,16 +777,10 @@ class Adex(EthereumModule):
 
             result_data = result[schema]
             for raw_event in result_data:
-                try:
-                    event = deserialization_method(
-                        raw_event=raw_event,
-                        identity_address_map=identity_address_map,
-                    )
-                except (ChannelTokenAddressError, KeyError, ValueError) as e:
-                    msg = f'Failed to deserialize an AdEx {schema} event due to: {str(e)}.'
-                    log.error(msg, raw_event=raw_event)
-                    raise DeserializationError(msg) from e
-
+                event = deserialization_method(
+                    raw_event=raw_event,
+                    identity_address_map=identity_address_map,
+                )
                 events.append(event)
 
             if len(result_data) < GRAPH_QUERY_LIMIT:

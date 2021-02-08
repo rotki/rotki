@@ -1329,17 +1329,35 @@ def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v23_rotkehlchen.db')
     db = _init_db_with_target_version(
+        target_version=23,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    # Checks before migration
+    assert cursor.execute(
+        'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "adex_events%";',
+    ).fetchone()[0] == 1
+    assert cursor.execute(
+        'SELECT COUNT(*) from adex_events;',
+    ).fetchone()[0] == 1
+
+    # Migrate to v24
+    db = _init_db_with_target_version(
         target_version=24,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
     cursor = db.conn.cursor()
+
     # Make sure AdEx used query ranges have been deleted
     assert cursor.execute(
-        'SELECT COUNT(*) from used_query_ranges WHERE name = "adex_events";',
+        'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "adex_events%";',
     ).fetchone()[0] == 0
-    # Make sure `adex_events` has been created
-    assert cursor.execute('SELECT COUNT(*) from adex_events;').fetchone()[0] == 0
+
+    # Make sure `adex_events` has been successfully created. All columns have
+    # been selected for double-checking the new schema
     query = cursor.execute(
         'SELECT '
         'tx_hash, '
@@ -1358,10 +1376,7 @@ def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
         'token, '
         'log_index from adex_events;',
     )
-    length = 0
-    for _ in query:
-        length += 1
-    assert length == 0
+    assert len(query.fetchall()) == 0
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 24

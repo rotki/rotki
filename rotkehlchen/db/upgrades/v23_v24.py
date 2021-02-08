@@ -13,7 +13,7 @@ def upgrade_v23_to_v24(db: 'DBHandler') -> None:
     """
     cursor = db.conn.cursor()
     # Delete AdEx used query ranges, drop the events table and re-create it
-    cursor.execute('DELETE FROM used_query_ranges WHERE name = "adex_events";')
+    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "adex_events%";')
     cursor.execute('DROP TABLE IF EXISTS adex_events;')
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS adex_events (
