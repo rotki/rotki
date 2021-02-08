@@ -120,6 +120,10 @@ export default class ManualBalances extends Vue {
     this.openDialog = false;
     this.balanceToEdit = null;
   }
+
+  mounted() {
+    this.openDialog = !!this.$route.query.add;
+  }
 }
 </script>
 
