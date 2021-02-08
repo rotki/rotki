@@ -1496,7 +1496,8 @@
     "total": "Total"
   },
   "labeled_address_display": {
-    "label": "{label} |",
+    "label": "{label}",
+    "divider": "|",
     "copy": "Copy address to clipboard",
     "open_link": "Open in external block explorer"
   },
