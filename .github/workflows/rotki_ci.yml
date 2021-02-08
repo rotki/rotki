@@ -201,6 +201,16 @@ jobs:
             ~/.npm
             ~/.cache/Cypress
           key: ${{ runner.os }}-node--e2e-${{ hashFiles('**/app/package-lock.json') }}
+      - name: Store frontend cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/rotki-e2e/price_history
+            ~/rotki-e2e/icons
+            ~/rotki-e2e/assets
+          key: ${{ runner.os }}-e2e-cache-${{ hashFiles('**/app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-e2e-cache-
       - name: Setup SQLCipher
         run: |
           sudo apt-get update

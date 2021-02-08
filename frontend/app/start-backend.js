@@ -3,21 +3,25 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const tmpDir = os.tmpdir();
-let tempPath = path.join(tmpDir, 'rotki');
+const tmpDir = process.env.CI ? os.homedir() : os.tmpdir();
+let tempPath = path.join(tmpDir, 'rotki-e2e');
 
-process.stdout.write(`Using ${tempPath} to start tests`);
+process.stdout.write(`Using ${tempPath} to start tests\n`);
 
 if (!fs.existsSync(tempPath)) {
   fs.mkdirSync(tempPath);
 } else {
   const contents = fs.readdirSync(tempPath);
-  contents.forEach(name => {
+  for (const name of contents) {
+    if (['assets', 'icons', 'price_history'].includes(name)) {
+      continue;
+    }
+
     const currentPath = path.join(tempPath, name);
     if (fs.statSync(currentPath).isDirectory()) {
       fs.rmdirSync(currentPath, { recursive: true });
     }
-  });
+  }
 }
 
 const args = [
