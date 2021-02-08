@@ -97,7 +97,7 @@ class MatchedAcquisition(NamedTuple):
     def to_string(self, converter: Callable[[Timestamp], str]) -> str:
         return (
             f'{self.amount} / {self.event.amount} acquired in {str(self.event.location)}'
-            f'at {converter(self.event.timestamp)}'
+            f' at {converter(self.event.timestamp)}'
         )
 
 

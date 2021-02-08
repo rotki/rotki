@@ -2,11 +2,10 @@ import csv
 import logging
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 from zipfile import ZipFile
 
 from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
-from rotkehlchen.accounting.cost_basis import CostBasisInfo
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import (
     EV_ASSET_MOVE,
@@ -36,6 +35,9 @@ from rotkehlchen.typing import (
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
 from rotkehlchen.db.dbhandler import DBHandler
 
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.cost_basis import CostBasisInfo
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -50,9 +52,18 @@ FILENAME_LEDGER_ACTIONS_CSV = 'ledger_actions.csv'
 FILENAME_ALL_CSV = 'all_events.csv'
 
 
+class CSVWriteError(Exception):
+    pass
+
+
 def _dict_to_csv_file(path: Path, dictionary_list: List) -> None:
     """Takes a filepath and a list of dictionaries representing the rows and writes them
-    into the file as a CSV"""
+    into the file as a CSV
+
+    May raise:
+    - CSVWriteError if DictWriter.writerow() tried to write a dict contains
+    fields not in fieldnames
+    """
     if len(dictionary_list) == 0:
         log.debug('Skipping writting empty CSV for {}'.format(path))
         return
@@ -60,8 +71,11 @@ def _dict_to_csv_file(path: Path, dictionary_list: List) -> None:
     with open(path, 'w') as f:
         w = csv.DictWriter(f, dictionary_list[0].keys())
         w.writeheader()
-        for dic in dictionary_list:
-            w.writerow(dic)
+        try:
+            for dic in dictionary_list:
+                w.writerow(dic)
+        except ValueError as e:
+            raise CSVWriteError(f'Failed to write {path} CSV due to {str(e)}') from e
 
 
 class CSVExporter():
@@ -118,7 +132,7 @@ class CSVExporter():
             is_virtual: bool = False,
             taxable_amount: FVal = ZERO,
             taxable_bought_cost: FVal = ZERO,
-            cost_basis_info: Optional[CostBasisInfo] = None,
+            cost_basis_info: Optional['CostBasisInfo'] = None,
     ) -> None:
         row = len(self.all_events_csv) + 2
         if event_type == EV_BUY:
@@ -209,6 +223,7 @@ class CSVExporter():
             'taxable_gain_in_{}'.format(self.profit_currency.identifier): FVal(0),
             'taxable_profit_loss_in_{}'.format(self.profit_currency.identifier): FVal(0),
             'time': self.timestamp_to_date(timestamp),
+            'cost_basis': 'N/A',
             'is_virtual': is_virtual,
         })
         self.add_to_allevents(
@@ -239,7 +254,7 @@ class CSVExporter():
             taxable_bought_cost: FVal,
             timestamp: Timestamp,
             is_virtual: bool,
-            cost_basis_info: CostBasisInfo,
+            cost_basis_info: 'CostBasisInfo',
     ) -> None:
         if not self.create_csv:
             return
@@ -301,7 +316,7 @@ class CSVExporter():
             rate_in_profit_currency: FVal,
             total_fee_in_profit_currency: FVal,
             timestamp: Timestamp,
-            cost_basis_info: CostBasisInfo,
+            cost_basis_info: 'CostBasisInfo',
     ) -> None:
         if not self.create_csv:
             return
@@ -592,7 +607,7 @@ class CSVExporter():
                 dirpath / FILENAME_ALL_CSV,
                 self.all_events_csv,
             )
-        except PermissionError as e:
+        except (CSVWriteError, PermissionError) as e:
             return False, str(e)
 
         return True, ''
