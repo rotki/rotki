@@ -46,7 +46,7 @@
           </div>
           <div v-if="blockchainTotals.length === 0">
             <v-card-actions>
-              <v-btn text color="primary" to="/accounts-balances">
+              <v-btn text color="primary" to="/accounts-balances/?add=true">
                 {{ $t('dashboard.blockchain_balances.add') }}
               </v-btn>
             </v-card-actions>
@@ -79,7 +79,7 @@
               <v-btn
                 text
                 color="primary"
-                to="/accounts-balances/manual-balances"
+                to="/accounts-balances/manual-balances/?add=true"
               >
                 {{ $t('dashboard.manual_balances.add') }}
               </v-btn>

@@ -137,5 +137,9 @@ export default class BlockchainBalances extends Vue {
       await this.clearDialog();
     }
   }
+
+  mounted() {
+    this.openDialog = !!this.$route.query.add;
+  }
 }
 </script>
