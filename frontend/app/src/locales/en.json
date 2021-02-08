@@ -23,7 +23,7 @@
     "title": "Airdrops"
   },
   "asset-locations": {
-    "title": "Asset Location"
+    "title": "Asset Locations"
   },
   "asset_balances": {
     "headers": {
@@ -1620,7 +1620,7 @@
     "advanced_tooltip": "Display the advanced xpub options | Hide the advanced xpub options"
   },
   "blockchain_balances": {
-    "title": "Blockchain Balances (per asset)",
+    "title": "Blockchain Balances per asset",
     "form_dialog": {
       "save": "Save",
       "cancel": "Cancel",
