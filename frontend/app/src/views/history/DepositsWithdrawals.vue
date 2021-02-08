@@ -182,7 +182,9 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
     { text: '', value: 'selection', width: '34px', sortable: false },
     {
       text: this.$tc('deposits_withdrawals.headers.location'),
-      value: 'location'
+      value: 'location',
+      width: '120px',
+      align: 'center'
     },
     {
       text: this.$tc('deposits_withdrawals.headers.action'),
@@ -340,6 +342,16 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
     &__details {
       height: 150px !important;
       background-color: var(--v-rotki-light-grey-base);
+    }
+  }
+}
+
+::v-deep {
+  th {
+    &:nth-child(2) {
+      span {
+        padding-left: 16px;
+      }
     }
   }
 }

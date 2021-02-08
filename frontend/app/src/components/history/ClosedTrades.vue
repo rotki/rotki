@@ -241,7 +241,9 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
     { text: '', value: 'selection', width: '34px', sortable: false },
     {
       text: this.$tc('closed_trades.headers.location'),
-      value: 'location'
+      value: 'location',
+      width: '120px',
+      align: 'center'
     },
     {
       text: this.$tc('closed_trades.headers.action'),
@@ -444,6 +446,16 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   &__trade {
     &__details {
       background-color: var(--v-rotki-light-grey-base);
+    }
+  }
+}
+
+::v-deep {
+  th {
+    &:nth-child(2) {
+      span {
+        padding-left: 16px;
+      }
     }
   }
 }

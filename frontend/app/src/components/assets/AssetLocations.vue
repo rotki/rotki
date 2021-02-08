@@ -8,6 +8,8 @@
         <v-data-table
           :headers="headers"
           :items="assetLocations"
+          sort-by="balance.amount"
+          sort-desc
           :footer-props="footerProps"
         >
           <template #item.location="{ item }">
@@ -60,7 +62,9 @@ export default class AssetLocations extends Vue {
     return [
       {
         text: this.$t('asset_locations.header.location').toString(),
-        value: 'location'
+        value: 'location',
+        align: 'center',
+        width: '120px'
       },
       {
         text: this.$t('asset_locations.header.address').toString(),
@@ -94,4 +98,14 @@ export default class AssetLocations extends Vue {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+::v-deep {
+  th {
+    &:first-child {
+      span {
+        padding-left: 16px;
+      }
+    }
+  }
+}
+</style>

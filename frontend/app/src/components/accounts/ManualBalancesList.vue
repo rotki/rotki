@@ -166,7 +166,9 @@ export default class ManualBalancesList extends Vue {
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('manual_balances_list.headers.location').toString(),
-      value: 'location'
+      value: 'location',
+      align: 'center',
+      width: '120px'
     },
     {
       text: this.$t('manual_balances_list.headers.label').toString(),
@@ -247,6 +249,16 @@ export default class ManualBalancesList extends Vue {
 
   &__label {
     padding-bottom: 0 !important;
+  }
+}
+
+::v-deep {
+  th {
+    &:first-child {
+      span {
+        padding-left: 16px;
+      }
+    }
   }
 }
 </style>

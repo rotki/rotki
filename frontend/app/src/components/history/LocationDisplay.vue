@@ -1,5 +1,5 @@
 <template>
-  <location-icon class="location-display pb-3 pt-3" :item="location" />
+  <location-icon class="location-display" :item="location" />
 </template>
 
 <script lang="ts">
@@ -52,6 +52,6 @@ export default class LocationDisplay extends Vue {
 
 <style scoped lang="scss">
 .location-display {
-  width: 90px;
+  width: 100%;
 }
 </style>

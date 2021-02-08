@@ -255,7 +255,9 @@ export default class LedgerActions extends Mixins(StatusMixin) {
     { text: '', value: 'selection', width: '34px', sortable: false },
     {
       text: this.$t('ledger_actions.headers.location').toString(),
-      value: 'location'
+      value: 'location',
+      width: '120px',
+      align: 'center'
     },
     {
       text: this.$t('ledger_actions.headers.type').toString(),
@@ -454,6 +456,16 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   &__action {
     &__details {
       background-color: var(--v-rotki-light-grey-base);
+    }
+  }
+}
+
+::v-deep {
+  th {
+    &:nth-child(2) {
+      span {
+        padding-left: 16px;
+      }
     }
   }
 }
