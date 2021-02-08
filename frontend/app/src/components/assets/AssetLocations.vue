@@ -10,6 +10,7 @@
           :items="assetLocations"
           sort-by="balance.amount"
           sort-desc
+          :loading="detailsLoading"
           :footer-props="footerProps"
         >
           <template #item.location="{ item }">
@@ -53,7 +54,8 @@ import { GeneralAccount } from '@/typing/types';
   components: { LabeledAddressDisplay, CardTitle },
   computed: {
     ...mapGetters('balances', ['breakdown', 'account']),
-    ...mapGetters('session', ['currencySymbol'])
+    ...mapGetters('session', ['currencySymbol']),
+    ...mapGetters(['detailsLoading'])
   }
 })
 export default class AssetLocations extends Vue {
@@ -91,6 +93,7 @@ export default class AssetLocations extends Vue {
   breakdown!: (asset: string) => AssetBreakdown[];
   account!: (address: string) => GeneralAccount | undefined;
   currencySymbol!: string;
+  detailsLoading!: boolean;
 
   get assetLocations(): AssetBreakdown[] {
     return this.breakdown(this.identifier);

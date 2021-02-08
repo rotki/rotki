@@ -157,6 +157,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const { name, ignoreCache } = payload;
     const isTaskRunning = rootGetters['tasks/isTaskRunning'];
     const taskMetadata = rootGetters['tasks/metadata'];
+    const status = rootGetters['status'];
     const taskType = TaskType.QUERY_EXCHANGE_BALANCES;
 
     const meta: ExchangeMeta = taskMetadata(taskType);
@@ -164,6 +165,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     if (isTaskRunning(taskType) && meta.name === name) {
       return;
     }
+
+    const currentStatus: Status = status(Section.EXCHANGES);
+    const section = Section.EXCHANGES;
+    const newStatus =
+      currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
 
     try {
       const { taskId } = await api.queryExchangeBalances(name, ignoreCache);
@@ -203,6 +210,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         }
       );
       notify(message, title, Severity.ERROR, true);
+    } finally {
+      setStatus(Status.LOADED, section, status, commit);
     }
   },
   async fetchExchangeRates({ commit }): Promise<void> {
@@ -690,7 +699,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async fetchManualBalances({ commit }) {
+  async fetchManualBalances({ commit, rootGetters: { status } }) {
+    const currentStatus: Status = status(Section.MANUAL_BALANCES);
+    const section = Section.MANUAL_BALANCES;
+    const newStatus =
+      currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
     try {
       const taskType = TaskType.MANUAL_BALANCES;
       const { taskId } = await api.balances.manualBalances();
@@ -718,6 +733,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         Severity.ERROR,
         true
       );
+    } finally {
+      setStatus(Status.LOADED, section, status, commit);
     }
   },
 

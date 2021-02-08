@@ -509,25 +509,29 @@ export const getters: Getters<
     }
 
     if (asset === BTC) {
-      for (const address in standalone) {
-        const btcBalance = standalone[address];
-        breakdown.push({
-          address,
-          location: BTC,
-          balance: btcBalance
-        });
-      }
-
-      for (let i = 0; i < xpubs.length; i++) {
-        const xpub = xpubs[i];
-        const addresses = xpub.addresses;
-        for (const address in addresses) {
-          const btcBalance = addresses[address];
+      if (standalone) {
+        for (const address in standalone) {
+          const btcBalance = standalone[address];
           breakdown.push({
             address,
             location: BTC,
             balance: btcBalance
           });
+        }
+      }
+
+      if (xpubs) {
+        for (let i = 0; i < xpubs.length; i++) {
+          const xpub = xpubs[i];
+          const addresses = xpub.addresses;
+          for (const address in addresses) {
+            const btcBalance = addresses[address];
+            breakdown.push({
+              address,
+              location: BTC,
+              balance: btcBalance
+            });
+          }
         }
       }
     }
