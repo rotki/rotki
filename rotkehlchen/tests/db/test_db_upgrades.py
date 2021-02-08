@@ -1339,9 +1339,7 @@ def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute(
         'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "adex_events%";',
     ).fetchone()[0] == 1
-    assert cursor.execute(
-        'SELECT COUNT(*) from adex_events;',
-    ).fetchone()[0] == 1
+    assert cursor.execute('SELECT COUNT(*) from adex_events;').fetchone()[0] == 1
 
     # Migrate to v24
     db = _init_db_with_target_version(
