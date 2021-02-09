@@ -888,7 +888,7 @@ Query the current exchange rate for select assets
       Content-Type: application/json
 
       {
-          "result": {"EUR": "0.8973438622", "CNY": "7.0837221823", "GBP": "0.7756191673", "BTC": "19420.23},
+          "result": {"EUR": "0.8973438622", "CNY": "7.0837221823", "GBP": "0.7756191673", "BTC": "19420.23"},
           "message": ""
       }
 
@@ -3024,6 +3024,7 @@ Querying complete action history
                   "received_in_asset": "24",
                   "net_profit_or_loss": "0",
                   "time": 1514765800,
+                  "cost_basis": null,
                   "is_virtual": false
               }, {
                   "type": "sell",
@@ -3037,6 +3038,26 @@ Querying complete action history
                   "received_in_asset": "1600",
                   "net_profit_or_loss": "200",
                   "time": 1524865800,
+                  "cost_basis": {
+                      "is_complete": true,
+                      "matched_acquisitions": [{
+                          "time": 15653231,
+                          "description": "trade",
+                          "location": "kraken",
+                          "used_amount": "0.1",
+                          "amount": "1",
+                          "rate": "500",
+                          "fee_rate": "0.1",
+                      }, {
+                          "time": 15654231,
+                          "description": "trade",
+                          "location": "bittrex",
+                          "used_amount": "0.1",
+                          "amount": "1",
+                          "rate": "550",
+                          "fee_rate": "0",
+                      }]
+                  },
                   "is_virtual": false
               }],
           },
@@ -3071,6 +3092,7 @@ Querying complete action history
    :resjson str net_profit_or_loss: The net profit/loss from this action denoted in profit currency.
    :resjson int time: The timestamp this action took place in.
    :resjson bool is_virtual: A boolean denoting whether this is a virtual action. Virtual actions are special actions that are created to make accounting for crypto to crypto trades possible. For example, if you sell BTC for ETH a virtual trade to sell BTC for EUR and then a virtual buy to buy BTC with EUR will be created.
+   :resjson object cost_basis: An object describing the cost basis of the event if it's a spend event. Contains a boolean attribute ``"is_complete"`` to denoting if we have complete cost basis information for the spent asset or not. If not then this means that rotki does not know enough to properly calculate cost basis. The other attribute is ``"matched_acquisitions"`` a list of matched acquisition events from which the cost basis is calculated. Each event has ``"time"``, ``"description"``, ``"location"`` attributes which are self-explanatory. Then it also has the ``"amount"`` which is the amount that was acquired in that event and the ``"used_amount"`` which is how much of that is used in this spend action. Then there is the ``"rate"`` key which shows the rate in the profit currency with which 1 unit of the asset was acquired at the event. And finally the ``"fee_rate"`` denoting how much of the profit currency was paid for each unit of the asset bought.
 
    :statuscode 200: History processed and returned succesfully
    :statuscode 400: Provided JSON is in some way malformed.

@@ -1,18 +1,19 @@
 import logging
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
+from rotkehlchen.accounting.cost_basis import CostBasisCalculator
 from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
-from rotkehlchen.exchanges.data_structures import BuyEvent, Events, MarginPosition, SellEvent
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Fee, Location, Timestamp
-from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -21,9 +22,9 @@ log = RotkehlchenLogsAdapter(logger)
 class TaxableEvents():
 
     def __init__(self, csv_exporter: CSVExporter, profit_currency: Asset) -> None:
-        self.events: Dict[Asset, Events] = {}
         self.csv_exporter = csv_exporter
         self.profit_currency = profit_currency
+        self.cost_basis = CostBasisCalculator(csv_exporter, profit_currency)
 
         # If this flag is True when your asset is being forcefully sold as a
         # loan/margin settlement then profit/loss is also calculated before the entire
@@ -34,8 +35,8 @@ class TaxableEvents():
         self._include_crypto2crypto: Optional[bool] = None
         self._account_for_assets_movements: Optional[bool] = None
 
-    def reset(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
-        self.events = {}
+    def reset(self, profit_currency: Asset, start_ts: Timestamp, end_ts: Timestamp) -> None:
+        self.cost_basis.reset(profit_currency)
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
         self.general_trade_profit_loss = ZERO
@@ -57,13 +58,11 @@ class TaxableEvents():
 
     @property
     def taxfree_after_period(self) -> Optional[int]:
-        return self._taxfree_after_period
+        return self.cost_basis._taxfree_after_period
 
     @taxfree_after_period.setter
     def taxfree_after_period(self, value: Optional[int]) -> None:
-        is_valid = isinstance(value, int) or value is None
-        assert is_valid, 'set taxfree_after_period should only get int or None'
-        self._taxfree_after_period = value
+        self.cost_basis.taxfree_after_period = value
 
     @property
     def account_for_assets_movements(self) -> Optional[bool]:
@@ -72,29 +71,6 @@ class TaxableEvents():
     @account_for_assets_movements.setter
     def account_for_assets_movements(self, value: Optional[bool]) -> None:
         self._account_for_assets_movements = value
-
-    def calculate_asset_details(self) -> Dict[Asset, Tuple[FVal, FVal]]:
-        """ Calculates what amount of all assets has been untouched for a year and
-        is hence tax-free and also the average buy price for each asset"""
-        self.details: Dict[Asset, Tuple[FVal, FVal]] = {}
-        now = ts_now()
-        for asset, events in self.events.items():
-            tax_free_amount_left = ZERO
-            amount_sum = ZERO
-            average = ZERO
-            for buy_event in events.buys:
-                if self.taxfree_after_period is not None:
-                    if buy_event.timestamp + self.taxfree_after_period < now:
-                        tax_free_amount_left += buy_event.amount
-                amount_sum += buy_event.amount
-                average += buy_event.amount * buy_event.rate
-
-            if amount_sum == ZERO:
-                self.details[asset] = (ZERO, ZERO)
-            else:
-                self.details[asset] = (tax_free_amount_left, average / amount_sum)
-
-        return self.details
 
     def get_rate_in_profit_currency(self, asset: Asset, timestamp: Timestamp) -> FVal:
         """Get the profit_currency price of asset in the given timestamp
@@ -115,42 +91,6 @@ class TaxableEvents():
                 timestamp=timestamp,
             )
         return rate
-
-    def reduce_asset_amount(self, asset: Asset, amount: FVal) -> bool:
-        """Searches all buy events for asset and reduces them by amount
-        Returns True if enough buy events to reduce the asset by amount were
-        found and False otherwise.
-        """
-        # No need to do anything if amount is to be reduced by zero
-        if amount == ZERO:
-            return True
-
-        if asset not in self.events or len(self.events[asset].buys) == 0:
-            return False
-
-        remaining_amount_from_last_buy = FVal('-1')
-        remaining_amount = amount
-        for idx, buy_event in enumerate(self.events[asset].buys):
-            if remaining_amount < buy_event.amount:
-                stop_index = idx
-                remaining_amount_from_last_buy = buy_event.amount - remaining_amount
-                # stop iterating since we found all buys to satisfy reduction
-                break
-
-            # else
-            remaining_amount -= buy_event.amount
-            if idx == len(self.events[asset].buys) - 1:
-                stop_index = idx + 1
-
-        # Otherwise, delete all the used up buys from the list
-        del self.events[asset].buys[:stop_index]
-        # and modify the amount of the buy where we stopped if there is one
-        if remaining_amount_from_last_buy != FVal('-1'):
-            self.events[asset].buys[0].amount = remaining_amount_from_last_buy
-        elif remaining_amount != ZERO:
-            return False
-
-        return True
 
     def handle_prefork_asset_buys(
             self,
@@ -197,7 +137,7 @@ class TaxableEvents():
             timestamp: Timestamp,
     ) -> None:
         if sold_asset == A_ETH and timestamp < ETH_DAO_FORK_TS:
-            if not self.reduce_asset_amount(asset=A_ETC, amount=sold_amount):
+            if not self.cost_basis.reduce_asset_amount(asset=A_ETC, amount=sold_amount):
                 log.critical(
                     'No documented buy found for ETC (ETH equivalent) before {}'.format(
                         self.csv_exporter.timestamp_to_date(timestamp),
@@ -205,7 +145,7 @@ class TaxableEvents():
                 )
 
         if sold_asset == A_BTC and timestamp < BTC_BCH_FORK_TS:
-            if not self.reduce_asset_amount(asset=A_BCH, amount=sold_amount):
+            if not self.cost_basis.reduce_asset_amount(asset=A_BCH, amount=sold_amount):
                 log.critical(
                     'No documented buy found for BCH (BTC equivalent) before {}'.format(
                         self.csv_exporter.timestamp_to_date(timestamp),
@@ -288,7 +228,6 @@ class TaxableEvents():
                 with_sold_asset_gain < with_bought_asset_gain):
             receiving_asset = self.profit_currency
             receiving_amount = with_sold_asset_gain
-            trade_rate = sold_asset_rate_in_profit_currency
             rate_in_profit_currency = sold_asset_rate_in_profit_currency
             gain_in_profit_currency = with_sold_asset_gain
 
@@ -298,7 +237,6 @@ class TaxableEvents():
             selling_amount=sold_amount,
             receiving_asset=receiving_asset,
             receiving_amount=receiving_amount,
-            trade_rate=trade_rate,
             rate_in_profit_currency=rate_in_profit_currency,
             gain_in_profit_currency=gain_in_profit_currency,
             total_fee_in_profit_currency=fee_in_profit_currency,
@@ -355,33 +293,18 @@ class TaxableEvents():
             timestamp=timestamp,
         )
 
-        if bought_asset not in self.events:
-            self.events[bought_asset] = Events([], [])
-
         gross_cost = bought_amount * buy_rate
         cost_in_profit_currency = gross_cost + fee_in_profit_currency
 
-        self.events[bought_asset].buys.append(
-            BuyEvent(
-                amount=bought_amount,
-                timestamp=timestamp,
-                rate=buy_rate,
-                fee_rate=fee_in_profit_currency / bought_amount,
-            ),
-        )
-        log.debug(
-            'Buy Event',
-            sensitive_log=True,
-            location=str(location),
-            bought_amount=bought_amount,
-            bought_asset=bought_asset,
-            paid_with_asset=paid_with_asset,
-            rate=trade_rate,
-            rate_in_profit_currency=buy_rate,
-            profit_currency=self.profit_currency,
+        self.cost_basis.obtain_asset(
+            location=location,
             timestamp=timestamp,
+            description='trade',
+            asset=bought_asset,
+            amount=bought_amount,
+            rate=buy_rate,
+            fee_in_profit_currency=fee_in_profit_currency,
         )
-
         if timestamp >= self.query_start_ts:
             self.csv_exporter.add_buy(
                 location=location,
@@ -442,7 +365,6 @@ class TaxableEvents():
             receiving_amount=receiving_amount,
             gain_in_profit_currency=gain_in_profit_currency,
             total_fee_in_profit_currency=total_fee_in_profit_currency,
-            trade_rate=trade_rate,
             rate_in_profit_currency=rate_in_profit_currency,
             timestamp=timestamp,
             is_virtual=False,
@@ -476,7 +398,6 @@ class TaxableEvents():
             receiving_amount: Optional[FVal],
             gain_in_profit_currency: FVal,
             total_fee_in_profit_currency: Fee,
-            trade_rate: FVal,
             rate_in_profit_currency: FVal,
             timestamp: Timestamp,
             loan_settlement: bool = False,
@@ -512,54 +433,22 @@ class TaxableEvents():
             f'{receiving_asset.identifier if receiving_asset else "nothing"} at {timestamp}',
         )
 
-        if selling_asset not in self.events:
-            self.events[selling_asset] = Events([], [])
-
-        self.events[selling_asset].sells.append(
-            SellEvent(
-                amount=selling_amount,
-                timestamp=timestamp,
-                rate=rate_in_profit_currency,
-                fee_rate=total_fee_in_profit_currency / selling_amount,
-                gain=gain_in_profit_currency,
-            ),
+        self.cost_basis.spend_asset(
+            location=location,
+            timestamp=timestamp,
+            asset=selling_asset,
+            amount=selling_amount,
+            rate=rate_in_profit_currency,
+            fee_in_profit_currency=total_fee_in_profit_currency,
+            gain_in_profit_currency=gain_in_profit_currency,
         )
-
         self.handle_prefork_asset_sells(selling_asset, selling_amount, timestamp)
 
-        if loan_settlement:
-            log.debug(
-                'Loan Settlement Selling Event',
-                sensitive_log=True,
-                selling_amount=selling_amount,
-                selling_asset=selling_asset,
-                gain_in_profit_currency=gain_in_profit_currency,
-                profit_currency=self.profit_currency,
-                timestamp=timestamp,
-            )
-        else:
-            log.debug(
-                'Selling Event',
-                sensitive_log=True,
-                selling_amount=selling_amount,
-                selling_asset=selling_asset,
-                receiving_amount=receiving_amount,
-                receiving_asset=receiving_asset,
-                rate=trade_rate,
-                rate_in_profit_currency=rate_in_profit_currency,
-                profit_currency=self.profit_currency,
-                gain_in_profit_currency=gain_in_profit_currency,
-                fee_in_profit_currency=total_fee_in_profit_currency,
-                timestamp=timestamp,
-            )
-
-        # now search the buys for `paid_with_asset` and calculate profit/loss
-        (
-            taxable_amount,
-            taxable_bought_cost,
-            taxfree_bought_cost,
-        ) = self.search_buys_calculate_profit(
-            selling_amount, selling_asset, timestamp,
+        # now search the acquisitions for `paid_with_asset` and calculate profit/loss
+        cost_basis_info = self.cost_basis.calculate_spend_cost_basis(
+            spending_amount=selling_amount,
+            spending_asset=selling_asset,
+            timestamp=timestamp,
         )
         general_profit_loss = ZERO
         taxable_profit_loss = ZERO
@@ -571,18 +460,18 @@ class TaxableEvents():
         # calculate profit/loss
         if not loan_settlement or (loan_settlement and self.count_profit_for_settlements):
             taxable_gain = taxable_gain_for_sell(
-                taxable_amount=taxable_amount,
+                taxable_amount=cost_basis_info.taxable_amount,
                 rate_in_profit_currency=rate_in_profit_currency,
                 total_fee_in_profit_currency=total_fee_in_profit_currency,
                 selling_amount=selling_amount,
             )
 
             general_profit_loss = gain_in_profit_currency - (
-                taxfree_bought_cost +
-                taxable_bought_cost +
+                cost_basis_info.taxfree_bought_cost +
+                cost_basis_info.taxable_bought_cost +
                 total_fee_in_profit_currency
             )
-            taxable_profit_loss = taxable_gain - taxable_bought_cost
+            taxable_profit_loss = taxable_gain - cost_basis_info.taxable_bought_cost
 
         # should never happen, should be stopped at the main loop
         assert timestamp <= self.query_end_ts, (
@@ -630,6 +519,7 @@ class TaxableEvents():
                     rate_in_profit_currency=rate_in_profit_currency,
                     total_fee_in_profit_currency=total_fee_in_profit_currency,
                     timestamp=timestamp,
+                    cost_basis_info=cost_basis_info,
                 )
             else:
                 assert receiving_asset, 'Here receiving asset should have a value'
@@ -646,133 +536,12 @@ class TaxableEvents():
                         receiving_asset,
                         timestamp,
                     ),
-                    taxable_amount=taxable_amount,
-                    taxable_bought_cost=taxable_bought_cost,
+                    taxable_amount=cost_basis_info.taxable_amount,
+                    taxable_bought_cost=cost_basis_info.taxable_bought_cost,
                     timestamp=timestamp,
+                    cost_basis_info=cost_basis_info,
                     is_virtual=is_virtual,
                 )
-
-    def search_buys_calculate_profit(
-            self,
-            selling_amount: FVal,
-            selling_asset: Asset,
-            timestamp: Timestamp,
-    ) -> Tuple[FVal, FVal, FVal]:
-        """
-        When selling `selling_amount` of `selling_asset` at `timestamp` this function
-        calculates using the first-in-first-out rule the corresponding buy/s from
-        which to do profit calculation. Also applies the one year rule after which
-        a sell is not taxable in Germany.
-
-        Returns a tuple of 3 values:
-            - `taxable_amount`: The amount out of `selling_amount` that is taxable,
-                                calculated from the 1 year rule.
-            - `taxable_bought_cost`: How much it cost in `profit_currency` to buy
-                                     the `taxable_amount`
-            - `taxfree_bought_cost`: How much it cost in `profit_currency` to buy
-                                     the taxfree_amount (selling_amount - taxable_amount)
-        """
-        remaining_sold_amount = selling_amount
-        stop_index = -1
-        taxfree_bought_cost = ZERO
-        taxable_bought_cost = ZERO
-        taxable_amount = ZERO
-        taxfree_amount = ZERO
-        remaining_amount_from_last_buy = FVal('-1')
-        for idx, buy_event in enumerate(self.events[selling_asset].buys):
-            if self.taxfree_after_period is None:
-                at_taxfree_period = False
-            else:
-                at_taxfree_period = (
-                    buy_event.timestamp + self.taxfree_after_period < timestamp
-                )
-
-            if remaining_sold_amount < buy_event.amount:
-                stop_index = idx
-                buying_cost = remaining_sold_amount.fma(
-                    buy_event.rate,
-                    (buy_event.fee_rate * remaining_sold_amount),
-                )
-
-                if at_taxfree_period:
-                    taxfree_amount += remaining_sold_amount
-                    taxfree_bought_cost += buying_cost
-                else:
-                    taxable_amount += remaining_sold_amount
-                    taxable_bought_cost += buying_cost
-
-                remaining_amount_from_last_buy = buy_event.amount - remaining_sold_amount
-                log.debug(
-                    'Sell uses up part of historical buy',
-                    sensitive_log=True,
-                    tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
-                    used_amount=remaining_sold_amount,
-                    from_amount=buy_event.amount,
-                    asset=selling_asset,
-                    trade_buy_rate=buy_event.rate,
-                    profit_currency=self.profit_currency,
-                    trade_timestamp=buy_event.timestamp,
-                )
-                # stop iterating since we found all buys to satisfy this sell
-                break
-
-            # else
-            buying_cost = buy_event.amount.fma(
-                buy_event.rate,
-                (buy_event.fee_rate * buy_event.amount),
-            )
-            remaining_sold_amount -= buy_event.amount
-            if at_taxfree_period:
-                taxfree_amount += buy_event.amount
-                taxfree_bought_cost += buying_cost
-            else:
-                taxable_amount += buy_event.amount
-                taxable_bought_cost += buying_cost
-
-            log.debug(
-                'Sell uses up entire historical buy',
-                sensitive_log=True,
-                tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
-                bought_amount=buy_event.amount,
-                asset=selling_asset,
-                trade_buy_rate=buy_event.rate,
-                profit_currency=self.profit_currency,
-                trade_timestamp=buy_event.timestamp,
-            )
-
-            # If the sell used up the last historical buy
-            if idx == len(self.events[selling_asset].buys) - 1:
-                stop_index = idx + 1
-
-        if len(self.events[selling_asset].buys) == 0:
-            log.critical(
-                'No documented buy found for "{}" before {}'.format(
-                    selling_asset,
-                    self.csv_exporter.timestamp_to_date(timestamp),
-                ),
-            )
-            # That means we had no documented buy for that asset. This is not good
-            # because we can't prove a corresponding buy and as such we are burdened
-            # calculating the entire sell as profit which needs to be taxed
-            return selling_amount, ZERO, ZERO
-
-        # Otherwise, delete all the used up buys from the list
-        del self.events[selling_asset].buys[:stop_index]
-        # and modify the amount of the buy where we stopped if there is one
-        if remaining_amount_from_last_buy != FVal('-1'):
-            self.events[selling_asset].buys[0].amount = remaining_amount_from_last_buy
-        elif remaining_sold_amount != ZERO:
-            # if we still have sold amount but no buys to satisfy it then we only
-            # found buys to partially satisfy the sell
-            adjusted_amount = selling_amount - taxfree_amount
-            log.critical(
-                f'Not enough documented buys found for "{selling_asset}" before '
-                f'{self.csv_exporter.timestamp_to_date(timestamp)}.'
-                f'Only found buys for {taxable_amount + taxfree_amount} {selling_asset}',
-            )
-            return adjusted_amount, taxable_bought_cost, taxfree_bought_cost
-
-        return taxable_amount, taxable_bought_cost, taxfree_bought_cost
 
     def add_loan_gain(
             self,
@@ -796,19 +565,17 @@ class TaxableEvents():
         timestamp = close_time
         rate = self.get_rate_in_profit_currency(gained_asset, timestamp)
 
-        if gained_asset not in self.events:
-            self.events[gained_asset] = Events([], [])
-
         net_gain_amount = gained_amount - fee_in_asset
         gain_in_profit_currency = net_gain_amount * rate
         assert gain_in_profit_currency > 0, "Loan profit is negative. Should never happen"
-        self.events[gained_asset].buys.append(
-            BuyEvent(
-                amount=net_gain_amount,
-                timestamp=timestamp,
-                rate=rate,
-                fee_rate=ZERO,
-            ),
+        self.cost_basis.obtain_asset(
+            location=location,
+            timestamp=timestamp,
+            description='loan gain',
+            asset=gained_asset,
+            amount=net_gain_amount,
+            rate=rate,
+            fee_in_profit_currency=ZERO,
         )
         # count profits if we are inside the query period
         if timestamp >= self.query_start_ts:
@@ -845,11 +612,6 @@ class TaxableEvents():
         - RemoteError if there is a problem reaching the price oracle server
         or with reading the response returned by the server
         """
-        if margin.pl_currency not in self.events:
-            self.events[margin.pl_currency] = Events([], [])
-        if margin.fee_currency not in self.events:
-            self.events[margin.fee_currency] = Events([], [])
-
         pl_currency_rate = self.get_rate_in_profit_currency(margin.pl_currency, margin.close_time)
         fee_currency_rate = self.get_rate_in_profit_currency(margin.pl_currency, margin.close_time)
         net_gain_loss_in_profit_currency = (
@@ -858,16 +620,17 @@ class TaxableEvents():
 
         # Add or remove to the pl_currency asset
         if margin.profit_loss > 0:
-            self.events[margin.pl_currency].buys.append(
-                BuyEvent(
-                    amount=margin.profit_loss,
-                    timestamp=margin.close_time,
-                    rate=pl_currency_rate,
-                    fee_rate=ZERO,
-                ),
+            self.cost_basis.obtain_asset(
+                location=margin.location,
+                timestamp=margin.close_time,
+                description='margin position',
+                asset=margin.pl_currency,
+                amount=margin.profit_loss,
+                rate=pl_currency_rate,
+                fee_in_profit_currency=ZERO,
             )
         elif margin.profit_loss < 0:
-            result = self.reduce_asset_amount(
+            result = self.cost_basis.reduce_asset_amount(
                 asset=margin.pl_currency,
                 amount=-margin.profit_loss,
             )
@@ -878,7 +641,7 @@ class TaxableEvents():
                 )
 
         # Reduce the fee_currency asset
-        result = self.reduce_asset_amount(asset=margin.fee_currency, amount=margin.fee)
+        result = self.cost_basis.reduce_asset_amount(asset=margin.fee_currency, amount=margin.fee)
         if not result:
             log.critical(
                 f'No documented buy found for {margin.fee_currency} before '
@@ -935,23 +698,23 @@ class TaxableEvents():
         rate = self.get_rate_in_profit_currency(action.asset, action.timestamp)
         profit_loss = action.amount * rate
 
-        if action.asset not in self.events:
-            self.events[action.asset] = Events([], [])
         if action.is_profitable():
             if action.timestamp > self.query_start_ts:
                 self.ledger_actions_profit_loss += profit_loss
-            self.events[action.asset].buys.append(
-                BuyEvent(
-                    amount=action.amount,
-                    timestamp=action.timestamp,
-                    rate=rate,
-                    fee_rate=ZERO,
-                ),
+
+            self.cost_basis.obtain_asset(
+                location=action.location,
+                timestamp=action.timestamp,
+                description=f'{str(action.action_type)}',
+                asset=action.asset,
+                amount=action.amount,
+                rate=rate,
+                fee_in_profit_currency=ZERO,
             )
         else:
             if action.timestamp > self.query_start_ts:
                 self.ledger_actions_profit_loss -= profit_loss
-            result = self.reduce_asset_amount(
+            result = self.cost_basis.reduce_asset_amount(
                 asset=action.asset,
                 amount=action.amount,
             )

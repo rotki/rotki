@@ -366,7 +366,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         count = 0
         for row in reader:
             assert_csv_formulas_trades(row, profit_currency)
-            assert len(row) == 15
+            assert len(row) == 16
             assert row['location'] in ('kraken', 'bittrex', 'binance', 'poloniex')
             assert row['type'] in ('buy', 'sell')
             assert Asset(row['asset']).identifier is not None
@@ -384,6 +384,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
             assert FVal(row[f'taxable_gain_in_{profit_currency.identifier}']) >= ZERO
             assert row[f'taxable_profit_loss_in_{profit_currency.identifier}'] is not None
             assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
+            assert row['cost_basis'] is not None
             assert row['is_virtual'] in ('True', 'False')
 
             count += 1
@@ -470,7 +471,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         count = 0
         for row in reader:
             assert_csv_formulas_all_events(row, profit_currency)
-            assert len(row) == 13
+            assert len(row) == 14
             assert row['location'] in (
                 'kraken',
                 'bittrex',
@@ -502,6 +503,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
             assert FVal(row[f'paid_in_{profit_currency.identifier}']) >= ZERO
             assert row[f'taxable_received_in_{profit_currency.identifier}'] is not None
             assert row[f'taxable_bought_cost_in_{profit_currency.identifier}'] is not None
+            assert row['cost_basis'] is not None
             count += 1
     assert count == (
         num_trades + num_loans + num_asset_movements + num_transactions + num_margins

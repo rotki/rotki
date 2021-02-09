@@ -6,7 +6,6 @@ import gevent
 
 from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.accounting.structures import ActionType, DefiEvent, LedgerAction
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -249,7 +248,6 @@ class Accountant():
                 receiving_amount=None,
                 gain_in_profit_currency=gain_in_profit_currency,
                 total_fee_in_profit_currency=fee_in_profit_currency,
-                trade_rate=trade.rate,
                 rate_in_profit_currency=selling_rate,
                 timestamp=trade.timestamp,
                 loan_settlement=True,
@@ -280,7 +278,8 @@ class Accountant():
             start_ts=start_ts,
             end_ts=end_ts,
         )
-        self.events.reset(start_ts, end_ts)
+        profit_currency = self.db.get_main_currency()
+        self.events.reset(profit_currency=profit_currency, start_ts=start_ts, end_ts=end_ts)
         self.last_gas_price = 2000000000
         self.start_ts = start_ts
         self.eth_transactions_gas_costs = FVal(0)
@@ -380,8 +379,6 @@ class Accountant():
                 # API may time out
                 gevent.sleep(0.5)
             count += 1
-
-        self.events.calculate_asset_details()
         Inquirer().save_historical_forex_data()
 
         sum_other_actions = (
@@ -477,7 +474,7 @@ class Accountant():
         # Assert we are sorted in ascending time order.
         timestamp = action_get_timestamp(action)
         assert timestamp >= prev_time, (
-            "During history processing the trades/loans are not in ascending order"
+            'During history processing the trades/loans are not in ascending order'
         )
         prev_time = timestamp
 
@@ -621,7 +618,6 @@ class Accountant():
                 receiving_amount=None,
                 gain_in_profit_currency=gain_in_profit_currency,
                 total_fee_in_profit_currency=fee_in_profit_currency,
-                trade_rate=trade.rate,
                 rate_in_profit_currency=selling_asset_rate,
                 timestamp=trade.timestamp,
                 loan_settlement=True,
@@ -631,15 +627,3 @@ class Accountant():
             raise AssertionError(f'Unknown trade type "{trade.trade_type}" encountered')
 
         return True, prev_time
-
-    def get_calculated_asset_amount(self, asset: Asset) -> Optional[FVal]:
-        """Get the amount of asset accounting has calculated we should have after
-        the history has been processed
-        """
-        if asset not in self.events.events:
-            return None
-
-        amount = FVal(0)
-        for buy_event in self.events.events[asset].buys:
-            amount += buy_event.amount
-        return amount
