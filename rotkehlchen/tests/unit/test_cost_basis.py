@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location
+from rotkehlchen.constants.misc import ZERO
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
@@ -40,23 +41,29 @@ def test_calculate_spend_cost_basis_after_year(accountant):
         ),
     )
 
-    (
-        taxable_amount,
-        taxable_bought_cost,
-        taxfree_bought_cost,
-    ) = accountant.events.cost_basis.calculate_spend_cost_basis(
-        spending_amount=FVal(8),
+    spending_amount = FVal(8)
+    cinfo = accountant.events.cost_basis.calculate_spend_cost_basis(
+        spending_amount=spending_amount,
         spending_asset=asset,
         timestamp=1480683904,  # 02/12/2016
     )
 
-    assert taxable_amount == 3, '3 out of 8 should be taxable (within a year)'
-    assert taxfree_bought_cost.is_close(FVal('1340.5005'))
-    assert taxable_bought_cost.is_close(FVal('1837.3557'))
+    assert cinfo.taxable_amount == 3, '3 out of 8 should be taxable (within a year)'
+    assert cinfo.taxfree_bought_cost.is_close(FVal('1340.5005'))
+    assert cinfo.taxable_bought_cost.is_close(FVal('1837.3557'))
+    assert len(cinfo.matched_acquisitions) == 2
+    assert sum(x.amount for x in cinfo.matched_acquisitions) == spending_amount
+    assert cinfo.is_complete is True
+    assert cinfo.matched_acquisitions[0].amount == FVal(5)
+    assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
+    assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
+    assert cinfo.matched_acquisitions[1].amount == FVal(3)
+    assert cinfo.matched_acquisitions[1].event.amount == FVal(15)
+    assert cinfo.matched_acquisitions[1].event.remaining_amount == FVal(12)
 
     acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
     assert acquisitions_num == 2, 'first buy should have been used'
-    remaining_amount = accountant.events.cost_basis.events[asset].acquisitions[0].amount
+    remaining_amount = accountant.events.cost_basis.events[asset].acquisitions[0].remaining_amount
     assert remaining_amount == FVal(12), '3 of 15 should have been consumed'
 
 
@@ -78,18 +85,21 @@ def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant):
         ),
     )
 
-    (
-        taxable_amount,
-        taxable_bought_cost,
-        taxfree_bought_cost,
-    ) = accountant.events.cost_basis.calculate_spend_cost_basis(
-        spending_amount=FVal(5),
+    spending_amount = FVal(5)
+    cinfo = accountant.events.cost_basis.calculate_spend_cost_basis(
+        spending_amount=spending_amount,
         spending_asset=asset,
         timestamp=1467378304,  # 31/06/2016
     )
-    assert taxable_amount == 5, '5 out of 5 should be taxable (within a year)'
-    assert taxfree_bought_cost.is_close(FVal('0'))
-    assert taxable_bought_cost.is_close(FVal('1340.5005'))
+    assert cinfo.taxable_amount == 5, '5 out of 5 should be taxable (within a year)'
+    assert cinfo.taxfree_bought_cost.is_close(FVal('0'))
+    assert cinfo.taxable_bought_cost.is_close(FVal('1340.5005'))
+    assert len(cinfo.matched_acquisitions) == 1
+    assert sum(x.amount for x in cinfo.matched_acquisitions) == spending_amount
+    assert cinfo.is_complete is True
+    assert cinfo.matched_acquisitions[0].amount == FVal(5)
+    assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
+    assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
 
     acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
     assert acquisitions_num == 0, 'only buy should have been used'
@@ -114,37 +124,43 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
         ),
     )
 
-    (
-        taxable_amount,
-        taxable_bought_cost,
-        taxfree_bought_cost,
-    ) = accountant.events.cost_basis.calculate_spend_cost_basis(
-        spending_amount=FVal(3),
+    spending_amount = FVal(3)
+    cinfo = accountant.events.cost_basis.calculate_spend_cost_basis(
+        spending_amount=spending_amount,
         spending_asset=asset,
         timestamp=1467378304,  # 31/06/2016
     )
-    assert taxable_amount == 3, '3 out of 3 should be taxable (within a year)'
-    assert taxfree_bought_cost.is_close(FVal('0'))
-    assert taxable_bought_cost.is_close(FVal('804.3003'))
+    assert cinfo.taxable_amount == 3, '3 out of 3 should be taxable (within a year)'
+    assert cinfo.taxfree_bought_cost.is_close(FVal('0'))
+    assert cinfo.taxable_bought_cost.is_close(FVal('804.3003'))
+    assert len(cinfo.matched_acquisitions) == 1
+    assert sum(x.amount for x in cinfo.matched_acquisitions) == spending_amount
+    assert cinfo.is_complete is True
+    assert cinfo.matched_acquisitions[0].amount == spending_amount
+    assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
+    assert cinfo.matched_acquisitions[0].event.remaining_amount == FVal(2)
 
     acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
     assert acquisitions_num == 1, 'whole buy was not used'
-    remaining_amount = accountant.events.cost_basis.events[asset].acquisitions[0].amount
+    remaining_amount = accountant.events.cost_basis.events[asset].acquisitions[0].remaining_amount
     assert remaining_amount == FVal(2), '3 of 5 should have been consumed'
 
     # now eat up all the rest
-    (
-        taxable_amount,
-        taxable_bought_cost,
-        taxfree_bought_cost,
-    ) = accountant.events.cost_basis.calculate_spend_cost_basis(
-        spending_amount=FVal(2),
+    spending_amount = FVal(2)
+    cinfo = accountant.events.cost_basis.calculate_spend_cost_basis(
+        spending_amount=spending_amount,
         spending_asset=asset,
         timestamp=1467378404,  # bit after previous sell
     )
-    assert taxable_amount == 2, '2 out of 2 should be taxable (within a year)'
-    assert taxfree_bought_cost.is_close(FVal('0'))
-    assert taxable_bought_cost.is_close(FVal('536.2002'))
+    assert cinfo.taxable_amount == 2, '2 out of 2 should be taxable (within a year)'
+    assert cinfo.taxfree_bought_cost.is_close(FVal('0'))
+    assert cinfo.taxable_bought_cost.is_close(FVal('536.2002'))
+    assert len(cinfo.matched_acquisitions) == 1
+    assert sum(x.amount for x in cinfo.matched_acquisitions) == spending_amount
+    assert cinfo.is_complete is True
+    assert cinfo.matched_acquisitions[0].amount == spending_amount
+    assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
+    assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
 
     acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
     assert acquisitions_num == 0, 'the buy should have been used'
@@ -170,37 +186,42 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
         ),
     )
 
-    (
-        taxable_amount,
-        taxable_bought_cost,
-        taxfree_bought_cost,
-    ) = accountant.events.cost_basis.calculate_spend_cost_basis(
-        spending_amount=FVal(3),
+    spending_amount = FVal(3)
+    cinfo = accountant.events.cost_basis.calculate_spend_cost_basis(
+        spending_amount=spending_amount,
         spending_asset=asset,
         timestamp=1480683904,  # 02/12/2016
     )
-    assert taxable_amount == 0, '0 out of 3 should be taxable (after a year)'
-    assert taxfree_bought_cost.is_close(FVal('804.3003'))
-    assert taxable_bought_cost.is_close(FVal('0'))
+    assert cinfo.taxable_amount == 0, '0 out of 3 should be taxable (after a year)'
+    assert cinfo.taxfree_bought_cost.is_close(FVal('804.3003'))
+    assert cinfo.taxable_bought_cost.is_close(FVal('0'))
+    assert len(cinfo.matched_acquisitions) == 1
+    assert sum(x.amount for x in cinfo.matched_acquisitions) == spending_amount
+    assert cinfo.is_complete is True
+    assert cinfo.matched_acquisitions[0].amount == spending_amount
+    assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
+    assert cinfo.matched_acquisitions[0].event.remaining_amount == FVal(2)
 
     acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
     assert acquisitions_num == 1, 'whole buy was not used'
-    remaining_amount = accountant.events.cost_basis.events[asset].acquisitions[0].amount
+    remaining_amount = accountant.events.cost_basis.events[asset].acquisitions[0].remaining_amount
     assert remaining_amount == FVal(2), '3 of 5 should have been consumed'
 
-    # now eat up all the rest
-    (
-        taxable_amount,
-        taxable_bought_cost,
-        taxfree_bought_cost,
-    ) = accountant.events.cost_basis.calculate_spend_cost_basis(
-        spending_amount=FVal(2),
+    spending_amount = FVal(2)
+    cinfo = accountant.events.cost_basis.calculate_spend_cost_basis(
+        spending_amount=spending_amount,
         spending_asset=asset,
         timestamp=1480683954,  # bit after previous sell
     )
-    assert taxable_amount == 0, '0 out of 2 should be taxable (after a year)'
-    assert taxfree_bought_cost.is_close(FVal('536.2002'))
-    assert taxable_bought_cost.is_close(FVal('0'))
+    assert cinfo.taxable_amount == 0, '0 out of 2 should be taxable (after a year)'
+    assert cinfo.taxfree_bought_cost.is_close(FVal('536.2002'))
+    assert cinfo.taxable_bought_cost.is_close(FVal('0'))
+    assert len(cinfo.matched_acquisitions) == 1
+    assert sum(x.amount for x in cinfo.matched_acquisitions) == spending_amount
+    assert cinfo.is_complete is True
+    assert cinfo.matched_acquisitions[0].amount == spending_amount
+    assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
+    assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
 
     acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
     assert acquisitions_num == 0, 'the buy should have been used'
@@ -220,7 +241,6 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
             fee_rate=FVal(0.0001),
         ),
     )
-    events = accountant.events.cost_basis.events
     events[asset].acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
@@ -232,19 +252,25 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
         ),
     )
 
-    (
-        taxable_amount,
-        taxable_bought_cost,
-        taxfree_bought_cost,
-    ) = accountant.events.cost_basis.calculate_spend_cost_basis(
-        spending_amount=FVal(3),
+    spending_amount = FVal(3)
+    cinfo = accountant.events.cost_basis.calculate_spend_cost_basis(
+        spending_amount=spending_amount,
         spending_asset=asset,
         timestamp=1467478304,  # bit after 31/06/2016
     )
-
-    assert taxable_amount == 3, '3 out of 3 should be taxable (within a year)'
-    assert taxfree_bought_cost.is_close(FVal('0'))
-    assert taxable_bought_cost.is_close(FVal('880.552'))
+    assert cinfo.taxable_amount == 3, '3 out of 3 should be taxable (within a year)'
+    assert cinfo.taxfree_bought_cost.is_close(FVal('0'))
+    assert cinfo.taxable_bought_cost.is_close(FVal('880.552'))
+    assert len(cinfo.matched_acquisitions) == 2
+    matched_sum = sum(x.amount for x in cinfo.matched_acquisitions)
+    assert matched_sum < spending_amount
+    assert cinfo.is_complete is False
+    assert cinfo.matched_acquisitions[0].amount == FVal(1)
+    assert cinfo.matched_acquisitions[0].event.amount == FVal(1)
+    assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
+    assert cinfo.matched_acquisitions[1].amount == FVal(1)
+    assert cinfo.matched_acquisitions[1].event.amount == FVal(1)
+    assert cinfo.matched_acquisitions[1].event.remaining_amount == ZERO
 
     acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
     assert acquisitions_num == 0, 'only buy should have been used'
@@ -275,19 +301,25 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant)
         ),
     )
 
-    (
-        taxable_amount,
-        taxable_bought_cost,
-        taxfree_bought_cost,
-    ) = accountant.events.cost_basis.calculate_spend_cost_basis(
-        spending_amount=FVal(3),
+    spending_amount = FVal(3)
+    cinfo = accountant.events.cost_basis.calculate_spend_cost_basis(
+        spending_amount=spending_amount,
         spending_asset=asset,
         timestamp=1523399409,  # 10/04/2018
     )
-
-    assert taxable_amount == 1, '1 out of 3 should be taxable (after a year)'
-    assert taxfree_bought_cost.is_close(FVal('880.552'))
-    assert taxable_bought_cost.is_close(FVal('0'))
+    assert cinfo.taxable_amount == 1, '1 out of 3 should be taxable (after a year)'
+    assert cinfo.taxfree_bought_cost.is_close(FVal('880.552'))
+    assert cinfo.taxable_bought_cost.is_close(FVal('0'))
+    assert len(cinfo.matched_acquisitions) == 2
+    matched_sum = sum(x.amount for x in cinfo.matched_acquisitions)
+    assert matched_sum < spending_amount
+    assert cinfo.is_complete is False
+    assert cinfo.matched_acquisitions[0].amount == FVal(1)
+    assert cinfo.matched_acquisitions[0].event.amount == FVal(1)
+    assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
+    assert cinfo.matched_acquisitions[1].amount == FVal(1)
+    assert cinfo.matched_acquisitions[1].event.amount == FVal(1)
+    assert cinfo.matched_acquisitions[1].event.remaining_amount == ZERO
 
     acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
     assert acquisitions_num == 0, 'only buy should have been used'
@@ -330,7 +362,7 @@ def test_reduce_asset_amount(accountant):
     assert accountant.events.cost_basis.reduce_asset_amount(asset, FVal(1.5))
     acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
     assert acquisitions_num == 2, '1 buy should be used'
-    remaining_amount = accountant.events.cost_basis.events[asset].acquisitions[0].amount
+    remaining_amount = accountant.events.cost_basis.events[asset].acquisitions[0].remaining_amount
     assert remaining_amount == FVal(0.5), '0.5 of 2nd buy should remain'
 
 

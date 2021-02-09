@@ -205,7 +205,7 @@ def test_buying_selling_btc_before_bchfork(accountant):
     amount_btc = FVal(4.8)
     buys = accountant.events.cost_basis.events['BCH'].acquisitions
     assert len(buys) == 1
-    assert buys[0].amount == amount_bch
+    assert buys[0].remaining_amount == amount_bch
     assert buys[0].timestamp == 1491593374
     assert buys[0].rate == FVal('1128.905')
     assert buys[0].fee_rate.is_close(FVal('0.0846153846154'))

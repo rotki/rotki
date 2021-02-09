@@ -331,6 +331,8 @@ class CostBasisCalculator():
                 amount=acquisition_event.remaining_amount,
                 event=acquisition_event,
             ))
+            # and since this events is going to be removed, reduce its remaining to zero
+            acquisition_event.remaining_amount = ZERO
 
             # If the sell used up the last historical acquisition
             if idx == len(self.events[spending_asset].acquisitions) - 1:

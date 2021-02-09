@@ -185,6 +185,7 @@ class CSVExporter():
         new_entry[key] = taxable_received_in_profit_currency
         key = f'taxable_bought_cost_in_{self.profit_currency.identifier}'
         new_entry[key] = taxable_bought_cost
+        del new_entry['cost_basis']  # deleting and re-adding is for appending it to end of dict
         new_entry['cost_basis'] = cost_basis_info.to_string(self.timestamp_to_date) if cost_basis_info else ''  # noqa: E501
         del new_entry['paid_in_profit_currency']
         del new_entry['taxable_received_in_profit_currency']
