@@ -1,6 +1,8 @@
 import json
 from typing import Any, Dict, List, NamedTuple, Optional, Union
 
+from rotkehlchen.serialization.deserialize import deserialize_ledger_action_type
+from rotkehlchen.accounting.structures import LedgerActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
@@ -34,6 +36,40 @@ DEFAULT_CALCULATE_PAST_COST_BASIS = True
 DEFAULT_DISPLAY_DATE_IN_LOCALTIME = True
 DEFAULT_CURRENT_PRICE_ORACLES = DEFAULT_CURRENT_PRICE_ORACLES_ORDER
 DEFAULT_HISTORICAL_PRICE_ORACLES = DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
+DEFAULT_TAXABLE_LEDGER_ACTIONS = [
+    LedgerActionType.INCOME,
+    LedgerActionType.EXPENSE,
+    LedgerActionType.LOSS,
+    LedgerActionType.DIVIDENDS_INCOME,
+    LedgerActionType.DONATION_RECEIVED,
+    LedgerActionType.GRANT,
+]
+
+JSON_KEYS = ('current_price_oracles', 'historical_price_oracles', 'taxable_ledger_actions')
+BOOLEAN_KEYS = (
+    'have_premium',
+    'include_crypto2crypto',
+    'anonymized_logs',
+    'include_gas_costs',
+    'premium_should_sync',
+    'submit_usage_analytics',
+    'account_for_assets_movements',
+    'calculate_past_cost_basis',
+    'display_date_in_localtime',
+)
+INTEGER_KEYS = (
+    'version',
+    'ui_floating_precision',
+    'balance_save_frequency',
+    'btc_derivation_gap_limit',
+)
+STRING_KEYS = (
+    'eth_rpc_endpoint',
+    'ksm_rpc_endpoint',
+    'date_display_format',
+    'frontend_settings',
+)
+TIMESTAMP_KEYS = ('last_write_ts', 'last_data_upload_ts', 'last_balance_save')
 
 
 class DBSettings(NamedTuple):
@@ -63,6 +99,7 @@ class DBSettings(NamedTuple):
     display_date_in_localtime: bool = DEFAULT_DISPLAY_DATE_IN_LOCALTIME
     current_price_oracles: List[CurrentPriceOracle] = DEFAULT_CURRENT_PRICE_ORACLES
     historical_price_oracles: List[HistoricalPriceOracle] = DEFAULT_HISTORICAL_PRICE_ORACLES
+    taxable_ledger_actions: List[LedgerActionType] = DEFAULT_TAXABLE_LEDGER_ACTIONS
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -87,6 +124,7 @@ class ModifiableDBSettings(NamedTuple):
     display_date_in_localtime: Optional[bool] = None
     current_price_oracles: Optional[List[CurrentPriceOracle]] = None
     historical_price_oracles: Optional[List[HistoricalPriceOracle]] = None
+    taxable_ledger_actions: Optional[List[LedgerActionType]] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}
@@ -106,8 +144,8 @@ class ModifiableDBSettings(NamedTuple):
                     value = value.serialize()
                 elif setting == 'active_modules':
                     value = json.dumps(value)
-                elif setting in ('current_price_oracles', 'historical_price_oracles'):
-                    value = json.dumps([oracle.serialize() for oracle in value])
+                elif setting in JSON_KEYS:
+                    value = json.dumps([x.serialize() for x in value])
 
                 settings_dict[setting] = value
 
@@ -123,32 +161,6 @@ def read_boolean(value: Union[str, bool]) -> bool:
     raise DeserializationError(
         f'Failed to read a boolean from {value} which is of type {type(value)}',
     )
-
-
-BOOLEAN_KEYS = (
-    'have_premium',
-    'include_crypto2crypto',
-    'anonymized_logs',
-    'include_gas_costs',
-    'premium_should_sync',
-    'submit_usage_analytics',
-    'account_for_assets_movements',
-    'calculate_past_cost_basis',
-    'display_date_in_localtime',
-)
-INTEGER_KEYS = (
-    'version',
-    'ui_floating_precision',
-    'balance_save_frequency',
-    'btc_derivation_gap_limit',
-)
-STRING_KEYS = (
-    'eth_rpc_endpoint',
-    'ksm_rpc_endpoint',
-    'date_display_format',
-    'frontend_settings',
-)
-TIMESTAMP_KEYS = ('last_write_ts', 'last_data_upload_ts', 'last_balance_save')
 
 
 def db_settings_from_dict(
@@ -195,6 +207,9 @@ def db_settings_from_dict(
         elif key == 'historical_price_oracles':
             oracles = json.loads(value)
             specified_args[key] = [HistoricalPriceOracle.deserialize(oracle) for oracle in oracles]
+        elif key == 'taxable_ledger_actions':
+            values = json.loads(value)
+            specified_args[key] = [deserialize_ledger_action_type(x) for x in values]
         else:
             msg_aggregator.add_warning(
                 f'Unknown DB setting {key} given. Ignoring it. Should not '

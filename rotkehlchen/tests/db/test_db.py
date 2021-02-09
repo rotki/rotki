@@ -27,6 +27,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_DISPLAY_DATE_IN_LOCALTIME,
     DEFAULT_HISTORICAL_PRICE_ORACLES,
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
+    DEFAULT_TAXABLE_LEDGER_ACTIONS,
     DEFAULT_INCLUDE_GAS_COSTS,
     DEFAULT_KRAKEN_ACCOUNT_TYPE,
     DEFAULT_MAIN_CURRENCY,
@@ -295,6 +296,7 @@ def test_writing_fetching_data(data_dir, username):
         'display_date_in_localtime': DEFAULT_DISPLAY_DATE_IN_LOCALTIME,
         'current_price_oracles': DEFAULT_CURRENT_PRICE_ORACLES,
         'historical_price_oracles': DEFAULT_HISTORICAL_PRICE_ORACLES,
+        'taxable_ledger_actions': DEFAULT_TAXABLE_LEDGER_ACTIONS,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

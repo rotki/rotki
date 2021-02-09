@@ -247,6 +247,12 @@ class LedgerActionType(Enum):
     LOSS = 2
     DIVIDENDS_INCOME = 3
     DONATION_RECEIVED = 4
+    AIRDROP = 5
+    GIFT = 6
+    GRANT = 7
+
+    def serialize(self) -> str:
+        return str(self)
 
     def __str__(self) -> str:
         if self == LedgerActionType.INCOME:
@@ -259,6 +265,12 @@ class LedgerActionType(Enum):
             return 'dividends income'
         if self == LedgerActionType.DONATION_RECEIVED:
             return 'donation received'
+        if self == LedgerActionType.AIRDROP:
+            return 'airdrop'
+        if self == LedgerActionType.GIFT:
+            return 'gift'
+        if self == LedgerActionType.GRANT:
+            return 'grant'
 
         # else
         raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
@@ -274,6 +286,11 @@ class LedgerActionType(Enum):
             return 'D'
         if self == LedgerActionType.DONATION_RECEIVED:
             return 'E'
+        if self == LedgerActionType.GIFT:
+            return 'F'
+        if self == LedgerActionType.GRANT:
+            return 'G'
+
         # else
         raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
 
@@ -282,6 +299,9 @@ class LedgerActionType(Enum):
             LedgerActionType.INCOME,
             LedgerActionType.DIVIDENDS_INCOME,
             LedgerActionType.DONATION_RECEIVED,
+            LedgerActionType.AIRDROP,
+            LedgerActionType.GIFT,
+            LedgerActionType.GRANT,
         )
 
 

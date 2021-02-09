@@ -146,7 +146,8 @@ Handling user creation, sign-in, log-out and querying
                   "kraken_account_type": "intermediate",
                   "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
                   "current_price_oracles": ["cryptocompare", "coingecko"],
-                  "historical_price_oracles": ["cryptocompare", "coingecko"]
+                  "historical_price_oracles": ["cryptocompare", "coingecko"],
+		  "taxable_ledger_actions": ["income", "airdrop"]
               }
           },
           "message": ""
@@ -210,7 +211,8 @@ Handling user creation, sign-in, log-out and querying
                   "kraken_account_type": "intermediate",
                   "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
                   "current_price_oracles": ["cryptocompare", "coingecko"],
-                  "historical_price_oracles": ["cryptocompare", "coingecko"]
+                  "historical_price_oracles": ["cryptocompare", "coingecko"],
+		  "taxable_ledger_actions": ["income", "airdrop"]
               }
           },
           "message": ""
@@ -577,7 +579,8 @@ Getting or modifying settings
               "kraken_account_type": "intermediate",
               "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
               "current_price_oracles": ["coingecko"],
-              "historical_price_oracles": ["cryptocompare", "coingecko"]
+              "historical_price_oracles": ["cryptocompare", "coingecko"],
+              "taxable_ledger_actions": ["income", "airdrop"]
           },
           "message": ""
       }
@@ -604,6 +607,7 @@ Getting or modifying settings
    :resjson list active_module: A list of strings denoting the active modules with which Rotki is running.
    :resjson list current_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting current prices.
    :resjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
+   :resjson list taxable_ledger_actions: A list of strings denoting the ledger action types that will be taken into account in the profit/loss calculation during accounting. All others will only be taken into account in the cost basis and will not be taxed.
 
    :statuscode 200: Querying of settings was succesful
    :statuscode 409: There is no logged in user
@@ -643,6 +647,7 @@ Getting or modifying settings
    :reqjson list active_module: A list of strings denoting the active modules with which Rotki should run.
    :reqjson list current_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting current prices.
    :reqjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
+   :reqjson list taxable_ledger_actions: A list of strings denoting the ledger action types that will be taken into account in the profit/loss calculation during accounting. All others will only be taken into account in the cost basis and will not be taxed.
 
    **Example Response**:
 
@@ -673,7 +678,8 @@ Getting or modifying settings
               "kraken_account_type": "intermediate",
               "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
               "current_price_oracles": ["cryptocompare"],
-              "historical_price_oracles": ["coingecko", "cryptocompare"]
+              "historical_price_oracles": ["coingecko", "cryptocompare"],
+              "taxable_ledger_actions": ["income", "airdrop"]
           },
           "message": ""
       }

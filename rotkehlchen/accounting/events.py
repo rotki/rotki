@@ -1,8 +1,8 @@
 import logging
-from typing import Optional
+from typing import Optional, List
 
 from rotkehlchen.accounting.cost_basis import CostBasisCalculator
-from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
+from rotkehlchen.accounting.structures import DefiEvent, LedgerAction, LedgerActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
@@ -24,16 +24,14 @@ class TaxableEvents():
     def __init__(self, csv_exporter: CSVExporter, profit_currency: Asset) -> None:
         self.csv_exporter = csv_exporter
         self.profit_currency = profit_currency
+        # later customized via accountant._customize()
+        self.taxable_ledger_actions: List[LedgerActionType] = []
         self.cost_basis = CostBasisCalculator(csv_exporter, profit_currency)
 
         # If this flag is True when your asset is being forcefully sold as a
         # loan/margin settlement then profit/loss is also calculated before the entire
         # amount is taken as a loss
         self.count_profit_for_settlements = False
-
-        self._taxfree_after_period: Optional[int] = None
-        self._include_crypto2crypto: Optional[bool] = None
-        self._account_for_assets_movements: Optional[bool] = None
 
     def reset(self, profit_currency: Asset, start_ts: Timestamp, end_ts: Timestamp) -> None:
         self.cost_basis.reset(profit_currency)
@@ -686,11 +684,6 @@ class TaxableEvents():
         self.csv_exporter.add_defi_event(event=event, profit_loss_in_profit_currency=profit_loss)
 
     def add_ledger_action(self, action: LedgerAction) -> None:
-        log.debug(
-            'Accounting for LedgerAction',
-            sensitive_log=True,
-            action=action,
-        )
         # should never happen, should be stopped at the main loop
         assert action.timestamp <= self.query_end_ts, (
             'Ledger action time > query_end_ts found in processing'
@@ -698,10 +691,21 @@ class TaxableEvents():
         rate = self.get_rate_in_profit_currency(action.asset, action.timestamp)
         profit_loss = action.amount * rate
 
-        if action.is_profitable():
-            if action.timestamp > self.query_start_ts:
-                self.ledger_actions_profit_loss += profit_loss
+        account_for_action = (
+            action.timestamp > self.query_start_ts and
+            action.action_type in self.taxable_ledger_actions
+        )
+        log.debug(
+            'Processing LedgerAction',
+            sensitive_log=True,
+            action=action,
+            account_for_action=account_for_action,
+        )
+        if account_for_action is False:
+            profit_loss = ZERO
 
+        if action.is_profitable():
+            self.ledger_actions_profit_loss += profit_loss
             self.cost_basis.obtain_asset(
                 location=action.location,
                 timestamp=action.timestamp,
@@ -712,8 +716,8 @@ class TaxableEvents():
                 fee_in_profit_currency=ZERO,
             )
         else:
-            if action.timestamp > self.query_start_ts:
-                self.ledger_actions_profit_loss -= profit_loss
+            self.ledger_actions_profit_loss -= profit_loss
+
             result = self.cost_basis.reduce_asset_amount(
                 asset=action.asset,
                 amount=action.amount,
