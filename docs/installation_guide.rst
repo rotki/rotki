@@ -108,6 +108,116 @@ If you get "The python backend crashed" or any other error please run the execut
 
 You should also include all logs that can be found in ``<WindowsDrive>:\Users\<User>\Roaming\rotki\logs\`` (``%APPDATA%\rotki\logs``).
 
+Docker
+================
+
+Since v1.11.0 rotki provides official docker images of nightly versions
+and releases.
+
+   Versions up to v1.13.2 report a dev version instead of the actual
+   release. This is due to an issue during the build process.
+
+You can find all the available docker images at `DockerHub`_.
+
+   !Warning: It is important to keep in mind that is advisable to run
+   the docker image in a secure environment. Such an environment would
+   be for example running the docker image in the host machine and
+   accessing it only via NAT. Under any circumstances you should not
+   expose the docker image directly to public or local networks since
+   this can lead to security issues and unauthorized access of your
+   data.
+
+You can get the latest version of rotki by pulling the ``latest`` tag.
+This tag always points to the latest rotki release::
+
+   docker pull rotki/rotki:latest
+
+To start a container based on the latest rotki image you can run the
+following::
+
+   docker run -d --name rotki \
+       -v $HOME/.rotki/data:/data \
+       -v $HOME/.rotki/logs:/logs \
+       rotki/rotki:latest
+
+This will start a new container that stores the data and logs into a
+``.rotki`` directory under the user’s home directory. Will will be able
+to find your account data (databases etc) under the ``.rotki/data``
+directory.
+
+At this point the rotki docker container should be running and you
+should be able to access it via your browser. If you are not aware of
+the docker container’s IP address you can run the following to find it::
+
+   docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' rotki
+
+The command above will return an IP address, e.g. ``172.17.0.2``. To
+access the rotki frontend you just need to open your browser and go to
+``http://172.17.0.2``. You should be able to see the rotki login screen.
+
+Updating to a newer version
+---------------------------
+
+When a new rotki version is out there are few steps you need to follow
+in order to upgrade to a newest version.
+
+First you have to stop the rotki container from running::
+
+   docker stop rotki
+
+Then you need to remove the old container::
+
+   docker rm rotki
+
+Since your data are stored in volumes in the host machine, deleting the
+container will not touch your data.
+
+In order to update to the latest version you need to once again pull the
+latest tag from docker hub::
+
+   docker pull rotki/rotki:latest
+
+After the latest image is properly updated on your machine you need to
+create a new container::
+
+   docker run -d --name rotki \
+       -v $HOME/.rotki/data:/data \
+       -v $HOME/.rotki/logs:/logs \
+       rotki/rotki:latest
+
+Please ensure that the volumes from the previous container are used
+again. If you don’t use the same volumes, then your old accounts and
+date will be unavailable.
+
+.. _DockerHub: https://hub.docker.com/r/rotki/rotki/
+
+Moving the accounts from the app
+--------------------------------
+
+If for any reason you would like to move your accounts from the rotki application to
+docker you can do so by copying the data directory of the application to the docker
+data volume.
+
+You can find where the rotki application data is stored in the :ref:`rotki_data_directory`.
+
+To move your existing accounts from the application, you can copy the contents of
+application data directory to the data volume mount point.
+
+Assuming that you used the directory from the example, to move a specific account
+on linux, you have to run::
+
+    sudo cp -R ~/.local/share/rotki/data/username ~/.rotki/data/username
+
+This will copy the ``username`` account to the data volume and make it accessible through
+the docker container.
+
+Troubleshooting
+---------------
+
+If you get a problem when starting the application or during its usage
+please open an issue in Github and include all logs that can be found
+in ``$HOME/.rotki/logs:/logs`` or the custom volume you used during
+the container creation.
 
 Build from Source
 ******************
