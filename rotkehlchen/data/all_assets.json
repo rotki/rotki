@@ -15223,5 +15223,14 @@
         "started": 1606581191,
         "symbol": "XLMBULL",
         "type": "ethereum token"
+    },
+    "KCS": {
+        "coingecko": "kucoin-shares",
+        "ethereum_address": "0xf34960d9d60be18cC1D5Afc1A6F012A723a28811",
+        "ethereum_token_decimals": 6,
+        "name": "KuCoin Token",
+        "started": 1610436587,
+        "symbol": "KCS",
+        "type": "ethereum token"
     }
 }

@@ -473,6 +473,8 @@ def deserialize_location(symbol: str) -> Location:
         return Location.BITCOINDE
     if symbol == 'iconomi':
         return Location.ICONOMI
+    if symbol == 'kucoin':
+        return Location.KUCOIN
     # else
     raise DeserializationError(
         f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
@@ -582,6 +584,8 @@ def deserialize_location_from_db(symbol: str) -> Location:
         return Location.BITCOINDE
     if symbol == 'V':
         return Location.ICONOMI
+    if symbol == 'W':
+        return Location.KUCOIN
     # else
     raise DeserializationError(
         f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',

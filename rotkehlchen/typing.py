@@ -342,6 +342,7 @@ class Location(Enum):
     BITFINEX = 20
     BITCOINDE = 21
     ICONOMI = 22
+    KUCOIN = 23
 
     def __str__(self) -> str:
         if self == Location.EXTERNAL:
@@ -388,6 +389,8 @@ class Location(Enum):
             return 'bitcoinde'
         if self == Location.ICONOMI:
             return 'iconomi'
+        if self == Location.KUCOIN:
+            return 'kucoin'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 
@@ -436,6 +439,8 @@ class Location(Enum):
             return 'U'
         if self == Location.ICONOMI:
             return 'V'
+        if self == Location.KUCOIN:
+            return 'W'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 

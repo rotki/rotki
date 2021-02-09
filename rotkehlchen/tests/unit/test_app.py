@@ -28,7 +28,7 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
     credentials = []
     for name in SUPPORTED_EXCHANGES:
         passphrase = None
-        if name == 'coinbasepro':
+        if name in ('coinbasepro', 'kucoin'):
             passphrase = 'supersecretpassphrase'
         credentials.append((name, make_api_key(), make_api_secret(), passphrase))
     credentials.append(('rotkehlchen', make_api_key(), make_api_secret(), None))

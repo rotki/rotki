@@ -6,6 +6,7 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_BITTREX,
     WORLD_TO_ICONOMI,
     WORLD_TO_KRAKEN,
+    WORLD_TO_KUCOIN,
     WORLD_TO_POLONIEX,
     Asset,
 )
@@ -492,6 +493,7 @@ BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
 BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
 BITFINEX_TO_WORLD = {v: k for k, v in WORLD_TO_BITFINEX.items()}
 KRAKEN_TO_WORLD = {v: k for k, v in WORLD_TO_KRAKEN.items()}
+KUCOIN_TO_WORLD = {v: k for k, v, in WORLD_TO_KUCOIN.items()}
 ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
 
 RENAMED_BINANCE_ASSETS = {
@@ -591,6 +593,7 @@ def asset_from_bitfinex(
 def asset_from_bitstamp(bitstamp_name: str) -> Asset:
     """May raise:
     - DeserializationError
+    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(bitstamp_name, str):
@@ -654,3 +657,16 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
 
     # else
     return Asset(cb_name)
+
+
+def asset_from_kucoin(kucoin_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(kucoin_name, str):
+        raise DeserializationError(f'Got non-string type {type(kucoin_name)} for kucoin asset')
+
+    name = KUCOIN_TO_WORLD.get(kucoin_name, kucoin_name)
+    return Asset(name)

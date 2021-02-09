@@ -17,6 +17,7 @@ from rotkehlchen.tests.fixtures.exchanges.coinbasepro import *
 from rotkehlchen.tests.fixtures.exchanges.gemini import *
 from rotkehlchen.tests.fixtures.exchanges.iconomi import *
 from rotkehlchen.tests.fixtures.exchanges.kraken import *
+from rotkehlchen.tests.fixtures.exchanges.kucoin import *
 from rotkehlchen.tests.fixtures.exchanges.poloniex import *
 from rotkehlchen.tests.fixtures.greenlets import *
 from rotkehlchen.tests.fixtures.history import *

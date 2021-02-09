@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from unittest.mock import patch
 
 from rotkehlchen.db.dbhandler import DBHandler
@@ -15,8 +15,13 @@ from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.iconomi import Iconomi
+from rotkehlchen.exchanges.kucoin import Kucoin
 from rotkehlchen.exchanges.poloniex import Poloniex
-from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
+from rotkehlchen.tests.utils.factories import (
+    make_api_key,
+    make_api_secret,
+    make_random_uppercasenumeric_string,
+)
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import ApiKey, ApiSecret
@@ -326,10 +331,10 @@ def create_test_binance(
 
 
 def create_test_bitfinex(
-        database,
-        msg_aggregator,
-        api_key=None,
-        secret=None,
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        api_key: Optional[ApiKey] = None,
+        secret: Optional[ApiSecret] = None,
 ) -> Bitfinex:
     if api_key is None:
         api_key = make_api_key()
@@ -360,10 +365,10 @@ def create_test_bitmex(
 
 
 def create_test_bitstamp(
-        database,
-        msg_aggregator,
-        api_key=None,
-        secret=None,
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        api_key: Optional[ApiKey] = None,
+        secret: Optional[ApiSecret] = None,
 ) -> Bitstamp:
     if api_key is None:
         api_key = make_api_key()
@@ -431,6 +436,29 @@ def create_test_kraken(
         secret=make_api_secret(),
         database=database,
         msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_kucoin(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        api_key: Optional[ApiKey] = None,
+        secret: Optional[ApiSecret] = None,
+        passphrase: Optional[str] = None,
+) -> Kucoin:
+    if api_key is None:
+        api_key = make_api_key()
+    if secret is None:
+        secret = make_api_secret()
+    if passphrase is None:
+        passphrase = make_random_uppercasenumeric_string(size=6)
+
+    return Kucoin(
+        api_key=api_key,
+        secret=secret,
+        database=database,
+        msg_aggregator=msg_aggregator,
+        passphrase=passphrase,
     )
 
 
