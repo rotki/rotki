@@ -56,7 +56,11 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
           'general_trade_profit_loss',
           'taxable_trade_profit_loss',
           'total_taxable_profit_loss',
-          'total_profit_loss'
+          'total_profit_loss',
+          'used_amount',
+          'amount',
+          'rate',
+          'fee_rate'
         ],
         ignoreResult: false
       });

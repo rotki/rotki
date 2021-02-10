@@ -1,4 +1,5 @@
 import { default as BigNumber } from 'bignumber.js';
+import { TradeLocation } from '@/services/history/types';
 
 export type ReportPeriod = {
   readonly start: number;
@@ -24,6 +25,21 @@ export interface ProfitLossOverviewData {
   readonly totalProfitLoss: BigNumber;
 }
 
+interface MatchedAcquisition {
+  readonly time: number;
+  readonly description: string;
+  readonly location: TradeLocation;
+  readonly usedAmount: BigNumber;
+  readonly amount: BigNumber;
+  readonly rate: BigNumber;
+  readonly feeRate: BigNumber;
+}
+
+interface CostBasis {
+  readonly isComplete: boolean;
+  readonly matchedAcquisitions: MatchedAcquisition[];
+}
+
 export interface ProfitLossEvent {
   readonly location: string;
   readonly type: string;
@@ -36,6 +52,7 @@ export interface ProfitLossEvent {
   readonly taxableReceivedInProfitCurrency: BigNumber;
   readonly receivedInAsset: BigNumber;
   readonly netProfitOrLoss: BigNumber;
+  readonly costBasis: CostBasis | null;
   readonly time: number;
   readonly isVirtual: boolean;
 }

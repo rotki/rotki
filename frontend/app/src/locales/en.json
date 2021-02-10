@@ -68,6 +68,20 @@
       "password_missmatch": "The password confirmation does not match the provided password"
     }
   },
+  "cost_basis_table": {
+    "complete": "(Complete)",
+    "cost_basis": "Cost Basis",
+    "headers": {
+      "amount": "Amount",
+      "description": "Description",
+      "fee_rate": "Fee Rate",
+      "location": "Location",
+      "rate": "Rate",
+      "used_amount": "Used Amount",
+      "time": "Time"
+    },
+    "incomplete": "(Incomplete)"
+  },
   "create_account": {
     "title": "Create Account",
     "select_credentials": {
