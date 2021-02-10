@@ -122,7 +122,7 @@ You can find all the available docker images at `DockerHub`_.
    !Warning: It is important to keep in mind that is advisable to run
    the docker image in a secure environment. Such an environment would
    be for example running the docker image in the host machine and
-   accessing it only via NAT. Under any circumstances you should not
+   accessing it only via NAT. Under no circumstances should you
    expose the docker image directly to public or local networks since
    this can lead to security issues and unauthorized access of your
    data.
@@ -141,7 +141,7 @@ following::
        rotki/rotki:latest
 
 This will start a new container that stores the data and logs into a
-``.rotki`` directory under the user’s home directory. Will will be able
+``.rotki`` directory under the user’s home directory. You will be able
 to find your account data (databases etc) under the ``.rotki/data``
 directory.
 
@@ -187,12 +187,12 @@ create a new container::
 
 Please ensure that the volumes from the previous container are used
 again. If you don’t use the same volumes, then your old accounts and
-date will be unavailable.
+data will be unavailable.
 
 .. _DockerHub: https://hub.docker.com/r/rotki/rotki/
 
-Moving the accounts from the app
---------------------------------
+Moving the accounts from the desktop application
+-------------------------------------------------
 
 If for any reason you would like to move your accounts from the rotki application to
 docker you can do so by copying the data directory of the application to the docker
@@ -201,7 +201,7 @@ data volume.
 You can find where the rotki application data is stored in the :ref:`rotki_data_directory`.
 
 To move your existing accounts from the application, you can copy the contents of
-application data directory to the data volume mount point.
+the application data directory to the data volume mount point.
 
 Assuming that you used the directory from the example, to move a specific account
 on linux, you have to run::
