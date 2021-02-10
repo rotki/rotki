@@ -199,15 +199,15 @@ export default class DateTimePicker extends Vue {
     }
 
     .v-card {
-      box-shadow: none;
+      box-shadow: none !important;
     }
   }
 
   &:first-child {
     ::v-deep {
       .v-picker {
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
+        border-top-right-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
       }
     }
   }
@@ -215,8 +215,8 @@ export default class DateTimePicker extends Vue {
   &:last-child {
     ::v-deep {
       .v-picker {
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
+        border-top-left-radius: 0 !important;
+        border-bottom-left-radius: 0 !important;
       }
     }
   }
