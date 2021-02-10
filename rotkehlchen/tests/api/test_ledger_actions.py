@@ -155,7 +155,7 @@ def test_edit_ledger_actions(rotkehlchen_api_server):
     new_action = actions[1]
     new_action['timestamp'] = 1337
     new_action['location'] = 'kraken'
-    new_action['action_type'] = 'loss'
+    new_action['action_type'] = 'airdrop'
     new_action['amount'] = '10'
     new_action['asset'] = 'ETH'
     new_action['link'] = 'a link'

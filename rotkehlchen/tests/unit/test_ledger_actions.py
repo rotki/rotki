@@ -1,5 +1,4 @@
 import pytest
-import string
 from rotkehlchen.accounting.structures import LedgerActionType, LedgerAction
 from rotkehlchen.typing import Location, AssetAmount
 from rotkehlchen.fval import FVal
@@ -7,6 +6,8 @@ from rotkehlchen.constants.assets import A_ETH, A_BTC
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.history import prices
+from rotkehlchen.db.ledger_actions import DBLedgerActions
+from rotkehlchen.serialization.deserialize import deserialize_ledger_action_type_from_db
 
 
 def test_serialize_str():
@@ -17,10 +18,25 @@ def test_serialize_str():
         assert isinstance(entry.serialize(), str)
 
 
-def test_serialize_for_db():
-    uppercase_list = list(string.ascii_uppercase)
+def test_serialize_deserialize_for_db():
     for entry in LedgerActionType:
-        assert entry.serialize_for_db() in uppercase_list
+        db_code = entry.serialize_for_db()
+        assert deserialize_ledger_action_type_from_db(db_code) == entry
+
+
+def test_all_action_types_writtable_in_db(database, function_scope_messages_aggregator):
+    db = DBLedgerActions(database, function_scope_messages_aggregator)
+    for entry in LedgerActionType:
+        db.add_ledger_action(
+            timestamp=1,
+            action_type=entry,
+            location=Location.EXTERNAL,
+            amount=FVal(1),
+            asset=A_ETH,
+            link='',
+            notes=''
+        )
+    assert len(db.get_ledger_actions(None, None, None)) == len(LedgerActionType)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
