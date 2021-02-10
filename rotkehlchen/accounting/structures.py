@@ -286,10 +286,12 @@ class LedgerActionType(Enum):
             return 'D'
         if self == LedgerActionType.DONATION_RECEIVED:
             return 'E'
-        if self == LedgerActionType.GIFT:
+        if self == LedgerActionType.AIRDROP:
             return 'F'
-        if self == LedgerActionType.GRANT:
+        if self == LedgerActionType.GIFT:
             return 'G'
+        if self == LedgerActionType.GRANT:
+            return 'H'
 
         # else
         raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
