@@ -9,6 +9,7 @@
           :headers="headers"
           :items="indexedEvents"
           single-expand
+          class="profit-loss-events__table"
           :expanded.sync="expanded"
           item-key="index"
           sort-by="time"
@@ -136,7 +137,8 @@ export default class ProfitLossEvents extends Vue {
       text: this.$t('profit_loss_events.headers.location').toString(),
       value: 'location',
       width: '120px',
-      align: 'center'
+      align: 'center',
+      class: 'profit-loss-events__table__header__location'
     },
     {
       text: this.$t('profit_loss_events.headers.paid_in', {
@@ -203,10 +205,14 @@ export default class ProfitLossEvents extends Vue {
 }
 
 ::v-deep {
-  th {
-    &:nth-child(2) {
-      span {
-        padding-left: 16px;
+  .profit-loss-events {
+    &__table {
+      &__header {
+        &__location {
+          span {
+            padding-left: 16px;
+          }
+        }
       }
     }
   }
