@@ -311,9 +311,12 @@
   },
   "ledger_actions": {
     "actions": {
+      "airdrop": "Airdrop",
       "dividends": "Dividends Income",
       "donation": "Donation Received",
       "expense": "Expense",
+      "gift": "Gift",
+      "grant": "Grant",
       "income": "Income",
       "loss": "Loss"
     },
