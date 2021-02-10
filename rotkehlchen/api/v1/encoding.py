@@ -878,6 +878,7 @@ class ModifiableSettingsSchema(Schema):
         validate=_validate_historical_price_oracles,
         missing=None,
     )
+    taxable_ledger_actions = fields.List(LedgerActionTypeField, missing=None)
 
     @validates_schema  # type: ignore
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -921,6 +922,7 @@ class ModifiableSettingsSchema(Schema):
             display_date_in_localtime=data['display_date_in_localtime'],
             historical_price_oracles=data['historical_price_oracles'],
             current_price_oracles=data['current_price_oracles'],
+            taxable_ledger_actions=data['taxable_ledger_actions'],
         )
 
 

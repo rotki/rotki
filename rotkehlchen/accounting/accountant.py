@@ -95,6 +95,7 @@ class Accountant():
 
         self.profit_currency = settings.main_currency
         self.events.profit_currency = settings.main_currency
+        self.events.taxable_ledger_actions = settings.taxable_ledger_actions
         self.csvexporter.profit_currency = settings.main_currency
 
         if settings.account_for_assets_movements is not None:

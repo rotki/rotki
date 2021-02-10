@@ -96,6 +96,8 @@ def test_set_settings(rotkehlchen_api_server):
             value = ['coingecko', 'cryptocompare']
         elif setting == 'historical_price_oracles':
             value = ['coingecko', 'cryptocompare']
+        elif setting == 'taxable_ledger_actions':
+            value = ['income']
         else:
             raise AssertionError(f'Unexpected settting {setting} encountered')
 

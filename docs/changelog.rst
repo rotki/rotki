@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2237` Users can now choose which ledger actions are taken into account in the PnL report by customizing a setting. Two new ledger action types are added. Airdrop and Gift.
 * :feature:`1794` Users who create a Profit and Loss report will now be able to see a cost basis calculation in the events of the report and in the exported trades.csv and all_events.csv
 * :feature:`1001` Users will now be taken directly to the add dialog when pressing add Blockchain Address or Manual Balance on the dashboard.
 * :feature:`276` Users can now click on the assets on the dashboard and other tables and see which accounts hold this asset.
