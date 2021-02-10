@@ -100,9 +100,9 @@ class TaxableEvents():
             fee_in_profit_currency: Fee,
             fee_currency: Asset,
             timestamp: Timestamp,
-            is_virtual: bool,
+            is_from_prefork_virtual_buy: bool,
     ) -> None:
-        if is_virtual:
+        if is_from_prefork_virtual_buy:
             # This way we avoid double counting. For example BTC before BCH/BSV fork
             # adding the BSV twice
             return
@@ -119,6 +119,7 @@ class TaxableEvents():
                 fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
+                is_from_prefork_virtual_buy=True,
             )
 
         if bought_asset == A_BTC and timestamp < BTC_BCH_FORK_TS:
@@ -133,6 +134,7 @@ class TaxableEvents():
                 fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
+                is_from_prefork_virtual_buy=True,
             )
             self.add_buy(
                 location=location,
@@ -144,6 +146,7 @@ class TaxableEvents():
                 fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
+                is_from_prefork_virtual_buy=True,
             )
 
         if bought_asset == A_BCH and timestamp < BCH_BSV_FORK_TS:
@@ -158,6 +161,7 @@ class TaxableEvents():
                 fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
+                is_from_prefork_virtual_buy=True,
             )
 
     def handle_prefork_asset_sells(
@@ -298,6 +302,7 @@ class TaxableEvents():
             fee_currency: Asset,
             timestamp: Timestamp,
             is_virtual: bool = False,
+            is_from_prefork_virtual_buy: bool = False,
     ) -> None:
         """
         Account for the given buy
@@ -334,7 +339,7 @@ class TaxableEvents():
             fee_in_profit_currency=fee_in_profit_currency,
             fee_currency=fee_currency,
             timestamp=timestamp,
-            is_virtual=is_virtual,
+            is_from_prefork_virtual_buy=is_from_prefork_virtual_buy,
         )
 
         gross_cost = bought_amount * buy_rate
