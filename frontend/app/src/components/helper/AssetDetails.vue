@@ -1,5 +1,6 @@
 <template>
   <span
+    v-bind="$attrs"
     class="asset-details pt-3 pb-3"
     :class="opensDetails ? 'asset-details--link' : null"
     @click="navigate"
@@ -12,7 +13,9 @@
       <span class="grey--text asset-details__details__subtitle">
         <v-tooltip open-delay="400" top :disabled="$vuetify.breakpoint.lgAndUp">
           <template #activator="{ on, attrs }">
-            <span v-bind="attrs" v-on="on">{{ name }}</span>
+            <span v-bind="attrs" class="text-truncate" v-on="on">
+              {{ name }}
+            </span>
           </template>
           <span> {{ fullName }}</span>
         </v-tooltip>
@@ -96,6 +99,7 @@ export default class AssetDetails extends Vue {
   display: flex;
   flex-direction: row;
   align-items: center;
+  width: 100%;
 
   &--link {
     cursor: pointer;
@@ -108,10 +112,10 @@ export default class AssetDetails extends Vue {
   &__details {
     display: flex;
     flex-direction: column;
+    width: 100%;
 
     &__subtitle {
       font-size: 0.8rem;
-      white-space: nowrap;
     }
   }
 }
