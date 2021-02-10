@@ -425,8 +425,8 @@ class Adex(EthereumModule):
             slashed_at=slashed_at,
         )
 
+    @staticmethod
     def _deserialize_channel_withdraw(
-            self,
             raw_event: Dict[str, Any],
             identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
     ) -> ChannelWithdraw:
@@ -438,13 +438,9 @@ class Adex(EthereumModule):
             address: identity for identity, address in identity_address_map.items()
         }
         try:
-            adex_event = self._deserialize_adex_channel_event(
-                raw_event=raw_event,
-                inverse_identity_address_map=inverse_identity_address_map,
-                case='channel_withdraw',
-            )
-            # raw_event id is already checked in `_deserialize_adex_channel_event()`
-            log_index = raw_event['id'].split(':')[-1]
+            event_id = raw_event['id']
+            user_address = raw_event['user']
+            timestamp = deserialize_timestamp(raw_event['timestamp'])
             amount = FVal(raw_event['amount']) / ADX_AMOUNT_MANTISSA
             channel_id = raw_event['channel']['channelId']
             token_address = raw_event['channel']['tokenAddr']
@@ -464,94 +460,84 @@ class Adex(EthereumModule):
             ) from e
 
         try:
-            token_address = to_checksum_address(token_address)
-        except ValueError as e:
+            # tx_hash:identity_address:log_index
+            tx_hash, tx_address, tx_log_index = event_id.split(':')
+            log_index = int(tx_log_index)
+        except (AttributeError, ValueError) as e:
+            msg = str(e)
+            if isinstance(e, AttributeError):
+                msg = f'Unexpected type in event id: {type(raw_event["id"])}.'
+
+            log.error(
+                'Failed to deserialize an AdEx channel withdraw event id',
+                error=msg,
+                raw_event=raw_event,
+                identity_address_map=identity_address_map,
+            )
             raise DeserializationError(
-                f"Invalid ethereum address in channel withdraw event token address: {token_address}.",  # noqa: E501
+                'Failed to deserialize an AdEx channel withdraw event. Check logs for more details',  # noqa: E501
             ) from e
+
+        try:
+            address = to_checksum_address(user_address)
+            identity_address = inverse_identity_address_map[address]
+            tx_address = to_checksum_address(tx_address)
+            token_address = to_checksum_address(token_address)
+        except (KeyError, ValueError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key in event: {msg}.'
+
+            log.error(
+                'Failed to deserialize an AdEx channel withdraw event',
+                error=f'Invalid ethereum address in channel withdraw event: {token_address}. {msg}.',  # noqa: E501
+                raw_event=raw_event,
+                identity_address_map=identity_address_map,
+            )
+            raise DeserializationError(
+                'Failed to deserialize an AdEx channel withdraw event. Check logs for more details',  # noqa: E501
+            ) from e
+
+        if tx_address != address:
+            msg = (
+                f'Unexpected ethereum address in channel withdraw event id: {tx_address}. '
+                f'The event address does not match the address: {address}.'
+            )
+            log.error(
+                'Failed to deserialize an AdEx channel withdraw event',
+                error=msg,
+                raw_event=raw_event,
+                identity_address_map=identity_address_map,
+            )
+            raise DeserializationError(
+                'Failed to deserialize an AdEx channel withdraw event. Check logs for more details',  # noqa: E501
+            )
 
         if token_address == A_ADX.ethereum_address:
             token = A_ADX
         elif token_address == A_DAI.ethereum_address:
             token = A_DAI
         else:
-            msg = (
-                f'Failed to deserialize an AdEx channel withdraw event. '
-                f'Unexpected token address: {token_address} on channel: {channel_id}'
+            log.error(
+                'Failed to deserialize an AdEx channel withdraw event',
+                error=f'Unexpected token address: {token_address} on channel: {channel_id}',
+                raw_event=raw_event,
+                identity_address_map=identity_address_map,
             )
-            log.error(msg, raw_event=raw_event)
             raise DeserializationError(
                 'Failed to deserialize an AdEx channel withdraw event. Check logs for more details',  # noqa: E501
             )
 
         return ChannelWithdraw(
-            tx_hash=adex_event.tx_hash,
-            address=adex_event.address,
-            identity_address=adex_event.identity_address,
-            timestamp=adex_event.timestamp,
-            value=Balance(amount=amount),
-            channel_id=channel_id,
-            pool_id=TOM_POOL_ID,
-            token=token,
-            log_index=int(log_index),
-        )
-
-    @staticmethod
-    def _deserialize_adex_channel_event(
-            raw_event: Dict[str, Any],
-            inverse_identity_address_map: Dict[ChecksumAddress, ChecksumAddress],
-            case: Literal['channel_withdraw'],
-    ) -> AdexEvent:
-        """Deserialize the common attributes of a channel event.
-
-        May raise:
-        - KeyError
-        - DeserializationError
-        """
-        try:
-            address = to_checksum_address(raw_event['user'])
-        except ValueError as e:
-            raise DeserializationError(
-                f"Invalid ethereum address in {case} event user: {raw_event['user']}.",
-            ) from e
-
-        identity_address = inverse_identity_address_map[address]
-        event_id = raw_event['id']
-        if not isinstance(event_id, str):
-            raise DeserializationError(f'Unexpected type in {case} event id: {type(event_id)}.')
-
-        try:
-            if case == 'channel_withdraw':
-                # tx_hash:identity_address:log_index
-                tx_hash, tx_address, _ = event_id.split(':')
-            else:
-                raise AssertionError(f'Unexpected deserialization case: {case}.')
-        except ValueError as e:
-            raise DeserializationError(
-                f'Unexpected format in {case} event id: {event_id}.',
-            ) from e
-
-        if case == 'channel_withdraw':
-            try:
-                tx_address = to_checksum_address(tx_address)
-            except ValueError as e:
-                raise DeserializationError(
-                    f"Invalid ethereum address in {case} event id: {tx_address}.",
-                ) from e
-
-            if tx_address != address:
-                raise DeserializationError(
-                    f'Unexpected ethereum address in {case} event id: {tx_address}. '
-                    f'The event address does not match the address: {address}.',
-                )
-
-        timestamp = deserialize_timestamp(raw_event['timestamp'])
-
-        return AdexEvent(
             tx_hash=tx_hash,
             address=address,
             identity_address=identity_address,
             timestamp=timestamp,
+            value=Balance(amount=amount),
+            channel_id=channel_id,
+            pool_id=TOM_POOL_ID,
+            token=token,
+            log_index=log_index,
         )
 
     @staticmethod
@@ -587,16 +573,14 @@ class Adex(EthereumModule):
             else:
                 raise AssertionError(f'Unexpected deserialization case: {case}.')
         except ValueError as e:
-            raise DeserializationError(
-                f'Unexpected format in {case} event id: {event_id}',
-            ) from e
+            raise DeserializationError(f'Unexpected format in {case} event id: {event_id}') from e
 
         if case in ('unbond', 'unbond_request'):
             try:
                 tx_address = to_checksum_address(tx_address)
             except ValueError as e:
                 raise DeserializationError(
-                    f"Invalid ethereum address in {case} event id: {tx_address}.",
+                    f'Invalid ethereum address in {case} event id: {tx_address}.',
                 ) from e
 
             if address != tx_address:
