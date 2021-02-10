@@ -42,5 +42,6 @@ export const convertToAccountingSettings = (
   includeGasCosts: settings.include_gas_costs,
   includeCrypto2Crypto: settings.include_crypto2crypto,
   accountForAssetsMovements: settings.account_for_assets_movements,
-  calculatePastCostBasis: settings.calculate_past_cost_basis
+  calculatePastCostBasis: settings.calculate_past_cost_basis,
+  taxableLedgerActions: settings.taxable_ledger_actions
 });

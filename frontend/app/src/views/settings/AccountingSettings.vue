@@ -149,6 +149,7 @@
         </v-card>
       </v-col>
     </v-row>
+    <ledger-action-settings class="mt-18" />
   </v-container>
 </template>
 
@@ -156,12 +157,14 @@
 import { Component } from 'vue-property-decorator';
 import { mapActions, mapState } from 'vuex';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import LedgerActionSettings from '@/components/settings/accounting/LedgerActionSettings.vue';
 import { ActionStatus } from '@/store/types';
 import { AccountingSettings, SettingsUpdate } from '@/typing/types';
 import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
 
 @Component({
   components: {
+    LedgerActionSettings,
     AssetSelect
   },
   computed: {

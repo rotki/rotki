@@ -365,6 +365,14 @@
       }
     }
   },
+  "ledger_action_settings": {
+    "header": {
+      "ledger_action": "Ledger Action",
+      "taxable": "Taxable"
+    },
+    "subtitle": "Control which ledger actions are considered taxable or not during the profit/loss report generation",
+    "title": "Taxable ledger actions"
+  },
   "loan_liquidation": {
     "liquidated_collateral": "Liquidated collateral",
     "liquidation_events": "Liquidation Events",

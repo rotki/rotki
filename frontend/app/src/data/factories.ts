@@ -27,5 +27,6 @@ export const defaultAccountingSettings = (): AccountingSettings => ({
   includeGasCosts: true,
   taxFreeAfterPeriod: null,
   accountForAssetsMovements: true,
-  calculatePastCostBasis: true
+  calculatePastCostBasis: true,
+  taxableLedgerActions: []
 });
