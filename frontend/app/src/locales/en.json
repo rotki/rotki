@@ -370,7 +370,7 @@
       "ledger_action": "Ledger Action",
       "taxable": "Taxable"
     },
-    "subtitle": "Control which ledger actions are considered taxable or not during the profit/loss report generation",
+    "subtitle": "Control which ledger actions are considered taxable or not during the profit/loss report generation. That means which ones will add/subtract to/from the profit loss. All ledger actions irrespective of this setting will be taken into account for cost basis calculation.",
     "title": "Taxable ledger actions"
   },
   "loan_liquidation": {
