@@ -13,13 +13,19 @@ export const ACTION_LOSS = 'loss';
 export const ACTION_DONATION = 'donation received';
 export const ACTION_EXPENSE = 'expense';
 export const ACTION_DIVIDENDS = 'dividends income';
+export const ACTION_AIRDROP = 'airdrop';
+export const ACTION_GIFT = 'gift';
+export const ACTION_GRANT = 'grant';
 
 export const LEDGER_ACTION_TYPES = [
   ACTION_INCOME,
   ACTION_LOSS,
   ACTION_DONATION,
   ACTION_EXPENSE,
-  ACTION_DIVIDENDS
+  ACTION_DIVIDENDS,
+  ACTION_AIRDROP,
+  ACTION_GIFT,
+  ACTION_GRANT
 ] as const;
 
 type ActionDataEntry = { readonly identifier: string; readonly label: string };
@@ -44,6 +50,18 @@ export const ledgerActionsData: ActionDataEntry[] = [
   {
     identifier: ACTION_DIVIDENDS,
     label: i18n.t('ledger_actions.actions.dividends').toString()
+  },
+  {
+    identifier: ACTION_AIRDROP,
+    label: i18n.t('ledger_actions.actions.airdrop').toString()
+  },
+  {
+    identifier: ACTION_GIFT,
+    label: i18n.t('ledger_actions.actions.gift').toString()
+  },
+  {
+    identifier: ACTION_GRANT,
+    label: i18n.t('ledger_actions.actions.grant').toString()
   }
 ];
 

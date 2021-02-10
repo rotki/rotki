@@ -1,4 +1,5 @@
 import { SupportedModules } from '@/services/session/types';
+import { LedgerActionType } from '@/store/history/types';
 import { GeneralSettings } from '@/typing/types';
 
 const PRICE_ORACLES = ['cryptocompare', 'coingecko'] as const;
@@ -11,6 +12,7 @@ export interface AccountState {
 }
 
 export interface DBSettings {
+  readonly taxable_ledger_actions: LedgerActionType[];
   readonly have_premium: boolean;
   readonly version: number;
   readonly last_write_ts: number;

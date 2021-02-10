@@ -3,6 +3,7 @@ import { Currency } from '@/model/currency';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { SupportedModules } from '@/services/session/types';
 import { AssetBalances } from '@/store/balances/types';
+import { LedgerActionType } from '@/store/history/types';
 import { SyncConflictPayload } from '@/store/session/types';
 
 export const CURRENCY_BEFORE = 'before';
@@ -37,6 +38,7 @@ export interface AccountingSettings {
   readonly includeGasCosts: boolean;
   readonly taxFreeAfterPeriod: number | null;
   readonly accountForAssetsMovements: boolean;
+  readonly taxableLedgerActions: LedgerActionType[];
 }
 
 export type AccountingSettingsUpdate = {
@@ -134,6 +136,7 @@ interface SettingsPayload {
   display_date_in_localtime: boolean;
   current_price_oracles: string[];
   historical_price_oracles: string[];
+  taxable_ledger_actions: LedgerActionType[];
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare';
