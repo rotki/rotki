@@ -8,6 +8,7 @@ S_KSM = 'KSM'
 
 A_BTC = Asset(S_BTC)
 A_BCH = Asset('BCH')
+A_BSV = Asset('BSV')
 A_BAL = Asset('BAL')
 A_BSV = Asset('BSV')
 A_ETH = Asset(S_ETH)
