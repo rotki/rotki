@@ -147,7 +147,7 @@ Handling user creation, sign-in, log-out and querying
                   "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
                   "current_price_oracles": ["cryptocompare", "coingecko"],
                   "historical_price_oracles": ["cryptocompare", "coingecko"],
-		  "taxable_ledger_actions": ["income", "airdrop"]
+                  "taxable_ledger_actions": ["income", "airdrop"]
               }
           },
           "message": ""
@@ -212,7 +212,7 @@ Handling user creation, sign-in, log-out and querying
                   "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
                   "current_price_oracles": ["cryptocompare", "coingecko"],
                   "historical_price_oracles": ["cryptocompare", "coingecko"],
-		  "taxable_ledger_actions": ["income", "airdrop"]
+                  "taxable_ledger_actions": ["income", "airdrop"]
               }
           },
           "message": ""
@@ -716,9 +716,9 @@ Query the result of an ongoing backend task
 
       {
           "result": {
-	      "pending": [4, 23],
-	      "completed": [2]
-	  },
+              "pending": [4, 23],
+              "completed": [2]
+          },
           "message": ""
       }
 
@@ -1462,15 +1462,15 @@ Query supported ethereum modules
 
       { "result": [{
               "id": "uniswap",
-	      "name": "Uniswap"
-	  }], [{
-	      "id": "yearn_vaults",
-	      "name": "Yearn Vaults"
-	  }], [{
-	      "id": "makerdao_dsr",
-	      "name": "MakerDAO DSR"
-	  }]
-	  "message": "" }
+              "name": "Uniswap"
+          }], [{
+              "id": "yearn_vaults",
+              "name": "Yearn Vaults"
+          }], [{
+              "id": "makerdao_dsr",
+              "name": "MakerDAO DSR"
+          }]
+          "message": "" }
 
    :resjson object result: A list of all supported module each with its id and human readable name
 
@@ -1513,35 +1513,35 @@ Querying ethereum transactions
 
       { "result":
             "entries": [{
-	        "entry": {
-		    "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
-		    "timestamp": 1598006527,
-		    "block_number": 10703085,
-		    "from_address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
-		    "to_address": "0xF9986D445ceD31882377b5D6a5F58EaEa72288c3",
-		    "value": "0",
-		    "gas": "61676",
-		    "gas_price": "206000000000",
-		    "gas_used": "37154",
-		    "input_data": "0xa9059cbb0000000000000000000000001934aa5cdb0677aaa12850d763bf8b60e7a3dbd4000000000000000000000000000000000000000000000179b9b29a80ae20ca00",
-		    "nonce": 2720
-	       },
-	       "ignored_in_accounting": false
+                "entry": {
+                    "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
+                    "timestamp": 1598006527,
+                    "block_number": 10703085,
+                    "from_address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
+                    "to_address": "0xF9986D445ceD31882377b5D6a5F58EaEa72288c3",
+                    "value": "0",
+                    "gas": "61676",
+                    "gas_price": "206000000000",
+                    "gas_used": "37154",
+                    "input_data": "0xa9059cbb0000000000000000000000001934aa5cdb0677aaa12850d763bf8b60e7a3dbd4000000000000000000000000000000000000000000000179b9b29a80ae20ca00",
+                    "nonce": 2720
+               },
+               "ignored_in_accounting": false
             }, {
-	        "entry": {
-		    "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
-		    "timestamp": 1588006528,
-		    "block_number": 10700085,
-		    "from_address": "0x1CAdbe158CB5162439901edA08df0A305b016dA1",
-		    "to_address": "0xA9916D445ce1318A2377b3D6a5F58EaEa72288a1",
-		    "value": "56000300000000000000000",
-		    "gas": "610676",
-		    "gas_price": "106000000000",
-		    "gas_used": "270154",
-		    "input_data": "0x",
-		    "nonce": 55
-		},
-		"ignored_in_accounting": true
+                "entry": {
+                    "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
+                    "timestamp": 1588006528,
+                    "block_number": 10700085,
+                    "from_address": "0x1CAdbe158CB5162439901edA08df0A305b016dA1",
+                    "to_address": "0xA9916D445ce1318A2377b3D6a5F58EaEa72288a1",
+                    "value": "56000300000000000000000",
+                    "gas": "610676",
+                    "gas_price": "106000000000",
+                    "gas_used": "270154",
+                    "input_data": "0x",
+                    "nonce": 55
+                },
+                "ignored_in_accounting": true
             }],
             "entries_found": 95,
             "entries_limit": 500,
@@ -2425,20 +2425,20 @@ Dealing with trades
       {
           "result": {
               "entries": [{
-	          "entry": {
-		      "trade_id": "dsadfasdsad",
-		      "timestamp": 1491606401,
-		      "location": "external",
-		      "pair": "BTC_EUR",
-		      "trade_type": "buy",
-		      "amount": "0.5541",
-		      "rate": "8422.1",
-		      "fee": "0.55",
-		      "fee_currency": "USD",
-		      "link": "Optional unique trade identifier",
-		      "notes": "Optional notes"
-		  },
-		  "ignored_in_accounting": false
+                  "entry": {
+                      "trade_id": "dsadfasdsad",
+                      "timestamp": 1491606401,
+                      "location": "external",
+                      "pair": "BTC_EUR",
+                      "trade_type": "buy",
+                      "amount": "0.5541",
+                      "rate": "8422.1",
+                      "fee": "0.55",
+                      "fee_currency": "USD",
+                      "link": "Optional unique trade identifier",
+                      "notes": "Optional notes"
+                  },
+                  "ignored_in_accounting": false
               }],
               "entries_found": 95,
               "entries_limit": 250,
@@ -2509,17 +2509,17 @@ Dealing with trades
 
       {
           "result": [{
-		  "trade_id": "dsadfasdsad",
-		  "timestamp": 1491606401,
-		  "location": "external",
-		  "pair": "BTC_EUR",
-		  "trade_type": "buy",
-		  "amount": "0.5541",
-		  "rate": "8422.1",
-		  "fee": "0.55",
-		  "fee_currency": "USD",
-		  "link": "Optional unique trade identifier",
-		  "notes": "Optional notes"
+                  "trade_id": "dsadfasdsad",
+                  "timestamp": 1491606401,
+                  "location": "external",
+                  "pair": "BTC_EUR",
+                  "trade_type": "buy",
+                  "amount": "0.5541",
+                  "rate": "8422.1",
+                  "fee": "0.55",
+                  "fee_currency": "USD",
+                  "link": "Optional unique trade identifier",
+                  "notes": "Optional notes"
           }],
           "message": ""
       }
@@ -2663,20 +2663,20 @@ Querying asset movements
       {
           "result": {
               "entries": [{
-	          "entry": {
-		      "identifier": "foo"
-		      "location": "kraken",
-		      "category": "deposit",
-		      "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
-		      "transaction_id": "3a4b9b2404f6e6fb556c3e1d46a9752f5e70a93ac1718605c992b80aacd8bd1d",
-		      "timestamp": 1451706400
-		      "asset": "ETH",
-		      "amount": "500.55",
-		      "fee_asset": "ETH",
-		      "fee": "0.1",
-		      "link": "optional exchange unique id"
-		  },
-		  "ignored_in_accounting": false
+                  "entry": {
+                      "identifier": "foo"
+                      "location": "kraken",
+                      "category": "deposit",
+                      "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+                      "transaction_id": "3a4b9b2404f6e6fb556c3e1d46a9752f5e70a93ac1718605c992b80aacd8bd1d",
+                      "timestamp": 1451706400
+                      "asset": "ETH",
+                      "amount": "500.55",
+                      "fee_asset": "ETH",
+                      "fee": "0.1",
+                      "link": "optional exchange unique id"
+                  },
+                  "ignored_in_accounting": false
               }],
               "entries_found": 80,
               "entries_limit": 100,
@@ -2745,17 +2745,17 @@ Dealing with ledger actions
       {
           "result": {
               "entries": [{
-	          "entry": {
-		      "identifier": 344,
-		      "timestamp": 1491606401,
-		      "action_type": "loss",
-		      "location": "blockchain",
-		      "amount": "1550",
-		      "asset": "DAI",
-		      "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
-		      "notes": "The DAI I lost in the pickle finance hack"
-		  },
-		  "ignored_in_accounting": false
+                  "entry": {
+                      "identifier": 344,
+                      "timestamp": 1491606401,
+                      "action_type": "loss",
+                      "location": "blockchain",
+                      "amount": "1550",
+                      "asset": "DAI",
+                      "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
+                      "notes": "The DAI I lost in the pickle finance hack"
+                  },
+                  "ignored_in_accounting": false
               }],
               "entries_found": 1,
               "entries_limit": 50,
@@ -2791,13 +2791,13 @@ Dealing with ledger actions
 
       {
           "action": {
-	      "timestamp": 1491606401,
-	      "action_type": "income"
-	      "location": "external",
-	      "amount": "1",
-	      "asset": "ETH",
-	      "link": "Optional unique identifier",
-	      "notes": "Eth I received for being pretty"
+              "timestamp": 1491606401,
+              "action_type": "income"
+              "location": "external",
+              "amount": "1",
+              "asset": "ETH",
+              "link": "Optional unique identifier",
+              "notes": "Eth I received for being pretty"
       }}
 
    The request object is the same as above, a LedgerAction entry.
@@ -2834,7 +2834,7 @@ Dealing with ledger actions
       {
           "identifier": 55
           "timestamp": 1491606401,
-	  "action_type": "income"
+          "action_type": "income"
           "location": "external",
           "amount": "2",
           "asset": "ETH",
@@ -2854,17 +2854,17 @@ Dealing with ledger actions
       {
           "result": {
               "entries": [{
-	          "entry": {
-		      "identifier": 55,
-		      "timestamp": 1491606401,
-		      "action_type": "income"
-		      "location": "external",
-		      "amount": "2",
-		      "asset": "ETH",
-		      "link": "Optional unique identifier",
-		      "notes": "Eth I received for being pretty"
-		  },
-		  "ignored_in_accounting": false
+                  "entry": {
+                      "identifier": 55,
+                      "timestamp": 1491606401,
+                      "action_type": "income"
+                      "location": "external",
+                      "amount": "2",
+                      "asset": "ETH",
+                      "link": "Optional unique identifier",
+                      "notes": "Eth I received for being pretty"
+                  },
+                  "ignored_in_accounting": false
               }],
               "entries_found": 1,
               "entries_limit": 50,
@@ -2904,17 +2904,17 @@ Dealing with ledger actions
       {
           "result": {
               "entries": [{
-	          "entry": {
-		      "identifier": 35,
-		      "timestamp": 1491606401,
-		      "action_type": "income"
-		      "location": "external",
-		      "amount": "2",
-		      "asset": "ETH",
-		      "link": "Optional unique identifier",
-		      "notes": "Eth I received for being pretty"
-		  },
-		  "ignored_in_accounting": false
+                  "entry": {
+                      "identifier": 35,
+                      "timestamp": 1491606401,
+                      "action_type": "income"
+                      "location": "external",
+                      "amount": "2",
+                      "asset": "ETH",
+                      "link": "Optional unique identifier",
+                      "notes": "Eth I received for being pretty"
+                  },
+                  "ignored_in_accounting": false
               }],
               "entries_found": 1,
               "entries_limit": 50,
@@ -3170,7 +3170,7 @@ Querying history progress status
       {
           "result": {
               "processing_state": "Querying kraken exchange history",
-	      "total_progress": "50%"
+              "total_progress": "50%"
           }
           "message": ""
       }
@@ -5249,7 +5249,7 @@ Getting Eth2 Staking details
               "performance_1w": {"amount": "0.7", "usd_value": "700"},
               "performance_1m": {"amount": "3", "usd_value": "3000"},
               "performance_1y": {"amount": "36.5", "usd_value": "36500"}
-	  }, {
+          }, {
               "eth1_depositor": "0xaee017635291ea8E3C70FeAC5B86e1d3B0e23341",
               "index": 155,
               "public_key": "0xa8ff5fc88412d080a297683c25a791ef77eb52d75b265fabab1f2c2591bb927c35818ac6289bc6680ab252787d0ebab3",
@@ -5258,7 +5258,7 @@ Getting Eth2 Staking details
               "performance_1w": {"amount": "0", "usd_value": "0"},
               "performance_1m": {"amount": "0", "usd_value": "0"},
               "performance_1y": {"amount": "0", "usd_value": "0"}
-	  }],
+          }],
         "message": "",
       }
 
@@ -5372,25 +5372,25 @@ Querying ethereum airdrops
 
       {
           "result": {
-	      "0xe5B3330A43CeC5A01A80E75ebaB2d3bc17e70819": {
-	          "1inch": {
-		      "amount": "675.55",
-		      "asset": "1INCH",
-		      "link": "https://app.uniswap.org/"
-		  }
-	      },
-	      "0x0B89f648eEcCc574a9B7449B5242103789CCD9D7": {
-	          "1inch": {
-		      "amount": "1823.23",
-		      "asset": "1INCH",
-		      "link": "https://1inch.exchange/"
-		  },
-		  "uniswap": {
-		      "amount": "400",
-		      "asset": "UNI",
-		      "link": "https://app.uniswap.org/"
-		  }
-	      },
+              "0xe5B3330A43CeC5A01A80E75ebaB2d3bc17e70819": {
+                  "1inch": {
+                      "amount": "675.55",
+                      "asset": "1INCH",
+                      "link": "https://app.uniswap.org/"
+                  }
+              },
+              "0x0B89f648eEcCc574a9B7449B5242103789CCD9D7": {
+                  "1inch": {
+                      "amount": "1823.23",
+                      "asset": "1INCH",
+                      "link": "https://1inch.exchange/"
+                  },
+                  "uniswap": {
+                      "amount": "400",
+                      "asset": "UNI",
+                      "link": "https://app.uniswap.org/"
+                  }
+              },
           "message": ""
       }
 
@@ -6677,9 +6677,9 @@ Dealing with ignored actions
 
       {
           "result": {
-	      "trade": ["X124-JYI", "2325"],
-	      "ethereum_transaction": ["0xfoo", "0xboo"]
-	  },
+              "trade": ["X124-JYI", "2325"],
+              "ethereum_transaction": ["0xfoo", "0xboo"]
+          },
           "message": ""
       }
 
