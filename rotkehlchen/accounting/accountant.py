@@ -39,9 +39,13 @@ from rotkehlchen.utils.accounting import (
     action_get_timestamp,
     action_get_type,
 )
+from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+FREE_PNL_EVENTS_LIMIT = 1000
 
 
 class Accountant():
@@ -52,6 +56,7 @@ class Accountant():
             user_directory: Path,
             msg_aggregator: MessagesAggregator,
             create_csv: bool,
+            premium: Optional[Premium],
     ) -> None:
         self.db = db
         profit_currency = db.get_main_currency()
@@ -67,6 +72,7 @@ class Accountant():
         self.last_gas_price = 0
         self.currently_processing_timestamp = -1
         self.first_processed_timestamp = -1
+        self.premium = premium
 
     def __del__(self) -> None:
         del self.events
@@ -274,11 +280,14 @@ class Accountant():
         taxable events into account. Not where processing starts from. Processing
         always starts from the very first event we find in the history.
         """
+        active_premium = self.premium and self.premium.is_active()
         log.info(
             'Start of history processing',
             start_ts=start_ts,
             end_ts=end_ts,
+            active_premium=active_premium,
         )
+        events_limit = -1 if active_premium else FREE_PNL_EVENTS_LIMIT
         profit_currency = self.db.get_main_currency()
         self.events.reset(profit_currency=profit_currency, start_ts=start_ts, end_ts=end_ts)
         self.last_gas_price = 2000000000
@@ -380,6 +389,14 @@ class Accountant():
                 # API may time out
                 gevent.sleep(0.5)
             count += 1
+            if not active_premium and count > FREE_PNL_EVENTS_LIMIT:
+                log.debug(
+                    f'PnL reports event processing has hit the event limit of {events_limit}. '
+                    f'Processing stopped and the results will not '
+                    f'take into account subsequent events.',
+                )
+                break
+
         Inquirer().save_historical_forex_data()
 
         sum_other_actions = (
@@ -409,6 +426,8 @@ class Accountant():
                     sum_other_actions,
                 ),
             },
+            'events_processed': count,
+            'events_limit': events_limit,
             'all_events': self.csvexporter.all_events,
         }
 

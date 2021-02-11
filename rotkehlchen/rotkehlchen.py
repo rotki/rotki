@@ -250,6 +250,7 @@ class Rotkehlchen():
             user_directory=self.user_directory,
             msg_aggregator=self.msg_aggregator,
             create_csv=True,
+            premium=self.premium,
         )
 
         # Initialize the rotkehlchen logger

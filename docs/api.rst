@@ -3018,6 +3018,8 @@ Querying complete action history
                   "total_taxable_profit_loss": "6936.05",
                   "total_profit_loss": "6936.05"
               },
+	      "events_processed": 1000,
+	      "events_limit": 1000,
               "all_events": [{
                   "type": "buy",
                   "paid_in_profit_currency": "4000",
@@ -3083,6 +3085,8 @@ Querying complete action history
    :resjson str taxable_trade_profit_loss: The portion of the profit/loss from all trades that is taxable and is inside the given time period denominated in the user's profit currency.
    :resjson str total_taxable_profit_loss: The portion of all profit/loss that is taxable and is inside the given time period denominated in the user's profit currency.
    :resjson str total_profit_loss: The total profit loss inside the given time period denominated in the user's profit currency.
+   :resjson int events_processed: The total number of events processed. This also includes events in the past which are not exported due to the requested PnL range.
+   :resjson int events_limit: The limit of the events for the user's tier. -1 stands for unlimited. If the limit is hit then the event processing stops and only all events and PnL calculation up to the limit is returned.
 
    The all_events part of the result is a list of events with the following keys:
 
