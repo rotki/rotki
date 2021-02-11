@@ -11914,6 +11914,16 @@
         "symbol": "TOK",
         "type": "ethereum token"
     },
+    "TON": {
+        "coingecko": "tontoken",
+	"cryptocompare": "",
+        "ethereum_address": "0x6a6c2adA3Ce053561C2FbC3eE211F23d9b8C520a",
+        "ethereum_token_decimals": 18,
+        "name": "TONToken",
+        "started": 1597646321,
+        "symbol": "TON",
+        "type": "ethereum token"
+    },
     "TOMO": {
         "coingecko": "tomochain",
         "ethereum_address": "0x8b353021189375591723E7384262F45709A3C3dC",

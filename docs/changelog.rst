@@ -17,6 +17,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
+  - `Ton Token (TON) <https://www.coingecko.com/en/coins/tontoken>`__
   - `QCAD Token (QCAD) <https://www.coingecko.com/en/coins/qcad>`__
   - `Rigo Token (GRG) <https://www.coingecko.com/en/coins/rigoblock>`__
   - `bZx Vesting Token (vBZRX) <https://www.coingecko.com/en/coins/bzx-vesting-token>`__
