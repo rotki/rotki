@@ -442,17 +442,29 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             balances: DefaultDict[Asset, Balance],
     ) -> DefaultDict[Asset, Balance]:
         account_data = self.api_query_dict('api', 'account')
-        for entry in account_data['balances']:
-            if len(entry['asset']) >= 5 and entry['asset'].startswith('LD'):
+        binance_balances = account_data.get('balances', None)
+        if not binance_balances:
+            raise RemoteError('Binance spot balances response did not contain the balances key')
+
+        for entry in binance_balances:
+            try:
+                # force string https://github.com/rotki/rotki/issues/2342
+                asset_symbol = str(entry['asset'])
+                free = entry['free']
+                locked = entry['locked']
+            except KeyError as e:
+                raise RemoteError(f'Binance spot balance asset entry did not contain key {str(e)}') from e  # noqa: E501
+
+            if len(asset_symbol) >= 5 and asset_symbol.startswith('LD'):
                 # Some lending coins also appear to start with the LD prefix. Ignore them
                 continue
 
-            amount = entry['free'] + entry['locked']
+            amount = free + locked
             if amount == ZERO:
                 continue
 
             try:
-                asset = asset_from_binance(entry['asset'])
+                asset = asset_from_binance(asset_symbol)
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found unsupported {self.name} asset {e.asset_name}. '
