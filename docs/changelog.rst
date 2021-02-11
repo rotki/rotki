@@ -8,7 +8,7 @@ Changelog
 * :feature:`276` Users can now click on the assets on the dashboard and other tables and see which accounts hold this asset.
 * :feature:`295` When creating external trades, users will now have the trade rate automatically fetched when such a rate exists.
 * :feature:`2240` Users now can select the supported assets from a dropdown when adding or editing external trades.
-* :bug:`2228` AdEx claim events now always have the proper token (e.g. ADX, DAI) and usd value.
+* :bug:`2228` AdEx claim events now always have the proper token (e.g. ADX, DAI) and usd value. Also rotki should no longer miss Adex withdrawal events.
 
 * :feature:`-` Added support for the following tokens:
 
