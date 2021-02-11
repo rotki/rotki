@@ -6011,6 +6011,16 @@
         "symbol": "HBT",
         "type": "ethereum token"
     },
+    "HBTC": {
+        "coingecko": "huobi-btc",
+	"cryptocompare": "",
+        "ethereum_address": "0x0316EB71485b0Ab14103307bf65a021042c6d380",
+        "ethereum_token_decimals": 18,
+        "name": "Huobi BTC ",
+        "started": 1575870526,
+        "symbol": "HBTC",
+        "type": "ethereum token"
+    },
     "HBZ": {
         "coingecko": "helbiz",
         "ethereum_address": "0xE34e1944E776f39B9252790a0527eBDa647aE668",

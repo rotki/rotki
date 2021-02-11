@@ -17,6 +17,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
+  - `Huobi BTC (HBTC) <https://www.coingecko.com/en/coins/huobi-btc>`__
   - `Autonio (NIOX) <https://www.coingecko.com/en/coins/autonio>`__
   - `Ton Token (TON) <https://www.coingecko.com/en/coins/tontoken>`__
   - `QCAD Token (QCAD) <https://www.coingecko.com/en/coins/qcad>`__
