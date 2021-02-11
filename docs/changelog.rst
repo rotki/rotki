@@ -17,6 +17,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
+  - `Rigo Token (GRG) <https://www.coingecko.com/en/coins/rigoblock>`__
   - `bZx Vesting Token (vBZRX) <https://www.coingecko.com/en/coins/bzx-vesting-token>`__
   - `Nest protocol (NEST) <https://www.coingecko.com/en/coins/nest-protocol>`__
   - `pTokens BTC (pBTC) <https://www.coingecko.com/en/coins/ptokens-btc>`__
