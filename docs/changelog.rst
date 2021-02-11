@@ -17,6 +17,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
+  - `pTokens BTC (pBTC) <https://www.coingecko.com/en/coins/ptokens-btc>`__
   - `Dxdao token (DXD) <https://www.coingecko.com/en/coins/dxdao>`__
   - `Liquid staked Ether 2.0 (stETH) <https://www.coingecko.com/en/coins/lido-staked-ether>`__
   - `KuCoin Token (KCS) <https://www.coingecko.com/en/coins/kucoin-shares>`__

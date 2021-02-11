@@ -9088,6 +9088,16 @@
         "symbol": "PBT",
         "type": "ethereum token and more"
     },
+    "PBTC": {
+        "coingecko": "ptokens-btc",
+	"cryptocompare": "",
+        "ethereum_address": "0x5228a22e72ccC52d415EcFd199F99D0665E7733b",
+        "ethereum_token_decimals": 18,
+        "name": "pTokens BTC",
+        "started": 1583314408,
+        "symbol": "pBTC",
+        "type": "ethereum token"
+    },
     "PCH": {
         "coingecko": "popchain",
         "ethereum_address": "0xE3F4b4A5d91e5cB9435B947F090A319737036312",
