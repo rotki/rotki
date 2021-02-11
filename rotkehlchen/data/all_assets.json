@@ -8347,6 +8347,15 @@
         "symbol": "NEOS",
         "type": "own chain"
     },
+    "NEST": {
+        "coingecko": "nest-protocol",
+        "ethereum_address": "0x04abEdA201850aC0124161F037Efd70c74ddC74C",
+        "ethereum_token_decimals": 18,
+        "name": "NEST",
+        "started": 1545198662,
+        "symbol": "NEST",
+        "type": "ethereum token"
+    },
     "NEU": {
         "coingecko": "neumark",
         "ethereum_address": "0xA823E6722006afe99E91c30FF5295052fe6b8E32",
