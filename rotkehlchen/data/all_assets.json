@@ -9371,6 +9371,16 @@
         "symbol": "PLT",
         "type": "ethereum token"
     },
+    "PLTC": {
+        "coingecko": "ptokens-ltc",
+        "cryptocompare": "",
+        "ethereum_address": "0x5979F50f1D4c08f9A53863C2f39A7B0492C38d0f",
+        "ethereum_token_decimals": 18,
+        "name": "pTokens LTC",
+        "started": 1595933201,
+        "symbol": "pLTC",
+        "type": "ethereum token"
+    },
     "PLU": {
         "coingecko": "pluton",
         "ethereum_address": "0xD8912C10681D8B21Fd3742244f44658dBA12264E",
