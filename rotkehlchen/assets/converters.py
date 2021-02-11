@@ -467,6 +467,30 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'IQX',  # no cryptocompare/coingecko data (EOS token)
 )
 
+# https://api.kucoin.com/api/v1/currencies
+UNSUPPORTED_KUCOIN_ASSETS = (
+    'AXE',  # delisted
+    'BTCP',  # delisted
+    'CADH',  # no cryptocompare/coingecko data
+    'EPRX',  # delisted and no cryptocompare/coingecko data
+    'ETF',  # delisted and no cryptocompare/coingecko data
+    'GGC',  # delisted and no cryptocompare/coingecko data
+    'GMB',  # delisted
+    'GOD',  # delisted
+    'GZIL',  # delisted
+    'KTS',  # delisted
+    'LOL',  # delisted
+    'MAP2',  # delisted
+    'MHC',  # delisted
+    'SATT',  # delisted
+    'SERO',  # delisted
+    'SPRK',  # delisted
+    'TNC2',  # delisted and no cryptocompare/coingecko data
+    'TT',  # delisted
+    'VNX',  # delisted and no cryptocompare/coingecko data
+    'VOL',  # delisted
+)
+
 # https://api.iconomi.com/v1/assets marks delisted assets
 UNSUPPORTED_ICONOMI_ASSETS = (
     'ICNGS',
@@ -667,6 +691,9 @@ def asset_from_kucoin(kucoin_name: str) -> Asset:
     """
     if not isinstance(kucoin_name, str):
         raise DeserializationError(f'Got non-string type {type(kucoin_name)} for kucoin asset')
+
+    if kucoin_name in UNSUPPORTED_KUCOIN_ASSETS:
+        raise UnsupportedAsset(kucoin_name)
 
     name = KUCOIN_TO_WORLD.get(kucoin_name, kucoin_name)
     return Asset(name)

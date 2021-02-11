@@ -141,6 +141,13 @@ DELISTED_ASSETS = [
     'crvRenWBTC',
     'crvRenWSBTC',
     'ycrvRenWSBTC',
+    'SPRK',
+    'VV',
+    'DRP',
+    'HBZ',
+    'TAAS',
+    'TRUMPLOSE',
+    'TRUMPWIN',
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [

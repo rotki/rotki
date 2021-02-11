@@ -575,7 +575,7 @@
     },
     "ANTv2": {
         "coingecko": "aragon",
-	"cryptocompare": "ANT",
+	    "cryptocompare": "ANT",
         "ethereum_address": "0xa117000000f279D81A1D3cc75430fAA017FA5A2e",
         "ethereum_token_decimals": 18,
         "name": "Aragon",
@@ -6433,7 +6433,6 @@
     },
     "INDEX": {
         "coingecko": "index-cooperative",
-        "cryptocompare": "",
         "ethereum_address": "0x0954906da0Bf32d5479e25f46056d22f08464cab",
         "ethereum_token_decimals": 18,
         "name": "Index",
@@ -15232,5 +15231,673 @@
         "started": 1610436587,
         "symbol": "KCS",
         "type": "ethereum token"
+    },
+    "CSP": {
+        "coingecko": "caspian",
+        "ethereum_address": "0xA6446D655a0c34bC4F05042EE88170D056CBAf45",
+        "ethereum_token_decimals": 18,
+        "name": "Caspian Token",
+        "started": 1537450329,
+        "symbol": "CSP",
+        "type": "ethereum token"
+    },
+    "DX": {
+        "coingecko": "dxchain",
+        "ethereum_address": "0x973e52691176d36453868D9d86572788d27041A9",
+        "ethereum_token_decimals": 18,
+        "name": "DXChain Token",
+        "started": 1530942568,
+        "symbol": "DX",
+        "type": "ethereum token"
+    },
+    "MTV": {
+        "coingecko": "multivac",
+        "ethereum_address": "0x6226e00bCAc68b0Fe55583B90A1d727C14fAB77f",
+        "ethereum_token_decimals": 18,
+        "name": "MultiVAC",
+        "started": 1603046024,
+        "symbol": "MTV",
+        "type": "ethereum token"
+    },
+    "TRTL": {
+        "coingecko": "turtlecoin",
+        "name": "TurtleCoin",
+        "started": 1519257600,
+        "symbol": "TRTL",
+        "type": "own chain"
+    },
+    "NIX": {
+        "coingecko": "nix-platform",
+        "name": "NIX",
+        "started": 1530748800,
+        "symbol": "NIX",
+        "type": "own chain"
+    },
+    "TT": {
+        "coingecko": "thunder-token",
+        "name": "ThunderCore",
+        "started": 1557964800,
+        "symbol": "TT",
+        "type": "own chain"
+    },
+    "JAR": {
+        "coingecko": "jarvis",
+        "ethereum_address": "0xa249DE6948022783765Fee4850d7b85E43118FCc",
+        "ethereum_token_decimals": 18,
+        "name": "Jarvis+ Coins",
+        "started": 1533721752,
+        "symbol": "JAR",
+        "type": "ethereum token"
+    },
+    "CIX100": {
+        "coingecko": "cryptoindex-io",
+        "ethereum_address": "0x6393E822874728f8Afa7e1C9944E417D37CA5878",
+        "ethereum_token_decimals": 18,
+        "name": "Cryptoindex 100",
+        "started": 1542192600,
+        "symbol": "CIX100",
+        "type": "ethereum token"
+    },
+    "WXT": {
+        "coingecko": "wirex",
+        "name": "Wirex",
+        "started": 1560988800,
+        "symbol": "WXT",
+        "type": "stellar token"
+    },
+    "FORESTPLUS": {
+        "coingecko": "the-forbidden-forest",
+        "name": "The Forbidden Forest",
+        "started": 1590019200,
+        "symbol": "FORESTPLUS",
+        "type": "own chain"
+    },
+    "BOLT": {
+        "coingecko": "bolt",
+        "name": "Bolt",
+        "started": 1562803200,
+        "symbol": "BOLT",
+        "type": "binance token"
+    },
+    "SERO": {
+        "coingecko": "super-zero",
+        "name": "SERO",
+        "started": 1566432000,
+        "symbol": "SERO",
+        "type": "own chain"
+    },
+    "NOIA": {
+        "coingecko": "noia-network",
+        "ethereum_address": "0xa8c8CfB141A3bB59FEA1E2ea6B79b5ECBCD7b6ca",
+        "ethereum_token_decimals": 18,
+        "name": "Syntropy",
+        "started": 1601239579,
+        "symbol": "NOIA",
+        "type": "ethereum token"
+    },
+    "DAPPT": {
+        "coingecko": "dapp-com",
+        "ethereum_address": "0x96184d9C811Ea0624fC30C80233B1d749B9E485B",
+        "ethereum_token_decimals": 18,
+        "name": "Dapp Token",
+        "started": 1603000572,
+        "symbol": "DAPPT",
+        "type": "ethereum token"
+    },
+    "EOSC": {
+        "coingecko": "eosforce",
+        "name": "EOSForce",
+        "started": 1574294400,
+        "symbol": "EOSC",
+        "type": "own chain"
+    },
+    "DERO": {
+        "coingecko": "dero",
+        "name": "Dero",
+        "started": 1575590400,
+        "symbol": "DERO",
+        "type": "own chain"
+    },
+    "ENQ": {
+        "coingecko": "enq-enecuum",
+        "name": "Enecuum",
+        "started": 1561161600,
+        "symbol": "ENQ",
+        "type": "own chain"
+    },
+    "TOKO": {
+        "coingecko": "toko",
+        "ethereum_address": "0x0c963A1B52Eb97C5e457c7D76696F8b95c3087eD",
+        "ethereum_token_decimals": 18,
+        "name": "Tokoin",
+        "started": 1566432000,
+        "symbol": "TOKO",
+        "type": "ethereum token"
+    },
+    "LOL": {
+        "coingecko": "emogi-network",
+        "name": "EMOGI Network",
+        "started": 1565827200,
+        "symbol": "LOL",
+        "type": "own chain"
+    },
+    "AMIO": {
+        "coingecko": "amino-network",
+        "ethereum_address": "0x2E68dfB3f50Ea302c88F8dB74096D57565D9970a",
+        "ethereum_token_decimals": 18,
+        "name": "Amino Intelligent Network",
+        "started": 1555073235,
+        "symbol": "AMIO",
+        "type": "ethereum token"
+    },
+    "MXW": {
+        "coingecko": "maxonrow",
+        "name": "Maxonrow",
+        "started": 1590019200,
+        "symbol": "MXW",
+        "type": "own chain"
+    },
+    "ROOBEE": {
+        "coingecko": "roobee",
+        "ethereum_address": "0xA31B1767e09f842ECFd4bc471Fe44F830E3891AA",
+        "ethereum_token_decimals": 18,
+        "name": "Roobee",
+        "started": 1555677743,
+        "symbol": "ROOBEE",
+        "type": "ethereum token"
+    },
+    "MAP": {
+        "coingecko": "marcopolo",
+        "ethereum_address": "0x9E976F211daea0D652912AB99b0Dc21a7fD728e4",
+        "ethereum_token_decimals": 18,
+        "name": "MAP Protocol",
+        "started": 1602297272,
+        "symbol": "MAP",
+        "type": "ethereum token"
+    },
+    "POL": {
+        "coingecko": "proof-of-liquidity",
+        "name": "Proof Of Liquidity",
+        "started": 1599264000,
+        "symbol": "POL",
+        "type": "tron token"
+    },
+    "ARX": {
+        "coingecko": "arcs",
+        "ethereum_address": "0x7d8DafF6d70CEAd12c6f077048552Cf89130A2B1",
+        "ethereum_token_decimals": 18,
+        "name": "ARCS",
+        "started": 1603681955,
+        "symbol": "ARX",
+        "type": "ethereum token"
+    },
+    "NWC": {
+        "coingecko": "newscrypto-coin",
+        "name": "Newscrypto Coin",
+        "started": 1582156800,
+        "symbol": "NWC",
+        "type": "stellar token"
+    },
+    "BEPRO": {
+        "coingecko": "bet-protocol",
+        "ethereum_address": "0xCF3C8Be2e2C42331Da80EF210e9B1b307C03d36A",
+        "ethereum_token_decimals": 18,
+        "name": "BetProtocolToken",
+        "started": 1601288115,
+        "symbol": "BEPRO",
+        "type": "ethereum token"
+    },
+    "XNS": {
+        "coingecko": "ins-ecosystem",
+        "name": "Insolar",
+        "started": 1584576000,
+        "symbol": "XNS",
+        "type": "own chain"
+    },
+    "PMGT": {
+        "coingecko": "perth-mint-gold-token",
+        "ethereum_address": "0xAFFCDd96531bCd66faED95FC61e443D08F79eFEf",
+        "ethereum_token_decimals": 5,
+        "name": "Perth Mint Gold Token",
+        "started": 1570681682,
+        "symbol": "PMGT",
+        "type": "ethereum token"
+    },
+    "ROAD": {
+        "coingecko": "road",
+        "name": "ROAD",
+        "started": 1575504000,
+        "symbol": "ROAD",
+        "type": "own chain"
+    },
+    "ACOIN": {
+        "coingecko": "alchemy",
+        "ethereum_address": "0xFD25676Fc2c4421778B18Ec7Ab86E7C5701DF187",
+        "ethereum_token_decimals": 18,
+        "name": "Alchemy",
+        "started": 1581922577,
+        "symbol": "ACOIN",
+        "type": "ethereum token"
+    },
+    "VI": {
+        "coingecko": "vid",
+        "ethereum_address": "0x8b6c3b7C01D9dB4393f9aa734750F36df1543E9A",
+        "ethereum_token_decimals": 18,
+        "name": "VI",
+        "started": 1600802083,
+        "symbol": "VI",
+        "type": "ethereum token"
+    },
+    "ZEL": {
+        "coingecko": "zelcash",
+        "name": "Zel",
+        "started": 1523491200,
+        "symbol": "ZEL",
+        "type": "own chain"
+    },
+    "AXE": {
+        "coingecko": "axe",
+        "name": "Axe",
+        "started": 1585180800,
+        "symbol": "AXE",
+        "type": "own chain"
+    },
+    "XDB": {
+        "coingecko": "digitalbits",
+        "cryptocompare": "XDGB",
+        "ethereum_address": "0xB9EefC4b0d472A44be93970254Df4f4016569d27",
+        "ethereum_token_decimals": 7,
+        "name": "digitalbits",
+        "started": 1565102047,
+        "symbol": "XDB",
+        "type": "ethereum token"
+    },
+    "SYLO": {
+        "coingecko": "sylo",
+        "ethereum_address": "0xf293d23BF2CDc05411Ca0edDD588eb1977e8dcd4",
+        "ethereum_token_decimals": 18,
+        "name": "Sylo",
+        "started": 1525229188,
+        "symbol": "SYLO",
+        "type": "ethereum token"
+    },
+    "WOM": {
+        "coingecko": "wom-token",
+        "ethereum_address": "0xBd356a39BFf2cAda8E9248532DD879147221Cf76",
+        "ethereum_token_decimals": 18,
+        "name": "WOM Token",
+        "started": 1601364147,
+        "symbol": "WOM",
+        "type": "ethereum token"
+    },
+    "LYXE": {
+        "coingecko": "lukso-token",
+        "ethereum_address": "0xA8b919680258d369114910511cc87595aec0be6D",
+        "ethereum_token_decimals": 18,
+        "name": "LUKSO",
+        "started": 1589371378,
+        "symbol": "LYXE",
+        "type": "ethereum token"
+    },
+    "PAZZI": {
+        "coingecko": "paparazzi",
+        "ethereum_address": "0xbcD8756Ea481608Ea3DD5a555493305Cf0A79640",
+        "ethereum_token_decimals": 18,
+        "name": "Pazzi",
+        "started": 1588776788,
+        "symbol": "PAZZI",
+        "type": "ethereum token"
+    },
+    "EWT": {
+        "coingecko": "energy-web-token",
+        "name": "Energy Web Token",
+        "started": 1585180800,
+        "symbol": "EWT",
+        "type": "own chain"
+    },
+    "WEST": {
+        "coingecko": "waves-enterprise",
+        "name": "Waves Enterprise",
+        "started": 1597276800,
+        "symbol": "WEST",
+        "type": "own chain"
+    },
+    "BNS": {
+        "coingecko": "bns-token",
+        "ethereum_address": "0x695106Ad73f506f9D0A9650a78019A93149AE07C",
+        "ethereum_token_decimals": 8,
+        "name": "BNS Token",
+        "started": 1597086971,
+        "symbol": "BNS",
+        "type": "ethereum token"
+    },
+    "MLK": {
+        "coingecko": "milk",
+        "name": "MiL.k",
+        "started": 1595462400,
+        "symbol": "MLK",
+        "type": "luniverse token"
+    },
+    "SHA": {
+        "coingecko": "safe-haven",
+        "name": "Safe Haven",
+        "started": 1608508800,
+        "symbol": "SHA",
+        "type": "vechain token"
+    },
+    "EFX": {
+        "coingecko": "effect-ai",
+        "name": "Effect.AI",
+        "started": 1531785600,
+        "symbol": "EFX",
+        "type": "eos token"
+    },
+    "VELO": {
+        "coingecko": "velo",
+        "name": "Velo",
+        "started": 1602115200,
+        "symbol": "VELO",
+        "type": "stellar token"
+    },
+    "BUY": {
+        "coingecko": "burency",
+        "ethereum_address": "0xC559dB74236C1F1dD734e0b4C8d747bB57983E6a",
+        "ethereum_token_decimals": 18,
+        "name": "Burancy",
+        "started": 1573682246,
+        "symbol": "BUY",
+        "type": "ethereum token"
+    },
+    "SNTVT": {
+        "coingecko": "sentivate",
+        "ethereum_address": "0x7865af71cf0b288b4E7F654f4F7851EB46a2B7F8",
+        "ethereum_token_decimals": 18,
+        "name": "Sentivate",
+        "started": 1531539498,
+        "symbol": "SNTVT",
+        "type": "ethereum token"
+    },
+    "DEGO": {
+        "coingecko": "dego-finance",
+        "ethereum_address": "0x88EF27e69108B2633F8E1C184CC37940A075cC02",
+        "ethereum_token_decimals": 18,
+        "name": "dego.finance",
+        "started": 1599763860,
+        "symbol": "DEGO",
+        "type": "ethereum token"
+    },
+    "UDOO": {
+        "coingecko": "howdoo",
+        "ethereum_address": "0x12f649A9E821F90BB143089a6e56846945892ffB",
+        "ethereum_token_decimals": 18,
+        "name": "Hyprr",
+        "started": 1566482048,
+        "symbol": "uDOO",
+        "type": "ethereum token"
+    },
+    "UBX": {
+        "coingecko": "ubix-network",
+        "name": "UBIX Network",
+        "started": 1636675200,
+        "symbol": "UBX",
+        "type": "own chain"
+    },
+    "COMB": {
+        "coingecko": "combo-2",
+        "cryptocompare": "",
+        "ethereum_address": "0x7C81542ED859A2061538FEE22B6544a235B9557D",
+        "ethereum_token_decimals": 18,
+        "name": "Comboos",
+        "started": 1599401871,
+        "symbol": "COMB",
+        "type": "ethereum token"
+    },
+    "REAP": {
+        "coingecko": "reapchain",
+        "ethereum_address": "0x1fc5EF0337AEA85C5f9198853a6E3A579a7A6987",
+        "ethereum_token_decimals": 18,
+        "name": "ReapChain",
+        "started": 1593490870,
+        "symbol": "REAP",
+        "type": "ethereum token"
+    },
+    "TONE": {
+        "coingecko": "te-food",
+        "ethereum_address": "0x2Ab6Bb8408ca3199B8Fa6C92d5b455F820Af03c4",
+        "ethereum_token_decimals": 18,
+        "name": "TE-FOOD/TustChain",
+        "started": 1602173493,
+        "symbol": "TONE",
+        "type": "ethereum token"
+    },
+    "OPCT": {
+        "coingecko": "opacity",
+        "cryptocompare": "",
+        "ethereum_address": "0xDb05EA0877A2622883941b939f0bb11d1ac7c400",
+        "ethereum_token_decimals": 18,
+        "name": "Opacity",
+        "started": 1602265323,
+        "symbol": "OPCT",
+        "type": "ethereum token"
+    },
+    "UBXT": {
+        "coingecko": "upbots",
+        "ethereum_address": "0x8564653879a18C560E7C0Ea0E084c516C62F5653",
+        "ethereum_token_decimals": 18,
+        "name": "UpBots",
+        "started": 1599908414,
+        "symbol": "UBXT",
+        "type": "ethereum token"
+    },
+    "CTI": {
+        "coingecko": "clintex-cti",
+        "ethereum_address": "0x8c18D6a985Ef69744b9d57248a45c0861874f244",
+        "ethereum_token_decimals": 18,
+        "name": "ClinTex",
+        "started": 1591968800,
+        "symbol": "CTI",
+        "type": "ethereum token"
+    },
+    "BUX": {
+        "coingecko": "buxcoin",
+        "name": "BUX Token",
+        "started": 1643932800,
+        "symbol": "BUX",
+        "type": "binance token"
+    },
+    "MSWAP": {
+        "coingecko": "moneyswap",
+        "ethereum_address": "0xC005204856ee7035a13D8D7CdBbdc13027AFff90",
+        "ethereum_token_decimals": 0,
+        "name": "MoneySwap",
+        "started": 1604023308,
+        "symbol": "MSWAP",
+        "type": "ethereum token"
+    },
+    "GOM2": {
+        "coingecko": "gomoney2",
+        "ethereum_address": "0x48783486ddD7fa85ECa6B0C4AE8920Bc25DfbcD7",
+        "ethereum_token_decimals": 0,
+        "name": "GoMoney2",
+        "started": 1572430105,
+        "symbol": "GOM2",
+        "type": "ethereum token"
+    },
+    "REVV": {
+        "coingecko": "revv",
+        "ethereum_address": "0x557B933a7C2c45672B610F8954A3deB39a51A8Ca",
+        "ethereum_token_decimals": 18,
+        "name": "REVV",
+        "started": 1598945108,
+        "symbol": "REVV",
+        "type": "ethereum token"
+    },
+    "ALPA": {
+        "coingecko": "alpaca",
+        "cryptocompare": "",
+        "ethereum_address": "0x7cA4408137eb639570F8E647d9bD7B7E8717514A",
+        "ethereum_token_decimals": 18,
+        "name": "AlpaToken",
+        "started": 1603590090,
+        "symbol": "ALPA",
+        "type": "ethereum token"
+    },
+    "HTR": {
+        "coingecko": "hathor",
+        "name": "Hathor",
+        "started": 1641513600,
+        "symbol": "HTR",
+        "type": "own chain"
+    },
+    "HYDRA": {
+        "coingecko": "hydra",
+        "name": "Hydra",
+        "started": 1642118400,
+        "symbol": "HYDRA",
+        "type": "own chain"
+    },
+    "FRM": {
+        "coingecko": "ferrum-network",
+        "ethereum_address": "0xE5CAeF4Af8780E59Df925470b050Fb23C43CA68C",
+        "ethereum_token_decimals": 6,
+        "name": "Ferrum Network Token",
+        "started": 1564453764,
+        "symbol": "FRM",
+        "type": "ethereum token"
+    },
+    "PROPS": {
+        "coingecko": "props",
+        "ethereum_address": "0x6fe56C0bcdD471359019FcBC48863d6c3e9d4F41",
+        "ethereum_token_decimals": 18,
+        "name": "Props Token",
+        "started": 1551658213,
+        "symbol": "PROPS",
+        "type": "ethereum token"
+    },
+    "STRONG": {
+        "coingecko": "strong",
+        "ethereum_address": "0x990f341946A3fdB507aE7e52d17851B87168017c",
+        "ethereum_token_decimals": 18,
+        "name": "Strong",
+        "started": 1596834300,
+        "symbol": "STRONG",
+        "type": "ethereum token"
+    },
+    "TRIAS": {
+        "coingecko": "trias",
+        "ethereum_address": "0xe431a4c5DB8B73c773e06cf2587dA1EB53c41373",
+        "ethereum_token_decimals": 18,
+        "name": "Trias Token",
+        "started": 1557734805,
+        "symbol": "TRIAS",
+        "type": "ethereum token"
+    },
+    "ACAT": {
+        "coingecko": "alphacat",
+        "name": "Alphacat",
+        "started": 1521072000,
+        "symbol": "ACAT",
+        "type": "neo token"
+    },
+    "ACT": {
+        "coingecko": "achain",
+        "name": "Achain",
+        "started": 1538006400,
+        "symbol": "ACT",
+        "type": "own chain"
+    },
+    "BU": {
+        "coingecko": "bumo",
+        "name": "BUMO",
+        "started": 1533168000,
+        "symbol": "BU",
+        "type": "own chain"
+    },
+    "CV": {
+        "coingecko": "carvertical",
+        "ethereum_address": "0x50bC2Ecc0bfDf5666640048038C1ABA7B7525683",
+        "ethereum_token_decimals": 18,
+        "name": "cVToken",
+        "started": 1601413167,
+        "symbol": "CV",
+        "type": "ethereum token"
+    },
+    "DACC": {
+        "coingecko": "dacc",
+        "ethereum_address": "0xF8C595D070d104377f58715ce2E6C93E49a87f3c",
+        "ethereum_token_decimals": 6,
+        "name": "Decentralized Accessible Content Chain",
+        "started": 1527764723,
+        "symbol": "DACC",
+        "type": "ethereum token"
+    },
+    "DAG": {
+        "coingecko": "constellation-labs",
+        "name": "Constellation",
+        "started": 1534377600,
+        "symbol": "DAG",
+        "type": "own chain"
+    },
+    "DBC": {
+        "coingecko": "deepbrain-chain",
+        "name": "DeepBrain Chain",
+        "started": 1518912000,
+        "symbol": "DBC",
+        "type": "neo token"
+    },
+    "EDN": {
+        "coingecko": "edenchain",
+        "ethereum_address": "0x89020f0D5C5AF4f3407Eb5Fe185416c457B0e93e",
+        "ethereum_token_decimals": 18,
+        "name": "Eden Coin",
+        "started": 1601564299,
+        "symbol": "EDN",
+        "type": "ethereum token"
+    },
+    "ETN": {
+        "coingecko": "electroneum",
+        "name": "Electroneum",
+        "started": 1518048000,
+        "symbol": "ETN",
+        "type": "own chain"
+    },
+    "HPB": {
+        "coingecko": "high-performance-blockchain",
+        "ethereum_address": "0x38c6A68304cdEfb9BEc48BbFaABA5C5B47818bb2",
+        "ethereum_token_decimals": 18,
+        "name": "HPBCoin",
+        "started": 1503574599,
+        "symbol": "HPB",
+        "type": "ethereum token and more"
+    },
+    "KAT": {
+        "coingecko": "kambria",
+        "ethereum_address": "0x14da230d6726C50F759Bc1838717F8CE6373509C",
+        "ethereum_token_decimals": 18,
+        "name": "Kambria Token",
+        "started": 1601450954,
+        "symbol": "KAT",
+        "type": "ethereum token"
+    },
+    "MCT": {
+        "coingecko": "master-contract-token",
+        "name": "Master Contract Token",
+        "started": 1532563200,
+        "symbol": "MCT",
+        "type": "neo token"
+    },
+    "ONION": {
+        "coingecko": "deeponion",
+        "name": "DeepOnion",
+        "started": 1518912000,
+        "symbol": "ONION",
+        "type": "own chain"
+    },
+    "TKY": {
+        "coingecko": "thekey",
+        "name": "THEKEY",
+        "started": 1518912000,
+        "symbol": "TKY",
+        "type": "neo token"
     }
 }

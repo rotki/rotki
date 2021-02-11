@@ -265,6 +265,7 @@ class AssetType(Enum):
     BINANCE_TOKEN = 21
     EOS_TOKEN = 22
     FUSION_TOKEN = 23
+    LUNIVERSE_TOKEN = 24
 
 
 class AssetData(NamedTuple):
