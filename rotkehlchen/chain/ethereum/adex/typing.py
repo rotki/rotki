@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
-from eth_typing import ChecksumAddress, HexStr
+from eth_typing import ChecksumAddress
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
@@ -10,7 +10,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Timestamp
 
 # Pools data
-TOM_POOL_ID = HexStr('0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28')
+TOM_POOL_ID = '0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28'
 POOL_ID_POOL_NAME = {
     TOM_POOL_ID: 'Tom',
 }
@@ -31,6 +31,7 @@ AdexEventDBTuple = (
         Optional[int],  # unlock_at
         Optional[str],  # channel_id
         Optional[str],  # token
+        Optional[int],  # log_index
     ]
 )
 
@@ -55,28 +56,38 @@ class AdexEventType(Enum):
 
 
 @dataclass(init=True, repr=True)
-class Bond:
-    tx_hash: HexStr  # from bond.id
+class AdexEvent:
+    tx_hash: str
     address: ChecksumAddress
     identity_address: ChecksumAddress
     timestamp: Timestamp
-    bond_id: HexStr
-    pool_id: HexStr
-    value: Balance
-    nonce: int
-    slashed_at: Timestamp  # from bond.slashedAtStart
 
     def serialize(self) -> Dict[str, Any]:
         return {
             'tx_hash': self.tx_hash,
             'identity_address': self.identity_address,
             'timestamp': self.timestamp,
+        }
+
+
+@dataclass(init=True, repr=True)
+class Bond(AdexEvent):
+    bond_id: str
+    pool_id: str
+    value: Balance
+    nonce: int
+    slashed_at: Timestamp  # from bond.slashedAtStart
+
+    def serialize(self) -> Dict[str, Any]:
+        common_properties = super().serialize()
+        common_properties.update({
             'bond_id': self.bond_id,
             'pool_id': self.pool_id,
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
             'event_type': str(AdexEventType.BOND),
-        }
+        })
+        return common_properties
 
     def to_db_tuple(self) -> AdexEventDBTuple:
         return (
@@ -94,30 +105,26 @@ class Bond:
             None,  # unlock_at
             None,  # channel_id
             None,  # token
+            None,  # log_index
         )
 
 
 @dataclass(init=True, repr=True)
-class Unbond:
-    tx_hash: HexStr  # from unbond.id
-    address: ChecksumAddress
-    identity_address: ChecksumAddress
-    timestamp: Timestamp
-    bond_id: HexStr
+class Unbond(AdexEvent):
+    bond_id: str
     value: Balance  # from bond.amount
-    pool_id: HexStr = HexStr('')  # from bond.pool_id
+    pool_id: str = ''  # from bond.pool_id
 
     def serialize(self) -> Dict[str, Any]:
-        return {
-            'tx_hash': self.tx_hash,
-            'identity_address': self.identity_address,
-            'timestamp': self.timestamp,
+        common_properties = super().serialize()
+        common_properties.update({
             'bond_id': self.bond_id,
             'pool_id': self.pool_id,
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
             'event_type': str(AdexEventType.UNBOND),
-        }
+        })
+        return common_properties
 
     def to_db_tuple(self) -> AdexEventDBTuple:
         return (
@@ -135,31 +142,27 @@ class Unbond:
             None,  # unlock_at
             None,  # channel_id
             None,  # token
+            None,  # log_index
         )
 
 
 @dataclass(init=True, repr=True)
-class UnbondRequest:
-    tx_hash: HexStr  # from unbond.id
-    address: ChecksumAddress
-    identity_address: ChecksumAddress
-    timestamp: Timestamp
-    bond_id: HexStr
+class UnbondRequest(AdexEvent):
+    bond_id: str
     unlock_at: Timestamp  # from unbondRequest.willUnlock
     value: Balance  # from bond.amount
-    pool_id: HexStr = HexStr('')  # from bond.pool_id
+    pool_id: str = ''  # from bond.pool_id
 
     def serialize(self) -> Dict[str, Any]:
-        return {
-            'tx_hash': self.tx_hash,
-            'identity_address': self.identity_address,
-            'timestamp': self.timestamp,
+        common_properties = super().serialize()
+        common_properties.update({
             'bond_id': self.bond_id,
             'pool_id': self.pool_id,
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
             'event_type': str(AdexEventType.UNBOND_REQUEST),
-        }
+        })
+        return common_properties
 
     def to_db_tuple(self) -> AdexEventDBTuple:
         return (
@@ -177,34 +180,30 @@ class UnbondRequest:
             int(self.unlock_at),
             None,  # channel_id
             None,  # token
+            None,  # log_index
         )
 
 
 @dataclass(init=True, repr=True)
-class ChannelWithdraw:
-    tx_hash: HexStr  # from channelWithdraw.id
-    address: ChecksumAddress
-    identity_address: ChecksumAddress
-    timestamp: Timestamp
+class ChannelWithdraw(AdexEvent):
     value: Balance
-    channel_id: HexStr
-    pool_id: HexStr
-    token: Optional[EthereumToken] = None
+    channel_id: str
+    pool_id: str
+    token: EthereumToken
+    log_index: int
 
     def serialize(self) -> Dict[str, Any]:
-        return {
-            'tx_hash': self.tx_hash,
-            'identity_address': self.identity_address,
-            'timestamp': self.timestamp,
+        common_properties = super().serialize()
+        common_properties.update({
             'pool_id': self.pool_id,
             'pool_name': POOL_ID_POOL_NAME.get(self.pool_id, None),
             'value': self.value.serialize(),
             'event_type': str(AdexEventType.CHANNEL_WITHDRAW),
-            'token': (self.token.serialize() if self.token is not None else None),
-        }
+            'token': self.token.serialize(),
+        })
+        return common_properties
 
     def to_db_tuple(self) -> AdexEventDBTuple:
-        token = self.token.serialize() if self.token is not None else None
         return (
             str(self.tx_hash),
             str(self.address),
@@ -219,16 +218,9 @@ class ChannelWithdraw:
             None,  # slashed_at
             None,  # unlocked_at
             str(self.channel_id),
-            token,
+            self.token.serialize(),
+            int(self.log_index),
         )
-
-
-# Contains the events' (e.g. bond, unbond) common attributes
-class EventCoreData(NamedTuple):
-    tx_hash: HexStr
-    address: ChecksumAddress
-    identity_address: ChecksumAddress
-    timestamp: Timestamp
 
 
 class ADXStakingEvents(NamedTuple):
@@ -252,7 +244,7 @@ class UnclaimedReward(NamedTuple):
 
 
 class ADXStakingBalance(NamedTuple):
-    pool_id: HexStr
+    pool_id: str
     pool_name: Optional[str]
     adx_balance: Balance
     adx_unclaimed_balance: Balance
@@ -271,14 +263,12 @@ class ADXStakingBalance(NamedTuple):
 
 class TomPoolIncentive(NamedTuple):
     total_staked_amount: FVal  # from sum(currentTotalActiveStake)
-    total_reward_per_second: FVal  # from sum(currentRewardPerSecond)
-    period_ends_at: Timestamp  # from periodEnd
     apr: FVal  # from AdEx APY
 
 
 class ADXStakingDetail(NamedTuple):
     contract_address: ChecksumAddress  # From staking contract
-    pool_id: HexStr
+    pool_id: str
     pool_name: Optional[str]
     total_staked_amount: FVal
     apr: FVal

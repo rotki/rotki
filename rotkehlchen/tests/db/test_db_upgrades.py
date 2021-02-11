@@ -1321,6 +1321,65 @@ def test_upgrade_db_22_to_23_without_frontend_settings(data_dir, user_data_dir):
     assert db.get_version() == 23
 
 
+def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 23 to version 24.
+
+    Deletes the AdEx used query ranges, drops the AdEx events table and re-creates it.
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v23_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=23,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    # Checks before migration
+    assert cursor.execute(
+        'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "adex_events%";',
+    ).fetchone()[0] == 1
+    assert cursor.execute('SELECT COUNT(*) from adex_events;').fetchone()[0] == 1
+
+    # Migrate to v24
+    db = _init_db_with_target_version(
+        target_version=24,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    # Make sure AdEx used query ranges have been deleted
+    assert cursor.execute(
+        'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "adex_events%";',
+    ).fetchone()[0] == 0
+
+    # Make sure `adex_events` has been successfully created. All columns have
+    # been selected for double-checking the new schema
+    query = cursor.execute(
+        'SELECT '
+        'tx_hash, '
+        'address, '
+        'identity_address, '
+        'timestamp, '
+        'type, '
+        'pool_id, '
+        'amount, '
+        'usd_value, '
+        'bond_id, '
+        'nonce, '
+        'slashed_at, '
+        'unlock_at, '
+        'channel_id, '
+        'token, '
+        'log_index from adex_events;',
+    )
+    assert len(query.fetchall()) == 0
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 24
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the

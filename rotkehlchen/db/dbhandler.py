@@ -9,7 +9,6 @@ from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
 
-from eth_typing import HexStr
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
@@ -852,9 +851,10 @@ class DBHandler:
                 slashed_at,
                 unlock_at,
                 channel_id,
-                token
+                token,
+                log_index
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         )
         cursor = self.conn.cursor()
@@ -877,7 +877,7 @@ class DBHandler:
             from_timestamp: Optional[Timestamp] = None,
             to_timestamp: Optional[Timestamp] = None,
             address: Optional[ChecksumEthAddress] = None,
-            bond_id: Optional[HexStr] = None,
+            bond_id: Optional[str] = None,
             event_type: Optional[AdexEventType] = None,
     ) -> List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]:
         """Returns a list of AdEx events optionally filtered by time and address.
@@ -898,7 +898,8 @@ class DBHandler:
             'slashed_at, '
             'unlock_at, '
             'channel_id, '
-            'token '
+            'token, '
+            'log_index '
             'FROM adex_events '
         )
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`

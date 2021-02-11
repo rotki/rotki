@@ -460,7 +460,8 @@ CREATE TABLE IF NOT EXISTS adex_events (
     unlock_at INTEGER,
     channel_id TEXT,
     token TEXT,
-    PRIMARY KEY (tx_hash, address, type)
+    log_index INTEGER,
+    PRIMARY KEY (tx_hash, address, type, log_index)
 );
 """
 

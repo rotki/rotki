@@ -8,6 +8,7 @@ Changelog
 * :feature:`276` Users can now click on the assets on the dashboard and other tables and see which accounts hold this asset.
 * :feature:`295` When creating external trades, users will now have the trade rate automatically fetched when such a rate exists.
 * :feature:`2240` Users now can select the supported assets from a dropdown when adding or editing external trades.
+* :bug:`2228` AdEx claim events now always have the proper token (e.g. ADX, DAI) and usd value. Also rotki should no longer miss Adex withdrawal events.
 
 * :feature:`-` Added support for the following tokens:
 
@@ -19,6 +20,7 @@ Changelog
 * :bug:`1928` rotki premium DB sync will now work after entering api keys for the first time even without a restart.
 * :bug:`2294` Do not count MakerDAO Oasis proxy assets found by the DeFi SDK as it ends up double counting makerDAO vault deposits.
 * :bug:`2287` Rotki encrypted DB upload for premium users should now respect the user setting.
+
 * :feature:`-` Added support for the following tokens:
 
   - `Aragon v2 (ANT) <https://www.coingecko.com/en/coins/aragon>`__
