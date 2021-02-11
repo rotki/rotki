@@ -122,6 +122,16 @@
         "symbol": "AC",
         "type": "own chain"
     },
+    "AC-2": {
+        "coingecko": "acoconut",
+        "cryptocompare": "",
+        "ethereum_address": "0x9A0aBA393aac4dFbFf4333B06c407458002C6183",
+        "ethereum_token_decimals": 18,
+        "name": "ACoconut ",
+        "started": 1601514839,
+        "symbol": "AC",
+        "type": "ethereum token"
+    },
     "ACC": {
         "active": true,
         "coingecko": "",
