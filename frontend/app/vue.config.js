@@ -49,7 +49,7 @@ module.exports = {
         config.entry('preload').add('./src/preload.ts').end();
       },
       builderOptions: {
-        appId: 'com.rotki',
+        appId: 'com.rotki.app',
         publish: {
           provider: 'github',
           vPrefixedTagName: true,
@@ -65,10 +65,23 @@ module.exports = {
             filter: ['**/*']
           }
         ],
+        dmg: {
+          sign: false
+        },
         mac: {
-          identity: false,
           category: 'public.app-category.finance',
-          icon: 'src/assets/images/rotki.icns'
+          icon: 'src/assets/images/rotki.icns',
+          ...(process.env.CI
+            ? {
+                identity: 'Rotki Solutions GmbH (6H86XUVS7L)',
+                hardenedRuntime: true,
+                gatekeeperAssess: false,
+                entitlements: 'signing/entitlements.mac.plist',
+                entitlementsInherit: 'signing/entitlements.mac.plist'
+              }
+            : {
+                identity: false
+              })
         },
         win: {
           target: ['portable'],
@@ -81,7 +94,8 @@ module.exports = {
         },
         appImage: {
           publish: null
-        }
+        },
+        ...(process.env.CI ? { afterSign: 'scripts/notarize.js' } : {})
       }
     },
     i18n: {
