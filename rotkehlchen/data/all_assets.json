@@ -4966,6 +4966,15 @@
         "symbol": "FIRO",
         "type": "own chain"
     },
+    "FIN": {
+        "coingecko": "definer",
+        "ethereum_address": "0x054f76beED60AB6dBEb23502178C52d6C5dEbE40",
+        "ethereum_token_decimals": 18,
+        "name": "DeFiner",
+        "started": 1599626125,
+        "symbol": "FIN",
+        "type": "ethereum token"
+    },
     "FIT": {
         "coingecko": "300fit",
         "cryptocompare": "300F",

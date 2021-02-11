@@ -17,6 +17,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
+  - `DeFiner (FIN) <https://www.coingecko.com/en/coins/definer>`__
   - `pTokens LTC (pLTC) <https://www.coingecko.com/en/coins/ptokens-ltc>`__
   - `Huobi BTC (HBTC) <https://www.coingecko.com/en/coins/huobi-btc>`__
   - `Autonio (NIOX) <https://www.coingecko.com/en/coins/autonio>`__
