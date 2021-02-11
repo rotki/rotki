@@ -4097,6 +4097,15 @@
         "symbol": "DUSK",
         "type": "ethereum token"
     },
+    "DXD": {
+        "coingecko": "dxdao",
+        "ethereum_address": "0xa1d65E8fB6e87b60FECCBc582F7f97804B725521",
+        "ethereum_token_decimals": 18,
+        "name": "DXdao",
+        "started": 1588760087,
+        "symbol": "DXD",
+        "type": "ethereum token"
+    },
     "DXT": {
         "coingecko": "datawallet",
         "ethereum_address": "0x8dB54ca569D3019A2ba126D03C37c44b5eF81EF6",

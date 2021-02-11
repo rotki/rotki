@@ -17,6 +17,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
+  - `Dxdao token (DXD) <https://www.coingecko.com/en/coins/dxdao>`__
   - `Liquid staked Ether 2.0 (stETH) <https://www.coingecko.com/en/coins/lido-staked-ether>`__
   - `KuCoin Token (KCS) <https://www.coingecko.com/en/coins/kucoin-shares>`__
   - `Caspian Token (CSP) <https://www.coingecko.com/en/coins/caspian>`__
