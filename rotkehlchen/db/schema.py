@@ -106,6 +106,12 @@ INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('C', 3);
 INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('D', 4);
 /* Donation Received Action Type */
 INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('E', 5);
+/* Airdrop Action Type */
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('F', 6);
+/* Gift Action Type */
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('G', 7);
+/* Grant Action Type */
+INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('H', 8);
 """
 
 # Custom enum table for taxable action types

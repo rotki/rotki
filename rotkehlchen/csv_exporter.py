@@ -128,19 +128,21 @@ class CSVExporter():
             received_asset: Union[Asset, EmptyStr],
             received_in_asset: FVal,
             taxable_received_in_profit_currency: FVal,
+            total_received_in_profit_currency: FVal,
             timestamp: Timestamp,
             is_virtual: bool = False,
             taxable_amount: FVal = ZERO,
             taxable_bought_cost: FVal = ZERO,
+            total_bought_cost: FVal = ZERO,
             cost_basis_info: Optional['CostBasisInfo'] = None,
     ) -> None:
         row = len(self.all_events_csv) + 2
         if event_type == EV_BUY:
-            net_profit_or_loss = FVal(0)  # no profit by buying
+            net_profit_or_loss = ZERO  # no profit by buying
             net_profit_or_loss_csv = '0'
         elif event_type == EV_SELL:
             if taxable_amount == 0:
-                net_profit_or_loss = FVal(0)
+                net_profit_or_loss = ZERO
             else:
                 net_profit_or_loss = taxable_received_in_profit_currency - taxable_bought_cost
             net_profit_or_loss_csv = f'=IF(E{row}=0,0,L{row}-M{row})'
@@ -187,6 +189,10 @@ class CSVExporter():
         new_entry[key] = taxable_bought_cost
         del new_entry['cost_basis']  # deleting and re-adding is for appending it to end of dict
         new_entry['cost_basis'] = cost_basis_info.to_string(self.timestamp_to_date) if cost_basis_info else ''  # noqa: E501
+        key = f'total_bought_cost_in_{self.profit_currency.identifier}'
+        new_entry[key] = total_bought_cost
+        key = f'total_received_in_{self.profit_currency.identifier}'
+        new_entry[key] = total_received_in_profit_currency
         del new_entry['paid_in_profit_currency']
         del new_entry['taxable_received_in_profit_currency']
         del new_entry['taxable_bought_cost_in_profit_currency']
@@ -196,11 +202,12 @@ class CSVExporter():
             self,
             location: Location,
             bought_asset: Asset,
-            rate: FVal,
+            rate_in_profit_currency: FVal,
             fee_cost: Fee,
             amount: FVal,
-            cost: FVal,
+            cost_in_profit_currency: FVal,
             paid_with_asset: Asset,
+            paid_with_asset_amount: FVal,
             paid_with_asset_rate: FVal,
             timestamp: Timestamp,
             is_virtual: bool,
@@ -213,29 +220,31 @@ class CSVExporter():
             'type': 'buy',
             'location': str(location),
             'asset': bought_asset.identifier,
-            'price_in_{}'.format(self.profit_currency.identifier): rate,
+            'price_in_{}'.format(self.profit_currency.identifier): rate_in_profit_currency,
             'fee_in_{}'.format(self.profit_currency.identifier): fee_cost,
-            'gained_or_invested_{}'.format(self.profit_currency.identifier): cost,
+            'gained_or_invested_{}'.format(self.profit_currency.identifier): cost_in_profit_currency,  # noqa: E501
             'amount': amount,
-            'taxable_amount': 'not applicable',  # makes no difference for buying
+            'taxable_amount': 'N/A',  # makes no difference for buying
             'exchanged_for': paid_with_asset.identifier,
             exchange_rate_key: paid_with_asset_rate,
-            'taxable_bought_cost_in_{}'.format(self.profit_currency.identifier): 'not applicable',
-            'taxable_gain_in_{}'.format(self.profit_currency.identifier): FVal(0),
-            'taxable_profit_loss_in_{}'.format(self.profit_currency.identifier): FVal(0),
+            'taxable_bought_cost_in_{}'.format(self.profit_currency.identifier): 'N/A',
+            'taxable_gain_in_{}'.format(self.profit_currency.identifier): ZERO,
+            'taxable_profit_loss_in_{}'.format(self.profit_currency.identifier): ZERO,
             'time': self.timestamp_to_date(timestamp),
             'cost_basis': 'N/A',
             'is_virtual': is_virtual,
+            f'total_bought_cost_in_{self.profit_currency.identifier}': ZERO,
         })
         self.add_to_allevents(
             event_type=EV_BUY,
             location=location,
-            paid_in_profit_currency=cost,
-            paid_asset=self.profit_currency,
-            paid_in_asset=cost,
+            paid_in_profit_currency=cost_in_profit_currency,
+            paid_asset=paid_with_asset,
+            paid_in_asset=paid_with_asset_amount,
             received_asset=bought_asset,
             received_in_asset=amount,
-            taxable_received_in_profit_currency=FVal(0),
+            taxable_received_in_profit_currency=ZERO,
+            total_received_in_profit_currency=ZERO,
             timestamp=timestamp,
             is_virtual=is_virtual,
         )
@@ -256,6 +265,7 @@ class CSVExporter():
             timestamp: Timestamp,
             is_virtual: bool,
             cost_basis_info: 'CostBasisInfo',
+            total_bought_cost: FVal,
     ) -> None:
         if not self.create_csv:
             return
@@ -264,7 +274,7 @@ class CSVExporter():
             EmptyStr('') if receiving_asset is None else receiving_asset
         )
         exported_receiving_asset = '' if receiving_asset is None else receiving_asset.identifier
-        processed_receiving_amount = FVal(0) if not receiving_amount else receiving_amount
+        processed_receiving_amount = ZERO if not receiving_amount else receiving_amount
         exchange_rate_key = f'exchanged_asset_{self.profit_currency.identifier}_exchange_rate'
         taxable_profit_received = taxable_gain_for_sell(
             taxable_amount=taxable_amount,
@@ -291,6 +301,7 @@ class CSVExporter():
             'time': self.timestamp_to_date(timestamp),
             'cost_basis': cost_basis_info.to_string(self.timestamp_to_date),
             'is_virtual': is_virtual,
+            f'total_bought_cost_in_{self.profit_currency.identifier}': total_bought_cost,
         })
         paid_in_profit_currency = ZERO
         self.add_to_allevents(
@@ -302,10 +313,12 @@ class CSVExporter():
             received_asset=processed_receiving_asset,
             received_in_asset=processed_receiving_amount,
             taxable_received_in_profit_currency=taxable_profit_received,
+            total_received_in_profit_currency=gain_in_profit_currency,
             timestamp=timestamp,
             is_virtual=is_virtual,
             taxable_amount=taxable_amount,
             taxable_bought_cost=taxable_bought_cost,
+            total_bought_cost=total_bought_cost,
             cost_basis_info=cost_basis_info,
         )
 
@@ -342,8 +355,9 @@ class CSVExporter():
             paid_asset=asset,
             paid_in_asset=amount,
             received_asset=S_EMPTYSTR,
-            received_in_asset=FVal(0),
-            taxable_received_in_profit_currency=FVal(0),
+            received_in_asset=ZERO,
+            taxable_received_in_profit_currency=ZERO,
+            total_received_in_profit_currency=ZERO,
             timestamp=timestamp,
             cost_basis_info=cost_basis_info,
         )
@@ -373,12 +387,13 @@ class CSVExporter():
         self.add_to_allevents(
             location=location,
             event_type=EV_INTEREST_PAYMENT,
-            paid_in_profit_currency=FVal(0),
+            paid_in_profit_currency=ZERO,
             paid_asset=S_EMPTYSTR,
-            paid_in_asset=FVal(0),
+            paid_in_asset=ZERO,
             received_asset=gained_asset,
             received_in_asset=gained_amount,
             taxable_received_in_profit_currency=gain_in_profit_currency,
+            total_received_in_profit_currency=gain_in_profit_currency,
             timestamp=close_time,
         )
 
@@ -408,12 +423,13 @@ class CSVExporter():
         self.add_to_allevents(
             event_type=EV_MARGIN_CLOSE,
             location=location,
-            paid_in_profit_currency=FVal(0),
+            paid_in_profit_currency=ZERO,
             paid_asset=S_EMPTYSTR,
-            paid_in_asset=FVal(0),
+            paid_in_asset=ZERO,
             received_asset=gain_loss_asset,
             received_in_asset=gain_loss_amount,
             taxable_received_in_profit_currency=gain_loss_in_profit_currency,
+            total_received_in_profit_currency=gain_loss_in_profit_currency,
             timestamp=timestamp,
         )
 
@@ -444,8 +460,9 @@ class CSVExporter():
             paid_asset=asset,
             paid_in_asset=fee,
             received_asset=S_EMPTYSTR,
-            received_in_asset=FVal(0),
-            taxable_received_in_profit_currency=FVal(0),
+            received_in_asset=ZERO,
+            taxable_received_in_profit_currency=ZERO,
+            total_received_in_profit_currency=ZERO,
             timestamp=timestamp,
         )
 
@@ -472,8 +489,9 @@ class CSVExporter():
             paid_asset=A_ETH,
             paid_in_asset=eth_burned_as_gas,
             received_asset=S_EMPTYSTR,
-            received_in_asset=FVal(0),
-            taxable_received_in_profit_currency=FVal(0),
+            received_in_asset=ZERO,
+            taxable_received_in_profit_currency=ZERO,
+            total_received_in_profit_currency=ZERO,
             timestamp=timestamp,
         )
 
@@ -517,6 +535,7 @@ class CSVExporter():
             received_asset=received_asset,
             received_in_asset=received_in_asset,
             taxable_received_in_profit_currency=received_in_profit_currency,
+            total_received_in_profit_currency=received_in_profit_currency,
             timestamp=event.timestamp,
         )
 
@@ -563,6 +582,7 @@ class CSVExporter():
             received_asset=received_asset,
             received_in_asset=received_in_asset,
             taxable_received_in_profit_currency=received_in_profit_currency,
+            total_received_in_profit_currency=received_in_profit_currency,
             timestamp=action.timestamp,
         )
 

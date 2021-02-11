@@ -356,6 +356,12 @@ def deserialize_ledger_action_type_from_db(symbol: str) -> LedgerActionType:
         return LedgerActionType.DIVIDENDS_INCOME
     if symbol == 'E':
         return LedgerActionType.DONATION_RECEIVED
+    if symbol == 'F':
+        return LedgerActionType.AIRDROP
+    if symbol == 'G':
+        return LedgerActionType.GIFT
+    if symbol == 'H':
+        return LedgerActionType.GRANT
     # else
     raise DeserializationError(
         f'Failed to deserialize ledger action type symbol. Unknown DB '

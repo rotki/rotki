@@ -4,8 +4,8 @@ from typing import Optional, List
 from rotkehlchen.accounting.cost_basis import CostBasisCalculator
 from rotkehlchen.accounting.structures import DefiEvent, LedgerAction, LedgerActionType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
+from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO, BCH_BSV_FORK_TS
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH, A_BSV
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -100,9 +100,15 @@ class TaxableEvents():
             fee_in_profit_currency: Fee,
             fee_currency: Asset,
             timestamp: Timestamp,
+            is_from_prefork_virtual_buy: bool,
     ) -> None:
+        if is_from_prefork_virtual_buy:
+            # This way we avoid double counting. For example BTC before BCH/BSV fork
+            # adding the BSV twice
+            return
+
         # TODO: Should fee also be taken into account here?
-        if bought_asset == 'ETH' and timestamp < ETH_DAO_FORK_TS:
+        if bought_asset == A_ETH and timestamp < ETH_DAO_FORK_TS:
             self.add_buy(
                 location=location,
                 bought_asset=A_ETC,
@@ -113,10 +119,11 @@ class TaxableEvents():
                 fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
+                is_from_prefork_virtual_buy=True,
             )
 
-        if bought_asset == 'BTC' and timestamp < BTC_BCH_FORK_TS:
-            # Acquiring BTC before the BCH fork provides equal amount of BCH
+        if bought_asset == A_BTC and timestamp < BTC_BCH_FORK_TS:
+            # Acquiring BTC before the BCH fork provides equal amount of BCH and BSV
             self.add_buy(
                 location=location,
                 bought_asset=A_BCH,
@@ -127,6 +134,34 @@ class TaxableEvents():
                 fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
+                is_from_prefork_virtual_buy=True,
+            )
+            self.add_buy(
+                location=location,
+                bought_asset=A_BSV,
+                bought_amount=bought_amount,
+                paid_with_asset=paid_with_asset,
+                trade_rate=trade_rate,
+                fee_in_profit_currency=fee_in_profit_currency,
+                fee_currency=fee_currency,
+                timestamp=timestamp,
+                is_virtual=True,
+                is_from_prefork_virtual_buy=True,
+            )
+
+        if bought_asset == A_BCH and timestamp < BCH_BSV_FORK_TS:
+            # Acquiring BCH before the BSV fork provides equal amount of BSV
+            self.add_buy(
+                location=location,
+                bought_asset=A_BSV,
+                bought_amount=bought_amount,
+                paid_with_asset=paid_with_asset,
+                trade_rate=trade_rate,
+                fee_in_profit_currency=fee_in_profit_currency,
+                fee_currency=fee_currency,
+                timestamp=timestamp,
+                is_virtual=True,
+                is_from_prefork_virtual_buy=True,
             )
 
     def handle_prefork_asset_sells(
@@ -146,6 +181,20 @@ class TaxableEvents():
             if not self.cost_basis.reduce_asset_amount(asset=A_BCH, amount=sold_amount):
                 log.critical(
                     'No documented buy found for BCH (BTC equivalent) before {}'.format(
+                        self.csv_exporter.timestamp_to_date(timestamp),
+                    ),
+                )
+            if not self.cost_basis.reduce_asset_amount(asset=A_BSV, amount=sold_amount):
+                log.critical(
+                    'No documented buy found for BSV (BTC equivalent) before {}'.format(
+                        self.csv_exporter.timestamp_to_date(timestamp),
+                    ),
+                )
+
+        if sold_asset == A_BCH and timestamp < BCH_BSV_FORK_TS:
+            if not self.cost_basis.reduce_asset_amount(asset=A_BSV, amount=sold_amount):
+                log.critical(
+                    'No documented buy found for BSV (BCH equivalent) before {}'.format(
                         self.csv_exporter.timestamp_to_date(timestamp),
                     ),
                 )
@@ -253,6 +302,7 @@ class TaxableEvents():
             fee_currency: Asset,
             timestamp: Timestamp,
             is_virtual: bool = False,
+            is_from_prefork_virtual_buy: bool = False,
     ) -> None:
         """
         Account for the given buy
@@ -289,6 +339,7 @@ class TaxableEvents():
             fee_in_profit_currency=fee_in_profit_currency,
             fee_currency=fee_currency,
             timestamp=timestamp,
+            is_from_prefork_virtual_buy=is_from_prefork_virtual_buy,
         )
 
         gross_cost = bought_amount * buy_rate
@@ -307,12 +358,13 @@ class TaxableEvents():
             self.csv_exporter.add_buy(
                 location=location,
                 bought_asset=bought_asset,
-                rate=buy_rate,
+                rate_in_profit_currency=buy_rate,
                 fee_cost=fee_in_profit_currency,
                 amount=bought_amount,
-                cost=cost_in_profit_currency,
+                cost_in_profit_currency=cost_in_profit_currency,
                 paid_with_asset=paid_with_asset,
                 paid_with_asset_rate=paid_with_asset_rate,
+                paid_with_asset_amount=trade_rate * bought_amount,
                 timestamp=timestamp,
                 is_virtual=is_virtual,
             )
@@ -464,11 +516,12 @@ class TaxableEvents():
                 selling_amount=selling_amount,
             )
 
-            general_profit_loss = gain_in_profit_currency - (
+            total_bought_cost_in_profit_currency = (
                 cost_basis_info.taxfree_bought_cost +
                 cost_basis_info.taxable_bought_cost +
                 total_fee_in_profit_currency
             )
+            general_profit_loss = gain_in_profit_currency - total_bought_cost_in_profit_currency
             taxable_profit_loss = taxable_gain - cost_basis_info.taxable_bought_cost
 
         # should never happen, should be stopped at the main loop
@@ -539,6 +592,7 @@ class TaxableEvents():
                     timestamp=timestamp,
                     cost_basis_info=cost_basis_info,
                     is_virtual=is_virtual,
+                    total_bought_cost=total_bought_cost_in_profit_currency,
                 )
 
     def add_loan_gain(

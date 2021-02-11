@@ -9,6 +9,7 @@ Changelog
 * :feature:`295` When creating external trades, users will now have the trade rate automatically fetched when such a rate exists.
 * :feature:`2240` Users now can select the supported assets from a dropdown when adding or editing external trades.
 * :bug:`2228` AdEx claim events now always have the proper token (e.g. ADX, DAI) and usd value. Also rotki should no longer miss Adex withdrawal events.
+* :bug:`2335` Users having sold BSV they got from holding BCH during the BCH -> BSV fork will now have its cost basis properly counted in the PnL report.
 
 * :feature:`-` Added support for the following tokens:
 

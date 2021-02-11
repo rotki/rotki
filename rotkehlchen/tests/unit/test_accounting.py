@@ -214,6 +214,102 @@ def test_buying_selling_btc_before_bchfork(accountant):
     assert accountant.taxable_trade_pl.is_close('13876.6464615')
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_buying_selling_bch_before_bsvfork(accountant):
+    history = [{
+        # 6.5 BTC 6.5 BCH 6.5 BSV
+        'timestamp': 1491593374,  # 04/07/2017
+        'pair': 'BTC_EUR',
+        'trade_type': 'buy',
+        'rate': 1128.905,
+        'fee': 0.55,
+        'fee_currency': 'EUR',
+        'amount': 6.5,
+        'location': 'external',
+    }, {  # selling BTC pre both fork should also reduce the BCH and BSV equivalent -- taxable
+        # 6 BTC 6 BCH 6 BSV
+        'timestamp': 1500595200,  # 21/07/2017
+        'pair': 'BTC_EUR',
+        'trade_type': 'sell',
+        'rate': 2380.835,
+        'fee': 0.15,
+        'fee_currency': 'EUR',
+        'amount': 0.5,
+        'location': 'external',
+    }, {  # selling BCH after the fork should also reduce BSV equivalent -- taxable
+        # 6 BTC 3.9 BCH 3.9 BSV
+        'timestamp': 1512693374,  # 08/12/2017
+        'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
+        'trade_type': 'sell',
+        'rate': 995.935,
+        'fee': 0.26,
+        'fee_currency': 'EUR',
+        'amount': 2.1,
+        'location': 'kraken',
+    }, {
+        # 4.8 BTC 3.9 BCH 3.9 BSV
+        'timestamp': 1514937600,  # 03/01/2018
+        'pair': 'BTC_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
+        'trade_type': 'sell',
+        'rate': 12404.88,
+        'fee': 0.52,
+        'fee_currency': 'EUR',
+        'amount': 1.2,
+        'location': 'kraken',
+    }, {  # buying BCH before the BSV fork should increase BSV equivalent
+        # 4.8 BTC 4.9 BCH 4.9 BSV
+        'timestamp': 1524937600,
+        'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 1146.98
+        'trade_type': 'buy',
+        'rate': 1146.98,
+        'fee': 0.52,
+        'fee_currency': 'EUR',
+        'amount': 1,
+        'location': 'kraken',
+    }, {  # selling BCH before the BSV fork should decrease the BSV equivalent
+        # 4.8 BTC 4.6 BCH 4.6 BSV
+        'timestamp': 1525937600,
+        'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 1146.98
+        'trade_type': 'sell',
+        'rate': 1272.05,
+        'fee': 0.52,
+        'fee_currency': 'EUR',
+        'amount': 0.3,
+        'location': 'kraken',
+    }, {  # selling BCH after the BSV fork should not affect the BSV equivalent
+        # 4.8 BTC 4.1 BCH 4.6 BSV
+        'timestamp': 1552304352,
+        'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 114.27
+        'trade_type': 'sell',
+        'rate': 114.27,
+        'fee': 0.52,
+        'fee_currency': 'EUR',
+        'amount': 0.5,
+        'location': 'kraken',
+    }]
+    accounting_history_process(accountant, 1436979735, 1569693374, history)
+
+    amount_btc = FVal(4.8)
+    amount_bch = FVal(4.1)
+    amount_bsv = FVal(4.6)
+    bch_buys = accountant.events.cost_basis.events['BCH'].acquisitions
+    assert len(bch_buys) == 2
+    assert sum(x.remaining_amount for x in bch_buys) == amount_bch
+    assert bch_buys[0].timestamp == 1491593374
+    assert bch_buys[1].timestamp == 1524937600
+    bsv_buys = accountant.events.cost_basis.events['BSV'].acquisitions
+    assert len(bsv_buys) == 2
+    assert sum(x.remaining_amount for x in bsv_buys) == amount_bsv
+    assert bsv_buys[0].timestamp == 1491593374
+    assert bsv_buys[1].timestamp == 1524937600
+    assert accountant.events.cost_basis.get_calculated_asset_amount('BCH') == amount_bch
+    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC') == amount_btc
+    assert accountant.events.cost_basis.get_calculated_asset_amount('BSV') == amount_bsv
+
+    assert accountant.general_trade_pl.is_close('13411.164769')
+    assert accountant.taxable_trade_pl.is_close('13876.646461')
+
+
 history5 = history1 + [{
     'timestamp': 1512693374,  # cryptocompare hourly BTC/EUR price: 537.805
     'pair': 'BTC_EUR',  # cryptocompare hourly ETH/EUR price: 11.925
@@ -232,9 +328,9 @@ history5 = history1 + [{
 }])
 def test_nocrypto2crypto(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
-    # Expected = 3 trades + the creation of ETC and BCH after fork times
+    # Expected = 3 trades + the creation of ETC, BCH and BSV after fork times
     msg = 'The crypto to crypto trades should not appear in the list at all'
-    assert len(accountant.csvexporter.all_events) == 5, msg
+    assert len(accountant.csvexporter.all_events) == 6, msg
 
     assert accountant.general_trade_pl.is_close('264693.43364282')
     assert accountant.taxable_trade_pl.is_close('0')
