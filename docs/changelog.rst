@@ -17,6 +17,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
+  - `bZx Vesting Token (vBZRX) <https://www.coingecko.com/en/coins/bzx-vesting-token>`__
   - `Nest protocol (NEST) <https://www.coingecko.com/en/coins/nest-protocol>`__
   - `pTokens BTC (pBTC) <https://www.coingecko.com/en/coins/ptokens-btc>`__
   - `Dxdao token (DXD) <https://www.coingecko.com/en/coins/dxdao>`__

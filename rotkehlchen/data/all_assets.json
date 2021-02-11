@@ -12450,6 +12450,16 @@
         "symbol": "VBK",
         "type": "own chain"
     },
+    "VBZRX": {
+        "coingecko": "bzx-vesting-token",
+	"cryptocompare": "",
+        "ethereum_address": "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F",
+        "ethereum_token_decimals": 18,
+        "name": "bZx Vesting Token",
+        "started": 1594502694,
+        "symbol": "vBZRX",
+        "type": "ethereum token"
+    },
     "VD": {
         "coingecko": "",
         "cryptocompare": "",
