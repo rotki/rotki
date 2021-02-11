@@ -17,6 +17,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
+  - `Autonio (NIOX) <https://www.coingecko.com/en/coins/autonio>`__
   - `Ton Token (TON) <https://www.coingecko.com/en/coins/tontoken>`__
   - `QCAD Token (QCAD) <https://www.coingecko.com/en/coins/qcad>`__
   - `Rigo Token (GRG) <https://www.coingecko.com/en/coins/rigoblock>`__

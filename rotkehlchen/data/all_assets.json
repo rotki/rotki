@@ -8440,6 +8440,16 @@
         "symbol": "NIO",
         "type": "ethereum token"
     },
+    "NIOX": {
+        "coingecko": "autonio",
+        "cryptocompare": "AUTON",
+        "ethereum_address": "0xc813EA5e3b48BEbeedb796ab42A30C5599b01740",
+        "ethereum_token_decimals": 4,
+        "name": "Autonio",
+        "started": 1593141800,
+        "symbol": "NIOX",
+        "type": "ethereum token"
+    },
     "NKN": {
         "coingecko": "nkn",
         "name": "New Kind of Network",
