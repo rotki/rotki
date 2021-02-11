@@ -328,9 +328,9 @@ history5 = history1 + [{
 }])
 def test_nocrypto2crypto(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
-    # Expected = 3 trades + the creation of ETC and BCH after fork times
+    # Expected = 3 trades + the creation of ETC, BCH and BSV after fork times
     msg = 'The crypto to crypto trades should not appear in the list at all'
-    assert len(accountant.csvexporter.all_events) == 5, msg
+    assert len(accountant.csvexporter.all_events) == 6, msg
 
     assert accountant.general_trade_pl.is_close('264693.43364282')
     assert accountant.taxable_trade_pl.is_close('0')

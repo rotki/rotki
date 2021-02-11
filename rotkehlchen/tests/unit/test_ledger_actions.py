@@ -34,7 +34,7 @@ def test_all_action_types_writtable_in_db(database, function_scope_messages_aggr
             amount=FVal(1),
             asset=A_ETH,
             link='',
-            notes=''
+            notes='',
         )
     assert len(db.get_ledger_actions(None, None, None)) == len(LedgerActionType)
 

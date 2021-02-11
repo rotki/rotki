@@ -358,12 +358,13 @@ class TaxableEvents():
             self.csv_exporter.add_buy(
                 location=location,
                 bought_asset=bought_asset,
-                rate=buy_rate,
+                rate_in_profit_currency=buy_rate,
                 fee_cost=fee_in_profit_currency,
                 amount=bought_amount,
-                cost=cost_in_profit_currency,
+                cost_in_profit_currency=cost_in_profit_currency,
                 paid_with_asset=paid_with_asset,
                 paid_with_asset_rate=paid_with_asset_rate,
+                paid_with_asset_amount=trade_rate * bought_amount,
                 timestamp=timestamp,
                 is_virtual=is_virtual,
             )
@@ -515,11 +516,12 @@ class TaxableEvents():
                 selling_amount=selling_amount,
             )
 
-            general_profit_loss = gain_in_profit_currency - (
+            total_bought_cost_in_profit_currency = (
                 cost_basis_info.taxfree_bought_cost +
                 cost_basis_info.taxable_bought_cost +
                 total_fee_in_profit_currency
             )
+            general_profit_loss = gain_in_profit_currency - total_bought_cost_in_profit_currency
             taxable_profit_loss = taxable_gain - cost_basis_info.taxable_bought_cost
 
         # should never happen, should be stopped at the main loop
@@ -590,6 +592,7 @@ class TaxableEvents():
                     timestamp=timestamp,
                     cost_basis_info=cost_basis_info,
                     is_virtual=is_virtual,
+                    total_bought_cost=total_bought_cost_in_profit_currency,
                 )
 
     def add_loan_gain(

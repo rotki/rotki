@@ -100,7 +100,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
     # TODO: These events are not actually checked anywhere for correctness
     #       A test should probably be made for their correctness, even though
     #       they are assumed correct if the overview is correct
-    assert len(all_events) == 36
+    assert len(all_events) == 37
 
     # And now make sure that warnings have also been generated for the query of
     # the unsupported/unknown assets
@@ -366,7 +366,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         count = 0
         for row in reader:
             assert_csv_formulas_trades(row, profit_currency)
-            assert len(row) == 16
+            assert len(row) == 17
             assert row['location'] in ('kraken', 'bittrex', 'binance', 'poloniex')
             assert row['type'] in ('buy', 'sell')
             assert Asset(row['asset']).identifier is not None
@@ -386,9 +386,10 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
             assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
             assert row['cost_basis'] is not None
             assert row['is_virtual'] in ('True', 'False')
+            assert row[f'total_bought_cost_in_{profit_currency.identifier}'] is not None
 
             count += 1
-    num_trades = 18
+    num_trades = 19
     assert count == num_trades, 'Incorrect amount of trade CSV entries found'
 
     with open(os.path.join(csv_dir, FILENAME_LOAN_PROFITS_CSV), newline='') as csvfile:
@@ -471,7 +472,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         count = 0
         for row in reader:
             assert_csv_formulas_all_events(row, profit_currency)
-            assert len(row) == 14
+            assert len(row) == 16
             assert row['location'] in (
                 'kraken',
                 'bittrex',
@@ -504,6 +505,8 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
             assert row[f'taxable_received_in_{profit_currency.identifier}'] is not None
             assert row[f'taxable_bought_cost_in_{profit_currency.identifier}'] is not None
             assert row['cost_basis'] is not None
+            assert row[f'total_bought_cost_in_{profit_currency.identifier}'] is not None
+            assert row[f'total_received_in_{profit_currency.identifier}'] is not None
             count += 1
     assert count == (
         num_trades + num_loans + num_asset_movements + num_transactions + num_margins
