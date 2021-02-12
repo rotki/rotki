@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-card
     :loading="isLoading"
     :class="`dashboard__summary-card__${name}`"
@@ -7,7 +7,11 @@
     <v-card-title
       class="font-weight-medium text-capitalize pa-3 secondary--text summary-card__header"
     >
-      <card-title>{{ $t('summary_card.title', { name }) }}</card-title>
+      <card-title :class="navigatesTo ? 'summary-card--navigates' : null">
+        <span @click="navigatesTo ? navigate() : null">
+          {{ $t('summary_card.title', { name }) }}
+        </span>
+      </card-title>
       <v-tooltip v-if="this.$slots.tooltip" bottom max-width="300px">
         <template #activator="{ on }">
           <v-icon
@@ -59,15 +63,27 @@ export default class SummaryCard extends Vue {
   isLoading!: boolean;
   @Prop({ required: false, default: false, type: Boolean })
   canRefresh!: boolean;
+  @Prop({ required: false, default: '', type: String })
+  navigatesTo!: string;
 
   refresh(balanceSource: string) {
     this.$emit('refresh', balanceSource.toLowerCase());
+  }
+
+  navigate() {
+    this.$router.push({
+      path: this.navigatesTo
+    });
   }
 }
 </script>
 
 <style scoped lang="scss">
 .summary-card {
+  &--navigates {
+    cursor: pointer;
+  }
+
   .v-list-item {
     font-size: 0.8em;
     max-height: 48px;
