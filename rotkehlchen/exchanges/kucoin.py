@@ -37,6 +37,7 @@ from rotkehlchen.errors import (
     RemoteError,
     SystemClockNotSyncedError,
     UnknownAsset,
+    UnprocessableTradePair,
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -88,16 +89,37 @@ API_REQUEST_RETRY_TIMES = 2
 API_REQUEST_RETRIES_AFTER_SECONDS = 1
 
 
+class KucoinCase(Enum):
+    API_KEY = 1
+    BALANCES = 2
+    TRADES = 3
+    DEPOSITS = 4
+    WITHDRAWALS = 5
+
+    def __str__(self) -> str:
+        if self == KucoinCase.API_KEY:
+            return 'api_key'
+        if self == KucoinCase.BALANCES:
+            return 'balances'
+        if self == KucoinCase.TRADES:
+            return 'trades'
+        if self == KucoinCase.DEPOSITS:
+            return 'deposits'
+        if self == KucoinCase.WITHDRAWALS:
+            return 'withdrawals'
+        raise AssertionError(f'Unexpected KucoinCase: {self}')
+
+
 class SkipReason(Enum):
-    ABOVE_TIMESTAMP_RANGE = 1
-    BELOW_TIMESTAMP_RANGE = 2
+    AFTER_TIMESTAMP_RANGE = 1
+    BEFORE_TIMESTAMP_RANGE = 2
     INNER_MOVEMENT = 3
 
     def __str__(self) -> str:
-        if self == SkipReason.ABOVE_TIMESTAMP_RANGE:
-            return 'above timestamp range'
-        if self == SkipReason.BELOW_TIMESTAMP_RANGE:
-            return 'below timestamp range'
+        if self == SkipReason.AFTER_TIMESTAMP_RANGE:
+            return 'after timestamp range'
+        if self == SkipReason.BEFORE_TIMESTAMP_RANGE:
+            return 'before timestamp range'
         if self == SkipReason.INNER_MOVEMENT:
             return 'that is an inner movement'
         raise AssertionError(f'Unexpected SkipReason: {self}')
@@ -109,7 +131,24 @@ DeserializationMethod = Callable[
         Tuple[Optional[Trade], Optional[SkipReason]],
         Tuple[Optional[AssetMovement], Optional[SkipReason]],
     ],
-]  # ... due to keyword args
+]
+
+
+def deserialize_trade_pair(trade_pair_symbol: str) -> TradePair:
+    """May raise:
+    - UnprocessableTradePair
+    - UnknownAsset
+    - UnsupportedAsset
+    """
+    try:
+        base_asset_symbol, quote_asset_symbol = trade_pair_symbol.split('-')
+    except ValueError as e:
+        raise UnprocessableTradePair(trade_pair_symbol) from e
+
+    base_asset = asset_from_kucoin(base_asset_symbol)
+    quote_asset = asset_from_kucoin(quote_asset_symbol)
+
+    return TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
 
 
 class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
@@ -124,7 +163,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             passphrase: str,
-            base_uri: str = 'https://api.kucoin.com',
+            base_uri: str = 'https://openapi-sandbox.kucoin.com',  # 'https://api.kucoin.com',
     ):
         super().__init__(str(Location.KUCOIN), api_key, secret, database)
         self.base_uri = base_uri
@@ -139,7 +178,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def _api_query(
             self,
-            endpoint: Literal['accounts', 'deposits', 'fills', 'withdrawals'],
+            case: KucoinCase,
             options: Optional[Dict[str, Any]] = None,
     ) -> Response:
         """Request a KuCoin API v1 endpoint
@@ -150,51 +189,44 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         for header in ('KC-API-SIGN', 'KC-API-TIMESTAMP'):
             self.session.headers.pop(header, None)
 
-        if endpoint == 'accounts':
-            method = 'get'
+        if case == KucoinCase.BALANCES:
             api_path = 'api/v1/accounts'
-        elif endpoint == 'deposits':
-            method = 'get'
+        elif case == KucoinCase.DEPOSITS:
             api_path = 'api/v1/deposits'
-        elif endpoint == 'fills':
-            method = 'get'
+        elif case == KucoinCase.TRADES:
             api_path = 'api/v1/fills'
-        elif endpoint == 'withdrawals':
-            method = 'get'
+        elif case == KucoinCase.WITHDRAWALS:
             api_path = 'api/v1/withdrawals'
         else:
-            raise AssertionError(f'Unexpected endpoint: {endpoint}')
+            raise AssertionError(f'Unexpected case: {case}')
 
-        with self.nonce_lock:
-            timestamp = str(ts_now_in_ms())
-            request_url = f'{self.base_uri}/{api_path}'
-            message = f'{timestamp}{method.upper()}/{api_path}'
-            if endpoint in ('deposits', 'fills', 'withdrawals'):
-                urlencoded_options = urlencode(call_options)
-                request_url = f'{request_url}?{urlencoded_options}'
-                message = f'{message}?{urlencoded_options}'
+        timestamp = str(ts_now_in_ms())
+        method = 'GET'
+        request_url = f'{self.base_uri}/{api_path}'
+        message = f'{timestamp}{method}/{api_path}'
+        if case in (KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS):
+            urlencoded_options = urlencode(call_options)
+            request_url = f'{request_url}?{urlencoded_options}'
+            message = f'{message}?{urlencoded_options}'
 
-            signature = base64.b64encode(
-                hmac.new(
-                    self.secret,
-                    msg=message.encode('utf-8'),
-                    digestmod=hashlib.sha256,
-                ).digest(),
-            )
-            self.session.headers.update({
-                'KC-API-SIGN': signature,  # type: ignore # bytes required instead of str
-                'KC-API-TIMESTAMP': timestamp,
-            })
-            log.debug('Kucoin API request', request_url=request_url)
-            try:
-                response = self.session.request(
-                    method=method,
-                    url=request_url,
-                )
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(
-                    f'Kucoin {method} request at {request_url} connection error: {str(e)}.',
-                ) from e
+        signature = base64.b64encode(
+            hmac.new(
+                self.secret,
+                msg=message.encode('utf-8'),
+                digestmod=hashlib.sha256,
+            ).digest(),
+        ).decode('utf-8')
+        self.session.headers.update({
+            'KC-API-SIGN': signature,
+            'KC-API-TIMESTAMP': timestamp,
+        })
+        log.debug('Kucoin API request', request_url=request_url)
+        try:
+            response = self.session.get(url=request_url)
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(
+                f'Kucoin {method} request at {request_url} connection error: {str(e)}.',
+            ) from e
 
         return response
 
@@ -202,7 +234,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _api_query_paginated(  # pylint: disable=no-self-use
             self,
             options: Dict[str, Any],
-            case: Literal['trades'],
+            case: Literal[KucoinCase.TRADES],
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[Trade]:
@@ -212,7 +244,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _api_query_paginated(  # pylint: disable=no-self-use
             self,
             options: Dict[str, Any],
-            case: Literal['deposits', 'withdrawals'],
+            case: Literal[KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AssetMovement]:
@@ -221,7 +253,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _api_query_paginated(
             self,
             options: Dict[str, Any],
-            case: Literal['trades', 'deposits', 'withdrawals'],
+            case: Literal[KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Union[List[Trade], List[AssetMovement]]:
@@ -229,26 +261,18 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         May raise RemoteError and SystemClockNotSyncedError
         """
-        endpoint: Literal['fills', 'deposits', 'withdrawals']
-        case_: Literal['trades', 'asset_movements']
         deserialization_method: DeserializationMethod
-        if case == 'trades':
-            endpoint = 'fills'
-            case_ = 'trades'
+        if case == KucoinCase.TRADES:
             deserialization_method = self._deserialize_trade
-        elif case == 'deposits':
-            endpoint = 'deposits'
-            case_ = 'asset_movements'
+        elif case == KucoinCase.DEPOSITS:
             deserialization_method = partial(
                 self._deserialize_asset_movement,
-                category_case='deposit',
+                case=case,
             )
-        elif case == 'withdrawals':
-            endpoint = 'withdrawals'
-            case_ = 'asset_movements'
+        elif case == KucoinCase.WITHDRAWALS:
             deserialization_method = partial(
                 self._deserialize_asset_movement,
-                category_case='withdrawal',
+                case=case,
             )
         else:
             raise AssertionError(f'Unexpected case: {case}')
@@ -259,7 +283,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         retries_after_seconds = API_REQUEST_RETRIES_AFTER_SECONDS
         while retries_left >= 0:
             response = self._api_query(
-                endpoint=endpoint,
+                case=case,
                 options=call_options,
             )
             # Check request rate limit
@@ -281,14 +305,14 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     options=call_options,
                 )
                 retries_left -= 1
-                retries_after_seconds *= 2
                 gevent.sleep(retries_after_seconds)
+                retries_after_seconds *= 2
                 continue
 
             if response.status_code != HTTPStatus.OK:
                 return self._process_unsuccessful_response(
                     response=response,
-                    case=case_,
+                    case=case,
                 )
 
             try:
@@ -311,7 +335,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 log.error(msg, response_dict)
                 raise RemoteError(msg) from e
 
-            is_below_start_ts = False
+            is_before_start_ts = False
             for raw_result in raw_results:
                 try:
                     result, skip_reason = deserialization_method(
@@ -319,35 +343,43 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         start_ts=start_ts,
                         end_ts=end_ts,
                     )
-                except DeserializationError as e:
-                    self.msg_aggregator.add_error(
-                        f'{str(e)}. Check logs for more details',
+                except (
+                    DeserializationError, UnknownAsset, UnprocessableTradePair, UnsupportedAsset,
+                ) as e:
+                    log.error(
+                        f'Failed to deserialize a kucoin {case} result',
+                        error=str(e),
+                        raw_result=raw_result,
                     )
+                    if isinstance(e, (UnknownAsset, UnsupportedAsset)):
+                        asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
+                        error_msg = f'Found {asset_tag} kucoin asset {e.asset_name}'
+
+                    self.msg_aggregator.add_error(
+                        f'Failed to deserialize a kucoin {case} result. {error_msg}. Ignoring it. '
+                        f'Check logs for more details')
                     continue
 
                 if result is None and skip_reason is not None:
-                    if skip_reason == SkipReason.BELOW_TIMESTAMP_RANGE:
-                        log.debug(f'Found a kucoin {case} {str(skip_reason)}. Stop requesting.')
+                    if skip_reason == SkipReason.BEFORE_TIMESTAMP_RANGE:
+                        log.debug(f'Found a kucoin {case} {skip_reason}. Stop requesting.')
                         break
 
                     if skip_reason in (
-                        SkipReason.ABOVE_TIMESTAMP_RANGE,
+                        SkipReason.AFTER_TIMESTAMP_RANGE,
                         SkipReason.INNER_MOVEMENT,
                     ):
-                        log.debug(f'Found a kucoin {case} {str(skip_reason)}. Skipping it.')
+                        log.debug(f'Found a kucoin {case} {skip_reason}. Skipping it.')
                         continue
 
                     raise AssertionError(f'Unexpected skip reason: {skip_reason}. Update conditions')  # noqa: E501
 
-                if result is None:
-                    # NB: may happen only during development
-                    raise AssertionError(f'Unexpected return deserializing {case} calling {endpoint}.')  # noqa: E501
-
+                assert result is not None
                 results.append(result)  # type: ignore # type is known
 
-            # Stop requesting, either when a result was below the range or
+            # Stop requesting, either when a result was before the range or
             # totalPage indicates to stop paginating
-            if is_below_start_ts is True or total_page in (0, current_page):
+            if is_before_start_ts is True or total_page in (0, current_page):
                 break
 
             # Update pagination params per endpoint
@@ -357,10 +389,19 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             # break
         return results
 
-    def _calculate_accounts_balances(
+    def _deserialize_accounts_balances(
             self,
-            accounts_data: List[Dict[str, Any]],
+            response_dict: Dict[str, List[Dict[str, Any]]],
     ) -> Dict[Asset, Balance]:
+        """May raise RemoteError
+        """
+        try:
+            accounts_data = response_dict['data']
+        except KeyError as e:
+            msg = 'Kucoin balances JSON response is missing data key'
+            log.error(msg, response_dict)
+            raise RemoteError(msg) from e
+
         assets_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
         for raw_result in accounts_data:
             try:
@@ -419,40 +460,34 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return dict(assets_balance)
 
-    def _check_for_system_clock_not_synced_error(
-            self,
-            error_code: Optional[int] = None,
-    ) -> None:
-        if error_code == API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE:
-            raise SystemClockNotSyncedError(
-                current_time=str(datetime.now()),
-                remote_server=f'{self.name}',
-            )
-
     @staticmethod
     def _deserialize_asset_movement(
             raw_result: Dict[str, Any],
-            category_case: Literal['deposit', 'withdrawal'],
+            case: Literal[KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Tuple[Optional[AssetMovement], Optional[SkipReason]]:
         """Process an asset movement result and deserialize it
 
-        May raise DeserializationError
+        May raise:
+        - DeserializationError
+        - UnknownAsset
+        - UnsupportedAsset
         """
-        if category_case == 'deposit':
+        if case == KucoinCase.DEPOSITS:
             category = AssetMovementCategory.DEPOSIT
-        elif category_case == 'withdrawal':
+        elif case == KucoinCase.WITHDRAWALS:
             category = AssetMovementCategory.WITHDRAWAL
         else:
-            raise AttributeError(f'Unexpected category case: {category_case}')
+            raise AssertionError(f'Unexpected case: {case}')
 
         try:
-            timestamp = deserialize_timestamp(int(raw_result['createdAt'] / 1000))
+            timestamp_ms = deserialize_timestamp(raw_result['createdAt'])
+            timestamp = Timestamp(int(timestamp_ms / 1000))
             if timestamp > end_ts:
-                return None, SkipReason.ABOVE_TIMESTAMP_RANGE
+                return None, SkipReason.AFTER_TIMESTAMP_RANGE
             if timestamp < start_ts:
-                return None, SkipReason.BELOW_TIMESTAMP_RANGE
+                return None, SkipReason.BEFORE_TIMESTAMP_RANGE
 
             is_inner = raw_result['isInner']
             if is_inner is True:
@@ -464,34 +499,11 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             fee = deserialize_fee(raw_result['fee'])
             fee_currency_symbol = raw_result['currency']
             # NB: id only exists for withdrawals
-            link_id = raw_result['id'] if category_case == 'withdrawal' else transaction_id
-        except (DeserializationError, KeyError, ValueError) as e:
-            msg = str(e)
-            if isinstance(e, KeyError):
-                msg = f'Missing key in {category_case}: {msg}.'
+            link_id = raw_result['id'] if case == KucoinCase.WITHDRAWALS else transaction_id
+        except KeyError as e:
+            raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-            log.error(
-                f'Failed to deserialize a kucoin {category_case}',
-                error=msg,
-                raw_result=raw_result,
-            )
-            raise DeserializationError(f'Failed to deserialize a kucoin {category_case}.') from e
-
-        try:
-            fee_asset = asset_from_kucoin(fee_currency_symbol)
-        except DeserializationError as e:
-            log.error(
-                f'Unexpected asset symbol type in a kucoin {category_case}',
-                error=str(e),
-                raw_result=raw_result,
-            )
-            raise DeserializationError(f'Failed to deserialize a kucoin {category_case}.') from e
-        except (UnknownAsset, UnsupportedAsset) as e:
-            asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
-            raise DeserializationError(
-                f'Found {asset_tag} kucoin asset {e.asset_name} while processing a {category_case}. '  # noqa: E501
-                f'Ignoring it.',
-            ) from e
+        fee_asset = asset_from_kucoin(fee_currency_symbol)
 
         asset_movement = AssetMovement(
             timestamp=timestamp,
@@ -515,14 +527,19 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Tuple[Optional[Trade], Optional[SkipReason]]:
         """Process a trade result and deserialize it
 
-        May raise DeserializationError
+        May raise:
+        - DeserializationError
+        - UnknownAsset
+        - UnprocessableTradePair
+        - UnsupportedAsset
         """
         try:
-            timestamp = deserialize_timestamp(int(raw_result['createdAt'] / 1000))
+            timestamp_ms = deserialize_timestamp(raw_result['createdAt'])
+            timestamp = Timestamp(int(timestamp_ms / 1000))
             if timestamp > end_ts:
-                return None, SkipReason.ABOVE_TIMESTAMP_RANGE
+                return None, SkipReason.AFTER_TIMESTAMP_RANGE
             if timestamp < start_ts:
-                return None, SkipReason.BELOW_TIMESTAMP_RANGE
+                return None, SkipReason.BEFORE_TIMESTAMP_RANGE
 
             trade_type = TradeType.BUY if raw_result['side'] == 'buy' else TradeType.SELL
             amount = deserialize_asset_amount(raw_result['size'])
@@ -530,41 +547,16 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             fee = deserialize_fee(raw_result['fee'])
             trade_id = raw_result['tradeId']
             fee_currency_symbol = raw_result['feeCurrency']
-            base_asset_symbol, quote_asset_symbol = raw_result['symbol'].split('-')
-        except (DeserializationError, KeyError, ValueError) as e:
-            msg = str(e)
-            if isinstance(e, KeyError):
-                msg = f'Missing key in trade: {msg}.'
+            trade_pair_symbol = raw_result['symbol']
+        except KeyError as e:
+            raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-            log.error(
-                'Failed to deserialize a kucoin trade',
-                error=msg,
-                raw_result=raw_result,
-            )
-            raise DeserializationError('Failed to deserialize a kucoin trade.') from e
-
-        try:
-            base_asset = asset_from_kucoin(base_asset_symbol)
-            quote_asset = asset_from_kucoin(quote_asset_symbol)
-            fee_currency = asset_from_kucoin(fee_currency_symbol)
-        except DeserializationError as e:
-            log.error(
-                'Unexpected asset symbol type in a kucoin trade',
-                error=str(e),
-                raw_result=raw_result,
-            )
-            raise DeserializationError('Failed to deserialize a kucoin trade.') from e
-        except (UnknownAsset, UnsupportedAsset) as e:
-            asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
-            raise DeserializationError(
-                f'Found {asset_tag} kucoin asset {e.asset_name} while deserializing a trade. '
-                f'Ignoring it.',
-            ) from e
-
+        trade_pair = deserialize_trade_pair(trade_pair_symbol)
+        fee_currency = asset_from_kucoin(fee_currency_symbol)
         trade = Trade(
             timestamp=timestamp,
             location=Location.KUCOIN,
-            pair=TradePair(f'{base_asset.identifier}_{quote_asset.identifier}'),
+            pair=trade_pair,
             trade_type=trade_type,
             amount=amount,
             rate=rate,
@@ -579,7 +571,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _process_unsuccessful_response(  # pylint: disable=no-self-use
             self,
             response: Response,
-            case: Literal['validate_api_key'],
+            case: Literal[KucoinCase.API_KEY],
     ) -> Tuple[bool, str]:
         ...
 
@@ -587,7 +579,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _process_unsuccessful_response(  # pylint: disable=no-self-use
             self,
             response: Response,
-            case: Literal['balances'],
+            case: Literal[KucoinCase.BALANCES],
     ) -> ExchangeQueryBalances:
         ...
 
@@ -595,7 +587,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _process_unsuccessful_response(  # pylint: disable=no-self-use
             self,
             response: Response,
-            case: Literal['trades'],
+            case: Literal[KucoinCase.TRADES],
     ) -> List[Trade]:
         ...
 
@@ -603,14 +595,20 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _process_unsuccessful_response(  # pylint: disable=no-self-use
             self,
             response: Response,
-            case: Literal['asset_movements'],
+            case: Literal[KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
     ) -> List[AssetMovement]:
         ...
 
     def _process_unsuccessful_response(
             self,
             response: Response,
-            case: Literal['validate_api_key', 'balances', 'trades', 'asset_movements'],
+            case: Literal[
+                KucoinCase.API_KEY,
+                KucoinCase.BALANCES,
+                KucoinCase.TRADES,
+                KucoinCase.DEPOSITS,
+                KucoinCase.WITHDRAWALS,
+            ],
     ) -> Union[
         List,
         Tuple[bool, str],
@@ -626,9 +624,9 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             msg = f'Kucoin {case} returned an invalid JSON response: {response.text}.'
             log.error(msg)
 
-            if case in ('validate_api_key', 'balances'):
+            if case in (KucoinCase.API_KEY, KucoinCase.BALANCES):
                 raise RemoteError(msg) from e
-            if case in ('trades', 'asset_movements'):
+            if case in (KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS):
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying Kucoin {case}: {msg}',
                 )
@@ -637,12 +635,17 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise AssertionError(f'Unexpected case: {case}') from e
 
         error_code = response_dict.get('code', None)
-        self._check_for_system_clock_not_synced_error(error_code)
+        if error_code == API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE:
+            raise SystemClockNotSyncedError(
+                current_time=str(datetime.now()),
+                remote_server=f'{self.name}',
+            )
+
         # Errors related with the API key return a human readable message
-        if case == 'validate_api_key' and error_code in API_KEY_ERROR_CODE_ACTION.keys():
+        if case == KucoinCase.API_KEY and error_code in API_KEY_ERROR_CODE_ACTION.keys():
             return False, API_KEY_ERROR_CODE_ACTION[response_dict['code']]
 
-        # Below any other error not related with the system clock or the API key
+        # Before any other error not related with the system clock or the API key
         reason = response_dict.get('msg', None) or response.text
         msg = (
             f'Kucoin query responded with error status code: {response.status_code} '
@@ -650,11 +653,11 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         )
         log.error(msg)
 
-        if case == 'validate_api_key':
+        if case == KucoinCase.API_KEY:
             raise RemoteError(msg)
-        if case == 'balances':
+        if case == KucoinCase.BALANCES:
             return None, msg
-        if case in ('trades', 'asset_movements'):
+        if case in (KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS):
             self.msg_aggregator.add_error(
                 f'Got remote error while querying Kucoin {case}: {msg}',
             )
@@ -672,11 +675,11 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         May raise RemoteError and SystemClockNotSyncedError
         """
-        accounts_response = self._api_query('accounts')
+        accounts_response = self._api_query(KucoinCase.BALANCES)
         if accounts_response.status_code != HTTPStatus.OK:
             result, msg = self._process_unsuccessful_response(
                 response=accounts_response,
-                case='balances',
+                case=KucoinCase.BALANCES,
             )
             return result, msg
 
@@ -687,14 +690,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             raise RemoteError(msg) from e
 
-        try:
-            accounts_data = response_dict['data']
-        except KeyError as e:
-            msg = 'Kucoin balances JSON response is missing data key'
-            log.error(msg, response_dict)
-            raise RemoteError(msg) from e
-
-        account_balances = self._calculate_accounts_balances(accounts_data=accounts_data)
+        account_balances = self._deserialize_accounts_balances(response_dict=response_dict)
         return account_balances, ''
 
     def query_online_deposits_withdrawals(
@@ -714,14 +710,14 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         asset_movements: List[AssetMovement] = []
         deposits = self._api_query_paginated(
             options=options.copy(),
-            case='deposits',
+            case=KucoinCase.DEPOSITS,
             start_ts=start_ts,
             end_ts=end_ts,
         )
         asset_movements.extend(deposits)
         withdrawals = self._api_query_paginated(
             options=options.copy(),
-            case='withdrawals',
+            case=KucoinCase.WITHDRAWALS,
             start_ts=start_ts,
             end_ts=end_ts,
         )
@@ -745,7 +741,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         }
         trades: List[Trade] = self._api_query_paginated(
             options=options,
-            case='trades',
+            case=KucoinCase.TRADES,
             start_ts=start_ts,
             end_ts=end_ts,
         )
@@ -756,12 +752,12 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         May raise RemoteError and SystemClockNotSyncedError
         """
-        response = self._api_query('accounts')
+        response = self._api_query(KucoinCase.BALANCES)
 
         if response.status_code != HTTPStatus.OK:
             result, msg = self._process_unsuccessful_response(
                 response=response,
-                case='validate_api_key',
+                case=KucoinCase.API_KEY,
             )
             return result, msg
 
@@ -772,4 +768,4 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
-        return []  # noop for bitfinex
+        return []  # noop for kucoin

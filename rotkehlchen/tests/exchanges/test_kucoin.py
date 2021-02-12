@@ -12,7 +12,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_KUCOIN_ASSETS, asset_from_kucoin
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
-from rotkehlchen.exchanges.kucoin import Kucoin, SkipReason
+from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase, SkipReason
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import (
@@ -82,7 +82,7 @@ def test_api_query_paginated_retries_request(mock_kucoin):
         for result_ in results:
             yield result_
 
-    def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(case, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, next(get_response))
 
     get_response = get_paginated_response()
@@ -109,7 +109,7 @@ def test_api_query_paginated_retries_request(mock_kucoin):
                 'pageSize': 500,
                 'tradeType': 'TRADE',
             },
-            case='trades',
+            case=KucoinCase.TRADES,
             start_ts=Timestamp(0),
             end_ts=Timestamp(1612556794259),
         )
@@ -125,7 +125,7 @@ def test_api_query_paginated_retries_request(mock_kucoin):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_calculate_accounts_balances(mock_kucoin, inquirer):  # pylint: disable=unused-argument
+def test_deserialize_accounts_balances(mock_kucoin, inquirer):  # pylint: disable=unused-argument
     accounts_data = [
         {
             'id': '601ac6f7d48f8000063ab2da',
@@ -208,7 +208,7 @@ def test_calculate_accounts_balances(mock_kucoin, inquirer):  # pylint: disable=
             'holds': '0',
         },
     ]
-    assets_balance = mock_kucoin._calculate_accounts_balances(accounts_data)
+    assets_balance = mock_kucoin._deserialize_accounts_balances({'data': accounts_data})
     assert assets_balance == {
         Asset('BTC'): Balance(
             amount=FVal('2.61018067'),
@@ -316,8 +316,8 @@ def test_deserialize_trade_sell(mock_kucoin):
 
 
 @pytest.mark.parametrize('start_ts, end_ts, skip_reason', [
-    (0, 1612556793, SkipReason.ABOVE_TIMESTAMP_RANGE),
-    (1612556795, 1612556800, SkipReason.BELOW_TIMESTAMP_RANGE),
+    (0, 1612556793, SkipReason.AFTER_TIMESTAMP_RANGE),
+    (1612556795, 1612556800, SkipReason.BEFORE_TIMESTAMP_RANGE),
 ])
 def test_deserialize_trade_skipped(mock_kucoin, start_ts, end_ts, skip_reason):
     raw_result = {
@@ -376,7 +376,7 @@ def test_deserialize_asset_movement_deposit(mock_kucoin):
     )
     asset_movement, reason = mock_kucoin._deserialize_asset_movement(
         raw_result=raw_result,
-        category_case='deposit',
+        case=KucoinCase.DEPOSITS,
         start_ts=Timestamp(0),
         end_ts=Timestamp(1612556794),
     )
@@ -413,7 +413,7 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin):
     )
     asset_movement, reason = mock_kucoin._deserialize_asset_movement(
         raw_result=raw_result,
-        category_case='withdrawal',
+        case=KucoinCase.WITHDRAWALS,
         start_ts=Timestamp(0),
         end_ts=Timestamp(1612556794),
     )
@@ -422,8 +422,8 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin):
 
 
 @pytest.mark.parametrize('start_ts, end_ts, is_inner, skip_reason', [
-    (0, 1612556793, False, SkipReason.ABOVE_TIMESTAMP_RANGE),
-    (1612556795, 1612556800, False, SkipReason.BELOW_TIMESTAMP_RANGE),
+    (0, 1612556793, False, SkipReason.AFTER_TIMESTAMP_RANGE),
+    (1612556795, 1612556800, False, SkipReason.BEFORE_TIMESTAMP_RANGE),
     (1612556750, 1612556800, True, SkipReason.INNER_MOVEMENT),
 ])
 def test_deserialize_asset_movement_skipped(mock_kucoin, start_ts, end_ts, is_inner, skip_reason):
@@ -443,7 +443,7 @@ def test_deserialize_asset_movement_skipped(mock_kucoin, start_ts, end_ts, is_in
     }
     asset_movement, reason = mock_kucoin._deserialize_asset_movement(
         raw_result=raw_result,
-        category_case='withdrawal',
+        case=KucoinCase.WITHDRAWALS,
         start_ts=Timestamp(start_ts),
         end_ts=Timestamp(end_ts),
     )
@@ -712,7 +712,7 @@ def test_query_asset_movements_sandbox(
         for result_ in results:
             yield result_
 
-    def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(case, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, next(get_response))
 
     get_response = get_endpoints_response()
