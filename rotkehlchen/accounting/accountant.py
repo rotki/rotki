@@ -429,6 +429,7 @@ class Accountant():
                     sum_other_actions,
                 ),
             },
+            'first_processed_timestamp': self.first_processed_timestamp,
             'events_processed': count,
             'events_limit': events_limit,
             'all_events': self.csvexporter.all_events,
