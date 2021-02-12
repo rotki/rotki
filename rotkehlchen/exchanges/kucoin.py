@@ -24,7 +24,6 @@ from urllib.parse import urlencode
 
 import gevent
 import requests
-from gevent.lock import Semaphore
 from requests.adapters import Response
 from typing_extensions import Literal
 
@@ -174,7 +173,6 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             'KC-API-KEY-VERSION': '2',
         })
         self.msg_aggregator = msg_aggregator
-        self.nonce_lock = Semaphore()
 
     def _api_query(
             self,
@@ -419,12 +417,12 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     msg = f'Missing key in account: {msg}.'
 
                 log.error(
-                    'Failed to deserialize a kucoin account',
+                    'Failed to deserialize a kucoin balance',
                     error=msg,
                     raw_result=raw_result,
                 )
                 self.msg_aggregator.add_error(
-                    'Failed to deserialize a kucoin account. Ignoring it.',
+                    'Failed to deserialize a kucoin balance. Ignoring it.',
                 )
                 continue
 
@@ -432,26 +430,26 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 asset = asset_from_kucoin(asset_symbol)
             except DeserializationError as e:
                 log.error(
-                    'Unexpected asset symbol in a kucoin account',
+                    'Unexpected asset symbol in a kucoin balance',
                     error=str(e),
                     raw_result=raw_result,
                 )
                 self.msg_aggregator.add_error(
-                    'Failed to deserialize a kucoin account. Ignoring it.',
+                    'Failed to deserialize a kucoin balance. Ignoring it.',
                 )
                 continue
             except (UnknownAsset, UnsupportedAsset) as e:
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
                 self.msg_aggregator.add_warning(
                     f'Found {asset_tag} kucoin asset {e.asset_name} while deserializing '
-                    f'an account. Ignoring it.',
+                    f'a balance. Ignoring it.',
                 )
                 continue
             try:
                 usd_price = Inquirer().find_usd_price(asset=asset)
             except RemoteError:
                 self.msg_aggregator.add_error(
-                    f'Failed to deserialize a kucoin account balance after failing to '
+                    f'Failed to deserialize a kucoin balance after failing to '
                     f'request the USD price of {asset.identifier}. Ignoring it.',
                 )
                 continue
@@ -501,8 +499,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             amount = deserialize_asset_amount(raw_result['amount'])
             fee = deserialize_fee(raw_result['fee'])
             fee_currency_symbol = raw_result['currency']
-            # NB: id only exists for withdrawals
-            link_id = raw_result['id'] if case == KucoinCase.WITHDRAWALS else transaction_id
+            link_id = raw_result.get('id', '')  # NB: id only exists for withdrawals
         except KeyError as e:
             raise DeserializationError(f'Missing key: {str(e)}.') from e
 
@@ -648,7 +645,6 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         if case == KucoinCase.API_KEY and error_code in API_KEY_ERROR_CODE_ACTION.keys():
             return False, API_KEY_ERROR_CODE_ACTION[response_dict['code']]
 
-        # Before any other error not related with the system clock or the API key
         reason = response_dict.get('msg', None) or response.text
         msg = (
             f'Kucoin query responded with error status code: {response.status_code} '

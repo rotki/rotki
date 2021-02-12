@@ -370,7 +370,7 @@ def test_deserialize_asset_movement_deposit(mock_kucoin):
         amount=AssetAmount(FVal('1')),
         fee_asset=Asset('ETH'),
         fee=Fee(FVal('0.01')),
-        link='3e2414d82acce78d38be7fe9',
+        link='',
     )
     asset_movement, reason = mock_kucoin._deserialize_asset_movement(
         raw_result=raw_result,
@@ -686,7 +686,7 @@ def test_query_asset_movements_sandbox(
             amount=AssetAmount(FVal('1')),
             fee_asset=Asset('KCS'),
             fee=Fee(FVal('0.0001')),
-            link='5bbb57386d99522d9f954c5a',
+            link='',
         ),
         AssetMovement(
             location=Location.KUCOIN,
