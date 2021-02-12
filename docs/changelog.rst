@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :feature:`2318` Users can now see if their accounts are eligible for the Curve CRV airdrop and POAP Delivery badges.
 * :feature:`297` Rotki now supports KuCoin. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
 * :feature:`1436` Users will now see any validation errors when adding manual balances under their respective inputs instead of a modal dialog.
 * :feature:`2235` Loopring users will now be able to add their loopring api key to rotki and have it track all their loopring l2 balances.
