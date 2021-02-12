@@ -66,7 +66,7 @@ module.exports = {
           }
         ],
         dmg: {
-          sign: false
+          sign: true
         },
         mac: {
           category: 'public.app-category.finance',
