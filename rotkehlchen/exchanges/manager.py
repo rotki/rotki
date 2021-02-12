@@ -28,6 +28,7 @@ SUPPORTED_EXCHANGES = [
     'bitfinex',
     'bitcoinde',
     'iconomi',
+    'kucoin',
 ]
 
 

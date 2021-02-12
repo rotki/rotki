@@ -14,6 +14,7 @@ from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement
+from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
@@ -91,6 +92,14 @@ SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITSTAMP = patch(
     ),
 )
 
+SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_KUCOIN = patch(
+    'rotkehlchen.exchanges.kucoin.Kucoin.validate_api_key',
+    side_effect=SystemClockNotSyncedError(
+        current_time=str(datetime.now()),
+        remote_server='Kucoin',
+    ),
+)
+
 
 def test_setup_exchange(rotkehlchen_api_server):
     """Test that setting up an exchange via the api works"""
@@ -104,7 +113,7 @@ def test_setup_exchange(rotkehlchen_api_server):
     # First test that if api key validation fails we get an error, for every exchange
     for name in SUPPORTED_EXCHANGES:
         data = {'name': name, 'api_key': 'ddddd', 'api_secret': 'fffffff'}
-        if name == 'coinbasepro':
+        if name in ('coinbasepro', 'kucoin'):
             data['passphrase'] = '123'
         response = requests.put(
             api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
@@ -119,6 +128,7 @@ def test_setup_exchange(rotkehlchen_api_server):
                 'Provided Gemini API key needs to have "Auditor" permission activated',
                 BITSTAMP_API_KEY_ERROR_CODE_ACTION['API0011'],
                 BITFINEX_API_KEY_ERROR_MESSAGE,
+                KUCOIN_API_KEY_ERROR_CODE[400003],
             ],
             status_code=HTTPStatus.CONFLICT,
         )
@@ -180,6 +190,10 @@ def test_setup_exchange(rotkehlchen_api_server):
     (
         {'name': 'bitfinex', 'api_key': 'ddddd', 'api_secret': 'fffff'},
         SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITFINEX,
+    ),
+    (
+        {'name': 'kucoin', 'api_key': 'ddddd', 'api_secret': 'fffff', 'passphrase': 'ff'},
+        SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_KUCOIN,
     ),
 ])
 def test_setup_exchange_raises_system_clock_not_synced_error(

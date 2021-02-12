@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`297` Rotki now supports KuCoin. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
 * :feature:`2330` Users can now easily navigate to the respective pages by clicking the dashboard cards titles for manual balances, blockchain balances and exchange balances.
 * :feature:`2237` Users can now choose which ledger actions are taken into account in the PnL report by customizing a setting. Two new ledger action types are added. Airdrop and Gift.
 * :feature:`1794` Users who create a Profit and Loss report will now be able to see a cost basis calculation in the events of the report and in the exported trades.csv and all_events.csv
@@ -15,6 +16,86 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `Liquid staked Ether 2.0 (stETH) <https://www.coingecko.com/en/coins/lido-staked-ether>`__
+  - `KuCoin Token (KCS) <https://www.coingecko.com/en/coins/kucoin-shares>`__
+  - `Caspian Token (CSP) <https://www.coingecko.com/en/coins/caspian>`__
+  - `DXChain Token (CSP) <https://www.coingecko.com/en/coins/dxchain>`__
+  - `MultiVAC (MTV) <https://www.coingecko.com/en/coins/multivac>`__
+  - `TurtleCoin (TRTL) <https://www.coingecko.com/en/coins/turtlecoin>`__
+  - `Jarvis+ Coins (JAR) <https://www.coingecko.com/en/coins/jarvis>`__
+  - `Cryptoindex 100 (CIX100) <https://www.coingecko.com/en/coins/cryptoindex-io>`__
+  - `The Forbidden Forest (FORESTPLUS) <https://www.coingecko.com/en/coins/the-forbidden-forest>`__
+  - `Bolt (BOLT) <https://www.coingecko.com/en/coins/bolt>`__
+  - `SERO (SERO) <https://www.coingecko.com/en/coins/super-zero>`__
+  - `Syntropy (NOIA) <https://www.coingecko.com/en/coins/noia-network>`__
+  - `Dapp Token (DAPPT) <https://www.coingecko.com/en/coins/dapp-com>`__
+  - `EOSForce (EOSC) <https://www.coingecko.com/en/coins/eosforce>`__
+  - `Dero (DERO) <https://www.coingecko.com/en/coins/dero>`__
+  - `Enecuum (ENQ) <https://www.coingecko.com/en/coins/enq-enecuum>`__
+  - `Tokoin (TOKO) <https://www.coingecko.com/en/coins/toko>`__
+  - `EMOGI Network (LOL) <https://www.coingecko.com/en/coins/emogi-network>`__
+  - `Amino Intelligent Network (AMIO) <https://www.coingecko.com/en/coins/amino-network>`__
+  - `Maxonrow (MXW) <https://www.coingecko.com/en/coins/maxonrow>`__
+  - `Roobee (ROOBEE) <https://www.coingecko.com/en/coins/roobee>`__
+  - `MAP Protocol (MAP) <https://www.coingecko.com/en/coins/marcopolo>`__
+  - `Proof Of Liquidity (POL) <https://www.coingecko.com/en/coins/proof-of-liquidity>`__
+  - `ARCS (ARX) <https://www.coingecko.com/en/coins/arcs>`__
+  - `Newscrypto Coin (NWC) <https://www.coingecko.com/en/coins/newscrypto-coin>`__
+  - `BetProtocolToken (BEPRO) <https://www.coingecko.com/en/coins/bet-protocol>`__
+  - `Insolar (XNS) <https://www.coingecko.com/en/coins/ins-ecosystem>`__
+  - `Perth Mint Gold Token (PMGT) <https://www.coingecko.com/en/coins/perth-mint-gold-token>`__
+  - `ROAD (ROAD) <https://www.coingecko.com/en/coins/road>`__
+  - `Alchemy (ACOIN) <https://www.coingecko.com/en/coins/alchemy>`__
+  - `VI (VI) <https://www.coingecko.com/en/coins/vid>`__
+  - `Zel (ZEL) <https://www.coingecko.com/en/coins/zelcash>`__
+  - `Axe (AXE) <https://www.coingecko.com/en/coins/axe>`__
+  - `digitalbits (XDB) <https://www.coingecko.com/en/coins/digitalbits>`__
+  - `Sylo (SYLO) <https://www.coingecko.com/en/coins/sylo>`__
+  - `WOM Token (WOM) <https://www.coingecko.com/en/coins/wom-token>`__
+  - `LUKSO (LYXE) <https://www.coingecko.com/en/coins/lukso-token>`__
+  - `Pazzi (PAZZI) <https://www.coingecko.com/en/coins/paparazzi>`__
+  - `Energy Web Token (EWT) <https://www.coingecko.com/en/coins/energy-web-token>`__
+  - `Waves Enterprise (WEST) <https://www.coingecko.com/en/coins/waves-enterprise>`__
+  - `BNS Token (BNS) <https://www.coingecko.com/en/coins/bns-token>`__
+  - `MiL.k (MLK) <https://www.coingecko.com/en/coins/milk>`__
+  - `Safe Haven (SHA) <https://www.coingecko.com/en/coins/safe-haven>`__
+  - `Effect.AI (EFX) <https://www.coingecko.com/en/coins/effect-ai>`__
+  - `Velo (VELO) <https://www.coingecko.com/en/coins/velo>`__
+  - `Burancy (BUY) <https://www.coingecko.com/en/coins/burency>`__
+  - `Sentivate (SNTVT) <https://www.coingecko.com/en/coins/sentivate>`__
+  - `dego.finance (DEGO) <https://www.coingecko.com/en/coins/dego-finance>`__
+  - `Hyprr (uDOO) <https://www.coingecko.com/en/coins/howdoo>`__
+  - `UBIX Network (UBX) <https://www.coingecko.com/en/coins/ubix-network>`__
+  - `Comboos (COMB) <https://www.coingecko.com/en/coins/combo-2>`__
+  - `ReapChain (REAP) <https://www.coingecko.com/en/coins/reapchain>`__
+  - `TE-FOOD/TustChain (TONE) <https://www.coingecko.com/en/coins/te-food>`__
+  - `Opacity (OPCT) <https://www.coingecko.com/en/coins/opacity>`__
+  - `UpBots (UBXT) <https://www.coingecko.com/en/coins/upbots>`__
+  - `ClinTex (CTI) <https://www.coingecko.com/en/coins/clintex-cti>`__
+  - `BUX Token (BUX) <https://www.coingecko.com/en/coins/buxcoin>`__
+  - `MoneySwap (MSWAP) <https://www.coingecko.com/en/coins/moneyswap>`__
+  - `GoMoney2 (GOM2) <https://www.coingecko.com/en/coins/gomoney2>`__
+  - `REVV (REVV) <https://www.coingecko.com/en/coins/revv>`__
+  - `AlpaToken (ALPA) <https://www.coingecko.com/en/coins/alpaca>`__
+  - `Hathor (HTR) <https://www.coingecko.com/en/coins/hathor>`__
+  - `Hydra (HYDRA) <https://www.coingecko.com/en/coins/hydra>`__
+  - `Ferrum Network Token (FRM) <https://www.coingecko.com/en/coins/ferrum-network>`__
+  - `Props Token (PROPS) <https://www.coingecko.com/en/coins/props>`__
+  - `Strong (STRONG) <https://www.coingecko.com/en/coins/strong>`__
+  - `Trias Token (TRIAS) <https://www.coingecko.com/en/coins/trias>`__
+  - `Alphacat (ACAT) <https://www.coingecko.com/en/coins/alphacat>`__
+  - `Achain (ACT) <https://www.coingecko.com/en/coins/achain>`__
+  - `BUMO (BU) <https://www.coingecko.com/en/coins/bumo>`__
+  - `cVToken (CV) <https://www.coingecko.com/en/coins/carvertical>`__
+  - `Decentralized Accessible Content Chain (DACC) <https://www.coingecko.com/en/coins/dacc>`__
+  - `Constellation (DAG) <https://www.coingecko.com/en/coins/constellation-labs>`__
+  - `DeepBrain Chain (DBC) <https://www.coingecko.com/en/coins/deepbrain-chain>`__
+  - `Eden Coin (EDN) <https://www.coingecko.com/en/coins/edenchain>`__
+  - `Electroneum (ETN) <https://www.coingecko.com/en/coins/electroneum>`__
+  - `HPBCoin (HPB) <https://www.coingecko.com/en/coins/high-performance-blockchain>`__
+  - `Kambria Token (KAT) <https://www.coingecko.com/en/coins/kambria>`__
+  - `Master Contract Token Token (MCT) <https://www.coingecko.com/en/coins/master-contract-token>`__
+  - `DeepOnion (ONION) <https://www.coingecko.com/en/coins/deeponion>`__
+  - `THEKEY (TKY) <https://www.coingecko.com/en/coins/thekey>`__
 
 * :release:`1.13.3 <2021-02-11>`
 * :bug:`2342` Binance users should be able to query exchange balances again after Binance broke their api by adding "123" and "456" as test assets.

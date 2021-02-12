@@ -265,6 +265,7 @@ class AssetType(Enum):
     BINANCE_TOKEN = 21
     EOS_TOKEN = 22
     FUSION_TOKEN = 23
+    LUNIVERSE_TOKEN = 24
 
 
 class AssetData(NamedTuple):
@@ -342,6 +343,7 @@ class Location(Enum):
     BITFINEX = 20
     BITCOINDE = 21
     ICONOMI = 22
+    KUCOIN = 23
 
     def __str__(self) -> str:
         if self == Location.EXTERNAL:
@@ -388,6 +390,8 @@ class Location(Enum):
             return 'bitcoinde'
         if self == Location.ICONOMI:
             return 'iconomi'
+        if self == Location.KUCOIN:
+            return 'kucoin'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 
@@ -436,6 +440,8 @@ class Location(Enum):
             return 'U'
         if self == Location.ICONOMI:
             return 'V'
+        if self == Location.KUCOIN:
+            return 'W'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 

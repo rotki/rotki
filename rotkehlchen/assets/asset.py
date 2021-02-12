@@ -167,8 +167,13 @@ WORLD_TO_BITFINEX = {
     'ZB': 'ZBT',
 }
 
+WORLD_TO_KUCOIN = {
+    'BSV': 'BCHSV',
+    'LUNA-2': 'LUNA',
+}
+
 WORLD_TO_ICONOMI = {
-    # In Rotkehlchen LUNA-2 is Terra Luna but in Bittrex it's LUNA
+    # In Rotkehlchen LUNA-2 is Terra Luna but in Iconomi it's LUNA
     'LUNA-2': 'LUNA',
 }
 

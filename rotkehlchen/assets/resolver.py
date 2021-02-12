@@ -34,6 +34,7 @@ asset_type_mapping = {
     'binance token': AssetType.BINANCE_TOKEN,
     'eos token': AssetType.EOS_TOKEN,
     'fusion token': AssetType.FUSION_TOKEN,
+    'luniverse token': AssetType.LUNIVERSE_TOKEN,
 }
 
 

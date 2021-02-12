@@ -4,13 +4,13 @@ from itertools import count
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-from rotkehlchen.fval import FVal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, AssetMovementCategory, Trade
+from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
@@ -61,6 +61,8 @@ def exchange_row_to_location(entry: str) -> Location:
         return Location.BITSTAMP
     if entry == 'Bitfinex':
         return Location.BITFINEX
+    if entry == 'KuCoin':
+        return Location.KUCOIN
     if entry == 'ETH Transaction':
         raise UnsupportedCointrackingEntry(
             'Not importing ETH Transactions from Cointracking. Cointracking does not '
