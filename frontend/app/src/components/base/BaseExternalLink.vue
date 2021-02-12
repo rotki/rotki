@@ -2,6 +2,7 @@
   <a
     :href="$interop.isPackaged ? undefined : href"
     target="_blank"
+    class="text-no-wrap"
     @click="$interop.isPackaged ? openLink() : undefined"
   >
     {{ displayText }}

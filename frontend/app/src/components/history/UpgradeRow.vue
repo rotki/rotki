@@ -1,28 +1,33 @@
 <template>
-  <td :colspan="colspan" class="upgrade-row font-weight-medium">
-    <i18n
-      tag="span"
-      :path="events ? 'upgrade_row.events' : 'upgrade_row.upgrade'"
-      class="d-flex flex-row justify-center"
+  <tr>
+    <td
+      :colspan="$vuetify.breakpoint.xsOnly ? 2 : colspan"
+      class="upgrade-row font-weight-medium"
     >
-      <template #total>
-        {{ total }}
-      </template>
-      <template #limit>
-        {{ limit }}
-      </template>
-      <template #label>
-        {{ label }}
-      </template>
-      <template #link>
-        <base-external-link
-          class="ml-1"
-          :text="$t('upgrade_row.rotki_premium')"
-          :href="$interop.premiumURL"
-        />
-      </template>
-    </i18n>
-  </td>
+      <i18n
+        tag="span"
+        :path="events ? 'upgrade_row.events' : 'upgrade_row.upgrade'"
+        class="d-flex flex-row justify-center align-end"
+      >
+        <template #total>
+          {{ total }}
+        </template>
+        <template #limit>
+          {{ limit }}
+        </template>
+        <template #label>
+          {{ label }}
+        </template>
+        <template #link>
+          <base-external-link
+            class="ml-1"
+            :text="$t('upgrade_row.rotki_premium')"
+            :href="$interop.premiumURL"
+          />
+        </template>
+      </i18n>
+    </td>
+  </tr>
 </template>
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
