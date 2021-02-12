@@ -102,6 +102,9 @@ def test_cryptocompare_asset_support(cryptocompare):
         'NCT-2',   # Name change token but Polyswarm in CC
         'NDX',     # newdex token but Index token in CC
         'ARCH-2',  # Archer DAO Governance token but Archcoin in CC
+        'AC-2',    # Acoconut token but Asiacoin in CC
+        'TON',     # Tontoken but Tokamak network in CC
+        'FNK',     # Finiko token but FunKeyPai network in CC
     )
     for identifier, asset_data in AssetResolver().assets.items():
         potential_support = (
@@ -188,7 +191,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': 'b10f8fc4e93af8195cbb5bb204286399', 'version': 59}
+    last_meta = {'md5': '636601d0b0af53458feae3e2bf002661', 'version': 60}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 

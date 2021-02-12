@@ -8396,7 +8396,7 @@
         "type": "own chain"
     },
     "NEST": {
-        "coingecko": "nest-protocol",
+        "coingecko": "nest",
         "ethereum_address": "0x04abEdA201850aC0124161F037Efd70c74ddC74C",
         "ethereum_token_decimals": 18,
         "name": "NEST",
@@ -12558,7 +12558,7 @@
         "type": "own chain"
     },
     "VBZRX": {
-        "coingecko": "bzx-vesting-token",
+        "coingecko": "vbzrx",
 	"cryptocompare": "",
         "ethereum_address": "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F",
         "ethereum_token_decimals": 18,
