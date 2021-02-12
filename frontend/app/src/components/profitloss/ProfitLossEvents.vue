@@ -16,6 +16,9 @@
           sort-desc
           :footer-props="footerProps"
         >
+          <template #item.type="{ item }">
+            <profit-loss-event-type :type="item.type" />
+          </template>
           <template #item.location="{ item }">
             <location-display :identifier="item.location" />
           </template>
@@ -77,6 +80,15 @@
               />
             </td>
           </template>
+          <template v-if="showUpgradeMessage" #body.append="{ headers }">
+            <upgrade-row
+              events
+              :total="processed"
+              :limit="limit"
+              :colspan="headers.length"
+              :label="$t('profit_loss_events.title')"
+            />
+          </template>
           <template #item.expand="{ item }">
             <row-expander
               v-if="item.costBasis"
@@ -97,7 +109,9 @@ import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
+import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
+import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
 import { footerProps } from '@/config/datatable.common';
 import { ProfitLossEvent } from '@/store/reports/types';
 
@@ -105,13 +119,15 @@ type IndexedProfitLossEvent = ProfitLossEvent & { index: number };
 
 @Component({
   components: {
+    ProfitLossEventType,
+    UpgradeRow,
     CostBasisTable,
     RowExpander,
     DateDisplay,
     AmountDisplay
   },
   computed: {
-    ...mapState('reports', ['currency', 'events']),
+    ...mapState('reports', ['currency', 'events', 'limit', 'processed']),
     ...mapGetters('balances', ['exchangeRate'])
   }
 })
@@ -119,7 +135,13 @@ export default class ProfitLossEvents extends Vue {
   events!: ProfitLossEvent[];
   currency!: string;
   exchangeRate!: (currency: string) => number;
+  limit!: number;
+  processed!: number;
   expanded = [];
+
+  get showUpgradeMessage(): boolean {
+    return this.limit <= this.processed && this.limit > 0;
+  }
 
   get indexedEvents(): IndexedProfitLossEvent[] {
     return this.events.map((value, index) => ({
@@ -131,7 +153,10 @@ export default class ProfitLossEvents extends Vue {
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('profit_loss_events.headers.type').toString(),
-      value: 'type'
+      align: 'center',
+      value: 'type',
+      width: 110,
+      class: 'profit-loss-events__table__header__type'
     },
     {
       text: this.$t('profit_loss_events.headers.location').toString(),
@@ -208,6 +233,12 @@ export default class ProfitLossEvents extends Vue {
   .profit-loss-events {
     &__table {
       &__header {
+        &__type {
+          span {
+            padding-left: 16px;
+          }
+        }
+
         &__location {
           span {
             padding-left: 16px;

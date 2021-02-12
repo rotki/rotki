@@ -19,6 +19,7 @@ from rotkehlchen.constants import (
     EV_SELL,
     EV_TX_GAS_COST,
 )
+from rotkehlchen.accounting.accountant import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.csv_exporter import (
     FILENAME_ALL_CSV,
@@ -81,7 +82,10 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
 
     # Simply check that the results got returned here. The actual correctness of
     # accounting results is checked in other tests such as test_simple_accounting
-    assert len(outcome) == 2
+    assert len(outcome) == 5
+    assert outcome['events_limit'] == FREE_PNL_EVENTS_LIMIT
+    assert outcome['events_processed'] == 27
+    assert outcome['first_processed_timestamp'] == 1428994442
     overview = outcome['overview']
     assert len(overview) == 11
     assert overview["loan_profit"] is not None
@@ -208,7 +212,10 @@ def test_query_history_timerange(rotkehlchen_api_server_with_exchanges):
     assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
-    assert len(data['result']) == 2
+    assert len(data['result']) == 5
+    assert data['result']['events_limit'] == FREE_PNL_EVENTS_LIMIT
+    assert data['result']['events_processed'] == 25
+    assert data['result']['first_processed_timestamp'] == 1428994442
     overview = data['result']['overview']
     assert len(overview) == 11
     assert overview["loan_profit"] is not None

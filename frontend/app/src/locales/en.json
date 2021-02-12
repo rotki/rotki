@@ -491,6 +491,17 @@
   "price_refresh": {
     "button": "Refresh Prices"
   },
+  "profit_loss_event_type": {
+    "asset_movement": "Asset Movement",
+    "buy": "Buy",
+    "defi_event": "DeFi Event",
+    "gas_cost": "Gas Cost",
+    "interest_rate_payment": "Interest Rate Payment",
+    "ledger_action": "Ledger Action",
+    "loan_settlement": "Loan settlement",
+    "margin_position_close": "Margin Position Close",
+    "sell": "Sell"
+  },
   "progress_indicator": {
     "no_tasks": "No running tasks"
   },
@@ -871,6 +882,7 @@
   },
   "upgrade_row": {
     "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
+    "events": "Processed {limit} {label}. To view more please upgrade to {link}",
     "rotki_premium": "rotki Premium"
   },
   "external_trade_form": {
@@ -1861,7 +1873,9 @@
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
     "select_directory": "Select a directory",
     "csv_export_error": "There was an error with Export",
-    "report_period": "Report starting from {start} to {end}"
+    "report_period": "Report starting from {start} to {end}",
+    "upgrade": "{processed} total events have been processed starting from {start}.",
+    "upgrade2": "The limit of the free version has been reached. To get the full report please upgrade to {link}"
   },
   "import_data": {
     "cointracking": {

@@ -5,8 +5,7 @@ import {
 } from '@/store/reports/const';
 import { defaultState, ReportState } from '@/store/reports/state';
 import {
-  ProfitLossEvent,
-  ProfitLossOverviewData,
+  ReportData,
   ReportError,
   ReportPeriod,
   ReportProgress
@@ -15,18 +14,20 @@ import {
 import { AccountingSettings } from '@/typing/types';
 
 export const mutations: MutationTree<ReportState> = {
-  set(
-    state: ReportState,
-    payload: {
-      overview: ProfitLossOverviewData;
-      events: ProfitLossEvent[];
-      currency: string;
-    }
-  ) {
-    const { overview, events } = payload;
+  set(state: ReportState, payload: ReportData) {
+    const {
+      overview,
+      events,
+      processed,
+      limit,
+      firstProcessedTimestamp
+    } = payload;
     state.overview = { ...overview };
     state.events = [...events];
+    state.processed = processed;
+    state.limit = limit;
     state.loaded = true;
+    state.firstProcessedTimestamp = firstProcessedTimestamp;
   },
 
   currency(state: ReportState, currency: string) {

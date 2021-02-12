@@ -6,6 +6,7 @@ from typing import Optional
 
 import pytest
 
+from rotkehlchen.premium.premium import Premium
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -100,15 +101,22 @@ def fixture_accountant(
         function_scope_messages_aggregator,
         start_with_logged_in_user,
         accounting_initialize_parameters,
+        start_with_valid_premium,
+        rotki_premium_credentials,
 ) -> Optional[Accountant]:
     if not start_with_logged_in_user:
         return None
+
+    premium = None
+    if start_with_valid_premium:
+        premium = Premium(rotki_premium_credentials)
 
     accountant = Accountant(
         db=database,
         user_directory=data_dir,
         msg_aggregator=function_scope_messages_aggregator,
         create_csv=accounting_create_csv,
+        premium=premium,
     )
 
     if accounting_initialize_parameters:
