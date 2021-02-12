@@ -163,7 +163,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             passphrase: str,
-            base_uri: str = 'https://openapi-sandbox.kucoin.com',  # 'https://api.kucoin.com',
+            base_uri: str = 'https://api.kucoin.com',
     ):
         super().__init__(str(Location.KUCOIN), api_key, secret, database)
         self.base_uri = base_uri
@@ -200,33 +200,61 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         else:
             raise AssertionError(f'Unexpected case: {case}')
 
-        timestamp = str(ts_now_in_ms())
-        method = 'GET'
-        request_url = f'{self.base_uri}/{api_path}'
-        message = f'{timestamp}{method}/{api_path}'
-        if case in (KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS):
-            urlencoded_options = urlencode(call_options)
-            request_url = f'{request_url}?{urlencoded_options}'
-            message = f'{message}?{urlencoded_options}'
+        retries_left = API_REQUEST_RETRY_TIMES
+        retries_after_seconds = API_REQUEST_RETRIES_AFTER_SECONDS
+        while retries_left >= 0:
+            timestamp = str(ts_now_in_ms())
+            method = 'GET'
+            request_url = f'{self.base_uri}/{api_path}'
+            message = f'{timestamp}{method}/{api_path}'
+            if case in (KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS):
+                urlencoded_options = urlencode(call_options)
+                request_url = f'{request_url}?{urlencoded_options}'
+                message = f'{message}?{urlencoded_options}'
 
-        signature = base64.b64encode(
-            hmac.new(
-                self.secret,
-                msg=message.encode('utf-8'),
-                digestmod=hashlib.sha256,
-            ).digest(),
-        ).decode('utf-8')
-        self.session.headers.update({
-            'KC-API-SIGN': signature,
-            'KC-API-TIMESTAMP': timestamp,
-        })
-        log.debug('Kucoin API request', request_url=request_url)
-        try:
-            response = self.session.get(url=request_url)
-        except requests.exceptions.RequestException as e:
-            raise RemoteError(
-                f'Kucoin {method} request at {request_url} connection error: {str(e)}.',
-            ) from e
+            signature = base64.b64encode(
+                hmac.new(
+                    self.secret,
+                    msg=message.encode('utf-8'),
+                    digestmod=hashlib.sha256,
+                ).digest(),
+            ).decode('utf-8')
+            self.session.headers.update({
+                'KC-API-SIGN': signature,
+                'KC-API-TIMESTAMP': timestamp,
+            })
+            log.debug('Kucoin API request', request_url=request_url)
+            try:
+                response = self.session.get(url=request_url)
+            except requests.exceptions.RequestException as e:
+                raise RemoteError(
+                    f'Kucoin {method} request at {request_url} connection error: {str(e)}.',
+                ) from e
+
+            # Check request rate limit
+            if response.status_code in (HTTPStatus.FORBIDDEN, HTTPStatus.TOO_MANY_REQUESTS):
+                if retries_left == 0:
+                    msg = (
+                        f'Kucoin {case} request failed after retrying '
+                        f'{API_REQUEST_RETRY_TIMES} times.'
+                    )
+                    self.msg_aggregator.add_error(
+                        f'Got remote error while querying kucoin {case}: {msg}',
+                    )
+                    return response
+
+                # Trigger retry
+                log.debug(
+                    f'Kucoin {case} request reached the rate limits. Backing off',
+                    seconds=retries_after_seconds,
+                    options=call_options,
+                )
+                retries_left -= 1
+                gevent.sleep(retries_after_seconds)
+                retries_after_seconds *= 2
+                continue
+
+            break
 
         return response
 
@@ -279,36 +307,11 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         call_options = options.copy()
         results: Union[List[Trade], List[AssetMovement]] = []  # type: ignore # bug list nothing
-        retries_left = API_REQUEST_RETRY_TIMES
-        retries_after_seconds = API_REQUEST_RETRIES_AFTER_SECONDS
-        while retries_left >= 0:
+        while True:
             response = self._api_query(
                 case=case,
                 options=call_options,
             )
-            # Check request rate limit
-            if response.status_code in (HTTPStatus.FORBIDDEN, HTTPStatus.TOO_MANY_REQUESTS):
-                if retries_left == 0:
-                    msg = (
-                        f'Kucoin {case} request failed after retrying '
-                        f'{API_REQUEST_RETRY_TIMES} times.'
-                    )
-                    self.msg_aggregator.add_error(
-                        f'Got remote error while querying kucoin {case}: {msg}',
-                    )
-                    return []  # type: ignore # bug list nothing
-
-                # Trigger retry
-                log.debug(
-                    f'Kucoin {case} request reached the rate limits. Backing off',
-                    seconds=retries_after_seconds,
-                    options=call_options,
-                )
-                retries_left -= 1
-                gevent.sleep(retries_after_seconds)
-                retries_after_seconds *= 2
-                continue
-
             if response.status_code != HTTPStatus.OK:
                 return self._process_unsuccessful_response(
                     response=response,
@@ -386,7 +389,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             # NB: Copying the dict before updating it prevents losing the call args values
             call_options = call_options.copy()
             call_options['currentPage'] = current_page + 1
-            # break
+
         return results
 
     def _deserialize_accounts_balances(

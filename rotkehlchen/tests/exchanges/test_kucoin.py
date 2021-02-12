@@ -72,9 +72,9 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin):
             ))
 
 
-def test_api_query_paginated_retries_request(mock_kucoin):
+def test_api_query_retries_request(mock_kucoin):
 
-    def get_paginated_response():
+    def get_response():
         results = [
             """{"code":400007,"msg":"unknown error"}""",
             """{"code":400007,"msg":"unknown error"}""",
@@ -82,10 +82,10 @@ def test_api_query_paginated_retries_request(mock_kucoin):
         for result_ in results:
             yield result_
 
-    def mock_api_query_response(case, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(url):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, next(get_response))
 
-    get_response = get_paginated_response()
+    get_response = get_response()
     api_request_retry_times_patch = patch(
         target='rotkehlchen.exchanges.kucoin.API_REQUEST_RETRY_TIMES',
         new=1,
@@ -95,26 +95,24 @@ def test_api_query_paginated_retries_request(mock_kucoin):
         new=0,
     )
     api_query_patch = patch.object(
-        target=mock_kucoin,
-        attribute='_api_query',
+        target=mock_kucoin.session,
+        attribute='get',
         side_effect=mock_api_query_response,
     )
     with ExitStack() as stack:
         stack.enter_context(api_request_retry_times_patch)
         stack.enter_context(api_request_retry_after_seconds_patch)
         stack.enter_context(api_query_patch)
-        result = mock_kucoin._api_query_paginated(
+        result = mock_kucoin._api_query(
             options={
                 'currentPage': 1,
                 'pageSize': 500,
                 'tradeType': 'TRADE',
             },
             case=KucoinCase.TRADES,
-            start_ts=Timestamp(0),
-            end_ts=Timestamp(1612556794259),
         )
 
-    assert result == []
+    assert result.status_code == HTTPStatus.TOO_MANY_REQUESTS
     errors = mock_kucoin.msg_aggregator.consume_errors()
     assert len(errors) == 1
     expected_error = (
