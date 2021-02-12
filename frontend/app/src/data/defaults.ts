@@ -31,6 +31,7 @@ export const EXCHANGE_BITSTAMP = 'bitstamp';
 export const EXCHANGE_BINANCE_US = 'binance_us';
 export const EXCHANGE_BITCOIN_DE = 'bitcoinde';
 export const EXCHANGE_ICONOMI = 'iconomi';
+export const EXCHANGE_KUCOIN = 'kucoin';
 
 export const EXCHANGE_UNISWAP = 'uniswap';
 
@@ -57,7 +58,8 @@ export const SUPPORTED_EXCHANGES = [
   EXCHANGE_COINBASEPRO,
   EXCHANGE_GEMINI,
   EXCHANGE_ICONOMI,
-  EXCHANGE_BITSTAMP
+  EXCHANGE_BITSTAMP,
+  EXCHANGE_KUCOIN
 ] as const;
 
 export const SUPPORTED_TRADE_LOCATIONS = [

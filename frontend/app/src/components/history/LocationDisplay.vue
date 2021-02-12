@@ -1,5 +1,5 @@
 <template>
-  <location-icon class="location-display" :item="location" />
+  <location-icon class="location-display" :item="location" :icon="icon" />
 </template>
 
 <script lang="ts">
@@ -23,6 +23,8 @@ export default class LocationDisplay extends Vue {
   readonly tradeLocations = tradeLocations;
   @Prop({ required: true, type: String })
   identifier!: TradeLocation;
+  @Prop({ required: false, type: Boolean, default: false })
+  icon!: boolean;
 
   assetInfo!: (key: string) => SupportedAsset;
 

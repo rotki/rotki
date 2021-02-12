@@ -75,7 +75,7 @@
         />
 
         <revealable-input
-          v-if="selectedExchange === 'coinbasepro'"
+          v-if="requiresPassphrase"
           v-model="passphrase"
           prepend-icon="mdi-key-plus"
           class="exchange-settings__fields__passphrase"
@@ -127,7 +127,11 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import ExchangeBadge from '@/components/ExchangeBadge.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { SUPPORTED_EXCHANGES } from '@/data/defaults';
+import {
+  EXCHANGE_COINBASEPRO,
+  EXCHANGE_KUCOIN,
+  SUPPORTED_EXCHANGES
+} from '@/data/defaults';
 import { SupportedExchange } from '@/services/balances/types';
 import { ExchangePayload } from '@/store/balances/types';
 import { trimOnPaste } from '@/utils/event';
@@ -162,6 +166,11 @@ export default class ExchangeSettings extends Vue {
   removeExchange!: (exchange: string) => Promise<boolean>;
   krakenAccountTypes = ['starter', 'intermediate', 'pro'];
   selectedKrakenAccountType = '';
+
+  get requiresPassphrase(): boolean {
+    const exchange = this.selectedExchange;
+    return exchange === EXCHANGE_COINBASEPRO || exchange === EXCHANGE_KUCOIN;
+  }
 
   get exchanges(): SupportedExchange[] {
     return SUPPORTED_EXCHANGES.filter(

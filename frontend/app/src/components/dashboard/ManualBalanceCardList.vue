@@ -6,7 +6,7 @@
     to="/accounts-balances/manual-balances"
   >
     <v-list-item-avatar tile class="manual-balance-box__icon">
-      <balance-location-icon :name="name" />
+      <location-display :identifier="name" icon />
     </v-list-item-avatar>
     <v-list-item-content>
       <v-list-item-title class="d-flex justify-space-between">
@@ -29,14 +29,13 @@
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
-import BalanceLocationIcon from '@/components/dashboard/BalanceLocationIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Currency } from '@/model/currency';
 
 const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { AmountDisplay, BalanceLocationIcon },
+  components: { AmountDisplay },
   computed: {
     ...mapGetters(['currency'])
   }
