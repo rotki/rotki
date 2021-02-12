@@ -243,6 +243,12 @@ jobs:
           python3 -m virtualenv ~/venv
           source ~/venv/bin/activate
           ./package.sh
+        env:
+          CERTIFICATE_OSX_APPLICATION: ${{ secrets.CERTIFICATE_OSX_APPLICATION }}
+          CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+          IDENTITY: ${{ secrets.IDENTITY }}
+          APPLEID: ${{ secrets.APPLEID }}
+          APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:

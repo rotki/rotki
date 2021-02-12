@@ -84,6 +84,25 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
+if [[ -n "${CI-}" ]] && [[ "$OSTYPE" == "darwin"* ]]; then
+  echo "Preparing to sign backend binary for osx"
+  KEY_CHAIN=rotki-build.keychain
+  CSC_LINK=/tmp/certificate.p12
+  export CSC_LINK
+  # Recreate the certificate from the secure environment variable
+  echo $CERTIFICATE_OSX_APPLICATION | base64 --decode > $CSC_LINK
+  #create a keychain
+  security create-keychain -p actions $KEY_CHAIN
+  # Make the keychain the default so identities are found
+  security default-keychain -s $KEY_CHAIN
+  # Unlock the keychain
+  security unlock-keychain -p actions $KEY_CHAIN
+  security import $CSC_LINK -k $KEY_CHAIN -P $CSC_KEY_PASSWORD -T /usr/bin/codesign;
+  security set-key-partition-list -S apple-tool:,apple: -s -k actions $KEY_CHAIN
+
+  codesign --deep --force --options runtime --entitlements ./packaging/entitlements.plist --sign $IDENTITY ./rotkehlchen_py_dist/$PYINSTALLER_GENERATED_EXECUTABLE --timestamp || exit 1
+  codesign --verify --verbose ./rotkehlchen_py_dist/$PYINSTALLER_GENERATED_EXECUTABLE || exit 1
+fi
 
 # From here and on we go into the frontend/app directory
 cd frontend/app || exit 1
@@ -122,6 +141,11 @@ fi
 
 if [[ -n "${CI-}" ]]; then
   echo "::endgroup::"
+fi
+
+if [[ -n "${CI-}" ]] && [[ "$OSTYPE" == "darwin"* ]]; then
+  # remove certs
+  rm -fr /tmp/*.p12
 fi
 
 echo "Packaging finished for Rotki ${ROTKEHLCHEN_VERSION}"
