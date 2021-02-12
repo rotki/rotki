@@ -738,36 +738,42 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async addManualBalance({ commit, dispatch }, balance: ManualBalance) {
-    let result = false;
+  async addManualBalance(
+    { commit, dispatch },
+    balance: ManualBalance
+  ): Promise<ActionStatus> {
     try {
       const { balances } = await api.balances.addManualBalances([balance]);
       commit('manualBalances', balances);
-      result = true;
       dispatch('refreshPrices', false);
+      return {
+        success: true
+      };
     } catch (e) {
-      showError(
-        `${e.message}`,
-        i18n.t('actions.balances.manual_add.error.title').toString()
-      );
+      return {
+        success: false,
+        message: e.message
+      };
     }
-    return result;
   },
 
-  async editManualBalance({ commit, dispatch }, balance: ManualBalance) {
-    let result = false;
+  async editManualBalance(
+    { commit, dispatch },
+    balance: ManualBalance
+  ): Promise<ActionStatus> {
     try {
       const { balances } = await api.balances.editManualBalances([balance]);
       commit('manualBalances', balances);
-      result = true;
       dispatch('refreshPrices', false);
+      return {
+        success: true
+      };
     } catch (e) {
-      showError(
-        `${e.message}`,
-        i18n.t('actions.balances.manual_edit.error.title').toString()
-      );
+      return {
+        success: false,
+        message: e.message
+      };
     }
-    return result;
   },
 
   async deleteManualBalance({ commit }, label: string) {

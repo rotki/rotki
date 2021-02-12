@@ -4,25 +4,30 @@
       v-model="label"
       class="manual-balances-form__label"
       :label="$t('manual_balances_form.fields.label')"
-      :error-messages="errorMessages"
+      :error-messages="errors['label']"
       :rules="labelRules"
       :disabled="pending || !!edit"
+      @focus="delete errors['label']"
     />
     <asset-select
       v-model="asset"
       :label="$t('manual_balances_form.fields.asset')"
+      :error-messages="errors['asset']"
       class="manual-balances-form__asset"
       :rules="assetRules"
       :disabled="pending"
+      @focus="delete errors['asset']"
     />
     <v-text-field
       v-model="amount"
       :label="$t('manual_balances_form.fields.amount')"
+      :error-messages="errors['amount']"
       class="manual-balances-form__amount"
       type="number"
       autocomplete="off"
       :disabled="pending"
       :rules="amountRules"
+      @focus="delete errors['amount']"
     />
     <tag-input
       v-model="tags"
@@ -33,26 +38,34 @@
     <location-selector
       v-model="location"
       class="manual-balances-form__location"
+      :error-messages="errors['location']"
       :disabled="pending"
       :label="$t('manual_balances_form.fields.location')"
+      @focus="delete errors['location']"
     />
   </v-form>
 </template>
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { ManualBalance } from '@/services/balances/types';
+import { deserializeApiErrorMessage } from '@/services/converters';
 import { TradeLocation } from '@/services/history/types';
+import { ActionStatus } from '@/store/types';
+import { bigNumberify } from '@/utils/bignumbers';
 
 @Component({
   components: { LocationSelector, TagInput, AssetSelect },
   computed: {
     ...mapGetters('balances', ['manualLabels'])
+  },
+  methods: {
+    ...mapActions('balances', ['addManualBalance', 'editManualBalance'])
   }
 })
 export default class ManualBalancesForm extends Vue {
@@ -60,6 +73,9 @@ export default class ManualBalancesForm extends Vue {
   edit!: ManualBalance | null;
   @Prop({ required: true, type: Boolean })
   value!: boolean;
+
+  editManualBalance!: (balance: ManualBalance) => Promise<ActionStatus>;
+  addManualBalance!: (balance: ManualBalance) => Promise<ActionStatus>;
 
   @Watch('edit', { immediate: true })
   onEdit(balance: ManualBalance | null) {
@@ -80,15 +96,16 @@ export default class ManualBalancesForm extends Vue {
       return;
     }
 
+    const errors = this.errors['label'];
     if (this.manualLabels.includes(label)) {
-      if (this.errorMessages.length > 0) {
+      if (errors && errors.length > 0) {
         return;
       }
-      this.errorMessages.push(
+      this.errors['label'] = [
         this.$tc('manual_balances_form.validation.label_exists', 0, { label })
-      );
+      ];
     } else {
-      this.errorMessages.pop();
+      delete this.errors['label'];
     }
   }
 
@@ -96,7 +113,7 @@ export default class ManualBalancesForm extends Vue {
   pending: boolean = false;
 
   manualLabels!: string[];
-  errorMessages: string[] = [];
+  errors: { [key: string]: string[] } = {};
 
   asset: string = '';
   label: string = '';
@@ -124,25 +141,33 @@ export default class ManualBalancesForm extends Vue {
 
   private reset() {
     (this.$refs?.form as any)?.reset();
-    this.errorMessages.pop();
+    this.errors = {};
   }
 
   async save(): Promise<boolean> {
     this.pending = true;
-    const action =
-      this.edit === null ? 'addManualBalance' : 'editManualBalance';
-    const success: boolean = await this.$store.dispatch(`balances/${action}`, {
+    const balance: ManualBalance = {
       asset: this.asset,
-      amount: this.amount,
+      amount: bigNumberify(this.amount),
       label: this.label,
       tags: this.tags,
       location: this.location
-    });
+    };
+    const status = await (this.edit
+      ? this.editManualBalance(balance)
+      : this.addManualBalance(balance));
+
     this.pending = false;
-    if (success) {
+
+    if (status.success) {
       this.clear();
       this.reset();
       return true;
+    }
+
+    if (status.message) {
+      const errorMessages = deserializeApiErrorMessage(status.message);
+      this.errors = (errorMessages?.balances[0] as any) ?? {};
     }
     return false;
   }
