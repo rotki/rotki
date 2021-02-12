@@ -16071,5 +16071,47 @@
         "started": 1518912000,
         "symbol": "TKY",
         "type": "neo token"
+    },
+    "LIT": {
+        "coingecko": "litentry",
+        "ethereum_address": "0xb59490aB09A0f526Cc7305822aC65f2Ab12f9723",
+        "ethereum_token_decimals": 18,
+        "name": "Litentry",
+        "started": 1611494689,
+        "symbol": "LIT",
+        "type": "ethereum token"
+    },
+    "PROS": {
+        "coingecko": "prosper",
+        "ethereum_address": "0x8642A849D0dcb7a15a974794668ADcfbe4794B56",
+        "ethereum_token_decimals": 18,
+        "name": "Prosper",
+        "started": 1608048948,
+        "symbol": "PROS",
+        "type": "ethereum token"
+    },
+    "SFP": {
+        "coingecko": "safepal",
+        "name": "SafePal",
+        "started": 1612656000,
+        "symbol": "SFP",
+        "type": "binance token"
+    },
+    "VAI": {
+        "coingecko": "vai",
+        "name": "Vai",
+        "started": 1612656000,
+        "symbol": "VAI",
+        "type": "binance token"
+    },
+    "FNK": {
+        "coingecko": "finiko",
+        "cryptocompare": "",
+        "ethereum_address": "0xB5FE099475d3030DDe498c3BB6F3854F762A48Ad",
+        "ethereum_token_decimals": 18,
+        "name": "Finiko",
+        "started": 1606832874,
+        "symbol": "FNK",
+        "type": "ethereum token"
     }
 }
