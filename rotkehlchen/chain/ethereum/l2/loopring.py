@@ -27,11 +27,11 @@ from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsonloads
 
 logger = logging.getLogger(__name__)
 
@@ -152,6 +152,10 @@ TOKENID_TO_ASSET = {
 }
 
 
+class LoopringAPIKeyMismatch(Exception):
+    pass
+
+
 class Loopring(ExternalServiceWithApiKey, EthereumModule):
 
     def __init__(self, database: DBHandler, msg_aggregator: MessagesAggregator) -> None:
@@ -184,6 +188,19 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
             response = self.session.get(querystr)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Loopring api query {querystr} failed due to {str(e)}')
+        if response.status_code == HTTPStatus.BAD_REQUEST:
+            try:
+                json_ret = rlk_jsonloads(response.text)
+            except JSONDecodeError as e:
+                raise RemoteError(
+                    f'Loopring API {response.url} returned invalid '
+                    f'JSON response: {response.text}',
+                ) from e
+
+            code = json_ret.get('code', None)
+            if code and code == 104002:
+                raise LoopringAPIKeyMismatch()
+            # else just let it hit the generic remote error below
 
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
@@ -193,7 +210,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
             )
 
         try:
-            json_ret = rlk_jsonloads_dict(response.text)
+            json_ret = rlk_jsonloads(response.text)
         except JSONDecodeError as e:
             raise RemoteError(
                 f'Loopring API {response.url} returned invalid '
@@ -226,7 +243,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
             return account_id
 
         response = self._api_query('account', {'owner': l1_address})
-        account_id = response.get('account_id', None)
+        account_id = response.get('accountId', None)
         if account_id is None:
             raise RemoteError(
                 f'The loopring api account response {response} did not contain '
@@ -248,7 +265,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
         for balance_entry in response:
             try:
                 token_id = balance_entry['tokenId']
-                total = deserialize_asset_amount(balance_entry['total'])
+                total = balance_entry['total']
             except KeyError as e:
                 raise RemoteError(
                     f'Failed to query loopring balances because a balance entry '
@@ -270,6 +287,9 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
                 )
                 continue
 
+            # not checking for UnsupportedAsset since this should not happen thanks
+            # to the mapping above
+            amount = asset_normalized_value(amount=total, asset=asset)
             try:
                 usd_price = Inquirer().find_usd_price(asset)
             except RemoteError as e:
@@ -279,7 +299,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
                 )
                 continue
 
-            balances[asset] = Balance(amount=total, usd_value=total * usd_price)
+            balances[asset] = Balance(amount=amount, usd_value=amount * usd_price)
 
         return balances
 
@@ -301,7 +321,15 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
         result = {}
         for address in addresses:
             account_id = self.ethereum_account_to_loopring_id(l1_address=address)
-            balances = self.get_account_balances(account_id=account_id)
+            try:
+                balances = self.get_account_balances(account_id=account_id)
+            except LoopringAPIKeyMismatch:
+                self.msg_aggregator.add_warning(
+                    f'The given loopring API key does not match '
+                    f'address {address}. Skipping its query.',
+                )
+                continue
+
             if balances != {}:
                 result[address] = balances
 

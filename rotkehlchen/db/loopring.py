@@ -23,7 +23,7 @@ class DBLoopring():
     def remove_accountid_mapping(self, address: ChecksumEthAddress) -> None:
         cursor = self.db.conn.cursor()
         cursor.execute(
-            'DELETE FROM multisettings WHERE name="?";',
+            'DELETE FROM multisettings WHERE name=?;',
             (f'loopring_{address}_account_id',),
         )
         self.db.conn.commit()
@@ -32,7 +32,7 @@ class DBLoopring():
     def get_accountid_mapping(self, address: ChecksumEthAddress) -> Optional[int]:
         cursor = self.db.conn.cursor()
         query = cursor.execute(
-            'SELECT value FROM multisettings WHERE name="?";',
+            'SELECT value FROM multisettings WHERE name=?;',
             (f'loopring_{address}_account_id',),
         )
         query = query.fetchall()
