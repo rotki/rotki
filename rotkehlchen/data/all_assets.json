@@ -642,6 +642,15 @@
         "symbol": "APX",
         "type": "Ubiq token"
     },
+    "APY": {
+    	"coingecko": "apy-finance",
+    	"ethereum_address": "0x95a4492f028aa1fd432ea71146b433e7b4446611",
+    	"ethereum_token_decimals": 18,
+    	"name": "APY.Finance",
+    	"started": 1604545092,
+    	"symbol": "APY",
+   	"type": "ethereum token"
+    },
     "AR": {
         "coingecko": "arweave",
         "name": "Arweave",
@@ -8355,6 +8364,15 @@
         "started": 1524250249,
         "symbol": "NEXO",
         "type": "ethereum token"
+    },
+    "NFTX": {
+    	"coingecko": "nftx",
+    	"ethereum_address": "0x87d73e916d7057945c9bcd8cdd94e42a6f47f776",
+    	"ethereum_token_decimals": 18,
+    	"name": "NFTX",
+    	"started": 1605424498,
+    	"symbol": "NFTX",
+   	"type": "ethereum token"
     },
     "NGC": {
         "coingecko": "naga",
