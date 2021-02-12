@@ -78,6 +78,9 @@ class Accountant():
         del self.events
         del self.csvexporter
 
+    def deactivate_premium_status(self) -> None:
+        self.premium = None
+
     @property
     def general_trade_pl(self) -> FVal:
         return self.events.general_trade_profit_loss

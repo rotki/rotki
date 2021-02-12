@@ -318,12 +318,13 @@ class Rotkehlchen():
     def logout(self) -> None:
         if not self.user_is_logged_in:
             return
-
         user = self.data.username
         log.info(
             'Logging out user',
             user=user,
         )
+
+        self.deactivate_premium_status()
         self.greenlet_manager.clear()
         del self.chain_manager
         self.exchange_manager.delete_all_exchanges()
@@ -335,8 +336,6 @@ class Rotkehlchen():
         del self.events_historian
         del self.data_importer
 
-        if self.premium is not None:
-            del self.premium
         self.data.logout()
         self.password = ''
         self.cryptocompare.unset_database()
@@ -364,6 +363,7 @@ class Rotkehlchen():
         else:
             self.premium = premium_create_and_verify(credentials)
             self.premium_sync_manager.premium = self.premium
+            self.accountant.premium = self.premium
 
         self.data.db.set_rotkehlchen_premium(credentials)
 
@@ -382,6 +382,7 @@ class Rotkehlchen():
         self.premium = None
         self.premium_sync_manager.premium = None
         self.chain_manager.deactivate_premium_status()
+        self.accountant.deactivate_premium_status()
 
     def start(self) -> gevent.Greenlet:
         assert not self.main_loop_spawned, 'Tried to spawn the main loop twice'
