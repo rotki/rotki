@@ -11,7 +11,7 @@ from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.errors import DeserializationError, UnknownAsset
-from rotkehlchen.externalapis.coingecko import Coingecko, DELISTED_ASSETS
+from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.typing import AssetType
 from rotkehlchen.utils.hashing import file_md5
 
@@ -188,7 +188,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '415b54ba0afd4a552a3e7313c881ac07', 'version': 58}
+    last_meta = {'md5': 'b10f8fc4e93af8195cbb5bb204286399', 'version': 59}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 

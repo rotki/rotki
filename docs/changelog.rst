@@ -15,6 +15,11 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `Liquid staked Ether 2.0 (stETH) <https://www.coingecko.com/en/coins/lido-staked-ether>`__
+  - `Litentry (LIT) <https://www.coingecko.com/en/coins/litentry>`__
+  - `Prosper (PROS) <https://www.coingecko.com/en/coins/prosper>`__
+  - `SafePal (SFP) <https://www.coingecko.com/en/coins/safepal>`__
+  - `Vai (VAI) <https://www.coingecko.com/en/coins/vai>`__
+  - `Finiko (FNK) <https://www.coingecko.com/en/coins/finiko>`__
 
 * :release:`1.13.3 <2021-02-11>`
 * :bug:`2342` Binance users should be able to query exchange balances again after Binance broke their api by adding "123" and "456" as test assets.
