@@ -17,6 +17,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
+  - `BoringDAO BTC (oBTC) <https://www.coingecko.com/en/coins/boringdao-btc>`__
   - `Woo trade network (WOO) <https://www.coingecko.com/en/coins/wootrade-network>`__
   - `ACoconut (AC) <https://www.coingecko.com/en/coins/acoconut>`__
   - `DeFiner (FIN) <https://www.coingecko.com/en/coins/definer>`__

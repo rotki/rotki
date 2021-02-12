@@ -8730,6 +8730,16 @@
         "symbol": "OAX",
         "type": "ethereum token"
     },
+    "OBTC": {
+        "coingecko": "boringdao-btc",
+        "cryptocompare": "",
+        "ethereum_address": "0x8064d9Ae6cDf087b1bcd5BDf3531bD5d8C537a68",
+        "ethereum_token_decimals": 18,
+        "name": "BoringDAO BTC",
+        "started": 1605169554,
+        "symbol": "oBTC",
+        "type": "ethereum token"
+    },
     "OCC": {
         "coingecko": "",
         "cryptocompare": "OCC",
