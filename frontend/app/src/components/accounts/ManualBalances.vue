@@ -100,11 +100,7 @@ export default class ManualBalances extends Vue {
   async save() {
     this.dialogDisabled = true;
     this.dialogLoading = true;
-
-    interface dataForm extends Vue {
-      save(): Promise<boolean>;
-    }
-    const form = this.$refs.dialogChild as dataForm;
+    const form = this.$refs.dialogChild as ManualBalancesForm;
     const success = await form.save();
     this.dialogDisabled = false;
     this.dialogLoading = false;

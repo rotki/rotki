@@ -2,7 +2,9 @@
 Changelog
 =========
 
+
 * :feature:`297` Rotki now supports KuCoin. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
+* :feature:`1436` Users will now see any validation errors when adding manual balances under their respective inputs instead of a modal dialog.
 * :feature:`2330` Users can now easily navigate to the respective pages by clicking the dashboard cards titles for manual balances, blockchain balances and exchange balances.
 * :feature:`2237` Users can now choose which ledger actions are taken into account in the PnL report by customizing a setting. Two new ledger action types are added. Airdrop and Gift.
 * :feature:`1794` Users who create a Profit and Loss report will now be able to see a cost basis calculation in the events of the report and in the exported trades.csv and all_events.csv
