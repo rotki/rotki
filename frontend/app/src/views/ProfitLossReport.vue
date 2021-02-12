@@ -51,6 +51,32 @@
           </i18n>
         </v-col>
       </v-row>
+      <v-row>
+        <v-col class="subtitle-1">
+          <i18n
+            v-if="(limit > 0) & (processed > limit)"
+            tag="div"
+            path="profit_loss_report.upgrade"
+          >
+            <template #processed>
+              <span class="font-weight-medium">{{ processed }}</span>
+            </template>
+            <template #start>
+              <date-display
+                :timestamp="firstProcessedTimestamp"
+                class="font-weight-medium"
+                no-timezone
+              />
+            </template>
+            <template #link>
+              <base-external-link
+                :text="$t('upgrade_row.rotki_premium')"
+                :href="$interop.premiumURL"
+              />
+            </template>
+          </i18n>
+        </v-col>
+      </v-row>
       <accounting-settings-display
         :accounting-settings="accountingSettings"
         class="mt-4"
@@ -85,6 +111,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -100,6 +127,7 @@ import { AccountingSettings, ProfitLossPeriod } from '@/typing/types';
 
 @Component({
   components: {
+    BaseExternalLink,
     ErrorScreen,
     ProfitLossOverview,
     ProfitLossEvents,
@@ -115,7 +143,10 @@ import { AccountingSettings, ProfitLossPeriod } from '@/typing/types';
       'loaded',
       'accountingSettings',
       'reportPeriod',
-      'reportError'
+      'reportError',
+      'processed',
+      'limit',
+      'firstProcessedTimestamp'
     ]),
     ...mapGetters('session', ['currency'])
   }
@@ -125,10 +156,14 @@ export default class ProfitLossReport extends Vue {
   loaded!: boolean;
   currency!: Currency;
   progress!: string;
+  limit!: string;
   processingState!: string;
   accountingSettings!: AccountingSettings;
   reportPeriod!: ReportPeriod;
   reportError!: ReportError;
+
+  firstProcessedTimestamp!: number;
+  processed!: number;
 
   get isRunning(): boolean {
     return this.isTaskRunning(TaskType.TRADE_HISTORY);

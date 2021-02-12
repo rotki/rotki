@@ -11,11 +11,13 @@ export type ReportData = {
   readonly events: ProfitLossEvent[];
   readonly limit: number;
   readonly processed: number;
+  readonly firstProcessedTimestamp: number;
 };
 
 export interface TradeHistory {
   readonly eventsProcessed: number;
   readonly eventsLimit: number;
+  readonly firstProcessedTimestamp: number;
   readonly overview: ProfitLossOverviewData;
   readonly allEvents: ProfitLossEvent[];
 }

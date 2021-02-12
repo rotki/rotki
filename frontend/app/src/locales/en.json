@@ -882,6 +882,7 @@
   },
   "upgrade_row": {
     "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
+    "events": "Processed {limit} {label}. To view more please upgrade to {link}",
     "rotki_premium": "rotki Premium"
   },
   "external_trade_form": {
@@ -1872,7 +1873,8 @@
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
     "select_directory": "Select a directory",
     "csv_export_error": "There was an error with Export",
-    "report_period": "Report starting from {start} to {end}"
+    "report_period": "Report starting from {start} to {end}",
+    "upgrade": "{processed} total events have been processed starting from {start}. The limit of the free version as been reached. To get the full report please upgrade to {link}"
   },
   "import_data": {
     "cointracking": {

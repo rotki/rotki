@@ -15,6 +15,7 @@ import {
 import { AccountingSettings } from '@/typing/types';
 
 export interface ReportState {
+  firstProcessedTimestamp: number;
   processed: number;
   limit: number;
   overview: ProfitLossOverviewData;
@@ -32,6 +33,7 @@ export const defaultState = (): ReportState => ({
   events: [],
   processed: -1,
   limit: -1,
+  firstProcessedTimestamp: -1,
   accountingSettings: null,
   reportPeriod: emptyPeriod(),
   currency: currencies[0].ticker_symbol,

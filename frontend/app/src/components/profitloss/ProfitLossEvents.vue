@@ -82,6 +82,7 @@
           </template>
           <template v-if="showUpgradeMessage" #body.append="{ headers }">
             <upgrade-row
+              events
               :total="processed"
               :limit="limit"
               :colspan="headers.length"

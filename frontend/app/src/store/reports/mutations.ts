@@ -15,12 +15,19 @@ import { AccountingSettings } from '@/typing/types';
 
 export const mutations: MutationTree<ReportState> = {
   set(state: ReportState, payload: ReportData) {
-    const { overview, events, processed, limit } = payload;
+    const {
+      overview,
+      events,
+      processed,
+      limit,
+      firstProcessedTimestamp
+    } = payload;
     state.overview = { ...overview };
     state.events = [...events];
     state.processed = processed;
     state.limit = limit;
     state.loaded = true;
+    state.firstProcessedTimestamp = firstProcessedTimestamp;
   },
 
   currency(state: ReportState, currency: string) {

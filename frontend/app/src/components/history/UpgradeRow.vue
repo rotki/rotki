@@ -2,7 +2,7 @@
   <td :colspan="colspan" class="upgrade-row font-weight-medium">
     <i18n
       tag="span"
-      path="upgrade_row.upgrade"
+      :path="events ? 'upgrade_row.events' : 'upgrade_row.upgrade'"
       class="d-flex flex-row justify-center"
     >
       <template #total>
@@ -42,6 +42,8 @@ export default class UpgradeRow extends Vue {
   total!: number;
   @Prop({ required: true, type: Number })
   limit!: number;
+  @Prop({ required: false, type: Boolean, default: false })
+  events!: boolean;
 }
 </script>
 
