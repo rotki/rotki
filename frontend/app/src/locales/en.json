@@ -1874,7 +1874,8 @@
     "select_directory": "Select a directory",
     "csv_export_error": "There was an error with Export",
     "report_period": "Report starting from {start} to {end}",
-    "upgrade": "{processed} total events have been processed starting from {start}. The limit of the free version has been reached. To get the full report please upgrade to {link}"
+    "upgrade": "{processed} total events have been processed starting from {start}.",
+    "upgrade2": "The limit of the free version has been reached. To get the full report please upgrade to {link}"
   },
   "import_data": {
     "cointracking": {

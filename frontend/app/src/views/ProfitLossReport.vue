@@ -51,13 +51,9 @@
           </i18n>
         </v-col>
       </v-row>
-      <v-row>
-        <v-col class="subtitle-1">
-          <i18n
-            v-if="(limit > 0) & (processed > limit)"
-            tag="div"
-            path="profit_loss_report.upgrade"
-          >
+      <v-card v-if="(limit > 0) & (processed > limit)" class="mt-4 mb-8">
+        <v-card-text class="subtitle-1">
+          <i18n tag="div" path="profit_loss_report.upgrade">
             <template #processed>
               <span class="font-weight-medium">{{ processed }}</span>
             </template>
@@ -68,6 +64,8 @@
                 no-timezone
               />
             </template>
+          </i18n>
+          <i18n tag="div" path="profit_loss_report.upgrade2">
             <template #link>
               <base-external-link
                 :text="$t('upgrade_row.rotki_premium')"
@@ -75,8 +73,8 @@
               />
             </template>
           </i18n>
-        </v-col>
-      </v-row>
+        </v-card-text>
+      </v-card>
       <accounting-settings-display
         :accounting-settings="accountingSettings"
         class="mt-4"
