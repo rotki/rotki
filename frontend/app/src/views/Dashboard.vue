@@ -12,6 +12,7 @@
           :name="$t('dashboard.exchange_balances.title')"
           can-refresh
           :is-loading="exchangeIsLoading"
+          navigates-to="/accounts-balances/exchange-balances/"
           @refresh="refreshBalance($event)"
         >
           <div slot="tooltip">
@@ -39,6 +40,7 @@
           :name="$t('dashboard.blockchain_balances.title')"
           :is-loading="blockchainIsLoading"
           can-refresh
+          navigates-to="/accounts-balances/"
           @refresh="refreshBalance($event)"
         >
           <div slot="tooltip">
@@ -69,6 +71,7 @@
           :tooltip="$t('dashboard.manual_balances.card_tooltip')"
           :is-loading="manualBalancesLoading"
           can-refresh
+          navigates-to="/accounts-balances/manual-balances/"
           @refresh="fetchManualBalances"
         >
           <div slot="tooltip">
