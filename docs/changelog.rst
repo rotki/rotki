@@ -17,6 +17,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
+  - `Woo trade network (WOO) <https://www.coingecko.com/en/coins/wootrade-network>`__
   - `ACoconut (AC) <https://www.coingecko.com/en/coins/acoconut>`__
   - `DeFiner (FIN) <https://www.coingecko.com/en/coins/definer>`__
   - `pTokens LTC (pLTC) <https://www.coingecko.com/en/coins/ptokens-ltc>`__

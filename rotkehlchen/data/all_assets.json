@@ -128,7 +128,7 @@
         "ethereum_address": "0x9A0aBA393aac4dFbFf4333B06c407458002C6183",
         "ethereum_token_decimals": 18,
         "name": "ACoconut ",
-        "started": 1601514839,
+        "started": 1601507639,
         "symbol": "AC",
         "type": "ethereum token"
     },
@@ -4112,7 +4112,7 @@
         "ethereum_address": "0xa1d65E8fB6e87b60FECCBc582F7f97804B725521",
         "ethereum_token_decimals": 18,
         "name": "DXdao",
-        "started": 1588760087,
+        "started": 1588752887,
         "symbol": "DXD",
         "type": "ethereum token"
     },
@@ -4981,7 +4981,7 @@
         "ethereum_address": "0x054f76beED60AB6dBEb23502178C52d6C5dEbE40",
         "ethereum_token_decimals": 18,
         "name": "DeFiner",
-        "started": 1599626125,
+        "started": 1599618925,
         "symbol": "FIN",
         "type": "ethereum token"
     },
@@ -5818,7 +5818,7 @@
         "ethereum_address": "0x4FbB350052Bca5417566f188eB2EBCE5b19BC964",
         "ethereum_token_decimals": 18,
         "name": "Rigo Token",
-        "started": 1541883482,
+        "started": 1541876282,
         "symbol": "GRG",
         "type": "ethereum token"
     },
@@ -6036,7 +6036,7 @@
         "ethereum_address": "0x0316EB71485b0Ab14103307bf65a021042c6d380",
         "ethereum_token_decimals": 18,
         "name": "Huobi BTC ",
-        "started": 1575870526,
+        "started": 1575863326,
         "symbol": "HBTC",
         "type": "ethereum token"
     },
@@ -8391,7 +8391,7 @@
         "ethereum_address": "0x04abEdA201850aC0124161F037Efd70c74ddC74C",
         "ethereum_token_decimals": 18,
         "name": "NEST",
-        "started": 1545198662,
+        "started": 1545191462,
         "symbol": "NEST",
         "type": "ethereum token"
     },
@@ -8475,7 +8475,7 @@
         "ethereum_address": "0xc813EA5e3b48BEbeedb796ab42A30C5599b01740",
         "ethereum_token_decimals": 4,
         "name": "Autonio",
-        "started": 1593141800,
+        "started": 1593134600,
         "symbol": "NIOX",
         "type": "ethereum token"
     },
@@ -9152,7 +9152,7 @@
         "ethereum_address": "0x5228a22e72ccC52d415EcFd199F99D0665E7733b",
         "ethereum_token_decimals": 18,
         "name": "pTokens BTC",
-        "started": 1583314408,
+        "started": 1583307208,
         "symbol": "pBTC",
         "type": "ethereum token"
     },
@@ -9396,7 +9396,7 @@
         "ethereum_address": "0x5979F50f1D4c08f9A53863C2f39A7B0492C38d0f",
         "ethereum_token_decimals": 18,
         "name": "pTokens LTC",
-        "started": 1595933201,
+        "started": 1595926001,
         "symbol": "pLTC",
         "type": "ethereum token"
     },
@@ -9788,7 +9788,7 @@
         "ethereum_address": "0x4A16BAf414b8e637Ed12019faD5Dd705735DB2e0",
         "ethereum_token_decimals": 2,
         "name": "QCAD",
-        "started": 1578456785,
+        "started": 1578449585,
         "symbol": "QCAD",
         "type": "ethereum token"
     },
@@ -11969,7 +11969,7 @@
         "ethereum_address": "0x6a6c2adA3Ce053561C2FbC3eE211F23d9b8C520a",
         "ethereum_token_decimals": 18,
         "name": "TONToken",
-        "started": 1597646321,
+        "started": 1597639121,
         "symbol": "TON",
         "type": "ethereum token"
     },
@@ -12535,7 +12535,7 @@
         "ethereum_address": "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F",
         "ethereum_token_decimals": 18,
         "name": "bZx Vesting Token",
-        "started": 1594502694,
+        "started": 1594495494,
         "symbol": "vBZRX",
         "type": "ethereum token"
     },
@@ -13053,6 +13053,15 @@
         "started": 1407974400,
         "symbol": "WOLF",
         "type": "own chain"
+    },
+    "WOO": {
+        "coingecko": "wootrade-network",
+        "ethereum_address": "0x4691937a7508860F876c9c0a2a617E7d9E945D4B",
+        "ethereum_token_decimals": 18,
+        "name": "Wootrade Network",
+        "started": 1602855151,
+        "symbol": "WOO",
+        "type": "ethereum token"
     },
     "WPR": {
         "coingecko": "wepower",
