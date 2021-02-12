@@ -13,6 +13,7 @@ import {
   EXCHANGE_GEMINI,
   EXCHANGE_ICONOMI,
   EXCHANGE_KRAKEN,
+  EXCHANGE_KUCOIN,
   EXCHANGE_POLONIEX,
   EXCHANGE_UNISWAP,
   TRADE_LOCATION_BANKS,
@@ -129,6 +130,13 @@ export const tradeLocations: TradeLocationData[] = [
     identifier: EXCHANGE_BITSTAMP,
     name: 'Bitstamp',
     icon: require('@/assets/images/bitstamp.png'),
+    imageIcon: true,
+    exchange: true
+  },
+  {
+    identifier: EXCHANGE_KUCOIN,
+    name: 'KuCoin',
+    icon: require('@/assets/images/exchanges/kucoin.svg'),
     imageIcon: true,
     exchange: true
   },
