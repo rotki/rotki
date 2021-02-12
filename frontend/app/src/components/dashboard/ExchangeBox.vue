@@ -6,7 +6,7 @@
     class="exchange-box__item"
   >
     <v-list-item-avatar tile class="exchange-box__icon">
-      <balance-location-icon :name="name" />
+      <location-display :identifier="name" icon />
     </v-list-item-avatar>
     <v-list-item-content>
       <v-list-item-title class="d-flex justify-space-between">
@@ -28,11 +28,10 @@
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import BalanceLocationIcon from '@/components/dashboard/BalanceLocationIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 
 @Component({
-  components: { AmountDisplay, BalanceLocationIcon }
+  components: { AmountDisplay }
 })
 export default class ExchangeBox extends Vue {
   @Prop({ required: true })

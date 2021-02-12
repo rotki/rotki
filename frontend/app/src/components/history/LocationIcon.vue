@@ -14,7 +14,7 @@
       />
       <v-icon v-else color="accent"> {{ item.icon }} </v-icon>
     </span>
-    <span :class="horizontal ? 'ml-2' : null" class="mt-2">
+    <span v-if="!icon" :class="horizontal ? 'ml-2' : null" class="mt-2">
       {{ item.name }}
     </span>
   </span>
@@ -29,5 +29,7 @@ export default class LocationIcon extends Vue {
   item!: TradeLocationData;
   @Prop({ required: false, type: Boolean, default: false })
   horizontal!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  icon!: boolean;
 }
 </script>
