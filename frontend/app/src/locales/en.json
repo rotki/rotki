@@ -491,6 +491,17 @@
   "price_refresh": {
     "button": "Refresh Prices"
   },
+  "profit_loss_event_type": {
+    "asset_movement": "Asset Movement",
+    "buy": "Buy",
+    "defi_event": "DeFi Event",
+    "gas_cost": "Gas Cost",
+    "interest_rate_payment": "Interest Rate Payment",
+    "ledger_action": "Ledger Action",
+    "loan_settlement": "Loan settlement",
+    "margin_position_close": "Margin Position Close",
+    "sell": "Sell"
+  },
   "progress_indicator": {
     "no_tasks": "No running tasks"
   },

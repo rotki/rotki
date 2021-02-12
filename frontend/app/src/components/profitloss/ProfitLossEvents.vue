@@ -16,6 +16,9 @@
           sort-desc
           :footer-props="footerProps"
         >
+          <template #item.type="{ item }">
+            <profit-loss-event-type :type="item.type" />
+          </template>
           <template #item.location="{ item }">
             <location-display :identifier="item.location" />
           </template>
@@ -107,6 +110,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
+import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
 import { footerProps } from '@/config/datatable.common';
 import { ProfitLossEvent } from '@/store/reports/types';
 
@@ -114,6 +118,7 @@ type IndexedProfitLossEvent = ProfitLossEvent & { index: number };
 
 @Component({
   components: {
+    ProfitLossEventType,
     UpgradeRow,
     CostBasisTable,
     RowExpander,
@@ -147,7 +152,10 @@ export default class ProfitLossEvents extends Vue {
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('profit_loss_events.headers.type').toString(),
-      value: 'type'
+      align: 'center',
+      value: 'type',
+      width: 110,
+      class: 'profit-loss-events__table__header__type'
     },
     {
       text: this.$t('profit_loss_events.headers.location').toString(),
@@ -224,6 +232,12 @@ export default class ProfitLossEvents extends Vue {
   .profit-loss-events {
     &__table {
       &__header {
+        &__type {
+          span {
+            padding-left: 16px;
+          }
+        }
+
         &__location {
           span {
             padding-left: 16px;
