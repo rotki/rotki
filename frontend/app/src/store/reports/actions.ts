@@ -80,11 +80,13 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
         return;
       }
 
-      const { overview, allEvents } = result;
+      const { overview, allEvents, eventsLimit, eventsProcessed } = result;
 
       const report = {
         overview: overview,
-        events: allEvents
+        events: allEvents,
+        limit: eventsLimit,
+        processed: eventsProcessed
       };
       commit('set', report);
     } catch (e) {

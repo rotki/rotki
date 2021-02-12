@@ -6,7 +6,16 @@ export type ReportPeriod = {
   readonly end: number;
 };
 
+export type ReportData = {
+  readonly overview: ProfitLossOverviewData;
+  readonly events: ProfitLossEvent[];
+  readonly limit: number;
+  readonly processed: number;
+};
+
 export interface TradeHistory {
+  readonly eventsProcessed: number;
+  readonly eventsLimit: number;
   readonly overview: ProfitLossOverviewData;
   readonly allEvents: ProfitLossEvent[];
 }
