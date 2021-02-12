@@ -49,7 +49,7 @@ def test_get_account_balance_invalid_account(kusama_manager):
     )
     account_balance_errors = [error for error in errors if error.startswith(user_error_msg)]
     for error in account_balance_errors:
-        assert 'Invalid Address type' in error
+        assert 'Invalid SS58 format' in error
 
     assert 'Kusama request failed after trying the following nodes' in str(e.value)
 
@@ -73,7 +73,7 @@ def test_get_accounts_balance_invalid_account(kusama_manager):
     )
     account_balance_errors = [error for error in errors if error.startswith(user_error_msg)]
     for error in account_balance_errors:
-        assert 'Invalid Address type' in error
+        assert 'Invalid SS58 format' in error
 
     assert 'Kusama request failed after trying the following nodes' in str(e.value)
 

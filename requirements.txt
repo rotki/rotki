@@ -10,7 +10,7 @@ typing-extensions==3.7.4.3
 base58check==1.0.2
 bech32==1.2.0
 gql==2.0.0
-substrate-interface==0.11.8
+substrate-interface==0.11.16
 
 # For the rest api
 flask-cors==3.0.8

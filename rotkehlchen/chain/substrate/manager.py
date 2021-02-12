@@ -378,12 +378,6 @@ class SubstrateManager():
         except (
             requests.exceptions.RequestException,
             SubstrateRequestException,
-            # TODO: remove TypeError once py-susbtrate-interface `get_block_number`
-            # handles a None response. Keep ValueError just in case `get_chain_head`
-            # returns None.
-            # https://github.com/polkascan/py-substrate-interface/issues/68
-            TypeError,
-            ValueError,
             WebSocketException,
         ) as e:
             message = (
@@ -417,6 +411,7 @@ class SubstrateManager():
             node_interface = SubstrateInterface(
                 url=endpoint,
                 type_registry_preset=si_attributes.type_registry_preset,
+                use_remote_preset=True,
             )
         except (requests.exceptions.RequestException, WebSocketException) as e:
             message = (

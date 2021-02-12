@@ -29,12 +29,25 @@ def is_valid_substrate_address(
 ) -> bool:
     """Validates a ss58 encoded substrate address for the given chain.
 
+    TODO: this function relies on py-scale-codec `ss58_decode()` for validating
+    that a str is a valid substrate address for the given chain. The recent
+    changes introduced on the py-scale-codec library have altered the behavior
+    of this function by validating positively any str starting with `0x`. An
+    issue has been opened regarding this matter (link below). Once py-scale-codec
+    implements its own address validation method this function may be no longer
+    needed. Issue:
+    https://github.com/polkascan/py-scale-codec/issues/27
+
     Polkascan ss58 utils documentation:
     https://github.com/polkascan/py-substrate-interface/blob/master/substrateinterface/utils/ss58.py  # noqa: E501
 
     External Address Format (SS58) documentation:
     https://github.com/paritytech/substrate/wiki/External-Address-Format-(SS58)
     """
+    if value.startswith('0x'):
+        # TODO: temporary patch for py-scale-codec/issue/27
+        return False
+
     if chain == SubstrateChain.KUSAMA:
         valid_ss58_format = 2
     else:
@@ -47,6 +60,7 @@ def is_valid_substrate_address(
         )
     except ValueError:
         return False
+
     return True
 
 
