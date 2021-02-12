@@ -11,7 +11,7 @@ jobs:
   check-changes:
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ ubuntu-18.04 ]
         node-version: [ 12.x ]
     runs-on: ${{ matrix.os }}
     outputs:
@@ -40,7 +40,7 @@ jobs:
     if: ${{ needs.check-changes.outputs.frontend_tasks }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-18.04]
         node-version: [12.x]
     runs-on: ${{ matrix.os }}
     steps:
@@ -83,7 +83,7 @@ jobs:
     if: ${{ needs.check-changes.outputs.documentation_tasks }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-18.04]
         python-version: [3.7]
     runs-on: ${{ matrix.os }}
     steps:
@@ -105,7 +105,7 @@ jobs:
     if: ${{ needs.check-changes.outputs.backend_tasks }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-18.04]
         python-version: [3.7]
     runs-on: ${{ matrix.os }}
     steps:
@@ -130,7 +130,7 @@ jobs:
       CI: true
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-18.04]
         python-version: [3.7]
     runs-on: ${{ matrix.os }}
     steps:
@@ -177,7 +177,7 @@ jobs:
       contains(needs.check-changes.outputs.backend_tasks, true)
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-18.04]
         python-version: [3.7]
         node-version: [12.x]
     runs-on: ${{ matrix.os }}
@@ -254,7 +254,7 @@ jobs:
     needs: [ 'check-changes', 'check-frontend', 'docs', 'lint-backend', 'test-backend', 'test-e2e' ]
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-18.04]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check if any task failed
