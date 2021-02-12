@@ -8869,7 +8869,7 @@
         "type": "ethereum token"
     },
     "ONE": {
-        "coingecko": "one-hundred-coin-2",
+        "coingecko": "menlo-one",
         "cryptocompare": "MENLO",
         "ethereum_address": "0x4D807509aECe24C0fa5A102b6a3B059Ec6E14392",
         "ethereum_token_decimals": 18,
@@ -8877,6 +8877,13 @@
         "started": 1537093791,
         "symbol": "ONE",
         "type": "ethereum token"
+    },
+    "ONE-2": {
+        "coingecko": "harmony",
+        "cryptocompare": "ONE",
+        "started": 1537093791,
+        "symbol": "ONE",
+        "type": "own chain"
     },
     "ONG": {
         "coingecko": "ong",

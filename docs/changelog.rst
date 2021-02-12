@@ -15,6 +15,7 @@ Changelog
 * :feature:`2240` Users now can select the supported assets from a dropdown when adding or editing external trades.
 * :bug:`2228` AdEx claim events now always have the proper token (e.g. ADX, DAI) and usd value. Also rotki should no longer miss Adex withdrawal events.
 * :bug:`2335` Users having sold BSV they got from holding BCH during the BCH -> BSV fork will now have its cost basis properly counted in the PnL report.
+* :bug:`2360` Users of Binance who own ONE tokens will now have it properly mapped to harmony.
 
 * :feature:`-` Added support for the following tokens:
 
@@ -122,6 +123,7 @@ Changelog
   - `SafePal (SFP) <https://www.coingecko.com/en/coins/safepal>`__
   - `Vai (VAI) <https://www.coingecko.com/en/coins/vai>`__
   - `Finiko (FNK) <https://www.coingecko.com/en/coins/finiko>`__
+  - `Harmony (ONE) <https://www.coingecko.com/en/coins/harmony>`__
 
 * :release:`1.13.3 <2021-02-11>`
 * :bug:`2342` Binance users should be able to query exchange balances again after Binance broke their api by adding "123" and "456" as test assets.
