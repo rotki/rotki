@@ -13,14 +13,14 @@ jobs:
       CI: true
     strategy:
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ ubuntu-18.04, macos-latest ]
         python-version: [ 3.7 ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup SQLCipher
         run: |
-          if [ ${{ matrix.os }} == 'ubuntu-latest' ];
+          if [ ${{ matrix.os }} == 'ubuntu-18.04' ];
           then
             sudo apt-get update
             sudo apt-get install libxml2-utils
@@ -76,7 +76,7 @@ jobs:
       FILTER: '[ui tests]'
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ ubuntu-18.04 ]
         python-version: [ 3.7 ]
         node-version: [ 12.x ]
     runs-on: ${{ matrix.os }}
@@ -154,7 +154,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ ubuntu-18.04 ]
         python-version: [ 3.7 ]
         node-version: [ 12.x ]
     runs-on: ${{ matrix.os }}
@@ -312,7 +312,7 @@ jobs:
             ${{ steps.packaging.outputs.binary_checksum }}
 
   build-docker:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
