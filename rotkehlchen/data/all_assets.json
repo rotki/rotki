@@ -1729,6 +1729,15 @@
         "symbol": "BON",
         "type": "ethereum token"
     },
+    "BOR": {
+        "coingecko": "boringdao",
+        "ethereum_address": "0x3c9d6c1C73b31c837832c72E04D3152f051fc1A9",
+        "ethereum_token_decimals": 18,
+        "name": "BoringDAO",
+        "started": 1603390844,
+        "symbol": "BOR",
+        "type": "ethereum token"
+    },
     "BORA": {
         "coingecko": "bora",
         "ethereum_address": "0x26fb86579e371c7AEdc461b2DdEF0A8628c93d3B",
