@@ -17,6 +17,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
+  - `Redfox labs token (RFOX) <https://www.coingecko.com/en/coins/redfox-labs>`__
   - `BoringDAO (BOR) <https://www.coingecko.com/en/coins/boringdao>`__
   - `BoringDAO BTC (oBTC) <https://www.coingecko.com/en/coins/boringdao-btc>`__
   - `Woo trade network (WOO) <https://www.coingecko.com/en/coins/wootrade-network>`__
