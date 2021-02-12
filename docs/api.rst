@@ -5206,6 +5206,55 @@ Getting yearn finance vaults historical data
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+Getting Loopring balances
+==============================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/loopring/balances
+
+   Doing a GET on the loopring balances resource will return the balances in loopring L2 that the user has deposited from any of the L1 addresses that are set to track loopring.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/loopring/balances HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+            "0xE74ad5437C6CFB0cCD6bADda1F6b57b6E542E75e": [{
+                    "ETH": {
+                        "amount": "1050",
+                        "usd_value": "950"
+                    },
+		    "GNO": {
+		        "amount": "1",
+			"usd_value": 5"
+		    }
+            }]
+        },
+        "message": "",
+      }
+
+   :resjson object result: A mapping between accounts and their balances
+
+   :statuscode 200: Loopring balances succesfully queried.
+   :statuscode 409: User is not logged in. Or loopring module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as loopring returned an unexpected result.
+
 
 Getting Eth2 Staking details
 ==============================

@@ -38,6 +38,7 @@ from rotkehlchen.chain.ethereum.eth2 import (
     get_eth2_details,
     get_eth2_staking_deposits,
 )
+from rotkehlchen.chain.ethereum.l2.loopring import Loopring
 from rotkehlchen.chain.ethereum.makerdao import MakerDAODSR, MakerDAOVaults
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.uniswap import Uniswap
@@ -62,9 +63,9 @@ from rotkehlchen.typing import (
     ChecksumEthAddress,
     ListOfBlockchainAddresses,
     ModuleName,
+    Price,
     SupportedBlockchain,
     Timestamp,
-    Price,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import (
@@ -304,6 +305,12 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         premium=premium,
                         msg_aggregator=msg_aggregator,
                     )
+                elif given_module == 'loopring':
+                    self.eth_modules['loopring'] = Loopring(
+                        database=self.database,
+                        msg_aggregator=msg_aggregator,
+                    )
+
                 else:
                     log.error(f'Unrecognized module value {given_module} given. Skipping...')
 
@@ -418,6 +425,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
             return None
 
         return module  # type: ignore
+
+    @property
+    def loopring(self) -> Optional[Loopring]:
+        module = self.eth_modules.get('loopring', None)
+        if not module:
+            return None
+
+        return module
 
     def queried_addresses_for_module(self, module: ModuleName) -> List[ChecksumEthAddress]:
         """Returns the addresses to query for the given module/protocol"""

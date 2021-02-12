@@ -201,7 +201,8 @@ class Etherscan(ExternalServiceWithApiKey):
                 json_ret = rlk_jsonloads_dict(response.text)
             except JSONDecodeError as e:
                 raise RemoteError(
-                    f'Etherscan returned invalid JSON response: {response.text}',
+                    f'Etherscan API request {response.url} returned invalid '
+                    f'JSON response: {response.text}',
                 ) from e
 
             try:
