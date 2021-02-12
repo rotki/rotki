@@ -585,7 +585,7 @@
     },
     "ANTv2": {
         "coingecko": "aragon",
-	    "cryptocompare": "ANT",
+        "cryptocompare": "ANT",
         "ethereum_address": "0xa117000000f279D81A1D3cc75430fAA017FA5A2e",
         "ethereum_token_decimals": 18,
         "name": "Aragon",
@@ -653,13 +653,13 @@
         "type": "Ubiq token"
     },
     "APY": {
-    	"coingecko": "apy-finance",
-    	"ethereum_address": "0x95a4492f028aa1fd432ea71146b433e7b4446611",
-    	"ethereum_token_decimals": 18,
-    	"name": "APY.Finance",
-    	"started": 1604545092,
-    	"symbol": "APY",
-   	"type": "ethereum token"
+        "coingecko": "apy-finance",
+        "ethereum_address": "0x95a4492F028aa1fd432Ea71146b433E7B4446611",
+        "ethereum_token_decimals": 18,
+        "name": "APY.Finance",
+        "started": 1604545092,
+        "symbol": "APY",
+        "type": "ethereum token"
     },
     "AR": {
         "coingecko": "arweave",
@@ -6041,7 +6041,7 @@
     },
     "HBTC": {
         "coingecko": "huobi-btc",
-	"cryptocompare": "",
+        "cryptocompare": "",
         "ethereum_address": "0x0316EB71485b0Ab14103307bf65a021042c6d380",
         "ethereum_token_decimals": 18,
         "name": "Huobi BTC ",
@@ -8432,13 +8432,13 @@
         "type": "ethereum token"
     },
     "NFTX": {
-    	"coingecko": "nftx",
-    	"ethereum_address": "0x87d73e916d7057945c9bcd8cdd94e42a6f47f776",
-    	"ethereum_token_decimals": 18,
-    	"name": "NFTX",
-    	"started": 1605424498,
-    	"symbol": "NFTX",
-   	"type": "ethereum token"
+        "coingecko": "nftx",
+        "ethereum_address": "0x87d73E916D7057945c9BcD8cdd94e42A6F47f776",
+        "ethereum_token_decimals": 18,
+        "name": "NFTX",
+        "started": 1605424498,
+        "symbol": "NFTX",
+        "type": "ethereum token"
     },
     "NGC": {
         "coingecko": "naga",
@@ -9167,7 +9167,7 @@
     },
     "PBTC": {
         "coingecko": "ptokens-btc",
-	"cryptocompare": "",
+        "cryptocompare": "",
         "ethereum_address": "0x5228a22e72ccC52d415EcFd199F99D0665E7733b",
         "ethereum_token_decimals": 18,
         "name": "pTokens BTC",
@@ -11993,7 +11993,7 @@
     },
     "TON": {
         "coingecko": "tontoken",
-	"cryptocompare": "",
+        "cryptocompare": "",
         "ethereum_address": "0x6a6c2adA3Ce053561C2FbC3eE211F23d9b8C520a",
         "ethereum_token_decimals": 18,
         "name": "TONToken",
@@ -12559,7 +12559,7 @@
     },
     "VBZRX": {
         "coingecko": "vbzrx",
-	"cryptocompare": "",
+        "cryptocompare": "",
         "ethereum_address": "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F",
         "ethereum_token_decimals": 18,
         "name": "bZx Vesting Token",
