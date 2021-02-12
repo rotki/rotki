@@ -98,6 +98,8 @@ Changelog
   - `Master Contract Token Token (MCT) <https://www.coingecko.com/en/coins/master-contract-token>`__
   - `DeepOnion (ONION) <https://www.coingecko.com/en/coins/deeponion>`__
   - `THEKEY (TKY) <https://www.coingecko.com/en/coins/thekey>`__
+  - `APY.Finance (APY) <https://www.coingecko.com/en/coins/apy-finance>`__
+  - `NFTX (APY) <https://www.coingecko.com/en/coins/nftx>`__
 
 * :release:`1.13.3 <2021-02-11>`
 * :bug:`2342` Binance users should be able to query exchange balances again after Binance broke their api by adding "123" and "456" as test assets.
