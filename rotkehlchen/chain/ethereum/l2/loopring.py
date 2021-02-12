@@ -1,13 +1,15 @@
 import logging
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, overload
 from urllib.parse import urlencode
 
 import requests
+from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import (
     A_COMP,
     A_CRV,
@@ -27,7 +29,6 @@ from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
@@ -161,6 +162,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
     def __init__(self, database: DBHandler, msg_aggregator: MessagesAggregator) -> None:
         super().__init__(database=database, service_name=ExternalService.LOOPRING)
         api_key = self._get_api_key()
+        self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         if api_key:
             self.session.headers.update({'X-API-KEY': api_key})
@@ -178,7 +180,27 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
         self.session.headers.update({'X-API-KEY': api_key})
         return True
 
-    def _api_query(self, endpoint: str, options: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    @overload  # noqa: F811
+    def _api_query(  # noqa: F811 pylint: disable=no-self-use
+            self,
+            endpoint: Literal['user/balances'],
+            options: Optional[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        ...
+
+    @overload  # noqa: F811
+    def _api_query(  # noqa: F811 pylint: disable=no-self-use
+            self,
+            endpoint: Literal['account'],
+            options: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        ...
+
+    def _api_query(  # noqa: F811
+            self,
+            endpoint: str,
+            options: Optional[Dict[str, Any]],
+    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         querystr = self.base_url + endpoint
         if options is not None:
             querystr += '?' + urlencode(options)
@@ -187,7 +209,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
         try:
             response = self.session.get(querystr)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Loopring api query {querystr} failed due to {str(e)}')
+            raise RemoteError(f'Loopring api query {querystr} failed due to {str(e)}') from e
         if response.status_code == HTTPStatus.BAD_REQUEST:
             try:
                 json_ret = rlk_jsonloads(response.text)
@@ -197,9 +219,10 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
                     f'JSON response: {response.text}',
                 ) from e
 
-            code = json_ret.get('code', None)
-            if code and code == 104002:
-                raise LoopringAPIKeyMismatch()
+            if isinstance(json_ret, dict):
+                code = json_ret.get('code', None)
+                if code and code == 104002:
+                    raise LoopringAPIKeyMismatch()
             # else just let it hit the generic remote error below
 
         if response.status_code != HTTPStatus.OK:
@@ -217,7 +240,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
                 f'JSON response: {response.text}',
             ) from e
 
-        if 'code' in json_ret:
+        if isinstance(json_ret, dict) and 'code' in json_ret:
             code = json_ret['code']
             msg = json_ret.get('msg', 'no message')
             raise RemoteError(
@@ -237,7 +260,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
         - RemotError if there is a problem querying the loopring api or if the format
         of the response does not match expectations
         """
-        db = DBLoopring(self.db)
+        db = DBLoopring(self.db)  # type: ignore # we always know self.db is not None
         account_id = db.get_accountid_mapping(l1_address)
         if account_id:
             return account_id

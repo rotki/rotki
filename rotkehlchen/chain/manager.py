@@ -432,7 +432,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if not module:
             return None
 
-        return module
+        return module  # type: ignore
 
     def queried_addresses_for_module(self, module: ModuleName) -> List[ChecksumEthAddress]:
         """Returns the addresses to query for the given module/protocol"""

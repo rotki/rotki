@@ -8881,6 +8881,7 @@
     "ONE-2": {
         "coingecko": "harmony",
         "cryptocompare": "ONE",
+        "name": "Harmony",
         "started": 1537093791,
         "symbol": "ONE",
         "type": "own chain"
