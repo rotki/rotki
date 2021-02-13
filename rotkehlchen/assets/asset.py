@@ -156,6 +156,8 @@ WORLD_TO_BINANCE = {
     'ETH2': 'BETH',
     # STX is Blockstack in Binance
     'STX-2': 'STX',
+    # ONE is Harmony in Binance
+    'ONE-2': 'ONE',
 }
 
 WORLD_TO_BITFINEX = {

@@ -122,6 +122,16 @@
         "symbol": "AC",
         "type": "own chain"
     },
+    "AC-2": {
+        "coingecko": "acoconut",
+        "cryptocompare": "",
+        "ethereum_address": "0x9A0aBA393aac4dFbFf4333B06c407458002C6183",
+        "ethereum_token_decimals": 18,
+        "name": "ACoconut ",
+        "started": 1601507639,
+        "symbol": "AC",
+        "type": "ethereum token"
+    },
     "ACC": {
         "active": true,
         "coingecko": "",
@@ -575,7 +585,7 @@
     },
     "ANTv2": {
         "coingecko": "aragon",
-	    "cryptocompare": "ANT",
+        "cryptocompare": "ANT",
         "ethereum_address": "0xa117000000f279D81A1D3cc75430fAA017FA5A2e",
         "ethereum_token_decimals": 18,
         "name": "Aragon",
@@ -643,13 +653,13 @@
         "type": "Ubiq token"
     },
     "APY": {
-    	"coingecko": "apy-finance",
-    	"ethereum_address": "0x95a4492f028aa1fd432ea71146b433e7b4446611",
-    	"ethereum_token_decimals": 18,
-    	"name": "APY.Finance",
-    	"started": 1604545092,
-    	"symbol": "APY",
-   	"type": "ethereum token"
+        "coingecko": "apy-finance",
+        "ethereum_address": "0x95a4492F028aa1fd432Ea71146b433E7B4446611",
+        "ethereum_token_decimals": 18,
+        "name": "APY.Finance",
+        "started": 1604545092,
+        "symbol": "APY",
+        "type": "ethereum token"
     },
     "AR": {
         "coingecko": "arweave",
@@ -1717,6 +1727,15 @@
         "name": "Bonpay",
         "started": 1506816000,
         "symbol": "BON",
+        "type": "ethereum token"
+    },
+    "BOR": {
+        "coingecko": "boringdao",
+        "ethereum_address": "0x3c9d6c1C73b31c837832c72E04D3152f051fc1A9",
+        "ethereum_token_decimals": 18,
+        "name": "BoringDAO",
+        "started": 1603390844,
+        "symbol": "BOR",
         "type": "ethereum token"
     },
     "BORA": {
@@ -4097,6 +4116,15 @@
         "symbol": "DUSK",
         "type": "ethereum token"
     },
+    "DXD": {
+        "coingecko": "dxdao",
+        "ethereum_address": "0xa1d65E8fB6e87b60FECCBc582F7f97804B725521",
+        "ethereum_token_decimals": 18,
+        "name": "DXdao",
+        "started": 1588752887,
+        "symbol": "DXD",
+        "type": "ethereum token"
+    },
     "DXT": {
         "coingecko": "datawallet",
         "ethereum_address": "0x8dB54ca569D3019A2ba126D03C37c44b5eF81EF6",
@@ -4957,6 +4985,15 @@
         "symbol": "FIRO",
         "type": "own chain"
     },
+    "FIN": {
+        "coingecko": "definer",
+        "ethereum_address": "0x054f76beED60AB6dBEb23502178C52d6C5dEbE40",
+        "ethereum_token_decimals": 18,
+        "name": "DeFiner",
+        "started": 1599618925,
+        "symbol": "FIN",
+        "type": "ethereum token"
+    },
     "FIT": {
         "coingecko": "300fit",
         "cryptocompare": "300F",
@@ -5784,6 +5821,16 @@
         "symbol": "GRC",
         "type": "own chain"
     },
+    "GRG": {
+        "coingecko": "rigoblock",
+        "cryptocompare": "",
+        "ethereum_address": "0x4FbB350052Bca5417566f188eB2EBCE5b19BC964",
+        "ethereum_token_decimals": 18,
+        "name": "Rigo Token",
+        "started": 1541876282,
+        "symbol": "GRG",
+        "type": "ethereum token"
+    },
     "GRID": {
         "coingecko": "grid",
         "ethereum_address": "0x12B19D3e2ccc14Da04FAe33e63652ce469b3F2FD",
@@ -5990,6 +6037,16 @@
         "name": "Hubii Network",
         "started": 1503532800,
         "symbol": "HBT",
+        "type": "ethereum token"
+    },
+    "HBTC": {
+        "coingecko": "huobi-btc",
+        "cryptocompare": "",
+        "ethereum_address": "0x0316EB71485b0Ab14103307bf65a021042c6d380",
+        "ethereum_token_decimals": 18,
+        "name": "Huobi BTC ",
+        "started": 1575863326,
+        "symbol": "HBTC",
         "type": "ethereum token"
     },
     "HBZ": {
@@ -8338,6 +8395,15 @@
         "symbol": "NEOS",
         "type": "own chain"
     },
+    "NEST": {
+        "coingecko": "nest",
+        "ethereum_address": "0x04abEdA201850aC0124161F037Efd70c74ddC74C",
+        "ethereum_token_decimals": 18,
+        "name": "NEST",
+        "started": 1545191462,
+        "symbol": "NEST",
+        "type": "ethereum token"
+    },
     "NEU": {
         "coingecko": "neumark",
         "ethereum_address": "0xA823E6722006afe99E91c30FF5295052fe6b8E32",
@@ -8366,13 +8432,13 @@
         "type": "ethereum token"
     },
     "NFTX": {
-    	"coingecko": "nftx",
-    	"ethereum_address": "0x87d73e916d7057945c9bcd8cdd94e42a6f47f776",
-    	"ethereum_token_decimals": 18,
-    	"name": "NFTX",
-    	"started": 1605424498,
-    	"symbol": "NFTX",
-   	"type": "ethereum token"
+        "coingecko": "nftx",
+        "ethereum_address": "0x87d73E916D7057945c9BcD8cdd94e42A6F47f776",
+        "ethereum_token_decimals": 18,
+        "name": "NFTX",
+        "started": 1605424498,
+        "symbol": "NFTX",
+        "type": "ethereum token"
     },
     "NGC": {
         "coingecko": "naga",
@@ -8410,6 +8476,16 @@
         "name": "Autonio",
         "started": 1506816000,
         "symbol": "NIO",
+        "type": "ethereum token"
+    },
+    "NIOX": {
+        "coingecko": "autonio",
+        "cryptocompare": "AUTON",
+        "ethereum_address": "0xc813EA5e3b48BEbeedb796ab42A30C5599b01740",
+        "ethereum_token_decimals": 4,
+        "name": "Autonio",
+        "started": 1593134600,
+        "symbol": "NIOX",
         "type": "ethereum token"
     },
     "NKN": {
@@ -8663,6 +8739,16 @@
         "symbol": "OAX",
         "type": "ethereum token"
     },
+    "OBTC": {
+        "coingecko": "boringdao-btc",
+        "cryptocompare": "",
+        "ethereum_address": "0x8064d9Ae6cDf087b1bcd5BDf3531bD5d8C537a68",
+        "ethereum_token_decimals": 18,
+        "name": "BoringDAO BTC",
+        "started": 1605169554,
+        "symbol": "oBTC",
+        "type": "ethereum token"
+    },
     "OCC": {
         "coingecko": "",
         "cryptocompare": "OCC",
@@ -8783,7 +8869,7 @@
         "type": "ethereum token"
     },
     "ONE": {
-        "coingecko": "one-hundred-coin-2",
+        "coingecko": "menlo-one",
         "cryptocompare": "MENLO",
         "ethereum_address": "0x4D807509aECe24C0fa5A102b6a3B059Ec6E14392",
         "ethereum_token_decimals": 18,
@@ -8791,6 +8877,14 @@
         "started": 1537093791,
         "symbol": "ONE",
         "type": "ethereum token"
+    },
+    "ONE-2": {
+        "coingecko": "harmony",
+        "cryptocompare": "ONE",
+        "name": "Harmony",
+        "started": 1537093791,
+        "symbol": "ONE",
+        "type": "own chain"
     },
     "ONG": {
         "coingecko": "ong",
@@ -9079,6 +9173,16 @@
         "symbol": "PBT",
         "type": "ethereum token and more"
     },
+    "PBTC": {
+        "coingecko": "ptokens-btc",
+        "cryptocompare": "",
+        "ethereum_address": "0x5228a22e72ccC52d415EcFd199F99D0665E7733b",
+        "ethereum_token_decimals": 18,
+        "name": "pTokens BTC",
+        "started": 1583307208,
+        "symbol": "pBTC",
+        "type": "ethereum token"
+    },
     "PCH": {
         "coingecko": "popchain",
         "ethereum_address": "0xE3F4b4A5d91e5cB9435B947F090A319737036312",
@@ -9311,6 +9415,16 @@
         "name": "PlutusDeFi",
         "started": 1595686189,
         "symbol": "PLT",
+        "type": "ethereum token"
+    },
+    "PLTC": {
+        "coingecko": "ptokens-ltc",
+        "cryptocompare": "",
+        "ethereum_address": "0x5979F50f1D4c08f9A53863C2f39A7B0492C38d0f",
+        "ethereum_token_decimals": 18,
+        "name": "pTokens LTC",
+        "started": 1595926001,
+        "symbol": "pLTC",
         "type": "ethereum token"
     },
     "PLU": {
@@ -9695,6 +9809,16 @@
         "symbol": "QBK",
         "type": "Burst token"
     },
+    "QCAD": {
+        "coingecko": "qcad",
+        "cryptocompare": "",
+        "ethereum_address": "0x4A16BAf414b8e637Ed12019faD5Dd705735DB2e0",
+        "ethereum_token_decimals": 2,
+        "name": "QCAD",
+        "started": 1578449585,
+        "symbol": "QCAD",
+        "type": "ethereum token"
+    },
     "QCN": {
         "active": false,
         "coingecko": "",
@@ -10048,6 +10172,15 @@
         "name": "imbrex",
         "started": 1501521922,
         "symbol": "REX",
+        "type": "ethereum token"
+    },
+    "RFOX": {
+        "coingecko": "redfox-labs",
+        "ethereum_address": "0xa1d6Df714F91DeBF4e0802A542E13067f31b8262",
+        "ethereum_token_decimals": 18,
+        "name": "RFOX",
+        "started": 1603301829,
+        "symbol": "RFOX",
         "type": "ethereum token"
     },
     "RFR": {
@@ -11866,6 +11999,16 @@
         "symbol": "TOK",
         "type": "ethereum token"
     },
+    "TON": {
+        "coingecko": "tontoken",
+        "cryptocompare": "",
+        "ethereum_address": "0x6a6c2adA3Ce053561C2FbC3eE211F23d9b8C520a",
+        "ethereum_token_decimals": 18,
+        "name": "TONToken",
+        "started": 1597639121,
+        "symbol": "TON",
+        "type": "ethereum token"
+    },
     "TOMO": {
         "coingecko": "tomochain",
         "ethereum_address": "0x8b353021189375591723E7384262F45709A3C3dC",
@@ -12422,6 +12565,16 @@
         "symbol": "VBK",
         "type": "own chain"
     },
+    "VBZRX": {
+        "coingecko": "vbzrx",
+        "cryptocompare": "",
+        "ethereum_address": "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F",
+        "ethereum_token_decimals": 18,
+        "name": "bZx Vesting Token",
+        "started": 1594495494,
+        "symbol": "vBZRX",
+        "type": "ethereum token"
+    },
     "VD": {
         "coingecko": "",
         "cryptocompare": "",
@@ -12936,6 +13089,15 @@
         "started": 1407974400,
         "symbol": "WOLF",
         "type": "own chain"
+    },
+    "WOO": {
+        "coingecko": "wootrade-network",
+        "ethereum_address": "0x4691937a7508860F876c9c0a2a617E7d9E945D4B",
+        "ethereum_token_decimals": 18,
+        "name": "Wootrade Network",
+        "started": 1602855151,
+        "symbol": "WOO",
+        "type": "ethereum token"
     },
     "WPR": {
         "coingecko": "wepower",
@@ -15917,5 +16079,47 @@
         "started": 1518912000,
         "symbol": "TKY",
         "type": "neo token"
+    },
+    "LIT": {
+        "coingecko": "litentry",
+        "ethereum_address": "0xb59490aB09A0f526Cc7305822aC65f2Ab12f9723",
+        "ethereum_token_decimals": 18,
+        "name": "Litentry",
+        "started": 1611494689,
+        "symbol": "LIT",
+        "type": "ethereum token"
+    },
+    "PROS": {
+        "coingecko": "prosper",
+        "ethereum_address": "0x8642A849D0dcb7a15a974794668ADcfbe4794B56",
+        "ethereum_token_decimals": 18,
+        "name": "Prosper",
+        "started": 1608048948,
+        "symbol": "PROS",
+        "type": "ethereum token"
+    },
+    "SFP": {
+        "coingecko": "safepal",
+        "name": "SafePal",
+        "started": 1612656000,
+        "symbol": "SFP",
+        "type": "binance token"
+    },
+    "VAI": {
+        "coingecko": "vai",
+        "name": "Vai",
+        "started": 1612656000,
+        "symbol": "VAI",
+        "type": "binance token"
+    },
+    "FNK": {
+        "coingecko": "finiko",
+        "cryptocompare": "",
+        "ethereum_address": "0xB5FE099475d3030DDe498c3BB6F3854F762A48Ad",
+        "ethereum_token_decimals": 18,
+        "name": "Finiko",
+        "started": 1606832874,
+        "symbol": "FNK",
+        "type": "ethereum token"
     }
 }

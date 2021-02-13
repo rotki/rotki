@@ -12,14 +12,10 @@ from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.structures import ActionType, LedgerAction, LedgerActionType
-from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AssetIconsSchema,
-    NamedOracleCacheSchema,
-    NamedOracleCacheCreateSchema,
-    NamedOracleCacheGetSchema,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
@@ -52,6 +48,9 @@ from rotkehlchen.api.v1.encoding import (
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
     NamedEthereumModuleDataSchema,
+    NamedOracleCacheCreateSchema,
+    NamedOracleCacheGetSchema,
+    NamedOracleCacheSchema,
     NewUserSchema,
     QueriedAddressesSchema,
     StatisticsAssetBalanceSchema,
@@ -77,6 +76,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -1219,6 +1219,15 @@ class UniswapTradesHistoryResource(BaseResource):
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
+
+
+class LoopringBalancesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_loopring_balances(async_query=async_query)
 
 
 class WatchersResource(BaseResource):

@@ -5,6 +5,7 @@ Changelog
 
 * :feature:`297` Rotki now supports KuCoin. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
 * :feature:`1436` Users will now see any validation errors when adding manual balances under their respective inputs instead of a modal dialog.
+* :feature:`2235` Loopring users will now be able to add their loopring api key to rotki and have it track all their loopring l2 balances.
 * :feature:`2330` Users can now easily navigate to the respective pages by clicking the dashboard cards titles for manual balances, blockchain balances and exchange balances.
 * :feature:`2237` Users can now choose which ledger actions are taken into account in the PnL report by customizing a setting. Two new ledger action types are added. Airdrop and Gift.
 * :feature:`1794` Users who create a Profit and Loss report will now be able to see a cost basis calculation in the events of the report and in the exported trades.csv and all_events.csv
@@ -14,9 +15,26 @@ Changelog
 * :feature:`2240` Users now can select the supported assets from a dropdown when adding or editing external trades.
 * :bug:`2228` AdEx claim events now always have the proper token (e.g. ADX, DAI) and usd value. Also rotki should no longer miss Adex withdrawal events.
 * :bug:`2335` Users having sold BSV they got from holding BCH during the BCH -> BSV fork will now have its cost basis properly counted in the PnL report.
+* :bug:`2360` Users of Binance who own ONE tokens will now have it properly mapped to harmony.
 
 * :feature:`-` Added support for the following tokens:
 
+  - `Redfox labs token (RFOX) <https://www.coingecko.com/en/coins/redfox-labs>`__
+  - `BoringDAO (BOR) <https://www.coingecko.com/en/coins/boringdao>`__
+  - `BoringDAO BTC (oBTC) <https://www.coingecko.com/en/coins/boringdao-btc>`__
+  - `Woo trade network (WOO) <https://www.coingecko.com/en/coins/wootrade-network>`__
+  - `ACoconut (AC) <https://www.coingecko.com/en/coins/acoconut>`__
+  - `DeFiner (FIN) <https://www.coingecko.com/en/coins/definer>`__
+  - `pTokens LTC (pLTC) <https://www.coingecko.com/en/coins/ptokens-ltc>`__
+  - `Huobi BTC (HBTC) <https://www.coingecko.com/en/coins/huobi-btc>`__
+  - `Autonio (NIOX) <https://www.coingecko.com/en/coins/autonio>`__
+  - `Ton Token (TON) <https://www.coingecko.com/en/coins/tontoken>`__
+  - `QCAD Token (QCAD) <https://www.coingecko.com/en/coins/qcad>`__
+  - `Rigo Token (GRG) <https://www.coingecko.com/en/coins/rigoblock>`__
+  - `bZx Vesting Token (vBZRX) <https://www.coingecko.com/en/coins/bzx-vesting-token>`__
+  - `Nest protocol (NEST) <https://www.coingecko.com/en/coins/nest-protocol>`__
+  - `pTokens BTC (pBTC) <https://www.coingecko.com/en/coins/ptokens-btc>`__
+  - `Dxdao token (DXD) <https://www.coingecko.com/en/coins/dxdao>`__
   - `Liquid staked Ether 2.0 (stETH) <https://www.coingecko.com/en/coins/lido-staked-ether>`__
   - `KuCoin Token (KCS) <https://www.coingecko.com/en/coins/kucoin-shares>`__
   - `Caspian Token (CSP) <https://www.coingecko.com/en/coins/caspian>`__
@@ -100,6 +118,12 @@ Changelog
   - `THEKEY (TKY) <https://www.coingecko.com/en/coins/thekey>`__
   - `APY.Finance (APY) <https://www.coingecko.com/en/coins/apy-finance>`__
   - `NFTX (APY) <https://www.coingecko.com/en/coins/nftx>`__
+  - `Litentry (LIT) <https://www.coingecko.com/en/coins/litentry>`__
+  - `Prosper (PROS) <https://www.coingecko.com/en/coins/prosper>`__
+  - `SafePal (SFP) <https://www.coingecko.com/en/coins/safepal>`__
+  - `Vai (VAI) <https://www.coingecko.com/en/coins/vai>`__
+  - `Finiko (FNK) <https://www.coingecko.com/en/coins/finiko>`__
+  - `Harmony (ONE) <https://www.coingecko.com/en/coins/harmony>`__
 
 * :release:`1.13.3 <2021-02-11>`
 * :bug:`2342` Binance users should be able to query exchange balances again after Binance broke their api by adding "123" and "456" as test assets.

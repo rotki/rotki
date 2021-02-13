@@ -16,6 +16,7 @@ ModuleName = Literal[
     'yearn_vaults',
     'uniswap',
     'adex',
+    'loopring',
 ]
 # TODO: Turn this into some kind of light data structure and not just a mapping
 # This is a mapping of module ids to human readable names
@@ -27,6 +28,7 @@ AVAILABLE_MODULES_MAP = {
     'yearn_vaults': 'Yearn Vaults',
     'uniswap': 'Uniswap',
     'adex': 'AdEx',
+    'loopring': 'Loopring',
 }
 
 T_BinaryEthAddress = bytes
@@ -81,6 +83,7 @@ class ExternalService(Enum):
     ETHERSCAN = 0
     CRYPTOCOMPARE = 1
     BEACONCHAIN = 2
+    LOOPRING = 3
 
     @staticmethod
     def serialize(name: str) -> Optional['ExternalService']:
@@ -90,6 +93,8 @@ class ExternalService(Enum):
             return ExternalService.CRYPTOCOMPARE
         if name == 'beaconchain':
             return ExternalService.BEACONCHAIN
+        if name == 'loopring':
+            return ExternalService.LOOPRING
         # else
         return None
 

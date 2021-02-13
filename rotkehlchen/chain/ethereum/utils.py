@@ -65,7 +65,7 @@ def asset_normalized_value(amount: int, asset: Asset) -> FVal:
     else:
         if asset.asset_type != AssetType.ETH_TOKEN:
             raise UnsupportedAsset(asset.identifier)
-        decimals = asset.decimals  # type: ignore
+        decimals = EthereumToken(asset.identifier).decimals
 
     return token_normalized_value_decimals(amount, decimals)
 

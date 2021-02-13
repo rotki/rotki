@@ -45,6 +45,7 @@ from rotkehlchen.chain.ethereum.uniswap import (
 )
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
+from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import (
     DEFAULT_PREMIUM_SHOULD_SYNC,
@@ -1063,6 +1064,7 @@ class DBHandler:
             self.delete_aave_data()
             self.delete_adex_events_data()
             self.delete_yearn_vaults_data()
+            self.delete_loopring_data()
             logger.debug('Purged all module data from the DB')
             return
 
@@ -1075,6 +1077,8 @@ class DBHandler:
             self.delete_adex_events_data()
         elif module_name == 'yearn_vaults':
             self.delete_yearn_vaults_data()
+        elif module_name == 'loopring':
+            self.delete_loopring_data()
         else:
             logger.debug(f'Requested to purge {module_name} data from the DB but nothing to do')
             return
@@ -1208,6 +1212,13 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM yearn_vaults_events;')
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{YEARN_VAULTS_PREFIX}%";')
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_loopring_data(self) -> None:
+        """Delete all loopring related data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM multisettings WHERE name LIKE "loopring_%";')
         self.conn.commit()
         self.update_last_write()
 
@@ -2298,6 +2309,8 @@ class DBHandler:
             'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',
             (address,),
         )
+        loopring = DBLoopring(self)
+        loopring.remove_accountid_mapping(address)
 
         # For transactions we need to delete all transactions where the address
         # appears in either from or to, BUT no other tracked address is in
