@@ -124,9 +124,14 @@ class IconManager():
         coingecko_integrated_assets = []
 
         for identifier, asset_data in AssetResolver().assets.items():
-            asset_type = asset_type_mapping[asset_data['type']]
-            if asset_type != AssetType.FIAT and asset_data['coingecko'] != '':
-                coingecko_integrated_assets.append(identifier)
+            try:
+                asset_type = asset_type_mapping[asset_data['type']]
+
+                if asset_type != AssetType.FIAT and asset_data['coingecko'] != '':
+                    coingecko_integrated_assets.append(identifier)
+            except KeyError:
+                log.warning(f'Ignoring asset {identifier} during query icons due to KeyError')
+                continue
 
         cached_assets = [
             str(x.name)[:-10] for x in self.icons_dir.glob('*_thumb.png') if x.is_file()
