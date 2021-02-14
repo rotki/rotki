@@ -31,6 +31,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import MONTH_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -86,6 +87,9 @@ API_PAGE_SIZE_LIMIT = 500
 # will restrict the IP
 API_REQUEST_RETRY_TIMES = 2
 API_REQUEST_RETRIES_AFTER_SECONDS = 1
+
+API_V2_TIMESTART_MS = 1550448000000  # 2019-02-18T00:00:00Z
+KUCOIN_LAUNCH_TS = 1504224000  # 01/09/2017
 
 
 class KucoinCase(Enum):
@@ -190,11 +194,20 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         if case == KucoinCase.BALANCES:
             api_path = 'api/v1/accounts'
         elif case == KucoinCase.DEPOSITS:
-            api_path = 'api/v1/deposits'
-        elif case == KucoinCase.TRADES:
-            api_path = 'api/v1/fills'
+            if options['startAt'] < API_V2_TIMESTART_MS:
+                api_path = 'api/v1/hist-deposits'
+            else:
+                api_path = 'api/v1/deposits'
         elif case == KucoinCase.WITHDRAWALS:
-            api_path = 'api/v1/withdrawals'
+            if options['startAt'] < API_V2_TIMESTART_MS:
+                api_path = 'api/v1/hist-withdrawals'
+            else:
+                api_path = 'api/v1/withdrawals'
+        elif case == KucoinCase.TRADES:
+            if options['startAt'] < API_V2_TIMESTART_MS:
+                api_path = 'api/v1/hist-orders'
+            else:
+                api_path = 'api/v1/fills'
         else:
             raise AssertionError(f'Unexpected case: {case}')
 
@@ -296,22 +309,22 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         deserialization_method: DeserializationMethod
         if case == KucoinCase.TRADES:
             deserialization_method = self._deserialize_trade
-        elif case == KucoinCase.DEPOSITS:
+            time_step = WEEK_IN_SECONDS
+        elif case in (KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS):
             deserialization_method = partial(
                 self._deserialize_asset_movement,
                 case=case,
             )
-        elif case == KucoinCase.WITHDRAWALS:
-            deserialization_method = partial(
-                self._deserialize_asset_movement,
-                case=case,
-            )
+            time_step = MONTH_IN_SECONDS
         else:
             raise AssertionError(f'Unexpected case: {case}')
 
         call_options = options.copy()
         results: Union[List[Trade], List[AssetMovement]] = []  # type: ignore # bug list nothing
+        call_options['startAt'] = max(start_ts, KUCOIN_LAUNCH_TS) * 1000
         while True:
+            current_query_ts = int(call_options['startAt'] / 1000)
+            call_options['endAt'] = min(current_query_ts + time_step, end_ts) * 1000
             response = self._api_query(
                 case=case,
                 options=call_options,
@@ -342,7 +355,6 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 log.error(msg, response_dict)
                 raise RemoteError(msg) from e
 
-            is_before_start_ts = False
             for raw_result in raw_results:
                 try:
                     result, skip_reason = deserialization_method(
@@ -386,13 +398,21 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             # Stop requesting, either when a result was before the range or
             # totalPage indicates to stop paginating
-            if is_before_start_ts is True or total_page in (0, current_page):
-                break
+            is_last_page = total_page in (0, current_page)
+            if is_last_page:
+                if current_query_ts + time_step >= end_ts:
+                    break  # end of time range query and last page. We are done.
+                # else update query ts
+                current_query_ts += time_step
 
             # Update pagination params per endpoint
             # NB: Copying the dict before updating it prevents losing the call args values
             call_options = call_options.copy()
-            call_options['currentPage'] = current_page + 1
+            if not is_last_page:
+                call_options['currentPage'] = current_page + 1
+            else:
+                call_options['currentPage'] = 1
+            call_options['startAt'] = int(current_query_ts * 1000)
 
         return results
 
@@ -743,6 +763,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             'currentPage': 1,
             'pageSize': API_PAGE_SIZE_LIMIT,
             'tradeType': 'TRADE',  # discarded MARGIN_TRADE
+            'status': 'done',
         }
         trades: List[Trade] = self._api_query_paginated(
             options=options,
