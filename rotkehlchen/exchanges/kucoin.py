@@ -194,16 +194,19 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         if case == KucoinCase.BALANCES:
             api_path = 'api/v1/accounts'
         elif case == KucoinCase.DEPOSITS:
+            assert isinstance(options, dict)
             if options['startAt'] < API_V2_TIMESTART_MS:
                 api_path = 'api/v1/hist-deposits'
             else:
                 api_path = 'api/v1/deposits'
         elif case == KucoinCase.WITHDRAWALS:
+            assert isinstance(options, dict)
             if options['startAt'] < API_V2_TIMESTART_MS:
                 api_path = 'api/v1/hist-withdrawals'
             else:
                 api_path = 'api/v1/withdrawals'
         elif case == KucoinCase.TRADES:
+            assert isinstance(options, dict)
             if options['startAt'] < API_V2_TIMESTART_MS:
                 api_path = 'api/v1/hist-orders'
             else:
@@ -366,9 +369,10 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 except (
                     DeserializationError, UnknownAsset, UnprocessableTradePair, UnsupportedAsset,
                 ) as e:
+                    error_msg = str(e)
                     log.error(
                         f'Failed to deserialize a kucoin {case} result',
-                        error=str(e),
+                        error=error_msg,
                         raw_result=raw_result,
                     )
                     if isinstance(e, (UnknownAsset, UnsupportedAsset)):
@@ -573,7 +577,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             amount = deserialize_asset_amount(raw_result['size'])
             rate = deserialize_price(raw_result['price'])
             fee = deserialize_fee(raw_result['fee'])
-            trade_id = raw_result['id']
+            trade_id = raw_result.get('id', raw_result['tradeId'])
             fee_currency_symbol = raw_result['feeCurrency']
             trade_pair_symbol = raw_result['symbol']
         except KeyError as e:

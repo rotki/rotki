@@ -108,6 +108,7 @@ def test_api_query_retries_request(mock_kucoin):
                 'currentPage': 1,
                 'pageSize': 500,
                 'tradeType': 'TRADE',
+                'startAt': 1504224000000,
             },
             case=KucoinCase.TRADES,
         )
