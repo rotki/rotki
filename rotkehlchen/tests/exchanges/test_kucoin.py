@@ -232,7 +232,7 @@ def test_deserialize_accounts_balances(mock_kucoin, inquirer):  # pylint: disabl
     }
 
 
-def test_deserialize_trade_buy(mock_kucoin):
+def test_deserialize_v2_trade_buy(mock_kucoin):
     raw_result = {
         'symbol': 'KCS-USDT',
         'tradeId': '601da9faf1297d0007efd712',
@@ -268,12 +268,13 @@ def test_deserialize_trade_buy(mock_kucoin):
         raw_result=raw_result,
         start_ts=Timestamp(0),
         end_ts=Timestamp(1612556794),
+        case=KucoinCase.TRADES,
     )
     assert trade == expected_trade
     assert reason is None
 
 
-def test_deserialize_trade_sell(mock_kucoin):
+def test_deserialize_v2_trade_sell(mock_kucoin):
     raw_result = {
         'symbol': 'BCHSV-USDT',
         'tradeId': '601da995e0ee8b00063a075c',
@@ -309,6 +310,40 @@ def test_deserialize_trade_sell(mock_kucoin):
         raw_result=raw_result,
         start_ts=Timestamp(0),
         end_ts=Timestamp(1612556794),
+        case=KucoinCase.TRADES,
+    )
+    assert trade == expected_trade
+    assert reason is None
+
+
+def test_deserialize_v1_trade(mock_kucoin):
+    raw_result = {
+        'id': 'xxxx',
+        'symbol': 'NANO-ETH',
+        'dealPrice': '0.015743',
+        'dealValue': '0.00003441',
+        'amount': '0.002186',
+        'fee': '0.00000003',
+        'side': 'sell',
+        'createdAt': 1520471876,
+    }
+    expected_trade = Trade(
+        timestamp=Timestamp(1520471876),
+        location=Location.KUCOIN,
+        pair=TradePair('NANO_ETH'),
+        trade_type=TradeType.SELL,
+        amount=AssetAmount(FVal('0.002186')),
+        rate=Price(FVal('0.015743')),
+        fee=Fee(FVal('0.00000003')),
+        fee_currency=Asset('ETH'),
+        link='xxxx',
+        notes='',
+    )
+    trade, reason = mock_kucoin._deserialize_trade(
+        raw_result=raw_result,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1612556794),
+        case=KucoinCase.OLD_TRADES,
     )
     assert trade == expected_trade
     assert reason is None
@@ -342,6 +377,7 @@ def test_deserialize_trade_skipped(mock_kucoin, start_ts, end_ts, skip_reason):
         raw_result=raw_result,
         start_ts=Timestamp(start_ts),
         end_ts=Timestamp(end_ts),
+        case=KucoinCase.TRADES,
     )
     assert trade is None
     assert reason == skip_reason

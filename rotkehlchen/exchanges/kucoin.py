@@ -50,6 +50,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_price,
     deserialize_timestamp,
+    pair_get_assets,
 )
 from rotkehlchen.typing import (
     ApiKey,
@@ -88,16 +89,18 @@ API_PAGE_SIZE_LIMIT = 500
 API_REQUEST_RETRY_TIMES = 2
 API_REQUEST_RETRIES_AFTER_SECONDS = 1
 
-API_V2_TIMESTART_MS = 1550448000000  # 2019-02-18T00:00:00Z
-KUCOIN_LAUNCH_TS = 1504224000  # 01/09/2017
+API_V2_TIMESTART = Timestamp(1550448000)  # 2019-02-18T00:00:00Z
+API_V2_TIMESTART_MS = API_V2_TIMESTART * 1000
+KUCOIN_LAUNCH_TS = Timestamp(1504224000)  # 01/09/2017
 
 
 class KucoinCase(Enum):
     API_KEY = 1
     BALANCES = 2
     TRADES = 3
-    DEPOSITS = 4
-    WITHDRAWALS = 5
+    OLD_TRADES = 4
+    DEPOSITS = 5
+    WITHDRAWALS = 6
 
     def __str__(self) -> str:
         if self == KucoinCase.API_KEY:
@@ -106,11 +109,25 @@ class KucoinCase(Enum):
             return 'balances'
         if self == KucoinCase.TRADES:
             return 'trades'
+        if self == KucoinCase.OLD_TRADES:
+            return 'old trades'
         if self == KucoinCase.DEPOSITS:
             return 'deposits'
         if self == KucoinCase.WITHDRAWALS:
             return 'withdrawals'
         raise AssertionError(f'Unexpected KucoinCase: {self}')
+
+
+def _serialize_ts(case: KucoinCase, time: int) -> int:
+    if case == KucoinCase.OLD_TRADES:
+        return time
+    return time * 1000
+
+
+def _deserialize_ts(case: KucoinCase, time: int) -> Timestamp:
+    if case == KucoinCase.OLD_TRADES:
+        return Timestamp(time)
+    return Timestamp(int(time / 1000))
 
 
 class SkipReason(Enum):
@@ -205,12 +222,13 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 api_path = 'api/v1/hist-withdrawals'
             else:
                 api_path = 'api/v1/withdrawals'
+        elif case == KucoinCase.OLD_TRADES:
+            assert isinstance(options, dict)
+            api_path = 'api/v1/hist-orders'
         elif case == KucoinCase.TRADES:
             assert isinstance(options, dict)
-            if options['startAt'] < API_V2_TIMESTART_MS:
-                api_path = 'api/v1/hist-orders'
-            else:
-                api_path = 'api/v1/fills'
+            api_path = 'api/v1/fills'
+
         else:
             raise AssertionError(f'Unexpected case: {case}')
 
@@ -252,6 +270,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     f'Kucoin {method} request at {request_url} connection error: {str(e)}.',
                 ) from e
 
+            log.debug('Kucoin API response', text=response.text)
             # Check request rate limit
             if response.status_code in (HTTPStatus.FORBIDDEN, HTTPStatus.TOO_MANY_REQUESTS):
                 if retries_left == 0:
@@ -283,7 +302,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _api_query_paginated(  # pylint: disable=no-self-use
             self,
             options: Dict[str, Any],
-            case: Literal[KucoinCase.TRADES],
+            case: Literal[KucoinCase.OLD_TRADES, KucoinCase.TRADES],
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[Trade]:
@@ -302,7 +321,12 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _api_query_paginated(
             self,
             options: Dict[str, Any],
-            case: Literal[KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
+            case: Literal[
+                KucoinCase.TRADES,
+                KucoinCase.OLD_TRADES,
+                KucoinCase.DEPOSITS,
+                KucoinCase.WITHDRAWALS,
+            ],
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Union[List[Trade], List[AssetMovement]]:
@@ -310,10 +334,27 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         May raise RemoteError and SystemClockNotSyncedError
         """
+        results: Union[List[Trade], List[AssetMovement]] = []  # type: ignore # bug list nothing
         deserialization_method: DeserializationMethod
         if case == KucoinCase.TRADES:
-            deserialization_method = self._deserialize_trade
+            if start_ts < API_V2_TIMESTART:
+                # create separate query for v1 trades.
+                results.extend(self._api_query_paginated(  # type: ignore
+                    options=options,
+                    case=KucoinCase.OLD_TRADES,
+                    start_ts=start_ts,
+                    end_ts=API_V2_TIMESTART,
+                ))
+                if end_ts <= API_V2_TIMESTART:
+                    return results
+                # else the new start is the api v2 and we now query the normal v2 api
+                start_ts = API_V2_TIMESTART
+
+            deserialization_method = partial(self._deserialize_trade, case=case)
             time_step = WEEK_IN_SECONDS
+        elif case == KucoinCase.OLD_TRADES:
+            deserialization_method = partial(self._deserialize_trade, case=case)
+            time_step = MONTH_IN_SECONDS  # does not get used anyway
         elif case in (KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS):
             deserialization_method = partial(
                 self._deserialize_asset_movement,
@@ -324,11 +365,15 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise AssertionError(f'Unexpected case: {case}')
 
         call_options = options.copy()
-        results: Union[List[Trade], List[AssetMovement]] = []  # type: ignore # bug list nothing
-        call_options['startAt'] = max(start_ts, KUCOIN_LAUNCH_TS) * 1000
+        call_options['startAt'] = _serialize_ts(case, max(start_ts, KUCOIN_LAUNCH_TS))
         while True:
-            current_query_ts = int(call_options['startAt'] / 1000)
-            call_options['endAt'] = min(current_query_ts + time_step, end_ts) * 1000
+            current_query_ts = _deserialize_ts(case, call_options['startAt'])
+            if case != KucoinCase.OLD_TRADES:
+                call_options['endAt'] = _serialize_ts(
+                    case=case,
+                    time=min(current_query_ts + time_step, end_ts),
+                )
+
             response = self._api_query(
                 case=case,
                 options=call_options,
@@ -349,6 +394,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 raise RemoteError(msg) from e
 
+            print(f'Response is {response.text}')
             try:
                 response_data = response_dict['data']
                 total_page = response_data['totalPage']
@@ -405,10 +451,10 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             # totalPage indicates to stop paginating
             is_last_page = total_page in (0, current_page)
             if is_last_page:
-                if current_query_ts + time_step >= end_ts:
+                if case == KucoinCase.OLD_TRADES or current_query_ts + time_step >= end_ts:
                     break  # end of time range query and last page. We are done.
                 # else update query ts
-                current_query_ts += time_step
+                current_query_ts += time_step  # type: ignore
 
             # Update pagination params per endpoint
             # NB: Copying the dict before updating it prevents losing the call args values
@@ -417,7 +463,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 call_options['currentPage'] = current_page + 1
             else:
                 call_options['currentPage'] = 1
-            call_options['startAt'] = int(current_query_ts * 1000)
+            call_options['startAt'] = _serialize_ts(case, current_query_ts)
 
         return results
 
@@ -554,10 +600,14 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     @staticmethod
     def _deserialize_trade(
             raw_result: Dict[str, Any],
+            case: Literal[KucoinCase.TRADES, KucoinCase.OLD_TRADES],
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Tuple[Optional[Trade], Optional[SkipReason]]:
         """Process a trade result and deserialize it
+
+        For the old v1 trades look here:
+        https://github.com/ccxt/ccxt/blob/ed5f6f424f7777db03022df8dcc6553b3230006b/python/ccxt/kucoin.py#L1181
 
         May raise:
         - DeserializationError
@@ -566,25 +616,36 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         - UnsupportedAsset
         """
         try:
-            timestamp_ms = deserialize_timestamp(raw_result['createdAt'])
-            timestamp = Timestamp(int(timestamp_ms / 1000))
-            if timestamp > end_ts:
-                return None, SkipReason.AFTER_TIMESTAMP_RANGE
-            if timestamp < start_ts:
-                return None, SkipReason.BEFORE_TIMESTAMP_RANGE
-
+            timestamp = deserialize_timestamp(raw_result['createdAt'])
             trade_type = TradeType.BUY if raw_result['side'] == 'buy' else TradeType.SELL
-            amount = deserialize_asset_amount(raw_result['size'])
-            rate = deserialize_price(raw_result['price'])
+            # amount_key = 'size' if case == KucoinCase.TRADES else 'amount'
+            # amount = deserialize_asset_amount(raw_result['size'])
             fee = deserialize_fee(raw_result['fee'])
-            trade_id = raw_result.get('id', raw_result['tradeId'])
-            fee_currency_symbol = raw_result['feeCurrency']
             trade_pair_symbol = raw_result['symbol']
+            trade_pair = deserialize_trade_pair(trade_pair_symbol)
+            if case == KucoinCase.TRADES:
+                fee_currency_symbol = raw_result['feeCurrency']
+                fee_currency = asset_from_kucoin(fee_currency_symbol)
+                amount = deserialize_asset_amount(raw_result['size'])
+                rate = deserialize_price(raw_result['price'])
+                # new trades have the timestamp in ms
+                timestamp = Timestamp(int(timestamp / 1000))
+                trade_id = raw_result['tradeId']
+            else:  # old v1 trades
+                amount = deserialize_asset_amount(raw_result['amount'])
+                base_asset, quote_asset = pair_get_assets(trade_pair)
+                fee_currency = quote_asset if trade_type == TradeType.SELL else base_asset
+                rate = deserialize_price(raw_result['dealPrice'])
+                trade_id = raw_result['id']
+
         except KeyError as e:
             raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-        trade_pair = deserialize_trade_pair(trade_pair_symbol)
-        fee_currency = asset_from_kucoin(fee_currency_symbol)
+        if timestamp > end_ts:
+            return None, SkipReason.AFTER_TIMESTAMP_RANGE
+        if timestamp < start_ts:
+            return None, SkipReason.BEFORE_TIMESTAMP_RANGE
+
         trade = Trade(
             timestamp=timestamp,
             location=Location.KUCOIN,
@@ -619,7 +680,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _process_unsuccessful_response(  # pylint: disable=no-self-use
             self,
             response: Response,
-            case: Literal[KucoinCase.TRADES],
+            case: Literal[KucoinCase.TRADES, KucoinCase.OLD_TRADES],
     ) -> List[Trade]:
         ...
 
@@ -638,6 +699,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 KucoinCase.API_KEY,
                 KucoinCase.BALANCES,
                 KucoinCase.TRADES,
+                KucoinCase.OLD_TRADES,
                 KucoinCase.DEPOSITS,
                 KucoinCase.WITHDRAWALS,
             ],
