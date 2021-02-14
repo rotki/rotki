@@ -13383,6 +13383,15 @@
         "symbol": "XNN",
         "type": "ethereum token"
     },
+    "XOR": {
+        "coingecko": "sora",
+        "ethereum_address": "0x40FD72257597aA14C7231A7B1aaa29Fce868F677",
+        "ethereum_token_decimals": 18,
+        "name": "Sora Token",
+        "started": 1571141236,
+        "symbol": "XOR",
+        "type": "ethereum token"
+    },
     "XOV": {
         "coingecko": "xov",
         "ethereum_address": "0x153eD9CC1b792979d2Bde0BBF45CC2A7e436a5F9",
