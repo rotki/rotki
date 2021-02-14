@@ -5951,6 +5951,16 @@
         "symbol": "GUESS",
         "type": "ethereum token"
     },
+    "GUNTHY": {
+        "coingecko": "gunthy",
+        "cryptocompare": "",
+        "ethereum_address": "0x3684b581dB1F94b721EE0022624329FEb16Ab653",
+        "ethereum_token_decimals": 18,
+        "name": "GUNTHY",
+        "started": 1545158465,
+        "symbol": "GUNTHY",
+        "type": "ethereum token"
+    },
     "GUP": {
         "coingecko": "matchpool",
         "ethereum_address": "0xf7B098298f7C69Fc14610bf71d5e02c60792894C",

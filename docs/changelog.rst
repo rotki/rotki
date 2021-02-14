@@ -19,6 +19,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
+  - `Gunthy Token (GUNTHY) <https://www.coingecko.com/en/coins/gunthy>`__
   - `Bao Finance Token (BAO) <https://www.coingecko.com/en/coins/bao-finance>`__
   - `Sora Token (XOR) <https://www.coingecko.com/en/coins/sora>`__
   - `Banano (BAN) <https://www.coingecko.com/en/coins/banano>`__
