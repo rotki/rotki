@@ -89,5 +89,7 @@ def test_query_eth2_info(rotkehlchen_api_server, ethereum_accounts):
     assert details[0]['public_key'] == expected_pubkey
     for duration in ('1d', '1w', '1m', '1y'):
         performance = details[0][f'performance_{duration}']
-        assert FVal(performance['amount']) >= ZERO
-        assert FVal(performance['usd_value']) >= ZERO
+        # Can't assert for positive since they may go offline for a day and the test will fail
+        # https://twitter.com/LefterisJP/status/1361091757274972160
+        assert FVal(performance['amount']) is not None
+        assert FVal(performance['usd_value']) is not None
