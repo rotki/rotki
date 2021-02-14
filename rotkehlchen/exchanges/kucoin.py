@@ -219,9 +219,10 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             request_url = f'{self.base_uri}/{api_path}'
             message = f'{timestamp}{method}/{api_path}'
             if case in (KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS):
-                urlencoded_options = urlencode(call_options)
-                request_url = f'{request_url}?{urlencoded_options}'
-                message = f'{message}?{urlencoded_options}'
+                if call_options != {}:
+                    urlencoded_options = urlencode(call_options)
+                    request_url = f'{request_url}?{urlencoded_options}'
+                    message = f'{message}?{urlencoded_options}'
 
             signature = base64.b64encode(
                 hmac.new(
