@@ -1018,6 +1018,13 @@
         "symbol": "BAL",
         "type": "ethereum token"
     },
+    "BAN": {
+        "coingecko": "banano",
+        "name": "Avalanche",
+        "started": 1538352000,
+        "symbol": "BAN",
+        "type": "own chain"
+    },
     "BANCA": {
         "coingecko": "banca",
         "ethereum_address": "0x998b3B82bC9dBA173990Be7afb772788B5aCB8Bd",

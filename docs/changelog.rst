@@ -20,6 +20,7 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `Sora Token (XOR) <https://www.coingecko.com/en/coins/sora>`__
+  - `Banano (BAN) <https://www.coingecko.com/en/coins/banano>`__
   - `Redfox labs token (RFOX) <https://www.coingecko.com/en/coins/redfox-labs>`__
   - `BoringDAO (BOR) <https://www.coingecko.com/en/coins/boringdao>`__
   - `BoringDAO BTC (oBTC) <https://www.coingecko.com/en/coins/boringdao-btc>`__
