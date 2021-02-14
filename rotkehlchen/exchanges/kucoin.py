@@ -166,10 +166,10 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ):
         super().__init__(str(Location.KUCOIN), api_key, secret, database)
         self.base_uri = base_uri
+        self.api_passphrase = passphrase
         self.session.headers.update({
             'Content-Type': 'application/json',
             'KC-API-KEY': self.api_key,
-            'KC-API-PASSPHRASE': passphrase,
             'KC-API-KEY-VERSION': '2',
         })
         self.msg_aggregator = msg_aggregator
@@ -184,7 +184,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         May raise RemoteError
         """
         call_options = options.copy() if options else {}
-        for header in ('KC-API-SIGN', 'KC-API-TIMESTAMP'):
+        for header in ('KC-API-SIGN', 'KC-API-TIMESTAMP', 'KC-API-PASSPHRASE'):
             self.session.headers.pop(header, None)
 
         if case == KucoinCase.BALANCES:
@@ -217,9 +217,15 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     digestmod=hashlib.sha256,
                 ).digest(),
             ).decode('utf-8')
+            passphrase = base64.b64encode(hmac.new(
+                self.secret,
+                self.api_passphrase.encode('utf-8'),
+                hashlib.sha256,
+            ).digest()).decode('utf-8')
             self.session.headers.update({
                 'KC-API-SIGN': signature,
                 'KC-API-TIMESTAMP': timestamp,
+                'KC-API-PASSPHRASE': passphrase,
             })
             log.debug('Kucoin API request', request_url=request_url)
             try:

@@ -449,6 +449,7 @@ def test_deserialize_asset_movement_skipped(mock_kucoin, start_ts, end_ts, is_in
     assert reason == skip_reason
 
 
+@pytest.mark.skip('Fails with status code: 404 and text: KC-API-KEY not exists')
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_balances_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unused-argument
     assets_balance, msg = sandbox_kuckoin.query_balances()
@@ -473,6 +474,7 @@ def test_query_balances_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=u
     assert msg == ''
 
 
+@pytest.mark.skip('Fails with status code: 404 and text: KC-API-KEY not exists')
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_trades_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unused-argument
     """The sandbox account has 6 trades. Below a list of the trades and their

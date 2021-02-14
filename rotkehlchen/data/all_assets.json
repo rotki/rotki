@@ -1018,6 +1018,13 @@
         "symbol": "BAL",
         "type": "ethereum token"
     },
+    "BAN": {
+        "coingecko": "banano",
+        "name": "Avalanche",
+        "started": 1538352000,
+        "symbol": "BAN",
+        "type": "own chain"
+    },
     "BANCA": {
         "coingecko": "banca",
         "ethereum_address": "0x998b3B82bC9dBA173990Be7afb772788B5aCB8Bd",
@@ -1034,6 +1041,15 @@
         "name": "Band Protocol",
         "started": 1567987200,
         "symbol": "BAND",
+        "type": "ethereum token"
+    },
+    "BAO": {
+        "coingecko": "bao-finance",
+        "ethereum_address": "0x374CB8C27130E2c9E04F44303f3c8351B9De61C1",
+        "ethereum_token_decimals": 18,
+        "name": "BaoToken",
+        "started": 1606850780,
+        "symbol": "BAO",
         "type": "ethereum token"
     },
     "BAS": {
@@ -5933,6 +5949,16 @@
         "name": "Peerguess",
         "started": 1509148800,
         "symbol": "GUESS",
+        "type": "ethereum token"
+    },
+    "GUNTHY": {
+        "coingecko": "gunthy",
+        "cryptocompare": "",
+        "ethereum_address": "0x3684b581dB1F94b721EE0022624329FEb16Ab653",
+        "ethereum_token_decimals": 18,
+        "name": "GUNTHY",
+        "started": 1545158465,
+        "symbol": "GUNTHY",
         "type": "ethereum token"
     },
     "GUP": {
@@ -13381,6 +13407,15 @@
         "name": "Xenon",
         "started": 1505981778,
         "symbol": "XNN",
+        "type": "ethereum token"
+    },
+    "XOR": {
+        "coingecko": "sora",
+        "ethereum_address": "0x40FD72257597aA14C7231A7B1aaa29Fce868F677",
+        "ethereum_token_decimals": 18,
+        "name": "Sora Token",
+        "started": 1571141236,
+        "symbol": "XOR",
         "type": "ethereum token"
     },
     "XOV": {
