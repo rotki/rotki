@@ -522,7 +522,8 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 return None, SkipReason.INNER_MOVEMENT
 
             address = raw_result['address']
-            transaction_id = raw_result['walletTxId']
+            # The transaction id can have an @ which we should just get rid of
+            transaction_id = raw_result['walletTxId'].split('@')[0]
             amount = deserialize_asset_amount(raw_result['amount'])
             fee = deserialize_fee(raw_result['fee'])
             fee_currency_symbol = raw_result['currency']
@@ -572,7 +573,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             amount = deserialize_asset_amount(raw_result['size'])
             rate = deserialize_price(raw_result['price'])
             fee = deserialize_fee(raw_result['fee'])
-            trade_id = raw_result['tradeId']
+            trade_id = raw_result['id']
             fee_currency_symbol = raw_result['feeCurrency']
             trade_pair_symbol = raw_result['symbol']
         except KeyError as e:
