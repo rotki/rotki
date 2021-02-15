@@ -83,13 +83,13 @@ POAP_AIRDROPS = {
         # is checksummed
         'https://gist.githubusercontent.com/LefterisJP/73469098efe0b12965e5752899be00fe/raw/2ee02c22b68b90333359e2f1d24ff5d460dba092/poap_beacon_chain_first_1024.json',  # noqa: E501
         'https://poap.delivery/beacon-chain-first-1024',
-        'Beacon Chain First 32,769 Block Validators',
+        'Beacon Chain First 1024 Depositors and Proposers',
     ),
     'beacon_chain_first_32769': (
         # is checksummed
         'https://gist.githubusercontent.com/LefterisJP/6302f4e6da6c1488427fbb8b6207222e/raw/1e2e6ebc8c29ba75c2189a5780c132da4ed8530c/poap_beacon_chain_first_32769.json',  # noqa: E501
         'https://poap.delivery/beacon-chain-first-32769',
-        'Beacon Chain First 1024 Depositors and Proposers',
+        'Beacon Chain First 32,769 Block Validators',
     ),
     'coingecko_yield_farming': (
         # is checksummed

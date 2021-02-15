@@ -114,7 +114,7 @@ import {
   AIRDROP_LIDO,
   AIRDROP_FURUCOMBO,
   AIRDROP_CURVE,
-  AIRDROAP_POAP
+  AIRDROP_POAP
 } from '@/store/defi/const';
 import { Airdrop, AirdropType } from '@/store/defi/types';
 import { ETH, GeneralAccount } from '@/typing/types';
@@ -171,7 +171,7 @@ export default class Airdrops extends Mixins(StatusMixin) {
   expanded = [];
 
   hasDetails(source: AirdropType): boolean {
-    return [AIRDROAP_POAP].includes(source);
+    return [AIRDROP_POAP].includes(source);
   }
 
   async mounted() {
@@ -223,7 +223,7 @@ export default class Airdrops extends Mixins(StatusMixin) {
       icon: require(`@/assets/images/defi/curve.svg`),
       name: 'Curve Finance'
     },
-    [AIRDROAP_POAP]: {
+    [AIRDROP_POAP]: {
       icon: require(`@/assets/images/airdrops/poap.svg`),
       name: 'POAP Delivery'
     }

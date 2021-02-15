@@ -29,7 +29,7 @@ import {
 import { TradeType } from '@/services/history/types';
 import { Balance, HasBalance } from '@/services/types-api';
 import {
-  AIRDROAP_POAP,
+  AIRDROP_POAP,
   AIRDROPS,
   OVERVIEW_PROTOCOLS,
   UNISWAP_EVENT_TYPE
@@ -91,7 +91,7 @@ type RegularAirdrop = {
 };
 
 type PoapDetails = {
-  readonly [AIRDROAP_POAP]?: PoapDelivery[];
+  readonly [AIRDROP_POAP]?: PoapDelivery[];
 };
 
 export interface Airdrops {

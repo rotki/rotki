@@ -288,7 +288,7 @@ export const AIRDROP_GRAIN = 'grain';
 export const AIRDROP_LIDO = 'lido';
 export const AIRDROP_FURUCOMBO = 'furucombo';
 export const AIRDROP_CURVE = 'curve';
-export const AIRDROAP_POAP = 'poap';
+export const AIRDROP_POAP = 'poap';
 
 export const AIRDROPS = [
   AIRDROP_1INCH,
@@ -299,5 +299,5 @@ export const AIRDROPS = [
   AIRDROP_LIDO,
   AIRDROP_FURUCOMBO,
   AIRDROP_CURVE,
-  AIRDROAP_POAP
+  AIRDROP_POAP
 ] as const;

@@ -31,7 +31,7 @@ import { Balance } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
   AAVE,
-  AIRDROAP_POAP,
+  AIRDROP_POAP,
   COMPOUND,
   getProtcolIcon,
   GETTER_UNISWAP_ASSETS,
@@ -1355,7 +1355,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       const airdrop = airdrops[address];
       for (const source in airdrop) {
         const element = airdrop[source as AirdropType];
-        if (source === AIRDROAP_POAP) {
+        if (source === AIRDROP_POAP) {
           const details = element as PoapDelivery[];
           data.push({
             address,
