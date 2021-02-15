@@ -60,6 +60,24 @@
             </v-sheet>
           </v-col>
         </v-row>
+        <v-row no-gutters class="mt-8">
+          <v-col cols="12">
+            <v-sheet outlined rounded>
+              <service-key
+                v-model="loopringKey"
+                class="external-services__loopring_key"
+                :title="$t('external_services.loopring.title')"
+                :description="$t('external_services.loopring.description')"
+                :label="$t('external_services.loopring.label')"
+                :hint="$t('external_services.loopring.hint')"
+                :loading="loading"
+                :tooltip="$t('external_services.loopring.delete_tooltip')"
+                @save="save('loopring', $event)"
+                @delete-key="deleteKey('loopring')"
+              />
+            </v-sheet>
+          </v-col>
+        </v-row>
       </v-card-text>
     </v-card>
 
@@ -88,6 +106,7 @@ export default class ExternalServices extends Vue {
   etherscanKey: string = '';
   cryptocompareKey: string = '';
   beaconchainKey: string = '';
+  loopringKey: string = '';
 
   serviceToDelete: ExternalServiceName | '' = '';
 
@@ -96,11 +115,13 @@ export default class ExternalServices extends Vue {
   private updateKeys({
     cryptocompare,
     etherscan,
-    beaconchain
+    beaconchain,
+    loopring
   }: ExternalServiceKeys) {
     this.cryptocompareKey = cryptocompare?.api_key || '';
     this.etherscanKey = etherscan?.api_key || '';
     this.beaconchainKey = beaconchain?.api_key || '';
+    this.loopringKey = loopring?.api_key || '';
   }
 
   async mounted() {

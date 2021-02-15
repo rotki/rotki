@@ -52,4 +52,5 @@ export interface ExternalServiceKeys {
   etherscan?: ApiKey;
   cryptocompare?: ApiKey;
   beaconchain?: ApiKey;
+  loopring?: ApiKey;
 }

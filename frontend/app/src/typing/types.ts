@@ -139,7 +139,7 @@ interface SettingsPayload {
   taxable_ledger_actions: LedgerActionType[];
 }
 
-export type ExternalServiceName = 'etherscan' | 'cryptocompare';
+export type ExternalServiceName = 'etherscan' | 'cryptocompare' | 'loopring';
 
 export interface ExternalServiceKey {
   readonly name: ExternalServiceName;

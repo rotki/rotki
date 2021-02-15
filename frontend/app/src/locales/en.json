@@ -250,6 +250,13 @@
       "label": "API key",
       "title": "Etherscan"
     },
+    "loopring": {
+      "delete_tooltip": "Delete your Loopring API key",
+      "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key. ",
+      "hint": "Enter your Loopring API key",
+      "label": "API key",
+      "title": "Loopring"
+    },
     "set": {
       "error": {
         "message": "Error while settings external service api keys: {error}",
