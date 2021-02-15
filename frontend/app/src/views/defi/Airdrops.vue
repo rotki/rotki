@@ -30,12 +30,20 @@
               :items="entries"
               :footer-props="footerProps"
               :headers="headers"
+              single-expand
+              :expanded.sync="expanded"
+              item-key="index"
             >
               <template #item.address="{ item }">
                 <hash-link :text="item.address" />
               </template>
               <template #item.amount="{ item }">
-                <amount-display :value="item.amount" :asset="item.asset" />
+                <amount-display
+                  v-if="!hasDetails(item.source)"
+                  :value="item.amount"
+                  :asset="item.asset"
+                />
+                <span v-else>{{ item.details.length }}</span>
               </template>
               <template #item.source="{ item }">
                 <div class="d-flex flex-row align-center">
@@ -52,6 +60,7 @@
               </template>
               <template #item.link="{ item }">
                 <v-btn
+                  v-if="!hasDetails(item.source)"
                   icon
                   color="primary"
                   :target="$interop.isPackaged ? undefined : '_blank'"
@@ -64,6 +73,20 @@
                 >
                   <v-icon>mdi-link</v-icon>
                 </v-btn>
+                <row-expander
+                  v-else
+                  :expanded="expanded.includes(item)"
+                  @click="expanded = expanded.includes(item) ? [] : [item]"
+                />
+              </template>
+              <template #expanded-item="{ headers, item }">
+                <td
+                  v-if="hasDetails(item.source)"
+                  class="airdrops__details"
+                  :colspan="$vuetify.breakpoint.xsOnly ? 2 : headers.length"
+                >
+                  <poap-delivery-airdrops :items="item.details" />
+                </td>
               </template>
             </v-data-table>
           </v-sheet>
@@ -78,6 +101,7 @@ import { Component, Mixins } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters } from 'vuex';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import RowExpander from '@/components/helper/RowExpander.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
@@ -88,10 +112,13 @@ import {
   AIRDROP_CORNICHON,
   AIRDROP_GRAIN,
   AIRDROP_LIDO,
-  AIRDROP_FURUCOMBO
+  AIRDROP_FURUCOMBO,
+  AIRDROP_CURVE,
+  AIRDROAP_POAP
 } from '@/store/defi/const';
 import { Airdrop, AirdropType } from '@/store/defi/types';
 import { ETH, GeneralAccount } from '@/typing/types';
+import PoapDeliveryAirdrops from '@/views/defi/PoapDeliveryAirdrops.vue';
 
 type AirdropSource = {
   readonly icon: string;
@@ -103,7 +130,7 @@ type AirdropSources = {
 };
 
 @Component({
-  components: { ProgressScreen },
+  components: { PoapDeliveryAirdrops, RowExpander, ProgressScreen },
   computed: {
     ...mapGetters('defi', ['airdrops', 'airdropAddresses'])
   },
@@ -141,6 +168,11 @@ export default class Airdrops extends Mixins(StatusMixin) {
   fetchAirdrops!: (refresh: boolean) => Promise<void>;
   selectedAccounts: GeneralAccount[] = [];
   airdropAddresses!: string[];
+  expanded = [];
+
+  hasDetails(source: AirdropType): boolean {
+    return [AIRDROAP_POAP].includes(source);
+  }
 
   async mounted() {
     await this.fetchAirdrops(false);
@@ -148,7 +180,10 @@ export default class Airdrops extends Mixins(StatusMixin) {
 
   get entries(): Airdrop[] {
     const addresses = this.selectedAccounts.map(({ address }) => address);
-    return this.airdrops(addresses);
+    return this.airdrops(addresses).map((value, index) => ({
+      ...value,
+      index
+    }));
   }
 
   async refresh() {
@@ -183,20 +218,34 @@ export default class Airdrops extends Mixins(StatusMixin) {
     [AIRDROP_FURUCOMBO]: {
       icon: require(`@/assets/images/airdrops/furucombo.png`),
       name: 'Furucombo'
+    },
+    [AIRDROP_CURVE]: {
+      icon: require(`@/assets/images/defi/curve.svg`),
+      name: 'Curve Finance'
+    },
+    [AIRDROAP_POAP]: {
+      icon: require(`@/assets/images/airdrops/poap.svg`),
+      name: 'POAP Delivery'
     }
   };
 
   getIcon(source: AirdropType) {
-    return this.sources[source].icon ?? '';
+    return this.sources[source]?.icon ?? '';
   }
 
   getLabel(source: AirdropType) {
-    return this.sources[source].name ?? '';
+    return this.sources[source]?.name ?? '';
   }
 }
 </script>
 
 <style scoped lang="scss">
+.airdrops {
+  &__details {
+    background-color: var(--v-rotki-light-grey-base) !important;
+  }
+}
+
 ::v-deep {
   tbody {
     tr {

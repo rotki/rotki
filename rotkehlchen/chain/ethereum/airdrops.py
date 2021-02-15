@@ -145,7 +145,7 @@ POAP_AIRDROPS = {
         'https://poap.delivery/proof-of-gucci-design',
         'YFI - Proof of Gucci Design Competition',
     ),
-    'resucitators': (
+    'resuscitators': (
         # is checksummed
         'https://gist.githubusercontent.com/LefterisJP/0ac0216f82f16453b74a40529384a152/raw/f003083090efd834bcee1d0d1fe4e218380aa0cf/poap_resucitators.json',  # noqa: E501
         'https://poap.delivery/medalla-resuscitator',

@@ -29,6 +29,7 @@ import {
 import { TradeType } from '@/services/history/types';
 import { Balance, HasBalance } from '@/services/types-api';
 import {
+  AIRDROAP_POAP,
   AIRDROPS,
   OVERVIEW_PROTOCOLS,
   UNISWAP_EVENT_TYPE
@@ -54,12 +55,20 @@ export interface DefiState {
   airdrops: Airdrops;
 }
 
+export interface PoapDeliveryDetails {
+  readonly amount: string;
+  readonly link: string;
+  readonly name: string;
+  readonly event: string;
+}
+
 export interface Airdrop {
   readonly address: string;
   readonly source: AirdropType;
-  readonly amount: string;
-  readonly link: string;
-  readonly asset: string;
+  readonly amount?: string;
+  readonly link?: string;
+  readonly asset?: string;
+  readonly details?: PoapDeliveryDetails[];
 }
 
 export interface AirdropDetail {
@@ -68,9 +77,22 @@ export interface AirdropDetail {
   readonly link: string;
 }
 
-interface AirdropDetails {
-  readonly [source: string]: AirdropDetail;
+export interface PoapDelivery {
+  readonly assets: number[];
+  readonly event: string;
+  readonly link: string;
+  readonly name: string;
 }
+
+type AirdropDetails = RegularAirdrop & PoapDetails;
+
+type RegularAirdrop = {
+  readonly [source in Exclude<AirdropType, 'poap'>]?: AirdropDetail;
+};
+
+type PoapDetails = {
+  readonly [AIRDROAP_POAP]?: PoapDelivery[];
+};
 
 export interface Airdrops {
   readonly [address: string]: AirdropDetails;
