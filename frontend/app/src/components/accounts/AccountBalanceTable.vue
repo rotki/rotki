@@ -108,7 +108,10 @@
         </tr>
       </template>
       <template #expanded-item="{ headers, item }">
-        <td :colspan="headers.length" class="account-balance-table__expanded">
+        <td
+          :colspan="$vuetify.breakpoint.xsOnly ? 2 : headers.length"
+          class="account-balance-table__expanded"
+        >
           <account-asset-balances
             :title="$t('account_balance_table.assets')"
             :assets="accountAssets(item.address)"
@@ -437,7 +440,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   }
 
   &__expanded {
-    padding: 0 !important;
+    background-color: var(--v-rotki-light-grey-base) !important;
   }
 
   &__tag {

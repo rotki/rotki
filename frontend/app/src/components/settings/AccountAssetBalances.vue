@@ -1,67 +1,58 @@
 <template>
-  <fragment>
-    <v-row class="account-asset-balances__header">
-      <v-col class="text-h5 ms-6">{{ title }}</v-col>
-    </v-row>
-    <v-row
-      no-gutters
-      class="account-asset-balances"
-      align="center"
-      justify="center"
-    >
-      <v-col cols="12">
-        <v-data-table
-          :items="assets"
-          :headers="headers"
-          class="account-asset-balances__table"
-          sort-by="usdValue"
-          sort-desc
-          :footer-props="footerProps"
-        >
-          <template #header.usdValue>
-            <div class="text-no-wrap">
-              {{
-                $t('account_asset_balance.headers.value', {
-                  symbol: currencySymbol
-                })
-              }}
-            </div>
-          </template>
-          <template #header.price>
-            <div class="text-no-wrap">
-              {{
-                $t('account_asset_balance.headers.price', {
-                  symbol: currencySymbol
-                })
-              }}
-            </div>
-          </template>
-          <template #item.asset="{ item }">
-            <asset-details opens-details :asset="item.asset" />
-          </template>
-          <template #item.price="{ item }">
-            <amount-display
-              tooltip
-              show-currency="symbol"
-              fiat-currency="USD"
-              :price-asset="item.asset"
-              :value="prices[item.asset] ? prices[item.asset] : '-'"
-            />
-          </template>
-          <template #item.amount="{ item }">
-            <amount-display :value="item.amount" />
-          </template>
-          <template #item.usdValue="{ item }">
-            <amount-display
-              fiat-currency="USD"
-              :value="item.usdValue"
-              show-currency="symbol"
-            />
-          </template>
-        </v-data-table>
-      </v-col>
-    </v-row>
-  </fragment>
+  <div class="py-4">
+    <div class="text-h6 mb-4">{{ title }}</div>
+    <v-sheet outlined rounded>
+      <v-data-table
+        :items="assets"
+        :headers="headers"
+        class="account-asset-balances__table"
+        sort-by="usdValue"
+        sort-desc
+        :footer-props="footerProps"
+      >
+        <template #header.usdValue>
+          <div class="text-no-wrap">
+            {{
+              $t('account_asset_balance.headers.value', {
+                symbol: currencySymbol
+              })
+            }}
+          </div>
+        </template>
+        <template #header.price>
+          <div class="text-no-wrap">
+            {{
+              $t('account_asset_balance.headers.price', {
+                symbol: currencySymbol
+              })
+            }}
+          </div>
+        </template>
+        <template #item.asset="{ item }">
+          <asset-details opens-details :asset="item.asset" />
+        </template>
+        <template #item.price="{ item }">
+          <amount-display
+            tooltip
+            show-currency="symbol"
+            fiat-currency="USD"
+            :price-asset="item.asset"
+            :value="prices[item.asset] ? prices[item.asset] : '-'"
+          />
+        </template>
+        <template #item.amount="{ item }">
+          <amount-display :value="item.amount" />
+        </template>
+        <template #item.usdValue="{ item }">
+          <amount-display
+            fiat-currency="USD"
+            :value="item.usdValue"
+            show-currency="symbol"
+          />
+        </template>
+      </v-data-table>
+    </v-sheet>
+  </div>
 </template>
 
 <script lang="ts">
@@ -143,23 +134,6 @@ export default class AccountAssetBalances extends Vue {
 }
 
 .account-asset-balances {
-  background-color: #fafafa;
-
-  &__header {
-    background-color: #fafafa;
-  }
-
-  ::v-deep {
-    .v-data-table {
-      background-color: #fafafa;
-    }
-  }
-
-  &__table {
-    margin-left: 12px;
-    margin-right: 12px;
-  }
-
   &__balance {
     &__asset {
       display: flex;

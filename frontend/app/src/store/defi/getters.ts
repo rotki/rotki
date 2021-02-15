@@ -31,6 +31,7 @@ import { Balance } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
   AAVE,
+  AIRDROP_POAP,
   COMPOUND,
   getProtcolIcon,
   GETTER_UNISWAP_ASSETS,
@@ -40,6 +41,7 @@ import {
 import {
   AaveLoan,
   Airdrop,
+  AirdropDetail,
   AirdropType,
   BaseDefiBalance,
   Collateral,
@@ -51,6 +53,7 @@ import {
   LoanSummary,
   MakerDAOVaultModel,
   OverviewDefiProtocol,
+  PoapDelivery,
   ProfitLossModel,
   TokenInfo,
   UniswapBalance,
@@ -1351,14 +1354,29 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
       const airdrop = airdrops[address];
       for (const source in airdrop) {
-        const { amount, asset, link } = airdrop[source];
-        data.push({
-          address,
-          amount,
-          link,
-          source: source as AirdropType,
-          asset
-        });
+        const element = airdrop[source as AirdropType];
+        if (source === AIRDROP_POAP) {
+          const details = element as PoapDelivery[];
+          data.push({
+            address,
+            source: source as AirdropType,
+            details: details.map(value => ({
+              amount: '1',
+              link: value.link,
+              name: value.name,
+              event: value.event
+            }))
+          });
+        } else {
+          const { amount, asset, link } = element as AirdropDetail;
+          data.push({
+            address,
+            amount,
+            link,
+            source: source as AirdropType,
+            asset
+          });
+        }
       }
     }
     return data;

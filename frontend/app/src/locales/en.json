@@ -460,6 +460,12 @@
     "title": "Oracle cache",
     "to_asset": "To Asset"
   },
+  "poap_delivery_airdrops": {
+    "headers": {
+      "name": "Name"
+    },
+    "title": "Claimable POAP Delivery NFTs"
+  },
   "premium_loading_failed": {
     "description": "This might indicate a problem with the premium component service.",
     "open_issue": "If the problem persists open an issue in our issue tracker.",
