@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Union
+from typing import List, Union
 
 from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
 from rotkehlchen.assets.asset import Asset
@@ -67,18 +67,34 @@ def action_get_type(action: TaxableAction) -> str:
     raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
 
 
-def action_get_assets(
-        action: TaxableAction,
-) -> Tuple[Asset, Optional[Asset]]:
+def action_get_assets(action: TaxableAction) -> List[Asset]:
+    """Gets the assets involved in the action
+
+    May raise:
+     - UnknownAsset, UnsupportedAsset due to the trade pair's assets
+     - UnprocessableTradePair: If a trade's pair can't be processed
+
+    """
     if isinstance(action, (Trade, AMMTrade)):
-        return trade_get_assets(action)
-    if isinstance(action, (AssetMovement, DefiEvent, LedgerAction)):
-        return action.asset, None
+        return list(trade_get_assets(action))
+    if isinstance(action, (AssetMovement, LedgerAction)):
+        return [action.asset]
+    if isinstance(action, DefiEvent):
+        assets = set()
+        if action.got_asset is not None:
+            assets.add(action.got_asset)
+        if action.spent_asset is not None:
+            assets.add(action.spent_asset)
+        if action.pnl is not None:
+            for entry in action.pnl:
+                assets.add(entry.asset)
+
+        return list(assets)
     if isinstance(action, EthereumTransaction):
-        return A_ETH, None
+        return [A_ETH]
     if isinstance(action, MarginPosition):
-        return action.pl_currency, None
+        return [action.pl_currency]
     if isinstance(action, Loan):
-        return action.currency, None
+        return [action.currency]
     # else
     raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
