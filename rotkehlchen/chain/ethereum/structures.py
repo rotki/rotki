@@ -75,7 +75,7 @@ class AaveEvent:
 
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class AaveSimpleEvent(AaveEvent):
-    """A simple event of the Aave protocol. Deposit or withdrawal"""
+    """A simple event of the Aave protocol. Deposit, withdrawal or interest"""
     asset: Asset
     value: Balance
 
@@ -137,7 +137,7 @@ class AaveRepayEvent(AaveSimpleEvent):
 
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class AaveLiquidationEvent(AaveEvent):
-    """A simple event of the Aave protocol. Deposit or withdrawal"""
+    """An aave liquidation event. You gain the principal and lose the collateral."""
     collateral_asset: Asset
     collateral_balance: Balance
     principal_asset: Asset

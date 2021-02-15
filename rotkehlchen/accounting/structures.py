@@ -1,8 +1,8 @@
 import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, DefaultDict, Dict, Optional, List
+from enum import Enum, auto
+from typing import Any, DefaultDict, Dict, List, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
@@ -87,11 +87,11 @@ class AssetBalance:
     balance: Balance
 
     @property
-    def amount(self):
+    def amount(self) -> FVal:
         return self.balance.amount
 
     @property
-    def usd_value(self):
+    def usd_value(self) -> FVal:
         return self.balance.usd_value
 
     def serialize(self) -> Dict[str, str]:
@@ -101,10 +101,10 @@ class AssetBalance:
 
     def to_dict(self) -> Dict[str, Any]:
         result = self.balance.to_dict()
-        result['asset'] = self.asset
+        result['asset'] = self.asset  # type: ignore
         return result
 
-    def _evaluate_other_input(self, other: Any):
+    def _evaluate_other_input(self, other: Any) -> None:
         if not isinstance(other, AssetBalance):
             raise TypeError(f'AssetBalance can not interact with {type(other)}')
 
@@ -130,40 +130,58 @@ class AssetBalance:
 
 class DefiEventType(Enum):
     DSR_LOAN_GAIN = 0
-    MAKERDAO_VAULT_LOSS = 1
-    AAVE_LOAN_INTEREST = 2
-    COMPOUND_LOAN_INTEREST = 3
-    COMPOUND_DEBT_REPAY = 4
-    COMPOUND_LIQUIDATION_DEBT_REPAID = 5
-    COMPOUND_LIQUIDATION_COLLATERAL_LOST = 6
-    COMPOUND_REWARDS = 7
-    YEARN_VAULTS_PNL = 8
-    AAVE_LOSS = 9
-    ADEX_STAKE_PROFIT = 10
+    DSR_EVENT = auto()
+    MAKERDAO_VAULT_LOSS = auto()
+    MAKERDAO_VAULT_EVENT = auto()
+    AAVE_LOAN_INTEREST = auto()
+    COMPOUND_EVENT = auto()
+    COMPOUND_LOAN_INTEREST = auto()
+    COMPOUND_DEBT_REPAY = auto()
+    COMPOUND_LIQUIDATION_DEBT_REPAID = auto()
+    COMPOUND_LIQUIDATION_COLLATERAL_LOST = auto()
+    COMPOUND_REWARDS = auto()
+    YEARN_VAULTS_PNL = auto()
+    YEARN_VAULTS_EVENT = auto()
+    AAVE_LOSS = auto()
+    AAVE_EVENT = auto()
+    ADEX_STAKE_PROFIT = auto()
+    ADEX_EVENT = auto()
 
     def __str__(self) -> str:
         if self == DefiEventType.DSR_LOAN_GAIN:
-            return "DSR loan gain"
+            return 'DSR loan gain'
+        if self == DefiEventType.DSR_EVENT:
+            return 'DSR event'
         if self == DefiEventType.MAKERDAO_VAULT_LOSS:
-            return "Makerdao vault loss"
+            return 'Makerdao vault loss'
+        if self == DefiEventType.MAKERDAO_VAULT_EVENT:
+            return 'Makerdao vault event'
         if self == DefiEventType.AAVE_LOAN_INTEREST:
-            return "Aave loan interest"
+            return 'Aave loan interest'
         if self == DefiEventType.AAVE_LOSS:
-            return "Aave loss"
+            return 'Aave loss'
+        if self == DefiEventType.AAVE_EVENT:
+            return 'Aave event'
+        if self == DefiEventType.COMPOUND_EVENT:
+            return 'Compound event'
         if self == DefiEventType.COMPOUND_LOAN_INTEREST:
-            return "Compound loan interest"
+            return 'Compound loan interest'
         if self == DefiEventType.COMPOUND_DEBT_REPAY:
-            return "Compound debt repayment"
+            return 'Compound debt repayment'
         if self == DefiEventType.COMPOUND_LIQUIDATION_DEBT_REPAID:
-            return "Compound liquidation debt repayment"
+            return 'Compound liquidation debt repayment'
         if self == DefiEventType.COMPOUND_LIQUIDATION_COLLATERAL_LOST:
-            return "Compound liquidation collateral lost"
+            return 'Compound liquidation collateral lost'
         if self == DefiEventType.COMPOUND_REWARDS:
-            return "Compound rewards"
+            return 'Compound rewards'
         if self == DefiEventType.YEARN_VAULTS_PNL:
-            return "Yearn vaults profit/loss"
+            return 'Yearn vaults profit/loss'
+        if self == DefiEventType.YEARN_VAULTS_EVENT:
+            return 'Yearn vaults event'
         if self == DefiEventType.ADEX_STAKE_PROFIT:
-            return "AdEx staking profit"
+            return 'AdEx staking profit'
+        if self == DefiEventType.ADEX_EVENT:
+            return 'AdEx event'
         # else
         raise RuntimeError(f'Corrupt value {self} for DefiEventType -- Should never happen')
 
@@ -182,10 +200,14 @@ class DefiEventType(Enum):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DefiEvent:
     timestamp: Timestamp
+    wrapped_event: Any
     event_type: DefiEventType
-    asset: Asset
-    amount: FVal
-    tx_hashes: Optional[List[str]] = None
+    got_asset: Optional[Asset]
+    got_balance: Optional[Balance]
+    spent_asset: Optional[Asset]
+    spent_balance: Optional[Balance]
+    pnl: Optional[List[AssetBalance]]
+    tx_hashes: Optional[str] = None
     notes: str = ''
 
     def is_profitable(self) -> bool:

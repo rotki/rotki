@@ -1,14 +1,23 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 
 from gevent.lock import Semaphore
 
+from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.makerdao.common import RAY
+from rotkehlchen.chain.ethereum.structures import (
+    AaveBorrowEvent,
+    AaveLiquidationEvent,
+    AaveRepayEvent,
+    AaveSimpleEvent,
+)
 from rotkehlchen.constants.ethereum import AAVE_LENDING_POOL
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
@@ -189,6 +198,102 @@ class Aave(EthereumModule):
                 to_timestamp=to_timestamp,
                 aave_balances=None,  # type: ignore
             )
+
+    def get_history_events(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            addresses: List[ChecksumEthAddress],
+    ) -> List[DefiEvent]:
+        mapping = self.get_history(
+            addresses=addresses,
+            reset_db_data=False,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            given_defi_balances={},
+        )
+        events = []
+        for _, history in mapping.items():
+            total_borrow: Dict[Asset, Balance] = defaultdict(Balance)
+            realized_borrow_loss: Dict[Asset, Balance] = defaultdict(Balance)
+            for event in history.events:
+                got_asset: Optional[Asset]
+                spent_asset: Optional[Asset]
+                pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
+                if event.event_type == 'deposit':
+                    event = cast(AaveSimpleEvent, event)
+                    spent_asset = event.asset
+                    spent_balance = event.value
+                    try:  # this will need editing for v2
+                        got_asset = EthereumToken('a' + event.asset.identifier)
+                    except UnknownAsset:
+                        # should not really happen
+                        log.error(
+                            f'Could not find corresponding aToken to'
+                            f'{event.asset.identifier} during an aave event processing'
+                            f' Skipping entry...',
+                        )
+                        continue
+                    got_balance = event.value
+                elif event.event_type == 'withdrawal':
+                    event = cast(AaveSimpleEvent, event)
+                    got_asset = event.asset
+                    got_balance = event.value
+                    try:  # this will need editing for v2
+                        spent_asset = Asset('a' + got_asset.identifier)
+                    except UnknownAsset:
+                        # should not really happen
+                        log.error(
+                            f'Could not find corresponding asset to aToken'
+                            f'{event.asset.identifier} during an aave event processing'
+                            f' Skipping entry...',
+                        )
+                        continue
+                    spent_balance = got_balance
+                elif event.event_type == 'interest':
+                    event = cast(AaveSimpleEvent, event)
+                    pnl = [AssetBalance(asset=event.asset, balance=event.value)]
+                elif event.event_type == 'borrow':
+                    event = cast(AaveBorrowEvent, event)
+                    got_asset = event.asset
+                    got_balance = event.value
+                    total_borrow[got_asset] += got_balance
+                elif event.event_type == 'repay':
+                    event = cast(AaveRepayEvent, event)
+                    spent_asset = event.asset
+                    spent_balance = event.value
+                    if total_borrow[spent_asset].amount + realized_borrow_loss[spent_asset].amount < ZERO:  # noqa: E501
+                        pnl_balance = total_borrow[spent_asset] + realized_borrow_loss[spent_asset]
+                        realized_borrow_loss[spent_asset] += -pnl_balance
+                        pnl = [AssetBalance(asset=spent_asset, balance=pnl_balance)]
+                elif event.event_type == 'liquidation':
+                    event = cast(AaveLiquidationEvent, event)
+                    got_asset = event.principal_asset
+                    got_balance = event.principal_balance
+                    spent_asset = event.collateral_asset
+                    spent_balance = event.collateral_balance
+                    pnl = [
+                        AssetBalance(asset=spent_asset, balance=-spent_balance),
+                        AssetBalance(asset=got_asset, balance=got_balance),
+                    ]
+                    # The principal needs to also be removed from the total_borrow
+                    total_borrow[got_asset] -= got_balance
+
+                else:
+                    raise AssertionError(f'Unexpected aave event {event.event_type}')
+                events.append(DefiEvent(
+                    timestamp=event.timestamp,
+                    wrapped_event=event,
+                    event_type=DefiEventType.AAVE_EVENT,
+                    got_asset=got_asset,
+                    got_balance=got_balance,
+                    spent_asset=spent_asset,
+                    spent_balance=spent_balance,
+                    pnl=pnl,
+                    tx_hashes=event.tx_hash,
+                ))
+
+        return events
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:

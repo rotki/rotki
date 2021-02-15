@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optiona
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.chain.ethereum.makerdao.common import (
     MAKERDAO_REQUERY_PERIOD,
     RAD,
@@ -455,6 +455,60 @@ class MakerDAODSR(MakerDAOCommon):
         self.historical_dsr_reports = reports
         self.last_historical_dsr_query_ts = ts_now()
         return self.historical_dsr_reports
+
+    def get_history_events(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> List[DefiEvent]:
+        """Gets the history events from DSR for accounting
+
+            This is a premium only call. Check happens only in the API level.
+        """
+        history = self.get_historical_dsr()
+        events = []
+        for _, report in history.items():
+            total_balance = Balance()
+            counted_profit = Balance()
+            for movement in report.movements:
+                if movement.timestamp < from_timestamp:
+                    continue
+                elif movement.timestamp > to_timestamp:
+                    break
+
+                pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
+                balance = Balance(
+                    amount=_dsrdai_to_dai(movement.amount),
+                    usd_value=movement.amount_usd_value,
+                )
+                if movement.movement_type == 'deposit':
+                    spent_asset = A_DAI
+                    spent_balance = balance
+                    event_type = DefiEventType.DSR_EVENT
+                    total_balance -= balance
+                else:
+                    got_asset = A_DAI
+                    got_balance = balance
+                    event_type = DefiEventType.DSR_EVENT
+                    total_balance += balance
+                    if total_balance.amount - counted_profit.amount > ZERO:
+                        pnl_balance = total_balance - counted_profit
+                        counted_profit += pnl_balance
+                        pnl = [AssetBalance(asset=A_DAI, balance=pnl_balance)]
+
+                events.append(DefiEvent(
+                    timestamp=movement.timestamp,
+                    wrapped_event=movement,
+                    event_type=event_type,
+                    got_asset=got_asset,
+                    got_balance=got_balance,
+                    spent_asset=spent_asset,
+                    spent_balance=spent_balance,
+                    pnl=pnl,
+                    tx_hashes=movement.tx_hash,
+                ))
+
+        return events
 
     def _get_join_exit_events(
             self,

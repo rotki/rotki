@@ -48,7 +48,7 @@ class DBAssetBalance(NamedTuple):
     usd_value: str
 
 
-class SingleAssetBalance(NamedTuple):
+class SingleDBAssetBalance(NamedTuple):
     category: BalanceType
     time: Timestamp
     amount: str

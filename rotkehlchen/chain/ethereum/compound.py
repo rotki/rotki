@@ -5,7 +5,13 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, 
 from eth_utils import to_checksum_address
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import Balance, BalanceType
+from rotkehlchen.accounting.structures import (
+    AssetBalance,
+    Balance,
+    BalanceType,
+    DefiEvent,
+    DefiEventType,
+)
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
@@ -691,6 +697,76 @@ class Compound(EthereumModule):
         history['rewards'] = rewards
 
         return history
+
+    def get_history_events(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            addresses: List[ChecksumEthAddress],
+    ) -> List[DefiEvent]:
+        history = self.get_history(
+            given_defi_balances={},
+            addresses=addresses,
+            reset_db_data=False,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+        events = []
+        for event in history['events']:
+            pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
+            if event.event_type == 'mint':
+                spent_asset = event.asset
+                spent_balance = event.value
+                got_asset = event.to_asset
+                got_balance = event.to_value
+            elif event.event_type == 'redeem':
+                spent_asset = event.asset
+                spent_balance = event.value
+                got_asset = event.to_asset
+                got_balance = event.to_value
+                if event.realized_pnl is not None:
+                    pnl = [AssetBalance(asset=got_asset, balance=event.realized_pnl)]
+            elif event.event_type == 'borrow':
+                got_asset = event.asset
+                got_balance = event.value
+            elif event.event_type == 'repay':
+                spent_asset = event.asset
+                spent_balance = event.value
+                if event.realized_pnl is not None:
+                    pnl = [AssetBalance(asset=spent_asset, balance=-event.realized_pnl)]
+            elif event.event_type == 'liquidation':
+                spent_asset = event.to_asset
+                spent_balance = event.to_value
+                got_asset = event.asset
+                got_balance = event.value
+                pnl = [
+                    # collateral lost
+                    AssetBalance(asset=spent_asset, balance=-spent_balance),
+                    # borrowed asset gained since you can keep it
+                    AssetBalance(asset=got_asset, balance=got_balance),
+                ]
+            elif event.event_type == 'comp':
+                got_asset = event.asset
+                got_balance = event.value
+                if event.realized_pnl is not None:
+                    pnl = [AssetBalance(asset=got_asset, balance=event.realized_pnl)]
+            else:
+                raise AssertionError(f'Unexpected compound event {event.event_type}')
+
+            events.append(DefiEvent(
+                timestamp=event.timestamp,
+                wrapped_event=event,
+                event_type=DefiEventType.MAKERDAO_VAULT_EVENT,
+                got_asset=got_asset,
+                got_balance=got_balance,
+                spent_asset=spent_asset,
+                spent_balance=spent_balance,
+                pnl=pnl,
+                tx_hashes=event.tx_hash,
+            ))
+
+        return events
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:

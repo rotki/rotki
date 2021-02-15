@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.structures import YearnVault, YearnVaultEvent
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -560,6 +560,66 @@ class YearnVaults(EthereumModule):
                     del history[address]
 
         return history
+
+    def get_history_events(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            addresses: List[ChecksumEthAddress],
+    ) -> List[DefiEvent]:
+        """Gets the history events from maker vaults for accounting
+
+            This is a premium only call. Check happens only in the API level.
+        """
+        from_block = self.ethereum.get_blocknumber_by_time(from_timestamp)
+        to_block = self.ethereum.get_blocknumber_by_time(to_timestamp)
+
+        events = []
+        for address in addresses:
+            for _, vault in YEARN_VAULTS.items():
+                vault_history = self.get_vault_history(
+                    defi_balances=[],
+                    vault=vault,
+                    address=address,
+                    from_block=from_block,
+                    to_block=to_block,
+                )
+                if vault_history is None:
+                    continue
+
+                if len(vault_history.events) != 0:
+                    event = vault_history.events[0]
+                    # process the vault's events to populate realized_pnl
+                    self._process_vault_events(vault_history.events)
+
+                for event in vault_history.events:
+                    pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
+                    if event.event_type == 'deposit':
+                        spent_asset = event.from_asset
+                        spent_balance = event.from_value
+                        got_asset = event.to_asset
+                        got_balance = event.to_value
+                    else:  # withdraw
+                        spent_asset = event.from_asset
+                        spent_balance = event.from_value
+                        got_asset = event.to_asset
+                        got_balance = event.to_value
+                        if event.realized_pnl is not None:
+                            pnl = [AssetBalance(asset=got_asset, balance=event.realized_pnl)]
+
+                    events.append(DefiEvent(
+                        timestamp=event.timestamp,
+                        wrapped_event=event,
+                        event_type=DefiEventType.YEARN_VAULTS_EVENT,
+                        got_asset=got_asset,
+                        got_balance=got_balance,
+                        spent_asset=spent_asset,
+                        spent_balance=spent_balance,
+                        pnl=pnl,
+                        tx_hashes=event.tx_hash,
+                    ))
+
+        return events
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
