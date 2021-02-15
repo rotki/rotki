@@ -130,28 +130,7 @@ def _deserialize_ts(case: KucoinCase, time: int) -> Timestamp:
     return Timestamp(int(time / 1000))
 
 
-class SkipReason(Enum):
-    AFTER_TIMESTAMP_RANGE = 1
-    BEFORE_TIMESTAMP_RANGE = 2
-    INNER_MOVEMENT = 3
-
-    def __str__(self) -> str:
-        if self == SkipReason.AFTER_TIMESTAMP_RANGE:
-            return 'after timestamp range'
-        if self == SkipReason.BEFORE_TIMESTAMP_RANGE:
-            return 'before timestamp range'
-        if self == SkipReason.INNER_MOVEMENT:
-            return 'that is an inner movement'
-        raise AssertionError(f'Unexpected SkipReason: {self}')
-
-
-DeserializationMethod = Callable[
-    ...,
-    Union[
-        Tuple[Optional[Trade], Optional[SkipReason]],
-        Tuple[Optional[AssetMovement], Optional[SkipReason]],
-    ],
-]
+DeserializationMethod = Callable[..., Union[Trade, AssetMovement]]
 
 
 def deserialize_trade_pair(trade_pair_symbol: str) -> TradePair:
@@ -394,7 +373,6 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 raise RemoteError(msg) from e
 
-            print(f'Response is {response.text}')
             try:
                 response_data = response_dict['data']
                 total_page = response_data['totalPage']
@@ -407,15 +385,22 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             for raw_result in raw_results:
                 try:
-                    result, skip_reason = deserialization_method(
-                        raw_result=raw_result,
-                        start_ts=start_ts,
-                        end_ts=end_ts,
-                    )
+                    if (
+                        case in (KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS) and
+                        raw_result['isInner'] is True
+                    ):
+                        log.debug(f'Found an inner kucoin {case}. Skipping it.')
+                        continue
+
+                    result = deserialization_method(raw_result=raw_result)
                 except (
-                    DeserializationError, UnknownAsset, UnprocessableTradePair, UnsupportedAsset,
+                    DeserializationError,
+                    KeyError,
+                    UnknownAsset,
+                    UnprocessableTradePair,
+                    UnsupportedAsset,
                 ) as e:
-                    error_msg = str(e)
+                    error_msg = f'Missing key: {str(e)}.' if isinstance(e, KeyError) else str(e)
                     log.error(
                         f'Failed to deserialize a kucoin {case} result',
                         error=error_msg,
@@ -430,25 +415,8 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         f'Check logs for more details')
                     continue
 
-                if result is None and skip_reason is not None:
-                    if skip_reason == SkipReason.BEFORE_TIMESTAMP_RANGE:
-                        log.debug(f'Found a kucoin {case} {skip_reason}. Stop requesting.')
-                        break
-
-                    if skip_reason in (
-                        SkipReason.AFTER_TIMESTAMP_RANGE,
-                        SkipReason.INNER_MOVEMENT,
-                    ):
-                        log.debug(f'Found a kucoin {case} {skip_reason}. Skipping it.')
-                        continue
-
-                    raise AssertionError(f'Unexpected skip reason: {skip_reason}. Update conditions')  # noqa: E501
-
-                assert result is not None
                 results.append(result)  # type: ignore # type is known
 
-            # Stop requesting, either when a result was before the range or
-            # totalPage indicates to stop paginating
             is_last_page = total_page in (0, current_page)
             if is_last_page:
                 if case == KucoinCase.OLD_TRADES or current_query_ts + time_step >= end_ts:
@@ -542,9 +510,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _deserialize_asset_movement(
             raw_result: Dict[str, Any],
             case: Literal[KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> Tuple[Optional[AssetMovement], Optional[SkipReason]]:
+    ) -> AssetMovement:
         """Process an asset movement result and deserialize it
 
         May raise:
@@ -562,15 +528,6 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         try:
             timestamp_ms = deserialize_timestamp(raw_result['createdAt'])
             timestamp = Timestamp(int(timestamp_ms / 1000))
-            if timestamp > end_ts:
-                return None, SkipReason.AFTER_TIMESTAMP_RANGE
-            if timestamp < start_ts:
-                return None, SkipReason.BEFORE_TIMESTAMP_RANGE
-
-            is_inner = raw_result['isInner']
-            if is_inner is True:
-                return None, SkipReason.INNER_MOVEMENT
-
             address = raw_result['address']
             # The transaction id can have an @ which we should just get rid of
             transaction_id = raw_result['walletTxId'].split('@')[0]
@@ -595,15 +552,13 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             fee=fee,
             link=link_id,
         )
-        return asset_movement, None
+        return asset_movement
 
     @staticmethod
     def _deserialize_trade(
             raw_result: Dict[str, Any],
             case: Literal[KucoinCase.TRADES, KucoinCase.OLD_TRADES],
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> Tuple[Optional[Trade], Optional[SkipReason]]:
+    ) -> Trade:
         """Process a trade result and deserialize it
 
         For the old v1 trades look here:
@@ -641,11 +596,6 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         except KeyError as e:
             raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-        if timestamp > end_ts:
-            return None, SkipReason.AFTER_TIMESTAMP_RANGE
-        if timestamp < start_ts:
-            return None, SkipReason.BEFORE_TIMESTAMP_RANGE
-
         trade = Trade(
             timestamp=timestamp,
             location=Location.KUCOIN,
@@ -658,7 +608,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             link=trade_id,
             notes='',
         )
-        return trade, None
+        return trade
 
     @overload  # noqa: F811
     def _process_unsuccessful_response(  # pylint: disable=no-self-use
