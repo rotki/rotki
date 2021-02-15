@@ -5,6 +5,8 @@ BCH_BSV_FORK_TS = 1542304352  # 2018-11-15 18:52:00 UTC
 ROTKEHLCHEN_SERVER_TIMEOUT = 5
 GLOBAL_REQUESTS_TIMEOUT = 5  # perhaps consolidate this and the one above?
 
+WEEK_IN_SECONDS = 24 * 3600 * 7
+MONTH_IN_SECONDS = WEEK_IN_SECONDS * 4
 YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 
 # For queries that are attempted multiple times:
