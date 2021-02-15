@@ -12,7 +12,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_KUCOIN_ASSETS, asset_from_kucoin
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
-from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase, SkipReason
+from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import (
@@ -264,14 +264,11 @@ def test_deserialize_v2_trade_buy(mock_kucoin):
         link='601da9faf1297d0007efd712',
         notes='',
     )
-    trade, reason = mock_kucoin._deserialize_trade(
+    trade = mock_kucoin._deserialize_trade(
         raw_result=raw_result,
-        start_ts=Timestamp(0),
-        end_ts=Timestamp(1612556794),
         case=KucoinCase.TRADES,
     )
     assert trade == expected_trade
-    assert reason is None
 
 
 def test_deserialize_v2_trade_sell(mock_kucoin):
@@ -306,14 +303,11 @@ def test_deserialize_v2_trade_sell(mock_kucoin):
         link='601da995e0ee8b00063a075c',
         notes='',
     )
-    trade, reason = mock_kucoin._deserialize_trade(
+    trade = mock_kucoin._deserialize_trade(
         raw_result=raw_result,
-        start_ts=Timestamp(0),
-        end_ts=Timestamp(1612556794),
         case=KucoinCase.TRADES,
     )
     assert trade == expected_trade
-    assert reason is None
 
 
 def test_deserialize_v1_trade(mock_kucoin):
@@ -339,48 +333,11 @@ def test_deserialize_v1_trade(mock_kucoin):
         link='xxxx',
         notes='',
     )
-    trade, reason = mock_kucoin._deserialize_trade(
+    trade = mock_kucoin._deserialize_trade(
         raw_result=raw_result,
-        start_ts=Timestamp(0),
-        end_ts=Timestamp(1612556794),
         case=KucoinCase.OLD_TRADES,
     )
     assert trade == expected_trade
-    assert reason is None
-
-
-@pytest.mark.parametrize('start_ts, end_ts, skip_reason', [
-    (0, 1612556793, SkipReason.AFTER_TIMESTAMP_RANGE),
-    (1612556795, 1612556800, SkipReason.BEFORE_TIMESTAMP_RANGE),
-])
-def test_deserialize_trade_skipped(mock_kucoin, start_ts, end_ts, skip_reason):
-    raw_result = {
-        'symbol': 'KCS-USDT',
-        'tradeId': '601da9faf1297d0007efd712',
-        'orderId': '601da9fa0c92050006bd83be',
-        'counterOrderId': '601bad620c9205000642300f',
-        'side': 'buy',
-        'liquidity': 'taker',
-        'forceTaker': True,
-        'price': 1000,
-        'size': '0.2',
-        'funds': 200,
-        'fee': '0.14',
-        'feeRate': '0.0007',
-        'feeCurrency': 'USDT',
-        'stop': '',
-        'tradeType': 'TRADE',
-        'type': 'market',
-        'createdAt': 1612556794259,
-    }
-    trade, reason = mock_kucoin._deserialize_trade(
-        raw_result=raw_result,
-        start_ts=Timestamp(start_ts),
-        end_ts=Timestamp(end_ts),
-        case=KucoinCase.TRADES,
-    )
-    assert trade is None
-    assert reason == skip_reason
 
 
 def test_deserialize_asset_movement_deposit(mock_kucoin):
@@ -409,14 +366,11 @@ def test_deserialize_asset_movement_deposit(mock_kucoin):
         fee=Fee(FVal('0.01')),
         link='',
     )
-    asset_movement, reason = mock_kucoin._deserialize_asset_movement(
+    asset_movement = mock_kucoin._deserialize_asset_movement(
         raw_result=raw_result,
         case=KucoinCase.DEPOSITS,
-        start_ts=Timestamp(0),
-        end_ts=Timestamp(1612556794),
     )
     assert asset_movement == expected_asset_movement
-    assert reason is None
 
 
 def test_deserialize_asset_movement_withdrawal(mock_kucoin):
@@ -446,44 +400,11 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin):
         fee=Fee(FVal('0.01')),
         link='5c2dc64e03aa675aa263f1ac',
     )
-    asset_movement, reason = mock_kucoin._deserialize_asset_movement(
+    asset_movement = mock_kucoin._deserialize_asset_movement(
         raw_result=raw_result,
         case=KucoinCase.WITHDRAWALS,
-        start_ts=Timestamp(0),
-        end_ts=Timestamp(1612556794),
     )
     assert asset_movement == expected_asset_movement
-    assert reason is None
-
-
-@pytest.mark.parametrize('start_ts, end_ts, is_inner, skip_reason', [
-    (0, 1612556793, False, SkipReason.AFTER_TIMESTAMP_RANGE),
-    (1612556795, 1612556800, False, SkipReason.BEFORE_TIMESTAMP_RANGE),
-    (1612556750, 1612556800, True, SkipReason.INNER_MOVEMENT),
-])
-def test_deserialize_asset_movement_skipped(mock_kucoin, start_ts, end_ts, is_inner, skip_reason):
-    raw_result = {
-        'id': '5c2dc64e03aa675aa263f1ac',
-        'address': '0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
-        'memo': '',
-        'currency': 'ETH',
-        'amount': 1,
-        'fee': 0.01,
-        'walletTxId': '3e2414d82acce78d38be7fe9',
-        'isInner': is_inner,
-        'status': 'SUCCESS',
-        'remark': 'test',
-        'createdAt': 1612556794259,
-        'updatedAt': 1612556795000,
-    }
-    asset_movement, reason = mock_kucoin._deserialize_asset_movement(
-        raw_result=raw_result,
-        case=KucoinCase.WITHDRAWALS,
-        start_ts=Timestamp(start_ts),
-        end_ts=Timestamp(end_ts),
-    )
-    assert asset_movement is None
-    assert reason == skip_reason
 
 
 @pytest.mark.skip('Fails with status code: 404 and text: KC-API-KEY not exists')
@@ -591,26 +512,70 @@ def test_query_asset_movements_sandbox(
     """Unfortunately the sandbox environment does not support deposits and
     withdrawals, therefore they must be mocked.
 
-    The sandbox account has 6 movements. Below a list of the movements and their
-    timestamps in ascending mode.
-    - movement 1 - deposit: 1612556651 -> skipped
-    - movement 2 - deposit: 1612556693
-    - movement 3 - withdraw: 1612556765 -> skipped, inner withdraw
-    - movement 4 - deposit: 1612556765 -> skipped, inner deposit
-    - movement 5 - withdraw: 1612556765
-    - movement 6 - withdraw: 1612556794 -> skipped
+    Below a list of the movements and their timestamps in ascending mode:
 
-    By requesting trades from 1612556693 to 1612556765, the first and last
-    movement should be skipped, but also the two inner movements.
+    Deposits:
+    - deposit 1 - deposit: 1612556651
+    - deposit 2 - deposit: 1612556652
+    - deposit 3 - deposit: 1612556653 -> skipped, inner deposit
+
+    Withdrawals:
+    - withdraw 1: 1612556651 -> skipped, inner withdraw
+    - withdraw 2: 1612556652
+    - withdraw 3: 1612556656 -> never requested
+
+    By requesting trades from 1612556651 to 1612556654 and patching the time
+    step as 2s (via MONTHS_IN_SECONDS) we should get back 3 movements.
     """
-    deposits_response = (
+    deposits_response_1 = (
         """
         {
             "code":"200000",
             "data":{
                 "currentPage":1,
-                "pageSize":500,
-                "totalNum":3,
+                "pageSize":2,
+                "totalNum":2,
+                "totalPage":1,
+                "items":[
+                    {
+                        "address":"0x5f047b29041bcfdbf0e4478cdfa753a336ba6989",
+                        "memo":"5c247c8a03aa677cea2a251d",
+                        "amount":1,
+                        "fee":0.0001,
+                        "currency":"KCS",
+                        "isInner":false,
+                        "walletTxId":"5bbb57386d99522d9f954c5a",
+                        "status":"SUCCESS",
+                        "remark":"movement 2 - deposit",
+                        "createdAt":1612556652000,
+                        "updatedAt":1612556652000
+                    },
+                    {
+                        "address":"0x5f047b29041bcfdbf0e4478cdfa753a336ba6989",
+                        "memo":"5c247c8a03aa677cea2a251d",
+                        "amount":1000,
+                        "fee":0.01,
+                        "currency":"LINK",
+                        "isInner":false,
+                        "walletTxId":"5bbb57386d99522d9f954c5b@test",
+                        "status":"SUCCESS",
+                        "remark":"movement 1 - deposit",
+                        "createdAt":1612556651000,
+                        "updatedAt":1612556651000
+                    }
+                ]
+            }
+        }
+        """
+    )
+    deposits_response_2 = (
+        """
+        {
+            "code":"200000",
+            "data":{
+                "currentPage":1,
+                "pageSize":1,
+                "totalNum":1,
                 "totalPage":1,
                 "items":[
                     {
@@ -623,77 +588,37 @@ def test_query_asset_movements_sandbox(
                         "isInner":true,
                         "status":"SUCCESS",
                         "remark":"movement 4 - deposit",
-                        "createdAt":1612556765000,
-                        "updatedAt":1612556780000
-                    },
-                    {
-                        "address":"0x5f047b29041bcfdbf0e4478cdfa753a336ba6989",
-                        "memo":"5c247c8a03aa677cea2a251d",
-                        "amount":1,
-                        "fee":0.0001,
-                        "currency":"KCS",
-                        "isInner":false,
-                        "walletTxId":"5bbb57386d99522d9f954c5a",
-                        "status":"SUCCESS",
-                        "remark":"movement 2 - deposit",
-                        "createdAt":1612556693000,
-                        "updatedAt":1612556700000
-                    },
-                    {
-                        "address":"0x5f047b29041bcfdbf0e4478cdfa753a336ba6989",
-                        "memo":"5c247c8a03aa677cea2a251d",
-                        "amount":1000,
-                        "fee":0.01,
-                        "currency":"LINK",
-                        "isInner":false,
-                        "walletTxId":"5bbb57386d99522d9f954c5b",
-                        "status":"SUCCESS",
-                        "remark":"movement 1 - deposit",
-                        "createdAt":1612556651000,
-                        "updatedAt":1612556658000
+                        "createdAt":1612556653000,
+                        "updatedAt":1612556653000
                     }
                 ]
             }
         }
         """
     )
-    withdrawals_response = (
+    withdrawals_response_1 = (
         """
         {
             "code":"200000",
             "data":{
                 "currentPage":1,
-                "pageSize":500,
-                "totalNum":3,
+                "pageSize":2,
+                "totalNum":2,
                 "totalPage":1,
                 "items":[
                     {
-                        "id":"5c2dc64e03aa675aa263f1a6",
-                        "address":"0x5bedb060b8eb8d823e2414d82acce78d38be7fe9",
-                        "memo":"",
-                        "currency":"ETH",
-                        "amount":1,
-                        "fee":0.01,
-                        "walletTxId":"3e2414d82acce78d38be7fe0",
-                        "isInner":false,
-                        "status":"SUCCESS",
-                        "remark":"movement 6 - withdraw",
-                        "createdAt":1612556794000,
-                        "updatedAt":1612556799000
-                    },
-                    {
-                        "id":"5c2dc64e03aa675aa263f1a5",
+                        "id":"5c2dc64e03aa675aa263f1a4",
                         "address":"1DrT5xUaJ3CBZPDeFR2qdjppM6dzs4rsMt",
                         "memo":"",
                         "currency":"BCHSV",
                         "amount":2.5,
                         "fee":0.25,
-                        "walletTxId":"b893c3ece1b8d7cacb49a39ddd759cf407817f6902f566c443ba16614874ada5",
+                        "walletTxId":"b893c3ece1b8d7cacb49a39ddd759cf407817f6902f566c443ba16614874ada4",
                         "isInner":false,
                         "status":"SUCCESS",
-                        "remark":"movement 5 - withdraw",
-                        "createdAt":1612556765000,
-                        "updatedAt":1612556780000
+                        "remark":"movement 4 - withdraw",
+                        "createdAt":1612556652000,
+                        "updatedAt":1612556652000
                     },
                     {
                         "id":"5c2dc64e03aa675aa263f1a3",
@@ -706,8 +631,51 @@ def test_query_asset_movements_sandbox(
                         "isInner":true,
                         "status":"SUCCESS",
                         "remark":"movement 3 - withdraw",
-                        "createdAt":1612556765000,
-                        "updatedAt":1612556765000
+                        "createdAt":1612556651000,
+                        "updatedAt":1612556651000
+                    }
+                ]
+            }
+        }
+        """
+    )
+    withdrawals_response_2 = (
+        """
+        {
+            "code":"200000",
+            "data":{
+                "currentPage":0,
+                "pageSize":0,
+                "totalNum":0,
+                "totalPage":0,
+                "items":[]
+            }
+        }
+        """
+    )
+    withdrawals_response_3 = (
+        """
+        {
+            "code":"200000",
+            "data":{
+                "currentPage":1,
+                "pageSize":1,
+                "totalNum":1,
+                "totalPage":1,
+                "items":[
+                    {
+                        "id":"5c2dc64e03aa675aa263f1a5",
+                        "address":"0x5bedb060b8eb8d823e2414d82acce78d38be7f00",
+                        "memo":"",
+                        "currency":"KCS",
+                        "amount":2.5,
+                        "fee":0.25,
+                        "walletTxId":"b893c3ece1b8d7cacb49a39ddd759cf407817f6902f566c443ba16614874ada5",
+                        "isInner":false,
+                        "status":"SUCCESS",
+                        "remark":"movement 5 - withdraw",
+                        "createdAt":1612556655000,
+                        "updatedAt":1612556655000
                     }
                 ]
             }
@@ -718,7 +686,7 @@ def test_query_asset_movements_sandbox(
         AssetMovement(
             location=Location.KUCOIN,
             category=AssetMovementCategory.DEPOSIT,
-            timestamp=Timestamp(1612556693),
+            timestamp=Timestamp(1612556652),
             address='0x5f047b29041bcfdbf0e4478cdfa753a336ba6989',
             transaction_id='5bbb57386d99522d9f954c5a',
             asset=Asset('KCS'),
@@ -729,22 +697,39 @@ def test_query_asset_movements_sandbox(
         ),
         AssetMovement(
             location=Location.KUCOIN,
+            category=AssetMovementCategory.DEPOSIT,
+            timestamp=Timestamp(1612556651),
+            address='0x5f047b29041bcfdbf0e4478cdfa753a336ba6989',
+            transaction_id='5bbb57386d99522d9f954c5b',
+            asset=Asset('LINK'),
+            amount=AssetAmount(FVal('1000')),
+            fee_asset=Asset('LINK'),
+            fee=Fee(FVal('0.01')),
+            link='',
+        ),
+        AssetMovement(
+            location=Location.KUCOIN,
             category=AssetMovementCategory.WITHDRAWAL,
-            timestamp=Timestamp(1612556765),
+            timestamp=Timestamp(1612556652),
             address='1DrT5xUaJ3CBZPDeFR2qdjppM6dzs4rsMt',
-            transaction_id='b893c3ece1b8d7cacb49a39ddd759cf407817f6902f566c443ba16614874ada5',
+            transaction_id='b893c3ece1b8d7cacb49a39ddd759cf407817f6902f566c443ba16614874ada4',
             asset=Asset('BSV'),
             amount=AssetAmount(FVal('2.5')),
             fee_asset=Asset('BSV'),
             fee=Fee(FVal('0.25')),
-            link='5c2dc64e03aa675aa263f1a5',
+            link='5c2dc64e03aa675aa263f1a4',
         ),
     ]
 
     def get_endpoints_response():
         results = [
-            f'{deposits_response}',
-            f'{withdrawals_response}',
+            f'{deposits_response_1}',
+            f'{deposits_response_2}',
+            f'{withdrawals_response_1}',
+            f'{withdrawals_response_2}',
+            # if pagination works as expected and the requesting loop is broken,
+            # the response below won't be processed
+            f'{withdrawals_response_3}',
         ]
         for result_ in results:
             yield result_
@@ -753,14 +738,22 @@ def test_query_asset_movements_sandbox(
         return MockResponse(HTTPStatus.OK, next(get_response))
 
     get_response = get_endpoints_response()
-    with patch.object(
+    # Force a time_step of 2s
+    months_in_seconds_patch = patch(
+        target='rotkehlchen.exchanges.kucoin.MONTH_IN_SECONDS',
+        new=2,
+    )
+    api_query_patch = patch.object(
         target=sandbox_kuckoin,
         attribute='_api_query',
         side_effect=mock_api_query_response,
-    ):
+    )
+    with ExitStack() as stack:
+        stack.enter_context(months_in_seconds_patch)
+        stack.enter_context(api_query_patch)
         asset_movements = sandbox_kuckoin.query_online_deposits_withdrawals(
-            start_ts=Timestamp(1612556693),
-            end_ts=Timestamp(1612556765),
+            start_ts=Timestamp(1612556651),
+            end_ts=Timestamp(1612556654),
         )
 
     assert asset_movements == expected_asset_movements
