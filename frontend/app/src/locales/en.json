@@ -1241,6 +1241,15 @@
           "title": "Fetching conversion rate"
         }
       },
+      "loopring": {
+        "error": {
+          "description": "Querying Loopring balances failed: {error}",
+          "title": "Querying Loopring balances"
+        },
+        "task": {
+          "title": "Querying Loopring balances"
+        }
+      },
       "manual_add": {
         "error": {
           "title": "Adding Manual Balance"
@@ -2076,5 +2085,8 @@
   "no_premium_placeholder": {
     "get_premium": "@:common.visit_website",
     "no_premium": "@:common.no_premium {text} @:common.available_to_premium"
+  },
+  "l2": {
+    "loopring": "Loopring"
   }
 }

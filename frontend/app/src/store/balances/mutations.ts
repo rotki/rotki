@@ -8,9 +8,16 @@ import {
 } from '@/services/balances/types';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
-import { MUTATION_UPDATE_PRICES } from '@/store/balances/mutation-types';
+import {
+  MUTATION_UPDATE_LOOPRING_BALANCES,
+  MUTATION_UPDATE_PRICES
+} from '@/store/balances/mutation-types';
 import { defaultState } from '@/store/balances/state';
-import { AssetPrices, BalanceState } from '@/store/balances/types';
+import {
+  AccountAssetBalances,
+  AssetPrices,
+  BalanceState
+} from '@/store/balances/types';
 import { ExchangeData, ExchangeInfo, ExchangeRates } from '@/typing/types';
 
 export const mutations: MutationTree<BalanceState> = {
@@ -82,6 +89,12 @@ export const mutations: MutationTree<BalanceState> = {
   },
   [MUTATION_UPDATE_PRICES](state: BalanceState, prices: AssetPrices) {
     state.prices = prices;
+  },
+  [MUTATION_UPDATE_LOOPRING_BALANCES](
+    state: BalanceState,
+    balances: AccountAssetBalances
+  ) {
+    state.loopringBalances = balances;
   },
   reset(state: BalanceState) {
     Object.assign(state, defaultState());

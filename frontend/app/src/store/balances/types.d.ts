@@ -1,8 +1,8 @@
 import { BigNumber } from 'bignumber.js';
 import { PriceOracles } from '@/model/action-result';
 import {
-  BtcBalances,
   BlockchainAssetBalances,
+  BtcBalances,
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
@@ -17,8 +17,8 @@ import { Section } from '@/store/const';
 import {
   Blockchain,
   ExchangeData,
-  GeneralAccount,
-  ExchangeRates
+  ExchangeRates,
+  GeneralAccount
 } from '@/typing/types';
 
 export interface LocationBalance {
@@ -34,7 +34,12 @@ export interface AssetBalances {
   readonly [asset: string]: Balance;
 }
 
+export interface AccountAssetBalances {
+  readonly [account: string]: AssetBalances;
+}
+
 export interface BalanceState {
+  loopringBalances: AccountAssetBalances;
   eth: BlockchainAssetBalances;
   btc: BtcBalances;
   ksm: BlockchainAssetBalances;
@@ -116,7 +121,7 @@ export type AddAccountsPayload = {
 };
 
 export interface BlockchainTotal {
-  readonly chain: Blockchain;
+  readonly chain: Blockchain | 'LRC';
   readonly usdValue: BigNumber;
   readonly loading: boolean;
 }

@@ -172,7 +172,8 @@ import { Blockchain, BTC, ETH, ExchangeInfo, KSM } from '@/typing/types';
     ...mapActions('balances', [
       'fetchExchangeBalances',
       'fetchBlockchainBalances',
-      'fetchManualBalances'
+      'fetchManualBalances',
+      'fetchLoopringBalances'
     ])
   }
 })
@@ -186,6 +187,7 @@ export default class Dashboard extends Vue {
   fetchBlockchainBalances!: (
     payload: BlockchainBalancePayload
   ) => Promise<void>;
+  fetchLoopringBalances!: (refresh: boolean) => Promise<void>;
   fetchExchangeBalances!: (payload: ExchangeBalancePayload) => Promise<void>;
   fetchManualBalances!: () => Promise<void>;
 
@@ -196,6 +198,8 @@ export default class Dashboard extends Vue {
       return this.$t('blockchains.btc').toString();
     } else if (chain === KSM) {
       return this.$t('blockchains.ksm').toString();
+    } else if (chain === 'LRC') {
+      return this.$t('l2.loopring').toString();
     }
     return '';
   }
@@ -229,6 +233,7 @@ export default class Dashboard extends Vue {
       this.fetchBlockchainBalances({
         ignoreCache: true
       });
+      this.fetchLoopringBalances(true);
     } else if (balanceSource === 'exchange') {
       for (const exchange of this.exchanges) {
         this.fetchExchangeBalances({

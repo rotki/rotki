@@ -32,5 +32,6 @@ export enum TaskType {
   LEDGER_ACTIONS = 'ledger_actions',
   UPDATE_PRICES = 'update_prices',
   CREATE_PRICE_CACHE = 'create_price_cache',
-  FETCH_HISTORIC_PRICE = 'fetch_historic_price'
+  FETCH_HISTORIC_PRICE = 'fetch_historic_price',
+  L2_LOOPRING = 'l2_loopring'
 }

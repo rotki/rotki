@@ -3,6 +3,7 @@ import {
   MODULE_AAVE,
   MODULE_ADEX,
   MODULE_COMPOUND,
+  MODULE_LOOPRING,
   MODULE_MAKERDAO_DSR,
   MODULE_MAKERDAO_VAULTS,
   MODULE_UNISWAP,
@@ -44,5 +45,10 @@ export const DEFI_MODULES: Module[] = [
     identifier: MODULE_ADEX,
     name: 'AdEx',
     icon: require('@/assets/images/adx.svg')
+  },
+  {
+    identifier: MODULE_LOOPRING,
+    name: 'Loopring',
+    icon: require('@/assets/images/modules/loopring.svg')
   }
 ];

@@ -2,10 +2,10 @@ import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
 import { BlockchainAssetBalances } from '@/services/balances/types';
-import { Balance, GeneralAccountData } from '@/services/types-api';
+import { Balance, GeneralAccountData, HasBalance } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
 import {
-  AccountWithBalance,
+  AccountAssetBalances,
   AssetBalance,
   AssetBreakdown,
   AssetPriceInfo,
@@ -29,7 +29,7 @@ import {
 import { uniqueStrings } from '@/utils/array';
 import { assert } from '@/utils/assertions';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
-import { assetSum } from '@/utils/calculation';
+import { assetSum, balanceSum } from '@/utils/calculation';
 
 export interface BalanceGetters {
   ethAccounts: BlockchainAccountWithBalance[];
@@ -202,7 +202,7 @@ export const getters: Getters<
   },
 
   aggregatedBalances: (
-    { connectedExchanges, manualBalances }: BalanceState,
+    { connectedExchanges, manualBalances, loopringBalances }: BalanceState,
     { exchangeBalances, totals },
     { session }
   ): AssetBalance[] => {
@@ -229,6 +229,17 @@ export const getters: Getters<
 
     totals.forEach((value: AssetBalance) => addToOwned(value));
     manualBalances.forEach(value => addToOwned(value));
+
+    for (const address in loopringBalances) {
+      const balances = loopringBalances[address];
+      for (const asset in balances) {
+        addToOwned({
+          ...balances[asset],
+          asset
+        });
+      }
+    }
+
     return Object.values(ownedAssets).sort((a, b) =>
       b.usdValue.minus(a.usdValue).toNumber()
     );
@@ -311,14 +322,16 @@ export const getters: Getters<
     }, Zero);
   },
 
-  blockchainTotals: (_, getters, _rootState, { status }): BlockchainTotal[] => {
-    const sum = (accounts: BlockchainAccountWithBalance[]): BigNumber => {
-      return accounts.reduce(
-        (sum: BigNumber, { balance }: AccountWithBalance) => {
-          return sum.plus(balance.usdValue);
-        },
-        Zero
-      );
+  blockchainTotals: (
+    state,
+    getters,
+    _rootState,
+    { status }
+  ): BlockchainTotal[] => {
+    const sum = (accounts: HasBalance[]): BigNumber => {
+      return accounts.reduce((sum: BigNumber, { balance }: HasBalance) => {
+        return sum.plus(balance.usdValue);
+      }, Zero);
     };
 
     const totals: BlockchainTotal[] = [];
@@ -326,6 +339,7 @@ export const getters: Getters<
     const btcAccounts: BlockchainAccountWithBalance[] = getters.btcAccounts;
     const kusamaBalances: BlockchainAccountWithBalance[] =
       getters.kusamaBalances;
+    const loopring: AccountAssetBalances = state.loopringBalances;
 
     if (ethAccounts.length > 0) {
       const ethStatus = status(Section.BLOCKCHAIN_ETH);
@@ -351,6 +365,33 @@ export const getters: Getters<
         chain: KSM,
         usdValue: sum(kusamaBalances),
         loading: ksmStatus === Status.NONE || ksmStatus === Status.LOADING
+      });
+    }
+
+    if (Object.keys(loopring).length > 0) {
+      const balances: { [asset: string]: HasBalance } = {};
+      for (const address in loopring) {
+        for (const asset in loopring[address]) {
+          if (!balances[asset]) {
+            balances[asset] = {
+              balance: loopring[address][asset]
+            };
+          } else {
+            balances[asset] = {
+              balance: balanceSum(
+                loopring[address][asset],
+                balances[asset].balance
+              )
+            };
+          }
+        }
+      }
+      const loopringStatus = status(Section.L2_LOOPRING_BALANCES);
+      totals.push({
+        chain: 'LRC',
+        usdValue: sum(Object.values(balances)),
+        loading:
+          loopringStatus === Status.NONE || loopringStatus === Status.LOADING
       });
     }
 
