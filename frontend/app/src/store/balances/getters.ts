@@ -55,6 +55,7 @@ export interface BalanceGetters {
   isEthereumToken: (asset: string) => boolean;
   assetPriceInfo: (asset: string) => AssetPriceInfo;
   breakdown: (asset: string) => AssetBreakdown[];
+  loopringBalances: (address: string) => AssetBalance[];
 }
 
 function balances(
@@ -591,5 +592,18 @@ export const getters: Getters<
     }
 
     return breakdown;
+  },
+  loopringBalances: state => address => {
+    const balances: AssetBalance[] = [];
+    const loopringBalance = state.loopringBalances[address];
+    if (loopringBalance) {
+      for (const asset in loopringBalance) {
+        balances.push({
+          ...loopringBalance[asset],
+          asset
+        });
+      }
+    }
+    return balances;
   }
 };

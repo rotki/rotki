@@ -121,6 +121,13 @@
             :title="$t('account_balance_table.liabilities')"
             :assets="accountLiabilities(item.address)"
           />
+          <account-asset-balances
+            v-if="
+              blockchain === 'ETH' && loopringBalances(item.address).length > 0
+            "
+            :title="$t('account_balance_table.loopring')"
+            :assets="loopringBalances(item.address)"
+          />
         </td>
       </template>
       <template #item.expand="{ item }">
@@ -188,7 +195,8 @@ import { Zero } from '@/utils/bignumbers';
     ...mapGetters('balances', [
       'hasDetails',
       'accountAssets',
-      'accountLiabilities'
+      'accountLiabilities',
+      'loopringBalances'
     ]),
     ...mapState('session', ['tags'])
   }
@@ -217,6 +225,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   isTaskRunning!: (type: TaskType) => boolean;
   accountAssets!: (account: string) => AssetBalances[];
   accountLiabilities!: (account: string) => AssetBalances[];
+  loopringBalances!: (account: string) => AssetBalances[];
   hasDetails!: (account: string) => boolean;
   tags!: Tags;
 

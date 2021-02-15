@@ -70,7 +70,7 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -78,12 +78,12 @@ import TagFilter from '@/components/inputs/TagFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { TaskType } from '@/model/task-type';
 import {
-  BlockchainAccountWithBalance,
   AccountWithBalance,
+  BlockchainAccountWithBalance,
   BlockchainBalancePayload,
   XpubPayload
 } from '@/store/balances/types';
-import { Blockchain } from '@/typing/types';
+import { Blockchain, ETH } from '@/typing/types';
 
 @Component({
   components: {
@@ -95,6 +95,9 @@ import { Blockchain } from '@/typing/types';
   },
   computed: {
     ...mapGetters('tasks', ['isTaskRunning'])
+  },
+  methods: {
+    ...mapActions('balances', ['fetchLoopringBalances'])
   }
 })
 export default class AccountBalances extends Vue {
@@ -112,6 +115,7 @@ export default class AccountBalances extends Vue {
   xpubToDelete: XpubPayload | null = null;
 
   isTaskRunning!: (type: TaskType) => boolean;
+  fetchLoopringBalances!: (refresh: true) => Promise<void>;
 
   get isLoading(): boolean {
     return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
@@ -173,6 +177,9 @@ export default class AccountBalances extends Vue {
       ignoreCache: true,
       blockchain: this.blockchain
     } as BlockchainBalancePayload);
+    if (this.blockchain === ETH) {
+      this.fetchLoopringBalances(true);
+    }
   }
 }
 </script>

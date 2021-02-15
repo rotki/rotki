@@ -2051,7 +2051,8 @@
   },
   "account_balance_table": {
     "assets": "Assets",
-    "liabilities": "Liabilities"
+    "liabilities": "Liabilities",
+    "loopring": "Loopring"
   },
   "decentralized_deposits": {
     "protocols": "Protocols",
