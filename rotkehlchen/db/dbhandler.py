@@ -56,11 +56,11 @@ from rotkehlchen.db.settings import (
 )
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
-    AssetBalance,
+    DBAssetBalance,
     BlockchainAccounts,
     DBStartupAction,
     LocationData,
-    SingleAssetBalance,
+    SingleDBAssetBalance,
     Tag,
     deserialize_tags_from_db,
     form_query_to_filter_timestamps,
@@ -727,7 +727,7 @@ class DBHandler:
 
         return mapping
 
-    def add_multiple_balances(self, balances: List[AssetBalance]) -> None:
+    def add_multiple_balances(self, balances: List[DBAssetBalance]) -> None:
         """Execute addition of multiple balances in the DB"""
         cursor = self.conn.cursor()
 
@@ -1791,7 +1791,7 @@ class DBHandler:
         for key, val in data['assets'].items():
             msg = f'at this point the key should be of Asset type and not {type(key)} {str(key)}'
             assert isinstance(key, Asset), msg
-            balances.append(AssetBalance(
+            balances.append(DBAssetBalance(
                 category=BalanceType.ASSET,
                 time=timestamp,
                 asset=key,
@@ -1801,7 +1801,7 @@ class DBHandler:
         for key, val in data['liabilities'].items():
             msg = f'at this point the key should be of Asset type and not {type(key)} {str(key)}'
             assert isinstance(key, Asset), msg
-            balances.append(AssetBalance(
+            balances.append(DBAssetBalance(
                 category=BalanceType.LIABILITY,
                 time=timestamp,
                 asset=key,
@@ -2740,7 +2740,7 @@ class DBHandler:
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             balance_type: Optional[BalanceType] = None,
-    ) -> List[SingleAssetBalance]:
+    ) -> List[SingleDBAssetBalance]:
         """Query all balance entries for an asset within a range of timestamps
 
         Can optionally filter by balance type
@@ -2764,7 +2764,7 @@ class DBHandler:
         balances = []
         for result in results:
             balances.append(
-                SingleAssetBalance(
+                SingleDBAssetBalance(
                     time=result[0],
                     amount=result[1],
                     usd_value=result[2],
@@ -2848,10 +2848,10 @@ class DBHandler:
 
         return locations
 
-    def get_latest_asset_value_distribution(self) -> List[AssetBalance]:
+    def get_latest_asset_value_distribution(self) -> List[DBAssetBalance]:
         """Gets the latest asset distribution data
 
-        Returns a list of `AssetBalance` all at the latest timestamp.
+        Returns a list of `DBAssetBalance` all at the latest timestamp.
         Essentially this returns the distribution of netvalue across all assets
 
         This will NOT include liabilities
@@ -2869,7 +2869,7 @@ class DBHandler:
         assets = []
         for result in results:
             assets.append(
-                AssetBalance(
+                DBAssetBalance(
                     time=result[0],
                     asset=Asset(result[1]),
                     amount=result[2],

@@ -42,6 +42,92 @@ class BalanceType(Enum):
         raise AssertionError(f'Invalid value {self} for BalanceType')
 
 
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class Balance:
+    amount: FVal = ZERO
+    usd_value: FVal = ZERO
+
+    def serialize(self) -> Dict[str, str]:
+        return {'amount': str(self.amount), 'usd_value': str(self.usd_value)}
+
+    def to_dict(self) -> Dict[str, FVal]:
+        return {'amount': self.amount, 'usd_value': self.usd_value}
+
+    def __add__(self, other: Any) -> 'Balance':
+        other = _evaluate_balance_input(other, 'addition')
+        return Balance(
+            amount=self.amount + other.amount,
+            usd_value=self.usd_value + other.usd_value,
+        )
+
+    def __radd__(self, other: Any) -> 'Balance':
+        if other == 0:
+            return self
+
+        other = _evaluate_balance_input(other, 'addition')
+        return Balance(
+            amount=self.amount + other.amount,
+            usd_value=self.usd_value + other.usd_value,
+        )
+
+    def __sub__(self, other: Any) -> 'Balance':
+        other = _evaluate_balance_input(other, 'subtraction')
+        return Balance(
+            amount=self.amount - other.amount,
+            usd_value=self.usd_value - other.usd_value,
+        )
+
+    def __neg__(self) -> 'Balance':
+        return Balance(amount=-self.amount, usd_value=-self.usd_value)
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class AssetBalance:
+    asset: Asset
+    balance: Balance
+
+    @property
+    def amount(self):
+        return self.balance.amount
+
+    @property
+    def usd_value(self):
+        return self.balance.usd_value
+
+    def serialize(self) -> Dict[str, str]:
+        result = self.balance.serialize()
+        result['asset'] = self.asset.identifier
+        return result
+
+    def to_dict(self) -> Dict[str, Any]:
+        result = self.balance.to_dict()
+        result['asset'] = self.asset
+        return result
+
+    def _evaluate_other_input(self, other: Any):
+        if not isinstance(other, AssetBalance):
+            raise TypeError(f'AssetBalance can not interact with {type(other)}')
+
+        if self.asset != other.asset:
+            raise TypeError(
+                f'Tried to add {self.asset.identifier} balance to '
+                f'{other.asset.identifier} balance',
+            )
+
+    def __add__(self, other: Any) -> 'AssetBalance':
+        self._evaluate_other_input(other)
+        new_balance = self.balance + other.balance
+        return AssetBalance(asset=self.asset, balance=new_balance)
+
+    def __sub__(self, other: Any) -> 'AssetBalance':
+        self._evaluate_other_input(other)
+        new_balance = self.balance - other.balance
+        return AssetBalance(asset=self.asset, balance=new_balance)
+
+    def __neg__(self) -> 'AssetBalance':
+        return AssetBalance(asset=self.asset, balance=-self.balance)
+
+
 class DefiEventType(Enum):
     DSR_LOAN_GAIN = 0
     MAKERDAO_VAULT_LOSS = 1
@@ -110,45 +196,6 @@ class DefiEvent:
             return ''
 
         return ','.join(self.tx_hashes)
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class Balance:
-    amount: FVal = ZERO
-    usd_value: FVal = ZERO
-
-    def serialize(self) -> Dict[str, str]:
-        return {'amount': str(self.amount), 'usd_value': str(self.usd_value)}
-
-    def to_dict(self) -> Dict[str, FVal]:
-        return {'amount': self.amount, 'usd_value': self.usd_value}
-
-    def __add__(self, other: Any) -> 'Balance':
-        other = _evaluate_balance_input(other, 'addition')
-        return Balance(
-            amount=self.amount + other.amount,
-            usd_value=self.usd_value + other.usd_value,
-        )
-
-    def __radd__(self, other: Any) -> 'Balance':
-        if other == 0:
-            return self
-
-        other = _evaluate_balance_input(other, 'addition')
-        return Balance(
-            amount=self.amount + other.amount,
-            usd_value=self.usd_value + other.usd_value,
-        )
-
-    def __sub__(self, other: Any) -> 'Balance':
-        other = _evaluate_balance_input(other, 'subtraction')
-        return Balance(
-            amount=self.amount - other.amount,
-            usd_value=self.usd_value - other.usd_value,
-        )
-
-    def __neg__(self) -> 'Balance':
-        return Balance(amount=-self.amount, usd_value=-self.usd_value)
 
 
 def _evaluate_balance_input(other: Any, operation: str) -> Balance:

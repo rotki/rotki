@@ -40,7 +40,7 @@ class BlockchainAccounts(NamedTuple):
         raise AssertionError(f'Unsupported blockchain: {blockchain}')
 
 
-class AssetBalance(NamedTuple):
+class DBAssetBalance(NamedTuple):
     category: BalanceType
     time: Timestamp
     asset: Asset

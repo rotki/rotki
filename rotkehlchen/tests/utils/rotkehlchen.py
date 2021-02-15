@@ -8,7 +8,7 @@ from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.db.utils import AssetBalance, LocationData
+from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import (
     mock_beaconchain,
@@ -176,28 +176,28 @@ def setup_balances(
     )
 
 
-def add_starting_balances(datahandler) -> List[AssetBalance]:
+def add_starting_balances(datahandler) -> List[DBAssetBalance]:
     """Adds some starting balances and other data to a testing instance"""
     balances = [
-        AssetBalance(
+        DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488326400),
             asset=A_BTC,
             amount='1',
             usd_value='1222.66',
-        ), AssetBalance(
+        ), DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488326400),
             asset=A_ETH,
             amount='10',
             usd_value='4517.4',
-        ), AssetBalance(
+        ), DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488326400),
             asset=A_EUR,
             amount='100',
             usd_value='61.5',
-        ), AssetBalance(
+        ), DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488326400),
             asset=A_XMR,
