@@ -807,7 +807,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('addExchange', exchange);
       dispatch('fetchExchangeBalances', {
         name: exchange
-      }).then();
+      }).then(() => dispatch('refreshPrices', false));
+
       return success;
     } catch (e) {
       showError(
