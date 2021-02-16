@@ -767,6 +767,9 @@ class Compound(EthereumModule):
                 spent_asset=spent_asset,
                 spent_balance=spent_balance,
                 pnl=pnl,
+                # Count all compound events in cost basis since there is a swap
+                # from normal to cToken and back involved. Also to track debt.
+                count_spent_got_cost_basis=True,
                 tx_hash=event.tx_hash,
             ))
 

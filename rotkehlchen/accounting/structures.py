@@ -171,6 +171,10 @@ class DefiEvent:
     spent_asset: Optional[Asset]
     spent_balance: Optional[Balance]
     pnl: Optional[List[AssetBalance]]
+    # If this is true then both got and spent asset count in cost basis
+    # So it will count as if you got asset at given amount and price of timestamp
+    # and spent asset at given amount and price of timestamp
+    count_spent_got_cost_basis: bool
     tx_hash: Optional[str] = None
 
     def __str__(self) -> str:

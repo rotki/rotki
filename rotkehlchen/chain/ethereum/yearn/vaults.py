@@ -615,6 +615,9 @@ class YearnVaults(EthereumModule):
                         spent_asset=spent_asset,
                         spent_balance=spent_balance,
                         pnl=pnl,
+                        # Depositing and withdrawing from a vault is not counted in
+                        # cost basis. Assets were always yours, you did not rebuy them
+                        count_spent_got_cost_basis=False,
                         tx_hash=event.tx_hash,
                     ))
 

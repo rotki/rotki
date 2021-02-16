@@ -755,11 +755,14 @@ class MakerDAOVaults(MakerDAOCommon):
                 got_asset: Optional[Asset]
                 spent_asset: Optional[Asset]
                 pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
+                count_spent_got_cost_basis = False
                 if event.event_type == VaultEventType.GENERATE_DEBT:
+                    count_spent_got_cost_basis = True
                     got_asset = A_DAI
                     got_balance = event.value
                     total_vault_dai_balance += event.value
                 elif event.event_type == VaultEventType.PAYBACK_DEBT:
+                    count_spent_got_cost_basis = True
                     spent_asset = A_DAI
                     spent_balance = event.value
                     total_vault_dai_balance -= event.value
@@ -775,6 +778,7 @@ class MakerDAOVaults(MakerDAOCommon):
                     got_asset = detail.collateral_asset
                     got_balance = event.value
                 elif event.event_type == VaultEventType.LIQUIDATION:
+                    count_spent_got_cost_basis = True
                     # TODO: Don't you also get the dai here -- but how to calculate it?
                     spent_asset = detail.collateral_asset
                     spent_balance = event.value
@@ -791,6 +795,10 @@ class MakerDAOVaults(MakerDAOCommon):
                     spent_asset=spent_asset,
                     spent_balance=spent_balance,
                     pnl=pnl,
+                    # Depositing and withdrawing from a vault is not counted in
+                    # cost basis. Assets were always yours, you did not rebuy them.
+                    # Other actions are counted though to track debt and liquidations
+                    count_spent_got_cost_basis=count_spent_got_cost_basis,
                     tx_hash=event.tx_hash,
                 ))
 

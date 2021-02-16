@@ -1288,7 +1288,7 @@ class Adex(EthereumModule):
                     got_asset = A_ADX
                     got_balance = event.value
                 elif isinstance(event, UnbondRequest):
-                    continue  # just ignore those for accountign purposes
+                    continue  # just ignore those for accounting purposes
                 elif isinstance(event, ChannelWithdraw):
                     got_asset = event.token
                     got_balance = event.value
@@ -1305,6 +1305,9 @@ class Adex(EthereumModule):
                     spent_asset=spent_asset,
                     spent_balance=spent_balance,
                     pnl=pnl,
+                    # Do not count staking deposit/withdrawals as cost basis events
+                    # the ADX was always ours. PnL will ofc still be counted.
+                    count_spent_got_cost_basis=False,
                     tx_hash=event.tx_hash,
                 ))
 

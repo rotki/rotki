@@ -740,40 +740,75 @@ class TaxableEvents():
         )
 
         # count cost basis regardless of being in query time range
-        if event.got_asset is not None:
-            assert event.got_balance is not None, 'got_balance cant be missing for got_asset'
-            # With this we use the calculated usd_value to get the usd rate
-            rate = get_balance_asset_rate_at_time_zero_if_error(
-                balance=event.got_balance,
-                asset=self.profit_currency,
-                timestamp=event.timestamp,
-                location_hint=event_description,
-                msg_aggregator=self.msg_aggregator,
-            )
-            # we can also use the commented out code to use oracle query
-            # rate = self.get_rate_in_profit_currency(entry.asset, event.timestamp)
-
-            self.cost_basis.obtain_asset(
-                location=Location.BLOCKCHAIN,
-                timestamp=event.timestamp,
-                description=event_description,
-                asset=event.got_asset,
-                amount=event.got_balance.amount,
-                rate=rate,
-                fee_in_profit_currency=ZERO,
-            )
-
-        if event.spent_asset is not None:
-            assert event.spent_balance is not None, 'spent_balance cant be missing for spent_asset'
-            result = self.cost_basis.reduce_asset_amount(
-                asset=event.spent_asset,
-                amount=event.spent_balance.amount,
-            )
-            if not result:
-                log.critical(
-                    f'No documented acquisition found for {event.spent_asset} before '
-                    f'{self.csv_exporter.timestamp_to_date(event.timestamp)}',
+        if event.count_spent_got_cost_basis:
+            if event.got_asset is not None:
+                assert event.got_balance is not None, 'got_balance cant be missing for got_asset'
+                # With this we use the calculated usd_value to get the usd rate
+                rate = get_balance_asset_rate_at_time_zero_if_error(
+                    balance=event.got_balance,
+                    asset=self.profit_currency,
+                    timestamp=event.timestamp,
+                    location_hint=event_description,
+                    msg_aggregator=self.msg_aggregator,
                 )
+                # we can also use the commented out code to use oracle query
+                # rate = self.get_rate_in_profit_currency(entry.asset, event.timestamp)
+
+                self.cost_basis.obtain_asset(
+                    location=Location.BLOCKCHAIN,
+                    timestamp=event.timestamp,
+                    description=event_description,
+                    asset=event.got_asset,
+                    amount=event.got_balance.amount,
+                    rate=rate,
+                    fee_in_profit_currency=ZERO,
+                )
+
+            if event.spent_asset is not None:
+                assert event.spent_balance is not None, 'spent_balance cant be missing for spent_asset'  # noqa: E501
+                result = self.cost_basis.reduce_asset_amount(
+                    asset=event.spent_asset,
+                    amount=event.spent_balance.amount,
+                )
+                if not result:
+                    log.critical(
+                        f'No documented acquisition found for {event.spent_asset} before '
+                        f'{self.csv_exporter.timestamp_to_date(event.timestamp)}',
+                    )
+
+        elif event.pnl is not None:
+            # if we don't count got/spent in cost basis then we should at least count pnl
+            for entry in event.pnl:
+                if entry.balance.amount > ZERO:
+                    # With this we use the calculated usd_value to get the usd rate
+                    rate = get_balance_asset_rate_at_time_zero_if_error(
+                        balance=entry.balance,
+                        asset=self.profit_currency,
+                        timestamp=event.timestamp,
+                        location_hint=event_description,
+                        msg_aggregator=self.msg_aggregator,
+                    )
+                    # we can also use the commented out code to use oracle query
+                    # rate = self.get_rate_in_profit_currency(entry.asset, event.timestamp)
+                    self.cost_basis.obtain_asset(
+                        location=Location.BLOCKCHAIN,
+                        timestamp=event.timestamp,
+                        description=event_description,
+                        asset=entry.asset,
+                        amount=entry.balance.amount,
+                        rate=rate,
+                        fee_in_profit_currency=ZERO,
+                    )
+                else:
+                    result = self.cost_basis.reduce_asset_amount(
+                        asset=entry.asset,
+                        amount=-entry.balance.amount,
+                    )
+                    if not result:
+                        log.critical(
+                            f'No documented acquisition found for {entry.asset} before '
+                            f'{self.csv_exporter.timestamp_to_date(event.timestamp)}',
+                        )
 
         if event.timestamp < self.query_start_ts:
             return

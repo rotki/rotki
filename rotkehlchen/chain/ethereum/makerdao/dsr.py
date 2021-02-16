@@ -509,6 +509,9 @@ class MakerDAODSR(MakerDAOCommon):
                     spent_asset=spent_asset,
                     spent_balance=spent_balance,
                     pnl=pnl,
+                    # Depositing and withdrawing from DSR is not counted in
+                    # cost basis. DAI were always yours, you did not rebuy them
+                    count_spent_got_cost_basis=False,
                     tx_hash=movement.tx_hash,
                 ))
 

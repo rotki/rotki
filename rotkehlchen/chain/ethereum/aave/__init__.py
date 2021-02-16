@@ -290,6 +290,10 @@ class Aave(EthereumModule):
                     spent_asset=spent_asset,
                     spent_balance=spent_balance,
                     pnl=pnl,
+                    # Count all aave events in cost basis since there is a swap
+                    # involved from normal to aTokens and then back again. Also
+                    # borrowing/repaying for debt tracking.
+                    count_spent_got_cost_basis=True,
                     tx_hash=event.tx_hash,
                 ))
 
