@@ -460,9 +460,13 @@ export const getters: Getters<
     return supportedAssets.find(asset => asset.key === key);
   },
 
-  accounts: (_, { ethAccounts, btcAccounts }): GeneralAccount[] => {
+  accounts: (
+    _,
+    { ethAccounts, btcAccounts, kusamaBalances }
+  ): GeneralAccount[] => {
     return ethAccounts
       .concat(btcAccounts)
+      .concat(kusamaBalances)
       .filter((account: BlockchainAccountWithBalance) => !!account.address)
       .map((account: BlockchainAccountWithBalance) => ({
         chain: account.chain,
@@ -608,7 +612,7 @@ export const getters: Getters<
       }
       breakdown.push({
         address,
-        location: ETH,
+        location: KSM,
         balance: assetBalance
       });
     }
