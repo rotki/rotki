@@ -557,11 +557,12 @@ export const getters: Getters<
       const existing: Writeable<AssetBreakdown> | undefined = breakdown.find(
         value => value.address === address
       );
+      const balanceElement = loopringBalances[address][asset];
+      if (!balanceElement) {
+        continue;
+      }
       if (existing) {
-        const balanceElement = loopringBalances[address][asset];
-        if (balanceElement) {
-          existing.balance = balanceSum(existing.balance, balanceElement);
-        }
+        existing.balance = balanceSum(existing.balance, balanceElement);
       } else {
         breakdown.push({
           address,
