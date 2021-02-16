@@ -129,7 +129,7 @@ POAP_AIRDROPS = {
     ),
     'muir_glacier': (
         # is checksummed
-        'https://gist.githubusercontent.com/LefterisJP/d03954e7e6e48a340cb3830bf0ddb0f4/raw/d339cfd94885874cb83d829e815212cd29cbb66f/poap_muir_glacier.json',  # noqa: E501
+        'https://gist.githubusercontent.com/LefterisJP/d135745cf9f4f3143555e0f6a8f0d804/raw/d34c93087100168cac0dfd0ab46254b4a82ff0b8/poap_muir_glacier.json',  # noqa: E501
         'https://poap.delivery/muir-glacier',
         'Muir Glacier',
     ),

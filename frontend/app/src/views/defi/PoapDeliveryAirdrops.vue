@@ -50,7 +50,7 @@ const events = [
   'aave_v2_pioneers',
   'beacon_chain_first_1024',
   'beacon_chain_first_32769',
-  'coin_gecko_yield_farming',
+  'coingecko_yield_farming',
   'eth2_genesis',
   'half_rekt',
   'keep_stakers',
