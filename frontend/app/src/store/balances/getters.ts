@@ -18,6 +18,7 @@ import {
 import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
+import { Writeable } from '@/types';
 import {
   Blockchain,
   BTC,
@@ -505,7 +506,8 @@ export const getters: Getters<
     eth,
     exchangeBalances,
     ksm,
-    manualBalances
+    manualBalances,
+    loopringBalances
   }) => asset => {
     const breakdown: AssetBreakdown[] = [];
 
@@ -548,6 +550,24 @@ export const getters: Getters<
         location: ETH,
         balance: assetBalance
       });
+    }
+
+    for (const address in loopringBalances) {
+      const existing: Writeable<AssetBreakdown> | undefined = breakdown.find(
+        value => value.address === address
+      );
+      if (existing) {
+        const balanceElement = loopringBalances[address][asset];
+        if (balanceElement) {
+          existing.balance = balanceSum(existing.balance, balanceElement);
+        }
+      } else {
+        breakdown.push({
+          address,
+          location: ETH,
+          balance: loopringBalances[address][asset]
+        });
+      }
     }
 
     if (asset === BTC) {
