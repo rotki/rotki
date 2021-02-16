@@ -42,7 +42,7 @@ from rotkehlchen.chain.ethereum.yearn.vaults import (
     YearnVaultHistory,
 )
 from rotkehlchen.db.settings import DBSettings
-from rotkehlchen.db.utils import DBAssetBalance, LocationData
+from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.fval import FVal
@@ -81,6 +81,13 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         return {
             'time': entry.time,
             'location': str(deserialize_location_from_db(entry.location)),
+            'usd_value': entry.usd_value,
+        }
+    if isinstance(entry, SingleDBAssetBalance):
+        return {
+            'time': entry.time,
+            'category': str(entry.category),
+            'amount': entry.amount,
             'usd_value': entry.usd_value,
         }
     if isinstance(entry, DBAssetBalance):
