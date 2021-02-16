@@ -114,7 +114,7 @@ export class AccountBalancesPage {
             // TODO: extract the replace(',', '') as to use user settings (when implemented)
             cy.wrap($row)
               .find(
-                ':nth-child(5) > .amount-display > .v-skeleton-loader > .amount-display__value'
+                ':nth-child(5) > .amount-display > .v-skeleton-loader .amount-display__value'
               )
               .then($amount => {
                 if (balanceLocation.renderedValue === Zero) {

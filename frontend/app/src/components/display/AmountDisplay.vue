@@ -16,34 +16,36 @@
     >
       <amount-currency
         v-if="!renderValue.isNaN() && currencyLocation === 'before'"
-        class="ml-2"
+        class="mr-1 ml-1"
         :show-currency="shownCurrency"
         :currency="currency"
         :asset="asset"
       />
-      <v-tooltip
-        top
-        open-delay="400ms"
-        :disabled="
-          ((!!fiatCurrency ||
-            renderValue.decimalPlaces() <= floatingPrecision) &&
-            !tooltip) ||
-          isPriceAsset
-        "
-      >
-        <template #activator="{ on, attrs }">
-          <span
-            class="amount-display__value text-no-wrap"
-            v-bind="attrs"
-            v-on="on"
-          >
-            {{ formattedValue }}
+      <span>
+        <v-tooltip
+          top
+          open-delay="400ms"
+          :disabled="
+            ((!!fiatCurrency ||
+              renderValue.decimalPlaces() <= floatingPrecision) &&
+              !tooltip) ||
+            isPriceAsset
+          "
+        >
+          <template #activator="{ on, attrs }">
+            <span
+              class="amount-display__value text-no-wrap"
+              v-bind="attrs"
+              v-on="on"
+            >
+              {{ formattedValue }}
+            </span>
+          </template>
+          <span class="amount-display__full-value">
+            {{ fullValue }}
           </span>
-        </template>
-        <span class="amount-display__full-value">
-          {{ fullValue }}
-        </span>
-      </v-tooltip>
+        </v-tooltip>
+      </span>
       <amount-currency
         v-if="!renderValue.isNaN() && currencyLocation === 'after'"
         class="ml-1"
