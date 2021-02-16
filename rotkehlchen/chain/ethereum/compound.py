@@ -99,6 +99,10 @@ class CompoundEvent(NamedTuple):
         del serialized['log_index']
         return serialized
 
+    def __str__(self) -> str:
+        """Used in DefiEvent processing during accounting"""
+        return f'Compound {self.event_type} event'
+
 
 def _get_txhash_and_logidx(identifier: str) -> Optional[Tuple[str, int]]:
     result = identifier.split('-')
@@ -763,7 +767,7 @@ class Compound(EthereumModule):
                 spent_asset=spent_asset,
                 spent_balance=spent_balance,
                 pnl=pnl,
-                tx_hashes=event.tx_hash,
+                tx_hash=event.tx_hash,
             ))
 
         return events

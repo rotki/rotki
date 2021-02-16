@@ -66,7 +66,7 @@ class Accountant():
             user_directory=user_directory,
             create_csv=create_csv,
         )
-        self.events = TaxableEvents(self.csvexporter, profit_currency)
+        self.events = TaxableEvents(self.csvexporter, profit_currency, msg_aggregator)
 
         self.asset_movement_fees = FVal(0)
         self.last_gas_price = 0

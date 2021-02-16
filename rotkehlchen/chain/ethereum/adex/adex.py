@@ -1305,7 +1305,7 @@ class Adex(EthereumModule):
                     spent_asset=spent_asset,
                     spent_balance=spent_balance,
                     pnl=pnl,
-                    tx_hashes=event.tx_hash,
+                    tx_hash=event.tx_hash,
                 ))
 
         return events

@@ -72,6 +72,10 @@ class AaveEvent:
     def __eq__(self, other: Any) -> bool:
         return hash(self) == hash(other)
 
+    def __str__(self) -> str:
+        """Used in DefiEvent processing during accounting"""
+        return f'Aave {self.event_type} event'
+
 
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class AaveSimpleEvent(AaveEvent):
@@ -310,6 +314,10 @@ class YearnVaultEvent:
             'tx_hash': self.tx_hash,
             'log_index': self.log_index,
         }
+
+    def __str__(self) -> str:
+        """Used in DefiEvent processing during accounting"""
+        return f'Yearn vault {self.event_type}'
 
 
 class YearnVault(NamedTuple):

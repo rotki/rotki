@@ -108,6 +108,10 @@ class Bond(AdexEvent):
             None,  # log_index
         )
 
+    def __str__(self) -> str:
+        """Used in DefiEvent processing during accounting"""
+        return 'Adex bond event'
+
 
 @dataclass(init=True, repr=True)
 class Unbond(AdexEvent):
@@ -144,6 +148,10 @@ class Unbond(AdexEvent):
             None,  # token
             None,  # log_index
         )
+
+    def __str__(self) -> str:
+        """Used in DefiEvent processing during accounting"""
+        return 'Adex unbond event'
 
 
 @dataclass(init=True, repr=True)
@@ -183,6 +191,10 @@ class UnbondRequest(AdexEvent):
             None,  # log_index
         )
 
+    def __str__(self) -> str:
+        """Used in DefiEvent processing during accounting"""
+        return 'Adex unbond request'
+
 
 @dataclass(init=True, repr=True)
 class ChannelWithdraw(AdexEvent):
@@ -221,6 +233,10 @@ class ChannelWithdraw(AdexEvent):
             self.token.serialize(),
             int(self.log_index),
         )
+
+    def __str__(self) -> str:
+        """Used in DefiEvent processing during accounting"""
+        return 'Adex channel withdraw'
 
 
 class ADXStakingEvents(NamedTuple):

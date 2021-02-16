@@ -1,18 +1,20 @@
 import logging
-from typing import Optional, List
+from typing import List, Optional
 
 from rotkehlchen.accounting.cost_basis import CostBasisCalculator
 from rotkehlchen.accounting.structures import DefiEvent, LedgerAction, LedgerActionType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO, BCH_BSV_FORK_TS
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH, A_BSV
+from rotkehlchen.constants import BCH_BSV_FORK_TS, BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
+from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
+from rotkehlchen.history.price import get_balance_asset_rate_at_time_zero_if_error
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Fee, Location, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
 
 logger = logging.getLogger(__name__)
@@ -21,8 +23,14 @@ log = RotkehlchenLogsAdapter(logger)
 
 class TaxableEvents():
 
-    def __init__(self, csv_exporter: CSVExporter, profit_currency: Asset) -> None:
+    def __init__(
+            self,
+            csv_exporter: CSVExporter,
+            profit_currency: Asset,
+            msg_aggregator: MessagesAggregator,
+    ) -> None:
         self.csv_exporter = csv_exporter
+        self.msg_aggregator = msg_aggregator
         self.profit_currency = profit_currency
         # later customized via accountant._customize()
         self.taxable_ledger_actions: List[LedgerActionType] = []
@@ -688,15 +696,15 @@ class TaxableEvents():
             )
             if not result:
                 log.critical(
-                    f'No documented buy found for {margin.pl_currency} before '
-                    f'{self.csv_exporter.timestamp_to_date(margin.close_time),}',
+                    f'No documented acquisition found for {margin.pl_currency} before '
+                    f'{self.csv_exporter.timestamp_to_date(margin.close_time)}',
                 )
 
         # Reduce the fee_currency asset
         result = self.cost_basis.reduce_asset_amount(asset=margin.fee_currency, amount=margin.fee)
         if not result:
             log.critical(
-                f'No documented buy found for {margin.fee_currency} before '
+                f'No documented acquisition found for {margin.fee_currency} before '
                 f'{timestamp_to_date(margin.close_time, formatstr="%d/%m/%Y %H:%M:%S")}',
             )
 
@@ -724,18 +732,82 @@ class TaxableEvents():
             )
 
     def add_defi_event(self, event: DefiEvent) -> None:
+        event_description = str(event)
+        log.debug(
+            'Processing DeFi event',
+            sensitive_log=True,
+            event=event_description,
+        )
+
+        # count cost basis regardless of being in query time range
+        if event.got_asset is not None:
+            assert event.got_balance is not None, 'got_balance cant be missing for got_asset'
+            # With this we use the calculated usd_value to get the usd rate
+            rate = get_balance_asset_rate_at_time_zero_if_error(
+                balance=event.got_balance,
+                asset=self.profit_currency,
+                timestamp=event.timestamp,
+                location_hint=event_description,
+                msg_aggregator=self.msg_aggregator,
+            )
+            # we can also use the commented out code to use oracle query
+            # rate = self.get_rate_in_profit_currency(entry.asset, event.timestamp)
+
+            self.cost_basis.obtain_asset(
+                location=Location.BLOCKCHAIN,
+                timestamp=event.timestamp,
+                description=event_description,
+                asset=event.got_asset,
+                amount=event.got_balance.amount,
+                rate=rate,
+                fee_in_profit_currency=ZERO,
+            )
+
+        if event.spent_asset is not None:
+            assert event.spent_balance is not None, 'spent_balance cant be missing for spent_asset'
+            result = self.cost_basis.reduce_asset_amount(
+                asset=event.spent_asset,
+                amount=event.spent_balance.amount,
+            )
+            if not result:
+                log.critical(
+                    f'No documented acquisition found for {event.spent_asset} before '
+                    f'{self.csv_exporter.timestamp_to_date(event.timestamp)}',
+                )
+
+        if event.timestamp < self.query_start_ts:
+            return
+
+        # now we are within the range. Count profit/loss if any
+        profit_loss_list = []
         log.debug(
             'Accounting for DeFi event',
             sensitive_log=True,
-            event=event,
+            event=event_description,
         )
-        rate = self.get_rate_in_profit_currency(event.asset, event.timestamp)
-        profit_loss = event.amount * rate
-        if not event.is_profitable():
-            profit_loss *= - 1
 
-        self.defi_profit_loss += profit_loss
-        self.csv_exporter.add_defi_event(event=event, profit_loss_in_profit_currency=profit_loss)
+        if event.pnl is not None:
+            for entry in event.pnl:
+                # With this we use the calculated usd_value to get the usd rate
+                rate = get_balance_asset_rate_at_time_zero_if_error(
+                    balance=entry.balance,
+                    asset=self.profit_currency,
+                    timestamp=event.timestamp,
+                    location_hint=event_description,
+                    msg_aggregator=self.msg_aggregator,
+                )
+                # we can also use the commented out code to use oracle query
+                # rate = self.get_rate_in_profit_currency(entry.asset, event.timestamp)
+
+                single_profit_loss = entry.balance.amount * rate
+                log.debug(f'Counting profit/loss for {event_description}: {single_profit_loss}')
+                profit_loss_list.append(single_profit_loss)
+                self.defi_profit_loss += single_profit_loss
+
+        self.csv_exporter.add_defi_event(
+            event=event,
+            profit_loss_in_profit_currency_list=profit_loss_list,
+        )
 
     def add_ledger_action(self, action: LedgerAction) -> None:
         # should never happen, should be stopped at the main loop

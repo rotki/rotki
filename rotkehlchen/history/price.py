@@ -16,6 +16,7 @@ from rotkehlchen.utils.misc import timestamp_to_date
 from .typing import HistoricalPriceOracle, HistoricalPriceOracleInstance
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures import AssetBalance, Balance
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
@@ -65,6 +66,48 @@ def query_usd_price_zero_if_error(
         usd_price = Price(ZERO)
 
     return usd_price
+
+
+def get_balance_asset_rate_at_time_zero_if_error(
+        balance: 'Balance',
+        asset: Asset,
+        timestamp: Timestamp,
+        location_hint: str,
+        msg_aggregator: MessagesAggregator,
+) -> FVal:
+    """How many of asset, 1 unit of balance is worth at the given timestamp
+
+    If an error occurs at query we return an asset rate of zero
+    """
+    usd_rate = balance.usd_rate
+    price = query_usd_price_zero_if_error(
+        asset=asset,
+        time=timestamp,
+        location=location_hint,
+        msg_aggregator=msg_aggregator,
+    )
+    if price == ZERO:
+        return ZERO
+    return usd_rate / price
+
+
+def get_asset_balance_rate_at_time_zero_if_error(
+        asset_balance: 'AssetBalance',
+        timestamp: Timestamp,
+        location_hint: str,
+        msg_aggregator: MessagesAggregator,
+) -> FVal:
+    """How many of asset, 1 unit of balance is worth at the given timestamp
+
+    If an error occurs at query we return an asset rate of zero
+    """
+    return get_balance_asset_rate_at_time_zero_if_error(
+        balance=asset_balance.balance,
+        asset=asset_balance.asset,
+        timestamp=timestamp,
+        location_hint=location_hint,
+        msg_aggregator=msg_aggregator,
+    )
 
 
 class PriceHistorian():

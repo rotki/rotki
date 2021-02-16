@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
-from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -18,6 +17,7 @@ from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
     from rotkehlchen.chain.manager import ChainManager
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -36,8 +36,8 @@ HistoryResult = Tuple[
     List[Loan],
     List[AssetMovement],
     List[EthereumTransaction],
-    List[DefiEvent],
-    List[LedgerAction],
+    List['DefiEvent'],
+    List['LedgerAction'],
 ]
 
 
@@ -109,7 +109,7 @@ class EventsHistorian():
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             location: Optional[Location] = None,
-    ) -> Tuple[List[LedgerAction], int]:
+    ) -> Tuple[List['LedgerAction'], int]:
         """Queries the ledger actions from the DB and applies the free version limit
 
         TODO: Since we always query all in one call, the limiting will work, but if we start

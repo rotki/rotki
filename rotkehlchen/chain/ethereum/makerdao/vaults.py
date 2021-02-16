@@ -178,6 +178,13 @@ class VaultEvent(NamedTuple):
     timestamp: Timestamp
     tx_hash: str
 
+    def __str__(self) -> str:
+        """Used in DefiEvent processing during accounting"""
+        result = f'MakerDAO Vault {self.event_type}'
+        if self.event_type in (VaultEventType.GENERATE_DEBT, VaultEventType.PAYBACK_DEBT):
+            result += ' debt'
+        return result
+
 
 class MakerDAOVault(NamedTuple):
     identifier: int
@@ -742,7 +749,7 @@ class MakerDAOVaults(MakerDAOCommon):
                 timestamp = event.timestamp
                 if timestamp < from_timestamp:
                     continue
-                elif timestamp > to_timestamp:
+                if timestamp > to_timestamp:
                     break
 
                 got_asset: Optional[Asset]
@@ -784,7 +791,7 @@ class MakerDAOVaults(MakerDAOCommon):
                     spent_asset=spent_asset,
                     spent_balance=spent_balance,
                     pnl=pnl,
-                    tx_hashes=event.tx_hash,
+                    tx_hash=event.tx_hash,
                 ))
 
         return events

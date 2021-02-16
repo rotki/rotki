@@ -52,6 +52,10 @@ class DSRMovement:
     timestamp: Timestamp
     tx_hash: str
 
+    def __str__(self) -> str:
+        """Used in DefiEvent processing during accounting"""
+        return f'MakerDAO DSR {self.movement_type}'
+
 
 class DSRCurrentBalances(NamedTuple):
     balances: Dict[ChecksumEthAddress, Balance]
@@ -473,7 +477,7 @@ class MakerDAODSR(MakerDAOCommon):
             for movement in report.movements:
                 if movement.timestamp < from_timestamp:
                     continue
-                elif movement.timestamp > to_timestamp:
+                if movement.timestamp > to_timestamp:
                     break
 
                 pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
@@ -505,7 +509,7 @@ class MakerDAODSR(MakerDAOCommon):
                     spent_asset=spent_asset,
                     spent_balance=spent_balance,
                     pnl=pnl,
-                    tx_hashes=movement.tx_hash,
+                    tx_hash=movement.tx_hash,
                 ))
 
         return events
