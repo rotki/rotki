@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.14.0 <2021-02-16>`
 * :feature:`1005` MacOS users will no longer get the dreaded "Can not open the app because developer is not verified" warning. Rotki is now a verified apple developer.
 * :feature:`2299` During a PnL report rotki should now also take into account for cost basis the assets gained from or used in DeFi.
 * :feature:`2318` Users can now see if their accounts are eligible for the Curve CRV airdrop and POAP Delivery badges.
