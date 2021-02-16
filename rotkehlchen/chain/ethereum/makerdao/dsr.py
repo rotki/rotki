@@ -488,12 +488,10 @@ class MakerDAODSR(MakerDAOCommon):
                 if movement.movement_type == 'deposit':
                     spent_asset = A_DAI
                     spent_balance = balance
-                    event_type = DefiEventType.DSR_EVENT
                     total_balance -= balance
                 else:
                     got_asset = A_DAI
                     got_balance = balance
-                    event_type = DefiEventType.DSR_EVENT
                     total_balance += balance
                     if total_balance.amount - counted_profit.amount > ZERO:
                         pnl_balance = total_balance - counted_profit
@@ -503,7 +501,7 @@ class MakerDAODSR(MakerDAOCommon):
                 events.append(DefiEvent(
                     timestamp=movement.timestamp,
                     wrapped_event=movement,
-                    event_type=event_type,
+                    event_type=DefiEventType.DSR_EVENT,
                     got_asset=got_asset,
                     got_balance=got_balance,
                     spent_asset=spent_asset,

@@ -66,7 +66,7 @@ class AssetSpendEvent:
     def __str__(self) -> str:
         return (
             f'AssetSpendEvent in {str(self.location)} @ {self.timestamp}.'
-            f'amount: {self.amount} rate: {self.rate} fee_rate: {self.fee_rate}'
+            f'amount: {self.amount} rate: {self.rate} fee_rate: {self.fee_rate} '
             f'gain_in_profit_currency: {self.gain} '
         )
 
