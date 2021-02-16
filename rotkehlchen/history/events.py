@@ -1,12 +1,8 @@
 import logging
-from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
-from rotkehlchen.accounting.structures import DefiEvent, DefiEventType, LedgerAction
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.trades import AMMTrade
-from rotkehlchen.constants.assets import A_ADX, A_DAI, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import RemoteError
@@ -18,9 +14,10 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import EthereumTransaction, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
-from rotkehlchen.utils.misc import timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
     from rotkehlchen.chain.manager import ChainManager
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -39,8 +36,8 @@ HistoryResult = Tuple[
     List[Loan],
     List[AssetMovement],
     List[EthereumTransaction],
-    List[DefiEvent],
-    List[LedgerAction],
+    List['DefiEvent'],
+    List['LedgerAction'],
 ]
 
 
@@ -112,7 +109,7 @@ class EventsHistorian():
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             location: Optional[Location] = None,
-    ) -> Tuple[List[LedgerAction], int]:
+    ) -> Tuple[List['LedgerAction'], int]:
         """Queries the ledger actions from the DB and applies the free version limit
 
         TODO: Since we always query all in one call, the limiting will work, but if we start
@@ -238,279 +235,63 @@ class EventsHistorian():
         defi_events = []
         if self.chain_manager.makerdao_dsr and has_premium:
             self.processing_state_name = 'Querying makerDAO DSR history'
-            dsr_gains = self.chain_manager.makerdao_dsr.get_dsr_gains_in_period(
-                from_ts=start_ts,
-                to_ts=end_ts,
-            )
-            for gain in dsr_gains:
-                if gain.amount <= ZERO:
-                    continue
-
-                notes = (
-                    f'MakerDAO DSR Gains from {self.timestamp_to_date(gain.from_timestamp)}'
-                    f' to {self.timestamp_to_date(gain.to_timestamp)}'
-                )
-                defi_events.append(DefiEvent(
-                    timestamp=gain.to_timestamp,
-                    event_type=DefiEventType.DSR_LOAN_GAIN,
-                    asset=A_DAI,
-                    amount=gain.amount,
-                    tx_hashes=gain.tx_hashes,
-                    notes=notes,
-                ))
+            defi_events.extend(self.chain_manager.makerdao_dsr.get_history_events(
+                from_timestamp=Timestamp(0),  # we need to process all events from history start
+                to_timestamp=end_ts,
+            ))
         step = self._increase_progress(step, total_steps)
 
         # Include makerdao vault events
         if self.chain_manager.makerdao_vaults and has_premium:
             self.processing_state_name = 'Querying makerDAO vaults history'
-            vault_details = self.chain_manager.makerdao_vaults.get_vault_details()
-            # We count the loss on a vault in the period if the last event is within
-            # the given period. It's not a very accurate approach but it's good enough
-            # for now. A more detailed approach would need archive node or log querying
-            # to find owed debt at any given timestamp
-            for detail in vault_details:
-                last_event_ts = detail.events[-1].timestamp
-                if start_ts <= last_event_ts <= end_ts:
-                    notes = (
-                        f'USD value of DAI lost for MakerDAO vault {detail.identifier} '
-                        f'due to accrued debt or liquidations. IMPORTANT: At the moment rotki '
-                        f'can\'t figure debt until a given time, so this is debt until '
-                        f'now. If you are looking at a past range this may be bigger '
-                        f'than it should be. We are actively working on improving this'
-                    )
-                    defi_events.append(DefiEvent(
-                        timestamp=last_event_ts,
-                        event_type=DefiEventType.MAKERDAO_VAULT_LOSS,
-                        asset=A_USD,
-                        amount=detail.total_liquidated.usd_value + detail.total_interest_owed,
-                        tx_hashes=[x.tx_hash for x in detail.events],
-                        notes=notes,
-                    ))
+            defi_events.extend(self.chain_manager.makerdao_vaults.get_history_events(
+                from_timestamp=Timestamp(0),  # we need to process all events from history start
+                to_timestamp=end_ts,
+            ))
         step = self._increase_progress(step, total_steps)
 
         # include yearn vault events
         if self.chain_manager.yearn_vaults and has_premium:
             self.processing_state_name = 'Querying yearn vaults history'
-            yearn_vaults_history = self.chain_manager.yearn_vaults.get_history(
-                given_defi_balances=self.chain_manager.defi_balances,
-                addresses=self.chain_manager.queried_addresses_for_module('yearn_vaults'),
-                reset_db_data=False,
-                from_timestamp=start_ts,
+            defi_events.extend(self.chain_manager.yearn_vaults.get_history_events(
+                from_timestamp=Timestamp(0),  # we need to process all events from history start
                 to_timestamp=end_ts,
-            )
-            for address, vault_mappings in yearn_vaults_history.items():
-                for vault_name, vault_history in vault_mappings.items():
-                    # For the vaults since we can't get historical values of vault tokens
-                    # yet, for the purposes of the tax report count everything as USD
-                    for yearn_event in vault_history.events:
-                        if start_ts <= yearn_event.timestamp <= end_ts and yearn_event.realized_pnl is not None:  # noqa: E501
-                            defi_events.append(DefiEvent(
-                                timestamp=yearn_event.timestamp,
-                                event_type=DefiEventType.YEARN_VAULTS_PNL,
-                                asset=A_USD,
-                                amount=yearn_event.realized_pnl.usd_value,
-                                tx_hashes=[yearn_event.tx_hash],
-                                notes=(
-                                    f'USD equivalent PnL for {address} and yearn '
-                                    f'{vault_name} at event'
-                                ),
-                            ))
+                addresses=self.chain_manager.queried_addresses_for_module('yearn_vaults'),
+            ))
         step = self._increase_progress(step, total_steps)
 
         # include compound events
         if self.chain_manager.compound and has_premium:
             self.processing_state_name = 'Querying compound history'
-            compound_history = self.chain_manager.compound.get_history(
-                given_defi_balances=self.chain_manager.defi_balances,
-                addresses=self.chain_manager.queried_addresses_for_module('compound'),
-                reset_db_data=False,
-                from_timestamp=start_ts,
+            defi_events.extend(self.chain_manager.compound.get_history_events(
+                from_timestamp=Timestamp(0),  # we need to process all events from history start
                 to_timestamp=end_ts,
-            )
-            for event in compound_history['events']:
-                skip_event = (
-                    event.event_type != 'liquidation' and
-                    (event.realized_pnl is None or event.realized_pnl.amount == ZERO)
-                )
-                if skip_event:
-                    continue  # skip events with no realized profit/loss
-
-                if event.event_type == 'redeem':
-                    defi_events.append(DefiEvent(
-                        timestamp=event.timestamp,
-                        event_type=DefiEventType.COMPOUND_LOAN_INTEREST,
-                        asset=event.to_asset,
-                        amount=event.realized_pnl.amount,
-                        tx_hashes=[event.tx_hash],
-                        notes=(
-                            f'Interest earned in compound for '
-                            f'{event.to_asset.identifier} until this event'
-                        ),
-                    ))
-                elif event.event_type == 'repay':
-                    defi_events.append(DefiEvent(
-                        timestamp=event.timestamp,
-                        event_type=DefiEventType.COMPOUND_DEBT_REPAY,
-                        asset=event.asset,
-                        amount=event.realized_pnl.amount,
-                        tx_hashes=[event.tx_hash],
-                        notes=(
-                            f'Amount of {event.asset.identifier} lost in '
-                            f'compound due to debt repayment'
-                        ),
-                    ))
-                elif event.event_type == 'liquidation':
-                    defi_events.append(DefiEvent(
-                        timestamp=event.timestamp,
-                        event_type=DefiEventType.COMPOUND_LIQUIDATION_DEBT_REPAID,
-                        asset=event.asset,
-                        amount=event.value.amount,
-                        tx_hashes=[event.tx_hash],
-                        notes=(
-                            f'Amount of {event.asset.identifier} gained in '
-                            f'compound due to liquidation debt repayment'
-                        ),
-                    ))
-                    defi_events.append(DefiEvent(
-                        timestamp=event.timestamp,
-                        event_type=DefiEventType.COMPOUND_LIQUIDATION_COLLATERAL_LOST,
-                        asset=event.to_asset,
-                        amount=event.to_value.amount,
-                        tx_hashes=[event.tx_hash],
-                        notes=(
-                            f'Amount of {event.to_asset.identifier} collateral lost '
-                            f'in compound due to liquidation'
-                        ),
-                    ))
-                elif event.event_type == 'comp':
-                    defi_events.append(DefiEvent(
-                        timestamp=event.timestamp,
-                        event_type=DefiEventType.COMPOUND_REWARDS,
-                        asset=event.asset,
-                        amount=event.realized_pnl.amount,
-                        tx_hashes=[event.tx_hash],
-                    ))
+                addresses=self.chain_manager.queried_addresses_for_module('compound'),
+            ))
         step = self._increase_progress(step, total_steps)
 
-        # include adex staking profit
+        # include adex events
         adex = self.chain_manager.adex
         if adex is not None and has_premium:
             self.processing_state_name = 'Querying adex staking history'
-            adx_mapping = adex.get_events_history(
-                addresses=self.chain_manager.queried_addresses_for_module('adex'),
-                reset_db_data=False,
+            defi_events.extend(adex.get_history_events(
                 from_timestamp=start_ts,
                 to_timestamp=end_ts,
-                is_pnl_report=True,
-            )
-            for _, adex_history in adx_mapping.items():
-                # The transaction hashes here are not accurate. Need to figure out
-                # a way to have accurate transaction hashes for events in a time period
-                adex_tx_hashes = [x.tx_hash for x in adex_history.events]
-                for adx_detail in adex_history.staking_details:
-                    defi_events.append(DefiEvent(
-                        timestamp=end_ts,
-                        event_type=DefiEventType.ADEX_STAKE_PROFIT,
-                        asset=A_ADX,
-                        amount=adx_detail.adx_profit_loss.amount,
-                        tx_hashes=adex_tx_hashes,
-                    ))
-                    defi_events.append(DefiEvent(
-                        timestamp=end_ts,
-                        event_type=DefiEventType.ADEX_STAKE_PROFIT,
-                        asset=A_DAI,
-                        amount=adx_detail.dai_profit_loss.amount,
-                        tx_hashes=adex_tx_hashes,
-                    ))
+                addresses=self.chain_manager.queried_addresses_for_module('adex'),
+            ))
         step = self._increase_progress(step, total_steps)
 
-        # include aave lending events
+        # include aave events
         aave = self.chain_manager.aave
         if aave is not None and has_premium:
             self.processing_state_name = 'Querying aave history'
-            mapping = aave.get_history(
-                given_defi_balances=self.chain_manager.defi_balances,
-                addresses=self.chain_manager.queried_addresses_for_module('aave'),
-                reset_db_data=False,
+            defi_events.extend(aave.get_history_events(
                 from_timestamp=start_ts,
                 to_timestamp=end_ts,
-            )
-
-            now = ts_now()
-            for _, aave_history in mapping.items():
-                total_amount_per_token: Dict[Asset, FVal] = defaultdict(FVal)
-                for event in aave_history.events:
-                    if event.timestamp < start_ts:
-                        continue
-                    if event.timestamp > end_ts:
-                        break
-
-                    if event.event_type == 'interest':
-                        defi_events.append(DefiEvent(
-                            timestamp=event.timestamp,
-                            event_type=DefiEventType.AAVE_LOAN_INTEREST,
-                            asset=event.asset,
-                            amount=event.value.amount,
-                            tx_hashes=[event.tx_hash],
-                        ))
-                        total_amount_per_token[event.asset] += event.value.amount
-
-                # TODO: Here we should also calculate any unclaimed interest payments
-                # within the time range. IT's quite complicated to do that though and
-                # would most probably require an archive node
-
-                # Add all losses from aave borrowing/liquidations
-                for asset, balance in aave_history.total_lost.items():
-                    aave_tx_hashes = []
-                    for event in aave_history.events:
-                        if event not in ('borrow', 'repay', 'liquidation'):
-                            continue
-
-                        if event in ('borrow', 'repay') and event.asset == asset:
-                            aave_tx_hashes.append(event.tx_hash)
-                            continue
-
-                        relevant_liquidation = (
-                            event.event_type == 'liquidation' and
-                            asset in (event.collateral_asset, event.principal_asset)
-                        )
-                        if relevant_liquidation:
-                            aave_tx_hashes.append(event.tx_hash)
-
-                    defi_events.append(DefiEvent(
-                        timestamp=now,
-                        event_type=DefiEventType.AAVE_LOSS,
-                        asset=asset,
-                        amount=balance.amount,
-                        tx_hashes=aave_tx_hashes,
-                        notes=(
-                            f'All {asset.identifier} lost in Aave due to borrowing '
-                            f'debt or liquidations in the PnL period.'
-                        ),
-                    ))
-
-                # Add earned assets from aave liquidations
-                for asset, balance in aave_history.total_earned_liquidations.items():
-                    aave_tx_hashes = []
-                    for event in aave_history.events:
-                        relevant_liquidation = (
-                            event.event_type == 'liquidation' and
-                            asset in (event.collateral_asset, event.principal_asset)
-                        )
-                        if relevant_liquidation:
-                            aave_tx_hashes.append(event.tx_hash)
-
-                    defi_events.append(DefiEvent(
-                        timestamp=now,
-                        event_type=DefiEventType.AAVE_LOAN_INTEREST,
-                        asset=asset,
-                        amount=balance.amount,
-                        tx_hashes=aave_tx_hashes,
-                        notes=(
-                            f'All {asset.identifier} gained in Aave due to liquidation leftovers'
-                        ),
-                    ))
+                addresses=self.chain_manager.queried_addresses_for_module('aave'),
+            ))
         self._increase_progress(step, total_steps)
+
         history.sort(key=action_get_timestamp)
         return (
             empty_or_error,

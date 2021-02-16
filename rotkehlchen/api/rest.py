@@ -53,7 +53,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.utils import AssetBalance, LocationData
+from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors import (
     AuthenticationError,
     DBUpgradeError,
@@ -1263,7 +1263,7 @@ class RestAPI():
 
     @require_premium_user(active_check=False)
     def query_value_distribution_data(self, distribution_by: str) -> Response:
-        data: Union[List[AssetBalance], List[LocationData]]
+        data: Union[List[DBAssetBalance], List[LocationData]]
         if distribution_by == 'location':
             data = self.rotkehlchen.data.db.get_latest_location_value_distribution()
         else:
@@ -2200,7 +2200,7 @@ class RestAPI():
         return self._api_query_for_eth_module(
             async_query=async_query,
             module='adex',
-            method='get_events_history',
+            method='get_history',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('adex'),
             reset_db_data=reset_db_data,

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2299` During a PnL report rotki should now also take into account for cost basis the assets gained from or used in DeFi.
 * :feature:`2318` Users can now see if their accounts are eligible for the Curve CRV airdrop and POAP Delivery badges.
 * :feature:`297` Rotki now supports KuCoin. Users can see their balances and import trades, deposits and withdrawals from that exchange. They are also taken into account in the tax report.
 * :feature:`1436` Users will now see any validation errors when adding manual balances under their respective inputs instead of a modal dialog.
@@ -16,6 +17,7 @@ Changelog
 * :bug:`2228` AdEx claim events now always have the proper token (e.g. ADX, DAI) and usd value. Also rotki should no longer miss Adex withdrawal events.
 * :bug:`2335` Users having sold BSV they got from holding BCH during the BCH -> BSV fork will now have its cost basis properly counted in the PnL report.
 * :bug:`2360` Users of Binance who own ONE tokens will now have it properly mapped to harmony.
+* :bug:`2293` Go through DeFi events before the queried PnL range during PnL report for a more complete calculation.
 
 * :feature:`-` Added support for the following tokens:
 

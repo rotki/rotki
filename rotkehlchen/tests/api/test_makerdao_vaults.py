@@ -100,6 +100,7 @@ VAULT_8015 = {
 
 VAULT_8015_DETAILS = {
     'identifier': 8015,
+    'collateral_asset': 'ETH',
     'creation_ts': 1586785858,
     'total_interest_owed': '0.2810015984764',
     'total_liquidated': {
@@ -343,6 +344,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
     ))
     vault_6021_details = {
         'identifier': 6021,
+        'collateral_asset': 'ETH',
         'creation_ts': 1582699808,
         'total_interest_owed': '-11078.655097848869',
         'total_liquidated': {
@@ -464,6 +466,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     ))
     vault_8913_details = {
         'identifier': 8913,
+        'collateral_asset': 'WBTC',
         'creation_ts': 1588664698,
         'total_interest_owed': '0.1903819198',
         'total_liquidated': {
@@ -556,6 +559,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     ))
     vault_7588_details = {
         'identifier': 7588,
+        'collateral_asset': 'USDC',
         'creation_ts': 1585286480,
         'total_interest_owed': '0.00050636718',
         'total_liquidated': {
@@ -676,6 +680,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
     ))
     vault_8543_details = {
         'identifier': 8543,
+        'collateral_asset': 'ETH',
         'creation_ts': 1587910979,
         'total_interest_owed': '0',
         'total_liquidated': {
@@ -726,6 +731,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
     }
     vault_8632_details = {
         'identifier': 8632,
+        'collateral_asset': 'ETH',
         'creation_ts': 1588174425,
         'total_interest_owed': '0',
         'total_liquidated': {
@@ -835,6 +841,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
     ))
     vault_7538_details = {
         'identifier': 7538,
+        'collateral_asset': 'USDC',
         'creation_ts': 1585145754,
         'total_interest_owed': '0.0005943266',
         'total_liquidated': {

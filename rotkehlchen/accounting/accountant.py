@@ -13,11 +13,11 @@ from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import (
-    DeserializationError,
     NoPriceForGivenTimestamp,
     PriceQueryUnsupportedAsset,
     RemoteError,
     UnknownAsset,
+    UnprocessableTradePair,
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import (
@@ -31,6 +31,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import EthereumTransaction, Fee, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import (
@@ -39,7 +40,6 @@ from rotkehlchen.utils.accounting import (
     action_get_timestamp,
     action_get_type,
 )
-from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -66,7 +66,7 @@ class Accountant():
             user_directory=user_directory,
             create_csv=create_csv,
         )
-        self.events = TaxableEvents(self.csvexporter, profit_currency)
+        self.events = TaxableEvents(self.csvexporter, profit_currency, msg_aggregator)
 
         self.asset_movement_fees = FVal(0)
         self.last_gas_price = 0
@@ -514,7 +514,7 @@ class Accountant():
         action_type = action_get_type(action)
 
         try:
-            asset1, asset2 = action_get_assets(action)
+            action_assets = action_get_assets(action)
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'At history processing found trade with unknown asset {e.asset_name}. '
@@ -527,29 +527,26 @@ class Accountant():
                 f'Ignoring the trade.',
             )
             return True, prev_time
-        except DeserializationError:
+        except UnprocessableTradePair as e:
             self.msg_aggregator.add_error(
-                'At history processing found trade with non string asset type. '
-                'Ignoring the trade.',
+                f'At history processing found trade with unprocessable trade pair {str(e)} '
+                f'Ignoring the trade.',
             )
             return True, prev_time
 
-        if isinstance(asset1, UnknownEthereumToken) or isinstance(asset2, UnknownEthereumToken):  # type: ignore  # noqa: E501
-            # TODO: Typing needs fixing here  # type: ignore
-            log.debug(  # type: ignore
+        if any(isinstance(x, UnknownEthereumToken) for x in action_assets):
+            log.debug(
                 'Ignoring action with unknown token',
                 action_type=action_type,
-                asset1=asset1,
-                asset2=asset2,
+                assets=[x.identifier for x in action_assets],
             )
             return True, prev_time
 
-        if asset1 in ignored_assets or asset2 in ignored_assets:
+        if any(x in ignored_assets for x in action_assets):
             log.debug(
                 'Ignoring action with ignored asset',
                 action_type=action_type,
-                asset1=asset1,
-                asset2=asset2,
+                assets=[x.identifier for x in action_assets],
             )
             return True, prev_time
 

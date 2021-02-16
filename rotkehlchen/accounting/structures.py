@@ -1,8 +1,8 @@
 import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, DefaultDict, Dict, Optional, List
+from enum import Enum, auto
+from typing import Any, Callable, DefaultDict, Dict, List, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
@@ -42,80 +42,18 @@ class BalanceType(Enum):
         raise AssertionError(f'Invalid value {self} for BalanceType')
 
 
-class DefiEventType(Enum):
-    DSR_LOAN_GAIN = 0
-    MAKERDAO_VAULT_LOSS = 1
-    AAVE_LOAN_INTEREST = 2
-    COMPOUND_LOAN_INTEREST = 3
-    COMPOUND_DEBT_REPAY = 4
-    COMPOUND_LIQUIDATION_DEBT_REPAID = 5
-    COMPOUND_LIQUIDATION_COLLATERAL_LOST = 6
-    COMPOUND_REWARDS = 7
-    YEARN_VAULTS_PNL = 8
-    AAVE_LOSS = 9
-    ADEX_STAKE_PROFIT = 10
-
-    def __str__(self) -> str:
-        if self == DefiEventType.DSR_LOAN_GAIN:
-            return "DSR loan gain"
-        if self == DefiEventType.MAKERDAO_VAULT_LOSS:
-            return "Makerdao vault loss"
-        if self == DefiEventType.AAVE_LOAN_INTEREST:
-            return "Aave loan interest"
-        if self == DefiEventType.AAVE_LOSS:
-            return "Aave loss"
-        if self == DefiEventType.COMPOUND_LOAN_INTEREST:
-            return "Compound loan interest"
-        if self == DefiEventType.COMPOUND_DEBT_REPAY:
-            return "Compound debt repayment"
-        if self == DefiEventType.COMPOUND_LIQUIDATION_DEBT_REPAID:
-            return "Compound liquidation debt repayment"
-        if self == DefiEventType.COMPOUND_LIQUIDATION_COLLATERAL_LOST:
-            return "Compound liquidation collateral lost"
-        if self == DefiEventType.COMPOUND_REWARDS:
-            return "Compound rewards"
-        if self == DefiEventType.YEARN_VAULTS_PNL:
-            return "Yearn vaults profit/loss"
-        if self == DefiEventType.ADEX_STAKE_PROFIT:
-            return "AdEx staking profit"
-        # else
-        raise RuntimeError(f'Corrupt value {self} for DefiEventType -- Should never happen')
-
-    def is_profitable(self) -> bool:
-        return self in (
-            DefiEventType.DSR_LOAN_GAIN,
-            DefiEventType.AAVE_LOAN_INTEREST,
-            DefiEventType.COMPOUND_LOAN_INTEREST,
-            DefiEventType.COMPOUND_LIQUIDATION_DEBT_REPAID,
-            DefiEventType.COMPOUND_REWARDS,
-            DefiEventType.YEARN_VAULTS_PNL,
-            DefiEventType.ADEX_STAKE_PROFIT,
-        )
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DefiEvent:
-    timestamp: Timestamp
-    event_type: DefiEventType
-    asset: Asset
-    amount: FVal
-    tx_hashes: Optional[List[str]] = None
-    notes: str = ''
-
-    def is_profitable(self) -> bool:
-        return self.event_type.is_profitable()
-
-    def serialize_tx_hashes(self) -> str:
-        if self.tx_hashes is None:
-            return ''
-
-        return ','.join(self.tx_hashes)
-
-
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class Balance:
     amount: FVal = ZERO
     usd_value: FVal = ZERO
+
+    @property
+    def usd_rate(self) -> FVal:
+        """How many $ 1 unit of balance is worth"""
+        if self.amount == ZERO:
+            return ZERO
+
+        return self.usd_value / self.amount
 
     def serialize(self) -> Dict[str, str]:
         return {'amount': str(self.amount), 'usd_value': str(self.usd_value)}
@@ -149,6 +87,108 @@ class Balance:
 
     def __neg__(self) -> 'Balance':
         return Balance(amount=-self.amount, usd_value=-self.usd_value)
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class AssetBalance:
+    asset: Asset
+    balance: Balance
+
+    @property
+    def amount(self) -> FVal:
+        return self.balance.amount
+
+    @property
+    def usd_value(self) -> FVal:
+        return self.balance.usd_value
+
+    def serialize(self) -> Dict[str, str]:
+        result = self.balance.serialize()
+        result['asset'] = self.asset.identifier
+        return result
+
+    def to_dict(self) -> Dict[str, Any]:
+        result = self.balance.to_dict()
+        result['asset'] = self.asset  # type: ignore
+        return result
+
+    def _evaluate_other_input(self, other: Any) -> None:
+        if not isinstance(other, AssetBalance):
+            raise TypeError(f'AssetBalance can not interact with {type(other)}')
+
+        if self.asset != other.asset:
+            raise TypeError(
+                f'Tried to add {self.asset.identifier} balance to '
+                f'{other.asset.identifier} balance',
+            )
+
+    def __add__(self, other: Any) -> 'AssetBalance':
+        self._evaluate_other_input(other)
+        new_balance = self.balance + other.balance
+        return AssetBalance(asset=self.asset, balance=new_balance)
+
+    def __sub__(self, other: Any) -> 'AssetBalance':
+        self._evaluate_other_input(other)
+        new_balance = self.balance - other.balance
+        return AssetBalance(asset=self.asset, balance=new_balance)
+
+    def __neg__(self) -> 'AssetBalance':
+        return AssetBalance(asset=self.asset, balance=-self.balance)
+
+
+class DefiEventType(Enum):
+    DSR_EVENT = 0
+    MAKERDAO_VAULT_EVENT = auto()
+    AAVE_EVENT = auto()
+    YEARN_VAULTS_EVENT = auto()
+    ADEX_EVENT = auto()
+    COMPOUND_EVENT = auto()
+
+    def __str__(self) -> str:
+        if self == DefiEventType.DSR_EVENT:
+            return 'MakerDAO DSR event'
+        if self == DefiEventType.MAKERDAO_VAULT_EVENT:
+            return 'MakerDAO vault event'
+        if self == DefiEventType.AAVE_EVENT:
+            return 'Aave event'
+        if self == DefiEventType.YEARN_VAULTS_EVENT:
+            return 'Yearn vault event'
+        if self == DefiEventType.ADEX_EVENT:
+            return 'AdEx event'
+        if self == DefiEventType.COMPOUND_EVENT:
+            return 'Compound event'
+        # else
+        raise RuntimeError(f'Corrupt value {self} for DefiEventType -- Should never happen')
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DefiEvent:
+    timestamp: Timestamp
+    wrapped_event: Any
+    event_type: DefiEventType
+    got_asset: Optional[Asset]
+    got_balance: Optional[Balance]
+    spent_asset: Optional[Asset]
+    spent_balance: Optional[Balance]
+    pnl: Optional[List[AssetBalance]]
+    # If this is true then both got and spent asset count in cost basis
+    # So it will count as if you got asset at given amount and price of timestamp
+    # and spent asset at given amount and price of timestamp
+    count_spent_got_cost_basis: bool
+    tx_hash: Optional[str] = None
+
+    def __str__(self) -> str:
+        """Default string constructor"""
+        result = str(self.wrapped_event)
+        if self.tx_hash is not None:
+            result += f' {self.tx_hash}'
+        return result
+
+    def to_string(self, timestamp_converter: Callable[[Timestamp], str]) -> str:
+        """A customizable string constructor"""
+        result = str(self)
+        result += f' at {timestamp_converter(self.timestamp)}'
+        return result
 
 
 def _evaluate_balance_input(other: Any, operation: str) -> Balance:

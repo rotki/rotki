@@ -2,7 +2,7 @@ import csv
 import logging
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from zipfile import ZipFile
 
 from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
@@ -21,6 +21,7 @@ from rotkehlchen.constants import (
     ZERO,
 )
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.typing import (
@@ -33,7 +34,6 @@ from rotkehlchen.typing import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
-from rotkehlchen.db.dbhandler import DBHandler
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.cost_basis import CostBasisInfo
@@ -495,49 +495,62 @@ class CSVExporter():
             timestamp=timestamp,
         )
 
-    def add_defi_event(self, event: DefiEvent, profit_loss_in_profit_currency: FVal) -> None:
+    def add_defi_event(
+            self,
+            event: DefiEvent,
+            profit_loss_in_profit_currency_list: List[FVal],
+    ) -> None:
         if not self.create_csv:
             return
 
+        profit_loss_sum = FVal(sum(profit_loss_in_profit_currency_list))
         self.defi_events_csv.append({
             'time': self.timestamp_to_date(event.timestamp),
             'type': str(event.event_type),
-            'asset': str(event.asset),
-            'amount': str(event.amount),
-            f'profit_loss_in_{self.profit_currency.identifier}': profit_loss_in_profit_currency,
-            'tx_hashes': event.serialize_tx_hashes(),
-            'notes': event.notes,
+            'got_asset': str(event.got_asset) if event.got_asset else '',
+            'got_amount': str(event.got_balance.amount) if event.got_balance else '',
+            'spent_asset': str(event.spent_asset) if event.spent_asset else '',
+            'spent_amount': str(event.spent_balance.amount) if event.spent_balance else '',
+            f'profit_loss_in_{self.profit_currency.identifier}': profit_loss_sum,
+            'tx_hash': event.tx_hash if event.tx_hash else '',
+            'description': event.to_string(timestamp_converter=self.timestamp_to_date),
         })
 
         paid_asset: Union[EmptyStr, Asset]
         received_asset: Union[EmptyStr, Asset]
-        if event.is_profitable():
-            paid_in_profit_currency = ZERO
-            paid_in_asset = ZERO
-            paid_asset = S_EMPTYSTR
-            received_asset = event.asset
-            received_in_asset = event.amount
-            received_in_profit_currency = profit_loss_in_profit_currency
-        else:
-            paid_in_profit_currency = -1 * profit_loss_in_profit_currency
-            paid_in_asset = event.amount
-            paid_asset = event.asset
-            received_asset = S_EMPTYSTR
-            received_in_asset = ZERO
-            received_in_profit_currency = ZERO
+        if event.pnl is None:
+            return  # don't pollute all events csv with entries that are not useful
 
-        self.add_to_allevents(
-            event_type=EV_DEFI,
-            location=Location.BLOCKCHAIN,
-            paid_in_profit_currency=paid_in_profit_currency,
-            paid_asset=paid_asset,
-            paid_in_asset=paid_in_asset,
-            received_asset=received_asset,
-            received_in_asset=received_in_asset,
-            taxable_received_in_profit_currency=received_in_profit_currency,
-            total_received_in_profit_currency=received_in_profit_currency,
-            timestamp=event.timestamp,
-        )
+        for idx, entry in enumerate(event.pnl):
+            if entry.balance.amount > ZERO:
+                paid_in_profit_currency = ZERO
+                paid_in_asset = ZERO
+                paid_asset = S_EMPTYSTR
+                received_asset = entry.asset
+                received_in_asset = entry.balance.amount
+                # The index should be the same as the precalculated profit_currency list amounts
+                received_in_profit_currency = profit_loss_in_profit_currency_list[idx]
+            else:  # pnl is a loss
+                # The index should be the same as the precalculated profit_currency list amounts
+                paid_in_profit_currency = profit_loss_in_profit_currency_list[idx]
+                paid_in_asset = entry.balance.amount
+                paid_asset = entry.asset
+                received_asset = S_EMPTYSTR
+                received_in_asset = ZERO
+                received_in_profit_currency = ZERO
+
+            self.add_to_allevents(
+                event_type=EV_DEFI,
+                location=Location.BLOCKCHAIN,
+                paid_in_profit_currency=paid_in_profit_currency,
+                paid_asset=paid_asset,
+                paid_in_asset=paid_in_asset,
+                received_asset=received_asset,
+                received_in_asset=received_in_asset,
+                taxable_received_in_profit_currency=received_in_profit_currency,
+                total_received_in_profit_currency=received_in_profit_currency,
+                timestamp=event.timestamp,
+            )
 
     def add_ledger_action(
             self,

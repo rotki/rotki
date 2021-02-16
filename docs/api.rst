@@ -3780,6 +3780,7 @@ Getting MakerDAO vault details
       {
           "result": [{
               "identifier": 1,
+              "collateral_asset": "ETH",
               "creation_ts": 1589067898,
               "total_interest_owed": "0.02341",
               "total_liquidated": {
@@ -3805,6 +3806,7 @@ Getting MakerDAO vault details
               }]
           }, {
               "identifier": 56,
+              "collateral_asset": "USDC",
               "creation_ts": 1589067897,
               "total_interest_owed": "-751.32",
               "total_liquidated": {
@@ -3849,6 +3851,7 @@ Getting MakerDAO vault details
       }
 
    :resjson object result: A list of all vault details detected.
+   :resjsonarr string collateral_asset: The asset deposited in the vault as collateral.
    :resjsonarr int creation_ts: The timestamp of the vault's creation.
    :resjsonarr string total_interest_owed: Total amount of DAI lost to the vault as interest rate. This can be negative, if the vault has been liquidated. In that case the negative number is the DAI that is out in the wild and does not need to be returned after liquidation. Even if the vault has been paid out this still shows how much interest was paid to the vault. So it's past and future interest owed.
    :resjsonarr string total_liquidated: The total amount/usd_value of the collateral asset that has been lost to liquidation. Will be ``0`` if no liquidations happened.

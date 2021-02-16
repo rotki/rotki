@@ -8,7 +8,7 @@ from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.utils import AssetBalance, LocationData
+from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.typing import Location, Timestamp
@@ -116,7 +116,7 @@ class StatisticsFaker():
         # Add the first distribution of assets
         assets_data = []
         for idx, value in enumerate(divide_number_in_parts(starting_amount, len(assets))):
-            assets_data.append(AssetBalance(
+            assets_data.append(DBAssetBalance(
                 category=BalanceType.ASSET,
                 time=from_ts,
                 asset=assets[idx],
@@ -172,7 +172,7 @@ class StatisticsFaker():
                 new_amount = action(old_amount, add_amount)
                 if new_amount < FVal('0'):
                     new_amount = old_amount + FVal('0.01')
-                new_assets_data.append(AssetBalance(
+                new_assets_data.append(DBAssetBalance(
                     category=BalanceType.ASSET,
                     time=from_ts,
                     asset=assets[idx],

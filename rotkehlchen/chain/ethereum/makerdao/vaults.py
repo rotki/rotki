@@ -6,7 +6,13 @@ from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Opti
 from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures import Balance, BalanceSheet
+from rotkehlchen.accounting.structures import (
+    AssetBalance,
+    Balance,
+    BalanceSheet,
+    DefiEvent,
+    DefiEventType,
+)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.makerdao.common import (
     MAKERDAO_REQUERY_PERIOD,
@@ -172,6 +178,13 @@ class VaultEvent(NamedTuple):
     timestamp: Timestamp
     tx_hash: str
 
+    def __str__(self) -> str:
+        """Used in DefiEvent processing during accounting"""
+        result = f'MakerDAO Vault {self.event_type}'
+        if self.event_type in (VaultEventType.GENERATE_DEBT, VaultEventType.PAYBACK_DEBT):
+            result += ' debt'
+        return result
+
 
 class MakerDAOVault(NamedTuple):
     identifier: int
@@ -222,6 +235,7 @@ class MakerDAOVault(NamedTuple):
 
 class MakerDAOVaultDetails(NamedTuple):
     identifier: int
+    collateral_asset: Asset  # the vault's collateral asset
     creation_ts: Timestamp
     # Total amount of DAI owed to the vault, past and future as interest rate
     # Will be negative if vault has been liquidated. If it's negative then this
@@ -608,6 +622,7 @@ class MakerDAOVaults(MakerDAOCommon):
 
         return MakerDAOVaultDetails(
             identifier=vault.identifier,
+            collateral_asset=vault.collateral_asset,
             total_interest_owed=total_interest_owed,
             creation_ts=creation_ts,
             total_liquidated=Balance(sum_liquidation_amount, sum_liquidation_usd),
@@ -715,6 +730,79 @@ class MakerDAOVaults(MakerDAOCommon):
         self.vault_details.sort(key=lambda details: details.identifier)
         self.last_vault_details_query_ts = ts_now()
         return self.vault_details
+
+    def get_history_events(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> List[DefiEvent]:
+        """Gets the history events from maker vaults for accounting
+
+            This is a premium only call. Check happens only in the API level.
+        """
+        vault_details = self.get_vault_details()
+        events = []
+        for detail in vault_details:
+            total_vault_dai_balance = Balance()
+            realized_vault_dai_loss = Balance()
+            for event in detail.events:
+                timestamp = event.timestamp
+                if timestamp < from_timestamp:
+                    continue
+                if timestamp > to_timestamp:
+                    break
+
+                got_asset: Optional[Asset]
+                spent_asset: Optional[Asset]
+                pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
+                count_spent_got_cost_basis = False
+                if event.event_type == VaultEventType.GENERATE_DEBT:
+                    count_spent_got_cost_basis = True
+                    got_asset = A_DAI
+                    got_balance = event.value
+                    total_vault_dai_balance += event.value
+                elif event.event_type == VaultEventType.PAYBACK_DEBT:
+                    count_spent_got_cost_basis = True
+                    spent_asset = A_DAI
+                    spent_balance = event.value
+                    total_vault_dai_balance -= event.value
+                    if total_vault_dai_balance.amount + realized_vault_dai_loss.amount < ZERO:
+                        pnl_balance = total_vault_dai_balance + realized_vault_dai_loss
+                        realized_vault_dai_loss += -pnl_balance
+                        pnl = [AssetBalance(asset=A_DAI, balance=pnl_balance)]
+
+                elif event.event_type == VaultEventType.DEPOSIT_COLLATERAL:
+                    spent_asset = detail.collateral_asset
+                    spent_balance = event.value
+                elif event.event_type == VaultEventType.WITHDRAW_COLLATERAL:
+                    got_asset = detail.collateral_asset
+                    got_balance = event.value
+                elif event.event_type == VaultEventType.LIQUIDATION:
+                    count_spent_got_cost_basis = True
+                    # TODO: Don't you also get the dai here -- but how to calculate it?
+                    spent_asset = detail.collateral_asset
+                    spent_balance = event.value
+                    pnl = [AssetBalance(asset=detail.collateral_asset, balance=-spent_balance)]
+                else:
+                    raise AssertionError(f'Invalid Makerdao vault event type {event.event_type}')
+
+                events.append(DefiEvent(
+                    timestamp=timestamp,
+                    wrapped_event=event,
+                    event_type=DefiEventType.MAKERDAO_VAULT_EVENT,
+                    got_asset=got_asset,
+                    got_balance=got_balance,
+                    spent_asset=spent_asset,
+                    spent_balance=spent_balance,
+                    pnl=pnl,
+                    # Depositing and withdrawing from a vault is not counted in
+                    # cost basis. Assets were always yours, you did not rebuy them.
+                    # Other actions are counted though to track debt and liquidations
+                    count_spent_got_cost_basis=count_spent_got_cost_basis,
+                    tx_hash=event.tx_hash,
+                ))
+
+        return events
 
     def get_balances(self) -> Dict[ChecksumEthAddress, BalanceSheet]:
         """Return a mapping of all assets locked as collateral in the vaults and

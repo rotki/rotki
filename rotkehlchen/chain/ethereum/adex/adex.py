@@ -21,7 +21,7 @@ from eth_utils import to_checksum_address
 from typing_extensions import Literal
 from web3 import Web3
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.constants import YEAR_IN_SECONDS, ZERO
@@ -1201,7 +1201,7 @@ class Adex(EthereumModule):
         )
         return staking_balances
 
-    def get_events_history(
+    def get_history(
             self,
             addresses: List[ChecksumEthAddress],
             reset_db_data: bool,
@@ -1263,6 +1263,55 @@ class Adex(EthereumModule):
             tom_pool_incentive=tom_pool_incentive,
         )
         return staking_history
+
+    def get_history_events(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            addresses: List[ChecksumEthAddress],
+    ) -> List[DefiEvent]:
+        mapping = self.get_history(
+            addresses=addresses,
+            reset_db_data=False,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            is_pnl_report=False,
+        )
+        events = []
+        for _, history in mapping.items():
+            for event in history.events:
+                pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
+                if isinstance(event, Bond):
+                    spent_asset = A_ADX
+                    spent_balance = event.value
+                elif isinstance(event, Unbond):
+                    got_asset = A_ADX
+                    got_balance = event.value
+                elif isinstance(event, UnbondRequest):
+                    continue  # just ignore those for accounting purposes
+                elif isinstance(event, ChannelWithdraw):
+                    got_asset = event.token
+                    got_balance = event.value
+                    pnl = [AssetBalance(asset=got_asset, balance=got_balance)]
+                else:
+                    raise AssertionError(f'Unexpected adex event type {type(event)}')
+
+                events.append(DefiEvent(
+                    timestamp=event.timestamp,
+                    wrapped_event=event,
+                    event_type=DefiEventType.ADEX_EVENT,
+                    got_asset=got_asset,
+                    got_balance=got_balance,
+                    spent_asset=spent_asset,
+                    spent_balance=spent_balance,
+                    pnl=pnl,
+                    # Do not count staking deposit/withdrawals as cost basis events
+                    # the ADX was always ours. PnL will ofc still be counted.
+                    count_spent_got_cost_basis=False,
+                    tx_hash=event.tx_hash,
+                ))
+
+        return events
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:

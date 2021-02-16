@@ -36,7 +36,7 @@ from rotkehlchen.db.settings import (
     DBSettings,
     ModifiableDBSettings,
 )
-from rotkehlchen.db.utils import AssetBalance, BlockchainAccounts, LocationData
+from rotkehlchen.db.utils import DBAssetBalance, BlockchainAccounts, LocationData
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
@@ -457,49 +457,49 @@ def test_sqlcipher_detect_version():
 
 
 asset_balances = [
-    AssetBalance(
+    DBAssetBalance(
         category=BalanceType.ASSET,
         time=Timestamp(1451606400),
         asset=A_USD,
         amount='10',
         usd_value='10',
-    ), AssetBalance(
+    ), DBAssetBalance(
         category=BalanceType.ASSET,
         time=Timestamp(1451606401),
         asset=A_ETH,
         amount='2',
         usd_value='1.7068',
-    ), AssetBalance(
+    ), DBAssetBalance(
         category=BalanceType.ASSET,
         time=Timestamp(1465171200),
         asset=A_USD,
         amount='500',
         usd_value='500',
-    ), AssetBalance(
+    ), DBAssetBalance(
         category=BalanceType.ASSET,
         time=Timestamp(1465171201),
         asset=A_ETH,
         amount='10',
         usd_value='123',
-    ), AssetBalance(
+    ), DBAssetBalance(
         category=BalanceType.ASSET,
         time=Timestamp(1485907200),
         asset=A_USD,
         amount='350',
         usd_value='350',
-    ), AssetBalance(
+    ), DBAssetBalance(
         category=BalanceType.ASSET,
         time=Timestamp(1485907201),
         asset=A_ETH,
         amount='25',
         usd_value='249.5',
-    ), AssetBalance(
+    ), DBAssetBalance(
         category=BalanceType.LIABILITY,
         time=Timestamp(1485907201),
         asset=A_ETH,
         amount='1',
         usd_value='9.98',
-    ), AssetBalance(
+    ), DBAssetBalance(
         category=BalanceType.LIABILITY,
         time=Timestamp(1485907201),
         asset=A_DAI,
@@ -559,14 +559,14 @@ def test_query_owned_assets(data_dir, username):
 
     balances = deepcopy(asset_balances)
     balances.extend([
-        AssetBalance(
+        DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488326400),
             asset=A_BTC,
             amount='1',
             usd_value='1222.66',
         ),
-        AssetBalance(
+        DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1489326500),
             asset=A_XMR,
@@ -1057,13 +1057,13 @@ def test_timed_balances_primary_key_works(user_data_dir):
     msg_aggregator = MessagesAggregator()
     db = DBHandler(user_data_dir, '123', msg_aggregator, None)
     balances = [
-        AssetBalance(
+        DBAssetBalance(
             category=BalanceType.ASSET,
             time=1590676728,
             asset=A_BTC,
             amount='1.0',
             usd_value='8500',
-        ), AssetBalance(
+        ), DBAssetBalance(
             category=BalanceType.ASSET,
             time=1590676728,
             asset=A_BTC,
@@ -1080,13 +1080,13 @@ def test_timed_balances_primary_key_works(user_data_dir):
     assert len(balances) == 1
 
     balances = [
-        AssetBalance(
+        DBAssetBalance(
             category=BalanceType.ASSET,
             time=1590676728,
             asset=A_ETH,
             amount='1.0',
             usd_value='8500',
-        ), AssetBalance(
+        ), DBAssetBalance(
             category=BalanceType.LIABILITY,
             time=1590676728,
             asset=A_ETH,
@@ -1112,13 +1112,13 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir):
     db = DBHandler(user_data_dir, '123', msg_aggregator, None)
 
     balances = [
-        AssetBalance(
+        DBAssetBalance(
             category=BalanceType.ASSET,
             time=1590676728,
             asset=A_BTC,
             amount='1.0',
             usd_value='8500',
-        ), AssetBalance(
+        ), DBAssetBalance(
             category=BalanceType.ASSET,
             time=1590676728,
             asset=A_BTC,
