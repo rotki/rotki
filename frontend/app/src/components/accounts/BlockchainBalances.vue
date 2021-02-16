@@ -25,7 +25,7 @@
         </big-dialog>
         <asset-balances
           :title="$t('blockchain_balances.per_asset.title')"
-          :balances="aggregatedBalances"
+          :balances="blockchainAssets"
         />
       </v-card-text>
     </v-card>
@@ -87,7 +87,7 @@ import {
     ...mapGetters('balances', [
       'ethAccounts',
       'btcAccounts',
-      'aggregatedBalances',
+      'blockchainAssets',
       'kusamaBalances'
     ])
   }
@@ -96,7 +96,7 @@ export default class BlockchainBalances extends Vue {
   ethAccounts!: AccountWithBalance[];
   btcAccounts!: BlockchainAccountWithBalance[];
   kusamaBalances!: AccountWithBalance[];
-  aggregatedBalances!: AssetBalance[];
+  blockchainAssets!: AssetBalance[];
 
   accountToEdit: BlockchainAccountWithBalance | null = null;
   dialogTitle: string = '';

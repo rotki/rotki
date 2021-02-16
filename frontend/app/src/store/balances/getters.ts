@@ -57,6 +57,7 @@ export interface BalanceGetters {
   assetPriceInfo: (asset: string) => AssetPriceInfo;
   breakdown: (asset: string) => AssetBreakdown[];
   loopringBalances: (address: string) => AssetBalance[];
+  blockchainAssets: AssetBalance[];
 }
 
 function balances(
@@ -625,5 +626,32 @@ export const getters: Getters<
       }
     }
     return balances;
+  },
+  blockchainAssets: (state, { totals }, { session }) => {
+    const blockchainTotal = [...totals];
+    const ignoredAssets = session!.ignoredAssets;
+    const loopringBalances = state.loopringBalances;
+    for (const address in loopringBalances) {
+      const accountBalances = loopringBalances[address];
+      for (const asset in accountBalances) {
+        if (ignoredAssets.includes(asset)) {
+          continue;
+        }
+        const existing:
+          | Writeable<AssetBalance>
+          | undefined = blockchainTotal.find(value => value.asset === asset);
+        if (!existing) {
+          blockchainTotal.push({
+            asset,
+            ...accountBalances[asset]
+          });
+        } else {
+          const sum = balanceSum(existing, accountBalances[asset]);
+          existing.usdValue = sum.usdValue;
+          existing.amount = sum.amount;
+        }
+      }
+    }
+    return blockchainTotal;
   }
 };
