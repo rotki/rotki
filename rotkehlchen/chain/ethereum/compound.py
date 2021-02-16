@@ -761,7 +761,7 @@ class Compound(EthereumModule):
             events.append(DefiEvent(
                 timestamp=event.timestamp,
                 wrapped_event=event,
-                event_type=DefiEventType.MAKERDAO_VAULT_EVENT,
+                event_type=DefiEventType.COMPOUND_EVENT,
                 got_asset=got_asset,
                 got_balance=got_balance,
                 spent_asset=spent_asset,
