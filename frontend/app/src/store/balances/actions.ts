@@ -22,10 +22,15 @@ import {
 import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
+import { MODULE_LOOPRING } from '@/services/session/consts';
 import { XpubAccountData } from '@/services/types-api';
 import { chainSection } from '@/store/balances/const';
-import { MUTATION_UPDATE_PRICES } from '@/store/balances/mutation-types';
 import {
+  MUTATION_UPDATE_LOOPRING_BALANCES,
+  MUTATION_UPDATE_PRICES
+} from '@/store/balances/mutation-types';
+import {
+  AccountAssetBalances,
   AccountPayload,
   AddAccountsPayload,
   AllBalancePayload,
@@ -1099,5 +1104,58 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     } catch (e) {
       return bigNumberify(-1);
     }
+  },
+
+  async fetchLoopringBalances(
+    { commit, rootGetters: { status }, rootState: { session } },
+    refresh: boolean
+  ) {
+    const { activeModules } = session!.generalSettings;
+    if (!activeModules.includes(MODULE_LOOPRING)) {
+      return;
+    }
+
+    const section = Section.L2_LOOPRING_BALANCES;
+    const currentStatus = status(section);
+
+    if (
+      isLoading(currentStatus) ||
+      (currentStatus === Status.LOADED && !refresh)
+    ) {
+      return;
+    }
+
+    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+    setStatus(newStatus, section, status, commit);
+
+    try {
+      const taskType = TaskType.L2_LOOPRING;
+      const { taskId } = await api.balances.loopring();
+      const task = createTask(taskId, taskType, {
+        title: i18n.t('actions.balances.loopring.task.title').toString(),
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<AccountAssetBalances, TaskMeta>(
+        taskType
+      );
+
+      commit(MUTATION_UPDATE_LOOPRING_BALANCES, result);
+    } catch (e) {
+      notify(
+        i18n
+          .t('actions.balances.loopring.error.description', {
+            error: e.message
+          })
+          .toString(),
+        i18n.t('actions.balances.loopring.error.title').toString(),
+        Severity.ERROR,
+        true
+      );
+    }
+    setStatus(Status.LOADED, section, status, commit);
   }
 };

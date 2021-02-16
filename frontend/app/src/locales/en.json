@@ -250,6 +250,13 @@
       "label": "API key",
       "title": "Etherscan"
     },
+    "loopring": {
+      "delete_tooltip": "Delete your Loopring API key",
+      "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key. ",
+      "hint": "Enter your Loopring API key",
+      "label": "API key",
+      "title": "Loopring"
+    },
     "set": {
       "error": {
         "message": "Error while settings external service api keys: {error}",
@@ -1234,6 +1241,15 @@
           "title": "Fetching conversion rate"
         }
       },
+      "loopring": {
+        "error": {
+          "description": "Querying Loopring balances failed: {error}",
+          "title": "Querying Loopring balances"
+        },
+        "task": {
+          "title": "Querying Loopring balances"
+        }
+      },
       "manual_add": {
         "error": {
           "title": "Adding Manual Balance"
@@ -2035,7 +2051,9 @@
   },
   "account_balance_table": {
     "assets": "Assets",
-    "liabilities": "Liabilities"
+    "liabilities": "Liabilities",
+    "loopring": "Loopring",
+    "loopring_tooltip": "The account has balances on Loopring"
   },
   "decentralized_deposits": {
     "protocols": "Protocols",
@@ -2069,5 +2087,8 @@
   "no_premium_placeholder": {
     "get_premium": "@:common.visit_website",
     "no_premium": "@:common.no_premium {text} @:common.available_to_premium"
+  },
+  "l2": {
+    "loopring": "Loopring"
   }
 }

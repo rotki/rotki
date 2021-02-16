@@ -213,4 +213,17 @@ export class BalancesApi {
       )
       .then(handleResponse);
   }
+
+  async loopring(): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>(
+        'blockchains/ETH/modules/loopring/balances',
+        {
+          params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+          validateStatus: validWithSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
+        }
+      )
+      .then(handleResponse);
+  }
 }

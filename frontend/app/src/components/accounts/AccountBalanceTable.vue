@@ -51,13 +51,37 @@
         <v-row class="pt-3 pb-2">
           <v-col cols="12" class="account-balance-table__account">
             <labeled-address-display :account="item" />
-            <span v-if="item.tags.length > 0" class="mt-2">
-              <tag-icon
-                v-for="tag in item.tags"
-                :key="tag"
-                class="account-balance-table__tag"
-                :tag="tags[tag]"
-              />
+            <span class="mt-2 flex-row d-flex align-center">
+              <span v-if="loopringBalances(item.address).length > 0">
+                <v-tooltip open-delay="400" top>
+                  <template #activator="{ on, attrs }">
+                    <v-chip
+                      label
+                      v-bind="attrs"
+                      class="account-balance-table__tag"
+                      v-on="on"
+                    >
+                      <v-img
+                        contain
+                        height="20px"
+                        width="20px"
+                        :src="require('@/assets/images/modules/loopring.svg')"
+                      />
+                    </v-chip>
+                  </template>
+                  <span>
+                    {{ $t('account_balance_table.loopring_tooltip') }}
+                  </span>
+                </v-tooltip>
+              </span>
+              <span v-if="item.tags.length > 0">
+                <tag-icon
+                  v-for="tag in item.tags"
+                  :key="tag"
+                  class="account-balance-table__tag"
+                  :tag="tags[tag]"
+                />
+              </span>
             </span>
           </v-col>
         </v-row>
@@ -121,6 +145,13 @@
             :title="$t('account_balance_table.liabilities')"
             :assets="accountLiabilities(item.address)"
           />
+          <account-asset-balances
+            v-if="
+              blockchain === 'ETH' && loopringBalances(item.address).length > 0
+            "
+            :title="$t('account_balance_table.loopring')"
+            :assets="loopringBalances(item.address)"
+          />
         </td>
       </template>
       <template #item.expand="{ item }">
@@ -160,12 +191,13 @@ import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { footerProps } from '@/config/datatable.common';
 import { CURRENCY_USD } from '@/data/currencies';
+import { balanceSum } from '@/filters';
 import StatusMixin from '@/mixins/status-mixin';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import { chainSection } from '@/store/balances/const';
 import {
-  AssetBalances,
+  AssetBalance,
   BlockchainAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
@@ -188,7 +220,8 @@ import { Zero } from '@/utils/bignumbers';
     ...mapGetters('balances', [
       'hasDetails',
       'accountAssets',
-      'accountLiabilities'
+      'accountLiabilities',
+      'loopringBalances'
     ]),
     ...mapState('session', ['tags'])
   }
@@ -215,8 +248,9 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   section = chainSection[this.blockchain];
   currency!: Currency;
   isTaskRunning!: (type: TaskType) => boolean;
-  accountAssets!: (account: string) => AssetBalances[];
-  accountLiabilities!: (account: string) => AssetBalances[];
+  accountAssets!: (account: string) => AssetBalance[];
+  accountLiabilities!: (account: string) => AssetBalance[];
+  loopringBalances!: (account: string) => AssetBalance[];
   hasDetails!: (account: string) => boolean;
   tags!: Tags;
 
@@ -397,13 +431,43 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
       );
   }
 
-  get visibleBalances(): BlockchainAccountWithBalance[] {
-    if (this.visibleTags.length === 0) {
-      return this.nonExpandedBalances;
+  private withL2(
+    balances: BlockchainAccountWithBalance[]
+  ): BlockchainAccountWithBalance[] {
+    if (this.blockchain !== ETH) {
+      return balances;
     }
 
-    return this.nonExpandedBalances.filter(({ tags }) =>
-      this.visibleTags.every(tag => tags.includes(tag))
+    return balances.map(value => {
+      const address = value.address;
+      const assetBalances = this.loopringBalances(address);
+      if (assetBalances.length === 0) {
+        return value;
+      }
+      const chainBalance = value.balance;
+      const loopringEth =
+        assetBalances.find(({ asset }) => asset === ETH)?.amount ?? Zero;
+      return {
+        ...value,
+        balance: {
+          usdValue: balanceSum(
+            assetBalances.map(({ usdValue }) => usdValue)
+          ).plus(chainBalance.usdValue),
+          amount: chainBalance.amount.plus(loopringEth)
+        }
+      };
+    });
+  }
+
+  get visibleBalances(): BlockchainAccountWithBalance[] {
+    if (this.visibleTags.length === 0) {
+      return this.withL2(this.nonExpandedBalances);
+    }
+
+    return this.withL2(
+      this.nonExpandedBalances.filter(({ tags }) =>
+        this.visibleTags.every(tag => tags.includes(tag))
+      )
     );
   }
 

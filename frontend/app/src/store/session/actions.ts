@@ -103,7 +103,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
             exchanges
           },
           options
-        )
+        ),
+        dispatch('balances/fetchLoopringBalances', false, options)
       ];
 
       Promise.all(async).then(() =>

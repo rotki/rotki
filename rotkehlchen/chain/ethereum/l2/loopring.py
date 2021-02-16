@@ -220,9 +220,11 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
                 ) from e
 
             if isinstance(json_ret, dict):
-                code = json_ret.get('code', None)
-                if code and code == 104002:
-                    raise LoopringAPIKeyMismatch()
+                result_info = json_ret.get('resultInfo', None)
+                if result_info:
+                    code = result_info.get('code', None)
+                    if code and code == 104002:
+                        raise LoopringAPIKeyMismatch()
             # else just let it hit the generic remote error below
 
         if response.status_code != HTTPStatus.OK:
