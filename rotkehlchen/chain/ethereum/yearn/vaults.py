@@ -588,7 +588,6 @@ class YearnVaults(EthereumModule):
                     continue
 
                 if len(vault_history.events) != 0:
-                    event = vault_history.events[0]
                     # process the vault's events to populate realized_pnl
                     self._process_vault_events(vault_history.events)
 
