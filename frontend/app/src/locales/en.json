@@ -2052,7 +2052,8 @@
   "account_balance_table": {
     "assets": "Assets",
     "liabilities": "Liabilities",
-    "loopring": "Loopring"
+    "loopring": "Loopring",
+    "loopring_tooltip": "The account has balances on Loopring"
   },
   "decentralized_deposits": {
     "protocols": "Protocols",

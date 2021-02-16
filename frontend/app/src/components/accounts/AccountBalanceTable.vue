@@ -51,13 +51,37 @@
         <v-row class="pt-3 pb-2">
           <v-col cols="12" class="account-balance-table__account">
             <labeled-address-display :account="item" />
-            <span v-if="item.tags.length > 0" class="mt-2">
-              <tag-icon
-                v-for="tag in item.tags"
-                :key="tag"
-                class="account-balance-table__tag"
-                :tag="tags[tag]"
-              />
+            <span class="mt-2 flex-row d-flex align-center">
+              <span v-if="loopringBalances(item.address).length > 0">
+                <v-tooltip open-delay="400" top>
+                  <template #activator="{ on, attrs }">
+                    <v-chip
+                      label
+                      v-bind="attrs"
+                      class="account-balance-table__tag"
+                      v-on="on"
+                    >
+                      <v-img
+                        contain
+                        height="20px"
+                        width="20px"
+                        :src="require('@/assets/images/modules/loopring.svg')"
+                      />
+                    </v-chip>
+                  </template>
+                  <span>
+                    {{ $t('account_balance_table.loopring_tooltip') }}
+                  </span>
+                </v-tooltip>
+              </span>
+              <span v-if="item.tags.length > 0">
+                <tag-icon
+                  v-for="tag in item.tags"
+                  :key="tag"
+                  class="account-balance-table__tag"
+                  :tag="tags[tag]"
+                />
+              </span>
             </span>
           </v-col>
         </v-row>
