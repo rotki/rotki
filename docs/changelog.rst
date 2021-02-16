@@ -17,6 +17,7 @@ Changelog
 * :bug:`2228` AdEx claim events now always have the proper token (e.g. ADX, DAI) and usd value. Also rotki should no longer miss Adex withdrawal events.
 * :bug:`2335` Users having sold BSV they got from holding BCH during the BCH -> BSV fork will now have its cost basis properly counted in the PnL report.
 * :bug:`2360` Users of Binance who own ONE tokens will now have it properly mapped to harmony.
+* :bug:`2293` Go through DeFi events before the queried PnL range during PnL report for a more complete calculation.
 
 * :feature:`-` Added support for the following tokens:
 
