@@ -9,6 +9,7 @@ on:
 
 jobs:
   test-backend:
+    if: ${{ github.event_name == 'schedule' }}
     env:
       CI: true
     strategy:
@@ -70,6 +71,7 @@ jobs:
         run: bash <(curl -s https://codecov.io/bash) -F backend
 
   test-integration:
+    if: ${{ github.event_name == 'schedule' }}
     needs: [ test-backend ]
     env:
       CI: true
