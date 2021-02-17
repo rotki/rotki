@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.14.1 <2021-02-17>`
 * :bug:`2391` The signed version of the MacOS binary should now work properly for all users.
 
 * :release:`1.14.0 <2021-02-16>`
