@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :release:`1.14.1 <2021-02-17>`
+* :bug:`2391` The signed version of the MacOS binary should now work properly for all users.
+
 * :release:`1.14.0 <2021-02-16>`
 * :feature:`1005` MacOS users will no longer get the dreaded "Can not open the app because developer is not verified" warning. Rotki is now a verified apple developer.
 * :feature:`2299` During a PnL report rotki should now also take into account for cost basis the assets gained from or used in DeFi.
