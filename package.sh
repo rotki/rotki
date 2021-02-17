@@ -47,6 +47,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     PLATFORM='linux'
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     PLATFORM='darwin'
+    export ONEFILE=0
 elif [[ "$OSTYPE" == "win32" ]]; then
     PLATFORM='win32'
 elif [[ "$OSTYPE" == "freebsd"* ]]; then
@@ -76,16 +77,25 @@ if [[ $? -ne 0 ]]; then
 fi
 
 
-# Sanity check that the generated python executable works
-PYINSTALLER_GENERATED_EXECUTABLE=$(ls rotkehlchen_py_dist | head -n 1)
-./rotkehlchen_py_dist/$PYINSTALLER_GENERATED_EXECUTABLE version
+
+echo 'Checking binary'
+if [[ "$PLATFORM" == "darwin" ]]; then
+  PYINSTALLER_GENERATED_EXECUTABLE=$(find ./rotkehlchen_py_dist/rotkehlchen -name "rotkehlchen-*-macos")
+  ./rotkehlchen_py_dist/rotkehlchen/${PYINSTALLER_GENERATED_EXECUTABLE##*/} version
+else
+  # Sanity check that the generated python executable works
+  PYINSTALLER_GENERATED_EXECUTABLE=$(ls rotkehlchen_py_dist | head -n 1)
+  ./rotkehlchen_py_dist/$PYINSTALLER_GENERATED_EXECUTABLE version
+fi
+
+
 if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: The generated python executable does not work properly"
     exit 1
 fi
 
-if [[ -n "${CI-}" ]] && [[ "$OSTYPE" == "darwin"* ]]; then
-  echo "Preparing to sign backend binary for osx"
+if [[ -n "${CI-}" ]] && [[ "$PLATFORM" == "darwin" ]]; then
+  echo "Preparing to sign backend binary for macos"
   KEY_CHAIN=rotki-build.keychain
   CSC_LINK=/tmp/certificate.p12
   export CSC_LINK
@@ -95,14 +105,22 @@ if [[ -n "${CI-}" ]] && [[ "$OSTYPE" == "darwin"* ]]; then
   security create-keychain -p actions $KEY_CHAIN
   # Make the keychain the default so identities are found
   security default-keychain -s $KEY_CHAIN
-  # Unlock the keychain
+  # Unlock the keychains
   security unlock-keychain -p actions $KEY_CHAIN
   security import $CSC_LINK -k $KEY_CHAIN -P $CSC_KEY_PASSWORD -T /usr/bin/codesign;
   security set-key-partition-list -S apple-tool:,apple: -s -k actions $KEY_CHAIN
 
-  codesign --deep --force --options runtime --entitlements ./packaging/entitlements.plist --sign $IDENTITY ./rotkehlchen_py_dist/$PYINSTALLER_GENERATED_EXECUTABLE --timestamp || exit 1
-  codesign --verify --verbose ./rotkehlchen_py_dist/$PYINSTALLER_GENERATED_EXECUTABLE || exit 1
+  echo "::group::Preparing to sign"
+  files=(`find ./rotkehlchen_py_dist -type f -exec ls -dl \{\} \; | awk '{ print $9 }'`)
+  for i in "${files[@]}"
+  do
+    echo "Signing $i"
+    codesign --force --options runtime --entitlements ./packaging/entitlements.plist --sign $IDENTITY $i --timestamp || exit 1
+    codesign --verify --verbose $i || exit 1
+  done
+  echo "::endgroup::"
 fi
+
 
 # From here and on we go into the frontend/app directory
 cd frontend/app || exit 1
