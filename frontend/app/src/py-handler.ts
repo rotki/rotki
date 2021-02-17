@@ -1,5 +1,6 @@
 import { ChildProcess, execFile, spawn } from 'child_process';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import stream from 'stream';
 import { app, App, BrowserWindow, ipcMain } from 'electron';
@@ -218,6 +219,9 @@ export default class PyHandler {
 
   private static packagedBackendPath() {
     const resources = process.resourcesPath ? process.resourcesPath : __dirname;
+    if (os.platform() === 'darwin') {
+      return path.join(resources, PyHandler.PY_DIST_FOLDER, 'rotkehlchen');
+    }
     return path.join(resources, PyHandler.PY_DIST_FOLDER);
   }
 
@@ -285,17 +289,16 @@ export default class PyHandler {
     const files = fs.readdirSync(dist_dir);
     if (files.length === 0) {
       this.logAndQuit('ERROR: No files found in the dist directory');
-    } else if (files.length !== 1) {
-      this.logAndQuit('ERROR: Found more than one file in the dist directory');
     }
-    let executable = files[0];
-    if (!executable.startsWith('rotkehlchen-')) {
-      this.logAndQuit(
-        `ERROR: Unexpected executable name "${executable}" in the dist directory`
-      );
+
+    const exe = files.find(file => file.startsWith('rotkehlchen-'));
+    if (!exe) {
+      this.logAndQuit(`ERROR: Executable was not found`);
+      return;
     }
-    this.executable = executable;
-    executable = path.join(dist_dir, executable);
+
+    this.executable = exe;
+    const executable = path.join(dist_dir, exe);
     if (this._corsURL) {
       args.push('--api-cors', this._corsURL);
     }
