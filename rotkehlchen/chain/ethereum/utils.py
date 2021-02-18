@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.constants.ethereum import ETH_MULTICALL
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import AssetType, ChecksumEthAddress, EthTokenInfo
+from rotkehlchen.typing import ChecksumEthAddress, EthTokenInfo
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 if TYPE_CHECKING:
