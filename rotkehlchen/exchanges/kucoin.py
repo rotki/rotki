@@ -605,7 +605,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             rate=rate,
             fee=fee,
             fee_currency=fee_currency,
-            link=trade_id,
+            link=str(trade_id),
             notes='',
         )
         return trade
