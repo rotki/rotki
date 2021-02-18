@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.constants.ethereum import ETH_MULTICALL
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import AssetType, ChecksumEthAddress, EthTokenInfo
+from rotkehlchen.typing import ChecksumEthAddress, EthTokenInfo
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ def asset_normalized_value(amount: int, asset: Asset) -> FVal:
     if asset.identifier == 'ETH':
         decimals = 18
     else:
-        if asset.asset_type != AssetType.ETH_TOKEN:
+        if not asset.is_eth_token():
             raise UnsupportedAsset(asset.identifier)
         decimals = EthereumToken(asset.identifier).decimals
 

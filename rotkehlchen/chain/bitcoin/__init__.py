@@ -40,8 +40,8 @@ def get_bitcoin_addresses_balances(accounts: List[BTCAddress]) -> Dict[BTCAddres
                 # https://blockchain.info/q
                 backoff_in_seconds=10,
             )
-            for idx, entry in enumerate(btc_resp['addresses']):
-                balances[accounts[idx]] = satoshis_to_btc(FVal(entry['final_balance']))
+            for entry in btc_resp['addresses']:
+                balances[entry['address']] = satoshis_to_btc(FVal(entry['final_balance']))
     except (
             requests.exceptions.RequestException,
             UnableToDecryptRemoteData,
@@ -76,7 +76,7 @@ def _check_blockstream_for_transactions(
 def _check_blockchaininfo_for_transactions(
         accounts: List[BTCAddress],
 ) -> Dict[BTCAddress, Tuple[bool, FVal]]:
-    """May raise connection errors or KeyError"""
+    """May raise RemotError or KeyError"""
     have_transactions = {}
     params = '|'.join(accounts)
     btc_resp = request_get_dict(
@@ -86,9 +86,9 @@ def _check_blockchaininfo_for_transactions(
         # https://blockchain.infoq/
         backoff_in_seconds=15,
     )
-    for idx, entry in enumerate(btc_resp['addresses']):
+    for entry in btc_resp['addresses']:
         balance = satoshis_to_btc(entry['final_balance'])
-        have_transactions[accounts[idx]] = (entry['n_tx'] != 0, balance)
+        have_transactions[entry['address']] = (entry['n_tx'] != 0, balance)
 
     return have_transactions
 

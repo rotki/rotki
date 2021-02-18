@@ -58,7 +58,7 @@ EXPECTED_XPUB_ADDESSES = [
 
 
 def _check_xpub_addition_outcome(outcome, xpub):
-    """Checks the outcome of the xpub additions forthe following test.
+    """Checks the outcome of the xpub additions for the following test.
     Both results should be the same since the 2nd xpub derives no mainnet addresses
     """
     btc = outcome['per_account']['BTC']
