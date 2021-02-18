@@ -63,7 +63,7 @@ def asset_normalized_value(amount: int, asset: Asset) -> FVal:
     if asset.identifier == 'ETH':
         decimals = 18
     else:
-        if asset.asset_type != AssetType.ETH_TOKEN:
+        if not asset.is_eth_token():
             raise UnsupportedAsset(asset.identifier)
         decimals = EthereumToken(asset.identifier).decimals
 
