@@ -87,6 +87,8 @@ def rkl_decode_value(
                 (k == 'name' and isinstance(value, (FVal, int))) or
                 (k == 'symbol' and isinstance(value, (FVal, int))) or
                 (k == 'baseAsset' and isinstance(value, (FVal, int))) or
+                (k == 'tradeId' and isinstance(value, (FVal, int))) or
+                (k == 'id' and isinstance(value, (FVal, int))) or
                 (k == 'quoteAsset' and isinstance(value, (FVal, int)))
             )
             if should_not_be_fval:
