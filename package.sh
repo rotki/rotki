@@ -171,18 +171,6 @@ echo "Packaging finished for Rotki ${ROTKEHLCHEN_VERSION}"
 # Go back to root directory
 cd "$WORKDIR" || exit 1
 
-# Now if in linux make the AppImage executable
-if [[ "$PLATFORM" == "linux" ]]; then
-
-    # Find the appImage, make it executable and remember its filename so
-    # travis can do the publishing
-    # They don't do it automatically. Long discussion here:
-    # https://github.com/electron-userland/electron-builder/issues/893
-    GENERATED_APPIMAGE=$(find "$(pwd)/frontend/app/dist/" -name "*AppImage"  | head -n 1)
-    export GENERATED_APPIMAGE
-    chmod +x "$GENERATED_APPIMAGE"
-fi
-
 function generate_checksum() {
 
     local platform
@@ -211,6 +199,7 @@ function generate_checksum() {
 cd frontend/app/dist || exit 1
 
 if [[ "$PLATFORM" == "linux" ]]; then
+  GENERATED_APPIMAGE=$(find "$(pwd)/frontend/app/dist/" -name "*AppImage"  | head -n 1)
   generate_checksum "$PLATFORM" "*AppImage" APPIMAGE_CHECKSUM
   generate_checksum "$PLATFORM" "*.tar.xz" TAR_CHECKSUM
   generate_checksum "$PLATFORM" "*.deb" DEB_CHECKSUM

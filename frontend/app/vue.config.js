@@ -68,6 +68,10 @@ module.exports = {
         dmg: {
           sign: false
         },
+        nsis: {
+          license: '../../LICENSE.md',
+          createDesktopShortcut: false
+        },
         mac: {
           category: 'public.app-category.finance',
           icon: 'src/assets/images/rotki.icns',
@@ -84,16 +88,13 @@ module.exports = {
               })
         },
         win: {
-          target: ['portable'],
+          target: ['nsis'],
           icon: 'src/assets/images/rotki.ico'
         },
         linux: {
           target: ['AppImage', 'tar.xz', 'deb'],
           icon: 'srs/assets/images/rotki_1024x1024.png',
           category: 'Finance'
-        },
-        appImage: {
-          publish: null
         },
         ...(process.env.CI ? { afterSign: 'scripts/notarize.js' } : {})
       }
