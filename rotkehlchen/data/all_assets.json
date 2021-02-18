@@ -9967,6 +9967,16 @@
         "symbol": "VAL",
         "type": "own chain"
     },
+    "RAI": {
+        "coingecko": "rai",
+        "cryptocompare": "",
+        "ethereum_address": "0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919",
+        "ethereum_token_decimals": 18,
+        "name": "Rai Reflex Index",
+        "started": 1613221351,
+        "symbol": "RAI",
+        "type": "ethereum token"
+    },
     "RARI": {
         "coingecko": "rarible",
         "ethereum_address": "0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF",

@@ -4,6 +4,10 @@ Changelog
 
 * :bug:`2400` Loopring balances should now be queried properly for users who own USDT.
 
+* :feature:`-` Added support for the following tokens:
+
+  - `Rai Reflex Index (RAI) <https://www.coingecko.com/en/coins/rai>`__
+
 * :release:`1.14.1 <2021-02-17>`
 * :bug:`2391` The signed version of the MacOS binary should now work properly for all users.
 
