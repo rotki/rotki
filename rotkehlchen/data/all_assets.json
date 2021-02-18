@@ -12499,7 +12499,7 @@
         "name": "Tether",
         "started": 1402358400,
         "symbol": "USDT",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "USNBT": {
         "coingecko": "nubits",
