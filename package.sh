@@ -94,7 +94,7 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
-if [[ -n "${CI-}" ]] && [[ "$PLATFORM" == "darwin" ]]; then
+if [[ -n "${CI-}" ]] && [[ "$PLATFORM" == "darwin" ]] && [[ -n "${$CERTIFICATE_OSX_APPLICATION-}" ]]; then
   echo "Preparing to sign backend binary for macos"
   KEY_CHAIN=rotki-build.keychain
   CSC_LINK=/tmp/certificate.p12
@@ -171,18 +171,6 @@ echo "Packaging finished for Rotki ${ROTKEHLCHEN_VERSION}"
 # Go back to root directory
 cd "$WORKDIR" || exit 1
 
-# Now if in linux make the AppImage executable
-if [[ "$PLATFORM" == "linux" ]]; then
-
-    # Find the appImage, make it executable and remember its filename so
-    # travis can do the publishing
-    # They don't do it automatically. Long discussion here:
-    # https://github.com/electron-userland/electron-builder/issues/893
-    GENERATED_APPIMAGE=$(find "$(pwd)/frontend/app/dist/" -name "*AppImage"  | head -n 1)
-    export GENERATED_APPIMAGE
-    chmod +x "$GENERATED_APPIMAGE"
-fi
-
 function generate_checksum() {
 
     local platform
@@ -211,9 +199,10 @@ function generate_checksum() {
 cd frontend/app/dist || exit 1
 
 if [[ "$PLATFORM" == "linux" ]]; then
-  generate_checksum "$PLATFORM" "*AppImage" APPIMAGE_CHECKSUM
-  generate_checksum "$PLATFORM" "*.tar.xz" TAR_CHECKSUM
-  generate_checksum "$PLATFORM" "*.deb" DEB_CHECKSUM
+  GENERATED_APPIMAGE=$(find "$(pwd)" -name "rotki-linux*.AppImage"  | head -n 1)
+  generate_checksum "$PLATFORM" "rotki-linux*.AppImage" APPIMAGE_CHECKSUM
+  generate_checksum "$PLATFORM" "rotki-linux*.tar.xz" TAR_CHECKSUM
+  generate_checksum "$PLATFORM" "rotki-linux*.deb" DEB_CHECKSUM
 
   if [[ -n "${CI-}" ]]; then
     echo "::set-output name=binary::$GENERATED_APPIMAGE"
@@ -229,9 +218,9 @@ if [[ "$PLATFORM" == "linux" ]]; then
   export APPIMAGE_CHECKSUM
   export TAR_CHECKSUM
 elif [[ "$PLATFORM" == "darwin" ]]; then
-  DMG=$(find "$(pwd)" -name "*.dmg"  | head -n 1)
-  generate_checksum "$PLATFORM" "*.dmg" DMG_CHECKSUM
-  generate_checksum "$PLATFORM" "*.zip" ZIP_CHECKSUM
+  DMG=$(find "$(pwd)" -name "rotki-darwin*.dmg"  | head -n 1)
+  generate_checksum "$PLATFORM" "rotki-darwin*.dmg" DMG_CHECKSUM
+  generate_checksum "$PLATFORM" "rotki-darwin*.zip" ZIP_CHECKSUM
 
   if [[ -n "${CI-}" ]]; then
     echo "::set-output name=binary::$DMG"

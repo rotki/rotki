@@ -29,6 +29,7 @@
     "bignumber.js": "9.0.1",
     "chart.js": "2.9.4",
     "core-js": "3.8.2",
+    "electron-updater": "4.3.5",
     "electron-window-state": "5.0.3",
     "lodash": "4.17.20",
     "moment": "2.29.1",

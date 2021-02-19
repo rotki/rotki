@@ -113,15 +113,6 @@ jobs:
       - name: Upload AppImage sha512 checksum file
         uses: actions/upload-release-asset@v1
         env:
-         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-         upload_url: ${{ needs.create_draft.outputs.upload_url }}
-         asset_path: ${{ steps.packaging.outputs.binary }}
-         asset_name: ${{ steps.packaging.outputs.binary_name }}
-         asset_content_type: application/octet-stream
-      - name: Upload AppImage sha512 checksum file
-        uses: actions/upload-release-asset@v1
-        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_draft.outputs.upload_url }}
