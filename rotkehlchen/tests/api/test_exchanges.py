@@ -1,5 +1,4 @@
 import random
-from datetime import datetime
 from http import HTTPStatus
 from unittest.mock import patch
 from urllib.parse import urlencode
@@ -8,7 +7,6 @@ import pytest
 import requests
 
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.errors import SystemClockNotSyncedError
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
@@ -66,38 +64,6 @@ API_KEYPAIR_COINBASEPRO_VALIDATION_PATCH = patch(
 API_KEYPAIR_COINBASE_VALIDATION_PATCH = patch(
     'rotkehlchen.exchanges.coinbase.Coinbase.validate_api_key',
     return_value=(True, ''),
-)
-
-SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITFINEX = patch(
-    'rotkehlchen.exchanges.bitfinex.Bitfinex.validate_api_key',
-    side_effect=SystemClockNotSyncedError(
-        current_time=str(datetime.now()),
-        remote_server='Bitfinex',
-    ),
-)
-
-SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITTREX = patch(
-    'rotkehlchen.exchanges.bittrex.Bittrex._check_for_system_clock_not_synced_error',
-    side_effect=SystemClockNotSyncedError(
-        current_time=str(datetime.now()),
-        remote_server='Bittrex',
-    ),
-)
-
-SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITSTAMP = patch(
-    'rotkehlchen.exchanges.bitstamp.Bitstamp.validate_api_key',
-    side_effect=SystemClockNotSyncedError(
-        current_time=str(datetime.now()),
-        remote_server='Bitstamp',
-    ),
-)
-
-SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_KUCOIN = patch(
-    'rotkehlchen.exchanges.kucoin.Kucoin.validate_api_key',
-    side_effect=SystemClockNotSyncedError(
-        current_time=str(datetime.now()),
-        remote_server='Kucoin',
-    ),
 )
 
 
@@ -176,48 +142,6 @@ def test_setup_exchange(rotkehlchen_api_server):
     json_data = response.json()
     assert json_data['message'] == ''
     assert json_data['result'] == ['kraken', 'coinbasepro']
-
-
-@pytest.mark.parametrize('data, response_patch', [
-    (
-        {'name': 'bittrex', 'api_key': 'ddddd', 'api_secret': 'fffff'},
-        SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITTREX,
-    ),
-    (
-        {'name': 'bitstamp', 'api_key': 'ddddd', 'api_secret': 'fffff'},
-        SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITSTAMP,
-    ),
-    (
-        {'name': 'bitfinex', 'api_key': 'ddddd', 'api_secret': 'fffff'},
-        SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_BITFINEX,
-    ),
-    (
-        {'name': 'kucoin', 'api_key': 'ddddd', 'api_secret': 'fffff', 'passphrase': 'ff'},
-        SYSTEM_CLOCK_NOT_SYNCED_RESPONSE_KUCOIN,
-    ),
-])
-def test_setup_exchange_raises_system_clock_not_synced_error(
-        rotkehlchen_api_server,
-        data,
-        response_patch,
-):
-    """Test that when setting up an exchange raises SystemClockNotSyncedError
-    the response status code is HTTPStatus.Conflict.
-
-    TODO update the `exchange` param items each time an existing exchange
-    integrates this exception.
-    """
-    # Mock the api response that raises SystemClockNotSyncedError
-    with response_patch:
-        response = requests.put(
-            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
-        )
-
-    assert_error_response(
-        response=response,
-        contained_in_msg='Local system clock',
-        status_code=HTTPStatus.CONFLICT,
-    )
 
 
 @pytest.mark.parametrize('added_exchanges', [('kraken',)])

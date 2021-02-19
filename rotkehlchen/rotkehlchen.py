@@ -975,8 +975,6 @@ class Rotkehlchen():
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase
-
-        By default the api keys are always validated unless validate is False.
         """
         is_success, msg = self.exchange_manager.setup_exchange(
             name=name,
