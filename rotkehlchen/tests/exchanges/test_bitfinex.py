@@ -13,7 +13,7 @@ from rotkehlchen.assets.converters import (
     UNSUPPORTED_BITFINEX_ASSETS,
     asset_from_bitfinex,
 )
-from rotkehlchen.errors import UnknownAsset, UnsupportedAsset, RemoteError
+from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.bitfinex import (
     API_KEY_ERROR_CODE,
     API_KEY_ERROR_MESSAGE,
@@ -131,9 +131,9 @@ def test_api_key_err_auth_nonce(mock_bitfinex):
         assert result is False
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
 
-        with pytest.raises(RemoteError) as e:
-            mock_bitfinex.validate_api_key()
-            assert API_ERR_AUTH_NONCE_MESSAGE in str(e)
+        result, msg = mock_bitfinex.validate_api_key()
+        assert result is False
+        assert msg == API_ERR_AUTH_NONCE_MESSAGE
 
         movements = mock_bitfinex.query_online_deposits_withdrawals(0, 1)
         assert movements == []

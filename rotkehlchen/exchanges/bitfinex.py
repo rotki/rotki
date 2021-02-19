@@ -753,7 +753,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
 
             if case in ('validate_api_key', 'balances'):
-                raise RemoteError(msg) from e
+                return False, msg
             if case in ('trades', 'asset_movements'):
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying {self.name} {case}: {msg}',
@@ -777,9 +777,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             log.error(message)
 
-        if case == 'validate_api_key':
-            raise RemoteError(message)
-        if case == 'balances':
+        if case in ('validate_api_key', 'balances'):
             return False, message
         if case in ('trades', 'asset_movements'):
             self.msg_aggregator.add_error(
