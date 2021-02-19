@@ -11,6 +11,7 @@ import {
   shell
 } from 'electron';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
+import { autoUpdater } from 'electron-updater';
 import windowStateKeeper from 'electron-window-state';
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import { startHttp, stopHttp } from '@/electron-main/http';
@@ -352,6 +353,36 @@ app.on('ready', async () => {
     event.sender.send(IPC_RESTART_BACKEND, success);
   });
   createWindow();
+  autoUpdater.on('update-available', () => {
+    dialog
+      .showMessageBox({
+        type: 'info',
+        title: 'A rotki update is available',
+        message: 'Would you like to update',
+        buttons: ['Yes', 'No']
+      })
+      .then(value => {
+        if (value.response === 0) {
+          autoUpdater.downloadUpdate();
+        }
+      });
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    console.log('no update');
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    dialog
+      .showMessageBox({
+        title: 'Install Updates',
+        message: 'Updates downloaded, application will be quit for update...'
+      })
+      .then(() => {
+        setImmediate(() => autoUpdater.quitAndInstall());
+      });
+  });
+  autoUpdater.checkForUpdatesAndNotify();
 });
 
 async function closeApp() {
