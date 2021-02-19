@@ -292,6 +292,12 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             method: str,
             options: Optional[Dict] = None,
     ) -> Union[List, Dict]:
+        """Performs a binance api query
+
+        May raise:
+         - RemoteError
+         - BinancePermissionError
+        """
         call_options = options.copy() if options else {}
 
         while True:
@@ -336,7 +342,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 elif api_type == 'api' and method in V1_METHODS:
                     api_version = 1
                 else:
-                    raise ValueError(f'Unexpected {self.name} API method {method}')
+                    raise AssertionError(f'Unexpected {self.name} API method {method}')
 
                 api_subdomain = api_type if is_new_futures_api else 'api'
                 request_url = (
@@ -423,6 +429,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             method: str,
             options: Optional[Dict] = None,
     ) -> Dict:
+        """May raise RemoteError and BinancePermissionError due to api_query"""
         result = self.api_query(api_type, method, options)
         assert isinstance(result, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
@@ -433,6 +440,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             method: str,
             options: Optional[Dict] = None,
     ) -> List:
+        """May raise RemoteError and BinancePermissionError due to api_query"""
         result = self.api_query(api_type, method, options)
         assert isinstance(result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
         return result
@@ -709,6 +717,12 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts: Timestamp,
             markets: Optional[List[str]] = None,
     ) -> List[Trade]:
+        """
+
+        May raise due to api query and unexpected id:
+        - RemoteError
+        - BinancePermissionError
+        """
         self.first_connection()
 
         if not markets:
@@ -737,7 +751,13 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         # 'endTime': end_ts * 1000,
                     })
                 if result:
-                    last_trade_id = result[-1]['id'] + 1
+                    try:
+                        last_trade_id = int(result[-1]['id']) + 1
+                    except (ValueError, KeyError, IndexError) as e:
+                        raise RemoteError(
+                            f'Could not parse id from Binance myTrades api query result: {result}',
+                        ) from e
+
                 len_result = len(result)
                 log.debug(f'{self.name} myTrades query result', results_num=len_result)
                 for r in result:
