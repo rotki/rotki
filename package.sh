@@ -94,7 +94,7 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
-if [[ -n "${CI-}" ]] && [[ "$PLATFORM" == "darwin" ]]; then
+if [[ -n "${CI-}" ]] && [[ "$PLATFORM" == "darwin" ]] && [[ -n "${$CERTIFICATE_OSX_APPLICATION-}" ]]; then
   echo "Preparing to sign backend binary for macos"
   KEY_CHAIN=rotki-build.keychain
   CSC_LINK=/tmp/certificate.p12
