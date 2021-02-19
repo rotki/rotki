@@ -7396,6 +7396,16 @@
         "symbol": "LOON",
         "type": "ethereum token"
     },
+    "LOTTO": {
+        "coingecko": "lotto",
+        "cryptocompare": "",
+        "ethereum_address": "0xb0dFd28d3CF7A5897C694904Ace292539242f858",
+        "ethereum_token_decimals": 18,
+        "name": "Lotto",
+        "started": 1611872256,
+        "symbol": "LOTTO",
+        "type": "ethereum token"
+    },
     "LPT": {
         "coingecko": "livepeer",
         "ethereum_address": "0x58b6A8A3302369DAEc383334672404Ee733aB239",
