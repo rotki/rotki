@@ -1,5 +1,6 @@
 <template>
   <v-app v-if="!isPlayground" id="rotki">
+    <update-popup />
     <div v-if="logged" class="app__content rotki-light-grey">
       <notification-popup />
       <v-navigation-drawer
@@ -93,6 +94,7 @@ import NotificationSidebar from '@/components/status/notifications/NotificationS
 import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 import '@/services/task-manager';
+import UpdatePopup from '@/components/status/update/UpdatePopup.vue';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import DevApp from '@/DevApp.vue';
@@ -101,6 +103,7 @@ import { Message } from '@/store/types';
 
 @Component({
   components: {
+    UpdatePopup,
     StartupErrorScreen,
     DevApp,
     NotificationPopup,

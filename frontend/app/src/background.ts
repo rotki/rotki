@@ -15,7 +15,12 @@ import { autoUpdater } from 'electron-updater';
 import windowStateKeeper from 'electron-window-state';
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import { startHttp, stopHttp } from '@/electron-main/http';
-import { IPC_RESTART_BACKEND } from '@/electron-main/ipc';
+import {
+  IPC_CHECK_FOR_UPDATES,
+  IPC_DOWNLOAD_UPDATE,
+  IPC_INSTALL_UPDATE,
+  IPC_RESTART_BACKEND
+} from '@/electron-main/ipc';
 import { selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
 import PyHandler from './py-handler';
@@ -37,6 +42,37 @@ async function select(
     return undefined;
   }
   return value.filePaths?.[0];
+}
+
+function setupUpdaterInterop() {
+  autoUpdater.autoDownload = false;
+  ipcMain.on(IPC_CHECK_FOR_UPDATES, async event => {
+    autoUpdater.once('update-available', () => {
+      event.sender.send(IPC_CHECK_FOR_UPDATES, true);
+    });
+    autoUpdater.once('update-not-available', () => {
+      event.sender.send(IPC_CHECK_FOR_UPDATES, false);
+    });
+    try {
+      await autoUpdater.checkForUpdates();
+    } catch (e) {
+      console.error(e);
+      event.sender.send(IPC_CHECK_FOR_UPDATES, false);
+    }
+  });
+
+  ipcMain.on(IPC_DOWNLOAD_UPDATE, async event => {
+    try {
+      await autoUpdater.downloadUpdate();
+      event.sender.send(IPC_DOWNLOAD_UPDATE, true);
+    } catch (e) {
+      event.sender.send(IPC_DOWNLOAD_UPDATE, false);
+    }
+  });
+
+  ipcMain.on(IPC_INSTALL_UPDATE, async () => {
+    await autoUpdater.quitAndInstall();
+  });
 }
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -352,37 +388,9 @@ app.on('ready', async () => {
 
     event.sender.send(IPC_RESTART_BACKEND, success);
   });
+
+  setupUpdaterInterop();
   createWindow();
-  autoUpdater.on('update-available', () => {
-    dialog
-      .showMessageBox({
-        type: 'info',
-        title: 'A rotki update is available',
-        message: 'Would you like to update',
-        buttons: ['Yes', 'No']
-      })
-      .then(value => {
-        if (value.response === 0) {
-          autoUpdater.downloadUpdate();
-        }
-      });
-  });
-
-  autoUpdater.on('update-not-available', () => {
-    console.log('no update');
-  });
-
-  autoUpdater.on('update-downloaded', () => {
-    dialog
-      .showMessageBox({
-        title: 'Install Updates',
-        message: 'Updates downloaded, application will be quit for update...'
-      })
-      .then(() => {
-        setImmediate(() => autoUpdater.quitAndInstall());
-      });
-  });
-  autoUpdater.checkForUpdatesAndNotify();
 });
 
 async function closeApp() {

@@ -893,6 +893,15 @@
   "update_indicator": {
     "version": "An Updated Version ({appVersion}) of Rotki is available"
   },
+  "update_popup": {
+    "action": {
+      "cancel": "Cancel",
+      "update": "Download",
+      "install": "Install"
+    },
+    "downloaded": "The updated version will be installed on the next restart. Would you like to restart the application now to apply the update?",
+    "messages": "A new version of rotki is available. You would like to download it?"
+  },
   "upgrade_row": {
     "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
     "events": "Processed {limit} {label}. To view more please upgrade to {link}",

@@ -1,7 +1,10 @@
 import { TimeUnit } from '@/components/dashboard/types';
 import { Level } from '@/utils/log-level';
 
-export const IPC_RESTART_BACKEND = 'RESTART_BACKEND';
+export const IPC_RESTART_BACKEND = 'RESTART_BACKEND' as const;
+export const IPC_CHECK_FOR_UPDATES = 'CHECK_FOR_UPDATES' as const;
+export const IPC_DOWNLOAD_UPDATE = 'DOWNLOAD_UPDATE' as const;
+export const IPC_INSTALL_UPDATE = 'INSTALL_UPDATE' as const;
 
 export type DebugSettings = { vuex: boolean };
 
@@ -38,5 +41,8 @@ export interface Interop {
   debugSettings?(): DebugSettings | undefined;
   serverUrl(): string;
   metamaskImport(): Promise<MetamaskImport>;
+  checkForUpdates(): Promise<boolean>;
+  downloadUpdate(): Promise<boolean>;
+  installUpdate(): Promise<void>;
   restartBackend(logLevel: Level): Promise<boolean>;
 }
