@@ -199,10 +199,10 @@ function generate_checksum() {
 cd frontend/app/dist || exit 1
 
 if [[ "$PLATFORM" == "linux" ]]; then
-  GENERATED_APPIMAGE=$(find "$(pwd)/frontend/app/dist/" -name "*AppImage"  | head -n 1)
-  generate_checksum "$PLATFORM" "*AppImage" APPIMAGE_CHECKSUM
-  generate_checksum "$PLATFORM" "*.tar.xz" TAR_CHECKSUM
-  generate_checksum "$PLATFORM" "*.deb" DEB_CHECKSUM
+  GENERATED_APPIMAGE=$(find "$(pwd)" -name "rotki-linux*.AppImage"  | head -n 1)
+  generate_checksum "$PLATFORM" "rotki-linux*.AppImage" APPIMAGE_CHECKSUM
+  generate_checksum "$PLATFORM" "rotki-linux*.tar.xz" TAR_CHECKSUM
+  generate_checksum "$PLATFORM" "rotki-linux*.deb" DEB_CHECKSUM
 
   if [[ -n "${CI-}" ]]; then
     echo "::set-output name=binary::$GENERATED_APPIMAGE"
@@ -218,9 +218,9 @@ if [[ "$PLATFORM" == "linux" ]]; then
   export APPIMAGE_CHECKSUM
   export TAR_CHECKSUM
 elif [[ "$PLATFORM" == "darwin" ]]; then
-  DMG=$(find "$(pwd)" -name "*.dmg"  | head -n 1)
-  generate_checksum "$PLATFORM" "*.dmg" DMG_CHECKSUM
-  generate_checksum "$PLATFORM" "*.zip" ZIP_CHECKSUM
+  DMG=$(find "$(pwd)" -name "rotki-darwin*.dmg"  | head -n 1)
+  generate_checksum "$PLATFORM" "rotki-darwin*.dmg" DMG_CHECKSUM
+  generate_checksum "$PLATFORM" "rotki-darwin*.zip" ZIP_CHECKSUM
 
   if [[ -n "${CI-}" ]]; then
     echo "::set-output name=binary::$DMG"
