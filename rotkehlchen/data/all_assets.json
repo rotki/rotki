@@ -784,7 +784,7 @@
         "type": "ethereum token"
     },
     "ASR": {
-        "coingecko": "as-roma",
+        "coingecko": "as-roma-fan-token",
         "name": "AS Roma Fan Token",
         "started": 1592784000,
         "symbol": "ASR",
@@ -2499,7 +2499,7 @@
         "type": "ethereum token"
     },
     "CELO": {
-        "coingecko": "celo-gold",
+        "coingecko": "celo",
         "name": "Celo",
         "started": 1590115455,
         "symbol": "CELO",
@@ -5316,10 +5316,21 @@
     },
     "FTT": {
         "coingecko": "farmatrust",
+        "cryptocompare": "FARMA",
         "ethereum_address": "0x2AEC18c5500f21359CE1BEA5Dc1777344dF4C0Dc",
         "ethereum_token_decimals": 18,
         "name": "FarmaTrust",
         "started": 1512086400,
+        "symbol": "FTT",
+        "type": "ethereum token"
+    },
+    "FTT-2": {
+        "coingecko": "ftx-token",
+        "cryptocompare": "FTT",
+        "ethereum_address": "0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9",
+        "ethereum_token_decimals": 18,
+        "name": "FTX Token",
+        "started": 1555852887,
         "symbol": "FTT",
         "type": "ethereum token"
     },
@@ -7396,6 +7407,16 @@
         "symbol": "LOON",
         "type": "ethereum token"
     },
+    "LOTTO": {
+        "coingecko": "lotto",
+        "cryptocompare": "",
+        "ethereum_address": "0xb0dFd28d3CF7A5897C694904Ace292539242f858",
+        "ethereum_token_decimals": 18,
+        "name": "Lotto",
+        "started": 1611872256,
+        "symbol": "LOTTO",
+        "type": "ethereum token"
+    },
     "LPT": {
         "coingecko": "livepeer",
         "ethereum_address": "0x58b6A8A3302369DAEc383334672404Ee733aB239",
@@ -8811,7 +8832,7 @@
         "type": "ethereum token"
     },
     "OG": {
-        "coingecko": "og",
+        "coingecko": "og-fan-token",
         "name": "OG Fan Token",
         "started": 1592784000,
         "symbol": "OG",
@@ -9553,6 +9574,16 @@
         "symbol": "POLY",
         "type": "ethereum token"
     },
+    "POOL": {
+        "coingecko": "pooltogether",
+        "cryptocompare": "",
+        "ethereum_address": "0x0cEC1A9154Ff802e7934Fc916Ed7Ca50bDE6844e",
+        "ethereum_token_decimals": 18,
+        "name": "PoolTogether",
+        "started": 1613508749,
+        "symbol": "POOL",
+        "type": "ethereum token"
+    },
     "POP": {
         "coingecko": "popularcoin",
         "name": "PopularCoin",
@@ -10211,7 +10242,7 @@
         "type": "ethereum token"
     },
     "RFOX": {
-        "coingecko": "redfox-labs",
+        "coingecko": "redfox-labs-2",
         "ethereum_address": "0xa1d6Df714F91DeBF4e0802A542E13067f31b8262",
         "ethereum_token_decimals": 18,
         "name": "RFOX",
@@ -15673,7 +15704,7 @@
         "type": "ethereum token"
     },
     "XNS": {
-        "coingecko": "ins-ecosystem",
+        "coingecko": "",
         "name": "Insolar",
         "started": 1584576000,
         "symbol": "XNS",

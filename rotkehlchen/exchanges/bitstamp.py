@@ -2,7 +2,6 @@ import hashlib
 import hmac
 import logging
 import uuid
-from datetime import datetime
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import (
@@ -30,7 +29,6 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
-    SystemClockNotSyncedError,
     UnknownAsset,
     UnsupportedAsset,
 )
@@ -64,7 +62,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE = 'API0017'
+API_ERR_AUTH_NONCE_CODE = 'API0017'
+API_ERR_AUTH_NONCE_MESSAGE = (
+    'Bitstamp nonce too low error. Is the local system clock in synced?'
+)
 # More understandable explanation for API key-related errors than the default `reason`
 API_KEY_ERROR_CODE_ACTION = {
     'API0001': 'Check your API key value.',
@@ -74,6 +75,7 @@ API_KEY_ERROR_CODE_ACTION = {
         'permission activated. Please log into your Bitstamp account and create a key with '
         'the required permissions.'
     ),
+    API_ERR_AUTH_NONCE_CODE: API_ERR_AUTH_NONCE_MESSAGE,
     'API0006': 'Contact Bitstamp support to unfreeze your account',
     'API0008': "Can't find a customer with selected API key.",
     'API0011': 'Check that your API key string is correct.',
@@ -502,16 +504,6 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return results
 
     @staticmethod
-    def _check_for_system_clock_not_synced_error(
-            error_code: Optional[int] = None,
-    ) -> None:
-        if error_code == API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE:
-            raise SystemClockNotSyncedError(
-                current_time=str(datetime.now()),
-                remote_server='Bitstamp',
-            )
-
-    @staticmethod
     def _deserialize_asset_movement(
             raw_movement: Dict[str, Any],
     ) -> AssetMovement:
@@ -699,9 +691,9 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             msg = f'Bitstamp returned invalid JSON response: {response.text}.'
             log.error(msg)
 
-            if case in {'validate_api_key', 'balances'}:
-                raise RemoteError(msg) from e
-            if case in {'trades', 'asset_movements'}:
+            if case in ('validate_api_key', 'balances'):
+                return False, msg
+            if case in ('trades', 'asset_movements'):
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying Bistamp {case_pretty}: {msg}',
                 )
@@ -710,27 +702,19 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise AssertionError(f'Unexpected Bitstamp response_case: {case}.') from e
 
         error_code = response_dict.get('code', None)
-        self._check_for_system_clock_not_synced_error(error_code)
-        # Errors related with the API key return a human readable message
-        if (
-            case == 'validate_api_key' and
-            error_code in set(API_KEY_ERROR_CODE_ACTION.keys())
-        ):
-            return False, API_KEY_ERROR_CODE_ACTION[response_dict['code']]
+        if error_code in set(API_KEY_ERROR_CODE_ACTION.keys()):
+            msg = API_KEY_ERROR_CODE_ACTION[error_code]
+        else:
+            reason = response_dict.get('reason', None) or response.text
+            msg = (
+                f'Bitstamp query responded with error status code: {response.status_code} '
+                f'and text: {reason}.'
+            )
+            log.error(msg)
 
-        # Below any other error not related with the system clock or the API key
-        reason = response_dict.get('reason', None) or response.text
-        msg = (
-            f'Bitstamp query responded with error status code: {response.status_code} '
-            f'and text: {reason}.'
-        )
-        log.error(msg)
-
-        if case == 'validate_api_key':
-            raise RemoteError(msg)
-        if case == 'balances':
-            return None, msg
-        if case in {'trades', 'asset_movements'}:
+        if case in ('validate_api_key', 'balances'):
+            return False, msg
+        if case in ('trades', 'asset_movements'):
             self.msg_aggregator.add_error(
                 f'Got remote error while querying Bistamp {case_pretty}: {msg}',
             )

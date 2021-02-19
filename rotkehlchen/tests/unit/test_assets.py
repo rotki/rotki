@@ -105,6 +105,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'AC-2',    # Acoconut token but Asiacoin in CC
         'TON',     # Tontoken but Tokamak network in CC
         'FNK',     # Finiko token but FunKeyPai network in CC
+        'LOTTO',   # Lotto token but LottoCoin in CC
     )
     for identifier, asset_data in AssetResolver().assets.items():
         potential_support = (
@@ -191,7 +192,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '315486c0f601693f2a75f04e31d0fc74', 'version': 62}
+    last_meta = {'md5': '39bc12156cf534d57c27bdba9cf9ef18', 'version': 63}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 

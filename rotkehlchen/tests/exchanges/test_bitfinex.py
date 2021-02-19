@@ -13,12 +13,13 @@ from rotkehlchen.assets.converters import (
     UNSUPPORTED_BITFINEX_ASSETS,
     asset_from_bitfinex,
 )
-from rotkehlchen.errors import SystemClockNotSyncedError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.bitfinex import (
     API_KEY_ERROR_CODE,
     API_KEY_ERROR_MESSAGE,
     API_RATE_LIMITS_ERROR_MESSAGE,
-    API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE,
+    API_ERR_AUTH_NONCE_CODE,
+    API_ERR_AUTH_NONCE_MESSAGE,
     Bitfinex,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
@@ -116,19 +117,35 @@ def test_first_connection(mock_bitfinex):
     assert mock_bitfinex.first_connection_made is True
 
 
-def test_validate_api_key_system_clock_not_synced_error_code(mock_bitfinex):
-    """Test the error code related with the local system clock not being synced
-    raises SystemClockNotSyncedError.
-    """
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+def test_api_key_err_auth_nonce(mock_bitfinex):
+    """Test the error code related with the nonce authentication is properly handled"""
+    def mock_api_query_response(endpoint, options=None):  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.INTERNAL_SERVER_ERROR,
-            f'["error", {API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE}, "nonce: small"]',
+            f'["error", {API_ERR_AUTH_NONCE_CODE}, "nonce: small"]',
         )
 
+    mock_bitfinex.first_connection_made = True
     with patch.object(mock_bitfinex, '_api_query', side_effect=mock_api_query_response):
-        with pytest.raises(SystemClockNotSyncedError):
-            mock_bitfinex.validate_api_key()
+        result, msg = mock_bitfinex.query_balances()
+        assert result is False
+        assert msg == API_ERR_AUTH_NONCE_MESSAGE
+
+        result, msg = mock_bitfinex.validate_api_key()
+        assert result is False
+        assert msg == API_ERR_AUTH_NONCE_MESSAGE
+
+        movements = mock_bitfinex.query_online_deposits_withdrawals(0, 1)
+        assert movements == []
+        errors = mock_bitfinex.msg_aggregator.consume_errors()
+        assert len(errors) == 1
+        assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
+
+        trades = mock_bitfinex.query_online_trade_history(0, 1)
+        assert trades == []
+        errors = mock_bitfinex.msg_aggregator.consume_errors()
+        assert len(errors) == 1
+        assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
 
 
 def test_validate_api_key_invalid_key(mock_bitfinex):

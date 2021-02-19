@@ -3,7 +3,6 @@ import hashlib
 import hmac
 import logging
 from collections import defaultdict
-from datetime import datetime
 from enum import Enum
 from functools import partial
 from http import HTTPStatus
@@ -35,7 +34,6 @@ from rotkehlchen.constants.timing import MONTH_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
-    SystemClockNotSyncedError,
     UnknownAsset,
     UnprocessableTradePair,
     UnsupportedAsset,
@@ -77,6 +75,7 @@ log = RotkehlchenLogsAdapter(logger)
 API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE = 400002
 # More understandable explanation for API key-related errors than the default `reason`
 API_KEY_ERROR_CODE_ACTION = {
+    API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE: 'Invalid timestamp. Is your system clock synced?',
     400003: 'Invalid API key value.',
     400004: 'Invalid API passphrase.',
     400005: 'Invalid API secret.',
@@ -116,6 +115,9 @@ class KucoinCase(Enum):
         if self == KucoinCase.WITHDRAWALS:
             return 'withdrawals'
         raise AssertionError(f'Unexpected KucoinCase: {self}')
+
+
+PAGINATED_CASES = (KucoinCase.OLD_TRADES, KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS)  # noqa: E501
 
 
 def _serialize_ts(case: KucoinCase, time: int) -> int:
@@ -218,7 +220,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             method = 'GET'
             request_url = f'{self.base_uri}/{api_path}'
             message = f'{timestamp}{method}/{api_path}'
-            if case in (KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS):
+            if case in PAGINATED_CASES:
                 if call_options != {}:
                     urlencoded_options = urlencode(call_options)
                     request_url = f'{request_url}?{urlencoded_options}'
@@ -311,7 +313,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Union[List[Trade], List[AssetMovement]]:
         """Request endpoints paginating via an options attribute
 
-        May raise RemoteError and SystemClockNotSyncedError
+        May raise RemoteError
         """
         results: Union[List[Trade], List[AssetMovement]] = []  # type: ignore # bug list nothing
         deserialization_method: DeserializationMethod
@@ -660,7 +662,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ]:
         """Process unsuccessful responses
 
-        May raise RemoteError and SystemClockNotSyncedError
+        May raise RemoteError
         """
         try:
             response_dict = rlk_jsonloads_dict(response.text)
@@ -669,8 +671,8 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
 
             if case in (KucoinCase.API_KEY, KucoinCase.BALANCES):
-                raise RemoteError(msg) from e
-            if case in (KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS):
+                return False, msg
+            if case in PAGINATED_CASES:
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying Kucoin {case}: {msg}',
                 )
@@ -679,28 +681,19 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise AssertionError(f'Unexpected case: {case}') from e
 
         error_code = response_dict.get('code', None)
-        if error_code == API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE:
-            raise SystemClockNotSyncedError(
-                current_time=str(datetime.now()),
-                remote_server=f'{self.name}',
+        if error_code in API_KEY_ERROR_CODE_ACTION.keys():
+            msg = API_KEY_ERROR_CODE_ACTION[error_code]
+        else:
+            reason = response_dict.get('msg', None) or response.text
+            msg = (
+                f'Kucoin query responded with error status code: {response.status_code} '
+                f'and text: {reason}.'
             )
+            log.error(msg)
 
-        # Errors related with the API key return a human readable message
-        if case == KucoinCase.API_KEY and error_code in API_KEY_ERROR_CODE_ACTION.keys():
-            return False, API_KEY_ERROR_CODE_ACTION[response_dict['code']]
-
-        reason = response_dict.get('msg', None) or response.text
-        msg = (
-            f'Kucoin query responded with error status code: {response.status_code} '
-            f'and text: {reason}.'
-        )
-        log.error(msg)
-
-        if case == KucoinCase.API_KEY:
-            raise RemoteError(msg)
-        if case == KucoinCase.BALANCES:
-            return None, msg
-        if case in (KucoinCase.TRADES, KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS):
+        if case in (KucoinCase.BALANCES, KucoinCase.API_KEY):
+            return False, msg
+        if case in PAGINATED_CASES:
             self.msg_aggregator.add_error(
                 f'Got remote error while querying Kucoin {case}: {msg}',
             )
@@ -716,7 +709,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def query_balances(self) -> ExchangeQueryBalances:
         """Return the account balances
 
-        May raise RemoteError and SystemClockNotSyncedError
+        May raise RemoteError
         """
         accounts_response = self._api_query(KucoinCase.BALANCES)
         if accounts_response.status_code != HTTPStatus.OK:
@@ -743,7 +736,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[AssetMovement]:
         """Return the account deposits and withdrawals
 
-        May raise RemoteError and SystemClockNotSyncedError
+        May raise RemoteError
         """
         options = {
             'currentPage': 1,
@@ -775,7 +768,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[Trade]:
         """Return the account trades
 
-        May raise RemoteError and SystemClockNotSyncedError
+        May raise RemoteError
         """
         options = {
             'currentPage': 1,
@@ -794,7 +787,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the KuCoin API key is good for usage in Rotki
 
-        May raise RemoteError and SystemClockNotSyncedError
+        May raise RemoteError
         """
         response = self._api_query(KucoinCase.BALANCES)
 

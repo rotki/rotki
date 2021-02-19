@@ -65,7 +65,6 @@ from rotkehlchen.errors import (
     PremiumAuthenticationError,
     RemoteError,
     RotkehlchenPermissionError,
-    SystemClockNotSyncedError,
     SystemPermissionError,
     TagConstraintError,
     UnsupportedAsset,
@@ -464,15 +463,11 @@ class RestAPI():
         result = None
         status_code = HTTPStatus.OK
         msg = ''
-        try:
-            result, msg = self.rotkehlchen.setup_exchange(name, api_key, api_secret, passphrase)
-        except SystemClockNotSyncedError as e:
-            msg = str(e)
+        result, msg = self.rotkehlchen.setup_exchange(name, api_key, api_secret, passphrase)
+        if not result:
+            result = None
             status_code = HTTPStatus.CONFLICT
-        else:
-            if not result:
-                result = None
-                status_code = HTTPStatus.CONFLICT
+
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
     @require_loggedin_user()

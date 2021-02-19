@@ -9,6 +9,9 @@ Changelog
 * :feature:`-` Added support for the following tokens:
 
   - `Rai Reflex Index (RAI) <https://www.coingecko.com/en/coins/rai>`__
+  - `PoolTogether (POOL) <https://www.coingecko.com/en/coins/pooltogether>`__
+  - `Lotto (LOTTO) <https://www.coingecko.com/en/coins/lotto>`__
+  - `FTX Token (FTT) <https://www.coingecko.com/en/coins/ftx-token>`__
 
 * :release:`1.14.1 <2021-02-17>`
 * :bug:`2391` The signed version of the MacOS binary should now work properly for all users.
