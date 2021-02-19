@@ -32,7 +32,7 @@ class IconManager():
         self.icons_dir = data_dir / 'icons'
         self.coingecko = coingecko
         self.icons_dir.mkdir(parents=True, exist_ok=True)
-        self.failed_assets: Set[Asset] = set()
+        self.failed_asset_ids: Set[str] = set()
 
     def iconfile_path(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Path:
         return self.icons_dir / f'{asset.identifier}_{size}.png'
@@ -57,7 +57,7 @@ class IconManager():
         # we only keep delisted asset coingecko mappings since historical prices
         # can still be queried.
         if asset.identifier in DELISTED_ASSETS:
-            self.failed_assets.add(asset)
+            self.failed_asset_ids.add(asset.identifier)
             return False
 
         try:
@@ -67,7 +67,7 @@ class IconManager():
                 f'Problem querying coingecko for asset data of {asset.identifier}: {str(e)}',
             )
             # If a query fails (99% of fails will be 404s) don't repeat them
-            self.failed_assets.add(asset)
+            self.failed_asset_ids.add(asset.identifier)
             return False
 
         for size in ('thumb', 'small', 'large'):
@@ -121,32 +121,32 @@ class IconManager():
 
         Returns true if there is more icons left to cache after this batch.
         """
-        coingecko_integrated_assets = []
+        coingecko_integrated_asset_ids = []
 
         for identifier, asset_data in AssetResolver().assets.items():
             try:
                 asset_type = asset_type_mapping[asset_data['type']]
 
                 if asset_type != AssetType.FIAT and asset_data['coingecko'] != '':
-                    coingecko_integrated_assets.append(identifier)
+                    coingecko_integrated_asset_ids.append(identifier)
             except KeyError:
                 log.warning(f'Ignoring asset {identifier} during query icons due to KeyError')
                 continue
 
-        cached_assets = [
+        cached_asset_ids = [
             str(x.name)[:-10] for x in self.icons_dir.glob('*_thumb.png') if x.is_file()
         ]
-        uncached_assets = (
-            set(coingecko_integrated_assets) - set(cached_assets) - self.failed_assets
+        uncached_asset_ids = (
+            set(coingecko_integrated_asset_ids) - set(cached_asset_ids) - self.failed_asset_ids
         )
         log.info(
             f'Periodic task to query coingecko for {batch_size} uncached asset icons. '
-            f'Uncached assets: {len(uncached_assets)}. Cached assets: {len(cached_assets)}',
+            f'Uncached assets: {len(uncached_asset_ids)}. Cached assets: {len(cached_asset_ids)}',
         )
-        for asset_name in itertools.islice(uncached_assets, batch_size):
+        for asset_name in itertools.islice(uncached_asset_ids, batch_size):
             self._query_coingecko_for_icon(Asset(asset_name))
 
-        return len(uncached_assets) > batch_size
+        return len(uncached_asset_ids) > batch_size
 
     def periodically_query_icons_until_all_cached(
             self,

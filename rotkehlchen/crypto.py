@@ -4,7 +4,7 @@ from binascii import hexlify
 from coincurve import PrivateKey
 from Crypto import Random
 from Crypto.Cipher import AES
-from Crypto.Hash import SHA3_256, SHA256  # type: ignore
+from Crypto.Hash import SHA3_256, SHA256
 
 from rotkehlchen.errors import UnableToDecryptRemoteData
 from rotkehlchen.typing import BinaryEthAddress, EthAddress

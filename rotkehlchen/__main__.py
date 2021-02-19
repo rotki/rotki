@@ -20,11 +20,9 @@ def main() -> None:
         print(f'ERROR at initialization: {str(e)}')
         sys.exit(1)
     except SystemExit as e:
-        # Mypy here thinks e.code is always None which is not correct according to the docs:
-        # https://docs.python.org/3/library/exceptions.html#SystemExit
-        if e.code is None or e.code == 0 or e.code == 2:  # type: ignore
+        if e.code is None or e.code == 0 or e.code == 2:
             # exit_code 2 is for invalid arguments
-            exit_code = 0 if e.code is None else e.code  # type: ignore
+            exit_code = 0 if e.code is None else e.code
             sys.exit(exit_code)
         else:
             tb = traceback.format_exc()
