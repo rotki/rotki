@@ -2,7 +2,6 @@ import hashlib
 import hmac
 import logging
 from collections import defaultdict
-from datetime import datetime
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import (
@@ -40,7 +39,6 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
-    SystemClockNotSyncedError,
     UnknownAsset,
     UnsupportedAsset,
 )
@@ -78,7 +76,10 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 # Error codes that we handle nicely
-API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE = 10114  # small nonce (from timestamp in ms)
+API_ERR_AUTH_NONCE_CODE = 10114  # small nonce (from timestamp in ms)
+API_ERR_AUTH_NONCE_MESSAGE = (
+    'Bitfinex nonce too low error. Is the local system clock in synced?'
+)
 API_KEY_ERROR_CODE = 10100
 API_KEY_ERROR_MESSAGE = (
     'Provided API key/secret is invalid or does not have enough permissions. '
@@ -349,16 +350,6 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             })
 
         return results
-
-    def _check_for_system_clock_not_synced_error(
-            self,
-            error_code: Optional[int] = None,
-    ) -> None:
-        if error_code == API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE:
-            raise SystemClockNotSyncedError(
-                current_time=str(datetime.now()),
-                remote_server=f'{self.name}',
-            )
 
     @overload  # noqa: F811
     def _deserialize_api_query_paginated_results(  # pylint: disable=no-self-use
@@ -762,7 +753,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
 
             if case in ('validate_api_key', 'balances'):
-                raise RemoteError(msg) from e
+                return False, msg
             if case in ('trades', 'asset_movements'):
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying {self.name} {case}: {msg}',
@@ -772,26 +763,25 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise AssertionError(f'Unexpected {self.name} response_case: {case}') from e
 
         error_data = self._get_error_response_data(response_list)
-        self._check_for_system_clock_not_synced_error(error_data.error_code)
+        if error_data.error_code == API_ERR_AUTH_NONCE_CODE:
+            message = API_ERR_AUTH_NONCE_MESSAGE
         # Errors related with the API key return a human readable message
-        if case == 'validate_api_key' and error_data.error_code == API_KEY_ERROR_CODE:
-            return False, API_KEY_ERROR_MESSAGE
+        elif case == 'validate_api_key' and error_data.error_code == API_KEY_ERROR_CODE:
+            message = API_KEY_ERROR_MESSAGE
+        else:
+            # Below any other error not related with the system clock or the API key
+            reason = error_data.reason or response.text
+            message = (
+                f'{self.name} query responded with error status code: {response.status_code} '
+                f'and text: {reason}.'
+            )
+            log.error(message)
 
-        # Below any other error not related with the system clock or the API key
-        reason = error_data.reason or response.text
-        msg = (
-            f'{self.name} query responded with error status code: {response.status_code} '
-            f'and text: {reason}.'
-        )
-        log.error(msg)
-
-        if case == 'validate_api_key':
-            raise RemoteError(msg)
-        if case == 'balances':
-            return None, msg
+        if case in ('validate_api_key', 'balances'):
+            return False, message
         if case in ('trades', 'asset_movements'):
             self.msg_aggregator.add_error(
-                f'Got remote error while querying {self.name} {case}: {msg}',
+                f'Got remote error while querying {self.name} {case}: {message}',
             )
             return []
 

@@ -3,6 +3,7 @@ from importlib import import_module
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.constants.misc import BINANCE_BASE_URL, BINANCE_US_BASE_URL
+from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ApiCredentials, ApiKey, ApiSecret, Location
@@ -87,7 +88,6 @@ class ExchangeManager():
         """
         Setup a new exchange with an api key, an api secret and for some exchanges a passphrase.
 
-        By default the api keys are always validated unless validate is False.
         """
         if name not in SUPPORTED_EXCHANGES:
             return False, 'Attempted to register unsupported exchange {}'.format(name)
@@ -105,7 +105,12 @@ class ExchangeManager():
         self.initialize_exchanges(credentials_dict, database)
 
         exchange = self.connected_exchanges[name]
-        result, message = exchange.validate_api_key()
+        try:
+            result, message = exchange.validate_api_key()
+        except RemoteError as e:
+            result = False
+            message = str(e)
+
         if not result:
             log.error(
                 'Failed to validate API key for exchange',

@@ -10,11 +10,12 @@ import requests
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bitstamp
-from rotkehlchen.errors import RemoteError, SystemClockNotSyncedError, UnknownAsset
+from rotkehlchen.errors import RemoteError, UnknownAsset
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION,
     API_MAX_LIMIT,
-    API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE,
+    API_ERR_AUTH_NONCE_CODE,
+    API_ERR_AUTH_NONCE_MESSAGE,
     USER_TRANSACTION_MIN_SINCE_ID,
     USER_TRANSACTION_SORTING_MODE,
     Bitstamp,
@@ -72,30 +73,44 @@ def test_bitstamp_exchange_assets_are_known(mock_bitstamp):
 
 
 def test_validate_api_key_invalid_json(mock_bitstamp):
-    """Test when status code is not 200, an invalid JSON response raises
-    RemoteError.
-    """
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+    """Test when status code is not 200, an invalid JSON response is handled."""
+    def mock_api_query_response(endpoint, method='', options=None):  # pylint: disable=unused-argument  # noqa: E501
         return MockResponse(HTTPStatus.FORBIDDEN, '{"key"}')
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        with pytest.raises(RemoteError):
-            mock_bitstamp.validate_api_key()
+        result, msg = mock_bitstamp.validate_api_key()
+        assert result is False
+        assert msg == 'Bitstamp returned invalid JSON response: {"key"}.'
 
 
-def test_validate_api_key_system_clock_not_synced_error_code(mock_bitstamp):
-    """Test the error code related with the local system clock not being synced
-    raises SystemClockNotSyncedError.
-    """
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
+def test_validate_api_key_err_auth_nonce(mock_bitstamp):
+    """Test the error code related with the nonce authentication is properly handled"""
+    def mock_api_query_response(endpoint, method='', options=None):  # pylint: disable=unused-argument  # noqa: E501
         return MockResponse(
             HTTPStatus.FORBIDDEN,
-            f'{{"code": "{API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE}", "reason": "whatever"}}',
+            f'{{"code": "{API_ERR_AUTH_NONCE_CODE}", "reason": "whatever"}}',
         )
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        with pytest.raises(SystemClockNotSyncedError):
-            mock_bitstamp.validate_api_key()
+        result, msg = mock_bitstamp.query_balances()
+        assert result is False
+        assert msg == API_ERR_AUTH_NONCE_MESSAGE
+
+        result, msg = mock_bitstamp.validate_api_key()
+        assert result is False
+        assert msg == API_ERR_AUTH_NONCE_MESSAGE
+
+        movements = mock_bitstamp.query_online_deposits_withdrawals(0, 1)
+        assert movements == []
+        errors = mock_bitstamp.msg_aggregator.consume_errors()
+        assert len(errors) == 1
+        assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
+
+        trades = mock_bitstamp.query_online_trade_history(0, 1)
+        assert trades == []
+        errors = mock_bitstamp.msg_aggregator.consume_errors()
+        assert len(errors) == 1
+        assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
 
 
 @pytest.mark.parametrize('code', API_KEY_ERROR_CODE_ACTION.keys())
@@ -118,32 +133,6 @@ def test_validate_api_key_api_key_error_code(
 
     assert result is False
     assert msg == API_KEY_ERROR_CODE_ACTION[code]
-
-
-@pytest.mark.parametrize('response, has_reason', (
-    ('{"code": "APIXXX", "reason": "has reason"}', True),
-    ('{"code": "APIXXX", "text": "has text"}', False),
-))
-def test_validate_api_key_non_related_error_code(
-        mock_bitstamp,
-        response,
-        has_reason,
-):
-    """Test an error code unrelated with the API key ones or the system clock
-    not synced one raises RemoteError.
-
-    Test as well the exception message contains either the response reason
-    or the response as text.
-    """
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
-        return MockResponse(HTTPStatus.FORBIDDEN, response)
-
-    with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        with pytest.raises(RemoteError) as e:
-            mock_bitstamp.validate_api_key()
-
-        exp_reason = 'has reason' if has_reason else 'has text'
-        assert exp_reason in str(e.value)
 
 
 def test_validate_api_key_success(mock_bitstamp):
@@ -171,21 +160,6 @@ def test_query_balances_invalid_json(mock_bitstamp):
             mock_bitstamp.query_balances()
 
 
-def test_query_balances_system_clock_not_synced_error_code(mock_bitstamp):
-    """Test the error code related with the local system clock not being synced
-    raises SystemClockNotSyncedError.
-    """
-    def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
-        return MockResponse(
-            HTTPStatus.FORBIDDEN,
-            f'{{"code": "{API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE}", "reason": "whatever"}}',
-        )
-
-    with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        with pytest.raises(SystemClockNotSyncedError):
-            mock_bitstamp.query_balances()
-
-
 @pytest.mark.parametrize('response, has_reason', (
     ('{"code": "APIXXX", "reason": "has reason"}', True),
     ('{"code": "APIXXX", "text": "has text"}', False),
@@ -205,7 +179,7 @@ def test_query_balances_non_related_error_code(
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
         result, msg = mock_bitstamp.query_balances()
 
-    assert result is None
+    assert result is False
     exp_reason = 'has reason' if has_reason else 'has text'
     assert exp_reason in msg
 
@@ -458,33 +432,6 @@ def test_api_query_paginated_user_transactions_required_options_values(mock_bits
             options=options,
             case='trades',
         )
-
-
-def test_api_query_paginated_system_clock_not_synced_error_code(mock_bitstamp):
-    """Test the error code related with the local system clock not being synced
-    raises SystemClockNotSyncedError.
-    """
-    options = {
-        'since_id': USER_TRANSACTION_MIN_SINCE_ID,
-        'limit': API_MAX_LIMIT,
-        'sort': USER_TRANSACTION_SORTING_MODE,
-        'offset': 0,
-    }
-
-    def mock_api_query_response(endpoint, method, options):  # pylint: disable=unused-argument
-        return MockResponse(
-            HTTPStatus.FORBIDDEN,
-            f'{{"code": "{API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE}", "reason": "whatever"}}',
-        )
-
-    with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        with pytest.raises(SystemClockNotSyncedError):
-            mock_bitstamp._api_query_paginated(
-                start_ts=Timestamp(0),
-                end_ts=Timestamp(1),
-                options=options,
-                case='trades',
-            )
 
 
 def test_api_query_paginated_invalid_json(mock_bitstamp):

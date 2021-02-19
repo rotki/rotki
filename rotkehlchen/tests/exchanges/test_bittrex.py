@@ -1,19 +1,11 @@
 import warnings as test_warnings
-from http import HTTPStatus
 from unittest.mock import patch
-
-import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BITTREX_ASSETS, asset_from_bittrex
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import (
-    RemoteError,
-    SystemClockNotSyncedError,
-    UnknownAsset,
-    UnsupportedAsset,
-)
+from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
@@ -586,54 +578,3 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
         deposits=input_deposits,
         withdrawals=empty_response,
     )
-
-
-@pytest.mark.parametrize('response, exception', [
-    (
-        MockResponse(HTTPStatus.OK, '{"result": "a result"}'),
-        None,
-    ),
-    (
-        MockResponse(HTTPStatus.UNAUTHORIZED, 'this is not a dict'),
-        RemoteError,
-    ),
-    (
-        MockResponse(HTTPStatus.UNAUTHORIZED, '{"code": "NOT_THE_EXPECTED_CODE"}'),
-        None,
-    ),
-    (
-        MockResponse(HTTPStatus.UNAUTHORIZED, '{"not_code": "INVALID_TIMESTAMP"}'),
-        None,
-    ),
-    (
-        MockResponse(HTTPStatus.UNAUTHORIZED, '{"code": "INVALID_TIMESTAMP"}'),
-        SystemClockNotSyncedError,
-    ),
-])
-def test_check_for_system_clock_not_synced_error(bittrex, response, exception):
-    """Test the function behavior depending on the response `status_code` and
-    `text` attributes.
-    """
-    if exception:
-        with pytest.raises(exception):
-            bittrex._check_for_system_clock_not_synced_error(response)
-    else:
-        assert bittrex._check_for_system_clock_not_synced_error(response) is None
-
-
-def test_api_query_raises_system_clock_not_synced_error(bittrex):
-    """Test that a request that returns an error code related with unsync
-    system clock raises SystemClockNotSyncedError.
-    """
-    def mock_response(url, method, json):  # pylint: disable=unused-argument
-        response = MockResponse(HTTPStatus.UNAUTHORIZED, '{"code": "INVALID_TIMESTAMP"}')
-        return response
-
-    with patch.object(bittrex.session, 'request', side_effect=mock_response):
-        with pytest.raises(SystemClockNotSyncedError) as e:
-            bittrex.api_query(
-                endpoint='endoint',
-                method='put',
-                options={},
-            )
-        assert 'Local system clock' in str(e.value)
