@@ -7,6 +7,11 @@ exports.default = async function notarizing(context) {
     return;
   }
 
+  if (!process.env.APPLEID) {
+    console.info('APPLEID is not set, notarization will be skipped');
+    return;
+  }
+
   console.info('Preparing to notarize the application');
 
   const appName = context.packager.appInfo.productFilename;
