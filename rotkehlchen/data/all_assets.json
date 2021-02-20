@@ -417,7 +417,6 @@
     "AKT": {
         "coingecko": "akash-network",
         "cryptocompare": "akt",
-        "ethereum_token_decimals": 18,
         "name": "Akash Network",
         "started": 1601042400,
         "symbol": "AKT",
@@ -13373,6 +13372,16 @@
         "name": "ETERNAL TOKEN",
         "started": 1525067226,
         "symbol": "XET",
+        "type": "ethereum token"
+    },
+    "XFI": {
+        "coingecko": "dfinance",
+        "cryptocompare": "",
+        "ethereum_address": "0xE4E822C0d5b329E8BB637972467d2E313824eFA0",
+        "ethereum_token_decimals": 18 ,
+        "name": "dfinance",
+        "started": 1599068086,
+        "symbol": "XFI",
         "type": "ethereum token"
     },
     "XHV": {
