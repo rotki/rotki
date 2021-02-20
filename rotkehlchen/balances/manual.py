@@ -44,8 +44,8 @@ def get_manually_tracked_balances(db: 'DBHandler') -> List[ManuallyTrackedBalanc
                 f'manually tracked balance querying due to {str(e)}',
             )
             price = Price(ZERO)
-        # https://github.com/python/mypy/issues/2582 --> for the type ignore below
-        balances_with_value.append(ManuallyTrackedBalanceWithValue(  # type: ignore
+
+        balances_with_value.append(ManuallyTrackedBalanceWithValue(
             **entry._asdict(),
             usd_value=price * entry.amount,
         ))
