@@ -7577,6 +7577,15 @@
         "symbol": "MANA",
         "type": "ethereum token"
     },
+    "MAPS": {
+        "coingecko": "maps",
+        "ethereum_address": "",
+        "ethereum_token_decimals": 6,
+        "name": "Maps.me Token",
+        "started": 1607277936,
+        "symbol": "MAPS",
+        "type": "ethereum token and more"
+    },
     "MARO": {
         "coingecko": "ttc-protocol",
         "name": "Maro",
