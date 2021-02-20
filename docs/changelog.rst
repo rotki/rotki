@@ -12,6 +12,7 @@ Changelog
   - `PoolTogether (POOL) <https://www.coingecko.com/en/coins/pooltogether>`__
   - `Lotto (LOTTO) <https://www.coingecko.com/en/coins/lotto>`__
   - `FTX Token (FTT) <https://www.coingecko.com/en/coins/ftx-token>`__
+  - `Akash Network (AKT) <https://www.coingecko.com/en/coins/akash-network>`__
 
 * :release:`1.14.1 <2021-02-17>`
 * :bug:`2391` The signed version of the MacOS binary should now work properly for all users.

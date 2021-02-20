@@ -414,6 +414,15 @@
         "symbol": "AKRO",
         "type": "ethereum token"
     },
+    "AKT": {
+        "coingecko": "akash-network",
+        "cryptocompare": "akt",
+        "ethereum_token_decimals": 18,
+        "name": "Akash Network",
+        "started": 1601042400,
+        "symbol": "AKT",
+        "type": "own chain"
+    },
     "ALBT": {
         "coingecko": "allianceblock",
         "ethereum_address": "0x00a8b738E453fFd858a7edf03bcCfe20412f0Eb0",
