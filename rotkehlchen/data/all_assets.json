@@ -7579,7 +7579,7 @@
     },
     "MAPS": {
         "coingecko": "maps",
-        "ethereum_address": "",
+        "ethereum_address": "0x2b915b505c017ABb1547aA5Ab355FbE69865cC6D",
         "ethereum_token_decimals": 6,
         "name": "Maps.me Token",
         "started": 1607277936,
@@ -12858,11 +12858,21 @@
         "type": "own chain"
     },
     "VRA": {
-        "coingecko": "verasity",
+        "coingecko": "verasity-old",
         "ethereum_address": "0xdF1D6405df92d981a2fB3ce68F6A03baC6C0E41F",
         "ethereum_token_decimals": 18,
-        "name": "Verasity",
+        "name": "Verasity old",
         "started": 1526601600,
+        "symbol": "VRA",
+        "type": "ethereum token",
+        "swapped_for": "VRAv2"
+    },
+    "VRAv2": {
+        "coingecko": "verasity-new",
+        "ethereum_address": "0xF411903cbC70a74d22900a5DE66A2dda66507255",
+        "ethereum_token_decimals": 18,
+        "name": "Verasity",
+        "started": 1611749669,
         "symbol": "VRA",
         "type": "ethereum token"
     },

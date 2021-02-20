@@ -106,6 +106,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'TON',     # Tontoken but Tokamak network in CC
         'FNK',     # Finiko token but FunKeyPai network in CC
         'LOTTO',   # Lotto token but LottoCoin in CC
+        'XFI',     # Dfinance token but XFinance in CC
     )
     for identifier, asset_data in AssetResolver().assets.items():
         potential_support = (
@@ -192,7 +193,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '39bc12156cf534d57c27bdba9cf9ef18', 'version': 63}
+    last_meta = {'md5': 'f23860c6876948c299b95389445b5101', 'version': 64}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 
@@ -201,12 +202,10 @@ def test_assets_json_meta():
 
     assert data_md5 == saved_meta['md5']
 
-    if data_md5 != last_meta['md5']:
-        msg = (
-            'The md5 has changed since the last time assets.json was edited '
-            'and the version has not been bumped',
-        )
-        assert saved_meta['version'] == last_meta['version'] + 1, msg
+    msg = 'The last meta md5 of the test does not match the one in all_assets.meta'
+    assert saved_meta['md5'] == last_meta['md5'], msg
+    msg = 'The last meta version of the test does not match the one in all_assets.meta'
+    assert saved_meta['version'] == last_meta['version'], msg
 
 
 @pytest.mark.parametrize('mock_asset_meta_github_response', ['{"md5": "", "version": 99999999}'])
