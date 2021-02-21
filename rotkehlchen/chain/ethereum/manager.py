@@ -666,7 +666,8 @@ class EthereumManager():
         output_data = web3.codec.decode_abi(output_types, bytes.fromhex(result[2:]))
 
         if len(output_data) == 1:
-            return output_data[0]
+            # due to https://github.com/PyCQA/pylint/issues/4114
+            return output_data[0]  # pylint: disable=unsubscriptable-object
         return output_data
 
     def _get_transaction_receipt(

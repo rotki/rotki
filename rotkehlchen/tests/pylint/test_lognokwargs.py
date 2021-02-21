@@ -19,9 +19,11 @@ def test_simple_logger_with_kwargs(pylint_test_linter):
 
         checker.visit_call(node)
         messages = checker.linter.release_messages()
-        assert len(messages) == 1
-        assert messages[0].msg_id == LOGNOKWARGS_SYMBOL
-        assert messages[0].node == node
+        # from pylint 2.7 it finds it 2 times. One for Logger and one for RootLogger
+        assert len(messages) == 2
+        for m in messages:
+            assert m.msg_id == LOGNOKWARGS_SYMBOL
+            assert m.node == node
 
     # But also check that if it's a RotkehlchenLogsAdapter there is no error
     for method_name in ('info', 'debug', 'error', 'warning'):

@@ -316,7 +316,8 @@ def mock_etherscan_query(
                 # For now the only mocked multicall is 32 bytes for the locked CRV in escrow
                 # When there is more we have to figure out a way to differentiate
                 # between them in mocking. Just return empty response here
-                args = [1, [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' for x in decoded_input[0]]]  # noqa: E501
+                # all pylint ignores below due to https://github.com/PyCQA/pylint/issues/4114
+                args = [1, [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' for x in decoded_input[0]]]  # pylint: disable=unsubscriptable-object  # noqa: E501
                 result = '0x' + web3.codec.encode_abi(output_types, args).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
             else:
@@ -341,7 +342,7 @@ def mock_etherscan_query(
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
                 args = []
-                for account_address in decoded_input[0]:
+                for account_address in decoded_input[0]:  # pylint: disable=unsubscriptable-object  # noqa: E501
                     account_address = to_checksum_address(account_address)
                     args.append(int(eth_map[account_address]['ETH']))
                 result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
@@ -360,10 +361,10 @@ def mock_etherscan_query(
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
                 args = []
-                for account_address in decoded_input[0]:
+                for account_address in decoded_input[0]:  # pylint: disable=unsubscriptable-object  # noqa: E501
                     account_address = to_checksum_address(account_address)
                     x = []
-                    for token_address in decoded_input[1]:
+                    for token_address in decoded_input[1]:  # pylint: disable=unsubscriptable-object  # noqa: E501
                         token_address = to_checksum_address(token_address)
                         value_to_add = 0
                         for given_asset, value in eth_map[account_address].items():
@@ -395,9 +396,9 @@ def mock_etherscan_query(
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
                 args = []
-                account_address = to_checksum_address(decoded_input[0])
+                account_address = to_checksum_address(decoded_input[0])  # pylint: disable=unsubscriptable-object  # noqa: E501
                 x = []
-                for token_address in decoded_input[1]:
+                for token_address in decoded_input[1]:  # pylint: disable=unsubscriptable-object  # noqa: E501
                     token_address = to_checksum_address(token_address)
                     value_to_add = 0
                     for given_asset, value in eth_map[account_address].items():
