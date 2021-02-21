@@ -148,7 +148,8 @@ def _get_eth2_staking_deposits_onchain(
             # probably failed or was something other than a deposit
             if event['transactionHash'] == tx_hash:
                 decoded_data = decode_event_data(event['data'], EVENT_ABI)
-                amount = int.from_bytes(decoded_data[2], byteorder='little')
+                # all pylint ignores below due to https://github.com/PyCQA/pylint/issues/4114
+                amount = int.from_bytes(decoded_data[2], byteorder='little')  # pylint: disable=unsubscriptable-object  # noqa: E501
                 usd_price = query_usd_price_zero_if_error(
                     asset=A_ETH,
                     time=transaction.timestamp,
@@ -158,10 +159,10 @@ def _get_eth2_staking_deposits_onchain(
                 normalized_amount = from_gwei(FVal(amount))
                 deposits.append(Eth2Deposit(
                     from_address=transaction.from_address,
-                    pubkey='0x' + decoded_data[0].hex(),
-                    withdrawal_credentials='0x' + decoded_data[1].hex(),
+                    pubkey='0x' + decoded_data[0].hex(),    # pylint: disable=unsubscriptable-object  # noqa: E501
+                    withdrawal_credentials='0x' + decoded_data[1].hex(),    # pylint: disable=unsubscriptable-object  # noqa: E501
                     value=Balance(normalized_amount, usd_price * normalized_amount),
-                    deposit_index=int.from_bytes(decoded_data[4], byteorder='little'),
+                    deposit_index=int.from_bytes(decoded_data[4], byteorder='little'),    # pylint: disable=unsubscriptable-object  # noqa: E501
                     tx_hash=tx_hash,
                     log_index=event['logIndex'],
                     timestamp=Timestamp(transaction.timestamp),
