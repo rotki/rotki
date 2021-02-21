@@ -1,5 +1,5 @@
 import pytest
-from pylint.testutils import UnittestLinter
+from pylint.testutils.unittest_linter import UnittestLinter
 
 
 @pytest.fixture()
