@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2399` Users will now see a warning if the loopring module is not activated when adding an API key, and balances will be fetched automatically if it is.
 * :bug:`2151` Users will now see the datetime picker properly displaying the selected date when editing ledger actions.
 * :bug:`2405` Legacy bitcoin address balances and xpub derivation should now work properly again after blockchain.info decided to yolo change their api response format.
 * :bug:`2400` Loopring balances should now be queried properly for users who own USDT.
