@@ -308,3 +308,6 @@ class Aave(EthereumModule):
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         pass
+
+    def deactivate(self) -> None:
+        self.database.delete_aave_data()

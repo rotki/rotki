@@ -28,7 +28,6 @@ def mock_uniswap(
         start_with_valid_premium,
         rotki_premium_credentials,
         function_scope_messages_aggregator,
-        data_dir,
         mock_graph,  # pylint: disable=unused-argument
 ) -> Uniswap:
     premium = None
@@ -41,6 +40,5 @@ def mock_uniswap(
         database=database,
         premium=premium,
         msg_aggregator=function_scope_messages_aggregator,
-        data_directory=data_dir,
     )
     return uniswap

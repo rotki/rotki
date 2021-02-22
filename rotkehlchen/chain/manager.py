@@ -1,4 +1,5 @@
 import logging
+import sys
 import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -18,7 +19,6 @@ from typing import (
     Union,
 )
 
-import gevent
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
@@ -84,6 +84,12 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def _module_name_to_class(module_name: ModuleName) -> EthereumModule:
+    class_name = ''.join(word.title() for word in module_name.split('_'))
+    return getattr(sys.modules[__name__], class_name)  # class must be imported
+
 
 DEFI_BALANCES_REQUERY_SECONDS = 600
 ETH2_DETAILS_REQUERY_SECONDS = 600
@@ -223,7 +229,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             data_directory: Path,
             beaconchain: 'BeaconChain',
             btc_derivation_gap_limit: int,
-            eth_modules: Optional[List[str]] = None,
+            eth_modules: Optional[List[ModuleName]] = None,
     ):
         log.debug('Initializing ChainManager')
         super().__init__()
@@ -248,92 +254,16 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.balances = BlockchainBalances(db=database)
         # Per asset total balances
         self.totals: BalanceSheet = BalanceSheet()
-        # TODO: Perhaps turn this mapping into a typed dict?
-        self.eth_modules: Dict[str, Union[EthereumModule, Literal['loading']]] = {}
+        # TODO: Turn this mapping into a typed dict once we upgrade to python 3.8
+        self.eth_modules: Dict[ModuleName, Union[EthereumModule]] = {}
         if eth_modules:
             for given_module in eth_modules:
-                if given_module == 'makerdao_dsr':
-                    self.eth_modules['makerdao_dsr'] = MakerDAODSR(
-                        ethereum_manager=ethereum_manager,
-                        database=self.database,
-                        premium=premium,
-                        msg_aggregator=msg_aggregator,
-                    )
-                elif given_module == 'makerdao_vaults':
-                    self.eth_modules['makerdao_vaults'] = MakerDAOVaults(
-                        ethereum_manager=ethereum_manager,
-                        database=self.database,
-                        premium=premium,
-                        msg_aggregator=msg_aggregator,
-                    )
-                elif given_module == 'aave':
-                    self.eth_modules['aave'] = Aave(
-                        ethereum_manager=ethereum_manager,
-                        database=self.database,
-                        premium=premium,
-                        msg_aggregator=msg_aggregator,
-                    )
-                elif given_module == 'compound':
-                    self.eth_modules['compound'] = 'loading'
-                    # Since Compound initialization needs a few network calls we do it async
-                    greenlet_manager.spawn_and_track(
-                        after_seconds=None,
-                        task_name='Initialize Compound object',
-                        exception_is_error=True,
-                        method=self._initialize_compound,
-                        premium=premium,
-                    )
-                elif given_module == 'uniswap':
-                    self.eth_modules['uniswap'] = Uniswap(
-                        ethereum_manager=ethereum_manager,
-                        database=self.database,
-                        premium=premium,
-                        msg_aggregator=msg_aggregator,
-                        data_directory=self.data_directory,
-                    )
-                elif given_module == 'yearn_vaults':
-                    self.eth_modules['yearn_vaults'] = YearnVaults(
-                        ethereum_manager=ethereum_manager,
-                        database=self.database,
-                        premium=premium,
-                        msg_aggregator=msg_aggregator,
-                    )
-                elif given_module == 'adex':
-                    self.eth_modules['adex'] = Adex(
-                        ethereum_manager=ethereum_manager,
-                        database=self.database,
-                        premium=premium,
-                        msg_aggregator=msg_aggregator,
-                    )
-                elif given_module == 'loopring':
-                    self.eth_modules['loopring'] = Loopring(
-                        database=self.database,
-                        msg_aggregator=msg_aggregator,
-                    )
-
-                else:
-                    log.error(f'Unrecognized module value {given_module} given. Skipping...')
+                self.activate_module(given_module)
 
         self.premium = premium
         self.greenlet_manager = greenlet_manager
         self.defichad = DefiChad(
             ethereum_manager=self.ethereum,
-            msg_aggregator=self.msg_aggregator,
-        )
-
-        for name, module in self.iterate_modules():
-            self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name=f'startup of {name}',
-                exception_is_error=True,
-                method=module.on_startup,
-            )
-
-    def _initialize_compound(self, premium: Optional[Premium]) -> None:
-        self.eth_modules['compound'] = Compound(
-            ethereum_manager=self.ethereum,
-            database=self.database,
-            premium=premium,
             msg_aggregator=self.msg_aggregator,
         )
 
@@ -356,9 +286,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     def iterate_modules(self) -> Iterator[Tuple[str, EthereumModule]]:
         for name, module in self.eth_modules.items():
-            if module == 'loading':
-                continue
-
             yield name, module
 
     @property
@@ -399,15 +326,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if not module:
             return None
 
-        if module == 'loading':
-            # Keep trying out with a timeout of 10 seconds unitl initialization finishes
-            with gevent.Timeout(10):
-                while True:
-                    module = self.eth_modules.get('compound', None)
-                    if module == 'loading':
-                        gevent.sleep(0.5)
-                    else:
-                        return module  # type: ignore
         return module  # type: ignore
 
     @property
@@ -438,6 +356,40 @@ class ChainManager(CacheableObject, LockableQueryObject):
         """Returns the addresses to query for the given module/protocol"""
         result = QueriedAddresses(self.database).get_queried_addresses_for_module(module)
         return result if result is not None else self.accounts.eth
+
+    def activate_module(self, module_name: ModuleName) -> EthereumModule:
+        """Activates an ethereum module by module name"""
+        module = self.eth_modules.get(module_name, None)
+        if module:
+            return module  # already activated
+
+        klass = _module_name_to_class(module_name)
+        # TODO: figure out the type here: class EthereumModule not callable.
+        instance = klass(  # type: ignore
+            ethereum_manager=self.ethereum,
+            database=self.database,
+            premium=self.premium,
+            msg_aggregator=self.msg_aggregator,
+        )
+        self.eth_modules[module_name] = instance
+        # also run any startup initialization actions for the module
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name=f'startup of {module_name}',
+            exception_is_error=True,
+            method=instance.on_startup,
+        )
+        return instance
+
+    def deactivate_module(self, module_name: ModuleName) -> None:
+        """Deactivates an ethereum module by name"""
+        instance = self.eth_modules.pop(module_name, None)
+        if instance is None:
+            return  # nothing to do
+
+        instance.deactivate()
+        del instance
+        return
 
     def get_balances_update(self) -> BlockchainBalancesUpdate:
         return BlockchainBalancesUpdate(

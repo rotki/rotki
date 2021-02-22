@@ -101,3 +101,6 @@ class MakerDAOCommon(EthereumModule):
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         self.reset_last_query_ts()
+
+    def deactivate(self) -> None:
+        pass

@@ -2,7 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
-from eth_utils import to_checksum_address
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import (
@@ -148,11 +147,6 @@ class Compound(EthereumModule):
                 f' All compound historical queries are not functioning until this is fixed. '
                 f'Probably will get fixed with time. If not report it to Rotkis support channel ',
             )
-
-        self.comptroller_address = to_checksum_address(COMPTROLLER_PROXY.call(
-            ethereum=self.ethereum,
-            method_name='comptrollerImplementation',
-        ))
 
     def _get_apy(self, address: ChecksumEthAddress, supply: bool) -> Optional[FVal]:
         method_name = 'supplyRatePerBlock' if supply else 'borrowRatePerBlock'
@@ -783,4 +777,7 @@ class Compound(EthereumModule):
         pass
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
+        pass
+
+    def deactivate(self) -> None:
         pass
