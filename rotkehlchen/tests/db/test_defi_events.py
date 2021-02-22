@@ -1,5 +1,6 @@
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.ethereum.modules.yearn.vaults import YEARN_VAULTS
 from rotkehlchen.chain.ethereum.structures import (
     AaveBorrowEvent,
     AaveLiquidationEvent,
@@ -7,7 +8,6 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveSimpleEvent,
     YearnVaultEvent,
 )
-from rotkehlchen.chain.ethereum.yearn.vaults import YEARN_VAULTS
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.fval import FVal

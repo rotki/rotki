@@ -1,7 +1,7 @@
 import logging
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Union, overload, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, overload
 from urllib.parse import urlencode
 
 import requests
@@ -36,6 +36,7 @@ from rotkehlchen.utils.serialization import rlk_jsonloads
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
 
 
 logger = logging.getLogger(__name__)
@@ -168,6 +169,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
+            premium: Optional['Premium'],  # pylint: disable=unused-argument
     ) -> None:
         super().__init__(database=database, service_name=ExternalService.LOOPRING)
         api_key = self._get_api_key()
