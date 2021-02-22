@@ -17,6 +17,7 @@ ModuleName = Literal[
     'uniswap',
     'adex',
     'loopring',
+    'balancer',
 ]
 # TODO: Turn this into some kind of light data structure and not just a mapping
 # This is a mapping of module ids to human readable names
@@ -29,6 +30,7 @@ AVAILABLE_MODULES_MAP = {
     'uniswap': 'Uniswap',
     'adex': 'AdEx',
     'loopring': 'Loopring',
+    'balancer': 'Balancer',
 }
 
 T_BinaryEthAddress = bytes
@@ -349,6 +351,7 @@ class Location(Enum):
     BITCOINDE = 21
     ICONOMI = 22
     KUCOIN = 23
+    BALANCER = 24
 
     def __str__(self) -> str:
         if self == Location.EXTERNAL:
@@ -397,6 +400,8 @@ class Location(Enum):
             return 'iconomi'
         if self == Location.KUCOIN:
             return 'kucoin'
+        if self == Location.BALANCER:
+            return 'balancer'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 
@@ -447,6 +452,8 @@ class Location(Enum):
             return 'V'
         if self == Location.KUCOIN:
             return 'W'
+        if self == Location.BALANCER:
+            return 'X'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 

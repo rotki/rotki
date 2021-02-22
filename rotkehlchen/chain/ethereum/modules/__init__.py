@@ -1,6 +1,7 @@
 __all__ = [
     'Aave',
     'Adex',
+    'Balancer',
     'Compound',
     'Loopring',
     'MakerdaoDsr',
@@ -11,6 +12,7 @@ __all__ = [
 
 from .aave import Aave
 from .adex.adex import Adex
+from .balancer.balancer import Balancer
 from .compound import Compound
 from .l2.loopring import Loopring
 from .makerdao.dsr import MakerdaoDsr

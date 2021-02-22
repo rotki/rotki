@@ -1237,6 +1237,15 @@ class LoopringBalancesResource(BaseResource):
         return self.rest_api.get_loopring_balances(async_query=async_query)
 
 
+class BalancerBalancesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_balancer_balances(async_query=async_query)
+
+
 class WatchersResource(BaseResource):
 
     put_schema = WatchersAddSchema

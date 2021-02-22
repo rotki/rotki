@@ -44,6 +44,7 @@ from rotkehlchen.chain.ethereum.eth2_utils import get_validator_daily_stats
 from rotkehlchen.chain.ethereum.modules import (
     Aave,
     Adex,
+    Balancer,
     Compound,
     Loopring,
     MakerdaoDsr,
@@ -364,6 +365,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     @overload
     def get_module(self, module_name: Literal['adex']) -> Optional[Adex]:
+        ...
+
+    @overload
+    def get_module(self, module_name: Literal['balancer']) -> Optional[Balancer]:
         ...
 
     @overload
