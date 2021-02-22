@@ -957,6 +957,8 @@ class Rotkehlchen():
 
             if settings.historical_price_oracles is not None:
                 PriceHistorian().set_oracles_order(settings.historical_price_oracles)
+            if settings.active_modules is not None:
+                self.chain_manager.process_new_modules_list(settings.active_modules)
 
             self.data.db.set_settings(settings)
             return True, ''

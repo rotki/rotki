@@ -292,6 +292,21 @@ class ChainManager(CacheableObject, LockableQueryObject):
             if getattr(module, 'premium', None):
                 module.premium = None  # type: ignore
 
+    def process_new_modules_list(self, module_names: List[ModuleName]) -> None:
+        """Processes a new list of active modules
+
+        Adds those missing, and removes those not present
+        """
+        existing_names = set(self.eth_modules.keys())
+        given_modules_set = set(module_names)
+        modules_to_remove = existing_names.difference(given_modules_set)
+        modules_to_add = given_modules_set.difference(existing_names)
+
+        for name in modules_to_remove:
+            self.deactivate_module(name)
+        for name in modules_to_add:
+            self.activate_module(name)
+
     def iterate_modules(self) -> Iterator[Tuple[str, EthereumModule]]:
         for name, module in self.eth_modules.items():
             yield name, module
@@ -307,6 +322,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if module:
             return module  # already activated
 
+        logger.debug(f'Activating {module_name} module')
         klass = _module_name_to_class(module_name)
         # TODO: figure out the type here: class EthereumModule not callable.
         instance = klass(  # type: ignore
@@ -331,6 +347,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if instance is None:
             return  # nothing to do
 
+        logger.debug(f'Deactivating {module_name} module')
         instance.deactivate()
         del instance
         return
