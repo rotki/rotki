@@ -14,12 +14,12 @@ from rotkehlchen.accounting.structures import (
     DefiEventType,
 )
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.makerdao.common import (
+from .common import (
     MAKERDAO_REQUERY_PERIOD,
     RAY,
     RAY_DIGITS,
     WAD,
-    MakerDAOCommon,
+    MakerdaoCommon,
 )
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.constants import ZERO
@@ -76,7 +76,6 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_ZRX_A_JOIN,
 )
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
@@ -87,6 +86,7 @@ from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 log = logging.getLogger(__name__)
 
@@ -180,13 +180,13 @@ class VaultEvent(NamedTuple):
 
     def __str__(self) -> str:
         """Used in DefiEvent processing during accounting"""
-        result = f'MakerDAO Vault {self.event_type}'
+        result = f'Makerdao Vault {self.event_type}'
         if self.event_type in (VaultEventType.GENERATE_DEBT, VaultEventType.PAYBACK_DEBT):
             result += ' debt'
         return result
 
 
-class MakerDAOVault(NamedTuple):
+class MakerdaoVault(NamedTuple):
     identifier: int
     # The type of collateral used for the vault. asset + set of parameters.
     # e.g. ETH-A. Various types can be seen here: https://catflip.co/
@@ -233,7 +233,7 @@ class MakerDAOVault(NamedTuple):
         )
 
 
-class MakerDAOVaultDetails(NamedTuple):
+class MakerdaoVaultDetails(NamedTuple):
     identifier: int
     collateral_asset: Asset  # the vault's collateral asset
     creation_ts: Timestamp
@@ -246,12 +246,12 @@ class MakerDAOVaultDetails(NamedTuple):
     events: List[VaultEvent]
 
 
-class MakerDAOVaults(MakerDAOCommon):
+class MakerdaoVaults(MakerdaoCommon):
 
     def __init__(
             self,
             ethereum_manager: 'EthereumManager',
-            database: DBHandler,
+            database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
@@ -265,9 +265,9 @@ class MakerDAOVaults(MakerDAOCommon):
         self.reset_last_query_ts()
         self.lock = Semaphore()
         self.usd_price: Dict[str, FVal] = defaultdict(FVal)
-        self.vault_mappings: Dict[ChecksumEthAddress, List[MakerDAOVault]] = defaultdict(list)
+        self.vault_mappings: Dict[ChecksumEthAddress, List[MakerdaoVault]] = defaultdict(list)
         self.ilk_to_stability_fee: Dict[bytes, FVal] = {}
-        self.vault_details: List[MakerDAOVaultDetails] = []
+        self.vault_details: List[MakerdaoVaultDetails] = []
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""
@@ -291,7 +291,7 @@ class MakerDAOVaults(MakerDAOCommon):
             owner: ChecksumEthAddress,
             urn: ChecksumEthAddress,
             ilk: bytes,
-    ) -> Optional[MakerDAOVault]:
+    ) -> Optional[MakerdaoVault]:
         collateral_type = ilk.split(b'\0', 1)[0].decode()
         asset = COLLATERAL_TYPE_MAPPING.get(collateral_type, None)
         if asset is None:
@@ -328,7 +328,7 @@ class MakerDAOVaults(MakerDAOCommon):
             liquidation_price = (debt_value * liquidation_ratio) / collateral_amount
 
         dai_usd_price = Inquirer().find_usd_price(A_DAI)
-        return MakerDAOVault(
+        return MakerdaoVault(
             identifier=identifier,
             owner=owner,
             collateral_type=collateral_type,
@@ -344,10 +344,10 @@ class MakerDAOVaults(MakerDAOCommon):
 
     def _query_vault_details(
             self,
-            vault: MakerDAOVault,
+            vault: MakerdaoVault,
             proxy: ChecksumEthAddress,
             urn: ChecksumEthAddress,
-    ) -> Optional[MakerDAOVaultDetails]:
+    ) -> Optional[MakerdaoVaultDetails]:
         # They can raise:
         # ConversionError due to hex_or_bytes_to_address, hexstr_to_int
         # RemoteError due to external query errors
@@ -620,7 +620,7 @@ class MakerDAOVaults(MakerDAOCommon):
         # sort vault events by timestamp
         vault_events.sort(key=lambda event: event.timestamp)
 
-        return MakerDAOVaultDetails(
+        return MakerdaoVaultDetails(
             identifier=vault.identifier,
             collateral_asset=vault.collateral_asset,
             total_interest_owed=total_interest_owed,
@@ -633,7 +633,7 @@ class MakerDAOVaults(MakerDAOCommon):
             self,
             user_address: ChecksumEthAddress,
             proxy_address: ChecksumEthAddress,
-    ) -> List[MakerDAOVault]:
+    ) -> List[MakerdaoVault]:
         """Gets the vaults of a single address
 
         May raise:
@@ -663,7 +663,7 @@ class MakerDAOVaults(MakerDAOCommon):
 
         return vaults
 
-    def get_vaults(self) -> List[MakerDAOVault]:
+    def get_vaults(self) -> List[MakerdaoVault]:
         """Detects vaults the user has and returns basic info about each one
 
         If the vaults have been queried in the past REQUERY_PERIOD
@@ -698,7 +698,7 @@ class MakerDAOVaults(MakerDAOCommon):
             vaults.sort(key=lambda vault: vault.identifier)
         return vaults
 
-    def get_vault_details(self) -> List[MakerDAOVaultDetails]:
+    def get_vault_details(self) -> List[MakerdaoVaultDetails]:
         """Queries vault details for the auto detected vaults of the user
 
         This is a premium only call. Check happens only at the API level.

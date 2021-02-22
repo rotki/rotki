@@ -2,20 +2,20 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.chain.ethereum.uniswap.uniswap import Uniswap
+from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
 from rotkehlchen.premium.premium import Premium
 
 
 @pytest.fixture(name='mock_graph')
 def fixture_graph():
-    with patch('rotkehlchen.chain.ethereum.uniswap.uniswap.Graph'):
+    with patch('rotkehlchen.chain.ethereum.modules.uniswap.uniswap.Graph'):
         yield
 
 
 @pytest.fixture(name='mock_graph_query_limit')
 def fixture_graph_query_limit(graph_query_limit):
     with patch(
-        'rotkehlchen.chain.ethereum.uniswap.uniswap.GRAPH_QUERY_LIMIT',
+        'rotkehlchen.chain.ethereum.modules.uniswap.uniswap.GRAPH_QUERY_LIMIT',
         new=graph_query_limit,
     ):
         yield

@@ -6,16 +6,8 @@ from eth_utils.address import to_checksum_address
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.chain.ethereum.aave.common import (
-    AAVE_RESERVE_TO_ASSET,
-    ASSET_TO_AAVE_RESERVE_ADDRESS,
-    AaveBalances,
-    AaveHistory,
-    AaveInquirer,
-    _get_reserve_address_decimals,
-)
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.ethereum.makerdao.common import RAY
+from rotkehlchen.chain.ethereum.modules.makerdao.common import RAY
 from rotkehlchen.chain.ethereum.structures import (
     AaveBorrowEvent,
     AaveEvent,
@@ -34,6 +26,15 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
+
+from .common import (
+    AAVE_RESERVE_TO_ASSET,
+    ASSET_TO_AAVE_RESERVE_ADDRESS,
+    AaveBalances,
+    AaveHistory,
+    AaveInquirer,
+    _get_reserve_address_decimals,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager

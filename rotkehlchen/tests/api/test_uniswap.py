@@ -9,9 +9,9 @@ import requests
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.manager import NodeName
+from rotkehlchen.chain.ethereum.modules.uniswap import UniswapPoolEvent, UniswapPoolEventsBalance
+from rotkehlchen.chain.ethereum.modules.uniswap.typing import UNISWAP_EVENTS_PREFIX, EventType
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
-from rotkehlchen.chain.ethereum.uniswap import UniswapPoolEvent, UniswapPoolEventsBalance
-from rotkehlchen.chain.ethereum.uniswap.typing import UNISWAP_EVENTS_PREFIX, EventType
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
@@ -87,7 +87,8 @@ def test_get_balances(
         premium = Premium(rotki_premium_credentials)
 
     # Set module premium attribute
-    rotki.chain_manager.uniswap.premium = premium
+    uniswap = rotki.chain_manager.get_module('uniswap')
+    uniswap.premium = premium
 
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'uniswapbalancesresource'),
@@ -1075,7 +1076,8 @@ def test_events_pnl(
     if start_with_valid_premium:
         premium = Premium(rotki_premium_credentials)
 
-    rotki.chain_manager.uniswap.premium = premium
+    uniswap = rotki.chain_manager.get_module('uniswap')
+    uniswap.premium = premium
 
     setup = setup_balances(
         rotki,
@@ -1142,7 +1144,8 @@ def test_get_events_history_get_all_events_empty(
     if start_with_valid_premium:
         premium = Premium(rotki_premium_credentials)
 
-    rotki.chain_manager.uniswap.premium = premium
+    uniswap = rotki.chain_manager.get_module('uniswap')
+    uniswap.premium = premium
 
     setup = setup_balances(
         rotki,

@@ -1020,7 +1020,7 @@ class EthereumModuleResource(BaseResource):
         return self.rest_api.supported_modules()
 
 
-class MakerDAODSRBalanceResource(BaseResource):
+class MakerdaoDSRBalanceResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1029,7 +1029,7 @@ class MakerDAODSRBalanceResource(BaseResource):
         return self.rest_api.get_makerdao_dsr_balance(async_query)
 
 
-class MakerDAODSRHistoryResource(BaseResource):
+class MakerdaoDSRHistoryResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1038,7 +1038,7 @@ class MakerDAODSRHistoryResource(BaseResource):
         return self.rest_api.get_makerdao_dsr_history(async_query)
 
 
-class MakerDAOVaultsResource(BaseResource):
+class MakerdaoVaultsResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1047,7 +1047,7 @@ class MakerDAOVaultsResource(BaseResource):
         return self.rest_api.get_makerdao_vaults(async_query)
 
 
-class MakerDAOVaultDetailsResource(BaseResource):
+class MakerdaoVaultDetailsResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
 

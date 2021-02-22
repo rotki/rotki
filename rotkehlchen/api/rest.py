@@ -1905,7 +1905,7 @@ class RestAPI():
 
     def _eth_module_query(
             self,
-            module: str,
+            module_name: ModuleName,
             method: str,
             query_specific_balances_before: Optional[List[str]],
             **kwargs: Any,
@@ -1930,12 +1930,12 @@ class RestAPI():
             except (RemoteError, EthSyncError) as e:
                 return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        module_obj = getattr(self.rotkehlchen.chain_manager, module)
+        module_obj = self.rotkehlchen.chain_manager.get_module(module_name)
         if module_obj is None:
             return {
                 'result': None,
                 'status_code': HTTPStatus.CONFLICT,
-                'message': f'{module} module is not activated',
+                'message': f'{module_name} module is not activated',
             }
 
         try:
@@ -1949,7 +1949,7 @@ class RestAPI():
     def _api_query_for_eth_module(
             self,
             async_query: bool,
-            module: str,
+            module_name: ModuleName,
             method: str,
             query_specific_balances_before: Optional[List[str]],
             **kwargs: Any,
@@ -1957,14 +1957,14 @@ class RestAPI():
         if async_query:
             return self._query_async(
                 command='_eth_module_query',
-                module=module,
+                module_name=module_name,
                 method=method,
                 query_specific_balances_before=query_specific_balances_before,
                 **kwargs,
             )
 
         response = self._eth_module_query(
-            module=module,
+            module_name=module_name,
             method=method,
             query_specific_balances_before=query_specific_balances_before,
             **kwargs,
@@ -1977,7 +1977,7 @@ class RestAPI():
     def get_makerdao_dsr_balance(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='makerdao_dsr',
+            module_name='makerdao_dsr',
             method='get_current_dsr',
             query_specific_balances_before=None,
         )
@@ -1986,7 +1986,7 @@ class RestAPI():
     def get_makerdao_dsr_history(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='makerdao_dsr',
+            module_name='makerdao_dsr',
             method='get_historical_dsr',
             query_specific_balances_before=None,
         )
@@ -1995,7 +1995,7 @@ class RestAPI():
     def get_makerdao_vaults(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='makerdao_vaults',
+            module_name='makerdao_vaults',
             method='get_vaults',
             query_specific_balances_before=None,
         )
@@ -2004,7 +2004,7 @@ class RestAPI():
     def get_makerdao_vault_details(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='makerdao_vaults',
+            module_name='makerdao_vaults',
             method='get_vault_details',
             query_specific_balances_before=None,
         )
@@ -2014,7 +2014,7 @@ class RestAPI():
         # Once that has ran we can be sure that defi_balances mapping is populated
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='aave',
+            module_name='aave',
             method='get_balances',
             # We need to query defi balances before since defi_balances must be populated
             query_specific_balances_before=['defi'],
@@ -2034,7 +2034,7 @@ class RestAPI():
     ) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='aave',
+            module_name='aave',
             method='get_history',
             # We need to query defi balances before since defi_balances must be populated
             query_specific_balances_before=['defi'],
@@ -2053,7 +2053,7 @@ class RestAPI():
         # Once that has ran we can be sure that defi_balances mapping is populated
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='compound',
+            module_name='compound',
             method='get_balances',
             # We need to query defi balances before since defi_balances must be populated
             query_specific_balances_before=['defi'],
@@ -2073,7 +2073,7 @@ class RestAPI():
     ) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='compound',
+            module_name='compound',
             method='get_history',
             # We need to query defi balances before since defi_balances must be populated
             query_specific_balances_before=['defi'],
@@ -2092,7 +2092,7 @@ class RestAPI():
         # Once that has ran we can be sure that defi_balances mapping is populated
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='yearn_vaults',
+            module_name='yearn_vaults',
             method='get_balances',
             # We need to query defi balances before since defi_balances must be populated
             query_specific_balances_before=['defi'],
@@ -2112,7 +2112,7 @@ class RestAPI():
     ) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='yearn_vaults',
+            module_name='yearn_vaults',
             method='get_history',
             # We need to query defi balances before since defi_balances must be populated
             query_specific_balances_before=['defi'],
@@ -2130,7 +2130,7 @@ class RestAPI():
     def get_uniswap_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='uniswap',
+            module_name='uniswap',
             method='get_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
@@ -2146,7 +2146,7 @@ class RestAPI():
     ) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='uniswap',
+            module_name='uniswap',
             method='get_events_history',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
@@ -2165,7 +2165,7 @@ class RestAPI():
     ) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='uniswap',
+            module_name='uniswap',
             method='get_trades_history',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
@@ -2178,7 +2178,7 @@ class RestAPI():
     def get_adex_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='adex',
+            module_name='adex',
             method='get_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('adex'),
@@ -2194,7 +2194,7 @@ class RestAPI():
     ) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='adex',
+            module_name='adex',
             method='get_history',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('adex'),
@@ -2207,7 +2207,7 @@ class RestAPI():
     def get_loopring_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,
-            module='loopring',
+            module_name='loopring',
             method='get_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('loopring'),

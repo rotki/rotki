@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.adex.adex import Adex
-from rotkehlchen.chain.ethereum.adex.typing import (
+from rotkehlchen.chain.ethereum.modules.adex.adex import Adex
+from rotkehlchen.chain.ethereum.modules.adex.typing import (
     TOM_POOL_ID,
     ADXStakingBalance,
     ADXStakingEvents,
@@ -320,7 +320,7 @@ def test_calculate_staking_balances():
       - ADX unclaimed: 4200.31
       - ADX balance: 110044.10 (staked + unclaimed)
     """
-    with patch('rotkehlchen.chain.ethereum.adex.adex.Graph'):
+    with patch('rotkehlchen.chain.ethereum.modules.adex.adex.Graph'):
         adex = Adex(
             ethereum_manager=MagicMock(),
             database=MagicMock(),
@@ -342,7 +342,7 @@ def test_calculate_staking_balances_is_pnl_report():
     """Test that if 'is_pnl_report' argument is True, unclaimed ADX and DAI amounts are
     not calculated and set to 0.
     """
-    with patch('rotkehlchen.chain.ethereum.adex.adex.Graph'):
+    with patch('rotkehlchen.chain.ethereum.modules.adex.adex.Graph'):
         adex = Adex(
             ethereum_manager=MagicMock(),
             database=MagicMock(),

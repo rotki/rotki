@@ -24,7 +24,6 @@ from rotkehlchen.constants.assets import (
     A_YFI,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -36,6 +35,7 @@ from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 logger = logging.getLogger(__name__)
@@ -165,7 +165,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
 
     def __init__(
             self,
-            database: DBHandler,
+            database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
     ) -> None:

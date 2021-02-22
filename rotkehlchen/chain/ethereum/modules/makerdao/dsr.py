@@ -7,16 +7,15 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
-from rotkehlchen.chain.ethereum.makerdao.common import (
+from .common import (
     MAKERDAO_REQUERY_PERIOD,
     RAD,
     RAY,
-    MakerDAOCommon,
+    MakerdaoCommon,
 )
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import MAKERDAO_DAI_JOIN, MAKERDAO_POT
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import BlockchainQueryError, ConversionError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default
@@ -28,6 +27,7 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hexstr_to_int, ts_no
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 log = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ class DSRMovement:
 
     def __str__(self) -> str:
         """Used in DefiEvent processing during accounting"""
-        return f'MakerDAO DSR {self.movement_type}'
+        return f'Makerdao DSR {self.movement_type}'
 
 
 class DSRCurrentBalances(NamedTuple):
@@ -142,12 +142,12 @@ def _find_closest_event(
     return found_event
 
 
-class MakerDAODSR(MakerDAOCommon):
+class MakerdaoDsr(MakerdaoCommon):
 
     def __init__(
             self,
             ethereum_manager: 'EthereumManager',
-            database: DBHandler,
+            database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:

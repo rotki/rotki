@@ -221,9 +221,10 @@ class EventsHistorian():
         step = self._increase_progress(step, total_steps)
 
         # include uniswap trades
-        if has_premium and self.chain_manager.uniswap:
+        uniswap = self.chain_manager.get_module('uniswap')
+        if has_premium and uniswap:
             self.processing_state_name = 'Querying uniswap history'
-            uniswap_trades = self.chain_manager.uniswap.get_trades(
+            uniswap_trades = uniswap.get_trades(
                 addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
                 from_timestamp=Timestamp(0),
                 to_timestamp=end_ts,
@@ -233,27 +234,30 @@ class EventsHistorian():
 
         # Include makerdao DSR gains
         defi_events = []
-        if self.chain_manager.makerdao_dsr and has_premium:
+        makerdao_dsr = self.chain_manager.get_module('makerdao_dsr')
+        if makerdao_dsr and has_premium:
             self.processing_state_name = 'Querying makerDAO DSR history'
-            defi_events.extend(self.chain_manager.makerdao_dsr.get_history_events(
+            defi_events.extend(makerdao_dsr.get_history_events(
                 from_timestamp=Timestamp(0),  # we need to process all events from history start
                 to_timestamp=end_ts,
             ))
         step = self._increase_progress(step, total_steps)
 
         # Include makerdao vault events
-        if self.chain_manager.makerdao_vaults and has_premium:
+        makerdao_vaults = self.chain_manager.get_module('makerdao_vaults')
+        if makerdao_vaults and has_premium:
             self.processing_state_name = 'Querying makerDAO vaults history'
-            defi_events.extend(self.chain_manager.makerdao_vaults.get_history_events(
+            defi_events.extend(makerdao_vaults.get_history_events(
                 from_timestamp=Timestamp(0),  # we need to process all events from history start
                 to_timestamp=end_ts,
             ))
         step = self._increase_progress(step, total_steps)
 
         # include yearn vault events
-        if self.chain_manager.yearn_vaults and has_premium:
+        yearn_vaults = self.chain_manager.get_module('yearn_vaults')
+        if yearn_vaults and has_premium:
             self.processing_state_name = 'Querying yearn vaults history'
-            defi_events.extend(self.chain_manager.yearn_vaults.get_history_events(
+            defi_events.extend(yearn_vaults.get_history_events(
                 from_timestamp=Timestamp(0),  # we need to process all events from history start
                 to_timestamp=end_ts,
                 addresses=self.chain_manager.queried_addresses_for_module('yearn_vaults'),
@@ -261,9 +265,10 @@ class EventsHistorian():
         step = self._increase_progress(step, total_steps)
 
         # include compound events
-        if self.chain_manager.compound and has_premium:
+        compound = self.chain_manager.get_module('compound')
+        if compound and has_premium:
             self.processing_state_name = 'Querying compound history'
-            defi_events.extend(self.chain_manager.compound.get_history_events(
+            defi_events.extend(compound.get_history_events(
                 from_timestamp=Timestamp(0),  # we need to process all events from history start
                 to_timestamp=end_ts,
                 addresses=self.chain_manager.queried_addresses_for_module('compound'),
@@ -271,7 +276,7 @@ class EventsHistorian():
         step = self._increase_progress(step, total_steps)
 
         # include adex events
-        adex = self.chain_manager.adex
+        adex = self.chain_manager.get_module('adex')
         if adex is not None and has_premium:
             self.processing_state_name = 'Querying adex staking history'
             defi_events.extend(adex.get_history_events(
@@ -282,7 +287,7 @@ class EventsHistorian():
         step = self._increase_progress(step, total_steps)
 
         # include aave events
-        aave = self.chain_manager.aave
+        aave = self.chain_manager.get_module('aave')
         if aave is not None and has_premium:
             self.processing_state_name = 'Querying aave history'
             defi_events.extend(aave.get_history_events(

@@ -8,35 +8,35 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.bitcoin.xpub import XpubData
-from rotkehlchen.chain.ethereum.aave import (
+from rotkehlchen.chain.ethereum.modules.aave import (
     AaveBalances,
     AaveBorrowingBalance,
     AaveHistory,
     AaveLendingBalance,
 )
-from rotkehlchen.chain.ethereum.adex import ADXStakingBalance, ADXStakingHistory
-from rotkehlchen.chain.ethereum.compound import CompoundBalance, CompoundEvent
+from rotkehlchen.chain.ethereum.modules.adex import ADXStakingBalance, ADXStakingHistory
+from rotkehlchen.chain.ethereum.modules.compound import CompoundBalance, CompoundEvent
 from rotkehlchen.chain.ethereum.defi.structures import (
     DefiBalance,
     DefiProtocol,
     DefiProtocolBalances,
 )
 from rotkehlchen.chain.ethereum.eth2 import Eth2Deposit
-from rotkehlchen.chain.ethereum.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
-from rotkehlchen.chain.ethereum.makerdao.vaults import (
-    MakerDAOVault,
-    MakerDAOVaultDetails,
+from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
+from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
+    MakerdaoVault,
+    MakerdaoVaultDetails,
     VaultEvent,
     VaultEventType,
 )
 from rotkehlchen.chain.ethereum.structures import AaveEvent
 from rotkehlchen.chain.ethereum.trades import AMMTrade
-from rotkehlchen.chain.ethereum.uniswap import (
+from rotkehlchen.chain.ethereum.modules.uniswap import (
     UniswapPool,
     UniswapPoolAsset,
     UniswapPoolEventsBalance,
 )
-from rotkehlchen.chain.ethereum.yearn.vaults import (
+from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultBalance,
     YearnVaultEvent,
     YearnVaultHistory,
@@ -100,14 +100,14 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         }
     if isinstance(entry, (
             DefiProtocol,
-            MakerDAOVault,
+            MakerdaoVault,
             XpubData,
     )):
         return entry.serialize()
     if isinstance(entry, (
             Trade,
             EthereumTransaction,
-            MakerDAOVault,
+            MakerdaoVault,
             DSRAccountReport,
             Balance,
             AaveLendingBalance,
@@ -134,7 +134,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             DSRCurrentBalances,
             ManuallyTrackedBalanceWithValue,
             VaultEvent,
-            MakerDAOVaultDetails,
+            MakerdaoVaultDetails,
             AaveBalances,
             AaveHistory,
             DefiBalance,

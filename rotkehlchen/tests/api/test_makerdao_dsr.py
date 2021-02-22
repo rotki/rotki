@@ -7,7 +7,7 @@ from unittest.mock import _patch, patch
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.makerdao.dsr import _dsrdai_to_dai
+from rotkehlchen.chain.ethereum.modules.makerdao.dsr import _dsrdai_to_dai
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_DAI_JOIN,
@@ -171,7 +171,7 @@ def mock_etherscan_for_dsr(
                     result = int_to_32byteshexstr(params.current_dsr)
                 else:
                     raise AssertionError(
-                        'Call to unexpected method of MakerDAO pot during tests',
+                        'Call to unexpected method of MakerDao pot during tests',
                     )
 
                 response = f'{{"status":"1","message":"OK","result":"{result}"}}'
