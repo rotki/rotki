@@ -58,6 +58,7 @@ from rotkehlchen.api.v1.encoding import (
     TagDeleteSchema,
     TagEditSchema,
     TagSchema,
+    TimerangeLocationCacheQuerySchema,
     TimerangeLocationQuerySchema,
     TradeDeleteSchema,
     TradePatchSchema,
@@ -367,7 +368,7 @@ class ManuallyTrackedBalancesResource(BaseResource):
 
 class TradesResource(BaseResource):
 
-    get_schema = TimerangeLocationQuerySchema()
+    get_schema = TimerangeLocationCacheQuerySchema()
     put_schema = TradeSchema()
     patch_schema = TradePatchSchema()
     delete_schema = TradeDeleteSchema()
@@ -379,12 +380,14 @@ class TradesResource(BaseResource):
             to_timestamp: Timestamp,
             location: Optional[Location],
             async_query: bool,
+            only_cache: bool,
     ) -> Response:
         return self.rest_api.get_trades(
             from_ts=from_timestamp,
             to_ts=to_timestamp,
             location=location,
             async_query=async_query,
+            only_cache=only_cache,
         )
 
     @use_kwargs(put_schema, location='json')  # type: ignore
@@ -450,7 +453,7 @@ class TradesResource(BaseResource):
 
 class AssetMovementsResource(BaseResource):
 
-    get_schema = TimerangeLocationQuerySchema()
+    get_schema = TimerangeLocationCacheQuerySchema()
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(
@@ -459,12 +462,14 @@ class AssetMovementsResource(BaseResource):
             to_timestamp: Timestamp,
             location: Optional[Location],
             async_query: bool,
+            only_cache: bool,
     ) -> Response:
         return self.rest_api.get_asset_movements(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
             location=location,
             async_query=async_query,
+            only_cache=only_cache,
         )
 
 

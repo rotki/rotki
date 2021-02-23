@@ -115,7 +115,11 @@ def test_gemini_query_trades(sandbox_gemini):
 
     Uses the Gemini sandbox
     """
-    trades = sandbox_gemini.query_trade_history(start_ts=0, end_ts=Timestamp(1584881354))
+    trades = sandbox_gemini.query_trade_history(
+        start_ts=0,
+        end_ts=Timestamp(1584881354),
+        only_cache=False,
+    )
     assert len(trades) == 2
     assert trades[0] == Trade(
         timestamp=Timestamp(1584720549),
@@ -149,7 +153,7 @@ def test_gemini_query_all_trades_pagination(sandbox_gemini):
 
     Uses the Gemini sandbox at which we've made quite a few test trades
     """
-    trades = sandbox_gemini.query_trade_history(start_ts=0, end_ts=ts_now())
+    trades = sandbox_gemini.query_trade_history(start_ts=0, end_ts=ts_now(), only_cache=False)
     identifiers = set()
     for trade in trades:
         assert trade.link not in identifiers, 'trade included multiple times in the results'
@@ -241,6 +245,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         movements = sandbox_gemini.query_deposits_withdrawals(
             start_ts=0,
             end_ts=Timestamp(1584881354),
+            only_cache=False,
         )
 
     assert len(movements) == 6

@@ -57,6 +57,7 @@ def test_query_trade_history(function_scope_bitcoinde):
         trades = bitcoinde.query_trade_history(
             start_ts=0,
             end_ts=1565732120,
+            only_cache=False,
         )
 
     assert len(trades) == 2

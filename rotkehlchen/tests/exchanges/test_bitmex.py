@@ -53,6 +53,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(sandbox_bitmex)
     result = sandbox_bitmex.query_deposits_withdrawals(
         start_ts=1536492800,
         end_ts=1536492976,
+        only_cache=False,
     )
     assert len(result) == 0
 
@@ -62,6 +63,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(sandbox_bitmex)
     result = sandbox_bitmex.query_deposits_withdrawals(
         start_ts=0,
         end_ts=now,
+        only_cache=False,
     )
     expected_result = [
         AssetMovement(

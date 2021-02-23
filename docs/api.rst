@@ -2404,7 +2404,7 @@ Dealing with trades
       GET /api/1/trades HTTP/1.1
       Host: localhost:5042
 
-      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "external"}
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "external", "only_cache": false}
 
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
@@ -2412,6 +2412,7 @@ Dealing with trades
    :param int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :param int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :param string location: Optionally filter trades by location. A valid location name has to be provided. If missing location filtering does not happen.
+   :param bool only_cache: Optional.If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
 
    .. _trades_schema_section:
 
@@ -2646,11 +2647,12 @@ Querying asset movements
       GET /api/1/asset_movements HTTP/1.1
       Host: localhost:5042
 
-      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "kraken"}
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "kraken", "only_cache": false}
 
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson string location: Optionally filter trades by location. A valid location name has to be provided. Valid locations are for now only exchanges for deposits/widthrawals.
+   :param bool only_cache: Optional. If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
 
 
    **Example Response**:

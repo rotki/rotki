@@ -70,6 +70,7 @@ def test_querying_trade_history(function_scope_kraken):
     result = function_scope_kraken.query_trade_history(
         start_ts=1451606400,
         end_ts=now,
+        only_cache=False,
     )
     assert isinstance(result, list)
     assert len(result) != 0
@@ -83,6 +84,7 @@ def test_querying_deposits_withdrawals(function_scope_kraken):
     result = function_scope_kraken.query_deposits_withdrawals(
         start_ts=1451606400,
         end_ts=now,
+        only_cache=False,
     )
     assert isinstance(result, list)
     assert len(result) != 0
@@ -162,6 +164,7 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(function_scope_kraken):
     movements = kraken.query_deposits_withdrawals(
         start_ts=1408994442,
         end_ts=1498994442,
+        only_cache=False,
     )
 
     assert len(movements) == 4

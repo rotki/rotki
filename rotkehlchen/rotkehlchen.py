@@ -630,9 +630,13 @@ class Rotkehlchen():
             from_ts: Timestamp,
             to_ts: Timestamp,
             location: Optional[Location],
+            only_cache: bool,
     ) -> TRADES_LIST:
         """Queries trades for the given location and time range.
         If no location is given then all external, all exchange and DEX trades are queried.
+
+        If only_cache is given then only trades cached in the DB are returned.
+        No service is queried.
 
         DEX Trades are queried only if the user has premium
         If the user does not have premium then a trade limit is applied.
@@ -642,13 +646,22 @@ class Rotkehlchen():
         """
         trades: TRADES_LIST
         if location is not None:
-            trades = self.query_location_trades(from_ts, to_ts, location)
+            trades = self.query_location_trades(from_ts, to_ts, location, only_cache)
         else:
-            trades = self.query_location_trades(from_ts, to_ts, Location.EXTERNAL)
+            trades = self.query_location_trades(from_ts, to_ts, Location.EXTERNAL, only_cache)
             # crypto.com is not an API key supported exchange but user can import from CSV
-            trades.extend(self.query_location_trades(from_ts, to_ts, Location.CRYPTOCOM))
+            trades.extend(self.query_location_trades(
+                from_ts=from_ts,
+                to_ts=to_ts,
+                location=Location.CRYPTOCOM,
+                only_cache=only_cache,
+            ))
             for name, exchange in self.exchange_manager.connected_exchanges.items():
-                exchange_trades = exchange.query_trade_history(start_ts=from_ts, end_ts=to_ts)
+                exchange_trades = exchange.query_trade_history(
+                    start_ts=from_ts,
+                    end_ts=to_ts,
+                    only_cache=only_cache,
+                )
                 if self.premium is None:
                     trades = self._apply_actions_limit(
                         location=deserialize_location(name),
@@ -668,6 +681,7 @@ class Rotkehlchen():
                             addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
                             from_timestamp=from_ts,
                             to_timestamp=to_ts,
+                            only_cache=only_cache,
                         ),
                     )
 
@@ -680,6 +694,7 @@ class Rotkehlchen():
             from_ts: Timestamp,
             to_ts: Timestamp,
             location: Location,
+            only_cache: bool,
     ) -> TRADES_LIST:
         # clear the trades queried for this location
         self.actions_per_location['trade'][location] = 0
@@ -699,6 +714,7 @@ class Rotkehlchen():
                         addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
                         from_timestamp=from_ts,
                         to_timestamp=to_ts,
+                        only_cache=only_cache,
                     )
         else:
             # should only be an exchange
@@ -710,7 +726,11 @@ class Rotkehlchen():
                 )
                 return []
 
-            location_trades = exchange.query_trade_history(start_ts=from_ts, end_ts=to_ts)
+            location_trades = exchange.query_trade_history(
+                start_ts=from_ts,
+                end_ts=to_ts,
+                only_cache=only_cache,
+            )
 
         trades: TRADES_LIST = []
         if self.premium is None:
@@ -840,6 +860,7 @@ class Rotkehlchen():
             to_ts: Timestamp,
             all_movements: List[AssetMovement],
             exchange: Union[ExchangeInterface, Location],
+            only_cache: bool,
     ) -> List[AssetMovement]:
         if isinstance(exchange, ExchangeInterface):
             location = deserialize_location(exchange.name)
@@ -848,6 +869,7 @@ class Rotkehlchen():
             location_movements = exchange.query_deposits_withdrawals(
                 start_ts=from_ts,
                 end_ts=to_ts,
+                only_cache=only_cache,
             )
         else:
             assert isinstance(exchange, Location), 'only a location should make it here'
@@ -880,10 +902,12 @@ class Rotkehlchen():
             from_ts: Timestamp,
             to_ts: Timestamp,
             location: Optional[Location],
+            only_cache: bool,
     ) -> List[AssetMovement]:
         """Queries AssetMovements for the given location and time range.
 
         If no location is given then all exchange asset movements are queried.
+        If only_cache is True then only what is already in the DB is returned.
         If the user does not have premium then a limit is applied.
         May raise:
         - RemoteError: If there are problems connecting to any of the remote exchanges
@@ -896,6 +920,7 @@ class Rotkehlchen():
                     to_ts=to_ts,
                     all_movements=movements,
                     exchange=Location.CRYPTOCOM,
+                    only_cache=only_cache,
                 )
             else:
                 exchange = self.exchange_manager.get(str(location))
@@ -910,6 +935,7 @@ class Rotkehlchen():
                     to_ts=to_ts,
                     all_movements=movements,
                     exchange=exchange,
+                    only_cache=only_cache,
                 )
         else:
             # cryptocom has no exchange integration but we may have DB entries due to csv import
@@ -918,6 +944,7 @@ class Rotkehlchen():
                 to_ts=to_ts,
                 all_movements=movements,
                 exchange=Location.CRYPTOCOM,
+                only_cache=only_cache,
             )
             for _, exchange in self.exchange_manager.connected_exchanges.items():
                 self._query_exchange_asset_movements(
@@ -925,6 +952,7 @@ class Rotkehlchen():
                     to_ts=to_ts,
                     all_movements=movements,
                     exchange=exchange,
+                    only_cache=only_cache,
                 )
 
         # return movements with most recent first

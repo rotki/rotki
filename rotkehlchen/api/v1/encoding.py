@@ -695,6 +695,10 @@ class TimerangeLocationQuerySchema(Schema):
     async_query = fields.Boolean(missing=False)
 
 
+class TimerangeLocationCacheQuerySchema(TimerangeLocationQuerySchema):
+    only_cache = fields.Boolean(missing=False)
+
+
 class TradeSchema(Schema):
     timestamp = TimestampField(required=True)
     location = LocationField(required=True)

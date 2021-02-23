@@ -369,7 +369,7 @@ def test_query_trade_history(function_scope_coinbasepro):
         original_get=requests.get,
     )
     with cb_query_mock, get_mock:
-        trades = cb.query_trade_history(start_ts=0, end_ts=1579449769)
+        trades = cb.query_trade_history(start_ts=0, end_ts=1579449769, only_cache=False)
 
     assert len(trades) == 1
     assert trades[0] == EXPECTED_TRADE
@@ -386,7 +386,7 @@ def test_query_trade_history_unknown_assets(function_scope_coinbasepro):
         original_get=requests.get,
     )
     with cb_query_mock, get_mock:
-        trades = cb.query_trade_history(start_ts=0, end_ts=1579449769)
+        trades = cb.query_trade_history(start_ts=0, end_ts=1579449769, only_cache=False)
 
     assert len(trades) == 1
     assert trades[0] == EXPECTED_TRADE
@@ -407,7 +407,7 @@ def test_query_trade_history_wrong_format(function_scope_coinbasepro):
         original_get=requests.get,
     )
     with cb_query_mock, get_mock:
-        trades = cb.query_trade_history(start_ts=0, end_ts=1579449769)
+        trades = cb.query_trade_history(start_ts=0, end_ts=1579449769, only_cache=False)
 
     assert len(trades) == 1
     assert trades[0] == EXPECTED_TRADE
@@ -432,7 +432,7 @@ def test_query_trade_history_invalid_response(function_scope_coinbasepro):
         original_get=requests.get,
     )
     with cb_query_mock, get_mock:
-        trades = cb.query_trade_history(start_ts=0, end_ts=1579449769)
+        trades = cb.query_trade_history(start_ts=0, end_ts=1579449769, only_cache=False)
 
     assert len(trades) == 0
 
@@ -495,7 +495,7 @@ def test_query_asset_movements(function_scope_coinbasepro):
     cb = function_scope_coinbasepro
     cb_query_mock, get_mock = create_coinbasepro_query_mock(cb, original_get=requests.get)
     with cb_query_mock, get_mock:
-        movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769)
+        movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769, only_cache=False)
 
     assert movements == EXPECTED_MOVEMENTS
     warnings = cb.msg_aggregator.consume_warnings()
@@ -513,7 +513,7 @@ def test_query_asset_movements_unknown_assets(function_scope_coinbasepro):
         original_get=requests.get,
     )
     with cb_query_mock, get_mock:
-        movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769)
+        movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769, only_cache=False)
 
     assert movements == EXPECTED_MOVEMENTS
     warnings = cb.msg_aggregator.consume_warnings()
@@ -533,7 +533,7 @@ def test_query_asset_movements_wrong_format(function_scope_coinbasepro):
         original_get=requests.get,
     )
     with cb_query_mock, get_mock:
-        movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769)
+        movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769, only_cache=False)
 
     assert movements == EXPECTED_MOVEMENTS
     warnings = cb.msg_aggregator.consume_warnings()
@@ -555,7 +555,7 @@ def test_query_asset_movements_invalid_response(function_scope_coinbasepro):
         original_get=requests.get,
     )
     with cb_query_mock, get_mock:
-        movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769)
+        movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769, only_cache=False)
 
     assert movements == []
     warnings = cb.msg_aggregator.consume_warnings()

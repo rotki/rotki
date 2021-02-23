@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1448` When querying trades, deposits and withdrawals the entries that have already been queried will now be instantly shown to the user, while waiting for the query of the latest entries to complete.
 * :feature:`1799` Modules will now be dynamically activated/deactivated at the moment the user modifies the settings from the frontend. Restarts of the app will no longer be necessary.
 * :bug:`2405` Legacy bitcoin address balances and xpub derivation should now work properly again after blockchain.info decided to yolo change their api response format.
 * :bug:`2400` Loopring balances should now be queried properly for users who own USDT.

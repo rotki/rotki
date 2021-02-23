@@ -437,6 +437,7 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
         trades = coinbase.query_trade_history(
             start_ts=0,
             end_ts=TEST_END_TS,
+            only_cache=False,
         )
 
     warnings = coinbase.msg_aggregator.consume_warnings()
@@ -472,6 +473,7 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
         trades = coinbase.query_trade_history(
             start_ts=0,
             end_ts=1451606400,
+            only_cache=False,
         )
 
     warnings = coinbase.msg_aggregator.consume_warnings()

@@ -224,7 +224,7 @@ def test_binance_query_trade_history(function_scope_binance):
         return MockResponse(200, text)
 
     with patch.object(binance.session, 'get', side_effect=mock_my_trades):
-        trades = binance.query_trade_history(start_ts=0, end_ts=1564301134)
+        trades = binance.query_trade_history(start_ts=0, end_ts=1564301134, only_cache=False)
 
     expected_trade = Trade(
         timestamp=1499865549,

@@ -127,7 +127,7 @@ def test_bittrex_query_trade_history(bittrex):
         return response
 
     with patch.object(bittrex.session, 'request', side_effect=mock_order_history):
-        trades = bittrex.query_trade_history(start_ts=0, end_ts=1564301134)
+        trades = bittrex.query_trade_history(start_ts=0, end_ts=1564301134, only_cache=False)
 
     expected_trades = [Trade(
         timestamp=1392249600,
@@ -391,7 +391,11 @@ def test_bittrex_query_asset_movement_int_transaction_id(bittrex):
         return MockResponse(200, response_str)
 
     with patch.object(bittrex.session, 'request', side_effect=mock_get_deposit_withdrawal):
-        movements = bittrex.query_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
+        movements = bittrex.query_deposits_withdrawals(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            only_cache=False,
+        )
 
     errors = bittrex.msg_aggregator.consume_errors()
     warnings = bittrex.msg_aggregator.consume_warnings()
