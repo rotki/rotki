@@ -1,7 +1,7 @@
 <template>
   <v-row>
     <v-col cols="12">
-      <span class="title">{{ $t('generate.period') }}</span>
+      <span class="text-h6">{{ $t('generate.period') }}</span>
       <v-chip-group
         :value="year"
         mandatory
@@ -30,7 +30,7 @@
       </v-chip-group>
     </v-col>
     <v-col v-if="year !== 'custom'" cols="12">
-      <span class="title">{{ $t('generate.sub_period_label') }}</span>
+      <span class="text-h6">{{ $t('generate.sub_period_label') }}</span>
       <v-chip-group
         :value="quarter"
         mandatory

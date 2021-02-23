@@ -35,12 +35,12 @@
     </v-btn-toggle>
     <p
       v-if="isEth && isMetaMask"
-      class="mt-3 info--text caption"
+      class="mt-3 info--text text-caption"
       v-text="$t('input_mode_select.metamask_import.metamask')"
     />
     <p
       v-if="isEth && !isMetaMaskSupported()"
-      class="mt-3 warning--text caption"
+      class="mt-3 warning--text text-caption"
       v-text="$t('input_mode_select.metamask_import.missing')"
     />
   </fragment>

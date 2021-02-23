@@ -23,7 +23,7 @@
           v-if="!mini"
           class="my-2 text-center px-2 app__navigation-drawer__version"
         >
-          <span class="overline">
+          <span class="text-overline">
             <v-divider class="mx-3 my-1" />
             {{ version }}
           </span>

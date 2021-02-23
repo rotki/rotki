@@ -1,8 +1,8 @@
 <template>
   <div class="cost-basis-table">
-    <div class="title cost-basis-table__title">
+    <div class="text-h6 cost-basis-table__title">
       {{ $t('cost_basis_table.cost_basis') }}
-      <span class="caption">
+      <span class="text-caption">
         {{
           costBasis.isComplete
             ? $t('cost_basis_table.complete')

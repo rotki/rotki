@@ -18,7 +18,7 @@
           <i18n tag="span" path="module_not_active.not_active">
             <template #link>
               <v-btn
-                class="module-not-active__link font-weight-regular body-1"
+                class="module-not-active__link font-weight-regular text-body-1"
                 text
                 to="/settings/defi"
                 small

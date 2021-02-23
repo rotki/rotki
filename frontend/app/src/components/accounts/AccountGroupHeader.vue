@@ -11,7 +11,7 @@
       }"
     >
       <div class="ps-8">
-        <span class="subtitle-2">{{ label }}</span>
+        <span class="text-subtitle-2">{{ label }}</span>
       </div>
       <div>
         <v-btn v-if="items.length > 0" small icon @click="expandClicked(xpub)">

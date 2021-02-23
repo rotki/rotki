@@ -52,7 +52,7 @@
         </v-col>
       </v-row>
       <v-card v-if="(limit > 0) & (processed > limit)" class="mt-4 mb-8">
-        <v-card-text class="subtitle-1">
+        <v-card-text class="text-subtitle-1">
           <i18n tag="div" path="profit_loss_report.upgrade">
             <template #processed>
               <span class="font-weight-medium">{{ processed }}</span>
@@ -96,7 +96,7 @@
     </div>
     <progress-screen v-if="isRunning" :progress="progress">
       <template #message>
-        <div v-if="processingState" class="medium title mb-4">
+        <div v-if="processingState" class="medium text-h6 mb-4">
           {{ processingState }}
         </div>
         {{ $t('profit_loss_report.loading_message') }}

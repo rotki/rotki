@@ -35,7 +35,7 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-col class="caption">
+      <v-col class="text-caption">
         {{ $t('price_oracle_selection.hint') }}
       </v-col>
     </v-row>

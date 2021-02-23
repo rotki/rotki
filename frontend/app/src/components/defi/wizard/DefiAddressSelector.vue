@@ -39,7 +39,7 @@
             />
           </v-col>
           <v-col>
-            <div class="title">{{ modules[n - 1].name }}</div>
+            <div class="text-h6">{{ modules[n - 1].name }}</div>
           </v-col>
         </v-row>
 
