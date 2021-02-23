@@ -166,6 +166,7 @@ class TaskManager():
         if len(xpubs) == 0:
             return
 
+        logger.debug('Scheduling task for Xpub derivation')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='Derive new xpub addresses',
