@@ -228,6 +228,7 @@ class EventsHistorian():
                 addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
                 from_timestamp=Timestamp(0),
                 to_timestamp=end_ts,
+                only_cache=False,
             )
             history.extend(uniswap_trades)
         step = self._increase_progress(step, total_steps)

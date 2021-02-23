@@ -610,21 +610,45 @@ class Uniswap(EthereumModule):
 
         return address_events
 
+    def _fetch_trades_from_db(
+            self,
+            addresses: List[ChecksumEthAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> AddressTrades:
+        """Fetch all DB Uniswap trades within the time range"""
+        db_address_trades: AddressTrades = {}
+        for address in addresses:
+            db_swaps = self.database.get_amm_swaps(
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+                location=Location.UNISWAP,
+                address=address,
+            )
+            db_trades = self.swaps_to_trades(db_swaps)
+            if db_trades:
+                db_address_trades[address] = db_trades
+
+        return db_address_trades
+
     def _get_trades(
             self,
             addresses: List[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            only_cache: bool,
     ) -> AddressTrades:
         """Request via graph all trades for new addresses and the latest ones
         for already existing addresses. Then the requested trade are written in
         DB and finally all DB trades are read and returned.
         """
         address_amm_trades: AddressTrades = {}
-        db_address_trades: AddressTrades = {}
         new_addresses: List[ChecksumEthAddress] = []
         existing_addresses: List[ChecksumEthAddress] = []
         min_end_ts: Timestamp = to_timestamp
+
+        if only_cache:
+            return self._fetch_trades_from_db(addresses, from_timestamp, to_timestamp)
 
         # Get addresses' last used query range for Uniswap trades
         for address in addresses:
@@ -682,20 +706,7 @@ class Uniswap(EthereumModule):
                     all_swaps.add(swap)
 
         self.database.add_amm_swaps(list(all_swaps))
-
-        # Fetch all DB Uniswap trades within the time range
-        for address in addresses:
-            db_swaps = self.database.get_amm_swaps(
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-                location=Location.UNISWAP,
-                address=address,
-            )
-            db_trades = self.swaps_to_trades(db_swaps)
-            if db_trades:
-                db_address_trades[address] = db_trades
-
-        return db_address_trades
+        return self._fetch_trades_from_db(addresses, from_timestamp, to_timestamp)
 
     @staticmethod
     def swaps_to_trades(swaps: List[AMMSwap]) -> List[AMMTrade]:
@@ -984,6 +995,7 @@ class Uniswap(EthereumModule):
             addresses: List[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            only_cache: bool,
     ) -> List[AMMTrade]:
         with self.trades_lock:
             all_trades = []
@@ -991,6 +1003,7 @@ class Uniswap(EthereumModule):
                 addresses=addresses,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
+                only_cache=only_cache,
             )
             for _, trades in trade_mapping.items():
                 all_trades.extend(trades)
@@ -1017,6 +1030,7 @@ class Uniswap(EthereumModule):
                 addresses=addresses,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
+                only_cache=False,
             )
 
         return trades

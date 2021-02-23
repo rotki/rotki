@@ -145,13 +145,21 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            only_cache: bool,
     ) -> List[Trade]:
-        """Queries the local DB and the remote exchange for the trade history of the user"""
+        """Queries the local DB and the remote exchange for the trade history of the user
+
+        Limits the query to the given time range and also if only_cache is True returns
+        only what is already saved in the DB without performing an exchange query
+        """
         trades = self.db.get_trades(
             from_ts=start_ts,
             to_ts=end_ts,
             location=deserialize_location(self.name),
         )
+        if only_cache:
+            return trades
+
         ranges = DBQueryRanges(self.db)
         ranges_to_query = ranges.get_location_query_ranges(
             location_string=f'{self.name}_trades',
@@ -228,13 +236,21 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            only_cache: bool,
     ) -> List[AssetMovement]:
-        """Queries the local DB and the exchange for the deposits/withdrawal history of the user"""
+        """Queries the local DB and the exchange for the deposits/withdrawal history of the user
+
+        If only_cache is true only what is already cached in the DB is returned without
+        an actual exchange query.
+        """
         asset_movements = self.db.get_asset_movements(
             from_ts=start_ts,
             to_ts=end_ts,
             location=deserialize_location(self.name),
         )
+        if only_cache:
+            return asset_movements
+
         ranges = DBQueryRanges(self.db)
         ranges_to_query = ranges.get_location_query_ranges(
             location_string=f'{self.name}_asset_movements',
@@ -276,6 +292,7 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             trades_history = self.query_trade_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
+                only_cache=False,
             )
             margin_history = self.query_margin_history(
                 start_ts=start_ts,
@@ -284,6 +301,7 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             asset_movements = self.query_deposits_withdrawals(
                 start_ts=start_ts,
                 end_ts=end_ts,
+                only_cache=False,
             )
             exchange_specific_data = self.query_exchange_specific_history(  # pylint: disable=assignment-from-none  # noqa: E501
                 start_ts=start_ts,

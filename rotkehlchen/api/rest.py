@@ -616,9 +616,15 @@ class RestAPI():
             from_ts: Timestamp,
             to_ts: Timestamp,
             location: Optional[Location],
+            only_cache: bool,
     ) -> Dict[str, Any]:
         try:
-            trades = self.rotkehlchen.query_trades(from_ts=from_ts, to_ts=to_ts, location=location)
+            trades = self.rotkehlchen.query_trades(
+                from_ts=from_ts,
+                to_ts=to_ts,
+                location=location,
+                only_cache=only_cache,
+            )
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
@@ -660,6 +666,7 @@ class RestAPI():
             to_ts: Timestamp,
             location: Optional[Location],
             async_query: bool,
+            only_cache: bool,
     ) -> Response:
         if async_query:
             return self._query_async(
@@ -667,12 +674,14 @@ class RestAPI():
                 from_ts=from_ts,
                 to_ts=to_ts,
                 location=location,
+                only_cache=only_cache,
             )
 
         response = self._get_trades(
             from_ts=from_ts,
             to_ts=to_ts,
             location=location,
+            only_cache=only_cache,
         )
         status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
@@ -761,6 +770,7 @@ class RestAPI():
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             location: Optional[Location],
+            only_cache: bool,
     ) -> Dict[str, Any]:
         msg = ''
         status_code = HTTPStatus.OK
@@ -770,6 +780,7 @@ class RestAPI():
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 location=location,
+                only_cache=only_cache,
             )
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
@@ -801,6 +812,7 @@ class RestAPI():
             to_timestamp: Timestamp,
             location: Optional[Location],
             async_query: bool,
+            only_cache: bool,
     ) -> Response:
         if async_query:
             return self._query_async(
@@ -808,12 +820,14 @@ class RestAPI():
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
                 location=location,
+                only_cache=only_cache,
             )
 
         response = self._get_asset_movements(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
             location=location,
+            only_cache=only_cache,
         )
         result_dict = {'result': response['result'], 'message': response['message']}
         status_code = _get_status_code_from_async_response(response)
