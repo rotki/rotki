@@ -13,7 +13,7 @@
           :label="$t('login.label_username')"
           prepend-icon="mdi-account"
           :rules="usernameRules"
-          :disabled="loading || !!syncConflict.message"
+          :disabled="loading || !!syncConflict.message || customBackendDisplay"
           required
           @keypress.enter="login()"
         />
@@ -21,7 +21,7 @@
         <revealable-input
           v-model="password"
           :rules="passwordRules"
-          :disabled="loading || !!syncConflict.message"
+          :disabled="loading || !!syncConflict.message || customBackendDisplay"
           type="password"
           required
           class="login__fields__password"
@@ -31,11 +31,73 @@
           @keypress.enter="login()"
         />
 
-        <v-checkbox
-          v-model="rememberUser"
-          color="primary"
-          :label="$t('login.remember_me')"
-        />
+        <v-row no-gutters align="center">
+          <v-col>
+            <v-checkbox
+              v-model="rememberUser"
+              :disabled="customBackendDisplay"
+              color="primary"
+              :label="$t('login.remember_me')"
+            />
+          </v-col>
+          <v-col cols="auto">
+            <v-tooltip open-delay="400" top>
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  :color="serverColor"
+                  v-bind="attrs"
+                  v-on="on"
+                  @click="customBackendDisplay = !customBackendDisplay"
+                >
+                  <v-icon>mdi-server</v-icon>
+                </v-btn>
+              </template>
+              <span v-text="$t('login.custom_backend.tooltip')" />
+            </v-tooltip>
+          </v-col>
+        </v-row>
+
+        <transition v-if="customBackendDisplay" name="bounce">
+          <div>
+            <v-divider />
+            <v-row no-gutters class="mt-4" align="center">
+              <v-col>
+                <v-text-field
+                  v-model="customBackendUrl"
+                  prepend-icon="mdi-server"
+                  :rules="customBackendRules"
+                  :disabled="customBackendSaved"
+                  :label="$t('login.custom_backend.label')"
+                  :placeholder="$t('login.custom_backend.placeholder')"
+                  :hint="$t('login.custom_backend.hint')"
+                />
+              </v-col>
+              <v-col cols="auto">
+                <v-btn
+                  v-if="!customBackendSaved"
+                  class="ms-2"
+                  icon
+                  @click="saveCustomBackend()"
+                >
+                  <v-icon>mdi-content-save</v-icon>
+                </v-btn>
+                <v-btn v-else icon @click="clearCustomBackend()">
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </v-col>
+            </v-row>
+            <v-row no-gutters>
+              <v-col>
+                <v-checkbox
+                  v-model="customBackendSessionOnly"
+                  :disabled="customBackendSaved"
+                  :label="$t('login.custom_backend.session_only')"
+                />
+              </v-col>
+            </v-row>
+          </div>
+        </transition>
 
         <transition name="bounce">
           <v-alert
@@ -120,7 +182,9 @@
           class="login__button__sign-in"
           depressed
           color="primary"
-          :disabled="!valid || loading || !!syncConflict.message"
+          :disabled="
+            !valid || loading || !!syncConflict.message || customBackendDisplay
+          "
           :loading="loading"
           @click="login()"
         >
@@ -141,6 +205,11 @@
 </template>
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import {
+  deleteBackendUrl,
+  getBackendUrl,
+  saveBackendUrl
+} from '@/components/account-management/utils';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { SyncConflict } from '@/store/session/types';
 import { Credentials, SyncApproval } from '@/typing/types';
@@ -190,6 +259,16 @@ export default class Login extends Vue {
     return this.syncConflict.payload?.remoteSize ?? '';
   }
 
+  get serverColor(): string | null {
+    if (this.customBackendSessionOnly) {
+      return 'primary';
+    } else if (this.customBackendSaved) {
+      return 'success';
+    }
+
+    return null;
+  }
+
   @Watch('displayed')
   onDisplayChange() {
     this.username = '';
@@ -205,8 +284,20 @@ export default class Login extends Vue {
   username: string = '';
   password: string = '';
   rememberUser: boolean = false;
+  customBackendDisplay: boolean = false;
+  customBackendUrl: string = '';
+  customBackendSessionOnly: boolean = false;
+  customBackendSaved: boolean = false;
 
   valid = false;
+
+  readonly customBackendRules = [
+    (v: string) =>
+      !!v || this.$t('login.custom_backend.validation.non_empty').toString(),
+    (v: string) =>
+      (v && /^(https?:\/\/.*):(\d*)\/?(.*)+$/.test(v)) ||
+      this.$t('login.custom_backend.validation.url')
+  ];
 
   readonly usernameRules = [
     (v: string) => !!v || this.$t('login.validation.non_empty_username'),
@@ -223,9 +314,33 @@ export default class Login extends Vue {
     this.loadSettings();
   }
 
+  private saveCustomBackend() {
+    saveBackendUrl({
+      url: this.customBackendUrl,
+      sessionOnly: this.customBackendSessionOnly
+    });
+    this.backendChanged(this.customBackendUrl);
+    this.customBackendSaved = true;
+    this.customBackendDisplay = false;
+  }
+
+  private clearCustomBackend() {
+    this.customBackendUrl = '';
+    this.customBackendSessionOnly = false;
+    deleteBackendUrl();
+    this.backendChanged(null);
+    this.customBackendSaved = false;
+    this.customBackendDisplay = false;
+  }
+
   private loadSettings() {
     this.rememberUser = !!localStorage.getItem(KEY_REMEMBER);
     this.username = localStorage.getItem(KEY_USERNAME) ?? '';
+
+    const { sessionOnly, url } = getBackendUrl();
+    this.customBackendUrl = url;
+    this.customBackendSessionOnly = sessionOnly;
+    this.customBackendSaved = !!url;
   }
 
   @Watch('rememberUser')
@@ -259,6 +374,9 @@ export default class Login extends Vue {
 
   @Emit()
   touched() {}
+
+  @Emit()
+  backendChanged(_url: string | null) {}
 }
 </script>
 
