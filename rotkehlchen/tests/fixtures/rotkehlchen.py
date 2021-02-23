@@ -169,7 +169,7 @@ def initialize_mock_rotkehlchen_instance(
         substrate_manager=rotki.chain_manager.kusama,
     )
 
-    aave = rotki.chain_manager.aave
+    aave = rotki.chain_manager.get_module('aave')
     if aave:
         aave.use_graph = aave_use_graph
 

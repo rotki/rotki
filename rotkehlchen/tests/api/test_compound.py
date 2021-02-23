@@ -8,7 +8,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.compound import A_COMP, CompoundEvent
+from rotkehlchen.chain.ethereum.modules.compound import A_COMP, CompoundEvent
 from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address

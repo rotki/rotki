@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Dict, Optional
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.constants.ethereum import MAKERDAO_PROXY_REGISTRY
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
@@ -12,6 +11,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 MAKERDAO_REQUERY_PERIOD = 7200  # Refresh queries every 2 hours
 
@@ -23,13 +23,13 @@ RAD_DIGITS = 45
 RAD = 10**RAD_DIGITS
 
 
-class MakerDAOCommon(EthereumModule):
-    """Class to manage MakerDAO related stuff such as DSR and CDPs/Vaults"""
+class MakerdaoCommon(EthereumModule):
+    """Class to manage MakerDao related stuff such as DSR and CDPs/Vaults"""
 
     def __init__(
             self,
             ethereum_manager: 'EthereumManager',
-            database: DBHandler,
+            database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
@@ -101,3 +101,6 @@ class MakerDAOCommon(EthereumModule):
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         self.reset_last_query_ts()
+
+    def deactivate(self) -> None:
+        pass

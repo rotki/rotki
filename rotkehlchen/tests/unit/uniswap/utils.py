@@ -3,7 +3,7 @@ import functools
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
-from rotkehlchen.chain.ethereum.uniswap.typing import (
+from rotkehlchen.chain.ethereum.modules.uniswap.typing import (
     EventType,
     LiquidityPool,
     LiquidityPoolAsset,

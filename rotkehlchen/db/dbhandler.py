@@ -21,7 +21,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
-from rotkehlchen.chain.ethereum.adex import (
+from rotkehlchen.chain.ethereum.modules.adex import (
     ADEX_EVENTS_PREFIX,
     AdexEventType,
     Bond,
@@ -38,7 +38,7 @@ from rotkehlchen.chain.ethereum.structures import (
     aave_event_from_db,
 )
 from rotkehlchen.chain.ethereum.trades import AMMSwap
-from rotkehlchen.chain.ethereum.uniswap import (
+from rotkehlchen.chain.ethereum.modules.uniswap import (
     UNISWAP_EVENTS_PREFIX,
     UNISWAP_TRADES_PREFIX,
     UniswapPoolEvent,

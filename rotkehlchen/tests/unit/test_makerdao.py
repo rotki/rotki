@@ -4,11 +4,11 @@ import pytest
 from web3 import Web3
 
 from rotkehlchen.accounting.structures import Balance, BalanceSheet
-from rotkehlchen.chain.ethereum.makerdao.vaults import (
+from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     COLLATERAL_TYPE_MAPPING,
     GEMJOIN_MAPPING,
-    MakerDAOVault,
-    MakerDAOVaults,
+    MakerdaoVault,
+    MakerdaoVaults,
 )
 from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -19,10 +19,10 @@ from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.makerdao import VaultTestData, create_web3_mock
 
 
-def assert_vaults_equal(a: MakerDAOVault, b: MakerDAOVault) -> None:
+def assert_vaults_equal(a: MakerdaoVault, b: MakerdaoVault) -> None:
     attrs = [
-        x for x in MakerDAOVault.__dict__ if
-        not x.startswith('_') and not callable(getattr(MakerDAOVault, x))
+        x for x in MakerdaoVault.__dict__ if
+        not x.startswith('_') and not callable(getattr(MakerdaoVault, x))
     ]
     for attr in attrs:
         vala = getattr(a, attr)
@@ -45,7 +45,7 @@ def fixture_makerdao_test_data(
         inquirer,  # pylint: disable=unused-argument
 ) -> VaultTestData:
     user_address = ethereum_accounts[1]
-    vault0 = MakerDAOVault(
+    vault0 = MakerdaoVault(
         identifier=1,
         owner=user_address,
         urn=make_ethereum_address(),
@@ -58,7 +58,7 @@ def fixture_makerdao_test_data(
         liquidation_price=FVal('307.3064516129032258064516129'),
         stability_fee=ZERO,
     )
-    vault1 = MakerDAOVault(
+    vault1 = MakerdaoVault(
         identifier=2,
         owner=user_address,
         urn=make_ethereum_address(),
@@ -100,7 +100,7 @@ def fixture_makerdao_vaults(
 
     web3_patch = create_web3_mock(web3=ethereum_manager.web3, test_data=makerdao_test_data)
     with web3_patch:
-        makerdao_vaults = MakerDAOVaults(
+        makerdao_vaults = MakerdaoVaults(
             ethereum_manager=ethereum_manager,
             database=database,
             premium=premium,
@@ -129,7 +129,7 @@ def test_get_vault_balance(
 ):
     debt_value = FVal('2000')
     owner = make_ethereum_address()
-    vault = MakerDAOVault(
+    vault = MakerdaoVault(
         identifier=1,
         collateral_type='ETH-A',
         collateral_asset=A_ETH,

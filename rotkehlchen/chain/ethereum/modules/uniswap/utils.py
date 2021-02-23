@@ -138,7 +138,7 @@ def get_latest_lp_addresses(data_directory: Path) -> List[ChecksumEthAddress]:
     TODO: This is very similar to assets/resolver.py::_get_latest_assets
     Perhaps try to abstract it away?
     """
-    root_dir = Path(__file__).resolve().parent.parent.parent.parent
+    root_dir = Path(__file__).resolve().parent.parent.parent.parent.parent
     our_downloaded_meta = data_directory / 'assets' / 'uniswapv2_lp_tokens.meta'
     our_builtin_meta = root_dir / 'data' / 'uniswapv2_lp_tokens.meta'
     try:

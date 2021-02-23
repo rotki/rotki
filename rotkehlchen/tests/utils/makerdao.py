@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 from web3 import Web3
 
-from rotkehlchen.chain.ethereum.makerdao.common import RAY, WAD
-from rotkehlchen.chain.ethereum.makerdao.vaults import MakerDAOVault
+from rotkehlchen.chain.ethereum.modules.makerdao.common import RAY, WAD
+from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_GET_CDPS,
     MAKERDAO_JUG,
@@ -19,7 +19,7 @@ from rotkehlchen.typing import ChecksumEthAddress
 
 
 class VaultTestData(NamedTuple):
-    vaults: List[MakerDAOVault]
+    vaults: List[MakerdaoVault]
     proxy_mappings: Dict[ChecksumEthAddress, ChecksumEthAddress]
     mock_contracts: List[str]
 
@@ -153,6 +153,6 @@ def mock_proxies(
     def mock_get_proxies() -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
         return mapping
 
-    module = getattr(rotki.chain_manager, given_module)
+    module = rotki.chain_manager.get_module(given_module)
     assert module, f'module {module} not found in chain manager'
     module._get_accounts_having_maker_proxy = mock_get_proxies

@@ -661,7 +661,7 @@ class Rotkehlchen():
 
             # for all trades we also need uniswap trades
             if self.premium is not None:
-                uniswap = self.chain_manager.uniswap
+                uniswap = self.chain_manager.get_module('uniswap')
                 if uniswap is not None:
                     trades.extend(
                         uniswap.get_trades(
@@ -693,7 +693,7 @@ class Rotkehlchen():
             )
         elif location == Location.UNISWAP:
             if self.premium is not None:
-                uniswap = self.chain_manager.uniswap
+                uniswap = self.chain_manager.get_module('uniswap')
                 if uniswap is not None:
                     location_trades = uniswap.get_trades(  # type: ignore  # list invariance
                         addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
@@ -957,6 +957,8 @@ class Rotkehlchen():
 
             if settings.historical_price_oracles is not None:
                 PriceHistorian().set_oracles_order(settings.historical_price_oracles)
+            if settings.active_modules is not None:
+                self.chain_manager.process_new_modules_list(settings.active_modules)
 
             self.data.db.set_settings(settings)
             return True, ''

@@ -1,7 +1,6 @@
 import logging
 from collections import defaultdict
 from datetime import datetime, time
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from eth_utils import to_checksum_address
@@ -104,13 +103,12 @@ class Uniswap(EthereumModule):
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
-            data_directory: Path,
     ) -> None:
         self.ethereum = ethereum_manager
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
-        self.data_directory = data_directory
+        self.data_directory = database.user_data_dir.parent
         self.trades_lock = Semaphore()
         try:
             self.graph: Optional[Graph] = Graph(
@@ -1032,3 +1030,7 @@ class Uniswap(EthereumModule):
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         pass
+
+    def deactivate(self) -> None:
+        self.database.delete_uniswap_trades_data()
+        self.database.delete_uniswap_events_data()

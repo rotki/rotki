@@ -7,7 +7,7 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
-from rotkehlchen.chain.ethereum.makerdao.common import RAY
+from rotkehlchen.chain.ethereum.modules.makerdao.common import RAY
 from rotkehlchen.chain.ethereum.structures import (
     AaveBorrowEvent,
     AaveLiquidationEvent,
@@ -16,7 +16,6 @@ from rotkehlchen.chain.ethereum.structures import (
 )
 from rotkehlchen.constants.ethereum import AAVE_LENDING_POOL
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
@@ -38,6 +37,7 @@ log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def _atoken_to_reserve_asset(atoken: EthereumToken) -> Asset:
@@ -56,7 +56,7 @@ class Aave(EthereumModule):
     def __init__(
             self,
             ethereum_manager: 'EthereumManager',
-            database: DBHandler,
+            database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
             use_graph: bool = True,  # by default use graph
@@ -308,3 +308,6 @@ class Aave(EthereumModule):
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         pass
+
+    def deactivate(self) -> None:
+        self.database.delete_aave_data()

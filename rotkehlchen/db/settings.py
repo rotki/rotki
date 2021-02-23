@@ -1,7 +1,6 @@
 import json
 from typing import Any, Dict, List, NamedTuple, Optional, Union
 
-from rotkehlchen.serialization.deserialize import deserialize_ledger_action_type
 from rotkehlchen.accounting.structures import LedgerActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
@@ -14,7 +13,8 @@ from rotkehlchen.history.typing import (
     HistoricalPriceOracle,
 )
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
-from rotkehlchen.typing import AVAILABLE_MODULES_MAP, Timestamp
+from rotkehlchen.serialization.deserialize import deserialize_ledger_action_type
+from rotkehlchen.typing import AVAILABLE_MODULES_MAP, ModuleName, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 ROTKEHLCHEN_DB_VERSION = 24
@@ -91,7 +91,7 @@ class DBSettings(NamedTuple):
     last_balance_save: Timestamp = Timestamp(0)
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
     kraken_account_type: KrakenAccountType = DEFAULT_KRAKEN_ACCOUNT_TYPE
-    active_modules: List[str] = DEFAULT_ACTIVE_MODULES
+    active_modules: List[ModuleName] = DEFAULT_ACTIVE_MODULES  # type: ignore
     frontend_settings: str = ''
     account_for_assets_movements: bool = DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS
     btc_derivation_gap_limit: int = DEFAULT_BTC_DERIVATION_GAP_LIMIT
@@ -116,7 +116,7 @@ class ModifiableDBSettings(NamedTuple):
     date_display_format: Optional[str] = None
     submit_usage_analytics: Optional[bool] = None
     kraken_account_type: Optional[KrakenAccountType] = None
-    active_modules: Optional[List[str]] = None
+    active_modules: Optional[List[ModuleName]] = None
     frontend_settings: Optional[str] = None
     account_for_assets_movements: Optional[bool] = None
     btc_derivation_gap_limit: Optional[int] = None

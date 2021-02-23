@@ -1,4 +1,7 @@
-from rotkehlchen.chain.ethereum.aave.common import AAVE_RESERVE_TO_ASSET, ATOKEN_TO_DEPLOYED_BLOCK
+from rotkehlchen.chain.ethereum.modules.aave.common import (
+    AAVE_RESERVE_TO_ASSET,
+    ATOKEN_TO_DEPLOYED_BLOCK,
+)
 from rotkehlchen.constants.ethereum import AAVE_ETH_RESERVE_ADDRESS
 
 

@@ -1,7 +1,7 @@
 import logging
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, overload
 from urllib.parse import urlencode
 
 import requests
@@ -24,7 +24,6 @@ from rotkehlchen.constants.assets import (
     A_YFI,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -33,6 +32,12 @@ from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.serialization import rlk_jsonloads
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
+
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +164,13 @@ class LoopringAPIKeyMismatch(Exception):
 
 class Loopring(ExternalServiceWithApiKey, EthereumModule):
 
-    def __init__(self, database: DBHandler, msg_aggregator: MessagesAggregator) -> None:
+    def __init__(
+            self,
+            database: 'DBHandler',
+            msg_aggregator: MessagesAggregator,
+            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
+            premium: Optional['Premium'],  # pylint: disable=unused-argument
+    ) -> None:
         super().__init__(database=database, service_name=ExternalService.LOOPRING)
         api_key = self._get_api_key()
         self.msg_aggregator = msg_aggregator
@@ -369,3 +380,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         pass
+
+    def deactivate(self) -> None:
+        assert self.db, 'loopring must have DB initialized'
+        self.db.delete_loopring_data()

@@ -8,7 +8,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.makerdao.vaults import MakerDAOVault
+from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -442,7 +442,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     ))
     # That proxy has 3 vaults. We only want to test 8913, which is closed/repaid so just keep that
     vaults = [x for x in assert_proper_response_with_result(response) if x['identifier'] == 8913]
-    vault_8913 = MakerDAOVault(
+    vault_8913 = MakerdaoVault(
         identifier=8913,
         owner=ethereum_accounts[0],
         collateral_type='WBTC-A',
@@ -458,7 +458,8 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     expected_vaults = [vault_8913.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults, ignore_keys=['stability_fee'])
     # And also make sure that the internal mapping will only query details of 8913
-    rotki.chain_manager.makerdao_vaults.vault_mappings = {ethereum_accounts[0]: [vault_8913]}
+    makerdao_vaults = rotki.chain_manager.get_module('makerdao_vaults')
+    makerdao_vaults.vault_mappings = {ethereum_accounts[0]: [vault_8913]}
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -535,7 +536,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
         "makerdaovaultsresource",
     ))
     vaults = assert_proper_response_with_result(response)
-    vault_7588 = MakerDAOVault(
+    vault_7588 = MakerdaoVault(
         identifier=7588,
         owner=ethereum_accounts[0],
         collateral_type='USDC-A',
@@ -818,7 +819,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
     ))
     # That proxy has 3 vaults. We only want to test 7538, which is closed/repaid so just keep that
     vaults = [x for x in assert_proper_response_with_result(response) if x['identifier'] == 7538]
-    vault_7538 = MakerDAOVault(
+    vault_7538 = MakerdaoVault(
         identifier=7538,
         owner=ethereum_accounts[0],
         collateral_type='USDC-A',
@@ -833,7 +834,8 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
     expected_vaults = [vault_7538.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults)
     # And also make sure that the internal mapping will only query details of 7538
-    rotki.chain_manager.makerdao_vaults.vault_mappings = {ethereum_accounts[0]: [vault_7538]}
+    makerdao_vaults = rotki.chain_manager.get_module('makerdao_vaults')
+    makerdao_vaults.vault_mappings = {ethereum_accounts[0]: [vault_7538]}
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,

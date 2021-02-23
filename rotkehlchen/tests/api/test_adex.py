@@ -7,7 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.adex.typing import Bond, ChannelWithdraw, Unbond
+from rotkehlchen.chain.ethereum.modules.adex.typing import Bond, ChannelWithdraw, Unbond
 from rotkehlchen.constants.assets import A_ADX
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
@@ -60,7 +60,8 @@ def test_get_balances_premium(
     if start_with_valid_premium:
         premium = Premium(rotki_premium_credentials)
 
-    rotki.chain_manager.adex.premium = premium
+    adex = rotki.chain_manager.get_module('adex')
+    adex.premium = premium
 
     setup = setup_balances(
         rotki,
@@ -118,7 +119,8 @@ def test_get_events(
     if start_with_valid_premium:
         premium = Premium(rotki_premium_credentials)
 
-    rotki.chain_manager.adex.premium = premium
+    adex = rotki.chain_manager.get_module('adex')
+    adex.premium = premium
 
     setup = setup_balances(
         rotki,

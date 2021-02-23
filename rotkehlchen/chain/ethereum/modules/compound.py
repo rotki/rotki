@@ -2,7 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
-from eth_utils import to_checksum_address
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import (
@@ -18,7 +17,6 @@ from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, EthereumConstants
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
@@ -31,6 +29,7 @@ from rotkehlchen.utils.misc import hexstr_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 ADDRESS_TO_ASSETS = Dict[ChecksumEthAddress, Dict[Asset, Balance]]
 BLOCKS_PER_DAY = 4 * 60 * 24
@@ -129,7 +128,7 @@ class Compound(EthereumModule):
     def __init__(
             self,
             ethereum_manager: 'EthereumManager',
-            database: DBHandler,
+            database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ):
@@ -148,11 +147,6 @@ class Compound(EthereumModule):
                 f' All compound historical queries are not functioning until this is fixed. '
                 f'Probably will get fixed with time. If not report it to Rotkis support channel ',
             )
-
-        self.comptroller_address = to_checksum_address(COMPTROLLER_PROXY.call(
-            ethereum=self.ethereum,
-            method_name='comptrollerImplementation',
-        ))
 
     def _get_apy(self, address: ChecksumEthAddress, supply: bool) -> Optional[FVal]:
         method_name = 'supplyRatePerBlock' if supply else 'borrowRatePerBlock'
@@ -783,4 +777,7 @@ class Compound(EthereumModule):
         pass
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
+        pass
+
+    def deactivate(self) -> None:
         pass

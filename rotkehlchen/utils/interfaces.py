@@ -136,3 +136,8 @@ class EthereumModule(metaclass=ABCMeta):
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         """Actions to run on removal of an ethereum account"""
         ...
+
+    @abstractmethod
+    def deactivate(self) -> None:
+        """Actions to run on module's deactivation"""
+        ...

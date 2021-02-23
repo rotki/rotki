@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.chain.ethereum.uniswap.typing import ProtocolBalance
+from rotkehlchen.chain.ethereum.modules.uniswap.typing import ProtocolBalance
 
 from .utils import (
     EXP_KNOWN_ASSETS_1,
