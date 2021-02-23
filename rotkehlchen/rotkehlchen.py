@@ -657,7 +657,11 @@ class Rotkehlchen():
                 only_cache=only_cache,
             ))
             for name, exchange in self.exchange_manager.connected_exchanges.items():
-                exchange_trades = exchange.query_trade_history(start_ts=from_ts, end_ts=to_ts)
+                exchange_trades = exchange.query_trade_history(
+                    start_ts=from_ts,
+                    end_ts=to_ts,
+                    only_cache=only_cache,
+                )
                 if self.premium is None:
                     trades = self._apply_actions_limit(
                         location=deserialize_location(name),
