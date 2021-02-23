@@ -17,6 +17,7 @@ log = logging.getLogger(__name__)
 
 
 GRAPH_QUERY_LIMIT = 1000
+GRAPH_QUERY_SKIP_LIMIT = 5000
 RE_MULTIPLE_WHITESPACE = re.compile(r'\s+')
 RETRY_BACKOFF_FACTOR = 0.2
 

@@ -2,36 +2,48 @@ import datetime
 import logging
 import time
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, List, Optional, Set
 
-from eth_utils import to_checksum_address
 from gevent.lock import Semaphore
+from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
-from rotkehlchen.assets.utils import get_ethereum_token
-from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
+from rotkehlchen.chain.ethereum.graph import (
+    GRAPH_QUERY_LIMIT,
+    GRAPH_QUERY_SKIP_LIMIT,
+    Graph,
+    format_query_indentation,
+)
 from rotkehlchen.chain.ethereum.modules.uniswap.graph import TOKEN_DAY_DATAS_QUERY
+from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_price
-from rotkehlchen.typing import ChecksumEthAddress, Price
+from rotkehlchen.typing import ChecksumEthAddress, Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
-from .graph import POOLSHARES_QUERY, TOKENPRICES_QUERY
+from .graph import POOLSHARES_QUERY, SWAPS_QUERY, TOKENPRICES_QUERY
 from .typing import (
+    BALANCER_TRADES_PREFIX,
     AddressBalances,
-    BalancerPool,
-    BalancerPoolToken,
+    AddressSwaps,
+    AddressTrades,
     DDAddressBalances,
+    DDAddressSwaps,
     ProtocolBalance,
     TokenPrices,
+)
+from .utils import (
+    deserialize_pool_share,
+    deserialize_swap,
+    deserialize_token_day_data,
+    deserialize_token_price,
+    get_trades_from_tx_swaps,
 )
 
 if TYPE_CHECKING:
@@ -40,6 +52,13 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+SUBGRAPH_REMOTE_ERROR_MSG = (
+    "Failed to request the Balancer subgraph due to {error_msg}. "
+    "All Balancer balances and historical queries are not functioning until this is fixed. "  # noqa: E501
+    "Probably will get fixed with time. If not report it to rotki's support channel"  # noqa: E501
+)
 
 
 class Balancer(EthereumModule):
@@ -84,112 +103,26 @@ class Balancer(EthereumModule):
                 f"Probably will get fixed with time. If not report it to rotki's support channel",
             )
 
-    @staticmethod
-    def _deserialize_pool_share(
-            raw_pool_share: Dict[str, Any],
-    ) -> Tuple[ChecksumEthAddress, BalancerPool]:
-        """May raise DeserializationError"""
-        try:
-            user_address = raw_pool_share['userAddress']['id']
-            user_amount = deserialize_asset_amount(raw_pool_share['balance'])
-            raw_pool = raw_pool_share['poolId']
-            total_amount = deserialize_asset_amount(raw_pool['totalShares'])
-            address = raw_pool['id']
-            raw_tokens = raw_pool['tokens']
-            total_weight = deserialize_asset_amount(raw_pool['totalWeight'])
-        except KeyError as e:
-            raise DeserializationError(f'Missing key: {str(e)}.') from e
-
-        try:
-            user_address = to_checksum_address(user_address)
-            address = to_checksum_address(address)
-        except ValueError as e:
-            raise DeserializationError(
-                f'Invalid ethereum address: {address} in pool.',  # noqa: E501
-            ) from e
-
-        pool_tokens = []
-        for raw_token in raw_tokens:
-            try:
-                token_address = raw_token['address']
-                token_symbol = raw_token['symbol']
-                token_name = raw_token['name']
-                token_decimals = raw_token['decimals']
-                token_total_amount = deserialize_asset_amount(raw_token['balance'])
-                token_weight = deserialize_asset_amount(raw_token['denormWeight'])
-            except KeyError as e:
-                raise DeserializationError(f'Missing key: {str(e)}.') from e
-
-            try:
-                token_address = to_checksum_address(token_address)
-            except ValueError as e:
-                raise DeserializationError(
-                    f'Invalid ethereum address: {token_address} in pool token: {token_symbol}.',  # noqa: E501
-                ) from e
-
-            token = get_ethereum_token(
-                symbol=token_symbol,
-                ethereum_address=token_address,
-                name=token_name,
-                decimals=token_decimals,
+    def _fetch_trades_from_db(
+            self,
+            addresses: List[ChecksumEthAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> AddressTrades:
+        """Fetch all DB Balancer swaps within the time range and format as trades"""
+        db_address_trades: AddressTrades = {}
+        for address in addresses:
+            db_swaps = self.database.get_amm_swaps(
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+                location=Location.BALANCER,
+                address=address,
             )
-            token_user_amount = user_amount / total_amount * token_total_amount
-            weight = token_weight * 100 / total_weight
-            pool_token = BalancerPoolToken(
-                token=token,
-                total_amount=token_total_amount,
-                user_balance=Balance(amount=token_user_amount),
-                weight=weight,
-            )
-            pool_tokens.append(pool_token)
+            if db_swaps:
+                db_trades = self._get_trades_from_swaps(db_swaps)
+                db_address_trades[address] = db_trades
 
-        pool = BalancerPool(
-            address=address,
-            tokens=pool_tokens,
-            total_amount=total_amount,
-            user_balance=Balance(amount=user_amount),
-        )
-        return user_address, pool
-
-    @staticmethod
-    def _deserialize_token_price(
-            raw_token_price: Dict[str, Any],
-    ) -> Tuple[ChecksumEthAddress, Price]:
-        """May raise DeserializationError"""
-        try:
-            token_address = raw_token_price['id']
-            usd_price = deserialize_price(raw_token_price['price'])
-        except KeyError as e:
-            raise DeserializationError(f'Missing key: {str(e)}.') from e
-
-        try:
-            token_address = to_checksum_address(token_address)
-        except ValueError as e:
-            raise DeserializationError(
-                f'Invalid ethereum address: {token_address} in token price.',
-            ) from e
-
-        return token_address, usd_price
-
-    @staticmethod
-    def _deserialize_token_day_data(
-            raw_token_day_data: Dict[str, Any],
-    ) -> Tuple[ChecksumEthAddress, Price]:
-        """May raise DeserializationError"""
-        try:
-            token_address = raw_token_day_data['token']['id']
-            usd_price = deserialize_price(raw_token_day_data['priceUSD'])
-        except KeyError as e:
-            raise DeserializationError(f'Missing key: {str(e)}.') from e
-
-        try:
-            token_address = to_checksum_address(token_address)
-        except ValueError as e:
-            raise DeserializationError(
-                f'Invalid ethereum address: {token_address} in token day data.',
-            ) from e
-
-        return token_address, usd_price
+        return db_address_trades
 
     def _get_balances_graph(
             self,
@@ -224,11 +157,7 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f"Failed to request the Balancer subgraph due to {str(e)}. "
-                    f"All Balancer balances and historical queries are not functioning until this is fixed. "  # noqa: E501
-                    f"Probably will get fixed with time. If not report it to rotki's support channel",  # noqa: E501
-                )
+                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
                 raise
 
             try:
@@ -244,7 +173,7 @@ class Balancer(EthereumModule):
 
             for raw_pool_share in raw_pool_shares:
                 try:
-                    address, balancer_pool = self._deserialize_pool_share(raw_pool_share)
+                    address, balancer_pool = deserialize_pool_share(raw_pool_share)
                     for pool_token in balancer_pool.tokens:
                         if isinstance(pool_token.token, EthereumToken):
                             known_tokens.add(pool_token.token)
@@ -292,6 +221,192 @@ class Balancer(EthereumModule):
 
             token_prices[token.ethereum_address] = usd_price
         return token_prices
+
+    def _get_trades(
+            self,
+            addresses: List[ChecksumEthAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            only_cache: bool,
+    ) -> AddressTrades:
+        """Given a list of addresses returns all their trades
+        (1 AMMTrade has N AMMSwap) within the given time range. Requests all the
+        swaps of the new addresses via subgraph. Requests all the new swaps
+        (since last used query range) of the existing addresses via subgraph.
+
+        May raise RemoteError
+        """
+        address_swaps: AddressSwaps = {}
+        new_addresses: List[ChecksumEthAddress] = []
+        existing_addresses: List[ChecksumEthAddress] = []
+        min_end_ts: Timestamp = to_timestamp
+
+        if only_cache:
+            return self._fetch_trades_from_db(
+                addresses=addresses,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        # Get addresses' last used query range for Balancer trades
+        for address in addresses:
+            entry_name = f'{BALANCER_TRADES_PREFIX}_{address}'
+            trades_range = self.database.get_used_query_range(name=entry_name)
+
+            if not trades_range:
+                new_addresses.append(address)
+            else:
+                existing_addresses.append(address)
+                min_end_ts = min(min_end_ts, trades_range[1])
+
+        # Request new addresses' trades
+        if new_addresses:
+            start_ts = Timestamp(0)
+            new_address_swaps = self._get_swaps_graph(
+                addresses=new_addresses,
+                start_ts=start_ts,
+                end_ts=to_timestamp,
+            )
+            address_swaps.update(new_address_swaps)
+            self._update_used_query_range(
+                addresses=new_addresses,
+                prefix='balancer_trades',
+                start_ts=start_ts,
+                end_ts=to_timestamp,
+            )
+
+        # Request existing DB addresses' trades
+        if existing_addresses and to_timestamp > min_end_ts:
+            address_new_swaps = self._get_swaps_graph(
+                addresses=existing_addresses,
+                start_ts=min_end_ts,
+                end_ts=to_timestamp,
+            )
+            address_swaps.update(address_new_swaps)
+            self._update_used_query_range(
+                addresses=existing_addresses,
+                prefix='balancer_trades',
+                start_ts=min_end_ts,
+                end_ts=to_timestamp,
+            )
+
+        # Insert all unique swaps to the DB
+        if address_swaps:
+            all_swaps = {swap for a_swaps in address_swaps.values() for swap in a_swaps}
+            self.database.add_amm_swaps(list(all_swaps))
+
+        # Fetch all DB Balancer swaps within the time range and format as trades
+        db_address_trades = self._fetch_trades_from_db(
+            addresses=addresses,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+        return db_address_trades
+
+    def _get_swaps_graph(
+            self,
+            addresses: List[ChecksumEthAddress],
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> AddressSwaps:
+        """Get the swaps of the addresses for the given time range
+
+        May raise RemoteError
+        """
+        addresses_lower = [address.lower() for address in addresses]
+        querystr = format_query_indentation(SWAPS_QUERY.format())
+        param_types = {
+            '$limit': 'Int!',
+            '$offset': 'Int!',
+            '$addresses': '[ID!]',
+            '$start_ts': 'Int!',
+            '$end_ts': 'Int!',
+        }
+        param_values = {
+            'limit': GRAPH_QUERY_LIMIT,
+            'offset': 0,
+            'addresses': addresses_lower,
+            'start_ts': start_ts,
+            'end_ts': end_ts,
+        }
+        address_swaps: DDAddressSwaps = defaultdict(list)
+        while True:
+            try:
+                result = self.graph.query(  # type: ignore # caller already checks
+                    querystr=querystr,
+                    param_types=param_types,
+                    param_values=param_values,
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                raise
+
+            try:
+                raw_swaps = result['swaps']
+            except KeyError as e:
+                log.error(
+                    'Failed to deserialize balancer swaps',
+                    error='Missing key: swaps',
+                    result=result,
+                    param_values=param_values,
+                )
+                raise RemoteError('Failed to deserialize balancer trades') from e
+
+            for raw_swap in raw_swaps:
+                try:
+                    amm_swap = deserialize_swap(raw_swap)
+                except DeserializationError as e:
+                    log.error(
+                        'Failed to deserialize a balancer swap',
+                        error=str(e),
+                        raw_swap=raw_swap,
+                        start_ts=start_ts,  # initial value
+                        end_ts=end_ts,  # initial value
+                        param_values=param_values,
+                    )
+                    raise RemoteError('Failed to deserialize balancer trades') from e
+
+                address_swaps[amm_swap.address].append(amm_swap)
+
+            if len(raw_swaps) < GRAPH_QUERY_LIMIT:
+                break
+
+            if param_values['offset'] == GRAPH_QUERY_SKIP_LIMIT:
+                query_start_ts = amm_swap.timestamp
+                query_offset = 0
+            else:
+                query_start_ts = param_values['start_ts']  # type: ignore
+                query_offset = param_values['offset'] + GRAPH_QUERY_LIMIT  # type: ignore
+
+            param_values = {
+                **param_values,
+                'start_ts': query_start_ts,
+                'offset': query_offset,
+            }
+
+        return address_swaps
+
+    @staticmethod
+    def _get_trades_from_swaps(swaps: List[AMMSwap]) -> List[AMMTrade]:
+        if len(swaps) == 0:
+            raise AssertionError("Swaps can't be an empty list")
+
+        swaps.sort(key=lambda swap: (swap.timestamp, -swap.log_index), reverse=True)
+        current_swaps: List[AMMSwap] = []
+        trades: List[AMMTrade] = []
+        last_tx_hash = swaps[0].tx_hash
+        for swap in swaps:
+            if swap.tx_hash != last_tx_hash:
+                trades.extend(get_trades_from_tx_swaps(current_swaps, is_close_amount_mode=True))
+                last_tx_hash = swap.tx_hash
+                current_swaps = []
+
+            current_swaps.append(swap)
+
+        if len(current_swaps) != 0:
+            trades.extend(get_trades_from_tx_swaps(current_swaps, is_close_amount_mode=True))
+
+        return trades
 
     def _get_unknown_token_prices_graph(
             self,
@@ -357,11 +472,7 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f"Failed to request the Balancer subgraph due to {str(e)}. "
-                    f"All Balancer balances and historical queries are not functioning until this is fixed. "  # noqa: E501
-                    f"Probably will get fixed with time. If not report it to rotki's support channel",  # noqa: E501
-                )
+                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
                 raise
 
             try:
@@ -377,7 +488,7 @@ class Balancer(EthereumModule):
 
             for raw_token_price in raw_token_prices:
                 try:
-                    token_address, usd_price = self._deserialize_token_price(raw_token_price)
+                    token_address, usd_price = deserialize_token_price(raw_token_price)
                 except DeserializationError as e:
                     log.error(
                         'Failed to deserialize a balancer unknown token price',
@@ -409,7 +520,7 @@ class Balancer(EthereumModule):
         """
         unknown_token_addresses_lower = [address.lower() for address in unknown_token_addresses]
         querystr = format_query_indentation(TOKEN_DAY_DATAS_QUERY.format())
-        today_epoch = int(
+        midnight_epoch = int(
             datetime.datetime.combine(
                 datetime.datetime.fromtimestamp(time.time()),
                 datetime.time.min,
@@ -425,7 +536,7 @@ class Balancer(EthereumModule):
             'limit': GRAPH_QUERY_LIMIT,
             'offset': 0,
             'token_ids': unknown_token_addresses_lower,
-            'datetime': today_epoch,
+            'datetime': midnight_epoch,
         }
         token_prices: TokenPrices = {}
         while True:
@@ -457,7 +568,7 @@ class Balancer(EthereumModule):
 
             for raw_token_day_data in raw_token_day_datas:
                 try:
-                    token_address, usd_price = self._deserialize_token_day_data(raw_token_day_data)
+                    token_address, usd_price = deserialize_token_day_data(raw_token_day_data)
                 except DeserializationError as e:
                     log.error(
                         'Failed to deserialize a balancer unknown token day data',
@@ -478,6 +589,21 @@ class Balancer(EthereumModule):
             }
 
         return token_prices
+
+    def _update_used_query_range(
+            self,
+            addresses: List[ChecksumEthAddress],
+            prefix: Literal['balancer_trades'],
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> None:
+        for address in addresses:
+            entry_name = f'{prefix}_{address}'
+            self.database.update_used_query_range(
+                name=entry_name,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            )
 
     @staticmethod
     def _update_tokens_prices_in_address_balances(
@@ -529,6 +655,53 @@ class Balancer(EthereumModule):
         )
         return protocol_balance.address_balances
 
+    def get_trades(
+            self,
+            addresses: List[ChecksumEthAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            only_cache: bool,
+    ) -> List[AMMTrade]:
+        with self.trades_lock:
+            all_trades = []
+            trade_mapping = self._get_trades(
+                addresses=addresses,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                only_cache=only_cache,
+            )
+            for _, trades in trade_mapping.items():
+                all_trades.extend(trades)
+
+            return all_trades
+
+    def get_trades_history(
+        self,
+        addresses: List[ChecksumEthAddress],
+        reset_db_data: bool,
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> AddressTrades:
+        """Get the trades history of the addresses
+
+        May raise RemoteError
+        """
+        if self.graph is None:  # could not initialize graph
+            return {}
+
+        with self.trades_lock:
+            if reset_db_data is True:
+                self.database.delete_balancer_trades_data()
+
+            address_trades = self._get_trades(
+                addresses=addresses,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                only_cache=False,
+            )
+
+        return address_trades
+
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
         pass
@@ -540,4 +713,4 @@ class Balancer(EthereumModule):
         pass
 
     def deactivate(self) -> None:
-        pass
+        self.database.delete_balancer_trades_data()

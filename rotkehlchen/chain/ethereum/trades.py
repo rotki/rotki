@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, NamedTuple, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UNKNOWN_TOKEN_KEYS, UnknownEthereumToken
@@ -24,7 +24,7 @@ from rotkehlchen.typing import (
 )
 
 # Quick lookup for AMMTrade locations
-AMMTradeLocations = {Location.UNISWAP}
+AMMTradeLocations = {Location.BALANCER, Location.UNISWAP}
 AMMSwapDBTuple = (
     Tuple[
         str,  # tx_hash
@@ -37,13 +37,13 @@ AMMSwapDBTuple = (
         int,  # is_token0_unknown
         str,  # token0_address
         str,  # token0_symbol
-        str,  # token0_name
-        int,  # token0_decimals
+        Optional[str],  # token0_name
+        Optional[int],  # token0_decimals
         int,  # is_token1_unknown
         str,  # token1_address
         str,  # token1_symbol
-        str,  # token1_name
-        int,  # token1_decimals
+        Optional[str],  # token1_name
+        Optional[int],  # token1_decimals
         str,  # amount0_in
         str,  # amount1_in
         str,  # amount0_out
@@ -201,19 +201,19 @@ class AMMSwap(NamedTuple):
             is_token0_unknown,
             str(self.token0.ethereum_address),
             str(self.token0.symbol),
-            str(self.token0.name),
+            self.token0.name,
             self.token0.decimals,
             is_token1_unknown,
             str(self.token1.ethereum_address),
             str(self.token1.symbol),
-            str(self.token1.name),
+            self.token1.name,
             self.token1.decimals,
             str(self.amount0_in),
             str(self.amount1_in),
             str(self.amount0_out),
             str(self.amount1_out),
         )
-        return db_tuple  # type: ignore
+        return db_tuple
 
 
 class AMMTrade(NamedTuple):

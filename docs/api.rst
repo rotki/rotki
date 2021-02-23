@@ -4464,6 +4464,137 @@ Getting Balancer balances
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as the graph node could not be reached or returned unexpected response.
 
+Getting Balancer trades
+=========================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/balancer/history/trades
+
+   Doing a GET on the Balancer trades history resource will return the history of all Balancer trades.
+
+   .. note::
+      This endpoint is only available for premium users
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/balancer/history/trades HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+            "0x029f388aC4D5C8BfF490550ce0853221030E822b": [
+                {
+                    "address": "0x029f388aC4D5C8BfF490550ce0853221030E822b",
+                    "amount": "0.075627332013165531",
+                    "base_asset": "WETH",
+                    "fee": "0",
+                    "fee_currency": "QNT",
+                    "location": "balancer",
+                    "pair": "WETH_QNT",
+                    "quote_asset": "QNT",
+                    "rate": "0.02194014031410883771422129499",
+                    "swaps": [
+                        {
+                            "amount0_in": "3.446984883890308608",
+                            "amount0_out": "0",
+                            "amount1_in": "0",
+                            "amount1_out": "0.075627332013165531",
+                            "from_address": "0x0000000000007F150Bd6f54c40A34d7C3d5e9f56",
+                            "location": "balancer",
+                            "log_index": 37,
+                            "to_address": "0x6545773483142Fd781023EC74ee008d93aD5466B",
+                            "token0": "QNT",
+                            "token1": "WETH",
+                            "tx_hash": "0x9a5c2c73762ef2e8af326e7b286488a4b238b9855d3fd749370bb3074aabf6e5"
+                        }
+                    ],
+                    "timestamp": 1606924530,
+                    "trade_id": "0x9a5c2c73762ef2e8af326e7b286488a4b238b9855d3fd749370bb3074aabf6e5-0",
+                    "trade_type": "buy",
+                    "tx_hash": "0x9a5c2c73762ef2e8af326e7b286488a4b238b9855d3fd749370bb3074aabf6e5"
+                },
+                {
+                    "address": "0x029f388aC4D5C8BfF490550ce0853221030E822b",
+                    "amount": "3.214606868598057153",
+                    "base_asset": "MKR",
+                    "fee": "0",
+                    "fee_currency": "WETH",
+                    "location": "balancer",
+                    "pair": "MKR_WETH",
+                    "quote_asset": "WETH",
+                    "rate": "1.068431955314709719236410104",
+                    "swaps": [
+                        {
+                            "amount0_in": "3.008714642619599872",
+                            "amount0_out": "0",
+                            "amount1_in": "0",
+                            "amount1_out": "3.214606868598057153",
+                            "from_address": "0x0000000000007F150Bd6f54c40A34d7C3d5e9f56",
+                            "location": "balancer",
+                            "log_index": 334,
+                            "to_address": "0x987D7Cc04652710b74Fff380403f5c02f82e290a",
+                            "token0": "WETH",
+                            "token1": "MKR",
+                            "tx_hash": "0xe8f02a2c1105a0dd093d6bff6983bbc6ac662424e116fe4d53ea4f2fd4d36497"
+                        }
+                    ],
+                    "timestamp": 1606921757,
+                    "trade_id": "0xe8f02a2c1105a0dd093d6bff6983bbc6ac662424e116fe4d53ea4f2fd4d36497-0",
+                    "trade_type": "buy",
+                    "tx_hash": "0xe8f02a2c1105a0dd093d6bff6983bbc6ac662424e116fe4d53ea4f2fd4d36497"
+                }
+            ]
+        },
+        "message": "",
+      }
+
+   :resjson object result: A mapping between accounts and their Balancer trades history
+   :resjson string address: The address of the user who initiated the trade
+   :resjson object base_asset: Either an identifier if it's a known token or the address/symbol/name object for the base asset of the trade. That which is bought.
+   :resjson object quote_asset: Either an identifier if it's a known token or the address/symbol/name object for the quote asset of the trade. That which is sold to buy the base asset.
+   :resjson string amount: In case of a trade_type buy (and for Balancer all are buys) this is the amount of ``"base_asset"`` that is bought.
+   :resjson string rate: How much of each quote asset was given for the base asset amount. Essentially ``"amount"`` / ``"rate"`` will give you what you paid in ``"quote_asset"``.
+   :resjson string location: Always balancer.
+   :resjson string fee: Always 0 for now.
+   :resjson string fee_currency: Always quote_asset.
+   :resjson string pair: BASE_ASSET_QUOTE_ASSET
+   :resjson int timestamp: The timestamp of the trade
+   :resjson string trade_id: A combination of transaction hash plus a unique id (for custom trades that are virtually made by us)
+   :resjson string trade_type: Always buy
+   :resjson string tx_hash: The transaction hash
+   :resjson list[object] swaps: A list of all the swaps that the trade is made of. Each swap is an object with the following attributes:
+
+       - token0: Either an identifier if it's a known token or the address/symbol/name object for token0 of the swap.
+       - token1: Either an identifier if it's a known token or the address/symbol/name object for token1 of the swap.
+       - amount0_in: The amount (can be zero) of token0 that the user is putting in the swap.
+       - amount1_in: The amount (can be zero) of token1 that the user is putting in the swap.
+       - amount0_out: The amount (can be zero) of token0 that the user is getting out of the swap.
+       - amount1_out: The amount (can be zero) of token1 that the user is getting out of the swap.
+       - from_address: The address that is putting tokens in the swap. Can be many different parties in a multi swap.
+       - to_address: The address that is getting tokens out of the swap. Can be many different parties in a multi swap.
+       - address: Always the same address of the user, associated with the trade the swaps belong to.
+       - location: Always balancer.
+       - tx_hash: The transaction hash of the swap (always the same for swaps of the same transaction/trade).
+       - log_index: The index of the swap in the transaction/trade.
+
+   :statuscode 200: Balancer trades succesfully queried.
+   :statuscode 409: User is not logged in. Or Balancer module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as the graph node could not be reached or returned unexpected response.
+
 Getting Compound balances
 ==============================
 

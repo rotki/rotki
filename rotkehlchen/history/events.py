@@ -2,7 +2,9 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
-from rotkehlchen.chain.ethereum.trades import AMMTrade
+from typing_extensions import Literal
+
+from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import RemoteError
@@ -25,8 +27,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-# eth transactions, external trades, ledger actions, uniswap trades, makerDAO DSR,
-# makerDAO vaults, yearn vaults, compound, adex staking, aave lending
 HISTORY_QUERY_STEPS = 10
 FREE_LEDGER_ACTIONS_LIMIT = 50
 
@@ -220,18 +220,27 @@ class EventsHistorian():
         ledger_actions, _ = self.query_ledger_actions(has_premium, from_ts=start_ts, to_ts=end_ts)
         step = self._increase_progress(step, total_steps)
 
-        # include uniswap trades
-        uniswap = self.chain_manager.get_module('uniswap')
-        if has_premium and uniswap:
-            self.processing_state_name = 'Querying uniswap history'
-            uniswap_trades = uniswap.get_trades(
-                addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
-                from_timestamp=Timestamp(0),
-                to_timestamp=end_ts,
-                only_cache=False,
-            )
-            history.extend(uniswap_trades)
-        step = self._increase_progress(step, total_steps)
+        # include AMM trades: balancer, uniswap
+        for amm_location in AMMTradeLocations:
+            amm_module_name: Literal['balancer', 'uniswap']
+            if amm_location == Location.BALANCER:
+                amm_module_name = 'balancer'
+            elif amm_location == Location.UNISWAP:
+                amm_module_name = 'uniswap'
+            else:
+                raise AssertionError(f'Unexpected amm trade location : {amm_location}')
+
+            amm_module = self.chain_manager.get_module(amm_module_name)
+            if has_premium and amm_module:
+                self.processing_state_name = f'Querying {amm_module_name} trade history'
+                amm_module_trades = amm_module.get_trades(
+                    addresses=self.chain_manager.queried_addresses_for_module(amm_module_name),
+                    from_timestamp=Timestamp(0),
+                    to_timestamp=end_ts,
+                    only_cache=False,
+                )
+                history.extend(amm_module_trades)
+            step = self._increase_progress(step, total_steps)
 
         # Include makerdao DSR gains
         defi_events = []

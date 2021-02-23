@@ -22,7 +22,7 @@ from rotkehlchen.chain.ethereum.manager import (
     EthereumManager,
     NodeName,
 )
-from rotkehlchen.chain.ethereum.trades import AMMTrade
+from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.typing import SubstrateChain
@@ -672,19 +672,27 @@ class Rotkehlchen():
                 else:
                     trades.extend(exchange_trades)
 
-            # for all trades we also need uniswap trades
+            # for all trades we also need the trades from the amm protocols
             if self.premium is not None:
-                uniswap = self.chain_manager.get_module('uniswap')
-                if uniswap is not None:
-                    trades.extend(
-                        uniswap.get_trades(
-                            addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
-                            from_timestamp=from_ts,
-                            to_timestamp=to_ts,
-                            only_cache=only_cache,
-                        ),
-                    )
+                for amm_location in AMMTradeLocations:
+                    amm_module_name: Literal['balancer', 'uniswap']
+                    if amm_location == Location.BALANCER:
+                        amm_module_name = 'balancer'
+                    elif amm_location == Location.UNISWAP:
+                        amm_module_name = 'uniswap'
+                    else:
+                        raise AssertionError(f'Unexpected amm trade location : {amm_location}')
 
+                    amm_module = self.chain_manager.get_module(amm_module_name)
+                    if amm_module is not None:
+                        trades.extend(
+                            amm_module.get_trades(
+                                addresses=self.chain_manager.queried_addresses_for_module(amm_module_name),  # noqa: E501
+                                from_timestamp=from_ts,
+                                to_timestamp=to_ts,
+                                only_cache=only_cache,
+                            ),
+                        )
         # return trades with most recent first
         trades.sort(key=lambda x: x.timestamp, reverse=True)
         return trades
@@ -706,12 +714,20 @@ class Rotkehlchen():
                 to_ts=to_ts,
                 location=location,
             )
-        elif location == Location.UNISWAP:
+        elif location in AMMTradeLocations:
             if self.premium is not None:
-                uniswap = self.chain_manager.get_module('uniswap')
-                if uniswap is not None:
-                    location_trades = uniswap.get_trades(  # type: ignore  # list invariance
-                        addresses=self.chain_manager.queried_addresses_for_module('uniswap'),
+                amm_module_name: Literal['balancer', 'uniswap']
+                if location == Location.BALANCER:
+                    amm_module_name = 'balancer'
+                elif location == Location.UNISWAP:
+                    amm_module_name = 'uniswap'
+                else:
+                    raise AssertionError(f'Unexpected amm trade location : {location}')
+
+                amm_module = self.chain_manager.get_module(amm_module_name)
+                if amm_module is not None:
+                    location_trades = amm_module.get_trades(  # type: ignore  # list invariance
+                        addresses=self.chain_manager.queried_addresses_for_module(amm_module_name),
                         from_timestamp=from_ts,
                         to_timestamp=to_ts,
                         only_cache=only_cache,
