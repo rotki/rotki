@@ -3,11 +3,11 @@
     <v-row>
       <v-col>
         <div
-          class="title"
+          class="text-h6"
           v-text="$t('timeframe_settings.default_timeframe')"
         />
         <div
-          class="subtitle-1"
+          class="text-subtitle-1"
           v-text="$t('timeframe_settings.default_timeframe_description')"
         />
       </v-col>
@@ -23,7 +23,7 @@
           'success--text': !!message.success,
           'error--text': !!message.error
         }"
-        class="subtitle-2 general-settings__timeframe"
+        class="text-subtitle-2 general-settings__timeframe"
       >
         <div v-if="text" v-text="text" />
       </v-col>

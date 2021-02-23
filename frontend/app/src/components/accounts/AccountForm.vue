@@ -105,7 +105,7 @@
         <v-row v-if="multiple" no-gutters>
           <v-col>
             <div
-              class="caption"
+              class="text-caption"
               v-text="
                 $t('account_form.labels.addresses_entries', {
                   count: entries.length

@@ -58,7 +58,7 @@
               class="align-self-center"
               color="primary"
             />
-            <div class="pt-5 caption">
+            <div class="pt-5 text-caption">
               {{ $t('overall_balances.loading') }}
             </div>
           </div>

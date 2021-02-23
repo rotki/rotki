@@ -47,7 +47,7 @@
             type="info"
             icon="mdi-cloud-download"
           >
-            <div class="login__sync-error__header title">
+            <div class="login__sync-error__header text-h6">
               {{ $t('login.sync_error.title') }}
             </div>
             <div class="login__sync-error__body mt-2">

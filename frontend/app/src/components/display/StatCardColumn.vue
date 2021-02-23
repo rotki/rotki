@@ -1,7 +1,7 @@
 <template>
   <dl>
     <dt
-      class="title font-weight-regular"
+      class="text-h6 font-weight-regular"
       :class="lock ? 'd-flex justify-space-between' : ''"
     >
       <slot name="title" />

@@ -4,7 +4,7 @@
     <div v-if="!premiumVisible">
       <v-card class="account-management__card pb-6" width="500px" light>
         <div
-          class="pt-6 pb-3 display-3 font-weight-black white--text account-management__card__title"
+          class="pt-6 pb-3 text-h2 font-weight-black white--text account-management__card__title"
         >
           <span class="px-6">{{ $t('app.name') }}</span>
           <span class="d-block mb-3 pl-6 text-caption">

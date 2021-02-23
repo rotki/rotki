@@ -1,6 +1,6 @@
 <template>
   <div v-if="displayed" class="create-account">
-    <div class="title text--primary create-account__header">
+    <div class="text-h6 text--primary create-account__header">
       {{ $t('create_account.title') }}
     </div>
     <v-stepper v-model="step">

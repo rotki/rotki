@@ -6,7 +6,7 @@
       </v-col>
       <v-col class="d-flex flex-column">
         <span class="text-h5 font-weight-medium">{{ identifier }}</span>
-        <span class="subtitle-2 text--secondary">
+        <span class="text-subtitle-2 text--secondary">
           {{ assetName }}
         </span>
       </v-col>

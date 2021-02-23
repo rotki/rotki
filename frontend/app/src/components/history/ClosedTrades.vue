@@ -124,7 +124,7 @@
                   <v-row>
                     <v-col>
                       <v-card outlined>
-                        <v-card-title class="subtitle-2">
+                        <v-card-title class="text-subtitle-2">
                           {{ $t('closed_trades.details.notes') }}
                         </v-card-title>
                         <v-card-text>

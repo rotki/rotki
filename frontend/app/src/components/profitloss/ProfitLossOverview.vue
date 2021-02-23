@@ -86,7 +86,7 @@
               <td>
                 {{ $t('profit_loss_overview.rows.taxable_trade_profit_loss') }}
               </td>
-              <td class="text-right subtitle-1">
+              <td class="text-right text-subtitle-1">
                 <amount-display pnl :value="overview.taxableTradeProfitLoss" />
               </td>
             </tr>
@@ -94,18 +94,18 @@
               <td colspan="2" />
             </tr>
             <tr>
-              <td class="font-weight-medium subtitle-1">
+              <td class="font-weight-medium text-subtitle-1">
                 {{ $t('profit_loss_overview.rows.total_profit_loss') }}
               </td>
-              <td class="text-right subtitle-1">
+              <td class="text-right text-subtitle-1">
                 <amount-display pnl :value="overview.totalProfitLoss" />
               </td>
             </tr>
             <tr>
-              <td class="font-weight-medium subtitle-1">
+              <td class="font-weight-medium text-subtitle-1">
                 {{ $t('profit_loss_overview.rows.total_taxable_profit_loss') }}
               </td>
-              <td class="text-right subtitle-1">
+              <td class="text-right text-subtitle-1">
                 <amount-display pnl :value="overview.totalTaxableProfitLoss" />
               </td>
             </tr>

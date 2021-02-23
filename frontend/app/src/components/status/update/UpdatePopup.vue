@@ -20,7 +20,7 @@
         </v-icon>
         <v-icon v-else large color="primary">mdi-arrow-down-circle</v-icon>
       </v-col>
-      <v-col class="body-1">
+      <v-col class="text-body-1">
         <span v-if="!downloadReady">
           {{ $t('update_popup.messages') }}
         </span>

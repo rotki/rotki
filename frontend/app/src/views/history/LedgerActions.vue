@@ -115,7 +115,7 @@
                   <v-row>
                     <v-col>
                       <v-card outlined>
-                        <v-card-title class="subtitle-2">
+                        <v-card-title class="text-subtitle-2">
                           {{ $t('ledger_actions.details.notes') }}
                         </v-card-title>
                         <v-card-text>

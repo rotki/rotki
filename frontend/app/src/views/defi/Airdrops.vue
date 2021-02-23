@@ -21,7 +21,7 @@
         :chains="[ETH]"
         :usable-addresses="airdropAddresses"
       >
-        <div class="caption mt-4" v-text="$t('airdrops.description')" />
+        <div class="text-caption mt-4" v-text="$t('airdrops.description')" />
       </blockchain-account-selector>
       <v-card class="mt-8">
         <v-card-text>
