@@ -89,6 +89,10 @@ export const SupportedBlockchains = [ETH, BTC, KSM] as const;
 
 export type Blockchain = typeof SupportedBlockchains[number];
 
+export const L2_LOOPRING = 'LRC';
+export const L2_PROTOCOLS = [L2_LOOPRING] as const;
+export type SupportedL2Protocol = typeof L2_PROTOCOLS[number];
+
 export class SyncConflictError extends Error {
   readonly payload: SyncConflictPayload;
 

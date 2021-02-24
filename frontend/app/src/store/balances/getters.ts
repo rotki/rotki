@@ -12,6 +12,7 @@ import {
   BalanceState,
   BlockchainAccountWithBalance,
   BlockchainTotal,
+  L2Totals,
   LocationBalance,
   ManualBalanceByLocation
 } from '@/store/balances/types';
@@ -25,7 +26,8 @@ import {
   ETH,
   ExchangeInfo,
   GeneralAccount,
-  KSM
+  KSM,
+  L2_LOOPRING
 } from '@/typing/types';
 import { uniqueStrings } from '@/utils/array';
 import { assert } from '@/utils/assertions';
@@ -346,8 +348,37 @@ export const getters: Getters<
 
     if (ethAccounts.length > 0) {
       const ethStatus = status(Section.BLOCKCHAIN_ETH);
+      const l2Totals: L2Totals[] = [];
+      if (Object.keys(loopring).length > 0) {
+        const balances: { [asset: string]: HasBalance } = {};
+        for (const address in loopring) {
+          for (const asset in loopring[address]) {
+            if (!balances[asset]) {
+              balances[asset] = {
+                balance: loopring[address][asset]
+              };
+            } else {
+              balances[asset] = {
+                balance: balanceSum(
+                  loopring[address][asset],
+                  balances[asset].balance
+                )
+              };
+            }
+          }
+        }
+        const loopringStatus = status(Section.L2_LOOPRING_BALANCES);
+        l2Totals.push({
+          protocol: L2_LOOPRING,
+          usdValue: sum(Object.values(balances)),
+          loading:
+            loopringStatus === Status.NONE || loopringStatus === Status.LOADING
+        });
+      }
+
       totals.push({
         chain: ETH,
+        l2: l2Totals.sort((a, b) => b.usdValue.minus(a.usdValue).toNumber()),
         usdValue: sum(ethAccounts),
         loading: ethStatus === Status.NONE || ethStatus === Status.LOADING
       });
@@ -357,6 +388,7 @@ export const getters: Getters<
       const btcStatus = status(Section.BLOCKCHAIN_BTC);
       totals.push({
         chain: BTC,
+        l2: [],
         usdValue: sum(btcAccounts),
         loading: btcStatus === Status.NONE || btcStatus === Status.LOADING
       });
@@ -366,35 +398,9 @@ export const getters: Getters<
       const ksmStatus = status(Section.BLOCKCHAIN_KSM);
       totals.push({
         chain: KSM,
+        l2: [],
         usdValue: sum(kusamaBalances),
         loading: ksmStatus === Status.NONE || ksmStatus === Status.LOADING
-      });
-    }
-
-    if (Object.keys(loopring).length > 0) {
-      const balances: { [asset: string]: HasBalance } = {};
-      for (const address in loopring) {
-        for (const asset in loopring[address]) {
-          if (!balances[asset]) {
-            balances[asset] = {
-              balance: loopring[address][asset]
-            };
-          } else {
-            balances[asset] = {
-              balance: balanceSum(
-                loopring[address][asset],
-                balances[asset].balance
-              )
-            };
-          }
-        }
-      }
-      const loopringStatus = status(Section.L2_LOOPRING_BALANCES);
-      totals.push({
-        chain: 'LRC',
-        usdValue: sum(Object.values(balances)),
-        loading:
-          loopringStatus === Status.NONE || loopringStatus === Status.LOADING
       });
     }
 

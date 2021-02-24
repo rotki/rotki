@@ -18,7 +18,8 @@ import {
   Blockchain,
   ExchangeData,
   ExchangeRates,
-  GeneralAccount
+  GeneralAccount,
+  SupportedL2Protocol
 } from '@/typing/types';
 
 export interface LocationBalance {
@@ -120,8 +121,15 @@ export type AddAccountsPayload = {
   readonly payload: AccountPayload[];
 };
 
+interface L2Totals {
+  readonly protocol: SupportedL2Protocol;
+  readonly usdValue: BigNumber;
+  readonly loading: boolean;
+}
+
 export interface BlockchainTotal {
-  readonly chain: Blockchain | 'LRC';
+  readonly chain: Blockchain;
+  readonly l2: L2Totals[];
   readonly usdValue: BigNumber;
   readonly loading: boolean;
 }

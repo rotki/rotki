@@ -57,10 +57,7 @@
             <blockchain-balance-card-list
               v-for="total in blockchainTotals"
               :key="total.chain"
-              :chain="total.chain"
-              :name="name(total.chain)"
-              :loading="total.loading"
-              :amount="total.usdValue"
+              :total="total"
             />
           </div>
         </summary-card>
@@ -144,7 +141,7 @@ import {
   ExchangeBalancePayload,
   LocationBalance
 } from '@/store/balances/types';
-import { Blockchain, BTC, ETH, ExchangeInfo, KSM } from '@/typing/types';
+import { ExchangeInfo } from '@/typing/types';
 
 @Component({
   components: {
@@ -190,19 +187,6 @@ export default class Dashboard extends Vue {
   fetchLoopringBalances!: (refresh: boolean) => Promise<void>;
   fetchExchangeBalances!: (payload: ExchangeBalancePayload) => Promise<void>;
   fetchManualBalances!: () => Promise<void>;
-
-  name(chain: Blockchain): string {
-    if (chain === ETH) {
-      return this.$t('blockchains.eth').toString();
-    } else if (chain === BTC) {
-      return this.$t('blockchains.btc').toString();
-    } else if (chain === KSM) {
-      return this.$t('blockchains.ksm').toString();
-    } else if (chain === 'LRC') {
-      return this.$t('l2.loopring').toString();
-    }
-    return '';
-  }
 
   get blockchainIsLoading(): boolean {
     return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
