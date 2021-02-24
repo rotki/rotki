@@ -39,6 +39,7 @@ import {
   AssetMovements,
   EthTransactionEntry,
   EthTransactions,
+  FetchPayload,
   HistoricData,
   HistoryState,
   IgnoreActionPayload,
@@ -221,10 +222,11 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async fetchMovements(
     {
       commit,
+      state,
       rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
       rootState: { balances }
     },
-    refresh: boolean = false
+    { refresh, onlyCache }: FetchPayload
   ): Promise<void> {
     const taskType = TaskType.MOVEMENTS;
     if (isTaskRunning(taskType)) {
@@ -260,7 +262,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     const fetchLocation: (
       location: TradeLocation
     ) => Promise<void> = async location => {
-      const { taskId } = await api.history.assetMovements(location);
+      const { taskId } = await api.history.assetMovements(location, onlyCache);
       const task = createTask<LocationRequestMeta>(taskId, taskType, {
         title: i18n.tc('actions.asset_movements.task.title'),
         description: i18n.tc(
@@ -282,19 +284,24 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         TaskMeta
       >(taskType, `${taskId}`);
 
-      const data: HistoricData<AssetMovementEntry> = {
-        data: result.entries.map(({ entry, ignoredInAccounting }) => ({
+      const movements = [
+        ...state.assetMovements.data.filter(
+          movement => movement.location !== location
+        ),
+        ...result.entries.map(({ entry, ignoredInAccounting }) => ({
           ...entry,
           ignoredInAccounting: ignoredInAccounting
-        })),
+        }))
+      ];
+
+      const data: HistoricData<AssetMovementEntry> = {
+        data: movements,
         limit: result.entriesLimit,
         found: result.entriesFound
       };
-      commit('updateMovements', data);
+      commit('setMovements', data);
       setStatus(Status.PARTIALLY_LOADED);
     };
-
-    commit('resetMovements');
 
     const onError: (location: TradeLocation, message: string) => void = (
       location,

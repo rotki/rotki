@@ -87,9 +87,13 @@ export class HistoryApi {
       .then(handleResponse);
   }
 
-  async assetMovements(location?: TradeLocation): Promise<any> {
+  async assetMovements(
+    location?: TradeLocation,
+    onlyCache?: boolean
+  ): Promise<any> {
     const params = {
       asyncQuery: true,
+      onlyCache: onlyCache ? onlyCache : undefined,
       location
     };
     return this.axios

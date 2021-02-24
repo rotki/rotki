@@ -15,7 +15,7 @@
         <refresh-button
           :loading="refreshing"
           :tooltip="$t('deposits_withdrawals.refresh_tooltip')"
-          @refresh="fetchMovements(true)"
+          @refresh="fetchMovements({ refresh: true })"
         />
         <card-title class="ms-2">
           {{ $t('deposits_withdrawals.title') }}
@@ -145,7 +145,11 @@ import { SupportedExchange } from '@/services/balances/types';
 import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
 import { IGNORE_MOVEMENTS } from '@/store/history/consts';
-import { AssetMovementEntry, IgnoreActionPayload } from '@/store/history/types';
+import {
+  AssetMovementEntry,
+  FetchPayload,
+  IgnoreActionPayload
+} from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
 
 @Component({
@@ -215,7 +219,7 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
     { text: '', value: 'data-table-expand' }
   ];
 
-  fetchMovements!: (refresh: boolean) => Promise<void>;
+  fetchMovements!: (payload: FetchPayload) => Promise<void>;
   ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   unignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   setMessage!: (message: Message) => void;
@@ -331,7 +335,8 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
   expanded = [];
 
   async mounted() {
-    await this.fetchMovements(false);
+    await this.fetchMovements({ onlyCache: true });
+    await this.fetchMovements({ refresh: true });
   }
 }
 </script>

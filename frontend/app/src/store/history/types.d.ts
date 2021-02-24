@@ -72,3 +72,8 @@ export type IgnoreActionPayload = {
   readonly actionIds: string[];
   readonly type: IgnoreActionType;
 };
+
+export type FetchPayload = {
+  readonly onlyCache?: boolean;
+  readonly refresh?: boolean;
+};

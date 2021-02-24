@@ -12,7 +12,6 @@ import {
   Trades,
   HistoricData,
   TradeEntry,
-  AssetMovementEntry,
   LedgerActionEntry,
   EthTransactionEntry
 } from '@/store/history/types';
@@ -63,20 +62,6 @@ export const mutations: MutationTree<HistoryState> = {
 
   setMovements(state: HistoryState, movements: AssetMovements) {
     state.assetMovements = movements;
-  },
-
-  updateMovements(
-    state: HistoryState,
-    movements: HistoricData<AssetMovementEntry>
-  ) {
-    state.assetMovements = {
-      data: [...state.assetMovements.data, ...movements.data],
-      limit: movements.limit,
-      found: movements.found
-    };
-  },
-  resetMovements(state: HistoryState) {
-    state.assetMovements = defaultHistoricState();
   },
 
   setTransactions(state: HistoryState, transactions: EthTransactions) {
