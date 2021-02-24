@@ -16,7 +16,10 @@ from rotkehlchen.chain.ethereum.eth2 import (
 from rotkehlchen.chain.ethereum.eth2_utils import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
     ValidatorPerformance,
+    get_validator_daily_stats,
+    ValidatorDailyStats,
 )
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.serialization.serialize import process_result_list
@@ -464,3 +467,71 @@ def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer):  # py
         ),
     ]
     assert details == expected_details
+
+
+def test_validator_daily_stats():
+    stats = get_validator_daily_stats(validator_index=33710, last_known_timestamp=0)
+
+    assert len(stats) >= 81
+    expected_stats = [ValidatorDailyStats(
+        timestamp=1607126400,    # 2020/12/05
+        pnl=ZERO,
+        start_balance=ZERO,
+        end_balance=FVal(32),
+        deposits_number=1,
+        amount_deposited=FVal(32),
+    ), ValidatorDailyStats(
+        timestamp=1607212800,    # 2020/12/06
+        pnl=ZERO,
+        start_balance=FVal(32),
+        end_balance=FVal(32),
+    ), ValidatorDailyStats(
+        timestamp=1607299200,    # 2020/12/07
+        pnl=ZERO,
+        start_balance=FVal(32),
+        end_balance=FVal(32),
+    ), ValidatorDailyStats(
+        timestamp=1607385600,  # 2020/12/08
+        pnl=ZERO,
+        start_balance=FVal(32),
+        end_balance=FVal(32),
+    ), ValidatorDailyStats(
+        timestamp=1607472000,  # 2020/12/09
+        pnl=ZERO,
+        start_balance=FVal(32),
+        end_balance=FVal(32),
+    ), ValidatorDailyStats(
+        timestamp=1607558400,  # 2020/12/10
+        pnl=ZERO,
+        start_balance=FVal(32),
+        end_balance=FVal(32),
+    ), ValidatorDailyStats(
+        timestamp=1607644800,  # 2020/12/11
+        pnl=ZERO,
+        start_balance=FVal(32),
+        end_balance=FVal(32),
+    ), ValidatorDailyStats(
+        timestamp=1607731200,  # 2020/12/12
+        pnl=ZERO,
+        start_balance=FVal(32),
+        end_balance=FVal(32),
+    ), ValidatorDailyStats(
+        timestamp=1607817600,  # 2020/12/13
+        pnl=ZERO,
+        start_balance=FVal(32),
+        end_balance=FVal(32),
+    ), ValidatorDailyStats(
+        timestamp=1607904000,  # 2020/12/14
+        pnl=ZERO,
+        start_balance=FVal(32),
+        end_balance=FVal(32),
+    ), ValidatorDailyStats(
+        timestamp=1607990400,  # 2020/12/15
+        pnl=FVal('0.0120'),
+        start_balance=FVal(32),
+        end_balance=FVal('32.01'),
+        proposed_blocks=1,
+    )]
+
+    stats.reverse()
+    assert stats[:len(expected_stats)] == expected_stats
