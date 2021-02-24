@@ -29,7 +29,7 @@
         v-for="l2 in total.l2"
         :id="`${l2.protocol}_box`"
         :key="l2.protocol"
-        class="d-flex flex-row blockchain-balance-box__item"
+        class="d-flex flex-row blockchain-balance-box__item sub-item"
         to="/accounts-balances/blockchain-balances"
       >
         <v-list-item-avatar
@@ -126,6 +126,29 @@ export default class BlockchainBalanceCardList extends Vue {
 
   &__item:hover &__icon {
     filter: grayscale(0);
+  }
+}
+
+.sub-item {
+  &:before {
+    opacity: 0.75 !important;
+    position: relative;
+    top: -0.3em;
+    height: 1em;
+    width: 1em;
+    color: white;
+    border-bottom: 1px solid rgb(100, 100, 100);
+    content: '' !important;
+    display: inline-block;
+    left: 20px;
+  }
+
+  &:last-child {
+    border-left: none;
+
+    &:before {
+      border-left: 1px solid rgb(100, 100, 100);
+    }
   }
 }
 </style>
