@@ -531,6 +531,109 @@ def test_validator_daily_stats():
         start_balance=FVal(32),
         end_balance=FVal('32.01'),
         proposed_blocks=1,
+    ), ValidatorDailyStats(
+        timestamp=1608076800,  # 2020/12/16
+        pnl=FVal('0.0132'),
+        start_balance=FVal('32.01'),
+        end_balance=FVal('32.03'),
+    ), ValidatorDailyStats(
+        timestamp=1608163200,  # 2020/12/17
+        pnl=FVal('-0.0001'),
+        start_balance=FVal('32.03'),
+        end_balance=FVal('32.03'),
+        missed_attestations=126,
+    ), ValidatorDailyStats(
+        timestamp=1608249600,  # 2020/12/18
+        pnl=FVal('0.0129'),
+        start_balance=FVal('32.03'),
+        end_balance=FVal('32.04'),
+    ), ValidatorDailyStats(
+        timestamp=1608336000,  # 2020/12/19
+        pnl=FVal('0.0127'),
+        start_balance=FVal('32.04'),
+        end_balance=FVal('32.05'),
+    ), ValidatorDailyStats(
+        timestamp=1608422400,  # 2020/12/20
+        pnl=FVal('0.0144'),
+        start_balance=FVal('32.05'),
+        end_balance=FVal('32.07'),
+        missed_attestations=1,
+        proposed_blocks=1,
+    ), ValidatorDailyStats(
+        timestamp=1608508800,  # 2020/12/21
+        pnl=FVal('0.0124'),
+        start_balance=FVal('32.07'),
+        end_balance=FVal('32.08'),
+    ), ValidatorDailyStats(
+        timestamp=1608595200,  # 2020/12/22
+        pnl=FVal('0.0121'),
+        start_balance=FVal('32.08'),
+        end_balance=FVal('32.09'),
+        missed_attestations=1,
+    ), ValidatorDailyStats(
+        timestamp=1608681600,  # 2020/12/23
+        pnl=FVal('0.0120'),
+        start_balance=FVal('32.09'),
+        end_balance=FVal('32.10'),
+    ), ValidatorDailyStats(
+        timestamp=1608768000,  # 2020/12/24
+        pnl=FVal('0.0119'),
+        start_balance=FVal('32.1'),
+        end_balance=FVal('32.11'),
+    ), ValidatorDailyStats(
+        timestamp=1608854400,  # 2020/12/25
+        pnl=FVal('0.0117'),
+        start_balance=FVal('32.11'),
+        end_balance=FVal('32.13'),
+    )]
+
+    stats.reverse()
+    assert stats[:len(expected_stats)] == expected_stats
+
+
+def test_validator_daily_stats_with_last_known_timestamp():
+    stats = get_validator_daily_stats(
+        validator_index=33710,
+        last_known_timestamp=1613520000,
+    )
+
+    assert len(stats) >= 6
+    expected_stats = [ValidatorDailyStats(
+        timestamp=1613606400,    # 2021/02/18
+        pnl=FVal('0.0078'),
+        start_balance=FVal('32.66'),
+        end_balance=FVal('32.67'),
+        missed_attestations=1,
+    ), ValidatorDailyStats(
+        timestamp=1613692800,    # 2021/02/19
+        pnl=FVal('0.0068'),
+        start_balance=FVal('32.67'),
+        end_balance=FVal('32.68'),
+        missed_attestations=19,
+    ), ValidatorDailyStats(
+        timestamp=1613779200,    # 2021/02/20
+        pnl=FVal('0.0080'),
+        start_balance=FVal('32.68'),
+        end_balance=FVal('32.68'),
+    ), ValidatorDailyStats(
+        timestamp=1613865600,    # 2021/02/21
+        pnl=FVal('0.0111'),
+        start_balance=FVal('32.68'),
+        end_balance=FVal('32.69'),
+        missed_attestations=3,
+        proposed_blocks=1,
+    ), ValidatorDailyStats(
+        timestamp=1613952000,    # 2021/02/22
+        pnl=FVal('0.0078'),
+        start_balance=FVal('32.69'),
+        end_balance=FVal('32.7'),
+        missed_attestations=1,
+    ), ValidatorDailyStats(
+        timestamp=1614038400,    # 2021/02/23
+        pnl=FVal('0.0077'),
+        start_balance=FVal('32.7'),
+        end_balance=FVal('32.71'),
+        missed_attestations=1,
     )]
 
     stats.reverse()

@@ -1,5 +1,5 @@
 import logging
-import re
+from bs4 import BeautifulSoup, SoupStrainer
 from typing import Dict, NamedTuple
 
 import requests
@@ -75,47 +75,31 @@ class ValidatorDailyStats(NamedTuple):
     amount_deposited: FVal = ZERO
 
 
-PARSE_RE = re.compile(r'.*>(.*?)</')
-
-
-def _parse_td(line: str, entry: str) -> str:
-    match = PARSE_RE.match(line)
-    if not match:
-        raise RemoteError(f'Unexpected line for eth2 validator {entry}: {line}')
-    groups = match.groups()
-    if len(groups) != 1:
-        raise RemoteError(f'Unexpected line for eth2 validator {entry}: {line}')
-
-    return groups[0]
-
-
 def _parse_fval(line: str, entry: str) -> FVal:
     try:
-        td = _parse_td(line=line, entry=entry)
-        result = FVal(td.replace('ETH', ''))
+        result = FVal(line.replace('ETH', ''))
     except ValueError as e:
-        raise RemoteError(f'Could not parse {td} as a number') from e
+        raise RemoteError(f'Could not parse {line} as a number') from e
 
     return result
 
 
 def _parse_int(line: str, entry: str) -> FVal:
     try:
-        td = _parse_td(line=line, entry=entry)
-        if td == '-':
+        if line == '-':
             result = 0
         else:
-            result = int(td)
+            result = int(line)
     except ValueError as e:
-        raise RemoteError(f'Could not parse {td} as an integer') from e
+        raise RemoteError(f'Could not parse {line} as an integer') from e
 
     return result
 
 
 def get_validator_daily_stats(validator_index: int, last_known_timestamp: Timestamp):
-    """Crawls the website of beaconcha.in and parses the data directly out of the data table.
+    """Scrapes the website of beaconcha.in and parses the data directly out of the data table.
 
-    The parser is very very simple. And can break if they change stuff in the way
+    The parser is very simple. And can break if they change stuff in the way
     it's displayed in https://beaconcha.in/validator/33710/stats. If that happpens
     we need to adjust here. If we also somehow programatically get the data in a CSV
     that would be swell.
@@ -136,9 +120,13 @@ def get_validator_daily_stats(validator_index: int, last_known_timestamp: Timest
             f' and response: {response.text}',
         )
 
-    result = response.text.split('<tbod>')
-    if len(result) != 2:
-        raise RemoteError('Could not split at <tbod> while parsing beaconcha.in stats page')
+    soup = BeautifulSoup(response.text, 'html.parser', parse_only=SoupStrainer('tbod'))
+    if soup is None:
+        raise RemoteError('Could not find <tbod> while parsing beaconcha.in stats page')
+    try:
+        tr = soup.tbod.tr
+    except AttributeError as e:
+        raise RemoteError('Could not find first <tr> while parsing beaconcha.in stats page') from e
 
     timestamp = 0
     pnl = ZERO,
@@ -153,77 +141,78 @@ def get_validator_daily_stats(validator_index: int, last_known_timestamp: Timest
     proposer_attester_slashings = 0
     deposits_number = 0
     amount_deposited = FVal
-    column_pos = 0
+    column_pos = 1
     stats = []
-    for line in result[1].split('\n'):
-        if '<tr>' in line:
-            column_pos = 1
-            continue
-        elif '</tr>' in line:
-            stats.append(ValidatorDailyStats(
-                timestamp=timestamp,
-                pnl=pnl,
-                start_balance=start_balance,
-                end_balance=end_balance,
-                missed_attestations=missed_attestations,
-                orphaned_attestations=orphaned_attestations,
-                proposed_blocks=proposed_blocks,
-                missed_blocks=missed_blocks,
-                orphaned_blocks=orphaned_blocks,
-                included_attester_slashings=included_attester_slashings,
-                proposer_attester_slashings=proposer_attester_slashings,
-                deposits_number=deposits_number,
-                amount_deposited=amount_deposited,
-            ))
-            column_pos = 0
-            continue
+    while tr is not None:
 
-        if column_pos == 1:  # date
-            date = _parse_td(line, 'date')
-            try:
-                timestamp = create_timestamp(date, formatstr='%d %b %Y')
-            except ValueError as e:
-                raise RemoteError(f'Failed to parse {date} to timestamp') from e
+        for column in tr.children:
+            if column.name != 'td':
+                continue
 
-            if timestamp < last_known_timestamp:
-                break
+            if column_pos == 1:  # date
+                date = column.string
+                try:
+                    timestamp = create_timestamp(date, formatstr='%d %b %Y')
+                except ValueError as e:
+                    raise RemoteError(f'Failed to parse {date} to timestamp') from e
 
-            column_pos += 1
-        elif column_pos == 2:
-            pnl = _parse_fval(line, 'income')
-            column_pos += 1
-        elif column_pos == 3:
-            start_balance = _parse_fval(line, 'start balance')
-            column_pos += 1
-        elif column_pos == 4:
-            end_balance = _parse_fval(line, 'end balance')
-            column_pos += 1
-        elif column_pos == 5:
-            missed_attestations = _parse_int(line, 'missed attestations')
-            column_pos += 1
-        elif column_pos == 6:
-            orphaned_attestations = _parse_int(line, 'orphaned attestations')
-            column_pos += 1
-        elif column_pos == 7:
-            proposed_blocks = _parse_int(line, 'proposed blocks')
-            column_pos += 1
-        elif column_pos == 8:
-            missed_blocks = _parse_int(line, 'missed blocks')
-            column_pos += 1
-        elif column_pos == 9:
-            orphaned_blocks = _parse_int(line, 'orphaned blocks')
-            column_pos += 1
-        elif column_pos == 10:
-            included_attester_slashings = _parse_int(line, 'included attester slashings')
-            column_pos += 1
-        elif column_pos == 11:
-            proposer_attester_slashings = _parse_int(line, 'proposer attester slashings')
-            column_pos += 1
-        elif column_pos == 12:
-            deposits_number = _parse_int(line, 'deposits number')
-            column_pos += 1
-        elif column_pos == 13:
-            amount_deposited = _parse_fval(line, 'amount deposited')
-            column_pos += 1
+                if timestamp <= last_known_timestamp:
+                    return stats  # we are done
+
+                column_pos += 1
+            elif column_pos == 2:
+                pnl = _parse_fval(column.string, 'income')
+                column_pos += 1
+            elif column_pos == 3:
+                start_balance = _parse_fval(column.string, 'start balance')
+                column_pos += 1
+            elif column_pos == 4:
+                end_balance = _parse_fval(column.string, 'end balance')
+                column_pos += 1
+            elif column_pos == 5:
+                missed_attestations = _parse_int(column.string, 'missed attestations')
+                column_pos += 1
+            elif column_pos == 6:
+                orphaned_attestations = _parse_int(column.string, 'orphaned attestations')
+                column_pos += 1
+            elif column_pos == 7:
+                proposed_blocks = _parse_int(column.string, 'proposed blocks')
+                column_pos += 1
+            elif column_pos == 8:
+                missed_blocks = _parse_int(column.string, 'missed blocks')
+                column_pos += 1
+            elif column_pos == 9:
+                orphaned_blocks = _parse_int(column.string, 'orphaned blocks')
+                column_pos += 1
+            elif column_pos == 10:
+                included_attester_slashings = _parse_int(column.string, 'included attester slashings')  # noqa: E501
+                column_pos += 1
+            elif column_pos == 11:
+                proposer_attester_slashings = _parse_int(column.string, 'proposer attester slashings')  # noqa: E501
+                column_pos += 1
+            elif column_pos == 12:
+                deposits_number = _parse_int(column.string, 'deposits number')
+                column_pos += 1
+            elif column_pos == 13:
+                amount_deposited = _parse_fval(column.string, 'amount deposited')
+                column_pos += 1
+
+        column_pos = 1
+        stats.append(ValidatorDailyStats(
+            timestamp=timestamp,
+            pnl=pnl,
+            start_balance=start_balance,
+            end_balance=end_balance,
+            missed_attestations=missed_attestations,
+            orphaned_attestations=orphaned_attestations,
+            proposed_blocks=proposed_blocks,
+            missed_blocks=missed_blocks,
+            orphaned_blocks=orphaned_blocks,
+            included_attester_slashings=included_attester_slashings,
+            proposer_attester_slashings=proposer_attester_slashings,
+            deposits_number=deposits_number,
+            amount_deposited=amount_deposited,
+        ))
+        tr = tr.find_next_sibling()
 
     return stats
