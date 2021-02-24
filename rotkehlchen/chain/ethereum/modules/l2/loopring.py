@@ -265,13 +265,16 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
 
     def ethereum_account_to_loopring_id(self, l1_address: ChecksumEthAddress) -> int:
         """Get the integer corresponding to the loopring account id
-        of the owner of the given ETH L1 address
+        of the owner of the given ETH L1 address.
 
         First tries to get it from the DB and if not known queries loopring api
 
+        It's possible there is no account id if loopring has not been used yet. In that
+        case a RemoteError is raised and should be handled by the caller.
+
         May Raise:
         - RemotError if there is a problem querying the loopring api or if the format
-        of the response does not match expectations
+        of the response does not match expectations or if there is no account id.
         """
         db = DBLoopring(self.db)  # type: ignore # we always know self.db is not None
         account_id = db.get_accountid_mapping(l1_address)
@@ -356,7 +359,12 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
 
         result = {}
         for address in addresses:
-            account_id = self.ethereum_account_to_loopring_id(l1_address=address)
+            try:
+                account_id = self.ethereum_account_to_loopring_id(l1_address=address)
+            except RemoteError as e:
+                logger.debug(f'Skipping loopring query of address {address} due to {str(e)}')
+                continue
+
             try:
                 balances = self.get_account_balances(account_id=account_id)
             except LoopringAPIKeyMismatch:

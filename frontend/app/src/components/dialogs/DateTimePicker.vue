@@ -136,6 +136,10 @@ export default class DateTimePicker extends Vue {
     this.setMaxTime();
   }
 
+  mounted() {
+    this.onValueChange(this.value);
+  }
+
   onTimeChange(time: string) {
     this.timeModel = time;
     this.updateActualDate();

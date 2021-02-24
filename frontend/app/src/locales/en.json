@@ -251,10 +251,12 @@
       "title": "Etherscan"
     },
     "loopring": {
+      "settings": "Settings",
       "delete_tooltip": "Delete your Loopring API key",
       "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key. ",
       "hint": "Enter your Loopring API key",
       "label": "API key",
+      "not_enabled": "The Loopring module is not enabled. Your balances won't be retrieved unless you enable the loopring module",
       "title": "Loopring"
     },
     "set": {

@@ -20,13 +20,13 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Rotki'
-copyright = '2018-2020, Lefteris Karapetsas'
-author = 'Lefteris Karapetsas'
+copyright = '2018-2021, Rotki Solutions GmbH'
+author = 'The rotki team'
 
 # The short X.Y version
-version = '1.14.1'
+version = '1.14.2'
 # The full version, including alpha/beta/rc tags
-release = '1.14.1'
+release = '1.14.2'
 
 
 # -- General configuration ---------------------------------------------------

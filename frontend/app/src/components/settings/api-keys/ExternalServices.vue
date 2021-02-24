@@ -75,6 +75,25 @@
                 @save="save('loopring', $event)"
                 @delete-key="deleteKey('loopring')"
               />
+
+              <v-alert
+                v-if="loopringKey && !isLoopringActive"
+                prominent
+                type="warning"
+                class="ma-2"
+                outlined
+              >
+                <v-row align="center">
+                  <v-col class="grow">
+                    {{ $t('external_services.loopring.not_enabled') }}
+                  </v-col>
+                  <v-col class="shrink">
+                    <v-btn to="/settings/defi" color="primary">
+                      {{ $t('external_services.loopring.settings') }}
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-alert>
             </v-sheet>
           </v-col>
         </v-row>
@@ -93,14 +112,23 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import { mapActions, mapGetters } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { ExternalServiceKeys } from '@/model/action-result';
+import { MODULE_LOOPRING } from '@/services/session/consts';
+import { SupportedModules } from '@/services/session/types';
 import { Message } from '@/store/types';
 import { ExternalServiceKey, ExternalServiceName } from '@/typing/types';
 
 @Component({
-  components: { ServiceKey, ConfirmDialog }
+  components: { ServiceKey, ConfirmDialog },
+  computed: {
+    ...mapGetters('session', ['activeModules'])
+  },
+  methods: {
+    ...mapActions('balances', ['fetchLoopringBalances'])
+  }
 })
 export default class ExternalServices extends Vue {
   etherscanKey: string = '';
@@ -111,6 +139,12 @@ export default class ExternalServices extends Vue {
   serviceToDelete: ExternalServiceName | '' = '';
 
   loading: boolean = false;
+  activeModules!: SupportedModules[];
+  fetchLoopringBalances!: (refresh: boolean) => Promise<void>;
+
+  get isLoopringActive(): boolean {
+    return this.activeModules.includes(MODULE_LOOPRING);
+  }
 
   private updateKeys({
     cryptocompare,
@@ -145,6 +179,9 @@ export default class ExternalServices extends Vue {
         }).toString(),
         success: true
       } as Message);
+      if (serviceName === 'loopring') {
+        await this.fetchLoopringBalances(true);
+      }
     } catch (e) {
       this.$store.commit('setMessage', {
         title: this.$t('external_services.set.error.title').toString(),
