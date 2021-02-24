@@ -21,18 +21,6 @@ export const mutations: MutationTree<HistoryState> = {
     state.trades = trades;
   },
 
-  appendTrades(state: HistoryState, trades: HistoricData<TradeEntry>) {
-    state.trades = {
-      data: [...state.trades.data, ...trades.data],
-      limit: trades.limit,
-      found: trades.found
-    };
-  },
-
-  resetTrades(state: HistoryState) {
-    state.trades = defaultHistoricState();
-  },
-
   addTrade(state: HistoryState, trade: TradeEntry) {
     const { data: trades } = state.trades;
     state.trades = { ...state.trades, data: [...trades, trade] };

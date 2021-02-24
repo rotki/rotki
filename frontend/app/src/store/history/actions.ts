@@ -66,10 +66,11 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async fetchTrades(
     {
       commit,
+      state,
       rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
       rootState: { balances }
     },
-    refresh: boolean = false
+    { refresh, onlyCache }: FetchPayload
   ): Promise<void> {
     const taskType = TaskType.TRADES;
     if (isTaskRunning(taskType)) {
@@ -110,7 +111,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     const fetchLocation: (
       location: TradeLocation
     ) => Promise<void> = async location => {
-      const { taskId } = await api.history.trades(location);
+      const { taskId } = await api.history.trades(location, onlyCache);
       const task = createTask<LocationRequestMeta>(taskId, taskType, {
         title: i18n.tc('actions.trades.task.title'),
         description: i18n.tc('actions.trades.task.description', undefined, {
@@ -127,19 +128,22 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         LimitedResponse<EntryWithMeta<Trade>>,
         TaskMeta
       >(taskType, `${taskId}`);
-      const data: HistoricData<TradeEntry> = {
-        data: result.entries.map(({ entry, ignoredInAccounting }) => ({
+
+      const trades = [
+        ...state.trades.data.filter(trade => trade.location !== location),
+        ...result.entries.map(({ entry, ignoredInAccounting }) => ({
           ...entry,
           ignoredInAccounting
-        })),
+        }))
+      ];
+      const data: HistoricData<TradeEntry> = {
+        data: trades,
         found: result.entriesFound,
         limit: result.entriesLimit
       };
-      commit('appendTrades', data);
+      commit('setTrades', data);
       setStatus(Status.PARTIALLY_LOADED);
     };
-
-    commit('resetTrades');
 
     const onError: (location: TradeLocation, message: string) => void = (
       location,
