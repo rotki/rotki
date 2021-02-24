@@ -998,7 +998,7 @@
         "title": "Deposits & withdrawals for {exchange}"
       }
     },
-    "notitifcations": {
+    "notifications": {
       "consume": {
         "message_title": "Backend messages"
       }
