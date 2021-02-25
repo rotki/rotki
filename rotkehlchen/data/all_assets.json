@@ -2146,6 +2146,7 @@
         "coingecko": "",
         "cryptocompare": "",
         "name": "Bittrex Credits",
+        "started": 1571616000,
         "symbol": "BTXCRD",
         "type": "exchange specific"
     },
@@ -5746,6 +5747,7 @@
         "active": false,
         "coingecko": "",
         "name": "GameLeagueCoin",
+        "started": 1392739140,
         "symbol": "GML",
         "type": "own chain"
     },
@@ -6945,6 +6947,7 @@
         "coingecko": "",
         "cryptocompare": "",
         "name": "Kraken fees",
+        "started": 1392739140,
         "symbol": "KFEE",
         "type": "exchange specific"
     },
@@ -12585,6 +12588,7 @@
     "UTI": {
         "coingecko": "",
         "name": "Unicorn Technology International",
+        "started": 1588291200,
         "symbol": "UTI",
         "type": "own chain"
     },
