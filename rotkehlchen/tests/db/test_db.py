@@ -103,6 +103,7 @@ TABLES_AT_INIT = [
     'amm_swaps',
     'uniswap_events',
     'eth2_deposits',
+    'eth2_daily_staking_details',
     'adex_events',
     'ledger_actions',
     'ledger_action_type',

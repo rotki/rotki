@@ -15,11 +15,12 @@ from rotkehlchen.chain.ethereum.eth2 import (
 )
 from rotkehlchen.chain.ethereum.eth2_utils import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
-    ValidatorPerformance,
-    get_validator_daily_stats,
     ValidatorDailyStats,
+    ValidatorPerformance,
+    _scrape_validator_daily_stats,
 )
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.serialization.serialize import process_result_list
@@ -303,7 +304,8 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         (Timestamp(ts_now - (2 * REQUEST_DELTA_TS)), Timestamp(ts_now)),
         (Timestamp(ts_now - (2 * REQUEST_DELTA_TS)), Timestamp(ts_now)),
     ]
-    database.get_eth2_deposits.side_effect = [
+    dbeth2 = DBEth2(database)
+    dbeth2.get_eth2_deposits.side_effect = [
         [],  # no on-chain request, nothing in DB
         [],  # no on-chain request, nothing in DB
         [EXPECTED_DEPOSITS[0]],  # on-chain request, deposit in DB
@@ -470,7 +472,7 @@ def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer):  # py
 
 
 def test_validator_daily_stats():
-    stats = get_validator_daily_stats(validator_index=33710, last_known_timestamp=0)
+    stats = _scrape_validator_daily_stats(validator_index=33710, last_known_timestamp=0)
 
     assert len(stats) >= 81
     expected_stats = [ValidatorDailyStats(
@@ -592,7 +594,7 @@ def test_validator_daily_stats():
 
 
 def test_validator_daily_stats_with_last_known_timestamp():
-    stats = get_validator_daily_stats(
+    stats = _scrape_validator_daily_stats(
         validator_index=33710,
         last_known_timestamp=1613520000,
     )

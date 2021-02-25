@@ -1,14 +1,19 @@
 import logging
-from bs4 import BeautifulSoup, SoupStrainer
-from typing import Dict, NamedTuple
+from typing import Dict, NamedTuple, Tuple, Any, TYPE_CHECKING, List, Optional
 
 import requests
+from bs4 import BeautifulSoup, SoupStrainer
 
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Timestamp
-from rotkehlchen.utils.misc import create_timestamp, from_gwei
+from rotkehlchen.utils.misc import create_timestamp, from_gwei, ts_now
+from rotkehlchen.db.eth2 import DBEth2
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 log = logging.getLogger(__name__)
 
@@ -59,6 +64,24 @@ class ValidatorID(NamedTuple):
     public_key: str
 
 
+ValidatorDailyStatsDBTuple = Tuple[
+    int,  # validator index
+    int,  # timestamp
+    str,  # pnl
+    str,  # start_balance
+    str,  # end_balance
+    int,  # missed_attestations
+    int,  # orphaned_attestations
+    int,  # proposed_blocks
+    int,  # missed_blocks
+    int,  # orphaned_blocks
+    int,  # included_attester_slashings
+    int,  # proposer_attester_slashings
+    int,  # deposits_number
+    str,  # amount_deposited
+]
+
+
 class ValidatorDailyStats(NamedTuple):
     timestamp: Timestamp
     pnl: FVal
@@ -74,29 +97,76 @@ class ValidatorDailyStats(NamedTuple):
     deposits_number: int = 0
     amount_deposited: FVal = ZERO
 
+    def to_db_tuple(self, validator_index: int) -> ValidatorDailyStatsDBTuple:
+        return (
+            validator_index,
+            self.timestamp,
+            str(self.pnl),
+            str(self.start_balance),
+            str(self.end_balance),
+            self.missed_attestations,
+            self.orphaned_attestations,
+            self.proposed_blocks,
+            self.missed_blocks,
+            self.orphaned_blocks,
+            self.included_attester_slashings,
+            self.proposer_attester_slashings,
+            self.deposits_number,
+            str(self.amount_deposited),
+        )
+
+    @classmethod
+    def deserialize_from_db(cls, entry: ValidatorDailyStatsDBTuple) -> 'ValidatorDailyStats':
+        return cls(
+            timestamp=Timestamp(entry[1]),
+            pnl=FVal(entry[2]),
+            start_balance=FVal(entry[3]),
+            end_balance=FVal(entry[4]),
+            missed_attestations=entry[5],
+            orphaned_attestations=entry[6],
+            proposed_blocks=entry[7],
+            missed_blocks=entry[8],
+            orphaned_blocks=entry[9],
+            included_attester_slashings=entry[10],
+            proposer_attester_slashings=entry[11],
+            deposits_number=entry[12],
+            amount_deposited=FVal(entry[13]),
+        )
+
+    def serialize(self) -> Dict[str, Any]:
+        result = self._asdict()  # pylint: disable=no-member
+        result['pnl'] = str(self.pnl)
+        result['start_balance'] = str(self.start_balance)
+        result['end_balance'] = str(self.end_balance)
+        result['amount_deposited'] = str(self.amount_deposited)
+        return result
+
 
 def _parse_fval(line: str, entry: str) -> FVal:
     try:
         result = FVal(line.replace('ETH', ''))
     except ValueError as e:
-        raise RemoteError(f'Could not parse {line} as a number') from e
+        raise RemoteError(f'Could not parse {line} as a number for {entry}') from e
 
     return result
 
 
-def _parse_int(line: str, entry: str) -> FVal:
+def _parse_int(line: str, entry: str) -> int:
     try:
         if line == '-':
             result = 0
         else:
             result = int(line)
     except ValueError as e:
-        raise RemoteError(f'Could not parse {line} as an integer') from e
+        raise RemoteError(f'Could not parse {line} as an integer for {entry}') from e
 
     return result
 
 
-def get_validator_daily_stats(validator_index: int, last_known_timestamp: Timestamp):
+def _scrape_validator_daily_stats(
+        validator_index: int,
+        last_known_timestamp: Timestamp,
+) -> List[ValidatorDailyStats]:
     """Scrapes the website of beaconcha.in and parses the data directly out of the data table.
 
     The parser is very simple. And can break if they change stuff in the way
@@ -112,7 +182,7 @@ def get_validator_daily_stats(validator_index: int, last_known_timestamp: Timest
     try:
         response = requests.get(url)
     except requests.exceptions.RequestException as e:
-        raise RemoteError(f'Beaconcha.in api request {url} failed due to {str(e)}')
+        raise RemoteError(f'Beaconcha.in api request {url} failed due to {str(e)}') from e
 
     if response.status_code != 200:
         raise RemoteError(
@@ -128,8 +198,8 @@ def get_validator_daily_stats(validator_index: int, last_known_timestamp: Timest
     except AttributeError as e:
         raise RemoteError('Could not find first <tr> while parsing beaconcha.in stats page') from e
 
-    timestamp = 0
-    pnl = ZERO,
+    timestamp = Timestamp(0)
+    pnl = ZERO
     start_balance = ZERO
     end_balance = ZERO
     missed_attestations = 0
@@ -140,9 +210,9 @@ def get_validator_daily_stats(validator_index: int, last_known_timestamp: Timest
     included_attester_slashings = 0
     proposer_attester_slashings = 0
     deposits_number = 0
-    amount_deposited = FVal
+    amount_deposited = ZERO
     column_pos = 1
-    stats = []
+    stats: List[ValidatorDailyStats] = []
     while tr is not None:
 
         for column in tr.children:
@@ -216,3 +286,40 @@ def get_validator_daily_stats(validator_index: int, last_known_timestamp: Timest
         tr = tr.find_next_sibling()
 
     return stats
+
+
+def get_validator_daily_stats(
+        db: 'DBHandler',
+        validator_index: int,
+        from_timestamp: Optional[Timestamp] = None,
+        to_timestamp: Optional[Timestamp] = None,
+) -> List[ValidatorDailyStats]:
+    """Gets the daily stats of an ETH2 validator by index
+
+    First queries the DB for the already known stats and then if needed also scrapes
+    the beacocha.in website for more. Saves all new entries to the DB.
+    """
+    dbeth2 = DBEth2(db)
+    known_stats = dbeth2.get_validator_daily_stats(
+        validator_index=validator_index,
+        from_ts=from_timestamp,
+        to_ts=to_timestamp,
+    )
+    last_ts = Timestamp(0) if len(known_stats) == 0 else known_stats[-1].timestamp
+    limit_ts = to_timestamp if to_timestamp else ts_now()
+    if limit_ts - last_ts <= DAY_IN_SECONDS:
+        return known_stats  # no need to requery if less than a day passed
+
+    new_stats = _scrape_validator_daily_stats(
+        validator_index=validator_index,
+        last_known_timestamp=last_ts,
+    )
+
+    if len(new_stats) != 0:
+        dbeth2.add_validator_daily_stats(validator_index=validator_index, stats=new_stats)
+
+    return dbeth2.get_validator_daily_stats(
+        validator_index=validator_index,
+        from_ts=from_timestamp,
+        to_ts=to_timestamp,
+    )

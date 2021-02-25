@@ -5299,7 +5299,36 @@ Getting Eth2 Staking details
               "performance_1d": {"amount": "0.1", "usd_value": "100"},
               "performance_1w": {"amount": "0.7", "usd_value": "700"},
               "performance_1m": {"amount": "3", "usd_value": "3000"},
-              "performance_1y": {"amount": "36.5", "usd_value": "36500"}
+              "performance_1y": {"amount": "36.5", "usd_value": "36500"},
+              "daily_stats": [{
+                  "timestamp": 1613952000,
+                  "pnl": "0.007",
+                  "start_balance": "32.69"
+                  "end_balance": "32.7"
+                  "missed_attestations": 1,
+                  "orphaned_attestations": 0,
+                  "proposed_blocks": 1,
+                  "missed_blocks": 0,
+                  "orphaned_blocks": 0,
+                  "included_attester_slashings": 0,
+                  "proposer_attester_slashings": 0,
+                  "deposits_number": 0,
+                  "amount_deposited": "0",
+              }, {
+                  "timestamp": 1613865600,
+                  "pnl": "-0.0012",
+                  "start_balance": "32.66"
+                  "end_balance": "32.66"
+                  "missed_attestations": 0,
+                  "orphaned_attestations": 0,
+                  "proposed_blocks": 0,
+                  "missed_blocks": 1,
+                  "orphaned_blocks": 0,
+                  "included_attester_slashings": 0,
+                  "proposer_attester_slashings": 0,
+                  "deposits_number": 0,
+                  "amount_deposited": "0",
+              }],
           }, {
               "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
               "index": 10,
@@ -5308,7 +5337,8 @@ Getting Eth2 Staking details
               "performance_1d": {"amount": "0.1", "usd_value": "100"},
               "performance_1w": {"amount": "0.7", "usd_value": "700"},
               "performance_1m": {"amount": "3", "usd_value": "3000"},
-              "performance_1y": {"amount": "36.5", "usd_value": "36500"}
+              "performance_1y": {"amount": "36.5", "usd_value": "36500"},
+              "daily_stats": [],
           }, {
               "eth1_depositor": "0xaee017635291ea8E3C70FeAC5B86e1d3B0e23341",
               "index": 155,
@@ -5317,7 +5347,8 @@ Getting Eth2 Staking details
               "performance_1d": {"amount": "0", "usd_value": "0"},
               "performance_1w": {"amount": "0", "usd_value": "0"},
               "performance_1m": {"amount": "0", "usd_value": "0"},
-              "performance_1y": {"amount": "0", "usd_value": "0"}
+              "performance_1y": {"amount": "0", "usd_value": "0"},
+              "daily_stats": [],
           }],
         "message": "",
       }
@@ -5332,6 +5363,21 @@ Getting Eth2 Staking details
    :resjson performance_1w object: How much has the validator earned in ETH (and USD equivalent value) in the past week.
    :resjson performance_1m object: How much has the validator earned in ETH (and USD equivalent value) in the past month.
    :resjson performance_1y object: How much has the validator earned in ETH (and USD equivalent value) in the past year.
+
+   For the daily stats the fields are:
+   :resjson timestamp int: The timestamp of the start of the day in GMT for which this entry is.
+   :resjson pnl string: The amount of ETH gained or lost in that day.
+   :resjson start_balance string: The amount of ETH the day started with.
+   :resjson end_balance string: The amount of ETH the day ended with.
+   :resjson missed_attestations int: The number of attestations the validator missed during the day.
+   :resjson orphaned_attestations int: The number of attestations the validator orphaned during the day.
+   :resjson proposed_blocks int: The number of blocks the validator proposed during the day.
+   :resjson missed_blocks int: The number of blocks the validator missed during the day.
+   :resjson orphaned_blocks int: The number of blocks the validator proposed during the day but they got orphaned.
+   :resjson included_attester_slashings int: The number of included attester slashins the validator had inside the day.
+   :resjson proposer_attester_slashings int: The number of proposer attester slashins the validator had inside the day.
+   :resjson deposits_number int: The number of deposits from the eth1 chain the validator had inside the day.
+   :resjson amount_deposited int: The amount deposited from the eth1 chain for the validator inside the day.
 
    :statuscode 200: Eth2 staking details succesfully queried
    :statuscode 409: User is not logged in.

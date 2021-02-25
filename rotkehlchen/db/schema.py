@@ -452,6 +452,26 @@ CREATE TABLE IF NOT EXISTS eth2_deposits (
 );
 """
 
+DB_CREATE_ETH2_DAILY_STAKING_DETAILS = """
+CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
+    validator_index INTEGER NOT NULL,
+    timestamp integer NOT NULL
+    pnl TEXT NOT NULL,
+    start_balance TEXT NOT NULL,
+    end_balance TEXT NOT NULL,
+    missed_attestations INTEGER,
+    orphaned_attestations INTEGER,
+    proposed_blocks INTEGER,
+    missed_blocks INTEGER,
+    orphaned_blocks INTEGER,
+    included_attester_slashings INTEGER,
+    proposer_attester_slashings INTEGER,
+    deposits_number INTEGER,
+    amount_deposited TEXT,
+    PRIMARY KEY (validator_index, timestamp)
+);
+"""
+
 DB_CREATE_ADEX_EVENTS = """
 CREATE TABLE IF NOT EXISTS adex_events (
     tx_hash VARCHAR[42] NOT NULL,
@@ -476,7 +496,7 @@ CREATE TABLE IF NOT EXISTS adex_events (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -507,6 +527,7 @@ PRAGMA foreign_keys=on;
     DB_CREATE_AMM_SWAPS,
     DB_CREATE_UNISWAP_EVENTS,
     DB_CREATE_ETH2_DEPOSITS,
+    DB_CREATE_ETH2_DAILY_STAKING_DETAILS,
     DB_CREATE_ADEX_EVENTS,
     DB_CREATE_LEDGER_ACTION_TYPE,
     DB_CREATE_LEDGER_ACTIONS,

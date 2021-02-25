@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 import gevent
 
@@ -10,7 +10,6 @@ from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import (
     NoPriceForGivenTimestamp,
@@ -41,6 +40,10 @@ from rotkehlchen.utils.accounting import (
     action_get_type,
 )
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -52,7 +55,7 @@ class Accountant():
 
     def __init__(
             self,
-            db: DBHandler,
+            db: 'DBHandler',
             user_directory: Path,
             msg_aggregator: MessagesAggregator,
             create_csv: bool,
