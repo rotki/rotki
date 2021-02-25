@@ -15,7 +15,7 @@
         <refresh-button
           :loading="refreshing"
           :tooltip="$t('deposits_withdrawals.refresh_tooltip')"
-          @refresh="fetchMovements(true)"
+          @refresh="refresh"
         />
         <card-title class="ms-2">
           {{ $t('deposits_withdrawals.title') }}
@@ -144,8 +144,17 @@ import StatusMixin from '@/mixins/status-mixin';
 import { SupportedExchange } from '@/services/balances/types';
 import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
-import { IGNORE_MOVEMENTS } from '@/store/history/consts';
-import { AssetMovementEntry, IgnoreActionPayload } from '@/store/history/types';
+import {
+  FETCH_FROM_CACHE,
+  FETCH_FROM_SOURCE,
+  FETCH_REFRESH,
+  IGNORE_MOVEMENTS
+} from '@/store/history/consts';
+import {
+  AssetMovementEntry,
+  FetchSource,
+  IgnoreActionPayload
+} from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
 
 @Component({
@@ -215,7 +224,7 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
     { text: '', value: 'data-table-expand' }
   ];
 
-  fetchMovements!: (refresh: boolean) => Promise<void>;
+  fetchMovements!: (payload: FetchSource) => Promise<void>;
   ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   unignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   setMessage!: (message: Message) => void;
@@ -331,7 +340,12 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
   expanded = [];
 
   async mounted() {
-    await this.fetchMovements(false);
+    await this.fetchMovements(FETCH_FROM_CACHE);
+    await this.fetchMovements(FETCH_FROM_SOURCE);
+  }
+
+  async refresh() {
+    await this.fetchMovements(FETCH_REFRESH);
   }
 }
 </script>

@@ -44,9 +44,13 @@ export class HistoryApi {
     );
   }
 
-  async trades(location?: TradeLocation): Promise<PendingTask> {
+  async trades(
+    location?: TradeLocation,
+    onlyCache?: boolean
+  ): Promise<PendingTask> {
     const params = {
       asyncQuery: true,
+      onlyCache: onlyCache ? onlyCache : undefined,
       location
     };
     return this.axios
@@ -87,9 +91,13 @@ export class HistoryApi {
       .then(handleResponse);
   }
 
-  async assetMovements(location?: TradeLocation): Promise<any> {
+  async assetMovements(
+    location?: TradeLocation,
+    onlyCache?: boolean
+  ): Promise<any> {
     const params = {
       asyncQuery: true,
+      onlyCache: onlyCache ? onlyCache : undefined,
       location
     };
     return this.axios

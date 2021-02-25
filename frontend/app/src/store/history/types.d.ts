@@ -7,6 +7,7 @@ import {
   TradeLocation
 } from '@/services/history/types';
 import {
+  FETCH_SOURCE,
   IGNORE_ACTION_TYPE,
   LEDGER_ACTION_TYPES
 } from '@/store/history/consts';
@@ -72,3 +73,5 @@ export type IgnoreActionPayload = {
   readonly actionIds: string[];
   readonly type: IgnoreActionType;
 };
+
+export type FetchSource = typeof FETCH_SOURCE[number];
