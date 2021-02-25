@@ -150,6 +150,7 @@ def test_assets_have_common_keys():
     # Create a list of pairs with fields with their types. We'll add more fields to check
     # if we are dealing with a token
     verify = (("symbol", str), ("name", str), ("type", str), ("started", int))
+    verify_fiat = (("symbol", str), ("name", str), ("type", str))
     verify_token = (("symbol", str), ("name", str), ("type", str), ("started", int),
                     ("ethereum_address", str), ("ethereum_token_decimals", int))
     optional = (("active", bool), ("ended", int), ("forked", str), ("swapped_for", str),
@@ -164,8 +165,10 @@ def test_assets_have_common_keys():
         asset_type = resolver.get_asset_data(asset_id).asset_type
         if asset_type in (AssetType.ETH_TOKEN, AssetType.ETH_TOKEN_AND_MORE):
             verify_against = verify_token
+        elif asset_type == AssetType.FIAT:
+            verify_against = verify_fiat
 
-        # make the checks
+        # make the basic checks
         assert all((key in asset_data.keys() and isinstance(asset_data[key], key_type)
                     for (key, key_type) in verify_against)), 'Key verification'\
             f' in asset {asset_id} failed'
