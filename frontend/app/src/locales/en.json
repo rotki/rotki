@@ -615,10 +615,24 @@
     "default_timeframe_description": "Set the default time frame for the dashboard graph. This timeframe will be pre-selected upon login. By default it will remember the previous session's selection."
   },
   "frontend_settings": {
+    "hint": {
+      "refresh": "Select how often your balances will be automatically refreshed"
+    },
     "label": {
       "query_period": "Query period in seconds",
       "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
+      "refresh": "Select the automatic refresh period",
       "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions."
+    },
+    "refresh": {
+      "1h": "1 hour",
+      "2h": "2 hours",
+      "30min": "30 minutes",
+      "none": "None"
+    },
+    "subtitle": {
+      "query": "Periodic status query",
+      "refresh": "Automatic balance refresh"
     },
     "title": "Frontend-only Settings",
     "validation": {
@@ -633,6 +647,10 @@
       },
       "scramble": {
         "error": "Error setting scramble mode: {message}"
+      },
+      "refresh_period": {
+        "error": "Failed to set the refresh period",
+        "success": "The refresh period was successfully changed"
       }
     }
   },

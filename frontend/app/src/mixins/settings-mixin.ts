@@ -22,8 +22,6 @@ type TargetState = keyof BaseMessage;
   }
 })
 export default class SettingsMixin<T extends string> extends Vue {
-  private timeouts: { [setting: string]: any } = {};
-
   settingsUpdate!: (update: SettingsUpdate) => Promise<ActionStatus>;
   updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
   generalSettings!: GeneralSettings;
@@ -40,9 +38,7 @@ export default class SettingsMixin<T extends string> extends Vue {
     if (!(targetState === 'success' || targetState === 'error')) {
       return;
     }
-    if (this.timeouts[targetSetting]) {
-      clearTimeout(this.timeouts[targetSetting]);
-    }
+
     const settingsMessage = this.settingsMessages?.[targetSetting];
     if (!settingsMessage) {
       return;
@@ -58,7 +54,7 @@ export default class SettingsMixin<T extends string> extends Vue {
 
       settingsMessage[targetState] = validationMessage;
     }, 200);
-    this.timeouts[targetSetting] = setTimeout(() => {
+    setTimeout(() => {
       settingsMessage[targetState] = '';
     }, timeOut);
   }

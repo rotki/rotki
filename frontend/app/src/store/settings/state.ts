@@ -10,7 +10,9 @@ import {
   THOUSAND_SEPARATOR,
   TIMEFRAME_ALL,
   TIMEFRAME_REMEMBER,
-  TIMEFRAME_SETTING
+  TIMEFRAME_SETTING,
+  REFRESH_PERIOD,
+  REFRESH_NONE
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 
@@ -25,7 +27,8 @@ export const defaultState: () => SettingsState = () => ({
   },
   [THOUSAND_SEPARATOR]: Defaults.DEFAULT_THOUSAND_SEPARATOR,
   [DECIMAL_SEPARATOR]: Defaults.DEFAULT_DECIMAL_SEPARATOR,
-  [CURRENCY_LOCATION]: Defaults.DEFAULT_CURRENCY_LOCATION
+  [CURRENCY_LOCATION]: Defaults.DEFAULT_CURRENCY_LOCATION,
+  [REFRESH_PERIOD]: REFRESH_NONE
 });
 
 export const state: SettingsState = defaultState();
