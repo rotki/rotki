@@ -5747,7 +5747,7 @@
         "active": false,
         "coingecko": "",
         "name": "GameLeagueCoin",
-        "started": 1392739140,
+        "started": 1404489600,
         "symbol": "GML",
         "type": "own chain"
     },
@@ -6947,7 +6947,7 @@
         "coingecko": "",
         "cryptocompare": "",
         "name": "Kraken fees",
-        "started": 1392739140,
+        "started": 1377993600,
         "symbol": "KFEE",
         "type": "exchange specific"
     },
