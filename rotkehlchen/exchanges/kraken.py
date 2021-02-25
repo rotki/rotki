@@ -245,23 +245,24 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]
     except json.decoder.JSONDecodeError as e:
         raise RemoteError(f'Invalid JSON in Kraken response. {e}') from e
 
-    try:
-        if decoded_json['error']:
-            if isinstance(decoded_json['error'], list):
-                error = decoded_json['error'][0]
-            else:
-                error = decoded_json['error']
+    error = decoded_json.get('error', None)
+    if error:
+        if isinstance(error, list) and len(error) != 0:
+            error = error[0]
 
-            if 'Rate limit exceeded' in error:
-                log.debug(f'Kraken: Got rate limit exceeded error: {error}')
-                return 'Rate limited exceeded'
+        if 'Rate limit exceeded' in error:
+            log.debug(f'Kraken: Got rate limit exceeded error: {error}')
+            return 'Rate limited exceeded'
 
-            # else
-            raise RemoteError(error)
+        # else
+        raise RemoteError(error)
 
-        result = decoded_json['result']
-    except KeyError as e:
-        raise RemoteError(f'Unexpected format of Kraken response. Missing key: {e}') from e
+    result = decoded_json.get('result', None)
+    if result is None:
+        if method == 'Balance':
+            return {}
+
+        raise RemoteError(f'Missing result in kraken response for {method}')
 
     return result
 
