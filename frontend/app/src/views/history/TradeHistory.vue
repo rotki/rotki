@@ -11,11 +11,7 @@
       :available-locations="availableLocations"
     />
     <open-trades v-if="preview" :data="openTrades" />
-    <closed-trades
-      class="mt-8"
-      :data="closedTrades"
-      @refresh="fetchTrades({ refresh: true })"
-    />
+    <closed-trades class="mt-8" :data="closedTrades" @refresh="refresh" />
   </v-container>
 </template>
 
@@ -29,7 +25,12 @@ import TradeLocationSelector from '@/components/history/TradeLocationSelector.vu
 import StatusMixin from '@/mixins/status-mixin';
 import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
-import { FetchPayload, TradeEntry } from '@/store/history/types';
+import {
+  FETCH_FROM_CACHE,
+  FETCH_FROM_SOURCE,
+  FETCH_REFRESH
+} from '@/store/history/consts';
+import { FetchSource, TradeEntry } from '@/store/history/types';
 
 @Component({
   components: {
@@ -48,7 +49,7 @@ import { FetchPayload, TradeEntry } from '@/store/history/types';
 })
 export default class TradeHistory extends Mixins(StatusMixin) {
   selectedLocation: TradeLocation | null = null;
-  fetchTrades!: (payload: FetchPayload) => Promise<void>;
+  fetchTrades!: (payload: FetchSource) => Promise<void>;
   fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
   trades!: TradeEntry[];
   openTrades: TradeEntry[] = [];
@@ -74,12 +75,16 @@ export default class TradeHistory extends Mixins(StatusMixin) {
     );
   }
 
+  async refresh() {
+    await this.fetchTrades(FETCH_REFRESH);
+  }
+
   async mounted() {
     await Promise.all([
-      this.fetchTrades({ onlyCache: true }),
+      this.fetchTrades(FETCH_FROM_CACHE),
       this.fetchUniswapTrades(false)
     ]);
-    await this.fetchTrades({ refresh: true });
+    await this.fetchTrades(FETCH_FROM_SOURCE);
   }
 }
 </script>

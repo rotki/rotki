@@ -26,6 +26,9 @@ import {
   ACTION_DELETE_LEDGER_ACTION,
   ACTION_EDIT_LEDGER_ACTION,
   ACTION_FETCH_LEDGER_ACTIONS,
+  FETCH_FROM_CACHE,
+  FETCH_FROM_SOURCE,
+  FETCH_REFRESH,
   IGNORE_LEDGER_ACTION,
   IGNORE_MOVEMENTS,
   IGNORE_TRADES,
@@ -39,7 +42,7 @@ import {
   AssetMovements,
   EthTransactionEntry,
   EthTransactions,
-  FetchPayload,
+  FetchSource,
   HistoricData,
   HistoryState,
   IgnoreActionPayload,
@@ -70,7 +73,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
       rootState: { balances }
     },
-    { refresh, onlyCache }: FetchPayload
+    source: FetchSource
   ): Promise<void> {
     const taskType = TaskType.TRADES;
     if (isTaskRunning(taskType)) {
@@ -79,6 +82,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     const section = Section.TRADES;
     const currentStatus = status(section);
+    const refresh = source === FETCH_REFRESH || source === FETCH_FROM_SOURCE;
 
     if (
       currentStatus === Status.LOADING ||
@@ -104,14 +108,18 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     const { connectedExchanges } = balances!;
     const locations: TradeLocation[] = [
       ...connectedExchanges,
-      TRADE_LOCATION_EXTERNAL,
-      EXCHANGE_CRYPTOCOM
+      ...(source !== FETCH_FROM_SOURCE
+        ? ([TRADE_LOCATION_EXTERNAL, EXCHANGE_CRYPTOCOM] as TradeLocation[])
+        : [])
     ];
 
     const fetchLocation: (
       location: TradeLocation
     ) => Promise<void> = async location => {
-      const { taskId } = await api.history.trades(location, onlyCache);
+      const { taskId } = await api.history.trades(
+        location,
+        source === FETCH_FROM_CACHE
+      );
       const task = createTask<LocationRequestMeta>(taskId, taskType, {
         title: i18n.tc('actions.trades.task.title'),
         description: i18n.tc('actions.trades.task.description', undefined, {
@@ -230,7 +238,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
       rootState: { balances }
     },
-    { refresh, onlyCache }: FetchPayload
+    source: FetchSource
   ): Promise<void> {
     const taskType = TaskType.MOVEMENTS;
     if (isTaskRunning(taskType)) {
@@ -239,6 +247,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     const section = Section.ASSET_MOVEMENT;
     const currentStatus = status(section);
+    const refresh = source === FETCH_REFRESH || source === FETCH_FROM_SOURCE;
 
     if (
       currentStatus === Status.LOADING ||
@@ -266,7 +275,10 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     const fetchLocation: (
       location: TradeLocation
     ) => Promise<void> = async location => {
-      const { taskId } = await api.history.assetMovements(location, onlyCache);
+      const { taskId } = await api.history.assetMovements(
+        location,
+        source === FETCH_FROM_CACHE
+      );
       const task = createTask<LocationRequestMeta>(taskId, taskType, {
         title: i18n.tc('actions.asset_movements.task.title'),
         description: i18n.tc(
@@ -324,7 +336,10 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     };
 
     await Promise.all(
-      ([...locations, EXCHANGE_CRYPTOCOM] as TradeLocation[]).map(location =>
+      ([
+        ...locations,
+        ...(source !== FETCH_FROM_SOURCE ? [EXCHANGE_CRYPTOCOM] : [])
+      ] as TradeLocation[]).map(location =>
         fetchLocation(location).catch(e => onError(location, e.message))
       )
     );
