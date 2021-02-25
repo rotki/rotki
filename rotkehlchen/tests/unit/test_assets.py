@@ -162,7 +162,7 @@ def test_assets_have_common_keys():
             verify_against = verify_token
 
         # make the checks
-        assert all([key in asset_data.keys() and type(asset_data[key]) == key_type  for (key, key_type) in verify])
+        assert all([key in asset_data.keys() and type(asset_data[key]) == key_type  for (key, key_type) in verify_against])
 
         # check the optional fields
         optional = [("active", bool), ("ended", int), ("forked", str), ("swapped_for", str), ("cryptocompare", str), ("coingecko", str)]
