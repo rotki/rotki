@@ -5302,9 +5302,9 @@ Getting Eth2 Staking details
               "performance_1y": {"amount": "36.5", "usd_value": "36500"},
               "daily_stats": [{
                   "timestamp": 1613952000,
-                  "pnl": "0.007",
-                  "start_balance": "32.69"
-                  "end_balance": "32.7"
+                  "pnl": {"amount": "0.007", "usd_value": "70"},
+                  "start_balance": {"amount": "32.69", "usd_value": "32690"},
+                  "end_balance": {"amount": "32.7", "usd_value": "32700"},
                   "missed_attestations": 1,
                   "orphaned_attestations": 0,
                   "proposed_blocks": 1,
@@ -5312,13 +5312,13 @@ Getting Eth2 Staking details
                   "orphaned_blocks": 0,
                   "included_attester_slashings": 0,
                   "proposer_attester_slashings": 0,
-                  "deposits_number": 0,
-                  "amount_deposited": "0",
+                  "deposits_number": 1,
+                  "deposited_balance": {"amount": "32", "usd_value": "32000"}
               }, {
                   "timestamp": 1613865600,
-                  "pnl": "-0.0012",
-                  "start_balance": "32.66"
-                  "end_balance": "32.66"
+                  "pnl": {"amount": "-0.0066", "usd_value": "-6.6"},
+                  "start_balance": {"amount": "32.69", "usd_value": "32690"},
+                  "end_balance": {"amount": "32.7", "usd_value": "32700"},
                   "missed_attestations": 0,
                   "orphaned_attestations": 0,
                   "proposed_blocks": 0,
@@ -5327,7 +5327,7 @@ Getting Eth2 Staking details
                   "included_attester_slashings": 0,
                   "proposer_attester_slashings": 0,
                   "deposits_number": 0,
-                  "amount_deposited": "0",
+                  "amount_deposited": {"amount": "0", "usd_value": "0"},
               }],
           }, {
               "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
@@ -5366,9 +5366,9 @@ Getting Eth2 Staking details
 
    For the daily stats the fields are:
    :resjson timestamp int: The timestamp of the start of the day in GMT for which this entry is.
-   :resjson pnl string: The amount of ETH gained or lost in that day.
-   :resjson start_balance string: The amount of ETH the day started with.
-   :resjson end_balance string: The amount of ETH the day ended with.
+   :resjson pnl object: The amount of ETH gained or lost in that day along with its usd value. Average price of the day is taken.
+   :resjson start_balance object: The amount of ETH the day started with along with its usd value.
+   :resjson end_balance object: The amount of ETH the day ended with along with its usd value.
    :resjson missed_attestations int: The number of attestations the validator missed during the day.
    :resjson orphaned_attestations int: The number of attestations the validator orphaned during the day.
    :resjson proposed_blocks int: The number of blocks the validator proposed during the day.
@@ -5377,7 +5377,7 @@ Getting Eth2 Staking details
    :resjson included_attester_slashings int: The number of included attester slashins the validator had inside the day.
    :resjson proposer_attester_slashings int: The number of proposer attester slashins the validator had inside the day.
    :resjson deposits_number int: The number of deposits from the eth1 chain the validator had inside the day.
-   :resjson amount_deposited int: The amount deposited from the eth1 chain for the validator inside the day.
+   :resjson deposited_balance object: The amount deposited from the eth1 chain for the validator inside the day along with its usd value.
 
    :statuscode 200: Eth2 staking details succesfully queried
    :statuscode 409: User is not logged in.

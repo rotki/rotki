@@ -455,10 +455,12 @@ CREATE TABLE IF NOT EXISTS eth2_deposits (
 DB_CREATE_ETH2_DAILY_STAKING_DETAILS = """
 CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
     validator_index INTEGER NOT NULL,
-    timestamp integer NOT NULL
+    timestamp integer NOT NULL,
+    start_usd_price TEXT NOT NULL,
+    end_usd_price TEXT NOT NULL,
     pnl TEXT NOT NULL,
-    start_balance TEXT NOT NULL,
-    end_balance TEXT NOT NULL,
+    start_amount TEXT NOT NULL,
+    end_amount TEXT NOT NULL,
     missed_attestations INTEGER,
     orphaned_attestations INTEGER,
     proposed_blocks INTEGER,

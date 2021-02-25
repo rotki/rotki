@@ -1,16 +1,13 @@
+import logging
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Union, overload
 
 import gevent
-import logging
 import requests
 from typing_extensions import Literal
 
-from rotkehlchen.chain.ethereum.eth2_utils import (
-    ValidatorBalance,
-    ValidatorID,
-    ValidatorPerformance,
-)
+from rotkehlchen.chain.ethereum.eth2_utils import ValidatorBalance
+from rotkehlchen.chain.ethereum.typing import ValidatorID, ValidatorPerformance
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey

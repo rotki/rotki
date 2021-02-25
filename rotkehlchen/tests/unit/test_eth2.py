@@ -2,25 +2,28 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.eth2 import (
     REQUEST_DELTA_TS,
-    Eth2Deposit,
-    ValidatorDetails,
     _get_eth2_staking_deposits_onchain,
     get_eth2_balances,
     get_eth2_details,
     get_eth2_staking_deposits,
 )
 from rotkehlchen.chain.ethereum.eth2_utils import (
-    DEPOSITING_VALIDATOR_PERFORMANCE,
-    ValidatorDailyStats,
-    ValidatorPerformance,
     _scrape_validator_daily_stats,
+    get_validator_daily_stats,
+)
+from rotkehlchen.chain.ethereum.typing import (
+    DEPOSITING_VALIDATOR_PERFORMANCE,
+    Eth2Deposit,
+    ValidatorDailyStats,
+    ValidatorDetails,
+    ValidatorPerformance,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.serialization.serialize import process_result_list
@@ -304,7 +307,7 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         (Timestamp(ts_now - (2 * REQUEST_DELTA_TS)), Timestamp(ts_now)),
         (Timestamp(ts_now - (2 * REQUEST_DELTA_TS)), Timestamp(ts_now)),
     ]
-    dbeth2 = DBEth2(database)
+    dbeth2 = MagicMock()
     dbeth2.get_eth2_deposits.side_effect = [
         [],  # no on-chain request, nothing in DB
         [],  # no on-chain request, nothing in DB
@@ -471,172 +474,321 @@ def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer):  # py
     assert details == expected_details
 
 
-def test_validator_daily_stats():
-    stats = _scrape_validator_daily_stats(validator_index=33710, last_known_timestamp=0)
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
+def test_validator_daily_stats(price_historian, function_scope_messages_aggregator):
+    stats = _scrape_validator_daily_stats(
+        validator_index=33710,
+        last_known_timestamp=0,
+        msg_aggregator=function_scope_messages_aggregator,
+    )
 
     assert len(stats) >= 81
     expected_stats = [ValidatorDailyStats(
         timestamp=1607126400,    # 2020/12/05
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_balance=ZERO,
-        end_balance=FVal(32),
+        start_amount=ZERO,
+        end_amount=FVal(32),
         deposits_number=1,
         amount_deposited=FVal(32),
     ), ValidatorDailyStats(
         timestamp=1607212800,    # 2020/12/06
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_balance=FVal(32),
-        end_balance=FVal(32),
+        start_amount=FVal(32),
+        end_amount=FVal(32),
     ), ValidatorDailyStats(
         timestamp=1607299200,    # 2020/12/07
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_balance=FVal(32),
-        end_balance=FVal(32),
+        start_amount=FVal(32),
+        end_amount=FVal(32),
     ), ValidatorDailyStats(
         timestamp=1607385600,  # 2020/12/08
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_balance=FVal(32),
-        end_balance=FVal(32),
+        start_amount=FVal(32),
+        end_amount=FVal(32),
     ), ValidatorDailyStats(
         timestamp=1607472000,  # 2020/12/09
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_balance=FVal(32),
-        end_balance=FVal(32),
+        start_amount=FVal(32),
+        end_amount=FVal(32),
     ), ValidatorDailyStats(
         timestamp=1607558400,  # 2020/12/10
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_balance=FVal(32),
-        end_balance=FVal(32),
+        start_amount=FVal(32),
+        end_amount=FVal(32),
     ), ValidatorDailyStats(
         timestamp=1607644800,  # 2020/12/11
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_balance=FVal(32),
-        end_balance=FVal(32),
+        start_amount=FVal(32),
+        end_amount=FVal(32),
     ), ValidatorDailyStats(
         timestamp=1607731200,  # 2020/12/12
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_balance=FVal(32),
-        end_balance=FVal(32),
+        start_amount=FVal(32),
+        end_amount=FVal(32),
     ), ValidatorDailyStats(
         timestamp=1607817600,  # 2020/12/13
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_balance=FVal(32),
-        end_balance=FVal(32),
+        start_amount=FVal(32),
+        end_amount=FVal(32),
     ), ValidatorDailyStats(
         timestamp=1607904000,  # 2020/12/14
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=ZERO,
-        start_balance=FVal(32),
-        end_balance=FVal(32),
+        start_amount=FVal(32),
+        end_amount=FVal(32),
     ), ValidatorDailyStats(
         timestamp=1607990400,  # 2020/12/15
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0120'),
-        start_balance=FVal(32),
-        end_balance=FVal('32.01'),
+        start_amount=FVal(32),
+        end_amount=FVal('32.01'),
         proposed_blocks=1,
     ), ValidatorDailyStats(
         timestamp=1608076800,  # 2020/12/16
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0132'),
-        start_balance=FVal('32.01'),
-        end_balance=FVal('32.03'),
+        start_amount=FVal('32.01'),
+        end_amount=FVal('32.03'),
     ), ValidatorDailyStats(
         timestamp=1608163200,  # 2020/12/17
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('-0.0001'),
-        start_balance=FVal('32.03'),
-        end_balance=FVal('32.03'),
+        start_amount=FVal('32.03'),
+        end_amount=FVal('32.03'),
         missed_attestations=126,
     ), ValidatorDailyStats(
         timestamp=1608249600,  # 2020/12/18
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0129'),
-        start_balance=FVal('32.03'),
-        end_balance=FVal('32.04'),
+        start_amount=FVal('32.03'),
+        end_amount=FVal('32.04'),
     ), ValidatorDailyStats(
         timestamp=1608336000,  # 2020/12/19
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0127'),
-        start_balance=FVal('32.04'),
-        end_balance=FVal('32.05'),
+        start_amount=FVal('32.04'),
+        end_amount=FVal('32.05'),
     ), ValidatorDailyStats(
         timestamp=1608422400,  # 2020/12/20
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0144'),
-        start_balance=FVal('32.05'),
-        end_balance=FVal('32.07'),
+        start_amount=FVal('32.05'),
+        end_amount=FVal('32.07'),
         missed_attestations=1,
         proposed_blocks=1,
     ), ValidatorDailyStats(
         timestamp=1608508800,  # 2020/12/21
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0124'),
-        start_balance=FVal('32.07'),
-        end_balance=FVal('32.08'),
+        start_amount=FVal('32.07'),
+        end_amount=FVal('32.08'),
     ), ValidatorDailyStats(
         timestamp=1608595200,  # 2020/12/22
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0121'),
-        start_balance=FVal('32.08'),
-        end_balance=FVal('32.09'),
+        start_amount=FVal('32.08'),
+        end_amount=FVal('32.09'),
         missed_attestations=1,
     ), ValidatorDailyStats(
         timestamp=1608681600,  # 2020/12/23
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0120'),
-        start_balance=FVal('32.09'),
-        end_balance=FVal('32.10'),
+        start_amount=FVal('32.09'),
+        end_amount=FVal('32.10'),
     ), ValidatorDailyStats(
         timestamp=1608768000,  # 2020/12/24
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0119'),
-        start_balance=FVal('32.1'),
-        end_balance=FVal('32.11'),
+        start_amount=FVal('32.1'),
+        end_amount=FVal('32.11'),
     ), ValidatorDailyStats(
         timestamp=1608854400,  # 2020/12/25
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0117'),
-        start_balance=FVal('32.11'),
-        end_balance=FVal('32.13'),
+        start_amount=FVal('32.11'),
+        end_amount=FVal('32.13'),
     )]
 
     stats.reverse()
     assert stats[:len(expected_stats)] == expected_stats
 
 
-def test_validator_daily_stats_with_last_known_timestamp():
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
+def test_validator_daily_stats_with_last_known_timestamp(
+        price_historian,
+        function_scope_messages_aggregator,
+):
     stats = _scrape_validator_daily_stats(
         validator_index=33710,
         last_known_timestamp=1613520000,
+        msg_aggregator=function_scope_messages_aggregator,
     )
 
     assert len(stats) >= 6
     expected_stats = [ValidatorDailyStats(
         timestamp=1613606400,    # 2021/02/18
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0078'),
-        start_balance=FVal('32.66'),
-        end_balance=FVal('32.67'),
+        start_amount=FVal('32.66'),
+        end_amount=FVal('32.67'),
         missed_attestations=1,
     ), ValidatorDailyStats(
         timestamp=1613692800,    # 2021/02/19
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0068'),
-        start_balance=FVal('32.67'),
-        end_balance=FVal('32.68'),
+        start_amount=FVal('32.67'),
+        end_amount=FVal('32.68'),
         missed_attestations=19,
     ), ValidatorDailyStats(
         timestamp=1613779200,    # 2021/02/20
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0080'),
-        start_balance=FVal('32.68'),
-        end_balance=FVal('32.68'),
+        start_amount=FVal('32.68'),
+        end_amount=FVal('32.68'),
     ), ValidatorDailyStats(
         timestamp=1613865600,    # 2021/02/21
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0111'),
-        start_balance=FVal('32.68'),
-        end_balance=FVal('32.69'),
+        start_amount=FVal('32.68'),
+        end_amount=FVal('32.69'),
         missed_attestations=3,
         proposed_blocks=1,
     ), ValidatorDailyStats(
         timestamp=1613952000,    # 2021/02/22
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0078'),
-        start_balance=FVal('32.69'),
-        end_balance=FVal('32.7'),
+        start_amount=FVal('32.69'),
+        end_amount=FVal('32.7'),
         missed_attestations=1,
     ), ValidatorDailyStats(
         timestamp=1614038400,    # 2021/02/23
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
         pnl=FVal('0.0077'),
-        start_balance=FVal('32.7'),
-        end_balance=FVal('32.71'),
+        start_amount=FVal('32.7'),
+        end_amount=FVal('32.71'),
         missed_attestations=1,
     )]
 
     stats.reverse()
     assert stats[:len(expected_stats)] == expected_stats
+
+
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
+def test_validator_daily_stats_with_db_interaction(
+        price_historian,
+        database,
+        function_scope_messages_aggregator,
+):
+    stats_call_patch = patch(
+        'requests.get',
+        wraps=requests.get,
+    )
+
+    with stats_call_patch as stats_call:
+        stats = get_validator_daily_stats(
+            db=database,
+            validator_index=33710,
+            msg_aggregator=function_scope_messages_aggregator,
+            from_timestamp=1613606300,
+            to_timestamp=1614038500,
+        )
+
+        assert stats_call.call_count == 1
+        assert len(stats) >= 6
+        expected_stats = [ValidatorDailyStats(
+            timestamp=1613606400,    # 2021/02/18
+            start_usd_price=FVal(1.55),
+            end_usd_price=FVal(1.55),
+            pnl=FVal('0.0078'),
+            start_amount=FVal('32.66'),
+            end_amount=FVal('32.67'),
+            missed_attestations=1,
+        ), ValidatorDailyStats(
+            timestamp=1613692800,    # 2021/02/19
+            start_usd_price=FVal(1.55),
+            end_usd_price=FVal(1.55),
+            pnl=FVal('0.0068'),
+            start_amount=FVal('32.67'),
+            end_amount=FVal('32.68'),
+            missed_attestations=19,
+        ), ValidatorDailyStats(
+            timestamp=1613779200,    # 2021/02/20
+            start_usd_price=FVal(1.55),
+            end_usd_price=FVal(1.55),
+            pnl=FVal('0.0080'),
+            start_amount=FVal('32.68'),
+            end_amount=FVal('32.68'),
+        ), ValidatorDailyStats(
+            timestamp=1613865600,    # 2021/02/21
+            start_usd_price=FVal(1.55),
+            end_usd_price=FVal(1.55),
+            pnl=FVal('0.0111'),
+            start_amount=FVal('32.68'),
+            end_amount=FVal('32.69'),
+            missed_attestations=3,
+            proposed_blocks=1,
+        ), ValidatorDailyStats(
+            timestamp=1613952000,    # 2021/02/22
+            start_usd_price=FVal(1.55),
+            end_usd_price=FVal(1.55),
+            pnl=FVal('0.0078'),
+            start_amount=FVal('32.69'),
+            end_amount=FVal('32.7'),
+            missed_attestations=1,
+        ), ValidatorDailyStats(
+            timestamp=1614038400,    # 2021/02/23
+            start_usd_price=FVal(1.55),
+            end_usd_price=FVal(1.55),
+            pnl=FVal('0.0077'),
+            start_amount=FVal('32.7'),
+            end_amount=FVal('32.71'),
+            missed_attestations=1,
+        )]
+        assert stats[:len(expected_stats)] == expected_stats
+
+        # Make sure that calling it again does not make an external call
+        stats = get_validator_daily_stats(
+            db=database,
+            validator_index=33710,
+            msg_aggregator=function_scope_messages_aggregator,
+            from_timestamp=1613606300,
+            to_timestamp=1614038500,
+        )
+        assert stats_call.call_count == 1
+        assert stats[:len(expected_stats)] == expected_stats

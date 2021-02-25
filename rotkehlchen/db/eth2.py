@@ -3,14 +3,14 @@ from typing import TYPE_CHECKING, List, Optional, Sequence
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.chain.ethereum.eth2_utils import ValidatorDailyStats
+from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDailyStats
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
-from rotkehlchen.chain.ethereum.eth2 import ETH2_DEPOSITS_PREFIX, Eth2Deposit
+ETH2_DEPOSITS_PREFIX = 'eth2_deposits'
 
 logger = logging.getLogger(__name__)
 
@@ -109,9 +109,11 @@ class DBEth2():
                     'INSERT INTO eth2_daily_staking_details('
                     '    validator_index,'
                     '    timestamp,'
+                    '    start_usd_price,'
+                    '    end_usd_price,'
                     '    pnl,'
-                    '    start_balance,'
-                    '    end_balance,'
+                    '    start_amount,'
+                    '    end_amount,'
                     '    missed_attestations,'
                     '    orphaned_attestations,'
                     '    proposed_blocks,'
@@ -120,7 +122,7 @@ class DBEth2():
                     '    included_attester_slashings,'
                     '    proposer_attester_slashings,'
                     '    deposits_number,'
-                    '    amount_deposited) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                    '    amount_deposited) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                     entry.to_db_tuple(validator_index=validator_index),
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
@@ -142,9 +144,11 @@ class DBEth2():
         querystr = (
             'SELECT validator_index,'
             '    timestamp,'
+            '    start_usd_price,'
+            '    end_usd_price,'
             '    pnl,'
-            '    start_balance,'
-            '    end_balance,'
+            '    start_amount,'
+            '    end_amount,'
             '    missed_attestations,'
             '    orphaned_attestations,'
             '    proposed_blocks,'

@@ -30,8 +30,6 @@ from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.eth2 import (
-    Eth2Deposit,
-    ValidatorDetails,
     get_eth2_balances,
     get_eth2_details,
     get_eth2_staking_deposits,
@@ -82,6 +80,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDetails
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -256,7 +255,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
 
         self.eth2_details_last_query_ts = Timestamp(0)
-        self.eth2_details: List[ValidatorDetails] = []
+        self.eth2_details: List['ValidatorDetails'] = []
 
         self.defi_lock = Semaphore()
         self.eth2_lock = Semaphore()
@@ -1168,7 +1167,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def get_eth2_staking_deposits(self) -> List[Eth2Deposit]:
+    def get_eth2_staking_deposits(self) -> List['Eth2Deposit']:
         # Get the details first, to see which of the user's addresses have deposits
         details = self.get_eth2_staking_details()
         addresses = {x.eth1_depositor for x in details}
@@ -1183,7 +1182,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def get_eth2_staking_details(self) -> List[ValidatorDetails]:
+    def get_eth2_staking_details(self) -> List['ValidatorDetails']:
         return get_eth2_details(
             beaconchain=self.beaconchain,
             addresses=self.accounts.eth,
