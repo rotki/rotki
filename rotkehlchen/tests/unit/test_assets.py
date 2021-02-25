@@ -143,30 +143,39 @@ def test_asset_identifiers_are_unique_all_lowercased():
         assert asset_id.lower() not in identifier_set, f'id {asset_id} already in the assets set'
         identifier_set.add(asset_id)
 
+
 def test_assets_have_common_keys():
     """Test that checks that the keys and types of tokens in all_assets.json are correct"""
     # Issue #2363
     # Create a list of pairs with fields with their types. We'll add more fields to check
     # if we are dealing with a token
-    verify = [("symbol", str), ("name", str), ("type", str), ("started", int)]
-    verify_token = [("symbol", str), ("name", str), ("type", str), ("started", int), ("ethereum_address", str), ("ethereum_token_decimals", int)]
-    
+    verify = (("symbol", str), ("name", str), ("type", str), ("started", int))
+    verify_token = (("symbol", str), ("name", str), ("type", str), ("started", int),
+                    ("ethereum_address", str), ("ethereum_token_decimals", int))
+    optional = (("active", bool), ("ended", int), ("forked", str), ("swapped_for", str),
+                ("cryptocompare", str), ("coingecko", str))
+
     resolver = AssetResolver()
-    
+
     for asset_id, asset_data in resolver.assets.items():
         verify_against = verify
 
         # Check if the asset is a token and update the keys to verify
         asset_type = resolver.get_asset_data(asset_id).asset_type
-        if (asset_type == AssetType.ETH_TOKEN)  or (asset_type == AssetType.ETH_TOKEN_AND_MORE):
+        if asset_type in (AssetType.ETH_TOKEN, AssetType.ETH_TOKEN_AND_MORE):
             verify_against = verify_token
 
         # make the checks
-        assert all([key in asset_data.keys() and type(asset_data[key]) == key_type  for (key, key_type) in verify_against])
+        assert all((key in asset_data.keys() and isinstance(asset_data[key], key_type)
+                    for (key, key_type) in verify_against)), 'Key verification'\
+            f' in asset {asset_id} failed'
 
         # check the optional fields
-        optional = [("active", bool), ("ended", int), ("forked", str), ("swapped_for", str), ("cryptocompare", str), ("coingecko", str)]
-        assert all([type(asset_data.get(key))==key_type if asset_data.get(key) != None else True for key, key_type in optional])
+        for key, key_type in optional:
+            if asset_data.get(key) is not None:
+                assert isinstance(asset_data.get(key), key_type), 'Optional keys'\
+                    f' verification in asset {asset_id} failed'
+
 
 def test_coingecko_identifiers_are_reachable(data_dir):
     """
