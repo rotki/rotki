@@ -4,7 +4,19 @@ import re
 from collections import deque
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Deque, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Deque,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    NamedTuple,
+    NewType,
+    Optional,
+    Tuple,
+)
 
 import gevent
 import requests
@@ -13,7 +25,6 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_COMP, A_DAI, A_USD, A_USDT, A_WETH
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     NoPriceForGivenTimestamp,
     PriceQueryUnsupportedAsset,
@@ -32,6 +43,9 @@ from rotkehlchen.utils.misc import (
     write_history_data_in_file,
 )
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -235,7 +249,7 @@ def _get_cache_key(from_asset: Asset, to_asset: Asset) -> Optional[PairCacheKey]
 
 
 class Cryptocompare(ExternalServiceWithApiKey):
-    def __init__(self, data_directory: Path, database: Optional[DBHandler]) -> None:
+    def __init__(self, data_directory: Path, database: Optional['DBHandler']) -> None:
         super().__init__(database=database, service_name=ExternalService.CRYPTOCOMPARE)
         self.data_directory = data_directory
         self.price_history: Dict[PairCacheKey, PriceHistoryData] = {}
@@ -289,7 +303,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         """Checks when we were last rate limited by CC and if it was within the given seconds"""
         return ts_now() - self.last_rate_limit <= seconds
 
-    def set_database(self, database: DBHandler) -> None:
+    def set_database(self, database: 'DBHandler') -> None:
         """If the cryptocompare instance was initialized without a DB this sets its DB"""
         msg = 'set_database was called on a cryptocompare instance that already has a DB'
         assert self.db is None, msg

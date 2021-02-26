@@ -1,18 +1,20 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Tuple
+from typing import TYPE_CHECKING, Dict, List
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.eth2_utils import (
+from rotkehlchen.chain.ethereum.eth2_utils import get_validator_daily_stats
+from rotkehlchen.chain.ethereum.typing import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
-    ValidatorPerformance,
+    Eth2Deposit,
+    ValidatorDetails,
 )
 from rotkehlchen.chain.ethereum.utils import decode_event_data
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
+from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_gwei, ts_now
@@ -24,96 +26,9 @@ if TYPE_CHECKING:
 
 ETH2_DEPOSIT = EthereumConstants().contract('ETH2_DEPOSIT')
 ETH2_DEPLOYED_TS = Timestamp(1602667372)
-ETH2_DEPOSITS_PREFIX = 'eth2_deposits'
-
 EVENT_ABI = [x for x in ETH2_DEPOSIT.abi if x['type'] == 'event'][0]
 
-REQUEST_DELTA_TS = 60 * 60  # 1h
-
-Eth2DepositDBTuple = (
-    Tuple[
-        str,  # tx_hash
-        int,  # log_index
-        str,  # from_address
-        int,  # timestamp
-        str,  # pubkey
-        str,  # withdrawal_credentials
-        str,  # amount
-        str,  # usd_value
-        int,  # validator_index
-    ]
-)
-
-
-class ValidatorDetails(NamedTuple):
-    validator_index: int
-    public_key: str
-    eth1_depositor: ChecksumEthAddress
-    performance: ValidatorPerformance
-
-    def serialize(self, eth_usd_price: FVal) -> Dict[str, Any]:
-        return {
-            'index': self.validator_index,
-            'public_key': self.public_key,
-            'eth1_depositor': self.eth1_depositor,
-            **self.performance.serialize(eth_usd_price),
-        }
-
-
-class Eth2Deposit(NamedTuple):
-    from_address: ChecksumEthAddress
-    pubkey: str  # hexstring
-    withdrawal_credentials: str  # hexstring
-    value: Balance
-    deposit_index: int  # the deposit index -- not the same as the validator index
-    tx_hash: str  # the transaction hash
-    log_index: int
-    timestamp: Timestamp
-
-    @classmethod
-    def deserialize_from_db(
-            cls,
-            deposit_tuple: Eth2DepositDBTuple,
-    ) -> 'Eth2Deposit':
-        """Turns a tuple read from DB into an appropriate LiquidityPoolEvent.
-
-        Deposit_tuple index - Schema columns
-        ------------------------------------
-        0 - tx_hash
-        1 - log_index
-        2 - from_address
-        3 - timestamp
-        4 - pubkey
-        5 - withdrawal_credentials
-        6 - amount
-        7 - usd_value
-        8 - deposit_index
-        """
-        return cls(
-            tx_hash=deposit_tuple[0],
-            log_index=int(deposit_tuple[1]),
-            from_address=deserialize_ethereum_address(deposit_tuple[2]),
-            timestamp=Timestamp(int(deposit_tuple[3])),
-            pubkey=deposit_tuple[4],
-            withdrawal_credentials=deposit_tuple[5],
-            value=Balance(amount=FVal(deposit_tuple[6]), usd_value=FVal(deposit_tuple[7])),
-            deposit_index=int(deposit_tuple[8]),
-        )
-
-    def to_db_tuple(self) -> Eth2DepositDBTuple:
-        """Turns the instance data into a tuple to be inserted in the DB
-        """
-        return (
-            self.tx_hash,
-            self.log_index,
-            str(self.from_address),
-            int(self.timestamp),
-            self.pubkey,
-            self.withdrawal_credentials,
-            str(self.value.amount),
-            str(self.value.usd_value),
-            self.deposit_index,
-        )
+REQUEST_DELTA_TS = 60 * 60  # 1
 
 
 def _get_eth2_staking_deposits_onchain(
@@ -244,14 +159,15 @@ def get_eth2_staking_deposits(
                 end_ts=to_ts,
             )
 
+    dbeth2 = DBEth2(database)
     # Insert new deposits in DB
     if new_deposits:
-        database.add_eth2_deposits(new_deposits)
+        dbeth2.add_eth2_deposits(new_deposits)
 
     # Fetch all DB deposits for the given addresses
     deposits: List[Eth2Deposit] = []
     for address in addresses:
-        db_deposits = database.get_eth2_deposits(address=address)
+        db_deposits = dbeth2.get_eth2_deposits(address=address)
         deposits.extend(db_deposits)
 
     deposits.sort(key=lambda deposit: (deposit.timestamp, deposit.log_index))
@@ -300,12 +216,13 @@ def get_eth2_details(
         addresses: List[ChecksumEthAddress],
 ) -> List[ValidatorDetails]:
     """Go through the list of eth1 addresses and find all eth2 validators associated
-    with them along with their details.
+    with them along with their details. Also returns the daily stats for each validator.
 
     May raise RemoteError due to beaconcha.in API"""
     indices = []
     index_to_address = {}
     index_to_pubkey = {}
+    assert beaconchain.db is not None, 'Beaconchain db should be populated'
     # and for each address get the validator info (to get the index) -- this could be avoided
     for address in addresses:
         validators = beaconchain.get_eth1_address_validators(address)
@@ -318,21 +235,33 @@ def get_eth2_details(
     result = []
     performance_result = beaconchain.get_performance(list(indices))
     for validator_index, entry in performance_result.items():
+        stats = get_validator_daily_stats(
+            db=beaconchain.db,
+            validator_index=validator_index,
+            msg_aggregator=beaconchain.msg_aggregator,
+        )
         result.append(ValidatorDetails(
             validator_index=validator_index,
             public_key=index_to_pubkey[validator_index],
             eth1_depositor=index_to_address[validator_index],
             performance=entry,
+            daily_stats=stats,
         ))
 
     # The performance call does not return validators that are not active and are still depositing
     depositing_indices = set(index_to_address.keys()) - set(performance_result.keys())
     for index in depositing_indices:
+        stats = get_validator_daily_stats(
+            db=beaconchain.db,
+            validator_index=index,
+            msg_aggregator=beaconchain.msg_aggregator,
+        )
         result.append(ValidatorDetails(
             validator_index=index,
             public_key=index_to_pubkey[index],
             eth1_depositor=index_to_address[index],
             performance=DEPOSITING_VALIDATOR_PERFORMANCE,
+            daily_stats=stats,
         ))
 
     return result

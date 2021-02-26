@@ -8,6 +8,11 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.ethereum.defi.structures import (
+    DefiBalance,
+    DefiProtocol,
+    DefiProtocolBalances,
+)
 from rotkehlchen.chain.ethereum.modules.aave import (
     AaveBalances,
     AaveBorrowingBalance,
@@ -16,12 +21,6 @@ from rotkehlchen.chain.ethereum.modules.aave import (
 )
 from rotkehlchen.chain.ethereum.modules.adex import ADXStakingBalance, ADXStakingHistory
 from rotkehlchen.chain.ethereum.modules.compound import CompoundBalance, CompoundEvent
-from rotkehlchen.chain.ethereum.defi.structures import (
-    DefiBalance,
-    DefiProtocol,
-    DefiProtocolBalances,
-)
-from rotkehlchen.chain.ethereum.eth2 import Eth2Deposit
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     MakerdaoVault,
@@ -29,8 +28,6 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     VaultEvent,
     VaultEventType,
 )
-from rotkehlchen.chain.ethereum.structures import AaveEvent
-from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.chain.ethereum.modules.uniswap import (
     UniswapPool,
     UniswapPoolAsset,
@@ -41,6 +38,9 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultEvent,
     YearnVaultHistory,
 )
+from rotkehlchen.chain.ethereum.structures import AaveEvent
+from rotkehlchen.chain.ethereum.trades import AMMTrade
+from rotkehlchen.chain.ethereum.typing import Eth2Deposit
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade

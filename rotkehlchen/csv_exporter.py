@@ -21,7 +21,6 @@ from rotkehlchen.constants import (
     ZERO,
 )
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.typing import (
@@ -36,6 +35,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
 
 if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.accounting.cost_basis import CostBasisInfo
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ class CSVExporter():
 
     def __init__(
             self,
-            database: DBHandler,
+            database: 'DBHandler',
             user_directory: Path,
             create_csv: bool,
     ):

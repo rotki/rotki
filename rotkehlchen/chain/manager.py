@@ -24,18 +24,23 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
-from rotkehlchen.accounting.structures import Balance, BalanceSheet
+from rotkehlchen.accounting.structures import (
+    AssetBalance,
+    Balance,
+    BalanceSheet,
+    DefiEvent,
+    DefiEventType,
+)
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.eth2 import (
-    Eth2Deposit,
-    ValidatorDetails,
     get_eth2_balances,
     get_eth2_details,
     get_eth2_staking_deposits,
 )
+from rotkehlchen.chain.ethereum.eth2_utils import get_validator_daily_stats
 from rotkehlchen.chain.ethereum.modules import (
     Aave,
     Adex,
@@ -82,6 +87,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDetails
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -256,7 +262,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
 
         self.eth2_details_last_query_ts = Timestamp(0)
-        self.eth2_details: List[ValidatorDetails] = []
+        self.eth2_details: List['ValidatorDetails'] = []
 
         self.defi_lock = Semaphore()
         self.eth2_lock = Semaphore()
@@ -1168,7 +1174,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def get_eth2_staking_deposits(self) -> List[Eth2Deposit]:
+    def get_eth2_staking_deposits(self) -> List['Eth2Deposit']:
         # Get the details first, to see which of the user's addresses have deposits
         details = self.get_eth2_staking_details()
         addresses = {x.eth1_depositor for x in details}
@@ -1183,8 +1189,46 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def get_eth2_staking_details(self) -> List[ValidatorDetails]:
+    def get_eth2_staking_details(self) -> List['ValidatorDetails']:
         return get_eth2_details(
             beaconchain=self.beaconchain,
             addresses=self.accounts.eth,
         )
+
+    @protect_with_lock()
+    @cache_response_timewise()
+    def get_eth2_history_events(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> List[DefiEvent]:
+        if to_timestamp < 1607212800:  # Dec 1st UTC
+            return []  # no need to bother querying before beacon chain launch
+
+        defi_events = []
+        eth2_details = get_eth2_details(
+            beaconchain=self.beaconchain,
+            addresses=self.accounts.eth,
+        )
+        for entry in eth2_details:
+            stats = get_validator_daily_stats(
+                db=self.database,
+                validator_index=entry.validator_index,
+                msg_aggregator=self.msg_aggregator,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+            for stats_entry in stats:
+                defi_events.append(DefiEvent(
+                    timestamp=stats_entry.timestamp,
+                    wrapped_event=stats_entry,
+                    event_type=DefiEventType.ETH2_EVENT,
+                    got_asset=A_ETH,
+                    got_balance=stats_entry.pnl_balance,
+                    spent_asset=None,
+                    spent_balance=None,
+                    pnl=[AssetBalance(asset=A_ETH, balance=stats_entry.pnl_balance)],
+                    count_spent_got_cost_basis=True,
+                ))
+
+        return defi_events

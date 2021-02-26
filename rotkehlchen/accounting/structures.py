@@ -143,6 +143,7 @@ class DefiEventType(Enum):
     YEARN_VAULTS_EVENT = auto()
     ADEX_EVENT = auto()
     COMPOUND_EVENT = auto()
+    ETH2_EVENT = auto()
 
     def __str__(self) -> str:
         if self == DefiEventType.DSR_EVENT:
@@ -157,6 +158,8 @@ class DefiEventType(Enum):
             return 'AdEx event'
         if self == DefiEventType.COMPOUND_EVENT:
             return 'Compound event'
+        if self == DefiEventType.ETH2_EVENT:
+            return 'ETH2 event'
         # else
         raise RuntimeError(f'Corrupt value {self} for DefiEventType -- Should never happen')
 
