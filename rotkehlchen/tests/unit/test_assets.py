@@ -146,7 +146,6 @@ def test_asset_identifiers_are_unique_all_lowercased():
 
 def test_assets_have_common_keys():
     """Test that checks that the keys and types of tokens in all_assets.json are correct"""
-    # Issue #2363
     # Create a list of pairs with fields with their types. We'll add more fields to check
     # if we are dealing with a token
     verify = (("symbol", str), ("name", str), ("type", str), ("started", int))
@@ -169,15 +168,15 @@ def test_assets_have_common_keys():
             verify_against = verify_fiat
 
         # make the basic checks
+        msg = f'Key verification in asset {asset_id} failed'
         assert all((key in asset_data.keys() and isinstance(asset_data[key], key_type)
-                    for (key, key_type) in verify_against)), 'Key verification'\
-            f' in asset {asset_id} failed'
+                    for (key, key_type) in verify_against
+                    )), msg
 
         # check the optional fields
         for key, key_type in optional:
             if asset_data.get(key) is not None:
-                assert isinstance(asset_data.get(key), key_type), 'Optional keys'\
-                    f' verification in asset {asset_id} failed'
+                assert isinstance(asset_data.get(key), key_type), msg
 
 
 def test_coingecko_identifiers_are_reachable(data_dir):
