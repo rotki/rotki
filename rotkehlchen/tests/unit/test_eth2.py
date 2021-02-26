@@ -313,8 +313,8 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         [],  # no on-chain request, nothing in DB
         [EXPECTED_DEPOSITS[0]],  # on-chain request, deposit in DB
     ]
-
-    with patch(
+    dbeth2_mock = patch('rotkehlchen.chain.ethereum.eth2.DBEth2', return_value=dbeth2)
+    with dbeth2_mock, patch(
         'rotkehlchen.chain.ethereum.eth2._get_eth2_staking_deposits_onchain',
     ) as mock_get_eth2_staking_deposits_onchain:
         # 3rd call return
@@ -444,13 +444,20 @@ def test_get_eth2_balances_validator_not_yet_active(beaconchain, inquirer):  # p
     assert mapping[ADDR1] == Balance(amount=amount, usd_value=amount * FVal('1.5'))
 
 
-def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer):  # pylint: disable=unused-argument  # noqa: E501
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
+def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer, price_historian):  # pylint: disable=unused-argument  # noqa: E501
     """Test that if a validator is detected but is not yet active the balance is shown properly
 
     Test for: https://github.com/rotki/rotki/issues/1888
     """
     with _create_beacon_mock(beaconchain):
         details = get_eth2_details(beaconchain=beaconchain, addresses=[ADDR1])
+
+    for idx in range(0, 2):
+        # basic check about daily stats but then delete since this is not what this test checks
+        assert len(details[idx].daily_stats) > 0
+        assert details[idx].daily_stats[0].timestamp < details[idx].daily_stats[-1].timestamp
+        details[idx] = details[idx]._replace(daily_stats=[])
 
     expected_details = [
         ValidatorDetails(
@@ -464,11 +471,13 @@ def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer):  # py
                 performance_1m=143716247,
                 performance_1y=143716247,
             ),
+            daily_stats=[],
         ), ValidatorDetails(
             validator_index=1507,
             public_key='0x8b242e5cdb0a7740a605f3c39262253eb2b5e7ee514a544e823f996e8de9961db7d5264d08c5ce13a65efa82b868accc',  # noqa: E501
             eth1_depositor=ADDR1,
             performance=DEPOSITING_VALIDATOR_PERFORMANCE,
+            daily_stats=[],
         ),
     ]
     assert details == expected_details
