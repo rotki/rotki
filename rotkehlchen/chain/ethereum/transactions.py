@@ -31,12 +31,29 @@ class EthTransactions(LockableQueryObject):
         self.msg_aggregator = msg_aggregator
         self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
 
+    def _return_transactions_maybe_limit(
+            self,
+            address: ChecksumEthAddress,
+            transactions: List[EthereumTransaction],
+            with_limit: bool,
+    ) -> List[EthereumTransaction]:
+        if with_limit is False:
+            return transactions
+
+        transactions_queried_so_far = sum(x for _, x in self.tx_per_address.items())
+        remaining_num_tx = FREE_ETH_TX_LIMIT - transactions_queried_so_far
+        returning_tx_length = min(remaining_num_tx, len(transactions))
+        # Note down how many we got for this address
+        self.tx_per_address[address] = returning_tx_length
+        return transactions[:returning_tx_length]
+
     def single_address_query_transactions(
             self,
             address: ChecksumEthAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
             with_limit: bool,
+            only_cache: bool,
     ) -> List[EthereumTransaction]:
         self.tx_per_address[address] = 0
         transactions = self.database.get_ethereum_transactions(
@@ -44,6 +61,13 @@ class EthTransactions(LockableQueryObject):
             to_ts=end_ts,
             address=address,
         )
+        if only_cache:
+            return self._return_transactions_maybe_limit(
+                address=address,
+                transactions=transactions,
+                with_limit=with_limit,
+            )
+
         ranges = DBQueryRanges(self.database)
         ranges_to_query = ranges.get_location_query_ranges(
             location_string=f'ethtxs_{address}',
@@ -89,15 +113,11 @@ class EthTransactions(LockableQueryObject):
             ranges_to_query=ranges_to_query,
         )
 
-        if with_limit:
-            transactions_queried_so_far = sum(x for _, x in self.tx_per_address.items())
-            remaining_num_tx = FREE_ETH_TX_LIMIT - transactions_queried_so_far
-            returning_tx_length = min(remaining_num_tx, len(transactions))
-            # Note down how many we got for this address
-            self.tx_per_address[address] = returning_tx_length
-            return transactions[:returning_tx_length]
-
-        return transactions
+        return self._return_transactions_maybe_limit(
+            address=address,
+            transactions=transactions,
+            with_limit=with_limit,
+        )
 
     @protect_with_lock()
     def query(
@@ -107,6 +127,7 @@ class EthTransactions(LockableQueryObject):
             to_ts: Timestamp,
             with_limit: bool = False,
             recent_first: bool = False,
+            only_cache: bool = False,
     ) -> List[EthereumTransaction]:
         """Queries for all transactions (normal AND internal) of all ethereum accounts.
         Returns a list of all transactions of all accounts sorted by time.
@@ -133,6 +154,7 @@ class EthTransactions(LockableQueryObject):
                 start_ts=from_ts,
                 end_ts=to_ts,
                 with_limit=with_limit,
+                only_cache=only_cache,
             )
             transactions_set.update(set(new_transactions))
 

@@ -1498,10 +1498,11 @@ Querying ethereum transactions
       GET /api/1/blockchains/ETH/transactions/0xdAC17F958D2ee523a2206206994597C13D831ec7/ HTTP/1.1
       Host: localhost:5042
 
-      {"from_timestamp": 1514764800, "to_timestamp": 1572080165}
+      {"from_timestamp": 1514764800, "to_timestamp": 1572080165, "only_cache": false}
 
    :reqjson int from_timestamp: The timestamp after which to return transactions. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return transactions. If not given all transactions from ``from_timestamp`` until now are returned.
+   :reqjson bool only_cache: If true then only the ethereum transactions in the DB are queried.
 
 
    **Example Response**:

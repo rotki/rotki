@@ -2281,6 +2281,7 @@ class RestAPI():
             address: Optional[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            only_cache: bool,
     ) -> Dict[str, Any]:
         transactions: Optional[List[EthereumTransaction]]
         try:
@@ -2290,6 +2291,7 @@ class RestAPI():
                 to_ts=to_timestamp,
                 with_limit=self.rotkehlchen.premium is None,
                 recent_first=True,
+                only_cache=only_cache,
             )
             status_code = HTTPStatus.OK
             message = ''
@@ -2325,6 +2327,7 @@ class RestAPI():
             address: Optional[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            only_cache: bool,
     ) -> Response:
         if async_query:
             return self._query_async(
@@ -2332,9 +2335,15 @@ class RestAPI():
                 address=address,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
+                only_cache=only_cache,
             )
 
-        response = self._get_ethereum_transactions(address, from_timestamp, to_timestamp)
+        response = self._get_ethereum_transactions(
+            address=address,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            only_cache=only_cache,
+        )
         result = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)
