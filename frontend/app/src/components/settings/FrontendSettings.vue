@@ -185,8 +185,7 @@ export default class FrontendSettings extends Mixins<
     );
 
     if (success) {
-      monitor.stop();
-      monitor.start();
+      monitor.restart();
     }
   }
 
@@ -243,8 +242,7 @@ export default class FrontendSettings extends Mixins<
     );
     if (success) {
       this.refreshPeriod = refreshPeriod < 0 ? '' : period;
-      monitor.stop();
-      monitor.start();
+      monitor.restart();
     }
   }
 

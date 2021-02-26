@@ -32,11 +32,14 @@ class Monitoring {
    * This function is called periodically, queries some data from the
    * client and updates the UI with the response.
    */
-  start() {
+  start(restarting: boolean = false) {
     const settings = store.state.settings!;
 
     if (!this.monitors[PERIODIC]) {
-      Monitoring.fetch();
+      if (!restarting) {
+        Monitoring.fetch();
+      }
+
       this.monitors[PERIODIC] = setInterval(
         Monitoring.fetch,
         settings[QUERY_PERIOD] * 1000
@@ -44,12 +47,16 @@ class Monitoring {
     }
 
     if (!this.monitors[TASK]) {
-      taskManager.monitor();
+      if (!restarting) {
+        taskManager.monitor();
+      }
       this.monitors[TASK] = setInterval(() => taskManager.monitor(), 2000);
     }
 
     if (!this.monitors[WATCHER]) {
-      Monitoring.fetchWatchers();
+      if (!restarting) {
+        Monitoring.fetchWatchers();
+      }
       // check for watchers every 6 minutes (approx. half the firing time
       // of the server-side watchers)
       this.monitors[WATCHER] = setInterval(Monitoring.fetchWatchers, 360000);
@@ -66,6 +73,11 @@ class Monitoring {
       clearInterval(this.monitors[key]);
       delete this.monitors[key];
     }
+  }
+
+  restart() {
+    this.stop();
+    this.start(true);
   }
 }
 
