@@ -54,20 +54,20 @@ class BalancerPool:
         }
 
 
-AddressBalances = Dict[ChecksumEthAddress, List[BalancerPool]]
-DDAddressBalances = DefaultDict[ChecksumEthAddress, List[BalancerPool]]
-TokenPrices = Dict[ChecksumEthAddress, Price]
+AddressToBalances = Dict[ChecksumEthAddress, List[BalancerPool]]
+DDAddressToBalances = DefaultDict[ChecksumEthAddress, List[BalancerPool]]
+TokenToPrices = Dict[ChecksumEthAddress, Price]
 
 
 class ProtocolBalance(NamedTuple):
-    address_balances: AddressBalances
+    address_to_balances: AddressToBalances
     known_tokens: Set[EthereumToken]
     unknown_tokens: Set[UnknownEthereumToken]
 
 
-AddressSwaps = Dict[ChecksumEthAddress, List[AMMSwap]]
-DDAddressSwaps = DefaultDict[ChecksumEthAddress, List[AMMSwap]]
-AddressTrades = Dict[ChecksumEthAddress, List[AMMTrade]]
+AddressToSwaps = Dict[ChecksumEthAddress, List[AMMSwap]]
+DDAddressToSwaps = DefaultDict[ChecksumEthAddress, List[AMMSwap]]
+AddressToTrades = Dict[ChecksumEthAddress, List[AMMTrade]]
 
 
 class SwapRawAddresses(NamedTuple):

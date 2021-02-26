@@ -30,7 +30,7 @@ BALANCER_TEST_ADDR2 = deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0
 @pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR1]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_balances_module_not_activated(
+def test_get_balancer_module_not_activated(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
 ):

@@ -30,13 +30,13 @@ from rotkehlchen.utils.interfaces import EthereumModule
 from .graph import POOLSHARES_QUERY, SWAPS_QUERY, TOKENPRICES_QUERY
 from .typing import (
     BALANCER_TRADES_PREFIX,
-    AddressBalances,
-    AddressSwaps,
-    AddressTrades,
-    DDAddressBalances,
-    DDAddressSwaps,
+    AddressToBalances,
+    AddressToSwaps,
+    AddressToTrades,
+    DDAddressToBalances,
+    DDAddressToSwaps,
     ProtocolBalance,
-    TokenPrices,
+    TokenToPrices,
 )
 from .utils import (
     SUBGRAPH_REMOTE_ERROR_MSG,
@@ -95,9 +95,9 @@ class Balancer(EthereumModule):
             addresses: List[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> AddressTrades:
+    ) -> AddressToTrades:
         """Fetch all DB Balancer swaps within the time range and format as trades"""
-        db_address_trades: AddressTrades = {}
+        db_address_to_trades: AddressToTrades = {}
         for address in addresses:
             db_swaps = self.database.get_amm_swaps(
                 from_ts=from_timestamp,
@@ -107,15 +107,15 @@ class Balancer(EthereumModule):
             )
             if db_swaps:
                 db_trades = self._get_trades_from_swaps(db_swaps)
-                db_address_trades[address] = db_trades
+                db_address_to_trades[address] = db_trades
 
-        return db_address_trades
+        return db_address_to_trades
 
-    def _get_balances_graph(
+    def _get_protocol_balance_graph(
             self,
             addresses: List[ChecksumEthAddress],
     ) -> ProtocolBalance:
-        """Get the balances in the pools querying the Balancer subgraph
+        """Get a mapping of addresses to protocol balance.
 
         May raise RemoteError
         """
@@ -135,7 +135,7 @@ class Balancer(EthereumModule):
             'addresses': addresses_lower,
             'balance': '0',
         }
-        address_balances: DDAddressBalances = defaultdict(list)
+        address_to_balances: DDAddressToBalances = defaultdict(list)
         while True:
             try:
                 result = self.graph.query(
@@ -177,7 +177,7 @@ class Balancer(EthereumModule):
                     )
                     raise RemoteError('Failed to deserialize balancer balances') from e
 
-                address_balances[address].append(balancer_pool)
+                address_to_balances[address].append(balancer_pool)
 
             if len(raw_pool_shares) < GRAPH_QUERY_LIMIT:
                 break
@@ -188,15 +188,15 @@ class Balancer(EthereumModule):
             }
 
         protocol_balance = ProtocolBalance(
-            address_balances=dict(address_balances),
+            address_to_balances=dict(address_to_balances),
             known_tokens=known_tokens,
             unknown_tokens=unknown_tokens,
         )
         return protocol_balance
 
-    def _get_known_token_prices(self, known_tokens: Set[EthereumToken]) -> TokenPrices:
-        """Get the USD price of the known tokens"""
-        token_prices: TokenPrices = {}
+    def _get_known_token_to_prices(self, known_tokens: Set[EthereumToken]) -> TokenToPrices:
+        """Get a mapping of known token addresses to USD price"""
+        token_to_prices: TokenToPrices = {}
         for token in known_tokens:
             usd_price = Inquirer().find_usd_price(token)
             if usd_price == Price(ZERO):
@@ -206,24 +206,24 @@ class Balancer(EthereumModule):
                 )
                 continue
 
-            token_prices[token.ethereum_address] = usd_price
-        return token_prices
+            token_to_prices[token.ethereum_address] = usd_price
+        return token_to_prices
 
-    def _get_trades(
+    def _get_address_to_trades(
             self,
             addresses: List[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             only_cache: bool,
-    ) -> AddressTrades:
-        """Given a list of addresses returns all their trades
-        (1 AMMTrade has N AMMSwap) within the given time range. Requests all the
-        swaps of the new addresses via subgraph. Requests all the new swaps
-        (since last used query range) of the existing addresses via subgraph.
+    ) -> AddressToTrades:
+        """Get a mapping of addresses to trades for the given time range
+
+        Requests all the new swaps (since last used query range) of the existing
+        addresses via subgraph.
 
         May raise RemoteError
         """
-        address_swaps: AddressSwaps = {}
+        address_to_swaps: AddressToSwaps = {}
         new_addresses: List[ChecksumEthAddress] = []
         existing_addresses: List[ChecksumEthAddress] = []
         min_end_ts: Timestamp = to_timestamp
@@ -249,12 +249,12 @@ class Balancer(EthereumModule):
         # Request new addresses' trades
         if new_addresses:
             start_ts = Timestamp(0)
-            new_address_swaps = self._get_swaps_graph(
+            new_address_to_swaps = self._get_address_to_swaps_graph(
                 addresses=new_addresses,
                 start_ts=start_ts,
                 end_ts=to_timestamp,
             )
-            address_swaps.update(new_address_swaps)
+            address_to_swaps.update(new_address_to_swaps)
             self._update_used_query_range(
                 addresses=new_addresses,
                 prefix='balancer_trades',
@@ -264,12 +264,12 @@ class Balancer(EthereumModule):
 
         # Request existing DB addresses' trades
         if existing_addresses and to_timestamp > min_end_ts:
-            address_new_swaps = self._get_swaps_graph(
+            address_new_swaps = self._get_address_to_swaps_graph(
                 addresses=existing_addresses,
                 start_ts=min_end_ts,
                 end_ts=to_timestamp,
             )
-            address_swaps.update(address_new_swaps)
+            address_to_swaps.update(address_new_swaps)
             self._update_used_query_range(
                 addresses=existing_addresses,
                 prefix='balancer_trades',
@@ -278,25 +278,23 @@ class Balancer(EthereumModule):
             )
 
         # Insert all unique swaps to the DB
-        if address_swaps:
-            all_swaps = {swap for a_swaps in address_swaps.values() for swap in a_swaps}
+        if address_to_swaps:
+            all_swaps = {swap for a_swaps in address_to_swaps.values() for swap in a_swaps}
             self.database.add_amm_swaps(list(all_swaps))
 
-        # Fetch all DB Balancer swaps within the time range and format as trades
-        db_address_trades = self._fetch_trades_from_db(
+        return self._fetch_trades_from_db(
             addresses=addresses,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
-        return db_address_trades
 
-    def _get_swaps_graph(
+    def _get_address_to_swaps_graph(
             self,
             addresses: List[ChecksumEthAddress],
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> AddressSwaps:
-        """Get the swaps of the addresses for the given time range
+    ) -> AddressToSwaps:
+        """Get a mapping of addresses to swaps for the given time range
 
         May raise RemoteError
         """
@@ -316,7 +314,7 @@ class Balancer(EthereumModule):
             'start_ts': start_ts,
             'end_ts': end_ts,
         }
-        address_swaps: DDAddressSwaps = defaultdict(list)
+        address_to_swaps: DDAddressToSwaps = defaultdict(list)
         while True:
             try:
                 result = self.graph.query(
@@ -353,7 +351,7 @@ class Balancer(EthereumModule):
                     )
                     raise RemoteError('Failed to deserialize balancer trades') from e
 
-                address_swaps[amm_swap.address].append(amm_swap)
+                address_to_swaps[amm_swap.address].append(amm_swap)
 
             if len(raw_swaps) < GRAPH_QUERY_LIMIT:
                 break
@@ -371,7 +369,7 @@ class Balancer(EthereumModule):
                 'offset': query_offset,
             }
 
-        return address_swaps
+        return address_to_swaps
 
     @staticmethod
     def _get_trades_from_swaps(swaps: List[AMMSwap]) -> List[AMMTrade]:
@@ -395,46 +393,47 @@ class Balancer(EthereumModule):
 
         return trades
 
-    def _get_unknown_token_prices_graph(
+    def _get_unknown_token_to_prices_graph(
             self,
             unknown_tokens: Set[UnknownEthereumToken],
-    ) -> TokenPrices:
-        """Attempt to get the last token price using multiple price oracles,
-        first Balancer and then Uniswap (if necessary).
+    ) -> TokenToPrices:
+        """Get a mapping of unknown token addresses to USD price
+
+        Attempts first to get the price via Balancer, otherwise via Uniswap
 
         May raise RemoteError
         """
         unknown_token_addresses = {token.ethereum_address for token in unknown_tokens}
-        token_prices_bal = self._get_unknown_token_prices_balancer_graph(unknown_token_addresses)
-        token_prices = dict(token_prices_bal)
-        still_unknown_token_addresses = unknown_token_addresses - set(token_prices_bal.keys())
+        token_to_prices_bal = self._get_unknown_token_to_prices_balancer_graph(unknown_token_addresses)  # noqa: E501
+        token_to_prices = dict(token_to_prices_bal)
+        still_unknown_token_addresses = unknown_token_addresses - set(token_to_prices_bal.keys())
         if self.graph_uniswap is not None:
-            # Requesting the missing UnknownEthereumToken prices to Uniswap is
+            # Requesting the missing UnknownEthereumToken prices from Uniswap is
             # a nice to have alternative to the main oracle (Balancer). Therefore
-            # in case of failing to request it we just continue.
+            # in case of failing to request, it will just continue.
             try:
-                token_prices_uni = self._get_unknown_token_prices_uniswap_graph(still_unknown_token_addresses)  # noqa: E501
+                token_to_prices_uni = self._get_unknown_token_to_prices_uniswap_graph(still_unknown_token_addresses)  # noqa: E501
             except RemoteError:
                 # This error hiding is exclusive of the Balancer module. The Uniswap
                 # module also calls tokenDayDatas and processes the results in the
                 # same way, so in case of an error we should know.
-                token_prices_uni = {}
+                token_to_prices_uni = {}
 
-            token_prices = {**token_prices, **token_prices_uni}
+            token_to_prices = {**token_to_prices, **token_to_prices_uni}
 
         for unknown_token in unknown_tokens:
-            if unknown_token.ethereum_address not in token_prices:
+            if unknown_token.ethereum_address not in token_to_prices:
                 self.msg_aggregator.add_error(
                     f"Failed to request the USD price of {unknown_token.identifier}. "
                     f"Balances of the balancer pools that have this token won't be accurate.",
                 )
-        return token_prices
+        return token_to_prices
 
-    def _get_unknown_token_prices_balancer_graph(
+    def _get_unknown_token_to_prices_balancer_graph(
             self,
             unknown_token_addresses: Set[ChecksumEthAddress],
-    ) -> TokenPrices:
-        """Get the last token price via the balancer subgraph
+    ) -> TokenToPrices:
+        """Get a mapping of unknown token addresses to USD price via Balancer
 
         May raise RemoteError
         """
@@ -450,7 +449,7 @@ class Balancer(EthereumModule):
             'offset': 0,
             'token_ids': unknown_token_addresses_lower,
         }
-        token_prices: TokenPrices = {}
+        token_to_prices: TokenToPrices = {}
         while True:
             try:
                 result = self.graph.query(
@@ -485,7 +484,7 @@ class Balancer(EthereumModule):
                     )
                     continue
 
-                token_prices[token_address] = usd_price
+                token_to_prices[token_address] = usd_price
 
             if len(raw_token_prices) < GRAPH_QUERY_LIMIT:
                 break
@@ -495,13 +494,13 @@ class Balancer(EthereumModule):
                 'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
             }
 
-        return token_prices
+        return token_to_prices
 
-    def _get_unknown_token_prices_uniswap_graph(
+    def _get_unknown_token_to_prices_uniswap_graph(
             self,
             unknown_token_addresses: Set[ChecksumEthAddress],
-    ) -> TokenPrices:
-        """Get today's token price via the uniswap subgraph
+    ) -> TokenToPrices:
+        """Get a mapping of unknown token addresses to USD price via Uniswap
 
         May raise RemoteError
         """
@@ -525,7 +524,7 @@ class Balancer(EthereumModule):
             'token_ids': unknown_token_addresses_lower,
             'datetime': midnight_epoch,
         }
-        token_prices: TokenPrices = {}
+        token_to_prices: TokenToPrices = {}
         while True:
             try:
                 result = self.graph_uniswap.query(  # type: ignore # caller already checks
@@ -560,7 +559,7 @@ class Balancer(EthereumModule):
                     )
                     continue
 
-                token_prices[token_address] = usd_price
+                token_to_prices[token_address] = usd_price
 
             if len(raw_token_day_datas) < GRAPH_QUERY_LIMIT:
                 break
@@ -570,7 +569,7 @@ class Balancer(EthereumModule):
                 'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
             }
 
-        return token_prices
+        return token_to_prices
 
     def _update_used_query_range(
             self,
@@ -588,20 +587,20 @@ class Balancer(EthereumModule):
             )
 
     @staticmethod
-    def _update_tokens_prices_in_address_balances(
-            address_balances: AddressBalances,
-            known_token_prices: TokenPrices,
-            unknown_token_prices: TokenPrices,
+    def _update_tokens_prices_in_address_to_balances(
+            address_to_balances: AddressToBalances,
+            known_token_to_prices: TokenToPrices,
+            unknown_token_to_prices: TokenToPrices,
     ) -> None:
         """Update the prices (in USD) of the underlying pool tokens"""
-        for balancer_pools in address_balances.values():
+        for balancer_pools in address_to_balances.values():
             for balancer_pool in balancer_pools:
                 total_usd_value = ZERO
                 for pool_token in balancer_pool.tokens:
                     token_ethereum_address = pool_token.token.ethereum_address
-                    usd_price = known_token_prices.get(
+                    usd_price = known_token_to_prices.get(
                         token_ethereum_address,
-                        unknown_token_prices.get(token_ethereum_address, Price(ZERO)),
+                        unknown_token_to_prices.get(token_ethereum_address, Price(ZERO)),
                     )
                     if usd_price != Price(ZERO):
                         pool_token.usd_price = usd_price
@@ -614,22 +613,22 @@ class Balancer(EthereumModule):
     def get_balances(
         self,
         addresses: List[ChecksumEthAddress],
-    ) -> AddressBalances:
+    ) -> AddressToBalances:
         """Get the balances of the addresses
 
         May raise RemoteError
         """
-        protocol_balance = self._get_balances_graph(addresses)
+        protocol_balance = self._get_protocol_balance_graph(addresses)
         known_tokens = protocol_balance.known_tokens
         unknown_tokens = protocol_balance.unknown_tokens
-        known_token_prices = self._get_known_token_prices(known_tokens)
-        unknown_token_prices = self._get_unknown_token_prices_graph(unknown_tokens)
-        self._update_tokens_prices_in_address_balances(
-            address_balances=protocol_balance.address_balances,
-            known_token_prices=known_token_prices,
-            unknown_token_prices=unknown_token_prices,
+        known_token_to_prices = self._get_known_token_to_prices(known_tokens)
+        unknown_token_to_prices = self._get_unknown_token_to_prices_graph(unknown_tokens)
+        self._update_tokens_prices_in_address_to_balances(
+            address_to_balances=protocol_balance.address_to_balances,
+            known_token_to_prices=known_token_to_prices,
+            unknown_token_to_prices=unknown_token_to_prices,
         )
-        return protocol_balance.address_balances
+        return protocol_balance.address_to_balances
 
     def get_trades(
             self,
@@ -640,13 +639,13 @@ class Balancer(EthereumModule):
     ) -> List[AMMTrade]:
         with self.trades_lock:
             all_trades = []
-            trade_mapping = self._get_trades(
+            address_to_trades = self._get_address_to_trades(
                 addresses=addresses,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
                 only_cache=only_cache,
             )
-            for _, trades in trade_mapping.items():
+            for _, trades in address_to_trades.items():
                 all_trades.extend(trades)
 
             return all_trades
@@ -657,7 +656,7 @@ class Balancer(EthereumModule):
         reset_db_data: bool,
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
-    ) -> AddressTrades:
+    ) -> AddressToTrades:
         """Get the trades history of the addresses
 
         May raise RemoteError
@@ -666,14 +665,14 @@ class Balancer(EthereumModule):
             if reset_db_data is True:
                 self.database.delete_balancer_trades_data()
 
-            address_trades = self._get_trades(
+            address_to_trades = self._get_address_to_trades(
                 addresses=addresses,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
                 only_cache=False,
             )
 
-        return address_trades
+        return address_to_trades
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
