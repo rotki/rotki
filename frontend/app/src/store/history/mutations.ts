@@ -4,16 +4,15 @@ import {
   MUTATION_ADD_LEDGER_ACTION,
   MUTATION_SET_LEDGER_ACTIONS
 } from '@/store/history/consts';
-import { defaultHistoricState, defaultState } from '@/store/history/state';
+import { defaultState } from '@/store/history/state';
 import {
   AssetMovements,
   EthTransactions,
-  HistoryState,
-  Trades,
   HistoricData,
-  TradeEntry,
+  HistoryState,
   LedgerActionEntry,
-  EthTransactionEntry
+  TradeEntry,
+  Trades
 } from '@/store/history/types';
 
 export const mutations: MutationTree<HistoryState> = {
@@ -54,21 +53,6 @@ export const mutations: MutationTree<HistoryState> = {
 
   setTransactions(state: HistoryState, transactions: EthTransactions) {
     state.transactions = transactions;
-  },
-
-  updateTransactions(
-    state: HistoryState,
-    transactions: HistoricData<EthTransactionEntry>
-  ) {
-    state.transactions = {
-      data: [...state.transactions.data, ...transactions.data],
-      limit: transactions.limit,
-      found: transactions.found
-    };
-  },
-
-  resetTransactions(state: HistoryState) {
-    state.transactions = defaultHistoricState();
   },
 
   [MUTATION_SET_LEDGER_ACTIONS](

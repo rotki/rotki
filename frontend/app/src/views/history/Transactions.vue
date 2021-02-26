@@ -12,7 +12,7 @@
         <refresh-button
           :loading="refreshing"
           :tooltip="$t('transactions.refresh_tooltip')"
-          @refresh="fetchTransactions(true)"
+          @refresh="refresh"
         />
         <card-title class="ms-2">{{ $t('transactions.title') }}</card-title>
       </v-card-title>
@@ -129,9 +129,15 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
-import { IGNORE_TRANSACTIONS } from '@/store/history/consts';
+import {
+  FETCH_FROM_CACHE,
+  FETCH_FROM_SOURCE,
+  FETCH_REFRESH,
+  IGNORE_TRANSACTIONS
+} from '@/store/history/consts';
 import {
   EthTransactionWithFee,
+  FetchSource,
   IgnoreActionPayload
 } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
@@ -167,7 +173,7 @@ import { toUnit, Unit } from '@/utils/calculation';
   }
 })
 export default class Transactions extends Mixins(StatusMixin) {
-  fetchTransactions!: (refresh: boolean) => Promise<void>;
+  fetchTransactions!: (source: FetchSource) => Promise<void>;
   ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   unignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   setMessage!: (message: Message) => void;
@@ -347,8 +353,13 @@ export default class Transactions extends Mixins(StatusMixin) {
     { text: '', value: 'data-table-expand' }
   ];
 
-  mounted() {
-    this.fetchTransactions(false);
+  async mounted() {
+    await this.fetchTransactions(FETCH_FROM_CACHE);
+    await this.fetchTransactions(FETCH_FROM_SOURCE);
+  }
+
+  async refresh() {
+    await this.fetchTransactions(FETCH_REFRESH);
   }
 
   toEth(value: BigNumber): BigNumber {

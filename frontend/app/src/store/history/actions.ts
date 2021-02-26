@@ -350,10 +350,11 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async fetchTransactions(
     {
       commit,
+      state,
       rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
       rootState: { balances }
     },
-    refresh: boolean = false
+    source: FetchSource
   ): Promise<void> {
     const taskType = TaskType.TX;
     if (isTaskRunning(taskType)) {
@@ -362,6 +363,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     const section = Section.TX;
     const currentStatus = status(section);
+    const refresh = source === FETCH_REFRESH || source === FETCH_FROM_SOURCE;
 
     if (
       currentStatus === Status.LOADING ||
@@ -387,7 +389,10 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     const addresses = ethAccounts.map(address => address.address);
 
     const fetchAddress: (address: string) => Promise<void> = async address => {
-      const { taskId } = await api.history.ethTransactions(address);
+      const { taskId } = await api.history.ethTransactions(
+        address,
+        source === FETCH_FROM_CACHE
+      );
       const task = createTask<AccountRequestMeta>(taskId, taskType, {
         title: i18n.tc('actions.transactions.task.title'),
         description: i18n.tc(
@@ -408,19 +413,27 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         LimitedResponse<EntryWithMeta<EthTransaction>>,
         AccountRequestMeta
       >(taskType, `${taskId}`);
-      const data: HistoricData<EthTransactionEntry> = {
-        data: result.entries.map(({ entry, ignoredInAccounting }) => ({
+      const newTransactions = result.entries.map(
+        ({ entry, ignoredInAccounting }) => ({
           ...entry,
           ignoredInAccounting: ignoredInAccounting
-        })),
+        })
+      );
+
+      const transactions = [
+        ...state.transactions.data.filter(
+          tx => tx.fromAddress !== address && tx.toAddress !== address
+        ),
+        ...newTransactions
+      ];
+      const data: HistoricData<EthTransactionEntry> = {
+        data: transactions,
         limit: result.entriesLimit,
         found: result.entriesFound
       };
-      commit('updateTransactions', data);
+      commit('setTransactions', data);
       setStatus(Status.PARTIALLY_LOADED);
     };
-
-    commit('resetTransactions');
 
     const onError: (address: string, message: string) => void = (
       address,
