@@ -137,7 +137,7 @@ class ValidatorDailyStats(NamedTuple):
         )
 
     @property
-    def deposit_balance(self) -> Balance:
+    def deposited_balance(self) -> Balance:
         return Balance(
             amount=self.amount_deposited,
             usd_value=self.amount_deposited * self.start_usd_price,

@@ -24,7 +24,13 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
-from rotkehlchen.accounting.structures import Balance, BalanceSheet
+from rotkehlchen.accounting.structures import (
+    AssetBalance,
+    Balance,
+    BalanceSheet,
+    DefiEvent,
+    DefiEventType,
+)
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
@@ -34,6 +40,7 @@ from rotkehlchen.chain.ethereum.eth2 import (
     get_eth2_details,
     get_eth2_staking_deposits,
 )
+from rotkehlchen.chain.ethereum.eth2_utils import get_validator_daily_stats
 from rotkehlchen.chain.ethereum.modules import (
     Aave,
     Adex,
@@ -1187,3 +1194,41 @@ class ChainManager(CacheableObject, LockableQueryObject):
             beaconchain=self.beaconchain,
             addresses=self.accounts.eth,
         )
+
+    @protect_with_lock()
+    @cache_response_timewise()
+    def get_eth2_history_events(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> List[DefiEvent]:
+        if to_timestamp < 1607212800:  # Dec 1st UTC
+            return []  # no need to bother querying before beacon chain launch
+
+        defi_events = []
+        eth2_details = get_eth2_details(
+            beaconchain=self.beaconchain,
+            addresses=self.accounts.eth,
+        )
+        for entry in eth2_details:
+            stats = get_validator_daily_stats(
+                db=self.database,
+                validator_index=entry.validator_index,
+                msg_aggregator=self.msg_aggregator,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+            for stats_entry in stats:
+                defi_events.append(DefiEvent(
+                    timestamp=stats_entry.timestamp,
+                    wrapped_event=stats_entry,
+                    event_type=DefiEventType.ETH2_EVENT,
+                    got_asset=A_ETH,
+                    got_balance=stats_entry.pnl_balance,
+                    spent_asset=None,
+                    spent_balance=None,
+                    pnl=[AssetBalance(asset=A_ETH, balance=stats_entry.pnl_balance)],
+                    count_spent_got_cost_basis=True,
+                ))
+
+        return defi_events

@@ -4,17 +4,17 @@ from typing import TYPE_CHECKING, List, NamedTuple, Optional
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
 
-from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.chain.ethereum.typing import ValidatorDailyStats
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
-from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.typing import Timestamp
-from rotkehlchen.utils.misc import create_timestamp, ts_now
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import create_timestamp, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -162,7 +162,7 @@ def _scrape_validator_daily_stats(
                 location='eth2 staking daily stats',
                 msg_aggregator=msg_aggregator,
             )
-            for time in (timestamp, timestamp + DAY_IN_SECONDS)
+            for time in (timestamp, Timestamp(timestamp + DAY_IN_SECONDS))
         ]
         stats.append(ValidatorDailyStats(
             timestamp=timestamp,

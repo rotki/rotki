@@ -475,7 +475,7 @@ def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer):  # py
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_validator_daily_stats(price_historian, function_scope_messages_aggregator):
+def test_validator_daily_stats(price_historian, function_scope_messages_aggregator):  # pylint: disable=unused-argument  # noqa: E501
     stats = _scrape_validator_daily_stats(
         validator_index=33710,
         last_known_timestamp=0,
@@ -644,7 +644,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_validator_daily_stats_with_last_known_timestamp(
+def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unused-argument  # noqa: E501
         price_historian,
         function_scope_messages_aggregator,
 ):
@@ -710,7 +710,7 @@ def test_validator_daily_stats_with_last_known_timestamp(
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_validator_daily_stats_with_db_interaction(
+def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-argument  # noqa: E501
         price_historian,
         database,
         function_scope_messages_aggregator,
