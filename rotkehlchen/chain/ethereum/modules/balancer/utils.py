@@ -16,6 +16,18 @@ from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Location, Price,
 
 from .typing import BalancerPool, BalancerPoolToken, SwapAddresses, SwapRawAddresses
 
+SUBGRAPH_REMOTE_ERROR_MSG = (
+    "Failed to request the Balancer subgraph due to {error_msg}. "
+    "All Balancer balances and historical queries are not functioning until this is fixed. "  # noqa: E501
+    "Probably will get fixed with time. If not report it to rotki's support channel"  # noqa: E501
+)
+UNISWAP_REMOTE_ERROR_MSG = (
+    "Could not initialize the Uniswap subgraph due to {error_msg}. "
+    "All Balancer balances and historical queries won't be able to use a "
+    "secondary price oracle for requesting the USD price of the unsupported tokens. "
+    "Probably will get fixed with time. If not report it to rotki's support channel"
+)
+
 
 def deserialize_pool_share(
         raw_pool_share: Dict[str, Any],

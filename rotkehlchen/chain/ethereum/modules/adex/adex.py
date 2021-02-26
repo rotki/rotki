@@ -26,7 +26,7 @@ from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_qu
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.constants import YEAR_IN_SECONDS, ZERO
 from rotkehlchen.constants.assets import A_ADX, A_DAI, A_USD
-from rotkehlchen.errors import DeserializationError, RemoteError
+from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -71,6 +71,7 @@ from .utils import (
     IDENTITY_PROXY_INIT_CODE,
     OUTSTANDING_REWARD_THRESHOLD,
     STAKING_ADDR,
+    SUBGRAPH_REMOTE_ERROR_MSG,
     TOM_POOL_FEE_REWARDS_ADX_LEGACY_CHANNEL,
     TOM_POOL_FEE_REWARDS_API_URL,
     TOM_POOL_PERIOD_FORMAT,
@@ -104,16 +105,12 @@ class Adex(EthereumModule):
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         try:
-            self.graph: Optional[Graph] = Graph(
+            self.graph = Graph(
                 'https://api.thegraph.com/subgraphs/name/adexnetwork/adex-protocol-v2',
             )
         except RemoteError as e:
-            self.graph = None
-            self.msg_aggregator.add_error(
-                f'Could not initialize the AdEx subgraph due to {str(e)}. '
-                f'All balances and events history queries are not functioning until this is fixed. '  # noqa: E501
-                f'Probably will get fixed with time. If not report it to Rotki\'s support channel.',  # noqa: E501
-            )
+            self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+            raise ModuleInitializationFailure('subgraph remote error') from e
 
     @staticmethod
     def _calculate_unclaimed_reward(
@@ -889,16 +886,13 @@ class Adex(EthereumModule):
         events = []
         while True:
             try:
-                result = self.graph.query(  # type: ignore # caller already checks
+                result = self.graph.query(
                     querystr=querystr,
                     param_types=param_types,
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f'Failed to request the AdEx subgraph. All balances and events history '
-                    f'queries are not functioning due to: {str(e)}',
-                )
+                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
                 raise
 
             result_data = result[schema]
@@ -1155,12 +1149,6 @@ class Adex(EthereumModule):
         TODO: route non-premium users through on-chain query.
         """
         staking_balances: Dict[ChecksumAddress, List[ADXStakingBalance]] = {}
-        is_graph_mode = self.graph and self.premium
-        if not is_graph_mode:
-            raise NotImplementedError(
-                'Getting AdEx balances for non premium user is not implemented',
-            )
-
         fee_rewards: FeeRewards
         try:
             fee_rewards = self._get_tom_pool_fee_rewards_from_api()
@@ -1215,9 +1203,6 @@ class Adex(EthereumModule):
         - RemoteError: when there is a problem either querying the subgraph or
         deserializing the events.
         """
-        if self.graph is None:  # could not initialize graph
-            return {}
-
         if reset_db_data is True:
             self.database.delete_adex_events_data()
 

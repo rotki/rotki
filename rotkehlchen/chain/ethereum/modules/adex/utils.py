@@ -12,17 +12,12 @@ from rotkehlchen.serialization.deserialize import (
 
 from .typing import AdexEventDBTuple, AdexEventType, Bond, ChannelWithdraw, Unbond, UnbondRequest
 
-# The data below comes from:
-#
-# IdentityFactory address:
-# https://github.com/AdExNetwork/adex-staking/blob/master/src/helpers/constants.js#L16
-# https://github.com/adexnetwork/adex-protocol-eth
-#
-# IdentityProxy init code (creation bytecode):
-# https://github.com/AdExNetwork/adex-staking/blob/master/src/helpers/identity.js#L9
-#
-# 'generateAddress2()' (CREATE2) salt argument:
-# https://github.com/AdExNetwork/adex-staking/blob/master/src/helpers/identity.js#L15
+SUBGRAPH_REMOTE_ERROR_MSG = (
+    "Failed to request the AdEx subgraph due to {error_msg}. "
+    "All staking balances and events history queries are not functioning until this is fixed. "  # noqa: E501
+    "Probably will get fixed with time. If not report it to rotki's support channel"  # noqa: E501
+)
+# Constants from the AdExNetwork repo
 IDENTITY_FACTORY_ADDR = '0x9fe0d438E3c29C7CFF949aD8e8dA9403A531cC1A'
 IDENTITY_PROXY_INIT_CODE = (
     '0x608060405234801561001057600080fd5b5060026000803073ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060006101000a81548160ff021916908360ff160217905550600260008073'  # noqa: E501

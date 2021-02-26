@@ -18,7 +18,7 @@ from rotkehlchen.chain.ethereum.graph import (
 from rotkehlchen.chain.ethereum.modules.uniswap.graph import TOKEN_DAY_DATAS_QUERY
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors import DeserializationError, RemoteError
+from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -39,6 +39,8 @@ from .typing import (
     TokenPrices,
 )
 from .utils import (
+    SUBGRAPH_REMOTE_ERROR_MSG,
+    UNISWAP_REMOTE_ERROR_MSG,
     deserialize_pool_share,
     deserialize_swap,
     deserialize_token_day_data,
@@ -52,13 +54,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-SUBGRAPH_REMOTE_ERROR_MSG = (
-    "Failed to request the Balancer subgraph due to {error_msg}. "
-    "All Balancer balances and historical queries are not functioning until this is fixed. "  # noqa: E501
-    "Probably will get fixed with time. If not report it to rotki's support channel"  # noqa: E501
-)
 
 
 class Balancer(EthereumModule):
@@ -80,28 +75,20 @@ class Balancer(EthereumModule):
         self.msg_aggregator = msg_aggregator
         self.trades_lock = Semaphore()
         try:
-            self.graph: Optional[Graph] = Graph(
+            self.graph = Graph(
                 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer',
             )
         except RemoteError as e:
-            self.graph = None
-            self.msg_aggregator.add_error(
-                f"Could not initialize the Balancer subgraph due to {str(e)}. "
-                f"All Balancer balances and historical queries are not functioning until this is fixed. "  # noqa: E501
-                f"Probably will get fixed with time. If not report it to rotki's support channel",
-            )
+            self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+            raise ModuleInitializationFailure('subgraph remote error') from e
+
         try:
             self.graph_uniswap: Optional[Graph] = Graph(
                 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
             )
         except RemoteError as e:
             self.graph_uniswap = None
-            self.msg_aggregator.add_error(
-                f"Could not initialize the Uniswap subgraph due to {str(e)}. "
-                f"All Balancer balances and historical queries won't be able to use a "
-                f"secondary price oracle for requesting the USD price of the unsupported tokens. "
-                f"Probably will get fixed with time. If not report it to rotki's support channel",
-            )
+            self.msg_aggregator.add_error(UNISWAP_REMOTE_ERROR_MSG.format(error_msg=str(e)))
 
     def _fetch_trades_from_db(
             self,
@@ -151,7 +138,7 @@ class Balancer(EthereumModule):
         address_balances: DDAddressBalances = defaultdict(list)
         while True:
             try:
-                result = self.graph.query(  # type: ignore # caller already checks
+                result = self.graph.query(
                     querystr=querystr,
                     param_types=param_types,
                     param_values=param_values,
@@ -332,7 +319,7 @@ class Balancer(EthereumModule):
         address_swaps: DDAddressSwaps = defaultdict(list)
         while True:
             try:
-                result = self.graph.query(  # type: ignore # caller already checks
+                result = self.graph.query(
                     querystr=querystr,
                     param_types=param_types,
                     param_values=param_values,
@@ -421,7 +408,7 @@ class Balancer(EthereumModule):
         token_prices_bal = self._get_unknown_token_prices_balancer_graph(unknown_token_addresses)
         token_prices = dict(token_prices_bal)
         still_unknown_token_addresses = unknown_token_addresses - set(token_prices_bal.keys())
-        if self.graph_uniswap:
+        if self.graph_uniswap is not None:
             # Requesting the missing UnknownEthereumToken prices to Uniswap is
             # a nice to have alternative to the main oracle (Balancer). Therefore
             # in case of failing to request it we just continue.
@@ -466,7 +453,7 @@ class Balancer(EthereumModule):
         token_prices: TokenPrices = {}
         while True:
             try:
-                result = self.graph.query(  # type: ignore # caller already checks
+                result = self.graph.query(
                     querystr=querystr,
                     param_types=param_types,
                     param_values=param_values,
@@ -547,12 +534,7 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f"Failed to request the Uniswap subgraph due to {str(e)}. "
-                    f"All Balancer balances won't be able to use Uniswap as a secondary "
-                    f"price oracle for requesting the USD price of the unsupported tokens. "
-                    f"Probably will get fixed with time. If not report it to rotki's support channel.",  # noqa: E501
-                )
+                self.msg_aggregator.add_error(UNISWAP_REMOTE_ERROR_MSG.format(error_msg=str(e)))
                 raise
 
             try:
@@ -680,9 +662,6 @@ class Balancer(EthereumModule):
 
         May raise RemoteError
         """
-        if self.graph is None:  # could not initialize graph
-            return {}
-
         with self.trades_lock:
             if reset_db_data is True:
                 self.database.delete_balancer_trades_data()

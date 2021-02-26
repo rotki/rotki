@@ -115,3 +115,7 @@ class XPUBError(Exception):
 
 class EncodingError(Exception):
     pass
+
+
+class ModuleInitializationFailure(Exception):
+    """Raises when the module is unusable"""
