@@ -243,12 +243,14 @@ class EthereumTransactionsResource(BaseResource):
             address: Optional[ChecksumEthAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            only_cache: bool,
     ) -> Response:
         return self.rest_api.get_ethereum_transactions(
             async_query=async_query,
             address=address,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
+            only_cache=only_cache,
         )
 
     def delete(self) -> Response:

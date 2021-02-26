@@ -686,6 +686,7 @@ class EthereumTransactionQuerySchema(Schema):
     address = EthereumAddressField(missing=None)
     from_timestamp = TimestampField(missing=Timestamp(0))
     to_timestamp = TimestampField(missing=ts_now)
+    only_cache = fields.Boolean(missing=False)
 
 
 class TimerangeLocationQuerySchema(Schema):
