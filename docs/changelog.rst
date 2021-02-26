@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`916` Users will have the option to set an automatic balance refresh period.
 * :feature:`2379` Premium users will now be able to see their daily ETH2 staking details, how much they gained in ETH and fiat value. Furthermore they will be able to take it into account in the PnL report.
 * :feature:`2384` Users will now see their loopring balances on dashboard nested underneath the Ethereum balances.
 * :feature:`1448` When querying trades, deposits and withdrawals the entries that have already been queried will now be instantly shown to the user, while waiting for the query of the latest entries to complete.
