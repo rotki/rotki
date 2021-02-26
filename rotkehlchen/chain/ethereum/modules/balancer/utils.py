@@ -149,10 +149,6 @@ def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
             token_out=to_checksum_address(raw_addresses.token_out),
         )
     except ValueError as e:
-        error_msg = str(e)
-        for field in raw_addresses._fields:
-            if getattr(raw_addresses, field) in error_msg:
-                break
         raise DeserializationError(
             f'Invalid ethereum address: {getattr(raw_addresses, field)} in swap {field}.',
         ) from e
@@ -249,16 +245,21 @@ def deserialize_token_day_data(
     return token_address, usd_price
 
 
-def calculate_amm_trade_from_amm_swaps(swaps: List[AMMSwap]) -> AMMTrade:
-    """AMMTrade is always a buy.
+def calculate_trade_from_swaps(swaps: List[AMMSwap]) -> AMMTrade:
+    """Given a list of 1 or more AMMSwap (swap) return an AMMTrade (trade).
+    The trade is calculated using the first swap token (QUOTE) and last swap
+    token (BASE). Be aware that any token data in between will be ignored for
+    calculating the trade.
 
-    [USDC -> AMPL]               BASE_QUOTE pair is AMPL_USDC.
-    [USDC -> AMPL, AMPL -> WETH] BASE_QUOTE pair is WETH_USDC.
+    Examples:
+    [USDC -> AMPL]                              BASE_QUOTE pair is AMPL_USDC.
+    [USDC -> AMPL, AMPL -> WETH]                BASE_QUOTE pair is WETH_USDC.
+    [USDC -> AMPL, AMPL -> WETH, WETH -> USDC]  BASE_QUOTE pair is USDC_USDC.
     """
     assert len(swaps) != 0, "Swaps can't be an empty list here"
 
     amm_trade = AMMTrade(
-        trade_type=TradeType.BUY,
+        trade_type=TradeType.BUY,  # AMMTrade is always a buy
         base_asset=swaps[-1].token1,
         quote_asset=swaps[0].token0,
         amount=swaps[-1].amount1_out,
@@ -270,23 +271,19 @@ def calculate_amm_trade_from_amm_swaps(swaps: List[AMMSwap]) -> AMMTrade:
 
 
 def get_trades_from_tx_swaps(swaps: List[AMMSwap]) -> List[AMMTrade]:
-    """Aggregates N AMMSwaps in an AMMTrade.
+    """Given a list of AMMSwap (swap) return a list of AMMTrade (trade). Each
+    trade is made from 1 or more swaps (N swaps aggregated).
 
-    We expect that the swaps likely to be aggregated in a single trade are in
-    sequence (the next). This function currently does not have interleaved
-    matching capabilities.
+    Swaps aggregation criteria (all must be true):
+    - Sequence: the swaps are in sequence ([swap N, swap N+1]).
+    - Token: swap N token is swap N+1 token.
+    - Amount: swap N "amount out" is equal to swap N+1 "amount in".
 
     When swaps are done via the Balancer Exchange Proxy (caller address is
-    `0x3e66b66fd1d0b02fda6c811da9e0547970db2f21`) the previous swap N amount out
-    matches the swap N+1 amount in. However, there may be slightly differences
-    between these amounts when the caller is a custom contract. The former case
-    will be always be a trade with two swaps. On the latter it will depend on
-    the quantities. If they match, a trade with two swaps, otherwise two trades
-    (each one with one swap).
-
-    Aggregation criteria:
-    - AMMSwap N amount1_out == AMMSwap N+1 amount0_in
-    - AMMSwap N token1 == AMMSwap N+1 token0
+    0x3e66b66fd1d0b02fda6c811da9e0547970db2f21) the swap N "amount out" equals
+    to the swap N+1 "amount in". However, there may be a slightly difference
+    (e.g. 1e-5) when the caller is a custom contract. In this case the swaps
+    won't be aggregated under the same trade.
     """
     trades: List[AMMTrade] = []
     trade_swaps: List[AMMSwap] = []
@@ -294,16 +291,17 @@ def get_trades_from_tx_swaps(swaps: List[AMMSwap]) -> List[AMMTrade]:
     for idx, swap in enumerate(swaps):
         trade_swaps.append(swap)
         if idx == last_idx:
-            trade = calculate_amm_trade_from_amm_swaps(trade_swaps)
+            trade = calculate_trade_from_swaps(trade_swaps)
             trades.append(trade)
             break
 
         next_swap = swaps[idx + 1]
-        if (
+        is_aggregable = (
             swap.amount1_out != next_swap.amount0_in or
             swap.token1.ethereum_address != next_swap.token0.ethereum_address
-        ):
-            trade = calculate_amm_trade_from_amm_swaps(trade_swaps)
+        )
+        if is_aggregable:
+            trade = calculate_trade_from_swaps(trade_swaps)
             trades.append(trade)
             trade_swaps = []
 

@@ -15,8 +15,8 @@ BALANCER_TRADES_PREFIX = 'balancer_trades'
 @dataclass(init=True, repr=True)
 class BalancerPoolToken:
     token: Union[EthereumToken, UnknownEthereumToken]
-    total_amount: FVal
-    user_balance: Balance
+    total_amount: FVal  # token amount in the pool
+    user_balance: Balance  # user token balance
     weight: FVal
     usd_price: Price = Price(ZERO)
 
@@ -42,8 +42,8 @@ class BalancerPoolToken:
 class BalancerPool:
     address: ChecksumEthAddress
     tokens: List[BalancerPoolToken]
-    total_amount: FVal
-    user_balance: Balance
+    total_amount: FVal  # LP token amount
+    user_balance: Balance  # user LP token balance
 
     def serialize(self) -> Dict[str, Any]:
         return {

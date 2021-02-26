@@ -613,7 +613,7 @@ class Balancer(EthereumModule):
         self,
         addresses: List[ChecksumEthAddress],
     ) -> AddressToBalances:
-        """Get the balances of the addresses
+        """Get the balances of the given addresses in any Balancer pool
 
         May raise RemoteError
         """
@@ -656,7 +656,7 @@ class Balancer(EthereumModule):
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> AddressToTrades:
-        """Get the trades history of the addresses
+        """Get the trades history of the given addresses
 
         May raise RemoteError
         """
