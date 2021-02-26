@@ -144,6 +144,41 @@ def test_asset_identifiers_are_unique_all_lowercased():
         identifier_set.add(asset_id)
 
 
+def test_assets_have_common_keys():
+    """Test that checks that the keys and types of tokens in all_assets.json are correct"""
+    # Create a list of pairs with fields with their types. We'll add more fields to check
+    # if we are dealing with a token
+    verify = (("symbol", str), ("name", str), ("type", str), ("started", int))
+    verify_fiat = (("symbol", str), ("name", str), ("type", str))
+    verify_token = (("symbol", str), ("name", str), ("type", str), ("started", int),
+                    ("ethereum_address", str), ("ethereum_token_decimals", int))
+    optional = (("active", bool), ("ended", int), ("forked", str), ("swapped_for", str),
+                ("cryptocompare", str), ("coingecko", str))
+
+    resolver = AssetResolver()
+
+    for asset_id, asset_data in resolver.assets.items():
+        verify_against = verify
+
+        # Check if the asset is a token and update the keys to verify
+        asset_type = resolver.get_asset_data(asset_id).asset_type
+        if asset_type in (AssetType.ETH_TOKEN, AssetType.ETH_TOKEN_AND_MORE):
+            verify_against = verify_token
+        elif asset_type == AssetType.FIAT:
+            verify_against = verify_fiat
+
+        # make the basic checks
+        msg = f'Key verification in asset {asset_id} failed'
+        assert all((key in asset_data.keys() and isinstance(asset_data[key], key_type)
+                    for (key, key_type) in verify_against
+                    )), msg
+
+        # check the optional fields
+        for key, key_type in optional:
+            if asset_data.get(key) is not None:
+                assert isinstance(asset_data.get(key), key_type), msg
+
+
 def test_coingecko_identifiers_are_reachable(data_dir):
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
@@ -193,7 +228,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': 'f23860c6876948c299b95389445b5101', 'version': 64}
+    last_meta = {'md5': '6c123a56180d404f4b0e3b57e61f9dd7', 'version': 65}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 
