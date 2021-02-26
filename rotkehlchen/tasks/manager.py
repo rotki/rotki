@@ -203,6 +203,7 @@ class TaskManager():
             start_ts=0,
             end_ts=now,
             with_limit=False,
+            only_cache=False,
         )
         self.last_eth_tx_query_ts[address] = now
 
