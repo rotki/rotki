@@ -1,6 +1,5 @@
 import { taskManager } from '@/services/task-manager';
 import { QUERY_PERIOD, REFRESH_PERIOD } from '@/store/settings/consts';
-import { getPeriodInMs } from '@/store/settings/utils';
 import store from '@/store/store';
 
 const PERIODIC = 'periodic';
@@ -56,7 +55,7 @@ class Monitoring {
       this.monitors[WATCHER] = setInterval(Monitoring.fetchWatchers, 360000);
     }
 
-    const period = getPeriodInMs(settings[REFRESH_PERIOD]);
+    const period = settings[REFRESH_PERIOD] * 60 * 1000;
     if (!this.monitors[BALANCES] && period > 0) {
       this.monitors[BALANCES] = setInterval(Monitoring.fetchBalances, period);
     }

@@ -33,7 +33,6 @@ import {
 import { FetchSource, TradeEntry } from '@/store/history/types';
 import { REFRESH_PERIOD } from '@/store/settings/consts';
 import { RefreshPeriod } from '@/store/settings/types';
-import { getPeriodInMs } from '@/store/settings/utils';
 
 @Component({
   components: {
@@ -82,7 +81,7 @@ export default class TradeHistory extends Mixins(StatusMixin) {
   }
 
   created() {
-    const period = getPeriodInMs(this[REFRESH_PERIOD]);
+    const period = this[REFRESH_PERIOD] * 60 * 1000;
     if (period > 0) {
       this.refreshInterval = setInterval(async () => this.refresh(), period);
     }

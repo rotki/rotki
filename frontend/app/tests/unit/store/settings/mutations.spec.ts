@@ -10,8 +10,7 @@ import {
   TIMEFRAME_SETTING,
   TIMEFRAME_TWO_WEEKS,
   TIMEFRAME_YEAR,
-  REFRESH_PERIOD,
-  REFRESH_2H
+  REFRESH_PERIOD
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 import store from '@/store/store';
@@ -31,7 +30,7 @@ describe('settings:mutations', () => {
       [CURRENCY_LOCATION]: CURRENCY_BEFORE,
       [THOUSAND_SEPARATOR]: '|',
       [DECIMAL_SEPARATOR]: '-',
-      [REFRESH_PERIOD]: REFRESH_2H
+      [REFRESH_PERIOD]: 120
     };
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
@@ -46,6 +45,6 @@ describe('settings:mutations', () => {
     expect(settings[THOUSAND_SEPARATOR]).toBe('|');
     expect(settings[DECIMAL_SEPARATOR]).toBe('-');
     expect(settings[CURRENCY_LOCATION]).toBe(CURRENCY_BEFORE);
-    expect(settings[REFRESH_PERIOD]).toBe(REFRESH_2H);
+    expect(settings[REFRESH_PERIOD]).toBe(120);
   });
 });

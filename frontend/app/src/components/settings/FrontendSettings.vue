@@ -21,35 +21,54 @@
       {{ $t('frontend_settings.subtitle.refresh') }}
     </div>
 
-    <v-select
-      v-model="refreshPeriod"
-      :items="refreshOptions"
-      :label="$t('frontend_settings.label.refresh')"
-      item-value="id"
-      item-text="label"
-      persistent-hint
-      :hint="$t('frontend_settings.hint.refresh')"
-      :success-messages="settingsMessages[REFRESH_PERIOD].success"
-      :error-messages="settingsMessages[REFRESH_PERIOD].error"
-      @change="onRefreshPeriodChange($event)"
-    />
+    <v-row class="mt-1">
+      <v-col class="grow">
+        <v-text-field
+          v-model="refreshPeriod"
+          outlined
+          :disabled="!refreshEnabled"
+          type="number"
+          min="30"
+          :label="$t('frontend_settings.label.refresh')"
+          item-value="id"
+          item-text="label"
+          persistent-hint
+          :hint="$t('frontend_settings.hint.refresh')"
+          :success-messages="settingsMessages[REFRESH_PERIOD].success"
+          :error-messages="settingsMessages[REFRESH_PERIOD].error"
+          @change="onRefreshPeriodChange($event)"
+        />
+      </v-col>
+      <v-col class="shrink">
+        <v-switch
+          v-model="refreshEnabled"
+          :label="$t('frontend_settings.label.refresh_enabled')"
+          @change="onRefreshPeriodChange($event ? '30' : '-1')"
+        />
+      </v-col>
+    </v-row>
 
     <div class="text-h6 mt-4">
       {{ $t('frontend_settings.subtitle.query') }}
     </div>
 
-    <v-text-field
-      v-model="queryPeriod"
-      class="general-settings__fields__periodic-client-query-period"
-      :label="$t('frontend_settings.label.query_period')"
-      :hint="$t('frontend_settings.label.query_period_hint')"
-      type="number"
-      min="5"
-      max="3600"
-      :success-messages="settingsMessages[QUERY_PERIOD].success"
-      :error-messages="settingsMessages[QUERY_PERIOD].error"
-      @change="onQueryPeriodChange($event)"
-    />
+    <v-row class="mt-1">
+      <v-col>
+        <v-text-field
+          v-model="queryPeriod"
+          outlined
+          class="general-settings__fields__periodic-client-query-period"
+          :label="$t('frontend_settings.label.query_period')"
+          :hint="$t('frontend_settings.label.query_period_hint')"
+          type="number"
+          min="5"
+          max="3600"
+          :success-messages="settingsMessages[QUERY_PERIOD].success"
+          :error-messages="settingsMessages[QUERY_PERIOD].error"
+          @change="onQueryPeriodChange($event)"
+        />
+      </v-col>
+    </v-row>
   </setting-category>
 </template>
 
@@ -66,17 +85,12 @@ import SettingsMixin from '@/mixins/settings-mixin';
 import { monitor } from '@/services/monitoring';
 import {
   QUERY_PERIOD,
-  REFRESH_1H,
-  REFRESH_2H,
-  REFRESH_30MIN,
-  REFRESH_NONE,
   REFRESH_PERIOD,
   TIMEFRAME_ALL,
   TIMEFRAME_SETTING
 } from '@/store/settings/consts';
 import {
   FrontendSettingsPayload,
-  RefreshPeriod,
   TimeFrameSetting
 } from '@/store/settings/types';
 
@@ -103,31 +117,13 @@ export default class FrontendSettings extends Mixins<
   queryPeriod: string = '5';
   scrambleData: boolean = false;
   defaultGraphTimeframe: TimeFrameSetting = TIMEFRAME_ALL;
-  refreshPeriod: RefreshPeriod = REFRESH_NONE;
+  refreshPeriod: string = '';
+  refreshEnabled: boolean = false;
 
   readonly SCRAMBLE_DATA = SETTING_SCRAMBLE_DATA;
   readonly TIMEFRAME = SETTING_TIMEFRAME;
   readonly QUERY_PERIOD = SETTING_QUERY_PERIOD;
   readonly REFRESH_PERIOD = SETTING_REFRESH_PERIOD;
-
-  readonly refreshOptions = [
-    {
-      label: this.$t('frontend_settings.refresh.none').toString(),
-      id: REFRESH_NONE
-    },
-    {
-      label: this.$t('frontend_settings.refresh.30min').toString(),
-      id: REFRESH_30MIN
-    },
-    {
-      label: this.$t('frontend_settings.refresh.1h').toString(),
-      id: REFRESH_1H
-    },
-    {
-      label: this.$t('frontend_settings.refresh.2h').toString(),
-      id: REFRESH_2H
-    }
-  ];
 
   async onTimeframeChange(timeframe: TimeFrameSetting) {
     const payload: FrontendSettingsPayload = {
@@ -220,15 +216,21 @@ export default class FrontendSettings extends Mixins<
     );
   }
 
-  async onRefreshPeriodChange(period: RefreshPeriod) {
+  async onRefreshPeriodChange(period: string) {
+    const refreshPeriod = parseInt(period);
     const payload: FrontendSettingsPayload = {
-      [REFRESH_PERIOD]: period
+      [REFRESH_PERIOD]: refreshPeriod
     };
 
     const messages: BaseMessage = {
-      success: this.$t(
-        'frontend_settings.validation.refresh_period.success'
-      ).toString(),
+      success:
+        refreshPeriod > 0
+          ? this.$t('frontend_settings.validation.refresh_period.success', {
+              period
+            }).toString()
+          : this.$t(
+              'frontend_settings.validation.refresh_period.success_disabled'
+            ).toString(),
       error: this.$t(
         'frontend_settings.validation.refresh_period.error'
       ).toString()
@@ -240,6 +242,7 @@ export default class FrontendSettings extends Mixins<
       messages
     );
     if (success) {
+      this.refreshPeriod = refreshPeriod < 0 ? '' : period;
       monitor.stop();
       monitor.start();
     }
@@ -254,7 +257,9 @@ export default class FrontendSettings extends Mixins<
     this.scrambleData = state.session.scrambleData;
     this.defaultGraphTimeframe = state.settings![TIMEFRAME_SETTING];
     this.queryPeriod = state.settings![QUERY_PERIOD].toString();
-    this.refreshPeriod = state.settings![REFRESH_PERIOD];
+    const period = state.settings![REFRESH_PERIOD];
+    this.refreshEnabled = period > 0;
+    this.refreshPeriod = this.refreshEnabled ? period.toString() : '';
   }
 }
 </script>

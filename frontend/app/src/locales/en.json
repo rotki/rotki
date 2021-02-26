@@ -616,12 +616,13 @@
   },
   "frontend_settings": {
     "hint": {
-      "refresh": "Select how often your balances will be automatically refreshed"
+      "refresh": "How often (in minutes) your balances will be automatically refreshed"
     },
     "label": {
       "query_period": "Query period in seconds",
       "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
-      "refresh": "Select the automatic refresh period",
+      "refresh": "Set the automatic refresh period",
+      "refresh_enabled": "Enabled",
       "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions."
     },
     "refresh": {
@@ -650,7 +651,8 @@
       },
       "refresh_period": {
         "error": "Failed to set the refresh period",
-        "success": "The refresh period was successfully changed"
+        "success": "Automatic refresh was successfully changed to every {period} min",
+        "success_disabled": "Automatic refresh was successfully deactivated"
       }
     }
   },

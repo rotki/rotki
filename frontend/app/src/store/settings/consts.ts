@@ -32,15 +32,3 @@ export const Q4 = 'Q4';
 export const ALL = 'ALL';
 
 export const QUARTERS = [Q1, Q2, Q3, Q4, ALL] as const;
-
-export const REFRESH_NONE = 'none';
-export const REFRESH_30MIN = '30min';
-export const REFRESH_1H = '1h';
-export const REFRESH_2H = '2h';
-
-export const PERIODS = [
-  REFRESH_NONE,
-  REFRESH_30MIN,
-  REFRESH_1H,
-  REFRESH_2H
-] as const;
