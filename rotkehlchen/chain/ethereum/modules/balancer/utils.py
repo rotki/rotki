@@ -162,7 +162,7 @@ def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
     # be an empty list. Therefore it won't be possible to get their names and
     # decimals. In case of having to instantiate an UnknownEthereumToken both
     # params will be None.
-    if len(raw_tokens):
+    if len(raw_tokens) != 0:
         try:
             raw_address_tokens = {raw_token['address']: raw_token for raw_token in raw_tokens}
             raw_token0 = raw_address_tokens[raw_token_in]
@@ -255,8 +255,7 @@ def calculate_amm_trade_from_amm_swaps(swaps: List[AMMSwap]) -> AMMTrade:
     [USDC -> AMPL]               BASE_QUOTE pair is AMPL_USDC.
     [USDC -> AMPL, AMPL -> WETH] BASE_QUOTE pair is WETH_USDC.
     """
-    if len(swaps) == 0:
-        raise AssertionError("Swaps can't be an empty list")
+    assert len(swaps) != 0, "Swaps can't be an empty list here"
 
     amm_trade = AMMTrade(
         trade_type=TradeType.BUY,

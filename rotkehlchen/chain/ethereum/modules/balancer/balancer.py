@@ -373,8 +373,7 @@ class Balancer(EthereumModule):
 
     @staticmethod
     def _get_trades_from_swaps(swaps: List[AMMSwap]) -> List[AMMTrade]:
-        if len(swaps) == 0:
-            raise AssertionError("Swaps can't be an empty list")
+        assert len(swaps) != 0, "Swaps can't be an empty list"
 
         swaps.sort(key=lambda swap: (swap.timestamp, -swap.log_index), reverse=True)
         current_swaps: List[AMMSwap] = []
