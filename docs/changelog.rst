@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2442` Users will now see their accounts sorted by name instead of address when they sort by account.
 * :bug:`2443` Users who have no balances in Kraken and try to add an API key will now be able to set it up properly.
 
 * :release:`1.14.2 <2021-02-24>`
