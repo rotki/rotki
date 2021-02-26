@@ -247,7 +247,7 @@ def test_get_trades_from_tx_swaps_1():
 
 
 def test_get_trades_from_tx_swaps_2():
-    """Two swaps within the same pool"""
+    """Two swaps that can be aggregated"""
     trades = get_trades_from_tx_swaps(TEST_SWAPS_TX_2)
     expected_trades = [
         AMMTrade(
@@ -264,11 +264,7 @@ def test_get_trades_from_tx_swaps_2():
 
 
 def test_get_trades_from_tx_swaps_3():
-    """Three swaps using three different pools when `is_close_mode` is DISABLED.
-
-    The purpose of this test is to become a reference if we ever change or
-    improve the `get_trades_from_tx_swaps` logic.
-    """
+    """Three swaps that can't be aggregated"""
     trades = get_trades_from_tx_swaps(TEST_SWAPS_TX_3)
     expected_trades = [
         AMMTrade(
@@ -297,27 +293,6 @@ def test_get_trades_from_tx_swaps_3():
             rate=Price(FVal('0.01223222441966811342243170654')),
             trade_index=0,
             swaps=[TEST_SWAPS_TX_3[2]],
-        ),
-    ]
-    assert trades == expected_trades
-
-
-def test_get_trades_from_tx_swaps_3_is_close_amount_mode():
-    """Three swaps using three different pools when `is_close_mode` is ENABLED.
-
-    The purpose of this test is to become a reference if we ever change or
-    improve the `get_trades_from_tx_swaps` logic.
-    """
-    trades = get_trades_from_tx_swaps(TEST_SWAPS_TX_3, is_close_amount_mode=True)
-    expected_trades = [
-        AMMTrade(
-            trade_type=TradeType.BUY,
-            base_asset=EthereumToken('WETH'),
-            quote_asset=EthereumToken('WETH'),
-            amount=AssetAmount(FVal('2.283067259355947642')),
-            rate=Price(FVal('1.041830607256430575913929129')),
-            trade_index=0,
-            swaps=TEST_SWAPS_TX_3,
         ),
     ]
     assert trades == expected_trades

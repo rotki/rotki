@@ -48,7 +48,7 @@ def test_get_balances_module_not_activated(
 @pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR1]])
 @pytest.mark.parametrize('ethereum_modules', [['balancer']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_balances_premium(
+def test_get_balances(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
         rotki_premium_credentials,  # pylint: disable=unused-argument
@@ -57,15 +57,6 @@ def test_get_balances_premium(
     """Test get the balances for premium users works as expected"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-
-    # Set module premium is required for calling `get_balances()`
-    premium = None
-    if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials)
-
-    balancer = rotki.chain_manager.get_module('balancer')
-    balancer.premium = premium
-
     setup = setup_balances(
         rotki,
         ethereum_accounts=ethereum_accounts,
@@ -278,9 +269,34 @@ BALANCER_TEST_ADDR_2_EXPECTED_TRADES = [
     AMMTrade(
         trade_type=TradeType.BUY,
         base_asset=EthereumToken('WETH'),
-        quote_asset=EthereumToken('WETH'),
+        quote_asset=EthereumToken('AAVE'),
         amount=AssetAmount(FVal('3.055412574642681758')),
-        rate=Price(FVal('1.007444501938514432810413441')),
+        rate=Price(FVal('0.1445898203393074319511006560')),
+        trade_index=0,
+        swaps=[
+            AMMSwap(
+                tx_hash='0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',  # noqa: E501
+                log_index=37,
+                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                to_address=deserialize_ethereum_address('0x0E552307659E70bF61f918f96AA880Cdec40d7E2'),  # noqa: E501
+                timestamp=Timestamp(1607015339),
+                location=Location.BALANCER,
+                token0=EthereumToken('AAVE'),
+                token1=EthereumToken('WETH'),
+                amount0_in=AssetAmount(FVal('21.131588430448123904')),
+                amount1_in=AssetAmount(ZERO),
+                amount0_out=AssetAmount(ZERO),
+                amount1_out=AssetAmount(FVal('3.055412574642681758')),
+            ),
+        ],
+    ),
+    AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=EthereumToken('AAVE'),
+        quote_asset=EthereumToken('WETH'),
+        amount=AssetAmount(FVal('21.131588567541018817')),
+        rate=Price(FVal('6.967603293995613380604376603')),
         trade_index=0,
         swaps=[
             AMMSwap(
@@ -297,21 +313,6 @@ BALANCER_TEST_ADDR_2_EXPECTED_TRADES = [
                 amount1_in=AssetAmount(ZERO),
                 amount0_out=AssetAmount(ZERO),
                 amount1_out=AssetAmount(FVal('21.131588567541018817')),
-            ),
-            AMMSwap(
-                tx_hash='0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',  # noqa: E501
-                log_index=37,
-                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=deserialize_ethereum_address('0x0E552307659E70bF61f918f96AA880Cdec40d7E2'),  # noqa: E501
-                timestamp=Timestamp(1607015339),
-                location=Location.BALANCER,
-                token0=EthereumToken('AAVE'),
-                token1=EthereumToken('WETH'),
-                amount0_in=AssetAmount(FVal('21.131588430448123904')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('3.055412574642681758')),
             ),
         ],
     ),
@@ -374,7 +375,7 @@ def test_get_trades_history(
     assert len(db_trades) == 75
 
     address_trades = result[BALANCER_TEST_ADDR2]
-    assert len(address_trades) == 73  # Due to swaps aggregated under a trade
+    assert len(address_trades) == 75
 
     expected_trades = BALANCER_TEST_ADDR_2_EXPECTED_TRADES[::-1]
     filtered_trades = address_trades[:len(expected_trades)]

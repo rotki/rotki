@@ -121,7 +121,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             UniswapPoolAsset,
             UnknownEthereumToken,
             AMMTrade,
-            AMMSwap,
             UniswapPoolEventsBalance,
             ADXStakingBalance,
             ADXStakingHistory,

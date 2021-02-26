@@ -258,30 +258,24 @@ def calculate_amm_trade_from_amm_swaps(swaps: List[AMMSwap]) -> AMMTrade:
     return amm_trade
 
 
-def get_trades_from_tx_swaps(
-        swaps: List[AMMSwap],
-        is_close_amount_mode: bool = False,
-) -> List[AMMTrade]:
+def get_trades_from_tx_swaps(swaps: List[AMMSwap]) -> List[AMMTrade]:
     """Aggregates N AMMSwaps in an AMMTrade.
 
     We expect that the swaps likely to be aggregated in a single trade are in
     sequence (the next). This function currently does not have interleaved
     matching capabilities.
 
-    In the Balancer protocol, when swaps happen within the same pool, the
-    `amount1_out` of the swap N matches the `amount0_in` of the swap N+1.
-    However when swaps happend between different pools these quantities may
-    have a tiny difference. By default two swaps with these tiny differences
-    between quantities would count as two trades. When the `is_close_amount_mode`
-    is enabled we match them in a single trade.
-
-    TODO: `is_close_mode` is experimental. It would be useful to gather more
-    transactions and see how it behaves. By default FVal.is_close() has a
-    tolerance of 1e-6. We may need to increase it to 1e-5.
+    When swaps are done via the Balancer Exchange Proxy (caller address is
+    `0x3e66b66fd1d0b02fda6c811da9e0547970db2f21`) the previous swap N amount out
+    matches the swap N+1 amount in. However, there may be slightly differences
+    between these amounts when the caller is a custom contract. The former case
+    will be always be a trade with two swaps. On the latter it will depend on
+    the quantities. If they match, a trade with two swaps, otherwise two trades
+    (each one with one swap).
 
     Aggregation criteria:
     - AMMSwap N amount1_out == AMMSwap N+1 amount0_in
-    - AMMSwap N token1 == (or is_close) AMMSwap N+1 token0
+    - AMMSwap N token1 == AMMSwap N+1 token0
     """
     trades: List[AMMTrade] = []
     trade_swaps: List[AMMSwap] = []
@@ -294,13 +288,8 @@ def get_trades_from_tx_swaps(
             break
 
         next_swap = swaps[idx + 1]
-        if is_close_amount_mode is True:
-            is_equal_amount = swap.amount1_out.is_close(next_swap.amount0_in)
-        else:
-            is_equal_amount = swap.amount1_out == next_swap.amount0_in
-
         if (
-            is_equal_amount is False or
+            swap.amount1_out != next_swap.amount0_in or
             swap.token1.ethereum_address != next_swap.token0.ethereum_address
         ):
             trade = calculate_amm_trade_from_amm_swaps(trade_swaps)

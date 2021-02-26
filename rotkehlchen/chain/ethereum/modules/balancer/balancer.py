@@ -397,14 +397,14 @@ class Balancer(EthereumModule):
         last_tx_hash = swaps[0].tx_hash
         for swap in swaps:
             if swap.tx_hash != last_tx_hash:
-                trades.extend(get_trades_from_tx_swaps(current_swaps, is_close_amount_mode=True))
+                trades.extend(get_trades_from_tx_swaps(current_swaps))
                 last_tx_hash = swap.tx_hash
                 current_swaps = []
 
             current_swaps.append(swap)
 
         if len(current_swaps) != 0:
-            trades.extend(get_trades_from_tx_swaps(current_swaps, is_close_amount_mode=True))
+            trades.extend(get_trades_from_tx_swaps(current_swaps))
 
         return trades
 
@@ -637,12 +637,6 @@ class Balancer(EthereumModule):
 
         May raise RemoteError
         """
-        is_graph_mode = self.graph is not None and self.premium
-        if not is_graph_mode:
-            raise NotImplementedError(
-                'Getting Balancer balances for non premium user is not implemented',
-            )
-
         protocol_balance = self._get_balances_graph(addresses)
         known_tokens = protocol_balance.known_tokens
         unknown_tokens = protocol_balance.unknown_tokens
