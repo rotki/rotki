@@ -174,7 +174,6 @@ class AMMSwap(NamedTuple):
             'log_index': self.log_index,
             'from_address': self.from_address,
             'to_address': self.to_address,
-            'location': str(self.location),
             'token0': serialize_known_or_unknown_token(self.token0),
             'token1': serialize_known_or_unknown_token(self.token1),
             'amount0_in': str(self.amount0_in),

@@ -4513,7 +4513,6 @@ Getting Balancer trades
                             "amount1_in": "0",
                             "amount1_out": "0.075627332013165531",
                             "from_address": "0x0000000000007F150Bd6f54c40A34d7C3d5e9f56",
-                            "location": "balancer",
                             "log_index": 37,
                             "to_address": "0x6545773483142Fd781023EC74ee008d93aD5466B",
                             "token0": "QNT",
@@ -4543,7 +4542,6 @@ Getting Balancer trades
                             "amount1_in": "0",
                             "amount1_out": "3.214606868598057153",
                             "from_address": "0x0000000000007F150Bd6f54c40A34d7C3d5e9f56",
-                            "location": "balancer",
                             "log_index": 334,
                             "to_address": "0x987D7Cc04652710b74Fff380403f5c02f82e290a",
                             "token0": "WETH",
@@ -5132,7 +5130,6 @@ Getting Uniswap trades
                   "amount1_in": "3.8",
                   "amount1_out": "0",
                   "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-                  "location": "uniswap",
                   "log_index": 90,
                   "to_address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
                   "token0": "DAI",
@@ -5161,7 +5158,6 @@ Getting Uniswap trades
                   "amount1_in": "0",
                   "amount1_out": "2.411679959413889526",
                   "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-                  "location": "uniswap",
                   "log_index": 98,
                   "to_address": "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11",
                   "token0": {"ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628", "name": "aleph.im v2", "symbol": "ALEPH"},
@@ -5172,7 +5168,6 @@ Getting Uniswap trades
                   "amount1_in": "2.411679959413889526",
                   "amount1_out": "0",
                   "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-                  "location": "uniswap",
                   "log_index": 101,
                   "to_address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
                   "token0": "DAI",
@@ -5212,7 +5207,6 @@ Getting Uniswap trades
        - from_address: The address that is putting tokens in the swap. Can be many different parties in a multi swap.
        - to_address: The address that is getting tokens out of the swap. Can be many different parties in a multi swap.
        - address: Always the same address of the user, associated with the trade the swaps belong to.
-       - location: Always uniswap.
        - tx_hash: The transaction hash of the swap (always the same for swaps of the same transaction/trade).
        - log_index: The index of the swap in the transaction/trade.
 
