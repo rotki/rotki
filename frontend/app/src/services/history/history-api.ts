@@ -109,13 +109,19 @@ export class HistoryApi {
       .then(handleResponse);
   }
 
-  async ethTransactions(address: string): Promise<PendingTask> {
+  async ethTransactions(
+    address: string,
+    onlyCache: boolean
+  ): Promise<PendingTask> {
     assert(address.length > 0);
     return this.axios
       .get<ActionResult<PendingTask>>(
         `/blockchains/ETH/transactions/${address}`,
         {
-          params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+          params: axiosSnakeCaseTransformer({
+            asyncQuery: true,
+            onlyCache: onlyCache ? onlyCache : undefined
+          }),
           validateStatus: validWithParamsSessionAndExternalService,
           transformResponse: setupTransformer([])
         }
