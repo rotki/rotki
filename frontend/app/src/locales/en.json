@@ -446,7 +446,7 @@
     "clear_error": "Clearing the cache for {fromAsset} to {toAsset} failed: {error}",
     "create_cache": "Cache Pair prices",
     "notification": {
-      "title":  "Price pair cache creation",
+      "title": "Price pair cache creation",
       "error": "The cache creation for pair {fromAsset} to {toAsset} on failed: {error}",
       "success": "The cache for pair {fromAsset} to {toAsset} on {source} was successfully created"
     },
@@ -614,6 +614,48 @@
     "default_timeframe": "Dashboard graph default timeframe",
     "default_timeframe_description": "Set the default time frame for the dashboard graph. This timeframe will be pre-selected upon login. By default it will remember the previous session's selection."
   },
+  "frontend_settings": {
+    "hint": {
+      "refresh": "How often (in minutes) your balances will be automatically refreshed"
+    },
+    "label": {
+      "query_period": "Query period in seconds",
+      "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
+      "refresh": "Set the automatic refresh period",
+      "refresh_enabled": "Enabled",
+      "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions."
+    },
+    "refresh": {
+      "1h": "1 hour",
+      "2h": "2 hours",
+      "30min": "30 minutes",
+      "none": "None"
+    },
+    "subtitle": {
+      "query": "Periodic status query",
+      "refresh": "Automatic balance refresh"
+    },
+    "title": "Frontend-only Settings",
+    "validation": {
+      "timeframe": {
+        "error": "Failed to set the default timeframe for the user",
+        "success": "Default timeframe set to {timeframe}"
+      },
+      "periodic_query": {
+        "error": "Error setting query period",
+        "success": "Query period set to {period} seconds",
+        "invalid_period": "Period must be between {start} and {end}"
+      },
+      "scramble": {
+        "error": "Error setting scramble mode: {message}"
+      },
+      "refresh_period": {
+        "error": "Failed to set the refresh period",
+        "success": "Automatic refresh was successfully changed to every {period} min",
+        "success_disabled": "Automatic refresh was successfully deactivated"
+      }
+    }
+  },
   "general_settings": {
     "amount": {
       "label": {
@@ -630,14 +672,6 @@
         "main_currency": "Select Main Currency",
         "main_currency_subtitle": "Select as the main currency"
       }
-    },
-    "frontend": {
-      "label": {
-        "query_period": "Query period in seconds",
-        "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
-        "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions."
-      },
-      "title": "Frontend-only Settings"
     },
     "labels": {
       "anonymized_logs": "Should logs be anonymized?",
@@ -698,9 +732,6 @@
         "success_unset": "The Kusama node RPC endpoint was successfully unset",
         "error": "There was an error setting the Kusama node RPC endpoint"
       },
-      "scramble": {
-        "error": "Error setting scramble mode: {message}"
-      },
       "thousand_separator": {
         "error": "Error setting thousand separator",
         "success": "Thousand separator set to {thousandSeparator}"
@@ -708,15 +739,6 @@
       "decimal_separator": {
         "error": "Error setting decimal separator",
         "success": "Decimal separator set to {decimalSeparator}"
-      },
-      "periodic_query": {
-        "error": "Error setting query period",
-        "success": "Query period set to {period} seconds",
-        "invalid_period": "Period must be between {start} and {end}"
-      },
-      "timeframe": {
-        "error": "Failed to set the default timeframe for the user",
-        "success": "Default timeframe set to {timeframe}"
       }
     }
   },
@@ -1885,6 +1907,14 @@
     }
   },
   "settings": {
+    "not_saved": "Setting not saved",
+    "saved": "Setting saved",
+    "tabs": {
+      "accounting": "Accounting",
+      "data_security": "Data & Security",
+      "defi": "Defi",
+      "general": "General"
+    },
     "title": "Settings"
   },
   "statistics": {

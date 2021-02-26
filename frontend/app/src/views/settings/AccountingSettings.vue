@@ -154,13 +154,35 @@
 </template>
 
 <script lang="ts">
-import { Component } from 'vue-property-decorator';
+import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapState } from 'vuex';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import LedgerActionSettings from '@/components/settings/accounting/LedgerActionSettings.vue';
+import { settingsMessages } from '@/components/settings/utils';
+import SettingsMixin from '@/mixins/settings-mixin';
 import { ActionStatus } from '@/store/types';
-import { AccountingSettings, SettingsUpdate } from '@/typing/types';
-import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
+
+const crypto2crypto = 'crypto2crypto';
+const gasCostChange = 'gasCostChange';
+const taxFreePeriod = 'taxFreePeriod';
+const taxFreePeriodAfter = 'taxFreePeriodAfter';
+const addIgnoreAsset = 'addIgnoreAsset';
+const remIgnoreAsset = 'remIgnoreAsset';
+const accountForAssetsMovements = 'accountForAssetsMovements';
+const calculatePastCostBasis = 'calculatePastCostBasis';
+
+const SETTINGS = [
+  crypto2crypto,
+  gasCostChange,
+  taxFreePeriod,
+  taxFreePeriodAfter,
+  addIgnoreAsset,
+  remIgnoreAsset,
+  accountForAssetsMovements,
+  calculatePastCostBasis
+] as const;
+
+type SettingsEntries = typeof SETTINGS[number];
 
 @Component({
   components: {
@@ -168,18 +190,18 @@ import Settings, { SettingsMessages } from '@/views/settings/Settings.vue';
     AssetSelect
   },
   computed: {
-    ...mapState('session', ['accountingSettings', 'ignoredAssets'])
+    ...mapState('session', ['ignoredAssets'])
   },
   methods: {
-    ...mapActions('session', ['ignoreAsset', 'unignoreAsset', 'settingsUpdate'])
+    ...mapActions('session', ['ignoreAsset', 'unignoreAsset'])
   }
 })
-export default class Accounting extends Settings {
-  accountingSettings!: AccountingSettings;
+export default class Accounting extends Mixins<SettingsMixin<SettingsEntries>>(
+  SettingsMixin
+) {
   ignoredAssets!: string[];
   ignoreAsset!: (asset: string) => Promise<ActionStatus>;
   unignoreAsset!: (asset: string) => Promise<ActionStatus>;
-  settingsUpdate!: (update: SettingsUpdate) => Promise<ActionStatus>;
 
   crypto2CryptoTrades: boolean = false;
   gasCosts: boolean = false;
@@ -193,23 +215,16 @@ export default class Accounting extends Settings {
 
   asset: string = '';
 
-  settingsMessages: SettingsMessages = {
-    crypto2crypto: { success: '', error: '' },
-    gasCostChange: { success: '', error: '' },
-    taxFreePeriod: { success: '', error: '' },
-    taxFreePeriodAfter: { success: '', error: '' },
-    addIgnoreAsset: { success: '', error: '' },
-    remIgnoreAsset: { success: '', error: '' },
-    accountForAssetsMovements: { success: '', error: '' },
-    calculatePastCostBasis: { success: '', error: '' }
-  };
-
   taxFreeRules = [
     (v: string) => !!v || this.$tc('account_settings.validation.tax_free_days'),
     (v: string) =>
       (v && parseInt(v) > 0) ||
       this.$tc('account_settings.validation.tax_free_days_gt_zero')
   ];
+
+  created() {
+    this.settingsMessages = settingsMessages(SETTINGS);
+  }
 
   mounted() {
     this.crypto2CryptoTrades = this.accountingSettings.includeCrypto2Crypto;

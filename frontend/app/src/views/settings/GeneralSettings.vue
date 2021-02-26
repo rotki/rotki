@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-container class="general-settings">
     <v-row no-gutters>
       <v-col>
@@ -216,79 +216,42 @@
           </v-card-text>
         </v-card>
         <price-oracle-settings />
-        <v-card class="mt-8">
-          <v-card-title>
-            <card-title>{{ $t('general_settings.frontend.title') }}</card-title>
-          </v-card-title>
-          <v-card-text>
-            <v-switch
-              v-model="scrambleData"
-              class="general-settings__fields__scramble-data"
-              :label="$t('general_settings.frontend.label.scramble')"
-              :success-messages="settingsMessages[SCRAMBLE_DATA].success"
-              :error-messages="settingsMessages[SCRAMBLE_DATA].error"
-              @change="onScrambleDataChange($event)"
-            />
-            <time-frame-settings
-              :message="settingsMessages[TIMEFRAME]"
-              :value="defaultGraphTimeframe"
-              @timeframe-change="onTimeframeChange"
-            />
-            <v-text-field
-              v-model="queryPeriod"
-              class="general-settings__fields__periodic-client-query-period"
-              :label="$t('general_settings.frontend.label.query_period')"
-              :hint="$t('general_settings.frontend.label.query_period_hint')"
-              type="number"
-              min="5"
-              max="3600"
-              :success-messages="settingsMessages[QUERY_PERIOD].success"
-              :error-messages="settingsMessages[QUERY_PERIOD].error"
-              @change="onQueryPeriodChange($event)"
-            />
-          </v-card-text>
-        </v-card>
+        <frontend-settings />
       </v-col>
     </v-row>
   </v-container>
 </template>
 
 <script lang="ts">
-import { Component } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapState } from 'vuex';
+import { Component, Mixins } from 'vue-property-decorator';
+import { mapGetters } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import FrontendSettings from '@/components/settings/FrontendSettings.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
 import PriceOracleSettings from '@/components/settings/PriceOracleSettings.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import {
+  BaseMessage,
+  makeMessage,
+  settingsMessages
+} from '@/components/settings/utils';
 import { currencies } from '@/data/currencies';
 import { Defaults } from '@/data/defaults';
+import SettingsMixin from '@/mixins/settings-mixin';
 import { Currency } from '@/model/currency';
-import { monitor } from '@/services/monitoring';
 import {
   CURRENCY_LOCATION,
   DECIMAL_SEPARATOR,
-  QUERY_PERIOD,
-  THOUSAND_SEPARATOR,
-  TIMEFRAME_ALL,
-  TIMEFRAME_SETTING
+  THOUSAND_SEPARATOR
 } from '@/store/settings/consts';
-import {
-  FrontendSettingsPayload,
-  TimeFrameSetting
-} from '@/store/settings/types';
+import { FrontendSettingsPayload } from '@/store/settings/types';
 import { ActionStatus } from '@/store/types';
 import {
   CURRENCY_AFTER,
   CurrencyLocation,
-  GeneralSettings,
   SettingsUpdate
 } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
-import Settings from '@/views/settings/Settings.vue';
-
-type BaseMessage = { success: string; error: string };
-
-const message: () => BaseMessage = () => ({ success: '', error: '' });
 
 const SETTING_FLOATING_PRECISION = 'floatingPrecision';
 const SETTING_ANONYMIZED_LOGS = 'anonymizedLogs';
@@ -301,9 +264,6 @@ const SETTING_THOUSAND_SEPARATOR = 'thousandSeparator';
 const SETTING_DECIMAL_SEPARATOR = 'decimalSeparator';
 const SETTING_CURRENCY_LOCATION = 'currencyLocation';
 const SETTING_SELECTED_CURRENCY = 'selectedCurrency';
-const SETTING_SCRAMBLE_DATA = 'scrambleData';
-const SETTING_TIMEFRAME = 'timeframe';
-const SETTING_QUERY_PERIOD = 'queryPeriod';
 const SETTING_BTC_DERIVATION_GAP_LIMIT = 'btcDerivationGapLimit';
 const SETTING_DISPLAY_DATE_IN_LOCALTIME = 'displayDateInLocaltime';
 
@@ -319,42 +279,27 @@ const SETTINGS = [
   SETTING_DECIMAL_SEPARATOR,
   SETTING_CURRENCY_LOCATION,
   SETTING_SELECTED_CURRENCY,
-  SETTING_SCRAMBLE_DATA,
-  SETTING_TIMEFRAME,
-  SETTING_QUERY_PERIOD,
   SETTING_BTC_DERIVATION_GAP_LIMIT,
   SETTING_DISPLAY_DATE_IN_LOCALTIME
 ] as const;
 
 type SettingsEntries = typeof SETTINGS[number];
-type GeneralSettingsMessages = { [setting in SettingsEntries]: BaseMessage };
-
-const settingsMessages: () => GeneralSettingsMessages = () => {
-  const settings: GeneralSettingsMessages = {} as GeneralSettingsMessages;
-  for (const setting of SETTINGS) {
-    settings[setting] = message();
-  }
-  return settings;
-};
 
 @Component({
   components: {
+    FrontendSettings,
     PriceOracleSettings,
     SettingCategory,
     TimeFrameSettings,
     AmountDisplay
   },
   computed: {
-    ...mapState('session', ['generalSettings']),
     ...mapGetters('session', ['currency'])
-  },
-  methods: {
-    ...mapActions('session', ['settingsUpdate']),
-    ...mapActions('settings', ['updateSetting'])
   }
 })
-export default class General extends Settings {
-  generalSettings!: GeneralSettings;
+export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
+  SettingsMixin
+) {
   currency!: Currency;
 
   floatingPrecision: string = '0';
@@ -368,15 +313,9 @@ export default class General extends Settings {
   decimalSeparator: string = '';
   currencyLocation: CurrencyLocation = CURRENCY_AFTER;
   selectedCurrency: Currency = currencies[0];
-  scrambleData: boolean = false;
-  defaultGraphTimeframe: TimeFrameSetting = TIMEFRAME_ALL;
-  settingsUpdate!: (update: SettingsUpdate) => Promise<ActionStatus>;
-  updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
-  queryPeriod: string = '5';
   btcDerivationGapLimit: string = '20';
   displayDateInLocaltime: boolean = true;
 
-  readonly settingsMessages: GeneralSettingsMessages = settingsMessages();
   readonly FLOATING_PRECISION = SETTING_FLOATING_PRECISION;
   readonly ANONYMIZED_LOGS = SETTING_ANONYMIZED_LOGS;
   readonly ANONYMOUS_USAGE_ANALYTICS = SETTING_ANONYMOUS_USAGE_ANALYTICS;
@@ -388,9 +327,6 @@ export default class General extends Settings {
   readonly DECIMAL_SEPARATOR = SETTING_DECIMAL_SEPARATOR;
   readonly CURRENCY_LOCATION = SETTING_CURRENCY_LOCATION;
   readonly SELECTED_CURRENCY = SETTING_SELECTED_CURRENCY;
-  readonly SCRAMBLE_DATA = SETTING_SCRAMBLE_DATA;
-  readonly TIMEFRAME = SETTING_TIMEFRAME;
-  readonly QUERY_PERIOD = SETTING_QUERY_PERIOD;
   readonly BTC_DERIVATION_GAP_LIMIT = SETTING_BTC_DERIVATION_GAP_LIMIT;
   readonly DISPLAY_DATE_IN_LOCALTIME = SETTING_DISPLAY_DATE_IN_LOCALTIME;
 
@@ -399,15 +335,14 @@ export default class General extends Settings {
   amountExample = bigNumberify(123456.789);
 
   async onBtcDerivationGapLimitChanged(limit: string) {
-    const message: BaseMessage = {
-      success: this.$t(
-        'general_settings.validation.btc_derivation_gap.success',
-        { limit }
-      ).toString(),
-      error: this.$t(
+    const message = makeMessage(
+      this.$t(
         'general_settings.validation.btc_derivation_gap.error'
-      ).toString()
-    };
+      ).toString(),
+      this.$t('general_settings.validation.btc_derivation_gap.success', {
+        limit
+      }).toString()
+    );
 
     await this.update(
       { btc_derivation_gap_limit: parseInt(limit) },
@@ -416,32 +351,9 @@ export default class General extends Settings {
     );
   }
 
-  async onTimeframeChange(timeframe: TimeFrameSetting) {
-    const payload: FrontendSettingsPayload = {
-      [TIMEFRAME_SETTING]: timeframe
-    };
-
-    const messages: BaseMessage = {
-      success: this.$t('general_settings.validation.timeframe.success', {
-        timeframe: timeframe
-      }).toString(),
-      error: this.$t('general_settings.validation.timeframe.error').toString()
-    };
-
-    const { success } = await this.modifyFrontendSetting(
-      payload,
-      SETTING_TIMEFRAME,
-      messages
-    );
-
-    if (success) {
-      this.defaultGraphTimeframe = timeframe;
-    }
-  }
-
   async update(
     update: SettingsUpdate,
-    setting: string,
+    setting: SettingsEntries,
     baseMessage: BaseMessage
   ): Promise<boolean> {
     const { message, success } = await this.settingsUpdate(update);
@@ -454,84 +366,14 @@ export default class General extends Settings {
     return success;
   }
 
-  onScrambleDataChange(enabled: boolean) {
-    const { commit } = this.$store;
-    const previousValue = this.$store.state.session.scrambleData;
-
-    let success: boolean = false;
-    let message: string | undefined;
-
-    try {
-      commit('session/scrambleData', enabled);
-      success = true;
-    } catch (error) {
-      this.scrambleData = previousValue;
-      message = error.message;
-    }
-
-    this.validateSettingChange(
-      SETTING_SCRAMBLE_DATA,
-      success ? 'success' : 'error',
-      success
-        ? ''
-        : `${this.$t('general_settings.validation.scramble.error', {
-            message
-          })}`
-    );
-  }
-
-  async onQueryPeriodChange(queryPeriod: string) {
-    const period = parseInt(queryPeriod);
-    if (period < 5 || period > 3600) {
-      const message = `${this.$t(
-        'general_settings.validation.periodic_query.invalid_period',
-        {
-          start: 5,
-          end: 3600
-        }
-      )}`;
-      this.validateSettingChange(
-        SETTING_QUERY_PERIOD,
-        'error',
-        `${this.$t('general_settings.validation.periodic_query.error', {
-          message
-        })}`
-      );
-      this.queryPeriod = this.$store.state.settings![QUERY_PERIOD].toString();
-      return;
-    }
-
-    const messages: BaseMessage = {
-      success: this.$t('general_settings.validation.periodic_query.success', {
-        period
-      }).toString(),
-      error: this.$t(
-        'general_settings.validation.periodic_query.error'
-      ).toString()
-    };
-
-    const { success } = await this.modifyFrontendSetting(
-      {
-        [QUERY_PERIOD]: period
-      },
-      SETTING_QUERY_PERIOD,
-      messages
-    );
-
-    if (success) {
-      monitor.stop();
-      monitor.start();
-    }
-  }
-
   async onSelectedCurrencyChange(currency: Currency) {
     const symbol = currency.ticker_symbol;
-    const message: BaseMessage = {
-      success: `${this.$t('general_settings.validation.currency.success', {
+    const message = makeMessage(
+      `${this.$t('general_settings.validation.currency.error')}`,
+      `${this.$t('general_settings.validation.currency.success', {
         symbol
-      })}`,
-      error: `${this.$t('general_settings.validation.currency.error')}`
-    };
+      })}`
+    );
     await this.update(
       { main_currency: symbol },
       SETTING_SELECTED_CURRENCY,
@@ -556,15 +398,14 @@ export default class General extends Settings {
   }
 
   async onThousandSeparatorChange(thousandSeparator: string) {
-    const messages: BaseMessage = {
-      success: this.$t(
-        'general_settings.validation.thousand_separator.success',
-        { thousandSeparator }
-      ).toString(),
-      error: this.$t(
+    const messages = makeMessage(
+      this.$t(
         'general_settings.validation.thousand_separator.error'
-      ).toString()
-    };
+      ).toString(),
+      this.$t('general_settings.validation.thousand_separator.success', {
+        thousandSeparator
+      }).toString()
+    );
 
     await this.modifyFrontendSetting(
       { [THOUSAND_SEPARATOR]: this.thousandSeparator },
@@ -574,13 +415,12 @@ export default class General extends Settings {
   }
 
   async onDecimalSeparatorChange(decimalSeparator: string) {
-    const message: BaseMessage = {
-      success: this.$t(
-        'general_settings.validation.decimal_separator.success',
-        { decimalSeparator }
-      ).toString(),
-      error: `${this.$t('general_settings.validation.decimal_separator.error')}`
-    };
+    const message = makeMessage(
+      `${this.$t('general_settings.validation.decimal_separator.error')}`,
+      this.$t('general_settings.validation.decimal_separator.success', {
+        decimalSeparator
+      }).toString()
+    );
 
     await this.modifyFrontendSetting(
       { [DECIMAL_SEPARATOR]: this.decimalSeparator },
@@ -590,13 +430,12 @@ export default class General extends Settings {
   }
 
   async onCurrencyLocationChange(currencyLocation: CurrencyLocation) {
-    const message: BaseMessage = {
-      success: this.$t(
-        'general_settings.validation.currency_location.success',
-        { currencyLocation }
-      ).toString(),
-      error: `${this.$t('general_settings.validation.currency_location.error')}`
-    };
+    const message = makeMessage(
+      `${this.$t('general_settings.validation.currency_location.error')}`,
+      this.$t('general_settings.validation.currency_location.success', {
+        currencyLocation
+      }).toString()
+    );
 
     await this.modifyFrontendSetting(
       { [CURRENCY_LOCATION]: this.currencyLocation },
@@ -615,16 +454,16 @@ export default class General extends Settings {
     const params = {
       precision
     };
-    const message: BaseMessage = {
-      success: `${this.$t(
-        'general_settings.validation.floating_precision.success',
-        params
-      )}`,
-      error: `${this.$t(
+    const message = makeMessage(
+      `${this.$t(
         'general_settings.validation.floating_precision.error',
         params
+      )}`,
+      `${this.$t(
+        'general_settings.validation.floating_precision.success',
+        params
       )}`
-    };
+    );
 
     const success = await this.update(
       { ui_floating_precision: parseInt(precision) },
@@ -638,19 +477,17 @@ export default class General extends Settings {
   }
 
   async onAnonymizedLogsChange(enabled: boolean) {
-    const message: BaseMessage = {
-      success: '',
-      error: `${this.$t('general_settings.validation.anonymized_logs.error')}`
-    };
+    const message = makeMessage(
+      `${this.$t('general_settings.validation.anonymized_logs.error')}`
+    );
 
     await this.update({ anonymized_logs: enabled }, 'anonymizedLogs', message);
   }
 
   async onAnonymousUsageAnalyticsChange(enabled: boolean) {
-    const message: BaseMessage = {
-      success: '',
-      error: `${this.$t('general_settings.validation.analytics.error')}`
-    };
+    const message = makeMessage(
+      `${this.$t('general_settings.validation.analytics.error')}`
+    );
 
     await this.update(
       { submit_usage_analytics: enabled },
@@ -660,12 +497,11 @@ export default class General extends Settings {
   }
 
   async onDisplayDateInLocaltimeChange(enabled: boolean) {
-    const message: BaseMessage = {
-      success: '',
-      error: `${this.$t(
+    const message = makeMessage(
+      `${this.$t(
         'general_settings.validation.display_date_in_localtime.error'
       )}`
-    };
+    );
 
     await this.update(
       { display_date_in_localtime: enabled },
@@ -684,16 +520,16 @@ export default class General extends Settings {
     const params = {
       frequency
     };
-    const message: BaseMessage = {
-      success: `${this.$t(
-        'general_settings.validation.balance_frequency.success',
-        params
-      )}`,
-      error: `${this.$t(
+    const message = makeMessage(
+      `${this.$t(
         'general_settings.validation.balance_frequency.error',
         params
+      )}`,
+      `${this.$t(
+        'general_settings.validation.balance_frequency.success',
+        params
       )}`
-    };
+    );
 
     const success = await this.update(
       { balance_save_frequency: parseInt(frequency) },
@@ -707,12 +543,12 @@ export default class General extends Settings {
   }
 
   async onDateDisplayFormatChange(dateFormat: string) {
-    const message: BaseMessage = {
-      success: `${this.$t('general_settings.validation.date_format.success', {
+    const message = makeMessage(
+      `${this.$t('general_settings.validation.date_format.error')}`,
+      `${this.$t('general_settings.validation.date_format.success', {
         dateFormat
-      })}`,
-      error: `${this.$t('general_settings.validation.date_format.error')}`
-    };
+      })}`
+    );
 
     await this.update(
       { date_display_format: dateFormat },
@@ -728,14 +564,14 @@ export default class General extends Settings {
       return;
     }
 
-    const message: BaseMessage = {
-      success: endpoint
+    const message = makeMessage(
+      `${this.$t('general_settings.validation.rpc.error')}`,
+      endpoint
         ? `${this.$t('general_settings.validation.rpc.success_set', {
             endpoint
           })}`
-        : `${this.$t('general_settings.validation.rpc.success_unset')}`,
-      error: `${this.$t('general_settings.validation.rpc.error')}`
-    };
+        : `${this.$t('general_settings.validation.rpc.success_unset')}`
+    );
 
     const success = await this.update(
       { eth_rpc_endpoint: endpoint },
@@ -755,16 +591,16 @@ export default class General extends Settings {
       return;
     }
 
-    const message: BaseMessage = {
-      success: endpoint
+    const message = makeMessage(
+      this.$t('general_settings.validation.ksm_rpc.error').toString(),
+      endpoint
         ? this.$t('general_settings.validation.ksm_rpc.success_set', {
             endpoint
           }).toString()
         : this.$t(
             'general_settings.validation.ksm_rpc.success_unset'
-          ).toString(),
-      error: this.$t('general_settings.validation.ksm_rpc.error').toString()
-    };
+          ).toString()
+    );
 
     const success = await this.update(
       { ksm_rpc_endpoint: endpoint },
@@ -800,6 +636,10 @@ export default class General extends Settings {
     return currencies;
   }
 
+  created() {
+    this.settingsMessages = settingsMessages(SETTINGS);
+  }
+
   mounted() {
     this.loadFromState();
   }
@@ -816,9 +656,6 @@ export default class General extends Settings {
     this.dateDisplayFormat = settings.dateDisplayFormat;
     this.btcDerivationGapLimit = settings.btcDerivationGapLimit.toString();
     const state = this.$store.state;
-    this.scrambleData = state.session.scrambleData;
-    this.defaultGraphTimeframe = state.settings![TIMEFRAME_SETTING];
-    this.queryPeriod = state.settings![QUERY_PERIOD].toString();
     this.thousandSeparator = state.settings![THOUSAND_SEPARATOR];
     this.decimalSeparator = state.settings![DECIMAL_SEPARATOR];
     this.currencyLocation = state.settings![CURRENCY_LOCATION];

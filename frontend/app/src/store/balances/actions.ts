@@ -155,6 +155,18 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     await dispatch('accounts');
   },
 
+  async fetchConnectedExchangeBalances({
+    dispatch,
+    state: { connectedExchanges: exchanges }
+  }): Promise<void> {
+    for (const exchange of exchanges) {
+      await dispatch('fetchExchangeBalances', {
+        name: exchange,
+        ignoreCache: false
+      } as ExchangeBalancePayload);
+    }
+  },
+
   async fetchExchangeBalances(
     { commit, rootGetters },
     payload: ExchangeBalancePayload

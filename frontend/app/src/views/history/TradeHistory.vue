@@ -17,7 +17,7 @@
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import OpenTrades from '@/components/history/OpenTrades.vue';
@@ -31,6 +31,8 @@ import {
   FETCH_REFRESH
 } from '@/store/history/consts';
 import { FetchSource, TradeEntry } from '@/store/history/types';
+import { REFRESH_PERIOD } from '@/store/settings/consts';
+import { RefreshPeriod } from '@/store/settings/types';
 
 @Component({
   components: {
@@ -40,7 +42,8 @@ import { FetchSource, TradeEntry } from '@/store/history/types';
     OpenTrades
   },
   computed: {
-    ...mapGetters('history', ['trades'])
+    ...mapGetters('history', ['trades']),
+    ...mapState('settings', [REFRESH_PERIOD])
   },
   methods: {
     ...mapActions('history', ['fetchTrades', 'deleteExternalTrade']),
@@ -51,9 +54,11 @@ export default class TradeHistory extends Mixins(StatusMixin) {
   selectedLocation: TradeLocation | null = null;
   fetchTrades!: (payload: FetchSource) => Promise<void>;
   fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
+  [REFRESH_PERIOD]!: RefreshPeriod;
   trades!: TradeEntry[];
   openTrades: TradeEntry[] = [];
   section = Section.TRADES;
+  refreshInterval: any;
 
   get preview(): boolean {
     return !!process.env.VUE_APP_TRADES_PREVIEW;
@@ -75,16 +80,36 @@ export default class TradeHistory extends Mixins(StatusMixin) {
     );
   }
 
-  async refresh() {
-    await this.fetchTrades(FETCH_REFRESH);
+  created() {
+    const period = this[REFRESH_PERIOD] * 60 * 1000;
+    if (period > 0) {
+      this.refreshInterval = setInterval(async () => this.refresh(), period);
+    }
+  }
+
+  destroyed() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
   }
 
   async mounted() {
+    await this.load();
+  }
+
+  private async load() {
     await Promise.all([
       this.fetchTrades(FETCH_FROM_CACHE),
       this.fetchUniswapTrades(false)
     ]);
     await this.fetchTrades(FETCH_FROM_SOURCE);
+  }
+
+  private async refresh() {
+    await Promise.all([
+      this.fetchTrades(FETCH_REFRESH),
+      this.fetchUniswapTrades(true)
+    ]);
   }
 }
 </script>

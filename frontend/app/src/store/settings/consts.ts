@@ -1,11 +1,12 @@
 export const DEFI_SETUP_DONE = 'defiSetupDone' as 'defiSetupDone';
 export const TIMEFRAME_SETTING = 'timeframeSetting' as 'timeframeSetting';
 export const LAST_KNOWN_TIMEFRAME = 'lastKnownTimeframe' as 'lastKnownTimeframe';
-export const QUERY_PERIOD = 'queryPeriod' as 'queryPeriod';
+export const QUERY_PERIOD = 'queryPeriod' as const;
 export const PROFIT_LOSS_PERIOD = 'profitLossReportPeriod' as 'profitLossReportPeriod';
 export const THOUSAND_SEPARATOR = 'thousandSeparator' as 'thousandSeparator';
 export const DECIMAL_SEPARATOR = 'decimalSeparator' as 'decimalSeparator';
 export const CURRENCY_LOCATION = 'currencyLocation' as 'currencyLocation';
+export const REFRESH_PERIOD = 'refreshPeriod' as const;
 
 export const TIMEFRAME_ALL = 'All';
 export const TIMEFRAME_YEAR = '1Y';

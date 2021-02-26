@@ -12,64 +12,28 @@ import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
 
-export interface SettingsMessages {
-  [index: string]: {
-    success: string;
-    error: string;
-  };
-}
-
 @Component({
   components: { BasePageHeader, TabNavigation }
 })
 export default class Settings extends Vue {
   readonly settingsTabs: TabContent[] = [
     {
-      name: 'General',
+      name: this.$t('settings.tabs.general').toString(),
       routeTo: '/settings/general'
     },
     {
-      name: 'Accounting',
+      name: this.$t('settings.tabs.accounting').toString(),
       routeTo: '/settings/accounting'
     },
     {
-      name: 'Data & Security',
+      name: this.$t('settings.tabs.data_security').toString(),
       routeTo: '/settings/data-security'
     },
     {
-      name: 'Defi',
+      name: this.$t('settings.tabs.defi').toString(),
       routeTo: '/settings/defi'
     }
   ];
-
-  settingsMessages: SettingsMessages = {};
-
-  validateSettingChange(
-    targetSetting: string,
-    targetState: 'success' | 'error',
-    message: string = '',
-    timeOut: number = 5500
-  ) {
-    if (targetState === 'success' || targetState === 'error') {
-      setTimeout(() => {
-        let validationMessage: string;
-        if (targetState === 'error') {
-          validationMessage = 'Setting not saved';
-        } else {
-          validationMessage = 'Setting saved';
-        }
-
-        if (message) {
-          validationMessage += `: ${message}`;
-        }
-
-        this.settingsMessages[targetSetting][targetState] = validationMessage;
-      }, 200);
-      setTimeout(() => {
-        this.settingsMessages[targetSetting][targetState] = '';
-      }, timeOut);
-    }
-  }
 }
 </script>
 
