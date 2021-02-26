@@ -37,7 +37,7 @@
   },
   "asset_locations": {
     "header": {
-      "address": "Address",
+      "account": "Account",
       "amount": "Amount",
       "location": "Location",
       "value": "{symbol} value"
