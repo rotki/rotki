@@ -6,6 +6,11 @@ import { NotificationState } from '@/store/notifications/state';
 import { NotificationPayload } from '@/store/notifications/types';
 import { createNotification } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
+import { backoff } from '@/utils/backoff';
+
+const consume = {
+  isRunning: false
+};
 
 const unique = function (
   value: string,
@@ -16,53 +21,60 @@ const unique = function (
 };
 
 export const actions: ActionTree<NotificationState, RotkehlchenState> = {
-  consume({ commit, getters, state: { data } }): any {
-    const title = i18n
-      .t('actions.notitifcations.consume.message_title')
-      .toString();
-    api
-      .consumeMessages()
-      .then(value => {
-        const existing = data.map(({ message }) => message);
-        let id = getters.nextId;
-        const errors = value.errors
-          .filter(unique)
-          .filter(error => !existing.includes(error))
-          .map(message =>
-            createNotification(id++, {
-              title,
-              message,
-              severity: Severity.ERROR,
-              display: true
-            })
-          );
-        const warnings = value.warnings
-          .filter(unique)
-          .filter(warning => !existing.includes(warning))
-          .map(message =>
-            createNotification(id++, {
-              title,
-              message,
-              severity: Severity.WARNING
-            })
-          );
+  async consume({ commit, getters, state: { data } }): Promise<void> {
+    if (consume.isRunning) {
+      return;
+    }
 
-        const notifications = errors.concat(warnings);
-        if (notifications.length === 0) {
-          return;
-        }
-        commit('update', notifications);
-      })
-      .catch(message => {
-        commit('update', [
-          createNotification(getters.nextId, {
+    consume.isRunning = true;
+    const title = i18n
+      .t('actions.notifications.consume.message_title')
+      .toString();
+
+    try {
+      const messages = await backoff(3, () => api.consumeMessages(), 10000);
+      const existing = data.map(({ message }) => message);
+      let id = getters.nextId;
+      const errors = messages.errors
+        .filter(unique)
+        .filter(error => !existing.includes(error))
+        .map(message =>
+          createNotification(id++, {
             title,
             message,
             severity: Severity.ERROR,
             display: true
           })
-        ]);
-      });
+        );
+      const warnings = messages.warnings
+        .filter(unique)
+        .filter(warning => !existing.includes(warning))
+        .map(message =>
+          createNotification(id++, {
+            title,
+            message,
+            severity: Severity.WARNING
+          })
+        );
+
+      const notifications = errors.concat(warnings);
+      if (notifications.length === 0) {
+        return;
+      }
+      commit('update', notifications);
+    } catch (e) {
+      const message = e.message || e;
+      commit('update', [
+        createNotification(getters.nextId, {
+          title,
+          message,
+          severity: Severity.ERROR,
+          display: true
+        })
+      ]);
+    } finally {
+      consume.isRunning = false;
+    }
   },
   displayed({ commit, state }, ids: number[]): void {
     if (ids.length <= 0) {

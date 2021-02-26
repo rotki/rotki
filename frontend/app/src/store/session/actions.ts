@@ -37,6 +37,11 @@ import {
   Tag,
   UnlockPayload
 } from '@/typing/types';
+import { backoff } from '@/utils/backoff';
+
+const periodic = {
+  isRunning: false
+};
 
 export const actions: ActionTree<SessionState, RotkehlchenState> = {
   start({ commit }, payload: { settings: DBSettings }) {
@@ -127,8 +132,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       nodeConnection
     }
   }) {
+    if (periodic.isRunning) {
+      return;
+    }
+    periodic.isRunning = true;
     try {
-      const result = await api.queryPeriodicData();
+      const result = await backoff(3, () => api.queryPeriodicData(), 10000);
       if (Object.keys(result).length === 0) {
         // an empty object means user is not logged in yet
         return;
@@ -158,6 +167,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         Severity.ERROR,
         true
       );
+    } finally {
+      periodic.isRunning = false;
     }
   },
   async logout({ dispatch, state }) {
