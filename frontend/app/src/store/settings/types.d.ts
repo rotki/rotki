@@ -10,7 +10,8 @@ import {
   THOUSAND_SEPARATOR,
   DECIMAL_SEPARATOR,
   CURRENCY_LOCATION,
-  REFRESH_PERIOD
+  REFRESH_PERIOD,
+  PERIODS
 } from '@/store/settings/consts';
 import { CurrencyLocation } from '@/typing/types';
 
@@ -24,7 +25,7 @@ export type ProfitLossTimeframe = {
   readonly quarter: Quarter;
 };
 
-export type RefreshPeriod = typeof REFRESH_PERIOD[number];
+export type RefreshPeriod = typeof PERIODS[number];
 
 export interface SettingsState {
   readonly [DEFI_SETUP_DONE]: boolean;
