@@ -24,6 +24,7 @@ Changelog
   - `Akash Network (AKT) <https://www.coingecko.com/en/coins/akash-network>`__
   - `Dfinance (XFI) <https://www.coingecko.com/en/coins/dfinance>`__
   - `Maps.me Token (MAPS) <https://www.coingecko.com/en/coins/maps>`__
+  - `xToken (XTK) <https://www.coingecko.com/en/coins/xtoken>`__
 
 * :release:`1.14.1 <2021-02-17>`
 * :bug:`2391` The signed version of the MacOS binary should now work properly for all users.
