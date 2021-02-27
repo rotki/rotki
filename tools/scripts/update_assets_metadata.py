@@ -18,7 +18,7 @@ with open(ASSETS_JSON, 'rb') as assets_json:
     new_md5.update(assets_json.read())
 
 if new_md5.hexdigest() == old_meta['md5']:
-    print("Assets meta file is up-to-date.")
+    print('Assets meta file is up-to-date.')
     sys.exit(0)
 
 new_meta = json.dumps({
