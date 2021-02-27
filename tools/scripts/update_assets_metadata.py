@@ -20,7 +20,7 @@ new_meta = json.dumps({
 })
 
 with open(ASSETS_META, "w") as assets_meta:
-    assets_meta.write(new_meta)
+    assets_meta.write(new_meta + '\n')
 
 with open(ASSETS_TEST, "r+") as assets_test:
     test = assets_test.read()
