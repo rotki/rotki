@@ -1207,8 +1207,6 @@ class Cryptocompare(ExternalServiceWithApiKey):
         data['QBIT'] = object()
         # This is DPRating https://coinmarketcap.com/currencies/dprating/
         data['RATING'] = object()
-        # This is RouletteToken https://coinmarketcap.com/currencies/roulettetoken/
-        data['RLT'] = object()
         # This is RocketPool https://coinmarketcap.com/currencies/rocket-pool/
         data['RPL'] = object()
         # This is SpeedMiningService (https://coinmarketcap.com/currencies/speed-mining-service/)
