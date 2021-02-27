@@ -13608,6 +13608,15 @@
         "symbol": "XST",
         "type": "own chain"
     },
+    "XTK": {
+        "coingecko": "xtoken",
+        "ethereum_address": "0x7F3EDcdD180Dbe4819Bd98FeE8929b5cEdB3AdEB",
+        "ethereum_token_decimals": 18,
+        "name": "xToken",
+        "started": 1614218700,
+        "symbol": "XTK",
+        "type": "ethereum token"
+    },
     "XTP": {
         "coingecko": "tidepay",
         "ethereum_address": "0x6368e1E18c4C419DDFC608A0BEd1ccb87b9250fc",
