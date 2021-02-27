@@ -5247,11 +5247,11 @@ Getting Loopring balances
                     },
 		    "GNO": {
 		        "amount": "1",
-			"usd_value": 5"
+			"usd_value": "5"
 		    }
             }]
         },
-        "message": "",
+        "message": ""
       }
 
    :resjson object result: A mapping between accounts and their balances

@@ -97,7 +97,7 @@ This section contains information about how to customize the application through
 Changing the Profit Currency
 =============================
 
-Rotki calculates everything, including your profit/loss for your tax report into a given fiat currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
+Rotki calculates everything, including your total profit/loss during the PnL report into a given fiat currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
 
 .. image:: images/profit_currency.gif
    :alt: Changing the profit currency
@@ -189,13 +189,48 @@ Ignored assets
 
 Specify which assets you own and would like to completely ignore from all calculations. Any actions that involve these assets are ignored.
 
-Customizing user & security settings
+Customizing data & security settings
 ====================================
+
+
+Changing password
+---------------------
 
 By choosing the "user & security" section of the settings you can change the user password.
 
 .. image:: images/sc_user_password_change.png
    :alt: Changing the user's password
+   :align: center
+
+
+Purging data
+-----------------
+
+Rotki keeps a lot of data cached locally in the user's DB. There may be the need to clean some of these data from time to time. You can do so from the "Manage Data" section of the settings, by clicking on the dropdown list, selecting the type of data you want to delete and then pressing the Trash button.
+
+.. image:: images/sc_purge_data.png
+   :alt: Purging user data
+   :align: center
+
+
+.. _manage-historical-price-cache:
+
+Manage historical price oracle cache
+--------------------------------------------
+
+Querying historical prices from oracles such as cryptocompare and coingecko is slow and can get slower as a result of rate limiting. That is why rotki creates historical price caches during idle time of the application.
+
+You can request the creation of such a cache by going to the Oracle cache section, selecting the oracle, the from asset of the pair, the to asset of the pair and then pressing the Cache pair prices.
+
+
+.. image:: images/sc_historical_price_cache1.png
+   :alt: Creating a historical price cache
+   :align: center
+
+Users can also manage the existing historical price cache entries. They can inspect when does the historical price data start, when does it end and if they want they can delete the cache by pressing the trash button.
+
+.. image:: images/sc_historical_price_cache2.png
+   :alt: Managing the historical price cache
    :align: center
 
 Customizing the DeFi settings
@@ -411,7 +446,7 @@ If you have a premium subscription you can also see how much DAI you have gained
    :alt: DSR with premium
    :align: center
 
-Finally you need to have premium in order for the total amount of DAI earned in a given time period to be counted in the profit/loss statements of the tax report.
+Finally you need to have premium in order for the total amount of DAI earned in a given time period to be counted in the profit/loss report.
 
 Below you can see a small demonstration of the usage of DSR by a premium account.
 
@@ -453,48 +488,53 @@ Below you can see a small demonstration of the usage of makerdao vaults by a pre
    :alt: Makerdao vaults premium demo
    :align: center
 
-Creating a tax report
-**********************
+Creating a profit/loss report
+*****************************
 
-Rotki creates a tax report for you based on your trades and the provided accounting settings. This is essentially a calculation of profit or loss for all your trades based on the given dates. Before getting into the details of generating a tax report, here's a few important details regarding the tax report generation algorithm:
+Rotki creates a profit/loss report for you based on your trades and other events and the provided accounting settings. This is essentially a calculation of profit or loss for all your events based on the given dates. Before getting into the details of generating a report, here's a few important details regarding the report generation algorithm:
 
-- By default, rotki uses an accounting strategy called "First In - First Out" (short: FIFO). There are plans to implement other strategies (e.g. `"Last In - First Out" <https://github.com/rotki/rotki/issues/44>`_ (short: LIFO)).
+- By default, rotki uses an accounting strategy called "First In - First Out" (short: FIFO). There are plans to implement other strategies (e.g. `"Last In - First Out" <https://github.com/rotki/rotki/issues/44>`_).
 - Rotki allows users in jurisdictions offering a tax free holding period (e.g. Germany with 1 year) to specify the period in days. To adjust this value, see the section `Customizing the account settings <#tax-free-period>`_.
-- When generating a report for a custom period, where rotki is aware of the user's previous crypto holdings (e.g. we trade BTC between the years 2017 - 2019 but we ask for a report between 2018 - 2019), it takes all prior crypto holdings into account to calculate a starting balance for the given period. For example, say you traded BTC between 2017 - 2019 with a balance of 0.1 BTC on December 31, 2017. When generating a tax report for 2018 - 2019, rotki will take the 0.1 BTC from December 31, 2017 as a start balance for its calculations in the period of 2018.
+- When generating a report for a custom period, where rotki is aware of the user's previous crypto holdings (e.g. we trade BTC between the years 2017 - 2019 but we ask for a report between 2018 - 2019), it takes all prior crypto holdings into account to calculate a starting balance for the given period. For example, say you traded BTC between 2017 - 2019 with a balance of 0.1 BTC on December 31, 2017. When generating a pnl report for 2018 - 2019, rotki will take the 0.1 BTC from December 31, 2017 as a start balance for its calculations in the period of 2018.
 
+To create a profit loss report click on the "Profit and Loss Report" button from the left menu. Choose a period for the report (or click on Custom to set a custom time range) and press on "Generate" to start the report.
 
-To create a tax report click on the "Tax Report" button from the left menu. Choose a start and an end date for the report and then click the "Generate Report" button.
-
-.. image:: images/sc_tax_report1.png
-   :alt: Overview of the tax report
+.. image:: images/sc_pnl_report1.png
+   :alt: Overview of the profit/loss report
    :align: center
 
-The calculation may take some time. Once done you have an overview of the profit/loss for the given period, how much of that is taxable, and how much each taxable event category contributes to the total.
+The calculation may take some time. You can also see a summary of the accounting setting the report is running with in the "Accounting settings" section.
 
-Additionally below the overview you get a table containing all of the taxable events that were taken into account in the calculation along with how much of the ``profit_currency`` you lost or gained through that event.
+If you encounter any problems during the profit/loss report check out the :ref:`troubleshooting-pnl-report` section.
 
-.. image:: images/sc_tax_report2.png
-   :alt: Event list of the tax report
+Once done you have an overview of the profit/loss for the given period, how much of that is taxable, and how much each taxable event category contributes to the total.
+
+Additionally below the overview you get a table containing all of the events that were taken into account in the calculation along with how much of the ``profit_currency`` you lost or gained through that event.
+
+.. image:: images/sc_pnl_report2.png
+   :alt: Event list of the profit/loss report
    :align: center
 
 
-Finally you can get a CSV export by pressing the "Export CSV" button. This export is meant to be imported into Google Sheets. Press the button and then choose a directory to write the CSV files to. Once done you can import the CSV files into Google Sheets via its import menu. Following are definitions for the document's columns
+Finally you can get a CSV export by pressing the "Export CSV" button. This export is meant to be imported into Google Sheets. Press the button and then choose a directory to write the CSV files to. Once done you can import the CSV files into Google Sheets via its import menu. Following are definitions for the all_event document's columns
 
-- ``type`` is a string describing the type of event a user engaged in, e.g. in "I buy ETH for EUR", `buy` is the `type`.
-- ``paid_asset`` is a string identifying the asset an event was paid in, e.g. in "I bought 1 ETH for 100 EUR", `EUR` is the  `paid_asset`.
-- ``paid_in_asset`` is a float specifying the amount of `paid_asset`s involved in an event, e.g. in "I bought 1 ETH for 100 EUR", `100` is the `paid_in_asset`.
-- ``taxable_amount``: is a float specifying the amount of `paid_asset` needed to be taken into consideration when generating a tax report, e.g. "I sold 1 ETH for 120 EUR", `1 ETH` is the `taxable_amount`.
-- ``received_asset`` is a string identifying the asset of an event's yield, e.g. in "I bought 1 ETH for 100 EUR", `ETH` is the `received_asset`.
-- ``received_in_asset`` is a float specifying the amount of `received_asset`s involved in an event, e.g. in "I bought 1 ETH for 100 EUR", `1` is the `received_in_asset`.
-- ``net_profit_or_loss`` is a float specifying the amount of profit or loss an event accounts for given the selected accounting strategy (currently there's only FIFO). Note that its value is based on a spreadsheet formula.
+- ``type`` is a string describing the type of event a user engaged in, e.g. in "I buy ETH for EUR", buy is the ``type``.
+- ``location`` is a string describing the location the event occured at. For example "kraken" for kraken trades.
+- ``paid_asset`` is a string identifying the asset an event was paid in, e.g. in "I bought 1 ETH for 100 EUR", EUR is the  ``paid_asset``.
+- ``paid_in_asset`` is a number specifying the amount of ``paid_asset`` involved in an event, e.g. in "I bought 1 ETH for 100 EUR", 100 is the ``paid_in_asset``.
+- ``taxable_amount``: is a number specifying the amount of ``paid_asset`` needed to be taken into consideration for tax purposes according to the accounting settings, e.g. "I sold 1 ETH for 120 EUR", 1 ETH is the ``taxable_amount``.
+- ``received_asset`` is a string identifying the asset of an event's yield, e.g. in "I bought 1 ETH for 100 EUR", ETH is the ``received_asset``.
+- ``received_in_asset`` is a number specifying the amount of ``received_asset`` involved in an event, e.g. in "I bought 1 ETH for 100 EUR", 1 is the ``received_in_asset``.
+- ``net_profit_or_loss`` is a number specifying the amount of profit or loss an event accounts for given the selected accounting strategy. Note that its value is based on a spreadsheet formula.
 - ``time`` is a string containing the date and time an event was executed.
-- ``is_virtual`` is a boolean describing if an event's `paid_asset` and `received_asset` are both crypto assets. As in many jurisdictions, crypto to crypto trades are taxable, the `is_virtual` column allows us to calculate the event's taxable amount given the crypto coin's rate against rotki's default currency, also known as `profit_currency` (e.g. EUR).
-- ``paid_in_XXX``, where XXX is the user's customized `profit_currency` is a float describing the amount of `paid_in_asset` converted to the user`s `profit_currency`.
-- ``taxable_received_in_XXX`` where XXX is the user's customized `profit_currency` is a float describing the amount of `received_in_asset`converted to the user's `profit_currency`. Note that rotki additionally subtracts an exchange's trading fees from this number.
-- ``taxable_bought_cost_in_EUR``, where XXX is the user's customized `profit_currency` is a float simulating the total amount of `paid_in_asset` given the user's customized accounting strategy in the user's `profit_currency`.
+- ``is_virtual`` is a boolean describing if an event is a virtually generated event. Only appears if the crypto to crypto setting is set. In many jurisdictions, crypto to crypto trades are taxable at the rate of the equivalent fiat currency. So an additional virtual buy is always generated for a crypto to crypto sell and the opposite for a crypto to crypto buy. So for example selling BSV for BTC would also make the user buy BTC with EUR as a virtual event, assuming EUR is the set profit currency.
+- ``paid_in_XXX``, where XXX is the user's customized ``profit_currency`` is a number describing the amount of ``paid_in_asset`` converted to the user`s ``profit_currency``.
+- ``taxable_received_in_XXX`` where XXX is the user's customized ``profit_currency`` is a number describing the amount of ``received_in_asset`` converted to the user's ``profit_currency``. Note that rotki additionally subtracts an exchange's trading fees from this number.
+- ``taxable_bought_cost_in_EUR`` where XXX is the user's customized ``profit_currency`` is a float simulating the total amount of ``paid_in_asset`` given the user's customized accounting strategy in the user's ``profit_currency``.
+- ``cost_basis`` If this is a spending event, this field contains information about where the amount that is spent came from according to the user's setting. Which buys contributed to this spend. If not enough information is known then this is also stated.
 
 .. note::
-   To learn more about `profit_currency` or to adjust it, see the section `Changing the Profit Currency` <#changing-the-profit-currency>`.
+   To learn more about `profit_currency` or to adjust it, see the section :ref:`change_profit_currency`
 
 
 Analytics
@@ -600,3 +640,14 @@ Data with multiple accounts/devices is not synced
 ===================================================
 
 Please, make sure all your accounts have the "Allow data sync with Rotki Server" switched on, and that on each log-in you make the appropriate choice when prompted to replace the local database. See the section :ref:`sync-data-with-rotki-server` for more information about how to sync data with multiple accounts/devices.
+
+.. _troubleshooting-pnl-report:
+
+Profit/loss report creation problems
+===========================================
+
+Timeout or price not found for timestamp
+-------------------------------------------------
+
+Figure out which asset caused the price not found. Then check the historical price caches and make sure you have the historical price cache for that asset pair created. For example if you are creating a GBP profit/loss report and the asset is GNO then make sure to create the GNO -> GBP historical price cache. See :ref:`manage-historical-price-cache` on how to do it.
+
