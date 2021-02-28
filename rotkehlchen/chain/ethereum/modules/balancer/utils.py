@@ -14,7 +14,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Location, Price, TradeType
 
-from .typing import BalancerPool, BalancerPoolToken, SwapAddresses, SwapRawAddresses
+from .typing import BalancerPool, BalancerPoolToken
 
 SUBGRAPH_REMOTE_ERROR_MSG = (
     "Failed to request the Balancer subgraph due to {error_msg}. "
@@ -127,30 +127,48 @@ def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
         token1_symbol = raw_swap['tokenOutSym']
         amount0_in = deserialize_asset_amount(raw_swap['tokenAmountIn'])
         amount1_out = deserialize_asset_amount(raw_swap['tokenAmountOut'])
-        raw_token_in = raw_swap['tokenIn']
-        raw_token_out = raw_swap['tokenOut']
-        raw_addresses = SwapRawAddresses(
-            user_address=raw_swap['userAddress']['id'],  # address
-            caller=raw_swap['caller'],  # from_address
-            pool_address=raw_swap['poolAddress']['id'],  # to_address
-            token_in=raw_token_in,  # token0_address
-            token_out=raw_token_out,  # token1_address
-        )
+        raw_user_address = raw_swap['userAddress']['id']  # address
+        raw_caller_address = raw_swap['caller']  # from_address
+        raw_pool_address = raw_swap['poolAddress']['id']  # to_address
+        raw_token_in_address = raw_swap['tokenIn']  # token0_address
+        raw_token_out_address = raw_swap['tokenOut']  # token1_address
     except KeyError as e:
         raise DeserializationError(f'Missing key: {str(e)}.') from e
 
     # Checksum addresses
     try:
-        addresses = SwapAddresses(
-            user_address=to_checksum_address(raw_addresses.user_address),
-            caller=to_checksum_address(raw_addresses.caller),
-            pool_address=to_checksum_address(raw_addresses.pool_address),
-            token_in=to_checksum_address(raw_addresses.token_in),
-            token_out=to_checksum_address(raw_addresses.token_out),
-        )
+        user_address = to_checksum_address(raw_user_address)
     except ValueError as e:
         raise DeserializationError(
-            f'Invalid ethereum address: {getattr(raw_addresses, field)} in swap {field}.',
+            f'Invalid ethereum address: {raw_user_address} in userAddress.',
+        ) from e
+
+    try:
+        caller_address = to_checksum_address(raw_caller_address)
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {raw_caller_address} in caller.',
+        ) from e
+
+    try:
+        pool_address = to_checksum_address(raw_pool_address)
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {raw_pool_address} in poolAddress.',
+        ) from e
+
+    try:
+        token_in_address = to_checksum_address(raw_token_in_address)
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {raw_token_in_address} in tokenIn.',
+        ) from e
+
+    try:
+        token_out_address = to_checksum_address(raw_token_out_address)
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {raw_token_out_address} in tokenOut.',
         ) from e
 
     # Get token0 and token1
@@ -161,8 +179,8 @@ def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
     if len(raw_tokens) != 0:
         try:
             raw_address_tokens = {raw_token['address']: raw_token for raw_token in raw_tokens}
-            raw_token0 = raw_address_tokens[raw_token_in]
-            raw_token1 = raw_address_tokens[raw_token_out]
+            raw_token0 = raw_address_tokens[raw_token_in_address]
+            raw_token1 = raw_address_tokens[raw_token_out_address]
             token0_name = raw_token0['name']
             token0_decimals = raw_token0['decimals']
             token1_name = raw_token1['name']
@@ -177,22 +195,22 @@ def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
 
     token0 = get_ethereum_token(
         symbol=token0_symbol,
-        ethereum_address=addresses.token_in,
+        ethereum_address=token_in_address,
         name=token0_name,
         decimals=token0_decimals,
     )
     token1 = get_ethereum_token(
         symbol=token1_symbol,
-        ethereum_address=addresses.token_out,
+        ethereum_address=token_out_address,
         name=token1_name,
         decimals=token1_decimals,
     )
     amm_swap = AMMSwap(
         tx_hash=tx_hash,
         log_index=log_index,
-        address=addresses.user_address,
-        from_address=addresses.caller,
-        to_address=addresses.pool_address,
+        address=user_address,
+        from_address=caller_address,
+        to_address=pool_address,
         timestamp=timestamp,
         location=Location.BALANCER,
         token0=token0,

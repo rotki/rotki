@@ -68,19 +68,3 @@ class ProtocolBalance(NamedTuple):
 AddressToSwaps = Dict[ChecksumEthAddress, List[AMMSwap]]
 DDAddressToSwaps = DefaultDict[ChecksumEthAddress, List[AMMSwap]]
 AddressToTrades = Dict[ChecksumEthAddress, List[AMMTrade]]
-
-
-class SwapRawAddresses(NamedTuple):
-    user_address: str
-    caller: str
-    pool_address: str
-    token_in: str
-    token_out: str
-
-
-class SwapAddresses(NamedTuple):
-    user_address: ChecksumEthAddress
-    caller: ChecksumEthAddress
-    pool_address: ChecksumEthAddress
-    token_in: ChecksumEthAddress
-    token_out: ChecksumEthAddress
