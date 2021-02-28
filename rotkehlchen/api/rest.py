@@ -1213,8 +1213,8 @@ class RestAPI():
 
     @staticmethod
     def query_all_assets() -> Response:
-        """Returns all supported assets. Essentially the contents of all_assets.json"""
-        assets = AssetResolver().assets
+        """Returns all supported assets"""
+        assets = AssetResolver().get_all_asset_data()
         return api_response(
             _wrap_in_ok_result(assets),
             status_code=HTTPStatus.OK,

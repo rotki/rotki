@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, Tuple
+from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
@@ -22,6 +22,9 @@ class DBEntryEthereumToken(NamedTuple):
     started: Optional[Timestamp]
     coingecko: Optional[str]
     cryptocompare: Optional[str]
+
+    def serialize(self) -> Dict[str, Any]:
+        return self._asdict()  # pylint: disable=no-member
 
     def to_db_tuple(self) -> DBEntryEthereumTokenTuple:
         return (

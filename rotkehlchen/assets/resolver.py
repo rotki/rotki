@@ -283,6 +283,20 @@ class AssetResolver():
         )
 
     @staticmethod
+    def get_all_asset_data() -> Dict[str, Dict[str, Any]]:
+        """Gets all the supported/known assets.
+
+        Essentially the contents of all_assets.json and the custom ethereum
+        tokens from the global DB
+        """
+        all_assets = AssetResolver().assets
+        global_db_tokens = GlobalDBHandler().get_ethereum_tokens()
+        all_assets.update({
+            ETHEREUM_DIRECTIVE + x.address: x.serialize() for x in global_db_tokens
+        })
+        return all_assets
+
+    @staticmethod
     def get_all_eth_token_info() -> List[EthTokenInfo]:
         """Gets all of the information about ethereum tokens we know
 
