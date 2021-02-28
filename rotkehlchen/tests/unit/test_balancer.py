@@ -5,6 +5,7 @@ from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.tests.api.test_balancer import BALANCER_TEST_ADDR_2_EXPECTED_TRADES
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
 
 TEST_SWAPS_TX_1 = [
@@ -103,130 +104,6 @@ TEST_SWAPS_TX_3 = [
         amount1_out=AssetAmount(FVal('2.283067259355947642')),
     ),
 ]
-TEST_SWAPS_1 = [
-    AMMSwap(
-        tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
-        log_index=18,
-        address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-        from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-        to_address=deserialize_ethereum_address('0x70985E557aE0CD6dC88189a532e54FbC61927BAd'),  # noqa: E501
-        timestamp=Timestamp(1607008178),
-        location=Location.BALANCER,
-        token0=EthereumToken('WETH'),
-        token1=EthereumToken('AAVE'),
-        amount0_in=AssetAmount(FVal('1.594533794502600192')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('11.260286362820602094')),
-    ),
-    AMMSwap(
-        tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
-        log_index=24,
-        address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-        from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-        to_address=deserialize_ethereum_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
-        timestamp=Timestamp(1607008178),
-        location=Location.BALANCER,
-        token0=EthereumToken('AAVE'),
-        token1=EthereumToken('WETH'),
-        amount0_in=AssetAmount(FVal('11.260284842802604032')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('1.6169340389857445212')),
-    ),
-    AMMSwap(
-        tx_hash='0x5e235216cb03e4eb234014f5ccf3efbfddd40c4576424e2a8204f1d12b96ed35',  # noqa: E501
-        log_index=143,
-        address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-        from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-        to_address=deserialize_ethereum_address('0x8982E9bBf7AC6A49c434aD81D2fF8e16895318e5'),  # noqa: E501
-        timestamp=Timestamp(1607008218),
-        location=Location.BALANCER,
-        token0=EthereumToken('SYN'),
-        token1=EthereumToken('WETH'),
-        amount0_in=AssetAmount(FVal('980.08365587152306176')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('1.352902561458047718')),
-    ),
-]
-TEST_SWAPS_1_EXPECTED_TRADES = [
-    AMMTrade(
-        trade_type=TradeType.BUY,
-        base_asset=EthereumToken('WETH'),
-        quote_asset=EthereumToken('SYN'),
-        amount=AssetAmount(FVal('1.352902561458047718')),
-        rate=Price(FVal('0.001380394982972144001321983066')),
-        trade_index=0,
-        swaps=[
-            AMMSwap(
-                tx_hash='0x5e235216cb03e4eb234014f5ccf3efbfddd40c4576424e2a8204f1d12b96ed35',  # noqa: E501
-                log_index=143,
-                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=deserialize_ethereum_address('0x8982E9bBf7AC6A49c434aD81D2fF8e16895318e5'),  # noqa: E501
-                timestamp=Timestamp(1607008218),
-                location=Location.BALANCER,
-                token0=EthereumToken('SYN'),
-                token1=EthereumToken('WETH'),
-                amount0_in=AssetAmount(FVal('980.08365587152306176')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('1.352902561458047718')),
-            ),
-        ],
-    ),
-    AMMTrade(
-        trade_type=TradeType.BUY,
-        base_asset=EthereumToken('AAVE'),
-        quote_asset=EthereumToken('WETH'),
-        amount=AssetAmount(FVal('11.260286362820602094')),
-        rate=Price(FVal('7.061804774312194764662462992')),
-        trade_index=0,
-        swaps=[
-            AMMSwap(
-                tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
-                log_index=18,
-                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=deserialize_ethereum_address('0x70985E557aE0CD6dC88189a532e54FbC61927BAd'),  # noqa: E501
-                timestamp=Timestamp(1607008178),
-                location=Location.BALANCER,
-                token0=EthereumToken('WETH'),
-                token1=EthereumToken('AAVE'),
-                amount0_in=AssetAmount(FVal('1.594533794502600192')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('11.260286362820602094')),
-            ),
-        ],
-    ),
-    AMMTrade(
-        trade_type=TradeType.BUY,
-        base_asset=EthereumToken('WETH'),
-        quote_asset=EthereumToken('AAVE'),
-        amount=AssetAmount(FVal('1.6169340389857445212')),
-        rate=Price(FVal('0.1435961933076020882306795155')),
-        trade_index=0,
-        swaps=[
-            AMMSwap(
-                tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
-                log_index=24,
-                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=deserialize_ethereum_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
-                timestamp=Timestamp(1607008178),
-                location=Location.BALANCER,
-                token0=EthereumToken('AAVE'),
-                token1=EthereumToken('WETH'),
-                amount0_in=AssetAmount(FVal('11.260284842802604032')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('1.6169340389857445212')),
-            ),
-        ],
-    ),
-]
 
 
 def test_get_trades_from_tx_swaps_1():
@@ -299,5 +176,11 @@ def test_get_trades_from_tx_swaps_3():
 
 
 def test_get_trades_from_swaps():
-    trades = Balancer._get_trades_from_swaps(TEST_SWAPS_1)
-    assert trades == TEST_SWAPS_1_EXPECTED_TRADES
+    swaps = [
+        BALANCER_TEST_ADDR_2_EXPECTED_TRADES[1].swaps[0],  # log_index 18
+        BALANCER_TEST_ADDR_2_EXPECTED_TRADES[0].swaps[0],  # log_index 24
+        BALANCER_TEST_ADDR_2_EXPECTED_TRADES[2].swaps[0],  # log_index 143
+    ]
+    expected_trades = BALANCER_TEST_ADDR_2_EXPECTED_TRADES[0:3][::-1]
+    trades = Balancer._get_trades_from_swaps(swaps)
+    assert trades == expected_trades
