@@ -2,14 +2,16 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, DefaultDict, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Dict, List, Optional
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import AssetAmount, Location, Timestamp
 from rotkehlchen.utils.misc import combine_dicts
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
 
 
 class BalanceType(Enum):
@@ -91,7 +93,7 @@ class Balance:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class AssetBalance:
-    asset: Asset
+    asset: 'Asset'
     balance: Balance
 
     @property
@@ -169,9 +171,9 @@ class DefiEvent:
     timestamp: Timestamp
     wrapped_event: Any
     event_type: DefiEventType
-    got_asset: Optional[Asset]
+    got_asset: Optional['Asset']
     got_balance: Optional[Balance]
-    spent_asset: Optional[Asset]
+    spent_asset: Optional['Asset']
     spent_balance: Optional[Balance]
     pnl: Optional[List[AssetBalance]]
     # If this is true then both got and spent asset count in cost basis
@@ -216,8 +218,8 @@ def _evaluate_balance_input(other: Any, operation: str) -> Balance:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BalanceSheet:
-    assets: DefaultDict[Asset, Balance] = field(default_factory=lambda: defaultdict(Balance))
-    liabilities: DefaultDict[Asset, Balance] = field(default_factory=lambda: defaultdict(Balance))
+    assets: DefaultDict['Asset', Balance] = field(default_factory=lambda: defaultdict(Balance))
+    liabilities: DefaultDict['Asset', Balance] = field(default_factory=lambda: defaultdict(Balance))  # noqa: E501
 
     def copy(self) -> 'BalanceSheet':
         return BalanceSheet(assets=self.assets.copy(), liabilities=self.liabilities.copy())
@@ -358,7 +360,7 @@ class LedgerAction:
     action_type: LedgerActionType
     location: Location
     amount: AssetAmount
-    asset: Asset
+    asset: 'Asset'
     link: str
     notes: str
 

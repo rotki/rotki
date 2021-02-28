@@ -1397,7 +1397,7 @@ class RequiredEthereumAddressSchema(Schema):
     address = EthereumAddressField(required=True)
 
 
-class EditEthereumTokenSchema(Schema):
+class EthereumTokenSchema(Schema):
     address = EthereumAddressField(required=True)
     decimals = fields.Integer(
         strict=True,
@@ -1419,8 +1419,12 @@ class EditEthereumTokenSchema(Schema):
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
-    ) -> Any:
+    ) -> CustomEthereumToken:
         return CustomEthereumToken(**data)
+
+
+class ModifyEthereumTokenSchema(Schema):
+    token = fields.Nested(EthereumTokenSchema, required=True)
 
 
 class QueriedAddressesSchema(Schema):

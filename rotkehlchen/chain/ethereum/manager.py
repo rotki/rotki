@@ -39,7 +39,8 @@ from rotkehlchen.serialization.deserialize import deserialize_int_from_hex
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.typing import ChecksumEthAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str, request_get_dict
+from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
+from rotkehlchen.utils.network import request_get_dict
 
 from .typing import NodeName
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS

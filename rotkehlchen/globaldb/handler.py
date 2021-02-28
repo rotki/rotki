@@ -2,7 +2,7 @@ import sqlite3
 from pathlib import Path
 from typing import List, Optional
 
-from rotkehlchen.chain.etherum.typing import CustomEthereumToken
+from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.errors import InputError
 from rotkehlchen.typing import ChecksumEthAddress
 
@@ -58,14 +58,14 @@ class GlobalDBHandler():
         if len(results) == 0:
             return None
 
-        return CustomEthereumToken.deserialize_from_db((address, *results[0]))
+        return CustomEthereumToken.deserialize_from_db((address, *results[0]))  # type: ignore
 
     @staticmethod
     def get_ethereum_tokens() -> List[CustomEthereumToken]:
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
             'SELECT address, decimals, name, symbol, started, coingecko, cryptocompare '
-            'FROM ethereum_tokens?;',
+            'FROM ethereum_tokens;',
         )
         tokens = []
         for entry in query:
@@ -85,7 +85,7 @@ class GlobalDBHandler():
         cursor = connection.cursor()
         try:
             cursor.execute(
-                'INSERT OR REPLACE INTO '
+                'INSERT INTO '
                 'ethereum_tokens(address, decimals, name, symbol, '
                 'started, coingecko, cryptocompare) '
                 'VALUES(?, ?, ?, ?, ?, ?, ?)',

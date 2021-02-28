@@ -1,12 +1,21 @@
 from enum import Enum
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
+from eth_typing import HexAddress, HexStr
+
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.utils.misc import from_gwei
+
+
+def string_to_ethereum_address(value: str) -> ChecksumEthAddress:
+    """This is a conversion without any checks of a string to ethereum address
+
+    Is only used for typing.
+    """
+    return ChecksumEthAddress(HexAddress(HexStr(value)))
 
 
 class NodeName(Enum):
@@ -299,7 +308,7 @@ class Eth2Deposit(NamedTuple):
         return cls(
             tx_hash=deposit_tuple[0],
             log_index=int(deposit_tuple[1]),
-            from_address=deserialize_ethereum_address(deposit_tuple[2]),
+            from_address=string_to_ethereum_address(deposit_tuple[2]),
             timestamp=Timestamp(int(deposit_tuple[3])),
             pubkey=deposit_tuple[4],
             withdrawal_credentials=deposit_tuple[5],
@@ -338,9 +347,9 @@ class CustomEthereumToken(NamedTuple):
     decimals: int
     name: str
     symbol: str
-    started: Optional[Timestamp]
-    coingecko: Optional[str]
-    cryptocompare: Optional[str]
+    started: Optional[Timestamp] = None
+    coingecko: Optional[str] = None
+    cryptocompare: Optional[str] = None
 
     def serialize(self) -> Dict[str, Any]:
         return self._asdict()  # pylint: disable=no-member
@@ -359,7 +368,7 @@ class CustomEthereumToken(NamedTuple):
     @classmethod
     def deserialize_from_db(cls, entry: CustomEthereumTokenDBTuple) -> 'CustomEthereumToken':
         return CustomEthereumToken(
-            address=deserialize_ethereum_address(entry[0]),
+            address=string_to_ethereum_address(entry[0]),
             decimals=entry[1],
             name=entry[2],
             symbol=entry[3],

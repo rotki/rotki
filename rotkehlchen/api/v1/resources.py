@@ -27,7 +27,6 @@ from rotkehlchen.api.v1.encoding import (
     BlockchainBalanceQuerySchema,
     CurrentAssetsPriceSchema,
     DataImportSchema,
-    EditEthereumTokenSchema,
     EditSettingsSchema,
     EthereumTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
@@ -48,6 +47,7 @@ from rotkehlchen.api.v1.encoding import (
     LedgerActionSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
+    ModifyEthereumTokenSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
     NamedOracleCacheGetSchema,
@@ -79,7 +79,6 @@ from rotkehlchen.api.v1.parser import resource_parser
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
-from rotkehlchen.chain.etherum.typing import CustomEthereumToken
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.typing import (
@@ -104,6 +103,7 @@ from rotkehlchen.typing import (
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
+    from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 
 
 def _combine_data_and_view_args(
@@ -332,18 +332,18 @@ class EthereumAssetsResource(BaseResource):
 
     get_schema = OptionalEthereumAddressSchema()
     delete_schema = RequiredEthereumAddressSchema()
-    edit_schema = EditEthereumTokenSchema()
+    edit_schema = ModifyEthereumTokenSchema()
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(self, address: Optional[ChecksumEthAddress]) -> Response:
         return self.rest_api.get_custom_ethereum_tokens(address=address)
 
     @use_kwargs(edit_schema, location='json')  # type: ignore
-    def put(self, token: CustomEthereumToken) -> Response:
+    def put(self, token: 'CustomEthereumToken') -> Response:
         return self.rest_api.add_custom_ethereum_token(token=token)
 
     @use_kwargs(edit_schema, location='json')  # type: ignore
-    def patch(self, token: CustomEthereumToken) -> Response:
+    def patch(self, token: 'CustomEthereumToken') -> Response:
         return self.rest_api.edit_custom_ethereum_token(token=token)
 
     @use_kwargs(delete_schema, location='json')  # type: ignore

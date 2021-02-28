@@ -5,12 +5,8 @@ from asset_aggregator.utils import choose_multiple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.typing import EthAddress, Timestamp
-from rotkehlchen.utils.misc import (
-    create_timestamp,
-    iso8601ts_to_timestamp,
-    request_get_dict,
-    timestamp_to_date,
-)
+from rotkehlchen.utils.misc import create_timestamp, iso8601ts_to_timestamp, timestamp_to_date
+from rotkehlchen.utils.network import request_get_dict
 
 # For these assets we will definitely always use our data as they are more accurate
 # than coin paprika or cryptocompare or we have already decided on a time

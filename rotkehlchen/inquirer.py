@@ -32,13 +32,8 @@ from rotkehlchen.errors import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
-from rotkehlchen.utils.misc import (
-    get_or_make_price_history_dir,
-    request_get_dict,
-    retry_calls,
-    timestamp_to_date,
-    ts_now,
-)
+from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date, ts_now
+from rotkehlchen.utils.network import request_get_dict, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 if TYPE_CHECKING:

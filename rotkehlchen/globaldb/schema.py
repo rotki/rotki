@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS ethereum_tokens (
     symbol TEXT NOT NULL,
     started INTEGER,
     coingecko TEXT,
-    cryptocompare TEXT,
+    cryptocompare TEXT
 );
 """
 
