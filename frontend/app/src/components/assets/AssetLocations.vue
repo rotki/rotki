@@ -16,7 +16,7 @@
           <template #item.location="{ item }">
             <location-display :identifier="item.location" />
           </template>
-          <template #item.address="{ item }">
+          <template #item.label="{ item }">
             <labeled-address-display
               v-if="item.address"
               :account="account(item.address)"
@@ -69,8 +69,8 @@ export default class AssetLocations extends Vue {
         width: '120px'
       },
       {
-        text: this.$t('asset_locations.header.address').toString(),
-        value: 'address'
+        text: this.$t('asset_locations.header.account').toString(),
+        value: 'label'
       },
       {
         text: this.$t('asset_locations.header.amount').toString(),
@@ -95,8 +95,11 @@ export default class AssetLocations extends Vue {
   currencySymbol!: string;
   detailsLoading!: boolean;
 
-  get assetLocations(): AssetBreakdown[] {
-    return this.breakdown(this.identifier);
+  get assetLocations(): (AssetBreakdown & { readonly label: string })[] {
+    return this.breakdown(this.identifier).map(value => ({
+      label: this.account(value.address)?.label ?? '',
+      ...value
+    }));
   }
 }
 </script>
