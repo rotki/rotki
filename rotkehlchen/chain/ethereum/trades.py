@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
+from typing_extensions import Literal
+
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UNKNOWN_TOKEN_KEYS, UnknownEthereumToken
 from rotkehlchen.constants.assets import A_DAI
@@ -25,6 +27,7 @@ from rotkehlchen.typing import (
 
 # Quick lookup for AMMTrade locations
 AMMTradeLocations = {Location.BALANCER, Location.UNISWAP}
+AMMTRADE_LOCATION_NAMES = Literal['balancer', 'uniswap']
 AMMSwapDBTuple = (
     Tuple[
         str,  # tx_hash

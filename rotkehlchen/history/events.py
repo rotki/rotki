@@ -1,10 +1,8 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union, cast
 
-from typing_extensions import Literal
-
-from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
+from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import RemoteError
@@ -222,14 +220,7 @@ class EventsHistorian():
 
         # include AMM trades: balancer, uniswap
         for amm_location in AMMTradeLocations:
-            amm_module_name: Literal['balancer', 'uniswap']
-            if amm_location == Location.BALANCER:
-                amm_module_name = 'balancer'
-            elif amm_location == Location.UNISWAP:
-                amm_module_name = 'uniswap'
-            else:
-                raise AssertionError(f'Unexpected amm trade location : {amm_location}')
-
+            amm_module_name = cast(AMMTRADE_LOCATION_NAMES, str(amm_location))
             amm_module = self.chain_manager.get_module(amm_module_name)
             if has_premium and amm_module:
                 self.processing_state_name = f'Querying {amm_module_name} trade history'

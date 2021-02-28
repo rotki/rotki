@@ -573,7 +573,7 @@ class Balancer(EthereumModule):
     def _update_used_query_range(
             self,
             addresses: List[ChecksumEthAddress],
-            prefix: Literal['balancer_trades'],
+            prefix: Literal[BALANCER_TRADES_PREFIX],
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> None:

@@ -1,15 +1,18 @@
 from dataclasses import dataclass
 from typing import Any, DefaultDict, Dict, List, NamedTuple, Set, Union
 
+from typing_extensions import Literal
+
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import UNKNOWN_TOKEN_KEYS, UnknownEthereumToken
+from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.assets.utils import serialize_ethereum_token
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress, Price
 
-BALANCER_TRADES_PREFIX = 'balancer_trades'
+BALANCER_TRADES_PREFIX = Literal['balancer_trades']
 
 
 @dataclass(init=True, repr=True)
@@ -21,16 +24,8 @@ class BalancerPoolToken:
     usd_price: Price = Price(ZERO)
 
     def serialize(self) -> Dict:
-        serialized_token: Union[str, Dict[str, Any]]
-        if isinstance(self.token, EthereumToken):
-            serialized_token = self.token.serialize()
-        elif isinstance(self.token, UnknownEthereumToken):
-            serialized_token = self.token.serialize_as_dict(keys=UNKNOWN_TOKEN_KEYS)
-        else:
-            raise AssertionError(f'Unexpected type: {type(self.token)}')
-
         return {
-            'token': serialized_token,
+            'token': serialize_ethereum_token(self.token),
             'total_amount': self.total_amount,
             'user_balance': self.user_balance.serialize(),
             'usd_price': self.usd_price,

@@ -5,7 +5,8 @@ from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tupl
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import UNKNOWN_TOKEN_KEYS, UnknownEthereumToken
+from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.assets.utils import serialize_ethereum_token
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError
@@ -37,20 +38,8 @@ class LiquidityPoolAsset:
     usd_price: Price = Price(ZERO)
 
     def serialize(self) -> Dict[str, Any]:
-        serialized_asset: Union[str, Dict[str, Any]]
-
-        if isinstance(self.asset, EthereumToken):
-            serialized_asset = self.asset.serialize()
-        elif isinstance(self.asset, UnknownEthereumToken):
-            serialized_asset = self.asset.serialize_as_dict(keys=UNKNOWN_TOKEN_KEYS)
-        else:
-            raise AssertionError(
-                f'Got type {type(self.asset)} for a LiquidityPool Asset. '
-                f'This should never happen.',
-            )
-
         return {
-            'asset': serialized_asset,
+            'asset': serialize_ethereum_token(self.asset),
             'total_amount': self.total_amount,
             'user_balance': self.user_balance.serialize(),
             'usd_price': self.usd_price,
@@ -286,21 +275,11 @@ class LiquidityPoolEventsBalance(NamedTuple):
     usd_profit_loss: FVal
 
     def serialize(self) -> Dict[str, Any]:
-        serialized_token0 = (
-            self.token0.serialize()
-            if isinstance(self.token0, EthereumToken)
-            else self.token0.serialize_as_dict(keys=UNKNOWN_TOKEN_KEYS)
-        )
-        serialized_token1 = (
-            self.token1.serialize()
-            if isinstance(self.token1, EthereumToken)
-            else self.token1.serialize_as_dict(keys=UNKNOWN_TOKEN_KEYS)
-        )
         return {
             'address': self.address,
             'pool_address': self.pool_address,
-            'token0': serialized_token0,
-            'token1': serialized_token1,
+            'token0': serialize_ethereum_token(self.token0),
+            'token1': serialize_ethereum_token(self.token1),
             'events': [event.serialize() for event in self.events],
             'profit_loss0': str(self.profit_loss0),
             'profit_loss1': str(self.profit_loss1),

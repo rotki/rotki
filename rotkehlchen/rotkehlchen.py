@@ -6,7 +6,18 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+    overload,
+)
 
 import gevent
 from gevent.lock import Semaphore
@@ -22,7 +33,7 @@ from rotkehlchen.chain.ethereum.manager import (
     EthereumManager,
     NodeName,
 )
-from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
+from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.typing import SubstrateChain
@@ -675,14 +686,7 @@ class Rotkehlchen():
             # for all trades we also need the trades from the amm protocols
             if self.premium is not None:
                 for amm_location in AMMTradeLocations:
-                    amm_module_name: Literal['balancer', 'uniswap']
-                    if amm_location == Location.BALANCER:
-                        amm_module_name = 'balancer'
-                    elif amm_location == Location.UNISWAP:
-                        amm_module_name = 'uniswap'
-                    else:
-                        raise AssertionError(f'Unexpected amm trade location : {amm_location}')
-
+                    amm_module_name = cast(AMMTRADE_LOCATION_NAMES, str(amm_location))
                     amm_module = self.chain_manager.get_module(amm_module_name)
                     if amm_module is not None:
                         trades.extend(
@@ -716,14 +720,7 @@ class Rotkehlchen():
             )
         elif location in AMMTradeLocations:
             if self.premium is not None:
-                amm_module_name: Literal['balancer', 'uniswap']
-                if location == Location.BALANCER:
-                    amm_module_name = 'balancer'
-                elif location == Location.UNISWAP:
-                    amm_module_name = 'uniswap'
-                else:
-                    raise AssertionError(f'Unexpected amm trade location : {location}')
-
+                amm_module_name = cast(AMMTRADE_LOCATION_NAMES, str(location))
                 amm_module = self.chain_manager.get_module(amm_module_name)
                 if amm_module is not None:
                     location_trades = amm_module.get_trades(  # type: ignore  # list invariance
