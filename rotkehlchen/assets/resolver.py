@@ -4,10 +4,16 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
+from eth_utils.address import to_checksum_address
 
+from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.globaldb import DBEntryEthereumToken, GlobalDBHandler
 from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress, EthTokenInfo
 
 log = logging.getLogger(__name__)
+
+ETHEREUM_DIRECTIVE = ':ceth:'
+ETHEREUM_DIRECTIVE_LENGTH = len(ETHEREUM_DIRECTIVE)
 
 asset_type_mapping = {
     'fiat': AssetType.FIAT,
@@ -36,6 +42,16 @@ asset_type_mapping = {
     'fusion token': AssetType.FUSION_TOKEN,
     'luniverse token': AssetType.LUNIVERSE_TOKEN,
 }
+
+
+def _extract_custom_token_data(asset_identifier: str) -> Optional[DBEntryEthereumToken]:
+    try:
+        address = to_checksum_address(asset_identifier[ETHEREUM_DIRECTIVE_LENGTH:])
+    except (ValueError, TypeError):
+        log.debug(f'Could not extract ethereum address from {asset_identifier}')
+        return None
+
+    return GlobalDBHandler().get_ethereum_token(address=address)
 
 
 def _get_latest_assets(data_directory: Path) -> Dict[str, Any]:
@@ -115,7 +131,7 @@ def _attempt_initialization(
     saved and builtin file with the remote and return the most recent assets.
 
     Returns a tuple of the most recent assets mapping it can get and a boolean denoting
-    if the remote check happened or not. If it did then we havethe most recent assets.
+    if the remote check happened or not. If it did then we have the most recent assets.
     """
     if not data_directory:
         if saved_assets is not None:
@@ -192,37 +208,86 @@ class AssetResolver():
     def is_identifier_canonical(asset_identifier: str) -> Optional[str]:
         """Checks if an asset identifier exists and if yes returns its canonical form
 
-        The canonical form is the one in the all_assets.json file and in the DB"""
+        The canonical form is the one in the all_assets.json file and in the DB
+
+        Also search for custom eth tokens if identifier starts with :ceth:
+        An address should follow a :ceth: directive
+        """
         instance = AssetResolver()
+        if asset_identifier.startswith(ETHEREUM_DIRECTIVE):
+            token_data = _extract_custom_token_data(asset_identifier)
+            return asset_identifier if token_data else None
+
+        # else only other choice is all_assets.json
         return instance.lowercase_mapping.get(asset_identifier.lower(), None)
 
     @staticmethod
     def get_asset_data(asset_identifier: str) -> AssetData:
-        """Get all asset data from the known assets file for valid asset symbol"""
-        data = AssetResolver().assets[asset_identifier]
-        # If an unknown asset is found (can happen if list is updated but code is not)
-        # then default to the "own chain" type"
-        asset_type = asset_type_mapping.get(data['type'], AssetType.OWN_CHAIN)
-        result = AssetData(
+        """Get all asset data for a valid asset identifier
+
+        Raises UnknownAsset if no data can be found
+        """
+        ended = None
+        forked = None
+        swapped_for = None
+
+        if asset_identifier.startswith(ETHEREUM_DIRECTIVE):
+            token_data = _extract_custom_token_data(asset_identifier)
+            if token_data is None:
+                raise UnknownAsset(asset_identifier)
+
+            asset_type = AssetType.ETH_TOKEN
+            ethereum_address = token_data.address
+            decimals = token_data.decimals
+            name = token_data.name
+            symbol = token_data.symbol
+            started = token_data.started
+            coingecko = token_data.coingecko
+            cryptocompare = token_data.cryptocompare
+
+        else:  # the most common case of an all assets entry
+            data = AssetResolver().assets.get(asset_identifier, None)
+            if data is None:
+                raise UnknownAsset(asset_identifier)
+
+            # If an unknown asset is found (can happen if list is updated but code is not)
+            # then default to the "own chain" type"
+            asset_type = asset_type_mapping.get(data['type'], AssetType.OWN_CHAIN)
+
+            symbol = data['symbol']
+            name = data['name']
+            active = data.get('active', True)
+            started = data.get('started', None)
+            ended = data.get('ended', None)
+            forked = data.get('forked', None)
+            swapped_for = data.get('swapped_for', None)
+            ethereum_address = data.get('ethereum_address', None)
+            decimals = data.get('ethereum_token_decimals', None)
+            cryptocompare = data.get('cryptocompare', None)
+            coingecko = data.get('coingecko', None)
+
+        return AssetData(
             identifier=asset_identifier,
-            symbol=data['symbol'],
-            name=data['name'],
-            # If active is in the data use it, else we assume it's true
-            active=data.get('active', True),
+            symbol=symbol,
+            name=name,
+            active=active,
             asset_type=asset_type,
-            started=data.get('started', None),
-            ended=data.get('ended', None),
-            forked=data.get('forked', None),
-            swapped_for=data.get('swapped_for', None),
-            ethereum_address=data.get('ethereum_address', None),
-            decimals=data.get('ethereum_token_decimals', None),
-            cryptocompare=data.get('cryptocompare', None),
-            coingecko=data.get('coingecko', None),
+            started=started,
+            ended=ended,
+            forked=forked,
+            swapped_for=swapped_for,
+            ethereum_address=ethereum_address,
+            decimals=decimals,
+            cryptocompare=cryptocompare,
+            coingecko=coingecko,
         )
-        return result
 
     @staticmethod
     def get_all_eth_token_info() -> List[EthTokenInfo]:
+        """Gets all of the information about ethereum tokens we know
+
+        Takes them out of all_assets.json and global token db
+        """
         if AssetResolver().eth_token_info is not None:
             return AssetResolver().eth_token_info  # type: ignore
         all_tokens = []
@@ -240,6 +305,16 @@ class AssetResolver():
                 symbol=asset_data['symbol'],
                 name=asset_data['name'],
                 decimals=int(asset_data['ethereum_token_decimals']),
+            ))
+
+        global_db_tokens = GlobalDBHandler().get_ethereum_tokens()
+        for entry in global_db_tokens:
+            all_tokens.append(EthTokenInfo(
+                identifier=ETHEREUM_DIRECTIVE + entry.address,
+                address=entry.address,
+                symbol=entry.symbol,
+                name=entry.name,
+                decimals=entry.decimals,
             ))
 
         AssetResolver().eth_token_info = all_tokens
