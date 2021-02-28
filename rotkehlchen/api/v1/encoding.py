@@ -19,6 +19,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_btc_address,
 )
 from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_kusama_address_from_public_key,
@@ -1386,6 +1387,40 @@ class IgnoredActionsGetSchema(Schema):
 class IgnoredActionsModifySchema(Schema):
     action_type = ActionTypeField(required=True)
     action_ids = fields.List(fields.String(required=True), required=True)
+
+
+class OptionalEthereumAddressSchema(Schema):
+    address = EthereumAddressField(required=False, missing=None)
+
+
+class RequiredEthereumAddressSchema(Schema):
+    address = EthereumAddressField(required=True)
+
+
+class EditEthereumTokenSchema(Schema):
+    address = EthereumAddressField(required=True)
+    decimals = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=0,
+            max=18,
+            error='Ethereum token decimals should range from 0 to 18',
+        ),
+        required=True,
+    )
+    name = fields.String(required=True)
+    symbol = fields.String(required=True)
+    started = TimestampField(missing=None)
+    coingecko = fields.String(missing=None)
+    cryptocompare = fields.String(missing=None)
+
+    @post_load  # type: ignore
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        return CustomEthereumToken(**data)
 
 
 class QueriedAddressesSchema(Schema):

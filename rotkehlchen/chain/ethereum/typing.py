@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.constants.misc import ZERO
@@ -319,4 +319,51 @@ class Eth2Deposit(NamedTuple):
             str(self.value.amount),
             str(self.value.usd_value),
             self.deposit_index,
+        )
+
+
+CustomEthereumTokenDBTuple = Tuple[
+    str,                  # address
+    int,                  # decimals
+    str,                  # name
+    str,                  # symbol
+    Optional[int],        # started
+    Optional[str],        # coingecko
+    Optional[str],        # cryptocompare
+]
+
+
+class CustomEthereumToken(NamedTuple):
+    address: ChecksumEthAddress
+    decimals: int
+    name: str
+    symbol: str
+    started: Optional[Timestamp]
+    coingecko: Optional[str]
+    cryptocompare: Optional[str]
+
+    def serialize(self) -> Dict[str, Any]:
+        return self._asdict()  # pylint: disable=no-member
+
+    def to_db_tuple(self) -> CustomEthereumTokenDBTuple:
+        return (
+            self.address,
+            self.decimals,
+            self.name,
+            self.symbol,
+            self.started,
+            self.coingecko,
+            self.cryptocompare,
+        )
+
+    @classmethod
+    def deserialize_from_db(cls, entry: CustomEthereumTokenDBTuple) -> 'CustomEthereumToken':
+        return CustomEthereumToken(
+            address=deserialize_ethereum_address(entry[0]),
+            decimals=entry[1],
+            name=entry[2],
+            symbol=entry[3],
+            started=Timestamp(entry[4]),  # type: ignore
+            coingecko=entry[5],
+            cryptocompare=entry[6],
         )

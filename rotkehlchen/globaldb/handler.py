@@ -2,11 +2,11 @@ import sqlite3
 from pathlib import Path
 from typing import List, Optional
 
+from rotkehlchen.chain.etherum.typing import CustomEthereumToken
 from rotkehlchen.errors import InputError
 from rotkehlchen.typing import ChecksumEthAddress
 
 from .schema import DB_SCRIPT_CREATE_TABLES
-from .typing import DBEntryEthereumToken
 
 GLOBAL_DB_VERSION = 1
 
@@ -47,7 +47,7 @@ class GlobalDBHandler():
         return GlobalDBHandler.__instance
 
     @staticmethod
-    def get_ethereum_token(address: ChecksumEthAddress) -> Optional[DBEntryEthereumToken]:
+    def get_ethereum_token(address: ChecksumEthAddress) -> Optional[CustomEthereumToken]:
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
             'SELECT decimals, name, symbol, started, coingecko, cryptocompare '
@@ -58,10 +58,10 @@ class GlobalDBHandler():
         if len(results) == 0:
             return None
 
-        return DBEntryEthereumToken.deserialize_from_db((address, *results[0]))  # type: ignore
+        return CustomEthereumToken.deserialize_from_db((address, *results[0]))
 
     @staticmethod
-    def get_ethereum_tokens() -> List[DBEntryEthereumToken]:
+    def get_ethereum_tokens() -> List[CustomEthereumToken]:
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
             'SELECT address, decimals, name, symbol, started, coingecko, cryptocompare '
@@ -69,13 +69,13 @@ class GlobalDBHandler():
         )
         tokens = []
         for entry in query:
-            tokens.append(DBEntryEthereumToken.deserialize_from_db(entry))
+            tokens.append(CustomEthereumToken.deserialize_from_db(entry))
 
         return tokens
 
     @staticmethod
     def add_ethereum_token(
-            entry: DBEntryEthereumToken,
+            entry: CustomEthereumToken,
     ) -> None:
         """Adds a new ethereum token into the global DB
 
@@ -95,6 +95,29 @@ class GlobalDBHandler():
             raise InputError(
                 f'Ethereum token with address {entry.address} already exists in the DB',
             ) from e
+        connection.commit()
+
+    @staticmethod
+    def edit_ethereum_token(
+            entry: CustomEthereumToken,
+    ) -> None:
+        """Adds a new ethereum token into the global DB
+
+        May raise InputError if the token already exists
+        """
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        db_tuple = entry.to_db_tuple()
+        swapped_tuple = (*db_tuple[1:], db_tuple[0])
+        cursor.execute(
+            'UPDATE ethereum_tokens SET decimals=?, name=?, symbol=?, started=?,'
+            'coingecko=?, cryptocompare=? WHERE address = ?',
+            swapped_tuple,
+        )
+        if cursor.rowcount != 1:
+            raise InputError(
+                f'Tried to edit non existing ethereum token with address {entry.address}',
+            )
         connection.commit()
 
     @staticmethod

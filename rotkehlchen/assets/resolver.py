@@ -6,8 +6,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 from eth_utils.address import to_checksum_address
 
+from rotkehlchen.chain.etherum.typing import CustomEthereumToken
 from rotkehlchen.errors import UnknownAsset
-from rotkehlchen.globaldb import DBEntryEthereumToken, GlobalDBHandler
+from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress, EthTokenInfo
 
 log = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ asset_type_mapping = {
 }
 
 
-def _extract_custom_token_data(asset_identifier: str) -> Optional[DBEntryEthereumToken]:
+def _extract_custom_token_data(asset_identifier: str) -> Optional[CustomEthereumToken]:
     try:
         address = to_checksum_address(asset_identifier[ETHEREUM_DIRECTIVE_LENGTH:])
     except (ValueError, TypeError):

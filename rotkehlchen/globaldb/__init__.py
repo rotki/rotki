@@ -1,4 +1,3 @@
-__all__ = ['DBEntryEthereumToken', 'GlobalDBHandler']
+__all__ = ['GlobalDBHandler']
 
 from .handler import GlobalDBHandler
-from .typing import DBEntryEthereumToken
