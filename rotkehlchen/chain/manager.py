@@ -973,7 +973,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             if ts_now() - self.defi_balances_last_query_ts < DEFI_BALANCES_REQUERY_SECONDS:
                 return self.defi_balances
 
-            # query zerion for defi balances
+            # query zerion adapter contract for defi balances
             self.defi_balances = self.defichad.query_defi_balances(self.accounts.eth)
             self.defi_balances_last_query_ts = ts_now()
             return self.defi_balances

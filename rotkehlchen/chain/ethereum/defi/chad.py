@@ -41,7 +41,7 @@ class DefiChad():
             if len(balances) != 0:
                 defi_balances[account] = balances
 
-        # and also query balances of tokens that are not detected by zerion sdk
+        # and also query balances of tokens that are not detected by zerion adapter contract
         result = multicall_specific(
             ethereum=self.ethereum,
             contract=VOTE_ESCROWED_CRV,
