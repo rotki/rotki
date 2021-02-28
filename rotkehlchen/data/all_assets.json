@@ -8000,6 +8000,14 @@
         "symbol": "MNTP",
         "type": "ethereum token"
     },
+    "MOB": {
+        "coingecko": "mobilecoin",
+        "cryptocompare": "",
+        "name": "MobileCoin",
+        "started": 1607212800,
+        "symbol": "MOB",
+        "type": "own chain"
+    },
     "MOBI": {
         "coingecko": "mobius",
         "name": "Mobius",
@@ -10352,6 +10360,7 @@
     },
     "RLT": {
         "coingecko": "roulettetoken",
+        "cryptocompare": "",
         "ethereum_address": "0xcCeD5B8288086BE8c38E23567e684C3740be4D48",
         "ethereum_token_decimals": 10,
         "name": "RouletteToken",

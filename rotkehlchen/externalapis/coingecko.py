@@ -151,6 +151,18 @@ DELISTED_ASSETS = [
     'ATX-2',
     'SONIQ',
     'TRUST',
+    'CDX',
+    'CRB',
+    'CTX',
+    'EGC',
+    'ICOS',
+    'MTRC',
+    'NOX',
+    'PHI',
+    'RLT',
+    'SPIN',
+    'VIEW',
+    'VRM',
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [
