@@ -2,7 +2,7 @@ import sqlite3
 from pathlib import Path
 from typing import List, Optional
 
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
+from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
 from rotkehlchen.errors import InputError
 from rotkehlchen.typing import ChecksumEthAddress
 
@@ -47,6 +47,50 @@ class GlobalDBHandler():
         return GlobalDBHandler.__instance
 
     @staticmethod
+    def _fetch_underlying_tokens(
+            address: ChecksumEthAddress,
+    ) -> Optional[List[UnderlyingToken]]:
+        """Fetch underlying tokens for a token address if they exist"""
+        cursor = GlobalDBHandler()._conn.cursor()
+        query = cursor.execute(
+            'SELECT address, weight from underlying_tokens_list WHERE parent_token_entry=?;',
+            (address,),
+        )
+        results = query.fetchall()
+        underlying_tokens = None
+        if len(results) != 0:
+            underlying_tokens = [UnderlyingToken.deserialize_from_db(x) for x in results]
+
+        return underlying_tokens
+
+    @staticmethod
+    def _add_underlying_tokens(
+            parent_token_address: ChecksumEthAddress,
+            underlying_tokens: List[UnderlyingToken],
+    ) -> None:
+        cursor = GlobalDBHandler()._conn.cursor()
+        for underlying_token in underlying_tokens:
+            # make sure underlying token address is tracked if not already there
+            try:
+                cursor.execute(
+                    'INSERT INTO ethereum_tokens(address) VALUES(?)',
+                    (underlying_token.address,),
+                )
+            except sqlite3.IntegrityError:
+                pass  # already there
+
+            try:
+                cursor.execute(
+                    'INSERT INTO underlying_tokens_list(address, weight, parent_token_entry) '
+                    'VALUES(?, ?, ?)',
+                    (underlying_token.address, str(underlying_token.weight), parent_token_address),
+                )
+            except sqlite3.IntegrityError as e:
+                raise InputError(
+                    f'Failed to add underlying tokens for {parent_token_address} due to {str(e)}',
+                ) from e
+
+    @staticmethod
     def get_ethereum_token(address: ChecksumEthAddress) -> Optional[CustomEthereumToken]:
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
@@ -58,7 +102,12 @@ class GlobalDBHandler():
         if len(results) == 0:
             return None
 
-        return CustomEthereumToken.deserialize_from_db((address, *results[0]))  # type: ignore
+        token_data = results[0]
+        underlying_tokens = GlobalDBHandler()._fetch_underlying_tokens(address)
+        return CustomEthereumToken.deserialize_from_db(
+            entry=(address, *token_data),  # type: ignore
+            underlying_tokens=underlying_tokens,
+        )
 
     @staticmethod
     def get_ethereum_tokens() -> List[CustomEthereumToken]:
@@ -69,17 +118,20 @@ class GlobalDBHandler():
         )
         tokens = []
         for entry in query:
-            tokens.append(CustomEthereumToken.deserialize_from_db(entry))
+            underlying_tokens = GlobalDBHandler()._fetch_underlying_tokens(entry[0])
+            tokens.append(CustomEthereumToken.deserialize_from_db(entry, underlying_tokens))
 
         return tokens
 
     @staticmethod
     def add_ethereum_token(
             entry: CustomEthereumToken,
-    ) -> None:
+    ) -> str:
         """Adds a new ethereum token into the global DB
 
         May raise InputError if the token already exists
+
+        Returns the token's rotki identifier
         """
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
@@ -95,15 +147,25 @@ class GlobalDBHandler():
             raise InputError(
                 f'Ethereum token with address {entry.address} already exists in the DB',
             ) from e
+
+        if entry.underlying_tokens is not None:
+            GlobalDBHandler()._add_underlying_tokens(
+                parent_token_address=entry.address,
+                underlying_tokens=entry.underlying_tokens,
+            )
+
         connection.commit()
+        return entry.identifier()
 
     @staticmethod
     def edit_ethereum_token(
             entry: CustomEthereumToken,
-    ) -> None:
+    ) -> str:
         """Adds a new ethereum token into the global DB
 
         May raise InputError if the token already exists
+
+        Returns the token's rotki identifier
         """
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
@@ -118,7 +180,20 @@ class GlobalDBHandler():
             raise InputError(
                 f'Tried to edit non existing ethereum token with address {entry.address}',
             )
+
+        # Since this is editing, make sure no underlying tokens exist
+        cursor.execute(
+            'DELETE from underlying_tokens_list WHERE parent_token_entry=?',
+            (entry.address,),
+        )
+        if entry.underlying_tokens is not None:  # and now add any if needed
+            GlobalDBHandler()._add_underlying_tokens(
+                parent_token_address=entry.address,
+                underlying_tokens=entry.underlying_tokens,
+            )
+
         connection.commit()
+        return entry.identifier()
 
     @staticmethod
     def delete_ethereum_token(address: ChecksumEthAddress) -> None:

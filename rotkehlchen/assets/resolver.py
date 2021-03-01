@@ -9,14 +9,12 @@ from eth_utils.address import to_checksum_address
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress, EthTokenInfo
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE, ETHEREUM_DIRECTIVE_LENGTH
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 
 log = logging.getLogger(__name__)
-
-ETHEREUM_DIRECTIVE = ':ceth:'
-ETHEREUM_DIRECTIVE_LENGTH = len(ETHEREUM_DIRECTIVE)
 
 asset_type_mapping = {
     'fiat': AssetType.FIAT,
@@ -192,7 +190,7 @@ class AssetResolver():
 
         AssetResolver.__instance.assets = assets
         # Mapping of lowercase identifier to file identifier to make sure our comparisons
-        # are case insensitive. TODO: Eventially we can make this go away. We can achieve that by:
+        # are case insensitive. TODO: Eventually we can make this go away. We can achieve that by:
         # 1. Lowercasing all identifiers in the assets.json file
         # 2. Writing a DB upgrade to do the same everywhere in the DB where
         # an asset identifier is used for the user. That last part is doable but
@@ -241,6 +239,13 @@ class AssetResolver():
 
             asset_type = AssetType.ETH_TOKEN
             ethereum_address = token_data.address
+            if token_data.missing_basic_data():
+                log.debug(
+                    f'Considering ethereum token with address {ethereum_address}) '
+                    f'as unknown since its missing either decimals or name or symbol',
+                )
+                raise UnknownAsset(asset_identifier)
+
             decimals = token_data.decimals
             name = token_data.name
             symbol = token_data.symbol
@@ -271,8 +276,8 @@ class AssetResolver():
 
         return AssetData(
             identifier=asset_identifier,
-            symbol=symbol,
-            name=name,
+            symbol=symbol,  # type: ignore  # checked with missing_basic_data
+            name=name,  # type: ignore  # checked with missing_basic_data
             active=active,
             asset_type=asset_type,
             started=started,
@@ -326,12 +331,15 @@ class AssetResolver():
 
         global_db_tokens = GlobalDBHandler().get_ethereum_tokens()
         for entry in global_db_tokens:
+            if entry.missing_basic_data():
+                continue
+
             all_tokens.append(EthTokenInfo(
                 identifier=ETHEREUM_DIRECTIVE + entry.address,
                 address=entry.address,
-                symbol=entry.symbol,
-                name=entry.name,
-                decimals=entry.decimals,
+                symbol=entry.symbol,  # type: ignore  # checked with missing_basic_data
+                name=entry.name,  # type: ignore  # checked with missing_basic_data
+                decimals=entry.decimals,  # type: ignore  # checked with missing_basic_data
             ))
 
         AssetResolver().eth_token_info = all_tokens

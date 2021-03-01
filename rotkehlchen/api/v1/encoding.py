@@ -19,7 +19,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_btc_address,
 )
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
+from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
 from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_kusama_address_from_public_key,
@@ -283,6 +283,37 @@ class FeeField(fields.Field):
             raise ValidationError(str(e)) from e
 
         return fee
+
+
+class FloatingPercentageField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: FVal,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> FVal:
+        try:
+            percentage = FVal(value)
+        except ValueError as e:
+            raise ValidationError(str(e)) from e
+
+        if percentage < ZERO:
+            raise ValidationError('Percentage field can not be negative')
+        if percentage > FVal(100):
+            raise ValidationError('Percentage field can not be greater than 100')
+
+        return percentage / FVal(100)
 
 
 class BlockchainField(fields.Field):
@@ -1397,6 +1428,11 @@ class RequiredEthereumAddressSchema(Schema):
     address = EthereumAddressField(required=True)
 
 
+class UnderlyingTokenInfoSchema(Schema):
+    address = EthereumAddressField(required=True)
+    weight = FloatingPercentageField(required=True)
+
+
 class EthereumTokenSchema(Schema):
     address = EthereumAddressField(required=True)
     decimals = fields.Integer(
@@ -1413,6 +1449,27 @@ class EthereumTokenSchema(Schema):
     started = TimestampField(missing=None)
     coingecko = fields.String(missing=None)
     cryptocompare = fields.String(missing=None)
+    underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), missing=None)
+
+    @validates_schema  # type: ignore
+    def validate_ethereum_token_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        given_underlying_tokens = data.get('underlying_tokens', None)
+        if given_underlying_tokens is not None:
+            if given_underlying_tokens == []:
+                raise ValidationError(
+                    f'Gave an empty list for underlying tokens of {data["address"]}. '
+                    f'If you need to specify no underlying tokens give a null value',
+                )
+            weight_sum = sum(x['weight'] for x in given_underlying_tokens)
+            if weight_sum > FVal(1):
+                raise ValidationError(
+                    f'The sum of underlying token weights for {data["address"]} '
+                    f'is {weight_sum * 100} and exceeds 100%',
+                )
 
     @post_load  # type: ignore
     def transform_data(  # pylint: disable=no-self-use
@@ -1420,7 +1477,16 @@ class EthereumTokenSchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> CustomEthereumToken:
-        return CustomEthereumToken(**data)
+        given_underlying_tokens = data.pop('underlying_tokens', None)
+        underlying_tokens = None
+        if given_underlying_tokens is not None:
+            underlying_tokens = []
+            for entry in given_underlying_tokens:
+                underlying_tokens.append(UnderlyingToken(
+                    address=entry['address'],
+                    weight=entry['weight'],
+                ))
+        return CustomEthereumToken(**data, underlying_tokens=underlying_tokens)
 
 
 class ModifyEthereumTokenSchema(Schema):

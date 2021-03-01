@@ -1264,20 +1264,26 @@ class RestAPI():
     @staticmethod
     def add_custom_ethereum_token(token: CustomEthereumToken) -> Response:
         try:
-            GlobalDBHandler().add_ethereum_token(token)
+            identifier = GlobalDBHandler().add_ethereum_token(token)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(
+            _wrap_in_ok_result({'identifier': identifier}),
+            status_code=HTTPStatus.OK,
+        )
 
     @staticmethod
     def edit_custom_ethereum_token(token: CustomEthereumToken) -> Response:
         try:
-            GlobalDBHandler().edit_ethereum_token(token)
+            identifier = GlobalDBHandler().edit_ethereum_token(token)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(
+            _wrap_in_ok_result({'identifier': identifier}),
+            status_code=HTTPStatus.OK,
+        )
 
     @staticmethod
     def delete_custom_ethereum_token(address: ChecksumEthAddress) -> Response:

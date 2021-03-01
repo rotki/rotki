@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
@@ -5,6 +6,7 @@ from eth_typing import HexAddress, HexStr
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.utils.misc import from_gwei
@@ -331,28 +333,75 @@ class Eth2Deposit(NamedTuple):
         )
 
 
+UnderlyingTokenDBTuple = Tuple[str, str]
+
+
+class UnderlyingToken(NamedTuple):
+    """Represents an underlying token of a token
+
+    Is used for pool tokens, tokensets etc.
+    """
+    address: ChecksumEthAddress
+    weight: FVal  # Floating percentage from 0 to 1
+
+    def serialize(self) -> Dict[str, Any]:
+        return {'address': self.address, 'weight': str(self.weight * 100)}
+
+    @classmethod
+    def deserialize_from_db(cls, entry: UnderlyingTokenDBTuple) -> 'UnderlyingToken':
+        return UnderlyingToken(
+            address=string_to_ethereum_address(entry[0]),
+            weight=FVal(entry[1]),
+        )
+
+
 CustomEthereumTokenDBTuple = Tuple[
     str,                  # address
-    int,                  # decimals
-    str,                  # name
-    str,                  # symbol
+    Optional[int],        # decimals
+    Optional[str],        # name
+    Optional[str],        # symbol
     Optional[int],        # started
     Optional[str],        # coingecko
     Optional[str],        # cryptocompare
 ]
 
 
-class CustomEthereumToken(NamedTuple):
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class CustomEthereumToken:
     address: ChecksumEthAddress
-    decimals: int
-    name: str
-    symbol: str
+    decimals: Optional[int] = None
+    name: Optional[str] = None
+    symbol: Optional[str] = None
     started: Optional[Timestamp] = None
     coingecko: Optional[str] = None
     cryptocompare: Optional[str] = None
+    underlying_tokens: Optional[List[UnderlyingToken]] = None
+
+    def identifier(self) -> str:
+        """Returns the asset identifier for this ethereum token as a custom ethereum token
+
+        If we already got it from all_assets.json then this won't match the identifier from there
+        """
+        return ETHEREUM_DIRECTIVE + self.address
+
+    def missing_basic_data(self) -> bool:
+        return self.name is None or self.symbol is None or self.decimals is None
 
     def serialize(self) -> Dict[str, Any]:
-        return self._asdict()  # pylint: disable=no-member
+        result: Dict[str, Any] = {
+            'address': self.address,
+            'decimals': self.decimals,
+            'name': self.name,
+            'symbol': self.symbol,
+            'started': self.started,
+            'coingecko': self.coingecko,
+            'cryptocompare': self.cryptocompare,
+            'underlying_tokens': None,
+        }
+        if self.underlying_tokens:
+            result['underlying_tokens'] = [x.serialize() for x in self.underlying_tokens]
+
+        return result
 
     def to_db_tuple(self) -> CustomEthereumTokenDBTuple:
         return (
@@ -366,7 +415,11 @@ class CustomEthereumToken(NamedTuple):
         )
 
     @classmethod
-    def deserialize_from_db(cls, entry: CustomEthereumTokenDBTuple) -> 'CustomEthereumToken':
+    def deserialize_from_db(
+            cls,
+            entry: CustomEthereumTokenDBTuple,
+            underlying_tokens: Optional[List[UnderlyingToken]] = None,
+    ) -> 'CustomEthereumToken':
         return CustomEthereumToken(
             address=string_to_ethereum_address(entry[0]),
             decimals=entry[1],
@@ -375,4 +428,5 @@ class CustomEthereumToken(NamedTuple):
             started=Timestamp(entry[4]),  # type: ignore
             coingecko=entry[5],
             cryptocompare=entry[6],
+            underlying_tokens=underlying_tokens,
         )

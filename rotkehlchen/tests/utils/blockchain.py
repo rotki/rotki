@@ -453,7 +453,7 @@ def mock_bitcoin_balances_query(
 
         return MockResponse(200, response)
 
-    return patch('rotkehlchen.utils.misc.requests.get', wraps=mock_requests_get)
+    return patch('rotkehlchen.utils.network.requests.get', wraps=mock_requests_get)
 
 
 def compare_account_data(expected: List[Dict], got: List[Dict]) -> None:
