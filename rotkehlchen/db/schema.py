@@ -68,6 +68,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('V', 22);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('W', 23);
 /* BALANCER */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('X', 24);
+/* LOOPRING */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('Y', 25);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

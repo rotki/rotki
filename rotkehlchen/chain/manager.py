@@ -1248,3 +1248,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 ))
 
         return defi_events
+
+    @protect_with_lock()
+    @cache_response_timewise()
+    def get_loopring_balances(self) -> Dict[ChecksumEthAddress, Dict[Asset, Balance]]:
+        """Query loopring balances if the module is activated"""
+        # Check if the loopring module is activated
+        loopring_module = self.get_module('loopring')
+        if loopring_module:
+            return loopring_module.get_balances(addresses=self.accounts.eth)
+
+        return {}
