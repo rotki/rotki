@@ -11,12 +11,14 @@
     >
       <template #activator="{ on }">
         <v-text-field
+          ref="input"
           :value="value"
           :label="label"
           :hint="hint"
           prepend-inner-icon="mdi-calendar"
           :persistent-hint="persistentHint"
           :rules="allRules"
+          :outlined="outlined"
           append-icon="mdi-clock-outline"
           @change="emitIfValid($event)"
           @click:append="setNow()"
@@ -64,6 +66,8 @@ export default class DateTimePicker extends Vue {
   limitNow!: boolean;
   @Prop({ required: false, default: false, type: Boolean })
   seconds!: boolean;
+  @Prop({ required: false, default: false, type: Boolean })
+  outlined!: boolean;
 
   private date = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))?$/;
   private withSeconds = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d)(:[0-5]\d))$/;
@@ -185,6 +189,10 @@ export default class DateTimePicker extends Vue {
     this.timeModel = now.format(this.timeFormat);
     this.dateModel = now.format(DateTimePicker.dateFormat);
     this.updateActualDate();
+  }
+
+  reset() {
+    (this.$refs.input as any).reset();
   }
 }
 </script>

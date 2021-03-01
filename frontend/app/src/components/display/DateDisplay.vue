@@ -19,16 +19,22 @@ export default class DateDisplay extends Vue {
   timestamp!: number;
   @Prop({ required: false, type: Boolean, default: false })
   noTimezone!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  noTime!: boolean;
 
   dateDisplayFormat!: string;
   privacyMode!: boolean;
   scrambleData!: boolean;
 
   get dateFormat(): string {
-    if (this.noTimezone) {
-      return this.dateDisplayFormat.replace('%z', '').replace('%Z', '');
+    const display = this.noTimezone
+      ? this.dateDisplayFormat.replace('%z', '').replace('%Z', '')
+      : this.dateDisplayFormat;
+
+    if (this.noTime) {
+      return display.split(' ')[0];
     }
-    return this.dateDisplayFormat;
+    return display;
   }
 
   get displayTimestamp(): number {
