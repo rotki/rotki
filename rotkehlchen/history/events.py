@@ -25,7 +25,19 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-HISTORY_QUERY_STEPS = 10
+# Number of steps excluding the connected exchanges. Current query steps:
+# eth transactions
+# ledger actions
+# external trades: balancer, uniswap
+# makerdao dsr
+# makerdao vaults
+# yearn vaults
+# compound
+# adex staking
+# aave lending
+# eth2
+# Please, update this number each time a history query step is either added or removed
+NO_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 11
 FREE_LEDGER_ACTIONS_LIMIT = 50
 
 HistoryResult = Tuple[
@@ -132,7 +144,7 @@ class EventsHistorian():
         """Creates trades and loans history from start_ts to end_ts"""
         self._reset_variables()
         step = 0
-        total_steps = len(self.exchange_manager.connected_exchanges) + HISTORY_QUERY_STEPS
+        total_steps = len(self.exchange_manager.connected_exchanges) + NO_HISTORY_QUERY_STEPS_EXCL_EXCHANGES  # noqa: E501
         log.info(
             'Get/create trade history',
             start_ts=start_ts,

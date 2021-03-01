@@ -118,4 +118,4 @@ class EncodingError(Exception):
 
 
 class ModuleInitializationFailure(Exception):
-    """Raises when the module is unusable"""
+    """Raises when a module failed to initialize"""

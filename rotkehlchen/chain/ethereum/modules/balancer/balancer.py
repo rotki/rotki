@@ -106,7 +106,11 @@ class Balancer(EthereumModule):
                 address=address,
             )
             if db_swaps:
-                db_trades = self._get_trades_from_swaps(db_swaps)
+                try:
+                    db_trades = self._get_trades_from_swaps(db_swaps)
+                except DeserializationError as e:
+                    raise RemoteError('Failed to deserialize balancer trades') from e
+
                 db_address_to_trades[address] = db_trades
 
         return db_address_to_trades
@@ -257,7 +261,7 @@ class Balancer(EthereumModule):
             address_to_swaps.update(new_address_to_swaps)
             self._update_used_query_range(
                 addresses=new_addresses,
-                prefix='balancer_trades',
+                prefix=BALANCER_TRADES_PREFIX,
                 start_ts=start_ts,
                 end_ts=to_timestamp,
             )
@@ -272,7 +276,7 @@ class Balancer(EthereumModule):
             address_to_swaps.update(address_new_swaps)
             self._update_used_query_range(
                 addresses=existing_addresses,
-                prefix='balancer_trades',
+                prefix=BALANCER_TRADES_PREFIX,
                 start_ts=min_end_ts,
                 end_ts=to_timestamp,
             )
@@ -345,8 +349,8 @@ class Balancer(EthereumModule):
                         'Failed to deserialize a balancer swap',
                         error=str(e),
                         raw_swap=raw_swap,
-                        start_ts=start_ts,  # initial value
-                        end_ts=end_ts,  # initial value
+                        start_ts=start_ts,
+                        end_ts=end_ts,
                         param_values=param_values,
                     )
                     raise RemoteError('Failed to deserialize balancer trades') from e
@@ -373,6 +377,7 @@ class Balancer(EthereumModule):
 
     @staticmethod
     def _get_trades_from_swaps(swaps: List[AMMSwap]) -> List[AMMTrade]:
+        """May raise DeserializationError"""
         assert len(swaps) != 0, "Swaps can't be an empty list"
 
         swaps.sort(key=lambda swap: (swap.timestamp, -swap.log_index), reverse=True)
@@ -573,7 +578,7 @@ class Balancer(EthereumModule):
     def _update_used_query_range(
             self,
             addresses: List[ChecksumEthAddress],
-            prefix: Literal[BALANCER_TRADES_PREFIX],
+            prefix: Literal['balancer_trades'],
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> None:

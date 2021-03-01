@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List, Tuple
 
 from eth_utils import to_checksum_address
@@ -7,6 +8,7 @@ from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_price,
@@ -27,6 +29,10 @@ UNISWAP_REMOTE_ERROR_MSG = (
     "secondary price oracle for requesting the USD price of the unsupported tokens. "
     "Probably will get fixed with time. If not report it to rotki's support channel"
 )
+
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def deserialize_pool_share(
@@ -134,6 +140,10 @@ def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
         raw_token_out_address = raw_swap['tokenOut']  # token1_address
     except KeyError as e:
         raise DeserializationError(f'Missing key: {str(e)}.') from e
+
+    if amount0_in == ZERO:
+        # Prevent a DivisionByZero when creating the trade
+        raise DeserializationError('TokenAmountIn balance is zero')
 
     # Checksum addresses
     try:
@@ -273,8 +283,21 @@ def calculate_trade_from_swaps(swaps: List[AMMSwap]) -> AMMTrade:
     [USDC -> AMPL]                              BASE_QUOTE pair is AMPL_USDC.
     [USDC -> AMPL, AMPL -> WETH]                BASE_QUOTE pair is WETH_USDC.
     [USDC -> AMPL, AMPL -> WETH, WETH -> USDC]  BASE_QUOTE pair is USDC_USDC.
+
+    May raise DeserializationError
     """
     assert len(swaps) != 0, "Swaps can't be an empty list here"
+
+    if swaps[0].amount0_in == ZERO:
+        # Swaps with `tokenIn` amount (<AMMSwap>.amount0_in) equals to zero are
+        # not expected nor supported. The function `deserialize_swap` will raise
+        # a DeserializationError, preventing to store them in the DB. In case
+        # of having a zero amount it means the db data was corrupted.
+        log.error(
+            'Failed to deserialize swap from db. First swap amount0_in is zero',
+            swaps=swaps,
+        )
+        raise DeserializationError('First swap amount0_in is zero')
 
     amm_trade = AMMTrade(
         trade_type=TradeType.BUY,  # AMMTrade is always a buy
@@ -299,9 +322,11 @@ def get_trades_from_tx_swaps(swaps: List[AMMSwap]) -> List[AMMTrade]:
 
     When swaps are done via the Balancer Exchange Proxy (caller address is
     0x3e66b66fd1d0b02fda6c811da9e0547970db2f21) the swap N "amount out" equals
-    to the swap N+1 "amount in". However, there may be a slightly difference
+    to the swap N+1 "amount in". However, there may be a slight difference
     (e.g. 1e-5) when the caller is a custom contract. In this case the swaps
     won't be aggregated under the same trade.
+
+    May raise DeserializationError
     """
     trades: List[AMMTrade] = []
     trade_swaps: List[AMMSwap] = []

@@ -12,7 +12,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress, Price
 
-BALANCER_TRADES_PREFIX = Literal['balancer_trades']
+BALANCER_TRADES_PREFIX: Literal['balancer_trades'] = 'balancer_trades'
 
 
 @dataclass(init=True, repr=True)
