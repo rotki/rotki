@@ -142,7 +142,7 @@ def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
         raise DeserializationError(f'Missing key: {str(e)}.') from e
 
     if amount0_in == ZERO:
-        # Prevent a DivisionByZero when creating the trade
+        # Prevent a ZeroDivisionError when creating the trade
         raise DeserializationError('TokenAmountIn balance is zero')
 
     # Checksum addresses
@@ -289,6 +289,7 @@ def calculate_trade_from_swaps(swaps: List[AMMSwap]) -> AMMTrade:
     assert len(swaps) != 0, "Swaps can't be an empty list here"
 
     if swaps[0].amount0_in == ZERO:
+        # Prevent a ZeroDivisionError when creating the trade
         # Swaps with `tokenIn` amount (<AMMSwap>.amount0_in) equals to zero are
         # not expected nor supported. The function `deserialize_swap` will raise
         # a DeserializationError, preventing to store them in the DB. In case
