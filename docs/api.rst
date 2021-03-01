@@ -2108,6 +2108,201 @@ Querying owned assets
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal Rotki error
 
+Getting custom ethereum tokens
+==================================
+
+.. http:get:: /api/(version)/assets/ethereum
+
+   Doing a GET on the ethereum assets endpoint will return a list of all custom ethereum tokens. You can also optionally specify an ethereum address to get its token details. If you query by address only a single object is returned. If you query without, a list of objects.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/ethereum HTTP/1.1
+      Host: localhost:5042
+
+      {"address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807"}
+
+   :reqjson string address: An optional address to query for ethereum token info. If given only token info of this address are returned. As an object. **not a list**. If not given, a list of all known tokens is returned.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+              "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
+              "decimals": 18,
+              "name": "foo",
+              "symbol": "FTK",
+              "started": 1614636432,
+              "coingecko": "foo-coin",
+              "cryptocompare": "FOO",
+              "underlying_tokens": [
+                  {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "weight": "15.45"},
+                  {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "weight": "35.65"},
+                  {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "weight": "39"}
+              ]
+          }, {
+              "address": "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
+              "decimals": 4
+          }]
+          "message": ""
+      }
+
+   .. _custom_ethereum_token:
+
+   :resjson list result: A list of ethereum tokens
+   :resjsonarr string address: The address of the token. Can not be optional.
+   :resjsonarr integer decimals: Ethereum token decimals. Can be missing if not known.
+   :resjsonarr string name: Asset name. Can be missing if not known.
+   :resjsonarr string symbol: Asset symbol. Can be missing if not known.
+   :resjsonarr integer started: The timestamp of the token deployment. Can be missing if not known.
+   :resjsonarr string coingecko: The coingecko identifier for the asset. can be missing if not known.
+   :resjsonarr string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known.
+   :resjsonarr list underlying_tokens: Optional. If the token is an LP token or a token set or something similar which represents a pool of multiple other tokens, then this is a list of the underlying token addresses and a percentage that each token contributes to the pool.
+   :statuscode 200: Assets succesfully queried.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 404: Queried by address and no token was found.
+   :statuscode 500: Internal Rotki error
+
+Adding custom ethereum tokens
+==================================
+
+.. http:put:: /api/(version)/assets/ethereum
+
+   Doing a PUT on the ethereum assets endpoint will allow you to add a new ethereum token in the global rotki DB. Returns the asset identifier of the new custom token. For ethereum ones it's ``:ceth:0xADDRESS``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/ethereum HTTP/1.1
+      Host: localhost:5042
+
+      {"token": {
+          "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
+          "decimals": 18,
+          "name": "foo",
+          "symbol": "FTK",
+          "started": 1614636432,
+          "coingecko": "foo-coin",
+          "cryptocompare": "FOO",
+          "underlying_tokens": [
+              {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "weight": "15.45"},
+	      {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "weight": "35.65"},
+	      {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "weight": "39"}
+         ]
+       }}
+
+   :reqjson object token: A token to add. For details on the possible fields see `here <custom_ethereum_token_>`_.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"identifier": ":ceth:0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
+          "message": ""
+      }
+
+
+   :resjson string identifier: The identifier of the newly added token.
+   :statuscode 200: Asset succesfully addedd.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: Some conflict at addition. For example token address is already in the DB.
+   :statuscode 500: Internal Rotki error
+
+Editing custom ethereum tokens
+==================================
+
+.. http:patch:: /api/(version)/assets/ethereum
+
+   Doing a PATCH on the ethereum assets endpoint will allow you to edit an existing ethereum token in the global rotki DB. Returns the asset identifier of the edited token for success.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/ethereum HTTP/1.1
+      Host: localhost:5042
+
+      {"token": {
+          "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
+          "decimals": 5,
+          "name": "foo",
+          "symbol": "FTK",
+          "started": 1614636432,
+          "coingecko": "foo-coin",
+          "cryptocompare": "FOO",
+          "underlying_tokens": None
+       }}
+
+   :reqjson object token: Token to edit. Token is edited by address. The old token is completely replaced by all new entries passed by this endpoint. For details on the possible fields see `here <custom_ethereum_token_>`_.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"identifier": ":ceth:0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
+          "message": ""
+      }
+
+
+   :resjson string identifier: The identifier of the edited token.
+   :statuscode 200: Asset succesfully edited.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: Some conflict at editing. For example token address does not exist in the DB.
+   :statuscode 500: Internal Rotki error
+
+Deleting custom ethereum tokens
+==================================
+
+.. http:delete:: /api/(version)/assets/ethereum
+
+   Doing a DELETE on the ethereum assets endpoint will allow you to delete an existing ethereum token from the global rotki DB.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/ethereum HTTP/1.1
+      Host: localhost:5042
+
+      {"address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807"}
+
+   :reqjson string address: Address of the token to delete.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+
+   :resjson bool result: True for success, null for error.
+   :statuscode 200: Asset succesfully deleted.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: Some conflict at deleting. For example token address does not exist in the DB.
+   :statuscode 500: Internal Rotki error
+
 Querying asset icons
 ======================
 
@@ -3021,9 +3216,9 @@ Querying complete action history
                   "total_taxable_profit_loss": "6936.05",
                   "total_profit_loss": "6936.05"
               },
-	      "events_processed": 1000,
-	      "events_limit": 1000,
-	      "first_processed_timestamp": 1428994442,
+              "events_processed": 1000,
+              "events_limit": 1000,
+              "first_processed_timestamp": 1428994442,
               "all_events": [{
                   "type": "buy",
                   "paid_in_profit_currency": "4000",
@@ -5485,10 +5680,10 @@ Getting Loopring balances
                         "amount": "1050",
                         "usd_value": "950"
                     },
-		    "GNO": {
-		        "amount": "1",
-			"usd_value": "5"
-		    }
+                    "GNO": {
+                        "amount": "1",
+                        "usd_value": "5"
+                    }
             }]
         },
         "message": ""
