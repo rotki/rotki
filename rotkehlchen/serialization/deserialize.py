@@ -475,6 +475,8 @@ def deserialize_location(symbol: str) -> Location:
         return Location.ICONOMI
     if symbol == 'kucoin':
         return Location.KUCOIN
+    if symbol == 'balancer':
+        return Location.BALANCER
     # else
     raise DeserializationError(
         f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
@@ -586,6 +588,8 @@ def deserialize_location_from_db(symbol: str) -> Location:
         return Location.ICONOMI
     if symbol == 'W':
         return Location.KUCOIN
+    if symbol == 'X':
+        return Location.BALANCER
     # else
     raise DeserializationError(
         f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',

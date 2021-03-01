@@ -13,7 +13,7 @@ from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
@@ -53,7 +53,7 @@ from .typing import (
     LiquidityPoolEventsBalance,
     ProtocolBalance,
 )
-from .utils import get_latest_lp_addresses, uniswap_lp_token_balances
+from .utils import SUBGRAPH_REMOTE_ERROR_MSG, get_latest_lp_addresses, uniswap_lp_token_balances
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -111,16 +111,12 @@ class Uniswap(EthereumModule):
         self.data_directory = database.user_data_dir.parent
         self.trades_lock = Semaphore()
         try:
-            self.graph: Optional[Graph] = Graph(
+            self.graph = Graph(
                 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
             )
         except RemoteError as e:
-            self.graph = None
-            self.msg_aggregator.add_error(
-                f'Could not initialize the Uniswap subgraph due to {str(e)}. '
-                f'All uniswap historical queries are not functioning until this is fixed. '
-                f'Probably will get fixed with time. If not report it to Rotkis support channel ',
-            )
+            self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+            raise ModuleInitializationFailure('subgraph remote error') from e
 
     @staticmethod
     def _calculate_events_balances(
@@ -223,11 +219,16 @@ class Uniswap(EthereumModule):
             'balance': '0',
         }
         while True:
-            result = self.graph.query(  # type: ignore # caller already checks
-                querystr=querystr,
-                param_types=param_types,
-                param_values=param_values,
-            )
+            try:
+                result = self.graph.query(
+                    querystr=querystr,
+                    param_types=param_types,
+                    param_values=param_values,
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                raise
+
             result_data = result['liquidityPositions']
 
             for lp in result_data:
@@ -560,11 +561,16 @@ class Uniswap(EthereumModule):
         querystr = format_query_indentation(query.format())
 
         while True:
-            result = self.graph.query(  # type: ignore # caller already checks
-                querystr=querystr,
-                param_types=param_types,
-                param_values=param_values,
-            )
+            try:
+                result = self.graph.query(
+                    querystr=querystr,
+                    param_types=param_types,
+                    param_values=param_values,
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                raise
+
             result_data = result[query_schema]
 
             for event in result_data:
@@ -783,11 +789,16 @@ class Uniswap(EthereumModule):
         querystr = format_query_indentation(SWAPS_QUERY.format())
 
         while True:
-            result = self.graph.query(  # type: ignore # caller already checks
-                querystr=querystr,
-                param_types=param_types,
-                param_values=param_values,
-            )
+            try:
+                result = self.graph.query(
+                    querystr=querystr,
+                    param_types=param_types,
+                    param_values=param_values,
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                raise
+
             result_data = result['swaps']
             for entry in result_data:
                 swaps = []
@@ -875,11 +886,16 @@ class Uniswap(EthereumModule):
             'datetime': today_epoch,
         }
         while True:
-            result = self.graph.query(  # type: ignore # caller already checks
-                querystr=querystr,
-                param_types=param_types,
-                param_values=param_values,
-            )
+            try:
+                result = self.graph.query(
+                    querystr=querystr,
+                    param_types=param_types,
+                    param_values=param_values,
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                raise
+
             result_data = result['tokenDayDatas']
 
             for tdd in result_data:
@@ -939,9 +955,7 @@ class Uniswap(EthereumModule):
         Premium users can request balances either via the Uniswap subgraph or
         on-chain.
         """
-        is_graph_mode = self.graph is not None and self.premium
-
-        if is_graph_mode:
+        if self.premium:
             protocol_balance = self._get_balances_graph(addresses=addresses)
         else:
             protocol_balance = self.get_balances_chain(addresses)
@@ -955,7 +969,7 @@ class Uniswap(EthereumModule):
         )
 
         unknown_asset_price: AssetPrice = {}
-        if is_graph_mode:
+        if self.premium:
             unknown_asset_price = self._get_unknown_asset_price_graph(unknown_assets=unknown_assets)  # noqa:E501
 
         self._update_assets_prices_in_address_balances(
@@ -975,9 +989,6 @@ class Uniswap(EthereumModule):
     ) -> AddressEventsBalances:
         """Get the addresses' events history in the Uniswap protocol
         """
-        if self.graph is None:  # could not initialize graph
-            return {}
-
         with self.trades_lock:
             if reset_db_data is True:
                 self.database.delete_uniswap_events_data()
@@ -1019,9 +1030,6 @@ class Uniswap(EthereumModule):
     ) -> AddressTrades:
         """Get the addresses' trades history in the Uniswap protocol
         """
-        if self.graph is None:  # could not initialize graph
-            return {}
-
         with self.trades_lock:
             if reset_db_data is True:
                 self.database.delete_uniswap_trades_data()

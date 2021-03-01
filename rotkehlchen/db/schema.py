@@ -66,6 +66,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('U', 21);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('V', 22);
 /* KUCOIN */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('W', 23);
+/* BALANCER */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('X', 24);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

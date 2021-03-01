@@ -44,6 +44,7 @@ from rotkehlchen.chain.ethereum.eth2_utils import get_validator_daily_stats
 from rotkehlchen.chain.ethereum.modules import (
     Aave,
     Adex,
+    Balancer,
     Compound,
     Loopring,
     MakerdaoDsr,
@@ -59,7 +60,13 @@ from rotkehlchen.constants.assets import A_ADX, A_BTC, A_DAI, A_ETH, A_ETH2, A_K
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.errors import EthSyncError, InputError, RemoteError, UnknownAsset
+from rotkehlchen.errors import (
+    EthSyncError,
+    InputError,
+    ModuleInitializationFailure,
+    RemoteError,
+    UnknownAsset,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.inquirer import Inquirer
@@ -322,7 +329,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         result = QueriedAddresses(self.database).get_queried_addresses_for_module(module)
         return result if result is not None else self.accounts.eth
 
-    def activate_module(self, module_name: ModuleName) -> EthereumModule:
+    def activate_module(self, module_name: ModuleName) -> Optional[EthereumModule]:
         """Activates an ethereum module by module name"""
         module = self.eth_modules.get(module_name, None)
         if module:
@@ -331,12 +338,17 @@ class ChainManager(CacheableObject, LockableQueryObject):
         logger.debug(f'Activating {module_name} module')
         klass = _module_name_to_class(module_name)
         # TODO: figure out the type here: class EthereumModule not callable.
-        instance = klass(  # type: ignore
-            ethereum_manager=self.ethereum,
-            database=self.database,
-            premium=self.premium,
-            msg_aggregator=self.msg_aggregator,
-        )
+        try:
+            instance = klass(  # type: ignore
+                ethereum_manager=self.ethereum,
+                database=self.database,
+                premium=self.premium,
+                msg_aggregator=self.msg_aggregator,
+            )
+        except ModuleInitializationFailure as e:
+            logger.error(f'Failed to activate {module_name} due to: {str(e)}')
+            return None
+
         self.eth_modules[module_name] = instance
         # also run any startup initialization actions for the module
         self.greenlet_manager.spawn_and_track(
@@ -364,6 +376,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     @overload
     def get_module(self, module_name: Literal['adex']) -> Optional[Adex]:
+        ...
+
+    @overload
+    def get_module(self, module_name: Literal['balancer']) -> Optional[Balancer]:
         ...
 
     @overload

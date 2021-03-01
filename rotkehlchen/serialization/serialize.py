@@ -20,6 +20,7 @@ from rotkehlchen.chain.ethereum.modules.aave import (
     AaveLendingBalance,
 )
 from rotkehlchen.chain.ethereum.modules.adex import ADXStakingBalance, ADXStakingHistory
+from rotkehlchen.chain.ethereum.modules.balancer import BalancerPool, BalancerPoolToken
 from rotkehlchen.chain.ethereum.modules.compound import CompoundBalance, CompoundEvent
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
@@ -123,6 +124,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             UniswapPoolEventsBalance,
             ADXStakingBalance,
             ADXStakingHistory,
+            BalancerPool,
+            BalancerPoolToken,
     )):
         return process_result(entry.serialize())
     if isinstance(entry, (

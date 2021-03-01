@@ -30,6 +30,7 @@ from rotkehlchen.chain.ethereum.modules.adex import (
     UnbondRequest,
     deserialize_adex_event_from_db,
 )
+from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_TRADES_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import (
     UNISWAP_EVENTS_PREFIX,
     UNISWAP_TRADES_PREFIX,
@@ -944,6 +945,18 @@ class DBHandler:
         cursor.execute('DELETE FROM adex_events;')
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{ADEX_EVENTS_PREFIX}%";',
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_balancer_trades_data(self) -> None:
+        """Delete all historical Balancer trades data"""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            f'DELETE FROM amm_swaps WHERE location="{Location.BALANCER.serialize_for_db()}";',
+        )
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_TRADES_PREFIX}%";',
         )
         self.conn.commit()
         self.update_last_write()
@@ -2291,6 +2304,9 @@ class DBHandler:
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name="aave_events_{address}";')
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name="{ADEX_EVENTS_PREFIX}_{address}";',
+        )
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name="{BALANCER_TRADES_PREFIX}_{address}";',
         )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name="{UNISWAP_EVENTS_PREFIX}_{address}";',
