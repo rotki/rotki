@@ -462,13 +462,13 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  importDataFrom(source: string, filepath: string): Promise<boolean> {
+  importDataFrom(source: string, file: string): Promise<boolean> {
     return this.axios
       .put<ActionResult<boolean>>(
         '/import',
         {
           source,
-          filepath
+          file
         },
         {
           validateStatus: validStatus

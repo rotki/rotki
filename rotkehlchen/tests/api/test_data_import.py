@@ -1,57 +1,120 @@
 import os
+import shutil
 from http import HTTPStatus
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
+import pytest
 import requests
 
-from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_error_response,
+    assert_proper_response_with_result,
+)
 from rotkehlchen.tests.utils.dataimport import (
     assert_cointracking_import_results,
     assert_cryptocom_import_results,
 )
 
 
-def test_data_import_cointracking(rotkehlchen_api_server):
-    """Test that the data import endpoint works successfully for cointracking"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    filepath = os.path.join(dir_path, 'data', 'cointracking_trades_list.csv')
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('file_upload', [True, False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_data_import_cointracking(rotkehlchen_api_server, file_upload):
+    """Test that the data import endpoint works successfully for cointracking
 
-    json_data = {'source': 'cointracking.info', 'filepath': filepath}
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            "dataimportresource",
-        ), json=json_data,
-    )
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert data['result'] is True
+    To test that data import works both with specifying filepath and uploading
+    the file try both ways in this test.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    filepath = dir_path / 'data' / 'cointracking_trades_list.csv'
+
+    if file_upload:
+        files = {'file': open(filepath, 'rb')}
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'dataimportresource',
+            ),
+            files=files,
+            data={'source': 'cointracking.info'},
+        )
+    else:
+        json_data = {'source': 'cointracking.info', 'file': str(filepath)}
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'dataimportresource',
+            ), json=json_data,
+        )
+
+    result = assert_proper_response_with_result(response)
+    assert result is True
     # And also assert data was imported succesfully
     assert_cointracking_import_results(rotki)
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_data_import_cryptocom(rotkehlchen_api_server):
     """Test that the data import endpoint works successfully for cryptocom"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     filepath = os.path.join(dir_path, 'data', 'cryptocom_trades_list.csv')
 
-    json_data = {'source': 'crypto.com', 'filepath': filepath}
+    json_data = {'source': 'crypto.com', 'file': filepath}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "dataimportresource",
+            'dataimportresource',
         ), json=json_data,
     )
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert data['result'] is True
+    result = assert_proper_response_with_result(response)
+    assert result is True
     # And also assert data was imported succesfully
     assert_cryptocom_import_results(rotki)
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('file_upload', [True, False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_data_import_wrong_extension(rotkehlchen_api_server, file_upload):
+    """Test that uploading a file without the proper extension fails"""
+    dir_path = Path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    filepath = dir_path / 'data' / 'cointracking_trades_list.csv'
+
+    # Let's also try to upload a file without the csv prefix
+    with TemporaryDirectory() as temp_directory:
+        bad_filepath = Path(temp_directory) / 'somefile.bad'
+        shutil.copyfile(filepath, bad_filepath)
+        if file_upload:
+            files = {'file': open(bad_filepath, 'rb')}
+            response = requests.post(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'dataimportresource',
+                ),
+                files=files,
+                data={'source': 'cointracking.info'},
+            )
+        else:
+            json_data = {'source': 'cointracking.info', 'file': str(bad_filepath)}
+            response = requests.put(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'dataimportresource',
+                ), json=json_data,
+            )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='does not end in any of .csv',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     """Test that errors in the data import endpoint are handled correctly"""
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -62,12 +125,12 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "dataimportresource",
+            'dataimportresource',
         ), json=json_data,
     )
     assert_error_response(
         response=response,
-        contained_in_msg='filepath": ["Missing data for required field',
+        contained_in_msg='file": ["Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -76,7 +139,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "dataimportresource",
+            'dataimportresource',
         ), json=json_data,
     )
     assert_error_response(
@@ -100,7 +163,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
 
     # Test that if source is invalid an error is returned
-    json_data = {'source': 'somewhere', 'filepath': filepath}
+    json_data = {'source': 'somewhere', 'file': filepath}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -114,40 +177,40 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
 
     # Test that if filepath is invalid type an error is returned
-    json_data = {'source': 'cointracking.info', 'filepath': 22}
+    json_data = {'source': 'cointracking.info', 'file': 22}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "dataimportresource",
+            'dataimportresource',
         ), json=json_data,
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Provided non string type for filepath",
+        contained_in_msg='Provided non string or file type for file',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
     # Test that if filepath is not a valid path an error is returned
-    json_data = {'source': 'cointracking.info', 'filepath': '/not/a/valid/path'}
+    json_data = {'source': 'cointracking.info', 'file': '/not/a/valid/path'}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "dataimportresource",
+            'dataimportresource',
         ), json=json_data,
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Given path /not/a/valid/path does not exist",
+        contained_in_msg='Given path /not/a/valid/path does not exist',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
     # Test that if filepath is a directory an error is returned
     test_dir = str(tmpdir_factory.mktemp('test_dir'))
-    json_data = {'source': 'cointracking.info', 'filepath': test_dir}
+    json_data = {'source': 'cointracking.info', 'file': test_dir}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "dataimportresource",
+            'dataimportresource',
         ), json=json_data,
     )
     assert_error_response(

@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Union
 
 import marshmallow
 import webargs
@@ -8,6 +8,7 @@ from eth_utils import to_checksum_address
 from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from webargs.compat import MARSHMALLOW_VERSION_INFO
+from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.structures import ActionType, LedgerAction, LedgerActionType
 from rotkehlchen.assets.asset import Asset
@@ -32,6 +33,7 @@ from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.serialization.deserialize import (
     deserialize_action_type,
@@ -606,15 +608,29 @@ class DirectoryField(fields.Field):
 
 class FileField(fields.Field):
 
+    def __init__(self, *, allowed_extensions: Optional[Sequence[str]] = None, **kwargs: Any) -> None:  # noqa: E501
+        self.allowed_extensions = allowed_extensions
+        super().__init__(**kwargs)
+
     def _deserialize(
             self,
-            value: str,
+            value: Union[str, FileStorage],
             attr: Optional[str],  # pylint: disable=unused-argument
             data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> Path:
+    ) -> Union[Path, FileStorage]:
+        if isinstance(value, FileStorage):
+            if self.allowed_extensions is not None and value.filename:
+                if not any(value.filename.endswith(x) for x in self.allowed_extensions):
+                    raise ValidationError(
+                        f'Given file {value.filename} does not end in any of '
+                        f'{",".join(self.allowed_extensions)}',
+                    )
+
+            return value
+
         if not isinstance(value, str):
-            raise ValidationError('Provided non string type for filepath')
+            raise ValidationError('Provided non string or file type for file')
 
         path = Path(value)
         if not path.exists():
@@ -622,6 +638,13 @@ class FileField(fields.Field):
 
         if not path.is_file():
             raise ValidationError(f'Given path {value} is not a file')
+
+        if self.allowed_extensions is not None:
+            if not any(path.suffix == x for x in self.allowed_extensions):
+                raise ValidationError(
+                    f'Given file {path} does not end in any of '
+                    f'{",".join(self.allowed_extensions)}',
+                )
 
         return path
 
@@ -1506,7 +1529,12 @@ class DataImportSchema(Schema):
         required=True,
         validate=webargs.validate.OneOf(choices=('cointracking.info', 'crypto.com')),
     )
-    filepath = FileField(required=True)
+    file = FileField(required=True, allowed_extensions=('.csv',))
+
+
+class AssetIconUploadSchema(Schema):
+    asset = AssetField(required=True)
+    file = FileField(required=True, allowed_extensions=ALLOWED_ICON_EXTENSIONS)
 
 
 class ExchangeRatesSchema(Schema):

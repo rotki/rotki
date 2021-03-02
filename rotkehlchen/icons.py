@@ -1,5 +1,6 @@
 import itertools
 import logging
+import shutil
 from pathlib import Path
 from typing import Optional, Set
 
@@ -9,13 +10,15 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
-from rotkehlchen.externalapis.coingecko import Coingecko, DELISTED_ASSETS
+from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.typing import AssetType
 from rotkehlchen.utils.hashing import file_md5
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 
 log = logging.getLogger(__name__)
+
+ALLOWED_ICON_EXTENSIONS = ('.png', '.svg', 'jpeg', 'jpg')
 
 
 class IconManager():
@@ -30,8 +33,10 @@ class IconManager():
 
     def __init__(self, data_dir: Path, coingecko: Coingecko) -> None:
         self.icons_dir = data_dir / 'icons'
+        self.custom_icons_dir = data_dir / 'icons' / 'custom'
         self.coingecko = coingecko
         self.icons_dir.mkdir(parents=True, exist_ok=True)
+        self.custom_icons_dir.mkdir(parents=True, exist_ok=True)
         self.failed_asset_ids: Set[str] = set()
 
     def iconfile_path(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Path:
@@ -85,7 +90,8 @@ class IconManager():
 
     def get_icon(
             self,
-            asset: Asset, given_size: Literal['thumb', 'small', 'large'],
+            asset: Asset,
+            given_size: Literal['thumb', 'small', 'large'],
     ) -> Optional[bytes]:
         """Returns the byte data of the requested icon
 
@@ -96,6 +102,14 @@ class IconManager():
         If not, all icons of the asset are queried from coingecko and cached
         locally before the requested data are returned.
         """
+        # First search custom icons
+        for suffix in ALLOWED_ICON_EXTENSIONS:
+            icon_path = self.custom_icons_dir / f'{asset.identifier}{suffix}'
+            if icon_path.is_file():
+                with open(icon_path, 'rb') as f:
+                    image_data = f.read()
+                return image_data
+
         if not asset.has_coingecko():
             return None
 
@@ -163,3 +177,13 @@ class IconManager():
             if not carry_on:
                 break
             gevent.sleep(sleep_time_secs)
+
+    def add_icon(self, asset: Asset, icon_path: Path) -> None:
+        """Adds the icon in the custom icons directory for the asset
+
+        Completely replaces what was there before
+        """
+        shutil.copyfile(
+            icon_path,
+            self.custom_icons_dir / f'{asset.identifier}{icon_path.suffix}',
+        )

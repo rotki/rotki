@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 import requests
 from eth_utils.address import to_checksum_address
 
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE, ETHEREUM_DIRECTIVE_LENGTH
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress, EthTokenInfo
-from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE, ETHEREUM_DIRECTIVE_LENGTH
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
@@ -211,8 +211,8 @@ class AssetResolver():
 
         The canonical form is the one in the all_assets.json file and in the DB
 
-        Also search for custom eth tokens if identifier starts with :ceth:
-        An address should follow a :ceth: directive
+        Also search for custom eth tokens if identifier starts with the ethereum
+        directive. After the directive an ethereum address should follow
         """
         instance = AssetResolver()
         if asset_identifier.startswith(ETHEREUM_DIRECTIVE):

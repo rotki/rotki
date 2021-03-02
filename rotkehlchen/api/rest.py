@@ -7,7 +7,6 @@ from collections import defaultdict
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -26,7 +25,6 @@ from flask import Response, make_response, send_file
 from gevent.event import Event
 from gevent.lock import Semaphore
 from typing_extensions import Literal
-from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.structures import (
     ActionType,
@@ -2473,6 +2471,10 @@ class RestAPI():
 
         return response
 
+    def upload_asset_icon(self, asset: Asset, filepath: Path) -> Response:
+        self.rotkehlchen.icon_manager.add_icon(asset=asset, icon_path=filepath)
+        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+
     @staticmethod
     def _get_current_assets_price(
             assets: List[Asset],
@@ -2610,23 +2612,6 @@ class RestAPI():
         result_dict = self._sync_data(action)
         status_code = _get_status_code_from_async_response(result_dict)
         return api_response(result_dict, status_code=status_code)
-
-    @require_loggedin_user()
-    def import_data_from_file(
-            self,
-            source: Literal['cointracking.info', 'crypto.com'],
-            file: FileStorage,
-    ) -> Response:
-        if file.filename is None or not file.filename.endswith('.csv'):
-            result = wrap_in_fail_result(f'{file.filename} is not a csv')
-            return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
-
-        with TemporaryDirectory() as temp_directory:
-            filepath = Path(temp_directory) / f'{source}.csv'
-            file.save(str(filepath))
-            response = self.import_data(source, filepath)
-            filepath.unlink()
-        return response
 
     def _create_oracle_cache(
             self,

@@ -2175,7 +2175,7 @@ Adding custom ethereum tokens
 
 .. http:put:: /api/(version)/assets/ethereum
 
-   Doing a PUT on the ethereum assets endpoint will allow you to add a new ethereum token in the global rotki DB. Returns the asset identifier of the new custom token. For ethereum ones it's ``:ceth:0xADDRESS``
+   Doing a PUT on the ethereum assets endpoint will allow you to add a new ethereum token in the global rotki DB. Returns the asset identifier of the new custom token. For ethereum ones it's ``_ceth_0xADDRESS``
 
    **Example Request**:
 
@@ -2209,7 +2209,7 @@ Adding custom ethereum tokens
       Content-Type: application/json
 
       {
-          "result": {"identifier": ":ceth:0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
+          "result": {"identifier": "_ceth_0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
           "message": ""
       }
 
@@ -2255,7 +2255,7 @@ Editing custom ethereum tokens
       Content-Type: application/json
 
       {
-          "result": {"identifier": ":ceth:0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
+          "result": {"identifier": "_ceth_0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
           "message": ""
       }
 
@@ -2328,11 +2328,45 @@ Querying asset icons
       HTTP/1.1 200 OK
       Content-Type: image/png
 
-   :resuslt: The data of the image
+   :result: The data of the image
    :statuscode 200: Icon succesfully queried
    :statuscode 304: Icon data has not changed. Should be cached on the client. This is returned if the given If-Match or If-None-Match header match the etag of the previous response.
    :statuscode 400: Provided JSON is in some way malformed. Either unknown asset or invalid size.
    :statuscode 404: We have no icon for that asset
+   :statuscode 500: Internal Rotki error
+
+
+Uploading custom asset icons
+===============================
+
+.. http:put:: /api/(version)/assets/(identifier)/icon
+.. http:post:: /api/(version)/assets/(identifier)/icon
+
+   Doing either a PUT or a POST on the asset icon endpoint with appropriate arguments will upload a custom icon for an asset. That icon will take precedence over what rotki already knows for the asset if anything.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/ACUSTOMICON/icon/large HTTP/1.1
+      Host: localhost:5042
+
+      {"file": "/path/to/file"}
+
+   :reqjson string file: The path to the image file to upload for PUT. The file itself for POST.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {"result": true, "message": ""}
+
+
+   :statuscode 200: Icon succesfully uploaded
    :statuscode 500: Internal Rotki error
 
 
