@@ -210,7 +210,10 @@ class Accountant():
             gas_price=gas_price,
             timestamp=transaction.timestamp,
         )
-
+        self.events.cost_basis.reduce_asset_amount(
+            asset=A_ETH,
+            amount=eth_burned_as_gas,
+        )
         self.csvexporter.add_tx_gas_cost(
             transaction_hash=transaction.tx_hash,
             eth_burned_as_gas=eth_burned_as_gas,
