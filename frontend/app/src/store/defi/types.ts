@@ -38,6 +38,7 @@ import {
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 
 export interface DefiState {
+  balancerBalances: BalancerBalances;
   dsrHistory: DSRHistory;
   dsrBalances: DSRBalances;
   makerDAOVaults: MakerDAOVault[];
@@ -364,3 +365,22 @@ export interface UniswapPoolProfit
 export interface UniswapEventDetails
   extends UniswapEvent,
     Pick<UniswapPoolDetails, 'address' | 'poolAddress' | 'token0' | 'token1'> {}
+
+interface BalancerUnderlyingToken {
+  readonly token: string;
+  readonly totalAmount: BigNumber;
+  readonly userBalance: Balance;
+  readonly usdPrice: BigNumber;
+  readonly weight: string;
+}
+
+interface BalancerBalance {
+  readonly address: string;
+  readonly tokens: BalancerUnderlyingToken[];
+  readonly totalAmount: BigNumber;
+  readonly userBalance: Balance;
+}
+
+export interface BalancerBalances {
+  readonly [address: string]: BalancerBalance[];
+}

@@ -33,5 +33,6 @@ export enum TaskType {
   UPDATE_PRICES = 'update_prices',
   CREATE_PRICE_CACHE = 'create_price_cache',
   FETCH_HISTORIC_PRICE = 'fetch_historic_price',
-  L2_LOOPRING = 'l2_loopring'
+  L2_LOOPRING = 'l2_loopring',
+  BALANCER_BALANCES = 'balancer_balances'
 }

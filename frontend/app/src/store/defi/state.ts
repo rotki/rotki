@@ -25,7 +25,8 @@ export const defaultState = (): DefiState => ({
   uniswapBalances: {},
   uniswapTrades: {},
   uniswapEvents: {},
-  airdrops: {}
+  airdrops: {},
+  balancerBalances: {}
 });
 
 export const state: DefiState = defaultState();

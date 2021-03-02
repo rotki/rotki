@@ -13,6 +13,7 @@ import { defaultState } from '@/store/defi/state';
 import {
   Airdrops,
   AllDefiProtocols,
+  BalancerBalances,
   DefiState,
   DSRBalances,
   DSRHistory,
@@ -70,6 +71,9 @@ export const mutations: MutationTree<DefiState> = {
   },
   airdrops(state: DefiState, airdrops: Airdrops) {
     state.airdrops = airdrops;
+  },
+  balancerBalances(state: DefiState, balances: BalancerBalances) {
+    state.balancerBalances = balances;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());

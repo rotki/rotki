@@ -2,6 +2,7 @@ import { Module } from '@/components/defi/wizard/types';
 import {
   MODULE_AAVE,
   MODULE_ADEX,
+  MODULE_BALANCER,
   MODULE_COMPOUND,
   MODULE_LOOPRING,
   MODULE_MAKERDAO_DSR,
@@ -50,5 +51,10 @@ export const DEFI_MODULES: Module[] = [
     identifier: MODULE_LOOPRING,
     name: 'Loopring',
     icon: require('@/assets/images/modules/loopring.svg')
+  },
+  {
+    identifier: MODULE_BALANCER,
+    name: 'Balancer',
+    icon: require('@/assets/images/defi/balancer.svg')
   }
 ];

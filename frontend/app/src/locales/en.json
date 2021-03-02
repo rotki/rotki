@@ -1083,6 +1083,15 @@
           "title": "Querying airdrops"
         }
       },
+      "balancer_balances": {
+        "error": {
+          "description": "Failed to query Balancer balances: {message}",
+          "title": "Querying Balancer balances"
+        },
+        "task": {
+          "title": "Querying Balancer balances"
+        }
+      },
       "balances": {
         "task": {
           "title": "Querying DeFi balances"

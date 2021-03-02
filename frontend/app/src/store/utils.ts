@@ -1,8 +1,55 @@
-import { Commit } from 'vuex';
+import { ActionContext, Commit } from 'vuex';
 import i18n from '@/i18n';
+import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { Section, Status } from '@/store/const';
+import { Severity } from '@/store/notifications/consts';
+import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
-import { Message, StatusPayload } from '@/store/types';
+import { Message, RotkehlchenState, StatusPayload } from '@/store/types';
+import { FetchPayload } from '@/store/typing';
+
+export async function fetchAsync<S, T extends TaskMeta, R>(
+  {
+    commit,
+    rootGetters: { status },
+    rootState: { session }
+  }: ActionContext<S, RotkehlchenState>,
+  payload: FetchPayload<T>
+): Promise<void> {
+  const { activeModules } = session!.generalSettings;
+  if (!activeModules.includes(payload.module)) {
+    return;
+  }
+
+  const section = payload.section;
+  const currentStatus = status(section);
+
+  if (
+    isLoading(currentStatus) ||
+    (currentStatus === Status.LOADED && !payload.refresh)
+  ) {
+    return;
+  }
+
+  const newStatus = payload.refresh ? Status.REFRESHING : Status.LOADING;
+  setStatus(newStatus, section, status, commit);
+
+  try {
+    const { taskId } = await payload.query();
+    const task = createTask(taskId, payload.taskType, payload.meta);
+    commit('tasks/add', task, { root: true });
+    const { result } = await taskCompletion<R, T>(payload.taskType);
+    commit(payload.mutation, result);
+  } catch (e) {
+    notify(
+      payload.onError.error(e.message),
+      payload.onError.title,
+      Severity.ERROR,
+      true
+    );
+  }
+  setStatus(Status.LOADED, section, status, commit);
+}
 
 export function showError(description: string, title?: string) {
   const message = {
