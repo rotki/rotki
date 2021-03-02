@@ -1,5 +1,27 @@
 import { AxiosResponse } from 'axios';
-import { ActionResult } from '@/services/types-api';
+import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import {
+  ActionResult,
+  ApiImplementation,
+  PendingTask
+} from '@/services/types-api';
+
+export function fetchExternalAsync(
+  api: ApiImplementation,
+  url: string,
+  params?: { [key: string]: any }
+) {
+  return api.axios
+    .get<ActionResult<PendingTask>>(url, {
+      validateStatus: validWithSessionAndExternalService,
+      params: axiosSnakeCaseTransformer({
+        asyncQuery: true,
+        ...(params ? params : {})
+      }),
+      transformResponse: api.baseTransformer
+    })
+    .then(handleResponse);
+}
 
 export function handleResponse<T>(response: AxiosResponse<ActionResult<T>>): T {
   const { result, message } = response.data;

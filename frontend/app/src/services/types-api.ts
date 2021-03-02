@@ -1,3 +1,4 @@
+import { AxiosInstance, AxiosTransformer } from 'axios';
 import { BigNumber } from 'bignumber.js';
 import { IgnoreActionType } from '@/store/history/types';
 
@@ -126,3 +127,8 @@ export interface TaskStatus {
 export type IgnoreActionResult = {
   readonly [key in IgnoreActionType]?: string[];
 };
+
+export interface ApiImplementation {
+  readonly axios: AxiosInstance;
+  readonly baseTransformer: AxiosTransformer[];
+}
