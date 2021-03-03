@@ -34,6 +34,7 @@ import {
   AIRDROP_POAP,
   COMPOUND,
   getProtcolIcon,
+  GETTER_BALANCER_BALANCES,
   GETTER_UNISWAP_ASSETS,
   MAKERDAO,
   YEARN_FINANCE_VAULTS
@@ -43,6 +44,7 @@ import {
   Airdrop,
   AirdropDetail,
   AirdropType,
+  BalancerBalanceWithOwner,
   BaseDefiBalance,
   Collateral,
   DefiBalance,
@@ -124,6 +126,8 @@ interface DefiGetters {
   airdrops: (addresses: string[]) => Airdrop[];
   airdropAddresses: string[];
   [GETTER_UNISWAP_ASSETS]: UniswapPool[];
+  [GETTER_BALANCER_BALANCES]: BalancerBalanceWithOwner[];
+  balancerAddresses: string[];
 }
 
 export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
@@ -1416,5 +1420,19 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
     }
     return pools;
-  }
+  },
+
+  [GETTER_BALANCER_BALANCES]: ({ balancerBalances }) => {
+    const balances: BalancerBalanceWithOwner[] = [];
+    for (const address in balancerBalances) {
+      for (const balance of balancerBalances[address]) {
+        balances.push({
+          ...balance,
+          owner: address
+        });
+      }
+    }
+    return balances;
+  },
+  balancerAddresses: ({ balancerBalances }) => Object.keys(balancerBalances)
 };

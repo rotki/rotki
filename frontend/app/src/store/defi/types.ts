@@ -366,8 +366,8 @@ export interface UniswapEventDetails
   extends UniswapEvent,
     Pick<UniswapPoolDetails, 'address' | 'poolAddress' | 'token0' | 'token1'> {}
 
-interface BalancerUnderlyingToken {
-  readonly token: string;
+export interface BalancerUnderlyingToken {
+  readonly token: TokenDetails;
   readonly totalAmount: BigNumber;
   readonly userBalance: Balance;
   readonly usdPrice: BigNumber;
@@ -379,6 +379,10 @@ interface BalancerBalance {
   readonly tokens: BalancerUnderlyingToken[];
   readonly totalAmount: BigNumber;
   readonly userBalance: Balance;
+}
+
+export interface BalancerBalanceWithOwner extends BalancerBalance {
+  readonly owner: string;
 }
 
 export interface BalancerBalances {

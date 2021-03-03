@@ -34,9 +34,10 @@ export default class GeneretedIcon extends Vue {
     const { value } = this.dimensions;
     const scale = this.currency || this.asset.length <= 2 ? 1 : 0.58;
 
+    const lineHeight = value - 4;
     return {
-      transform: `scale(${scale})`,
-      'line-height': `${value - 4}px`
+      transform: `scale(${lineHeight < 20 ? 0.3 : scale})`,
+      'line-height': `${lineHeight}px`
     };
   }
 

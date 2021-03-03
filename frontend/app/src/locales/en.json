@@ -48,6 +48,10 @@
     "price": "Price",
     "value": "Value"
   },
+  "balancer": {
+    "loading": "Please wait while your liquidity pools are getting loaded...",
+    "premium": "Balancer feature "
+  },
   "blockchain_account_selector": {
     "all": "all",
     "default_label": "Filter account(s)",
@@ -395,6 +399,10 @@
     },
     "subtitle": "Control which ledger actions are considered taxable or not during the profit/loss report generation. That means which ones will add/subtract to/from the profit loss. All ledger actions irrespective of this setting will be taken into account for cost basis calculation.",
     "title": "Taxable ledger actions"
+  },
+  "liquidity": {
+    "balancer": "Balancer",
+    "uniswap": "Uniswap"
   },
   "loan_liquidation": {
     "liquidated_collateral": "Liquidated collateral",
@@ -911,7 +919,7 @@
       "subtitle": "Protocol asset details"
     }
   },
-  "uniswap_pool_filter": {
+  "liquidity_pool_selector": {
     "label": "Filter by pool(s)"
   },
   "update_indicator": {

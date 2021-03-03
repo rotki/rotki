@@ -2,6 +2,7 @@ import { balanceKeys } from '@/services/consts';
 import { OverviewDefiProtocol } from '@/store/defi/types';
 
 export const GETTER_UNISWAP_ASSETS = 'uniswapAssets' as const;
+export const GETTER_BALANCER_BALANCES = 'balancerBalances' as const;
 
 const FINNEXUS = 'FinNexus';
 const PICKLE_FINANCE = 'Pickle Finance';

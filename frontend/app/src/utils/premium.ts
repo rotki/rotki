@@ -12,12 +12,15 @@ import AssetMovementDisplay from '@/components/display/AssetMovementDisplay.vue'
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import EventTypeDisplay from '@/components/display/EventTypeDisplay.vue';
+import BalancerPoolAsset from '@/components/display/icons/BalancerPoolAsset.vue';
 import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import Card from '@/components/helper/Card.vue';
 import HashLink from '@/components/helper/HashLink.vue';
+import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
@@ -81,6 +84,10 @@ export const setupPremium = () => {
   Vue.component('DateTimePicker', DateTimePicker);
   // version 8
   Vue.component('CardTitle', CardTitle);
+  // version 9
+  Vue.component('Card', Card);
+  Vue.component('LiquidityPoolSelector', LiquidityPoolSelector);
+  Vue.component('BalancerPoolAsset', BalancerPoolAsset);
 };
 
 function findComponents(): string[] {
@@ -193,6 +200,10 @@ export const AdexStaking = (): Promise<VueConstructor> => {
 
 export const AssetAmountAndValueOverTime = (): Promise<VueConstructor> => {
   return load('AssetAmountAndValueOverTime');
+};
+
+export const BalancerBalances = (): Promise<VueConstructor> => {
+  return load('BalancerBalances');
 };
 
 declare global {
