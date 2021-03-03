@@ -1249,13 +1249,24 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         return defi_events
 
-    @protect_with_lock()
     @cache_response_timewise()
-    def get_loopring_balances(self) -> Dict[ChecksumEthAddress, Dict[Asset, Balance]]:
+    def get_loopring_balances(self) -> Dict[Asset, Balance]:
         """Query loopring balances if the module is activated"""
         # Check if the loopring module is activated
         loopring_module = self.get_module('loopring')
         if loopring_module:
-            return loopring_module.get_balances(addresses=self.accounts.eth)
+            addresses = self.queried_addresses_for_module('loopring')
+            balances = loopring_module.get_balances(addresses=addresses)
+
+            # Now that we have balances for the addresses we need to agregate the
+            # assets in the different addresses
+            aggregated_balances: Dict[Asset, Balance] = {}
+            for _, assets in balances.items():
+                for asset, balance in assets.items():
+                    if asset in aggregated_balances:
+                        aggregated_balances[asset] += balance
+                    else:
+                        aggregated_balances[asset] = balance
+            return aggregated_balances
 
         return {}
