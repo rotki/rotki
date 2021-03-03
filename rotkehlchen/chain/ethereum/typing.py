@@ -363,6 +363,7 @@ CustomEthereumTokenDBTuple = Tuple[
     Optional[int],        # started
     Optional[str],        # coingecko
     Optional[str],        # cryptocompare
+    Optional[str],        # protocol
 ]
 
 
@@ -375,6 +376,7 @@ class CustomEthereumToken:
     started: Optional[Timestamp] = None
     coingecko: Optional[str] = None
     cryptocompare: Optional[str] = None
+    protocol: Optional[str] = None
     underlying_tokens: Optional[List[UnderlyingToken]] = None
 
     def identifier(self) -> str:
@@ -396,6 +398,7 @@ class CustomEthereumToken:
             'started': self.started,
             'coingecko': self.coingecko,
             'cryptocompare': self.cryptocompare,
+            'protocol': self.protocol,
             'underlying_tokens': None,
         }
         if self.underlying_tokens:
@@ -412,6 +415,7 @@ class CustomEthereumToken:
             self.started,
             self.coingecko,
             self.cryptocompare,
+            self.protocol,
         )
 
     @classmethod
@@ -428,5 +432,6 @@ class CustomEthereumToken:
             started=Timestamp(entry[4]),  # type: ignore
             coingecko=entry[5],
             cryptocompare=entry[6],
+            protocol=entry[7],
             underlying_tokens=underlying_tokens,
         )

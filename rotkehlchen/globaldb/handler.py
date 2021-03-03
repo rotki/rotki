@@ -94,7 +94,7 @@ class GlobalDBHandler():
     def get_ethereum_token(address: ChecksumEthAddress) -> Optional[CustomEthereumToken]:
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT decimals, name, symbol, started, coingecko, cryptocompare '
+            'SELECT decimals, name, symbol, started, coingecko, cryptocompare, protocol '
             'FROM ethereum_tokens where address=?;',
             (address,),
         )
@@ -113,7 +113,7 @@ class GlobalDBHandler():
     def get_ethereum_tokens() -> List[CustomEthereumToken]:
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT address, decimals, name, symbol, started, coingecko, cryptocompare '
+            'SELECT address, decimals, name, symbol, started, coingecko, cryptocompare, protocol '
             'FROM ethereum_tokens;',
         )
         tokens = []
@@ -139,8 +139,8 @@ class GlobalDBHandler():
             cursor.execute(
                 'INSERT INTO '
                 'ethereum_tokens(address, decimals, name, symbol, '
-                'started, coingecko, cryptocompare) '
-                'VALUES(?, ?, ?, ?, ?, ?, ?)',
+                'started, coingecko, cryptocompare, protocol) '
+                'VALUES(?, ?, ?, ?, ?, ?, ?, ?)',
                 entry.to_db_tuple(),
             )
         except sqlite3.IntegrityError as e:
@@ -173,7 +173,7 @@ class GlobalDBHandler():
         swapped_tuple = (*db_tuple[1:], db_tuple[0])
         cursor.execute(
             'UPDATE ethereum_tokens SET decimals=?, name=?, symbol=?, started=?,'
-            'coingecko=?, cryptocompare=? WHERE address = ?',
+            'coingecko=?, cryptocompare=?, protocol=? WHERE address = ?',
             swapped_tuple,
         )
         if cursor.rowcount != 1:

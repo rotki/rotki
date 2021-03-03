@@ -1472,6 +1472,7 @@ class EthereumTokenSchema(Schema):
     started = TimestampField(missing=None)
     coingecko = fields.String(missing=None)
     cryptocompare = fields.String(missing=None)
+    protocol = fields.String(missing=None)
     underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), missing=None)
 
     @validates_schema  # type: ignore

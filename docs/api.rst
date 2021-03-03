@@ -2142,6 +2142,7 @@ Getting custom ethereum tokens
               "started": 1614636432,
               "coingecko": "foo-coin",
               "cryptocompare": "FOO",
+              "protocol": "uniswap",
               "underlying_tokens": [
                   {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "weight": "15.45"},
                   {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "weight": "35.65"},
@@ -2164,6 +2165,7 @@ Getting custom ethereum tokens
    :resjsonarr integer started: The timestamp of the token deployment. Can be missing if not known.
    :resjsonarr string coingecko: The coingecko identifier for the asset. can be missing if not known.
    :resjsonarr string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known.
+   :resjsonarr string protocol: A name for the protocol the token belongs to. For example uniswap for all uniswap LP tokens. Can be missing if not known or there is no protocol the token belongs to.
    :resjsonarr list underlying_tokens: Optional. If the token is an LP token or a token set or something similar which represents a pool of multiple other tokens, then this is a list of the underlying token addresses and a percentage that each token contributes to the pool.
    :statuscode 200: Assets succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed

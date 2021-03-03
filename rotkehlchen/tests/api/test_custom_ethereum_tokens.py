@@ -29,6 +29,7 @@ INITIAL_TOKENS = [
         started=Timestamp(0),
         coingecko='foo',
         cryptocompare='boo',
+        protocol='uniswap',
         underlying_tokens=[
             UnderlyingToken(address=underlying_address1, weight=FVal('0.5055')),
             UnderlyingToken(address=underlying_address2, weight=FVal('0.1545')),
@@ -58,6 +59,7 @@ CUSTOM_TOKEN3 = CustomEthereumToken(
     name='Custom 3',
     symbol='CST3',
     cryptocompare='goo',
+    protocol='aave',
     underlying_tokens=[
         UnderlyingToken(address=custom_address1, weight=FVal('0.55')),
         UnderlyingToken(address=underlying_address4, weight=FVal('0.45')),
@@ -223,8 +225,10 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
     new_token1 = INITIAL_TOKENS[0].serialize()
     new_name = 'Edited token'
     new_symbol = 'ESMBL'
+    new_protocol = 'curve'
     new_token1['name'] = new_name
     new_token1['symbol'] = new_symbol
+    new_token1['protocol'] = new_protocol
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
@@ -245,6 +249,7 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
     expected_tokens = INITIAL_EXPECTED_TOKENS.copy()
     expected_tokens[0].name = new_name
     expected_tokens[0].symbol = new_symbol
+    expected_tokens[0].protocol = new_protocol
     assert result == [x.serialize() for x in expected_tokens]
 
     # test that editing an non existing address is handled properly
