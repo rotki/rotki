@@ -1100,6 +1100,15 @@
           "title": "Querying Balancer balances"
         }
       },
+      "balancer_trades": {
+        "error": {
+          "description": "Failed to query Balancer trades: {message}",
+          "title": "Querying Balancer trades"
+        },
+        "task": {
+          "title": "Querying Balancer trades"
+        }
+      },
       "balances": {
         "task": {
           "title": "Querying DeFi balances"

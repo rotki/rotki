@@ -28,5 +28,6 @@ export interface FetchPayload<T extends TaskMeta> {
   readonly taskType: TaskType;
   readonly meta: T;
   readonly mutation: string;
+  readonly checkPremium: boolean;
   readonly onError: OnError;
 }

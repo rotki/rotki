@@ -38,6 +38,7 @@ import {
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 
 export interface DefiState {
+  balancerTrades: DexTrades;
   balancerBalances: BalancerBalances;
   dsrHistory: DSRHistory;
   dsrBalances: DSRBalances;
@@ -51,7 +52,7 @@ export interface DefiState {
   yearnVaultsHistory: YearnVaultsHistory;
   yearnVaultsBalances: YearnVaultsBalances;
   uniswapBalances: UniswapBalances;
-  uniswapTrades: UniswapTrades;
+  uniswapTrades: DexTrades;
   uniswapEvents: UniswapEvents;
   airdrops: Airdrops;
 }
@@ -293,7 +294,7 @@ export interface UniswapBalance {
 
 type UniswapEventType = typeof UNISWAP_EVENT_TYPE[number];
 
-interface UniswapSwap {
+interface DexSwap {
   readonly amount0In: BigNumber;
   readonly amount0Out: BigNumber;
   readonly amount1In: BigNumber;
@@ -307,25 +308,25 @@ interface UniswapSwap {
   readonly txHash: string;
 }
 
-export interface UniswapTrade {
+export interface DexTrade {
   readonly address: string;
   readonly amount: BigNumber;
   readonly baseAsset: TokenDetails;
   readonly fee: BigNumber;
   readonly feeCurrency: string;
-  readonly location: 'uniswap';
+  readonly location: 'uniswap' | 'balancer';
   readonly pair: string;
   readonly quoteAsset: TokenDetails;
   readonly rate: BigNumber;
-  readonly swaps: UniswapSwap[];
+  readonly swaps: DexSwap[];
   readonly timestamp: number;
   readonly tradeId: string;
   readonly tradeType: TradeType;
   readonly txHash: string;
 }
 
-export interface UniswapTrades {
-  readonly [address: string]: UniswapTrade[];
+export interface DexTrades {
+  readonly [address: string]: DexTrade[];
 }
 
 interface UniswapEvent {

@@ -47,13 +47,14 @@ import { RefreshPeriod } from '@/store/settings/types';
   },
   methods: {
     ...mapActions('history', ['fetchTrades', 'deleteExternalTrade']),
-    ...mapActions('defi', ['fetchUniswapTrades'])
+    ...mapActions('defi', ['fetchUniswapTrades', 'fetchBalancerTrades'])
   }
 })
 export default class TradeHistory extends Mixins(StatusMixin) {
   selectedLocation: TradeLocation | null = null;
   fetchTrades!: (payload: FetchSource) => Promise<void>;
   fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
+  fetchBalancerTrades!: (refresh: boolean) => Promise<void>;
   [REFRESH_PERIOD]!: RefreshPeriod;
   trades!: TradeEntry[];
   openTrades: TradeEntry[] = [];
@@ -100,7 +101,8 @@ export default class TradeHistory extends Mixins(StatusMixin) {
   private async load() {
     await Promise.all([
       this.fetchTrades(FETCH_FROM_CACHE),
-      this.fetchUniswapTrades(false)
+      this.fetchUniswapTrades(false),
+      this.fetchBalancerTrades(false)
     ]);
     await this.fetchTrades(FETCH_FROM_SOURCE);
   }
@@ -108,7 +110,8 @@ export default class TradeHistory extends Mixins(StatusMixin) {
   private async refresh() {
     await Promise.all([
       this.fetchTrades(FETCH_REFRESH),
-      this.fetchUniswapTrades(true)
+      this.fetchUniswapTrades(true),
+      this.fetchBalancerTrades(true)
     ]);
   }
 }

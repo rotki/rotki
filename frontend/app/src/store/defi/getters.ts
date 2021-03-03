@@ -62,7 +62,8 @@ import {
   UniswapEventDetails,
   UniswapPool,
   UniswapPoolProfit,
-  UniswapTrade
+  DexTrade,
+  DexTrades
 } from '@/store/defi/types';
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
 import { RotkehlchenState } from '@/store/types';
@@ -118,11 +119,11 @@ interface DefiGetters {
   yearnVaultsAssets: (addresses: string[]) => YearnVaultBalance[];
   aaveTotalEarned: (addresses: string[]) => ProfitLossModel[];
   uniswapBalances: (addresses: string[]) => UniswapBalance[];
-  uniswapTrades: (addresses: string[]) => Trade[];
+  basicDexTrades: (addresses: string[]) => Trade[];
   uniswapPoolProfit: (addresses: string[]) => UniswapPoolProfit[];
   uniswapEvents: (addresses: string[]) => UniswapEventDetails[];
   uniswapAddresses: string[];
-  dexTrades: (addresses: string[]) => UniswapTrade[];
+  dexTrades: (addresses: string[]) => DexTrade[];
   airdrops: (addresses: string[]) => Airdrop[];
   airdropAddresses: string[];
   [GETTER_UNISWAP_ASSETS]: UniswapPool[];
@@ -725,12 +726,16 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           continue;
         }
         const balance = dsrBalances.balances[address];
+        const currentDsr = dsrBalances.currentDsr;
+        // noinspection SuspiciousTypeOfGuard
+        const isBigNumber = currentDsr instanceof BigNumber;
+        const format = isBigNumber ? currentDsr.toFormat(2) : 0;
         balances.push({
           address,
           protocol: DEFI_MAKERDAO,
           asset: 'DAI',
           balance: { ...balance },
-          effectiveInterestRate: `${dsrBalances.currentDsr.toFormat(2)}%`
+          effectiveInterestRate: `${format}%`
         });
       }
     }
@@ -1258,30 +1263,41 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     }
     return Object.values(balances);
   },
-  uniswapTrades: ({ uniswapTrades }) => (addresses): Trade[] => {
-    const trades: Trade[] = [];
-    for (const address in uniswapTrades) {
-      if (addresses.length > 0 && !addresses.includes(address)) {
-        continue;
+  basicDexTrades: ({ uniswapTrades, balancerTrades }) => (
+    addresses
+  ): Trade[] => {
+    function transform(
+      trades: DexTrades,
+      location: 'uniswap' | 'balancer'
+    ): Trade[] {
+      const simpleTrades: Trade[] = [];
+      for (const address in trades) {
+        if (addresses.length > 0 && !addresses.includes(address)) {
+          continue;
+        }
+        const dexTrade = trades[address];
+        const convertedTrades: Trade[] = dexTrade.map(trade => ({
+          tradeId: trade.tradeId,
+          location: location,
+          amount: trade.amount,
+          fee: trade.fee,
+          feeCurrency: trade.feeCurrency,
+          timestamp: trade.timestamp,
+          pair: trade.pair,
+          rate: trade.rate,
+          tradeType: 'buy',
+          link: '',
+          notes: '',
+          ignoredInAccounting: false
+        }));
+        simpleTrades.push(...convertedTrades);
       }
-      const uniswapTrade = uniswapTrades[address];
-      const convertedTrades: Trade[] = uniswapTrade.map(trade => ({
-        tradeId: trade.tradeId,
-        location: 'uniswap',
-        amount: trade.amount,
-        fee: trade.fee,
-        feeCurrency: trade.feeCurrency,
-        timestamp: trade.timestamp,
-        pair: trade.pair,
-        rate: trade.rate,
-        tradeType: 'buy',
-        link: '',
-        notes: '',
-        ignoredInAccounting: false
-      }));
-      trades.push(...convertedTrades);
+      return simpleTrades;
     }
 
+    const trades: Trade[] = [];
+    trades.push(...transform(uniswapTrades, 'uniswap'));
+    trades.push(...transform(balancerTrades, 'balancer'));
     return sortBy(trades, 'timestamp').reverse();
   },
   uniswapPoolProfit: ({ uniswapEvents }) => (
@@ -1340,13 +1356,20 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       .concat(Object.keys(uniswapEvents))
       .filter(uniqueStrings);
   },
-  dexTrades: ({ uniswapTrades }) => (addresses): UniswapTrade[] => {
-    const trades: UniswapTrade[] = [];
+  dexTrades: ({ uniswapTrades, balancerTrades }) => (addresses): DexTrade[] => {
+    const trades: DexTrade[] = [];
     for (const address in uniswapTrades) {
       if (addresses.length > 0 && !addresses.includes(address)) {
         continue;
       }
       trades.push(...uniswapTrades[address]);
+    }
+
+    for (const address in balancerTrades) {
+      if (addresses.length > 0 && !addresses.includes(address)) {
+        continue;
+      }
+      trades.push(...balancerTrades[address]);
     }
     return sortBy(trades, 'timestamp').reverse();
   },

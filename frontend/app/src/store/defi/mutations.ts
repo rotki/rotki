@@ -20,7 +20,7 @@ import {
   MakerDAOVault,
   MakerDAOVaultDetails,
   UniswapEvents,
-  UniswapTrades
+  DexTrades
 } from '@/store/defi/types';
 
 export const mutations: MutationTree<DefiState> = {
@@ -63,7 +63,7 @@ export const mutations: MutationTree<DefiState> = {
   uniswapBalances(state: DefiState, balances: UniswapBalances) {
     state.uniswapBalances = balances;
   },
-  uniswapTrades(state: DefiState, trades: UniswapTrades) {
+  uniswapTrades(state: DefiState, trades: DexTrades) {
     state.uniswapTrades = trades;
   },
   uniswapEvents(state: DefiState, events: UniswapEvents) {
@@ -74,6 +74,9 @@ export const mutations: MutationTree<DefiState> = {
   },
   balancerBalances(state: DefiState, balances: BalancerBalances) {
     state.balancerBalances = balances;
+  },
+  balancerTrades(state: DefiState, trades: DexTrades) {
+    state.balancerTrades = trades;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());

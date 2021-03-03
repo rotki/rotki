@@ -39,7 +39,7 @@ import { Section, Status } from '@/store/const';
 import {
   uniswapEventsNumericKeys,
   uniswapNumericKeys,
-  uniswapTradeNumericKeys
+  dexTradeNumericKeys
 } from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
 import {
@@ -50,7 +50,7 @@ import {
   DSRHistory,
   MakerDAOVaultDetails,
   UniswapEvents,
-  UniswapTrades
+  DexTrades
 } from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
@@ -851,14 +851,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const task = createTask(taskId, taskType, {
         title: i18n.tc('actions.defi.uniswap_trades.task.title'),
         ignoreResult: false,
-        numericKeys: uniswapTradeNumericKeys
+        numericKeys: dexTradeNumericKeys
       });
 
       commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<UniswapTrades, TaskMeta>(
-        taskType
-      );
+      const { result } = await taskCompletion<DexTrades, TaskMeta>(taskType);
 
       commit('uniswapTrades', result);
     } catch (e) {
@@ -988,11 +986,42 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       module: MODULE_BALANCER,
       meta: meta,
       refresh,
+      checkPremium: true,
       onError: {
         title: i18n.t('actions.defi.balancer_balances.error.title').toString(),
         error: message =>
           i18n
             .t('actions.defi.balancer_balances.error.description', {
+              message
+            })
+            .toString()
+      }
+    });
+  },
+  async fetchBalancerTrades(
+    context: ActionContext<DefiState, RotkehlchenState>,
+    refresh: boolean = false
+  ) {
+    const meta: TaskMeta = {
+      title: i18n.t('actions.defi.balancer_trades.task.title').toString(),
+      ignoreResult: false,
+      numericKeys: dexTradeNumericKeys
+    };
+
+    await fetchAsync(context, {
+      query: async () => await api.defi.fetchBalancerTrades(),
+      mutation: 'balancerTrades',
+      taskType: TaskType.BALANCER_TRADES,
+      section: Section.DEFI_BALANCER_TRADES,
+      module: MODULE_BALANCER,
+      meta: meta,
+      checkPremium: true,
+      refresh,
+      onError: {
+        title: i18n.t('actions.defi.balancer_trades.error.title').toString(),
+        error: message =>
+          i18n
+            .t('actions.defi.balancer_trades.error.description', {
               message
             })
             .toString()

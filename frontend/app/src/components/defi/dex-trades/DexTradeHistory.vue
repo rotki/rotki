@@ -32,7 +32,7 @@ import { DexTradesTable } from '@/utils/premium';
     DexTradesTable
   },
   methods: {
-    ...mapActions('defi', ['fetchUniswapTrades'])
+    ...mapActions('defi', ['fetchUniswapTrades', 'fetchBalancerTrades'])
   }
 })
 export default class DexTradeHistory extends Mixins(
@@ -42,9 +42,13 @@ export default class DexTradeHistory extends Mixins(
 ) {
   section = Section.DEFI_UNISWAP_TRADES;
   fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
+  fetchBalancerTrades!: (refresh: boolean) => Promise<void>;
 
   async mounted() {
-    await this.fetchUniswapTrades(false);
+    await Promise.all([
+      this.fetchUniswapTrades(false),
+      this.fetchBalancerTrades(false)
+    ]);
   }
 }
 </script>

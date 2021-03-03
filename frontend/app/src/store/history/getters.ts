@@ -13,13 +13,13 @@ export const getters: GetterTree<HistoryState, RotkehlchenState> = {
   assetMovementsLimit: ({ assetMovements }) => {
     return assetMovements.limit;
   },
-  trades: ({ trades }, _, _rs, { 'defi/uniswapTrades': uniswapTrades }) => {
-    let uniTrades: TradeEntry[] = [];
+  trades: ({ trades }, _, _rs, { 'defi/basicDexTrades': dexTrades }) => {
+    let dxTrades: TradeEntry[] = [];
     if (trades.limit === -1) {
-      uniTrades = uniswapTrades([]);
+      dxTrades = dexTrades([]);
     }
 
-    return trades.data.concat(...uniTrades);
+    return trades.data.concat(...dxTrades);
   },
   tradesTotal: ({ trades }) => {
     return trades.found;

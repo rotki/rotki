@@ -1,8 +1,8 @@
 <template>
   <v-row>
     <v-col cols="12">
-      <v-card>
-        <div class="mx-4 py-2">
+      <v-card :flat="outlined">
+        <div class="mx-4 py-2" :class="outlined ? 'px-3' : null">
           <v-autocomplete
             :value="value"
             :items="locations"
@@ -10,6 +10,9 @@
             hide-selected
             hide-no-data
             clearable
+            chips
+            :class="outlined ? 'trade-location-selector--outlined' : null"
+            :outlined="outlined"
             :label="$t('trade_location_selector.label')"
             item-text="name"
             item-value="identifier"
@@ -68,8 +71,36 @@ export default class TradeLocationSelector extends Vue {
 
   @Prop({ required: false, type: Array, default: () => [] })
   availableLocations!: TradeLocation[];
+  @Prop({ required: false, default: false, type: Boolean })
+  outlined!: boolean;
 
   @Emit()
   input(_value: TradeLocation) {}
 }
 </script>
+
+<style scoped lang="scss">
+.trade-location-selector {
+  &--outlined {
+    ::v-deep {
+      /* stylelint-disable */
+      .v-label:not(.v-label--active) {
+        /* stylelint-enable */
+        top: 24px;
+      }
+
+      .v-input {
+        &__icon {
+          &--clear {
+            margin-top: 6px;
+          }
+
+          &--append {
+            margin-top: 6px;
+          }
+        }
+      }
+    }
+  }
+}
+</style>

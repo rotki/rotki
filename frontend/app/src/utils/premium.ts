@@ -23,6 +23,7 @@ import HashLink from '@/components/helper/HashLink.vue';
 import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { DebugSettings, ExposedUtilities } from '@/electron-main/ipc';
@@ -35,7 +36,7 @@ export const setupPremium = () => {
   window.moment = moment;
   window.rotki = {
     useHostComponents: true,
-    version: 8,
+    version: 9,
     utils: {
       date: {
         epoch(): number {
@@ -88,6 +89,7 @@ export const setupPremium = () => {
   Vue.component('Card', Card);
   Vue.component('LiquidityPoolSelector', LiquidityPoolSelector);
   Vue.component('BalancerPoolAsset', BalancerPoolAsset);
+  Vue.component('TradeLocationSelector', TradeLocationSelector);
 };
 
 function findComponents(): string[] {

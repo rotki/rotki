@@ -13,6 +13,6 @@ export const Routes = {
   PROFIT_LOSS_REPORT: '/profit-loss-report',
   HISTORY_LEDGER_ACTIONS: '/history/ledger-actions',
   ASSETS: '/assets/:identifier',
-  DEFI_DEPOSITS_LIQUIDITY_UNISWAP: '/defi/deposits/liquidity/uniswap/',
-  DEFI_DEPOSITS_LIQUIDITY_BALANCER: '/defi/deposits/liquidity/balancer/'
+  DEFI_DEPOSITS_LIQUIDITY_UNISWAP: '/defi/deposits/liquidity/uniswap',
+  DEFI_DEPOSITS_LIQUIDITY_BALANCER: '/defi/deposits/liquidity/balancer'
 };

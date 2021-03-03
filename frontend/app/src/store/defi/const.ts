@@ -261,7 +261,7 @@ export const uniswapNumericKeys = [
   'total_supply'
 ];
 
-export const uniswapTradeNumericKeys = [
+export const dexTradeNumericKeys = [
   'amount',
   'fee',
   'rate',

@@ -17,7 +17,10 @@ export async function fetchAsync<S, T extends TaskMeta, R>(
   payload: FetchPayload<T>
 ): Promise<void> {
   const { activeModules } = session!.generalSettings;
-  if (!activeModules.includes(payload.module)) {
+  if (
+    !activeModules.includes(payload.module) ||
+    (payload.checkPremium && !session!.premium)
+  ) {
     return;
   }
 
