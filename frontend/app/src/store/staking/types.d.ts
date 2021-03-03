@@ -18,6 +18,22 @@ export interface Eth2Deposit {
   readonly logIndex: number;
 }
 
+interface Eth2DailyStat {
+  readonly timestamp: number;
+  readonly pnl: Balance;
+  readonly startBalance: Balance;
+  readonly endBalance: Balance;
+  readonly missedAttestations: number;
+  readonly orphanedAttestations: number;
+  readonly proposedBlocks: number;
+  readonly missedBlocks: number;
+  readonly orphanedBlocks: number;
+  readonly includedAttesterSlashings: number;
+  readonly proposerAttesterSlashings: number;
+  readonly depositsNumber: number;
+  readonly depositedBalance: Balance;
+}
+
 interface Eth2Detail {
   readonly eth1Depositor: string;
   readonly index: number;
@@ -26,11 +42,7 @@ interface Eth2Detail {
   readonly performance1w: Balance;
   readonly performance1m: Balance;
   readonly performance1y: Balance;
-}
-
-export interface Eth2Staking {
-  readonly deposits: Eth2Deposit[];
-  readonly details: Eth2Detail[];
+  readonly dailyStats: Eth2DailyStat[];
 }
 
 interface AdexBalance {
