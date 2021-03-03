@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS ethereum_tokens (
     name TEXT,
     symbol TEXT,
     started INTEGER,
+    swapped_for TEXT,
     coingecko TEXT,
     cryptocompare TEXT,
     protocol TEXT

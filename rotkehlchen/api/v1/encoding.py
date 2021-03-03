@@ -1470,6 +1470,7 @@ class EthereumTokenSchema(Schema):
     name = fields.String(required=True)
     symbol = fields.String(required=True)
     started = TimestampField(missing=None)
+    swapped_for = AssetField(missing=None)
     coingecko = fields.String(missing=None)
     cryptocompare = fields.String(missing=None)
     protocol = fields.String(missing=None)

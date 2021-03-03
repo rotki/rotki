@@ -1,12 +1,15 @@
+import logging
 import sqlite3
 from pathlib import Path
 from typing import List, Optional
 
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
-from rotkehlchen.errors import InputError
+from rotkehlchen.errors import InputError, UnknownAsset
 from rotkehlchen.typing import ChecksumEthAddress
 
 from .schema import DB_SCRIPT_CREATE_TABLES
+
+log = logging.getLogger(__name__)
 
 GLOBAL_DB_VERSION = 1
 
@@ -94,7 +97,8 @@ class GlobalDBHandler():
     def get_ethereum_token(address: ChecksumEthAddress) -> Optional[CustomEthereumToken]:
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT decimals, name, symbol, started, coingecko, cryptocompare, protocol '
+            'SELECT decimals, name, symbol, started, swapped_for, '
+            'coingecko, cryptocompare, protocol '
             'FROM ethereum_tokens where address=?;',
             (address,),
         )
@@ -104,22 +108,38 @@ class GlobalDBHandler():
 
         token_data = results[0]
         underlying_tokens = GlobalDBHandler()._fetch_underlying_tokens(address)
-        return CustomEthereumToken.deserialize_from_db(
-            entry=(address, *token_data),  # type: ignore
-            underlying_tokens=underlying_tokens,
-        )
+
+        try:
+            return CustomEthereumToken.deserialize_from_db(
+                entry=(address, *token_data),  # type: ignore
+                underlying_tokens=underlying_tokens,
+            )
+        except UnknownAsset as e:
+            log.error(
+                f'Found unknown swapped_for asset {str(e)} in '
+                f'the DB when deserializing a CustomEthereumToken',
+            )
+            return None
 
     @staticmethod
     def get_ethereum_tokens() -> List[CustomEthereumToken]:
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT address, decimals, name, symbol, started, coingecko, cryptocompare, protocol '
+            'SELECT address, decimals, name, symbol, started, '
+            'swapped_for, coingecko, cryptocompare, protocol '
             'FROM ethereum_tokens;',
         )
         tokens = []
         for entry in query:
             underlying_tokens = GlobalDBHandler()._fetch_underlying_tokens(entry[0])
-            tokens.append(CustomEthereumToken.deserialize_from_db(entry, underlying_tokens))
+            try:
+                token = CustomEthereumToken.deserialize_from_db(entry, underlying_tokens)
+                tokens.append(token)
+            except UnknownAsset as e:
+                log.error(
+                    f'Found unknown swapped_for asset {str(e)} in '
+                    f'the DB when deserializing a CustomEthereumToken',
+                )
 
         return tokens
 
@@ -138,9 +158,9 @@ class GlobalDBHandler():
         try:
             cursor.execute(
                 'INSERT INTO '
-                'ethereum_tokens(address, decimals, name, symbol, '
-                'started, coingecko, cryptocompare, protocol) '
-                'VALUES(?, ?, ?, ?, ?, ?, ?, ?)',
+                'ethereum_tokens(address, decimals, name, symbol, started, '
+                'swapped_for, coingecko, cryptocompare, protocol) '
+                'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 entry.to_db_tuple(),
             )
         except sqlite3.IntegrityError as e:
@@ -172,7 +192,7 @@ class GlobalDBHandler():
         db_tuple = entry.to_db_tuple()
         swapped_tuple = (*db_tuple[1:], db_tuple[0])
         cursor.execute(
-            'UPDATE ethereum_tokens SET decimals=?, name=?, symbol=?, started=?,'
+            'UPDATE ethereum_tokens SET decimals=?, name=?, symbol=?, started=?, swapped_for=?, '
             'coingecko=?, cryptocompare=?, protocol=? WHERE address = ?',
             swapped_tuple,
         )

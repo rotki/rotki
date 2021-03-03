@@ -5,6 +5,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from eth_typing import HexAddress, HexStr
 
 from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.fval import FVal
@@ -361,6 +362,7 @@ CustomEthereumTokenDBTuple = Tuple[
     Optional[str],        # name
     Optional[str],        # symbol
     Optional[int],        # started
+    Optional[str],        # swapped_for
     Optional[str],        # coingecko
     Optional[str],        # cryptocompare
     Optional[str],        # protocol
@@ -374,6 +376,7 @@ class CustomEthereumToken:
     name: Optional[str] = None
     symbol: Optional[str] = None
     started: Optional[Timestamp] = None
+    swapped_for: Optional[Asset] = None
     coingecko: Optional[str] = None
     cryptocompare: Optional[str] = None
     protocol: Optional[str] = None
@@ -396,6 +399,7 @@ class CustomEthereumToken:
             'name': self.name,
             'symbol': self.symbol,
             'started': self.started,
+            'swapped_for': self.swapped_for.identifier if self.swapped_for else None,
             'coingecko': self.coingecko,
             'cryptocompare': self.cryptocompare,
             'protocol': self.protocol,
@@ -413,6 +417,7 @@ class CustomEthereumToken:
             self.name,
             self.symbol,
             self.started,
+            self.swapped_for.identifier if self.swapped_for else None,
             self.coingecko,
             self.cryptocompare,
             self.protocol,
@@ -424,14 +429,20 @@ class CustomEthereumToken:
             entry: CustomEthereumTokenDBTuple,
             underlying_tokens: Optional[List[UnderlyingToken]] = None,
     ) -> 'CustomEthereumToken':
+        """May raise UnknownAsset if the swapped for asset can't be recognized
+
+        That error would be bad because it would mean somehow an unknown id made it into the DB
+        """
+        swapped_for = Asset(entry[5]) if entry[5] is not None else None
         return CustomEthereumToken(
             address=string_to_ethereum_address(entry[0]),
             decimals=entry[1],
             name=entry[2],
             symbol=entry[3],
             started=Timestamp(entry[4]),  # type: ignore
-            coingecko=entry[5],
-            cryptocompare=entry[6],
-            protocol=entry[7],
+            swapped_for=swapped_for,
+            coingecko=entry[6],
+            cryptocompare=entry[7],
+            protocol=entry[8],
             underlying_tokens=underlying_tokens,
         )

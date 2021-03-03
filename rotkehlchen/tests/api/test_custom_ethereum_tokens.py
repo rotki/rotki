@@ -4,15 +4,16 @@ import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
+from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response_with_result,
 )
-from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.tests.utils.constants import A_BAT, A_MKR
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.typing import Timestamp
-from rotkehlchen.fval import FVal
 
 underlying_address1 = make_ethereum_address()
 underlying_address2 = make_ethereum_address()
@@ -27,6 +28,7 @@ INITIAL_TOKENS = [
         name='Custom 1',
         symbol='CST1',
         started=Timestamp(0),
+        swapped_for=A_MKR,
         coingecko='foo',
         cryptocompare='boo',
         protocol='uniswap',
@@ -226,8 +228,10 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
     new_name = 'Edited token'
     new_symbol = 'ESMBL'
     new_protocol = 'curve'
+    new_swapped_for = A_BAT.identifier
     new_token1['name'] = new_name
     new_token1['symbol'] = new_symbol
+    new_token1['swapped_for'] = new_swapped_for
     new_token1['protocol'] = new_protocol
     response = requests.patch(
         api_url_for(
@@ -250,6 +254,7 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
     expected_tokens[0].name = new_name
     expected_tokens[0].symbol = new_symbol
     expected_tokens[0].protocol = new_protocol
+    expected_tokens[0].swapped_for = A_BAT
     assert result == [x.serialize() for x in expected_tokens]
 
     # test that editing an non existing address is handled properly

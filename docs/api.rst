@@ -2140,6 +2140,7 @@ Getting custom ethereum tokens
               "name": "foo",
               "symbol": "FTK",
               "started": 1614636432,
+              "swapped_for": "SCT",
               "coingecko": "foo-coin",
               "cryptocompare": "FOO",
               "protocol": "uniswap",
@@ -2163,6 +2164,7 @@ Getting custom ethereum tokens
    :resjsonarr string name: Asset name. Can be missing if not known.
    :resjsonarr string symbol: Asset symbol. Can be missing if not known.
    :resjsonarr integer started: The timestamp of the token deployment. Can be missing if not known.
+   :resjsonarr string swapped_for: If this token was swapped for another one then here we would have the identifier of that other token. If not this is null.
    :resjsonarr string coingecko: The coingecko identifier for the asset. can be missing if not known.
    :resjsonarr string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known.
    :resjsonarr string protocol: A name for the protocol the token belongs to. For example uniswap for all uniswap LP tokens. Can be missing if not known or there is no protocol the token belongs to.
@@ -2192,8 +2194,10 @@ Adding custom ethereum tokens
           "name": "foo",
           "symbol": "FTK",
           "started": 1614636432,
+          "swapped_for": "SCT",
           "coingecko": "foo-coin",
           "cryptocompare": "FOO",
+	  "protocol": "uniswap"
           "underlying_tokens": [
               {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "weight": "15.45"},
 	      {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "weight": "35.65"},
@@ -2242,8 +2246,10 @@ Editing custom ethereum tokens
           "name": "foo",
           "symbol": "FTK",
           "started": 1614636432,
+          "swapped_for": "SCP,
           "coingecko": "foo-coin",
           "cryptocompare": "FOO",
+          "protocol": "aave",
           "underlying_tokens": None
        }}
 

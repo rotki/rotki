@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from functools import total_ordering
 from typing import Any, Optional, Type, TypeVar
 
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.typing import AssetType, ChecksumEthAddress, EthTokenInfo, Timestamp
 
@@ -214,6 +213,9 @@ class Asset():
                 'Tried to initialize an asset out of a non-string identifier',
             )
 
+        # TODO: figure out a way to move this out. Moved in here due to cyclic imports
+        from rotkehlchen.assets.resolver import AssetResolver
+
         canonical_id = AssetResolver().is_identifier_canonical(self.identifier)
         if canonical_id is None:
             raise UnknownAsset(self.identifier)
@@ -324,6 +326,10 @@ class HasEthereumToken(Asset):
 
     def __post_init__(self) -> None:
         super().__post_init__()
+
+        # TODO: figure out a way to move this out. Moved in here due to cyclic imports
+        from rotkehlchen.assets.resolver import AssetResolver
+
         data = AssetResolver().get_asset_data(self.identifier)  # pylint: disable=no-member
 
         if not data.ethereum_address:
