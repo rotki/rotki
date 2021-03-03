@@ -204,6 +204,8 @@ class Asset():
 
         If a non string is given then it's probably a deserialization error or
         invalid data were given to us by the server if an API was queried.
+
+        May raise UnknownAsset if the asset identifier can't be matched to anything
         """
         if not isinstance(self.identifier, str):
             raise DeserializationError(

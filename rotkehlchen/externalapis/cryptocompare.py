@@ -40,7 +40,6 @@ from rotkehlchen.utils.misc import (
     get_or_make_price_history_dir,
     timestamp_to_date,
     ts_now,
-    write_history_data_in_file,
 )
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
@@ -246,6 +245,28 @@ def _get_cache_key(from_asset: Asset, to_asset: Asset) -> Optional[PairCacheKey]
         return None
 
     return PairCacheKey(from_cc_asset + '_' + to_cc_asset)
+
+
+def _write_history_data_in_file(
+        data: List[Dict[str, Any]],
+        filepath: Path,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+) -> None:
+    log.info(
+        'Writing history file',
+        filepath=filepath,
+        start_time=start_ts,
+        end_time=end_ts,
+    )
+    with open(filepath, 'w') as outfile:
+        history_dict: Dict[str, Any] = {}
+        # From python 3.5 dict order should be preserved so we can expect
+        # start and end time to come before the data in the file
+        history_dict['start_time'] = start_ts
+        history_dict['end_time'] = end_ts
+        history_dict['data'] = data
+        outfile.write(rlk_jsondumps(history_dict))
 
 
 class Cryptocompare(ExternalServiceWithApiKey):
@@ -990,7 +1011,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             from_asset=from_asset,
             to_asset=to_asset,
         )
-        write_history_data_in_file(
+        _write_history_data_in_file(
             data=calculated_history,
             filepath=filename,
             start_ts=calculated_history[0]['time'],

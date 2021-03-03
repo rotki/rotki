@@ -12,7 +12,6 @@ ZERO_ADDRESS = deserialize_ethereum_address('0x000000000000000000000000000000000
 AAVE_ETH_RESERVE_ADDRESS = deserialize_ethereum_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
 
 
-
 class EthereumConstants():
     __instance = None
     contracts: Dict[str, Dict[str, Any]] = {}

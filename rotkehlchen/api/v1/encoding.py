@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Union
 
 import marshmallow
 import webargs
@@ -8,6 +8,7 @@ from eth_utils import to_checksum_address
 from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from webargs.compat import MARSHMALLOW_VERSION_INFO
+from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.structures import ActionType, LedgerAction, LedgerActionType
 from rotkehlchen.assets.asset import Asset
@@ -19,6 +20,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_btc_address,
 )
 from rotkehlchen.chain.ethereum.manager import EthereumManager
+from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
 from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_kusama_address_from_public_key,
@@ -31,6 +33,7 @@ from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.serialization.deserialize import (
     deserialize_action_type,
@@ -282,6 +285,37 @@ class FeeField(fields.Field):
             raise ValidationError(str(e)) from e
 
         return fee
+
+
+class FloatingPercentageField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: FVal,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> FVal:
+        try:
+            percentage = FVal(value)
+        except ValueError as e:
+            raise ValidationError(str(e)) from e
+
+        if percentage < ZERO:
+            raise ValidationError('Percentage field can not be negative')
+        if percentage > FVal(100):
+            raise ValidationError('Percentage field can not be greater than 100')
+
+        return percentage / FVal(100)
 
 
 class BlockchainField(fields.Field):
@@ -574,15 +608,29 @@ class DirectoryField(fields.Field):
 
 class FileField(fields.Field):
 
+    def __init__(self, *, allowed_extensions: Optional[Sequence[str]] = None, **kwargs: Any) -> None:  # noqa: E501
+        self.allowed_extensions = allowed_extensions
+        super().__init__(**kwargs)
+
     def _deserialize(
             self,
-            value: str,
+            value: Union[str, FileStorage],
             attr: Optional[str],  # pylint: disable=unused-argument
             data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> Path:
+    ) -> Union[Path, FileStorage]:
+        if isinstance(value, FileStorage):
+            if self.allowed_extensions is not None and value.filename:
+                if not any(value.filename.endswith(x) for x in self.allowed_extensions):
+                    raise ValidationError(
+                        f'Given file {value.filename} does not end in any of '
+                        f'{",".join(self.allowed_extensions)}',
+                    )
+
+            return value
+
         if not isinstance(value, str):
-            raise ValidationError('Provided non string type for filepath')
+            raise ValidationError('Provided non string or file type for file')
 
         path = Path(value)
         if not path.exists():
@@ -590,6 +638,13 @@ class FileField(fields.Field):
 
         if not path.is_file():
             raise ValidationError(f'Given path {value} is not a file')
+
+        if self.allowed_extensions is not None:
+            if not any(path.suffix == x for x in self.allowed_extensions):
+                raise ValidationError(
+                    f'Given file {path} does not end in any of '
+                    f'{",".join(self.allowed_extensions)}',
+                )
 
         return path
 
@@ -1388,6 +1443,79 @@ class IgnoredActionsModifySchema(Schema):
     action_ids = fields.List(fields.String(required=True), required=True)
 
 
+class OptionalEthereumAddressSchema(Schema):
+    address = EthereumAddressField(required=False, missing=None)
+
+
+class RequiredEthereumAddressSchema(Schema):
+    address = EthereumAddressField(required=True)
+
+
+class UnderlyingTokenInfoSchema(Schema):
+    address = EthereumAddressField(required=True)
+    weight = FloatingPercentageField(required=True)
+
+
+class EthereumTokenSchema(Schema):
+    address = EthereumAddressField(required=True)
+    decimals = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=0,
+            max=18,
+            error='Ethereum token decimals should range from 0 to 18',
+        ),
+        required=True,
+    )
+    name = fields.String(required=True)
+    symbol = fields.String(required=True)
+    started = TimestampField(missing=None)
+    coingecko = fields.String(missing=None)
+    cryptocompare = fields.String(missing=None)
+    underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), missing=None)
+
+    @validates_schema  # type: ignore
+    def validate_ethereum_token_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        given_underlying_tokens = data.get('underlying_tokens', None)
+        if given_underlying_tokens is not None:
+            if given_underlying_tokens == []:
+                raise ValidationError(
+                    f'Gave an empty list for underlying tokens of {data["address"]}. '
+                    f'If you need to specify no underlying tokens give a null value',
+                )
+            weight_sum = sum(x['weight'] for x in given_underlying_tokens)
+            if weight_sum > FVal(1):
+                raise ValidationError(
+                    f'The sum of underlying token weights for {data["address"]} '
+                    f'is {weight_sum * 100} and exceeds 100%',
+                )
+
+    @post_load  # type: ignore
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> CustomEthereumToken:
+        given_underlying_tokens = data.pop('underlying_tokens', None)
+        underlying_tokens = None
+        if given_underlying_tokens is not None:
+            underlying_tokens = []
+            for entry in given_underlying_tokens:
+                underlying_tokens.append(UnderlyingToken(
+                    address=entry['address'],
+                    weight=entry['weight'],
+                ))
+        return CustomEthereumToken(**data, underlying_tokens=underlying_tokens)
+
+
+class ModifyEthereumTokenSchema(Schema):
+    token = fields.Nested(EthereumTokenSchema, required=True)
+
+
 class QueriedAddressesSchema(Schema):
     module = fields.String(
         required=True,
@@ -1401,7 +1529,12 @@ class DataImportSchema(Schema):
         required=True,
         validate=webargs.validate.OneOf(choices=('cointracking.info', 'crypto.com')),
     )
-    filepath = FileField(required=True)
+    file = FileField(required=True, allowed_extensions=('.csv',))
+
+
+class AssetIconUploadSchema(Schema):
+    asset = AssetField(required=True)
+    file = FileField(required=True, allowed_extensions=ALLOWED_ICON_EXTENSIONS)
 
 
 class ExchangeRatesSchema(Schema):

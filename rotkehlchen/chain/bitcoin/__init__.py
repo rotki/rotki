@@ -5,7 +5,8 @@ import requests
 from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import BTCAddress
-from rotkehlchen.utils.misc import request_get_dict, satoshis_to_btc
+from rotkehlchen.utils.misc import satoshis_to_btc
+from rotkehlchen.utils.network import request_get_dict
 
 
 def _have_bc1_accounts(accounts: List[BTCAddress]) -> bool:

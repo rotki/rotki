@@ -58,6 +58,7 @@ from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history import EventsHistorian, PriceHistorian
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
@@ -162,6 +163,8 @@ class Rotkehlchen():
             cryptocompare=self.cryptocompare,
             coingecko=self.coingecko,
         )
+        # Initialize the GlobalDBHandler singleton
+        GlobalDBHandler(data_dir=self.data_dir)
         # Keeps how many trades we have found per location. Used for free user limiting
         self.actions_per_location: Dict[str, Dict[Location, int]] = {
             'trade': defaultdict(int),

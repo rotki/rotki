@@ -1,9 +1,9 @@
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from flask import Blueprint, Request, Response, request as flask_request
 from flask_restful import Resource
-from flask_restful.reqparse import RequestParser
 from marshmallow import Schema
 from marshmallow.utils import missing
 from typing_extensions import Literal
@@ -16,6 +16,7 @@ from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AssetIconsSchema,
+    AssetIconUploadSchema,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
@@ -47,12 +48,15 @@ from rotkehlchen.api.v1.encoding import (
     LedgerActionSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
+    ModifyEthereumTokenSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
     NamedOracleCacheGetSchema,
     NamedOracleCacheSchema,
     NewUserSchema,
+    OptionalEthereumAddressSchema,
     QueriedAddressesSchema,
+    RequiredEthereumAddressSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
     TagDeleteSchema,
@@ -100,22 +104,23 @@ from rotkehlchen.typing import (
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
+    from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 
 
-def _combine_data_and_view_args(
-        data: Dict[str, Any],
-        view_args: Dict[str, Any],
+def _combine_parser_data(
+        data_1: Dict[str, Any],
+        data_2: Dict[str, Any],
         schema: Schema,
 ) -> MultiDictProxy:
-    if view_args is not missing:
-        if data == {}:
-            data = MultiDictProxy(view_args, schema)
+    if data_2 is not missing:
+        if data_1 == {}:
+            data_1 = MultiDictProxy(data_2, schema)
         else:
-            all_data = data.to_dict() if isinstance(data, MultiDictProxy) else data
-            for key, value in view_args.items():
+            all_data = data_1.to_dict() if isinstance(data_1, MultiDictProxy) else data_1
+            for key, value in data_2.items():
                 all_data[key] = value
-            data = MultiDictProxy(all_data, schema)
-    return data
+            data_1 = MultiDictProxy(all_data, schema)
+    return data_1
 
 
 @parser.location_loader('json_and_view_args')  # type: ignore
@@ -126,7 +131,7 @@ def load_json_viewargs_data(request: Request, schema: Schema) -> Dict[str, Any]:
     if data is missing:
         return data
 
-    data = _combine_data_and_view_args(data, view_args, schema)
+    data = _combine_parser_data(data, view_args, schema)
     return data
 
 
@@ -151,7 +156,25 @@ def load_json_query_viewargs_data(request: Request, schema: Schema) -> Dict[str,
     if data is missing:
         return data
 
-    data = _combine_data_and_view_args(data, view_args, schema)
+    data = _combine_parser_data(data, view_args, schema)
+    return data
+
+
+@parser.location_loader('form_and_file')  # type: ignore
+def load_form_file_data(request: Request, schema: Schema) -> Dict[str, Any]:
+    """Load data from a request accepting form and file encoded data"""
+    form_data = parser.load_form(request, schema)
+    file_data = parser.load_files(request, schema)
+    data = _combine_parser_data(form_data, file_data, schema)
+    return data
+
+
+@parser.location_loader('view_args_and_file')  # type: ignore
+def load_view_args_file_data(request: Request, schema: Schema) -> Dict[str, Any]:
+    """Load data from a request accepting view_args and file encoded data"""
+    view_args_data = parser.load_view_args(request, schema)
+    file_data = parser.load_files(request, schema)
+    data = _combine_parser_data(view_args_data, file_data, schema)
     return data
 
 
@@ -322,6 +345,29 @@ class AllAssetsResource(BaseResource):
 
     def get(self) -> Response:
         return self.rest_api.query_all_assets()
+
+
+class EthereumAssetsResource(BaseResource):
+
+    get_schema = OptionalEthereumAddressSchema()
+    delete_schema = RequiredEthereumAddressSchema()
+    edit_schema = ModifyEthereumTokenSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, address: Optional[ChecksumEthAddress]) -> Response:
+        return self.rest_api.get_custom_ethereum_tokens(address=address)
+
+    @use_kwargs(edit_schema, location='json')  # type: ignore
+    def put(self, token: 'CustomEthereumToken') -> Response:
+        return self.rest_api.add_custom_ethereum_token(token=token)
+
+    @use_kwargs(edit_schema, location='json')  # type: ignore
+    def patch(self, token: 'CustomEthereumToken') -> Response:
+        return self.rest_api.edit_custom_ethereum_token(token=token)
+
+    @use_kwargs(delete_schema, location='json')  # type: ignore
+    def delete(self, address: ChecksumEthAddress) -> Response:
+        return self.rest_api.delete_custom_ethereum_token(address)
 
 
 class BlockchainBalancesResource(BaseResource):
@@ -953,31 +999,25 @@ class PingResource(BaseResource):
 
 class DataImportResource(BaseResource):
 
-    put_schema = DataImportSchema()
+    upload_schema = DataImportSchema()
 
-    @use_kwargs(put_schema, location='json')  # type: ignore
-    def put(self, source: Literal['cointracking.info', 'crypto.com'], filepath: Path) -> Response:
-        return self.rest_api.import_data(source=source, filepath=filepath)
+    @use_kwargs(upload_schema, location='json')  # type: ignore
+    def put(self, source: Literal['cointracking.info', 'crypto.com'], file: Path) -> Response:
+        return self.rest_api.import_data(source=source, filepath=file)
 
-    def post(self) -> Response:
-        req_parser = RequestParser()
-        req_parser.add_argument(
-            'source',
-            location='form',
-            required=True,
-            help="Source is required",
-            choices=('cointracking.info', 'crypto.com'),
-        )
-        req_parser.add_argument(
-            'file',
-            type=FileStorage,
-            location='files',
-            required=True,
-            help="A file is required",
-        )
+    @use_kwargs(upload_schema, location='form_and_file')  # type: ignore
+    def post(
+            self,
+            source: Literal['cointracking.info', 'crypto.com'],
+            file: FileStorage,
+    ) -> Response:
+        with TemporaryDirectory() as temp_directory:
+            filename = file.filename if file.filename else f'{source}.csv'
+            filepath = Path(temp_directory) / filename
+            file.save(str(filepath))
+            response = self.rest_api.import_data(source=source, filepath=filepath)
 
-        args = req_parser.parse_args()
-        return self.rest_api.import_data_from_file(source=(args['source']), file=(args['file']))
+        return response
 
 
 class Eth2StakeDepositsResource(BaseResource):
@@ -1291,6 +1331,7 @@ class WatchersResource(BaseResource):
 class AssetIconsResource(BaseResource):
 
     get_schema = AssetIconsSchema()
+    upload_schema = AssetIconUploadSchema()
 
     @use_kwargs(get_schema, location='view_args')  # type: ignore
     def get(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Response:
@@ -1302,6 +1343,20 @@ class AssetIconsResource(BaseResource):
             match_header = match_header[1:-1]  # remove enclosing quotes
 
         return self.rest_api.get_asset_icon(asset, size, match_header)
+
+    @use_kwargs(upload_schema, location='json_and_view_args')  # type: ignore
+    def put(self, asset: Asset, file: Path) -> Response:
+        return self.rest_api.upload_asset_icon(asset=asset, filepath=file)
+
+    @use_kwargs(upload_schema, location='view_args_and_file')  # type: ignore
+    def post(self, asset: Asset, file: FileStorage) -> Response:
+        with TemporaryDirectory() as temp_directory:
+            filename = file.filename if file.filename else f'{asset.identifier}.png'
+            filepath = Path(temp_directory) / filename
+            file.save(str(filepath))
+            response = self.rest_api.upload_asset_icon(asset=asset, filepath=filepath)
+
+        return response
 
 
 class CurrentAssetsPriceResource(BaseResource):

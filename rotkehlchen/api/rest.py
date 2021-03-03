@@ -7,7 +7,6 @@ from collections import defaultdict
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -26,7 +25,6 @@ from flask import Response, make_response, send_file
 from gevent.event import Event
 from gevent.lock import Semaphore
 from typing_extensions import Literal
-from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.structures import (
     ActionType,
@@ -48,6 +46,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
+from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -72,6 +71,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import HistoricalPriceOracle
@@ -1213,8 +1213,8 @@ class RestAPI():
 
     @staticmethod
     def query_all_assets() -> Response:
-        """Returns all supported assets. Essentially the contents of all_assets.json"""
-        assets = AssetResolver().assets
+        """Returns all supported assets"""
+        assets = AssetResolver().get_all_asset_data()
         return api_response(
             _wrap_in_ok_result(assets),
             status_code=HTTPStatus.OK,
@@ -1238,6 +1238,59 @@ class RestAPI():
             _wrap_in_ok_result(result),
             status_code=HTTPStatus.OK,
         )
+
+    @staticmethod
+    def get_custom_ethereum_tokens(address: Optional[ChecksumEthAddress]) -> Response:
+        if address is not None:
+            token = GlobalDBHandler().get_ethereum_token(address)
+            if token is None:
+                result = wrap_in_fail_result(f'Custom token with address {address} not found')
+                status_code = HTTPStatus.NOT_FOUND
+            else:
+                result = _wrap_in_ok_result(token.serialize())
+                status_code = HTTPStatus.OK
+
+            return api_response(result, status_code)
+
+        # else return all custom tokens
+        tokens = GlobalDBHandler().get_ethereum_tokens()
+        return api_response(
+            _wrap_in_ok_result([x.serialize() for x in tokens]),
+            status_code=HTTPStatus.OK,
+        )
+
+    @staticmethod
+    def add_custom_ethereum_token(token: CustomEthereumToken) -> Response:
+        try:
+            identifier = GlobalDBHandler().add_ethereum_token(token)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(
+            _wrap_in_ok_result({'identifier': identifier}),
+            status_code=HTTPStatus.OK,
+        )
+
+    @staticmethod
+    def edit_custom_ethereum_token(token: CustomEthereumToken) -> Response:
+        try:
+            identifier = GlobalDBHandler().edit_ethereum_token(token)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(
+            _wrap_in_ok_result({'identifier': identifier}),
+            status_code=HTTPStatus.OK,
+        )
+
+    @staticmethod
+    def delete_custom_ethereum_token(address: ChecksumEthAddress) -> Response:
+        try:
+            GlobalDBHandler().delete_ethereum_token(address=address)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def query_netvalue_data(self) -> Response:
         from_ts = Timestamp(0)
@@ -2418,6 +2471,10 @@ class RestAPI():
 
         return response
 
+    def upload_asset_icon(self, asset: Asset, filepath: Path) -> Response:
+        self.rotkehlchen.icon_manager.add_icon(asset=asset, icon_path=filepath)
+        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+
     @staticmethod
     def _get_current_assets_price(
             assets: List[Asset],
@@ -2555,23 +2612,6 @@ class RestAPI():
         result_dict = self._sync_data(action)
         status_code = _get_status_code_from_async_response(result_dict)
         return api_response(result_dict, status_code=status_code)
-
-    @require_loggedin_user()
-    def import_data_from_file(
-            self,
-            source: Literal['cointracking.info', 'crypto.com'],
-            file: FileStorage,
-    ) -> Response:
-        if file.filename is None or not file.filename.endswith('.csv'):
-            result = wrap_in_fail_result(f'{file.filename} is not a csv')
-            return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
-
-        with TemporaryDirectory() as temp_directory:
-            filepath = Path(temp_directory) / f'{source}.csv'
-            file.save(str(filepath))
-            response = self.import_data(source, filepath)
-            filepath.unlink()
-        return response
 
     def _create_oracle_cache(
             self,
