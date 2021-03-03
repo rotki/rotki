@@ -159,7 +159,7 @@ def test_get_trades_from_tx_swaps_3():
             quote_asset=EthereumToken('REN'),
             amount=AssetAmount(FVal('186.643670114899291543')),
             rate=Price(FVal('0.05836363704741385665599011674')),
-            trade_index=0,
+            trade_index=1,
             swaps=[TEST_SWAPS_TX_3[1]],
         ),
         AMMTrade(
@@ -168,7 +168,7 @@ def test_get_trades_from_tx_swaps_3():
             quote_asset=EthereumToken('SNX'),
             amount=AssetAmount(FVal('2.283067259355947642')),
             rate=Price(FVal('0.01223222441966811342243170654')),
-            trade_index=0,
+            trade_index=2,
             swaps=[TEST_SWAPS_TX_3[2]],
         ),
     ]

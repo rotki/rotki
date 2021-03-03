@@ -111,7 +111,7 @@ BALANCER_TEST_ADDR_2_EXPECTED_TRADES = [
         quote_asset=EthereumToken('AAVE'),
         amount=AssetAmount(FVal('1.616934038985744521')),
         rate=Price(FVal('0.1435961933076020882129179755')),
-        trade_index=0,
+        trade_index=1,
         swaps=[
             AMMSwap(
                 tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
@@ -271,7 +271,7 @@ BALANCER_TEST_ADDR_2_EXPECTED_TRADES = [
         quote_asset=EthereumToken('AAVE'),
         amount=AssetAmount(FVal('3.055412574642681758')),
         rate=Price(FVal('0.1445898203393074319511006560')),
-        trade_index=0,
+        trade_index=1,
         swaps=[
             AMMSwap(
                 tx_hash='0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',  # noqa: E501
