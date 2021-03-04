@@ -160,7 +160,7 @@ class Balancer(EthereumModule):
         # Take into account the current pool balances
         for pool_balance in pool_balances:
             profit_loss_amounts = pool_addr_to_profit_loss_amounts[pool_balance.address]
-            for idx in range(0, len(pool_balance.tokens)):
+            for idx in range(len(pool_balance.tokens)):
                 profit_loss_amounts[idx] += pool_balance.tokens[idx].user_balance.amount  # type: ignore # noqa: E501
                 pool_addr_to_usd_value[pool_balance.address] += pool_balance.tokens[idx].user_balance.usd_value  # noqa: E501
 

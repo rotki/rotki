@@ -382,7 +382,7 @@ class BalancerEventPool(NamedTuple):
         tokens_number = pool_tuple[1]
         pool_tokens: List[BalancerBPTEventPoolToken] = []
         # Deserialize only existing tokens (not null) using `tokens_number`
-        for idx in range(0, tokens_number):
+        for idx in range(tokens_number):
             idx_start = 2 + idx * DB_TOKEN_NUMBER_COLUMNS
             idx_stop = idx_start + DB_TOKEN_NUMBER_COLUMNS
             (
@@ -460,7 +460,7 @@ class BalancerPoolEventsBalance(NamedTuple):
             'pool_tokens': [pool_token.serialize() for pool_token in self.pool_tokens],
             'events': [event.serialize() for event in self.events],
             'profit_loss_amounts': [
-                str(pl_amount) for pl_amount in self.profit_loss_amounts[0:tokens_number]
+                str(pl_amount) for pl_amount in self.profit_loss_amounts[:tokens_number]
             ],
             'usd_profit_loss': str(self.usd_profit_loss),
         }
