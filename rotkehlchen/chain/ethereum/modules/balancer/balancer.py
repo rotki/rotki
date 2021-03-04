@@ -2,7 +2,7 @@ import datetime
 import logging
 from collections import defaultdict
 from operator import add, sub
-from typing import TYPE_CHECKING, DefaultDict, List, Optional, Set, Union, cast
+from typing import TYPE_CHECKING, DefaultDict, List, Optional, Set, Union
 
 from gevent.lock import Semaphore
 from typing_extensions import Literal
@@ -53,12 +53,10 @@ from .typing import (
     AddressToSwaps,
     AddressToTrades,
     BalancerAggregatedEventsData,
-    BalancerBPTEvent,
     BalancerBPTEventType,
     BalancerEvent,
     BalancerEventPool,
     BalancerEventsData,
-    BalancerInvestEvent,
     BalancerInvestEventType,
     BalancerPoolBalance,
     BalancerPoolEventsBalance,
@@ -817,14 +815,14 @@ class Balancer(EthereumModule):
         for events in address_to_events_data.values():
             # Create a map that allows getting the invest events by (tx_hash, pool address)
             tx_hash_and_pool_addr_to_invest_events = defaultdict(list)
-            for invest_event in cast(List[BalancerInvestEvent], getattr(events, attr_invest_events)):  # noqa: E501
+            for invest_event in getattr(events, attr_invest_events):  # noqa: E501
                 key = (invest_event.tx_hash, invest_event.pool_address)
                 tx_hash_and_pool_addr_to_invest_events[key].append(invest_event)
 
             # Create a <BalancerEvent> by aggregating invest and bpt events that happened
             # in the same transaction and for the same pool. Optionally create a
             # <BalancerEventPool> if it does not exist in the DB.
-            for bpt_event in cast(List[BalancerBPTEvent], getattr(events, attr_bpt_events)):
+            for bpt_event in getattr(events, attr_bpt_events):
                 key = (bpt_event.tx_hash, bpt_event.pool_address)
                 invest_events = tx_hash_and_pool_addr_to_invest_events[key]
                 # NB: 1 <BalancerBPTEvent> requires at least 1 <BalancerInvestEvent>
@@ -858,7 +856,7 @@ class Balancer(EthereumModule):
                 for invest_event in invest_events:
                     pool_addr_to_token_addr = pool_addr_to_token_addr_to_index[bpt_event.pool_address]  # noqa: E501
                     token_idx = pool_addr_to_token_addr[invest_event.token_address]
-                    amounts[token_idx] += invest_event.amount  # type: ignore # overload on list
+                    amounts[token_idx] += invest_event.amount
                     token = bpt_event.pool_tokens[token_idx].token
                     if is_missing_token_price is False:
                         usd_price = self._get_token_price_at_timestamp_zero_if_error(
@@ -1006,7 +1004,6 @@ class Balancer(EthereumModule):
             token: Union[EthereumToken, UnknownEthereumToken],
             timestamp: Timestamp,
     ) -> Price:
-        usd_price = Price(ZERO)
         if isinstance(token, EthereumToken):
             usd_price = query_usd_price_or_use_default(
                 asset=token,
