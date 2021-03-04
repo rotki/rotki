@@ -131,7 +131,7 @@ class BalancerBPTEventPoolToken(NamedTuple):
     def serialize(self) -> Dict:
         return {
             'token': serialize_ethereum_token(self.token),
-            'weight': self.weight,
+            'weight': str(self.weight),
         }
 
 
