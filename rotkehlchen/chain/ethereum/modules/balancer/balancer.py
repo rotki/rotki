@@ -302,14 +302,21 @@ class Balancer(EthereumModule):
         """Get a mapping of addresses to events data (addresses without events
         are not included in the returned dict).
 
-        Each event data (<BalancerEventsData>) contains all the BalancerInvestEvent
-        and BalancerBPTEvent events of the address for a given time range.
-        - BalancerInvestEvent: ADD_LIQUIDITY and REMOVE_LIQUIDITY events.
-        - BalancerBPTEvent: MINT and BURN events.
+        There are 2 groups of events: invest events and BPT events.
+        - Invest event: contains the amount of a single token added or removed by
+        the user into/from a pool. N invest events can happen at the same transaction.
+        - BPT event: contains the total amount of BPT minted or burnt at the transaction
+        where the related invest events took place.
 
-        NB: each <BalancerBPTEvent> (MINT and BURN) must have at least 1 <BalancerInvestEvent>
-        (ADD_LIQUIDITY and REMOVE_LIQUIDITY) at the same transaction and for the
-        same pool. Otherwise the subgraph is not providing all the required data.
+        It is required to request 4 types:
+        - Invest events: ADD_LIQUIDITY and REMOVE_LIQUIDITY. Both are filtered
+        by addresses and timestamps.
+        - BPT events: MINT and BURN. Both are filtered by the transactions of
+        their respective invest events.
+
+        NB: each MINT/BURN event must have at least 1 ADD_LIQUIDITY/REMOVE_LIQUIDITY
+        event (and as many invest events as token amounts are involved in the transaction).
+        Otherwise the subgraph is not providing all the required data.
 
         May raise RemoteError
         """
@@ -484,7 +491,7 @@ class Balancer(EthereumModule):
         existing_addresses: List[ChecksumEthAddress] = []
         min_to_timestamp: Timestamp = to_timestamp
 
-        # Get addresses' last used query range for Balancer trades
+        # Get the events last used query range of the addresses
         for address in addresses:
             entry_name = f'{BALANCER_EVENTS_PREFIX}_{address}'
             trades_range = self.database.get_used_query_range(name=entry_name)
@@ -514,6 +521,7 @@ class Balancer(EthereumModule):
             )
             address_to_events_data.update(address_to_events_data_)
 
+        # Aggregate the events, get the new pools and store them all in the DB
         if len(address_to_events_data) != 0:
             pool_addresses = self._get_pool_addresses_from_address_to_events_data(address_to_events_data)  # noqa: E501
             db_pools = self.database.get_balancer_pools(pool_addresses)
@@ -524,6 +532,8 @@ class Balancer(EthereumModule):
             self.database.add_balancer_pools(aggregated_events_data.balancer_pools)
             self.database.add_balancer_events(aggregated_events_data.balancer_events)
 
+        # Calculate the balance of the events per pool at the given timestamp per address.
+        # NB: take into account the current balances of each address in the protocol
         db_address_to_events: AddressToEvents = {}
         db_pool_addresses: Set[ChecksumEthAddress] = set()
         for address in addresses:
@@ -671,7 +681,7 @@ class Balancer(EthereumModule):
                 to_timestamp=to_timestamp,
             )
 
-        # Get addresses' last used query range for Balancer trades
+        # Get the trades last used query range of the addresses
         for address in addresses:
             entry_name = f'{BALANCER_TRADES_PREFIX}_{address}'
             trades_range = self.database.get_used_query_range(name=entry_name)
