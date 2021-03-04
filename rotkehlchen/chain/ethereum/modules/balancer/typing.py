@@ -251,14 +251,29 @@ class BalancerEvent(NamedTuple):
             amounts=amounts,
         )
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(
+            self,
+            pool_tokens: Optional[List[BalancerBPTEventPoolToken]] = None,
+    ) -> Dict[str, Any]:
+        amounts: Union[List[str], Dict[str, Any]]
+        if isinstance(pool_tokens, list) and len(pool_tokens) > 0:
+            # Excludes assets with zero amount
+            amounts = {}
+            for pool_token, amount in zip(pool_tokens, self.amounts):
+                if amount == AssetAmount(ZERO):
+                    continue
+                token_identifier = pool_token.token.identifier
+                amounts[token_identifier] = str(amount)
+        else:
+            amounts = [str(amount) for amount in self.amounts]
+
         return {
             'tx_hash': self.tx_hash,
             'log_index': self.log_index,
             'timestamp': self.timestamp,
             'event_type': str(self.event_type),
             'lp_balance': self.lp_balance.serialize(),
-            'amounts': [str(amount) for amount in self.amounts],
+            'amounts': amounts,
         }
 
     def to_db_tuple(self) -> BalancerEventDBTuple:
@@ -451,15 +466,16 @@ class BalancerPoolEventsBalance(NamedTuple):
     usd_profit_loss: FVal
 
     def serialize(self) -> Dict[str, Any]:
-        tokens_number = len(self.pool_tokens)
+        profit_loss_amounts: Dict[str, Any] = {}  # Includes all assets, even with zero amount
+        for pool_token, profit_loss_amount in zip(self.pool_tokens, self.profit_loss_amounts):
+            token_identifier = pool_token.token.identifier
+            profit_loss_amounts[token_identifier] = str(profit_loss_amount)
+
         return {
-            'address': self.address,
             'pool_address': self.pool_address,
             'pool_tokens': [pool_token.serialize() for pool_token in self.pool_tokens],
-            'events': [event.serialize() for event in self.events],
-            'profit_loss_amounts': [
-                str(pl_amount) for pl_amount in self.profit_loss_amounts[:tokens_number]
-            ],
+            'events': [event.serialize(pool_tokens=self.pool_tokens) for event in self.events],
+            'profit_loss_amounts': profit_loss_amounts,
             'usd_profit_loss': str(self.usd_profit_loss),
         }
 
