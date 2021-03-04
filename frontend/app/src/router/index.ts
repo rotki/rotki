@@ -168,7 +168,23 @@ export default new Router({
             },
             {
               path: Routes.DEFI_DEPOSITS_LIQUIDITY,
-              component: () => import('../views/defi/deposits/Liquidity.vue')
+              component: () => import('../views/defi/deposits/Liquidity.vue'),
+              children: [
+                {
+                  path: '',
+                  redirect: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP
+                },
+                {
+                  path: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP,
+                  component: () =>
+                    import('../components/defi/uniswap/Uniswap.vue')
+                },
+                {
+                  path: Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
+                  component: () =>
+                    import('../components/defi/balancer/Balancer.vue')
+                }
+              ]
             }
           ]
         },

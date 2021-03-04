@@ -42,7 +42,9 @@ export enum Section {
   PRICES = 'prices',
   EXCHANGES = 'exchanges',
   MANUAL_BALANCES = 'manual_balances',
-  L2_LOOPRING_BALANCES = 'loopring_balances'
+  L2_LOOPRING_BALANCES = 'loopring_balances',
+  DEFI_BALANCER_BALANCES = 'balancer_balances',
+  DEFI_BALANCER_TRADES = 'balancer_trades'
 }
 
 export const defiSections: Section[] = [

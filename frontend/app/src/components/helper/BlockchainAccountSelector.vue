@@ -15,8 +15,10 @@
         return-object
         chips
         clearable
+        :outlined="outlined"
         :open-on-clear="false"
         :label="label ? label : $t('blockchain_account_selector.default_label')"
+        :class="outlined ? 'blockchain-account-selector--outlined' : null"
         item-text="address"
         item-value="address"
         class="blockchain-account-selector"
@@ -97,6 +99,8 @@ export default class BlockchainAccountSelector extends Vue {
   value!: GeneralAccount[] | GeneralAccount | null;
   @Prop({ required: false, type: Array, default: () => [] })
   chains!: Blockchain[];
+  @Prop({ required: false, type: Boolean, default: false })
+  outlined!: boolean;
 
   accounts!: GeneralAccount[];
   tags!: Tags;
@@ -148,4 +152,24 @@ export default class BlockchainAccountSelector extends Vue {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.blockchain-account-selector {
+  &--outlined {
+    ::v-deep {
+      /* stylelint-disable */
+      .v-label:not(.v-label--active) {
+        /* stylelint-enable */
+        top: 24px;
+      }
+
+      .v-input {
+        &__icon {
+          &--append {
+            margin-top: 6px;
+          }
+        }
+      }
+    }
+  }
+}
+</style>

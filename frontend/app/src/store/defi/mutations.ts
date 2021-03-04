@@ -13,13 +13,14 @@ import { defaultState } from '@/store/defi/state';
 import {
   Airdrops,
   AllDefiProtocols,
+  BalancerBalances,
   DefiState,
   DSRBalances,
   DSRHistory,
   MakerDAOVault,
   MakerDAOVaultDetails,
   UniswapEvents,
-  UniswapTrades
+  DexTrades
 } from '@/store/defi/types';
 
 export const mutations: MutationTree<DefiState> = {
@@ -62,7 +63,7 @@ export const mutations: MutationTree<DefiState> = {
   uniswapBalances(state: DefiState, balances: UniswapBalances) {
     state.uniswapBalances = balances;
   },
-  uniswapTrades(state: DefiState, trades: UniswapTrades) {
+  uniswapTrades(state: DefiState, trades: DexTrades) {
     state.uniswapTrades = trades;
   },
   uniswapEvents(state: DefiState, events: UniswapEvents) {
@@ -70,6 +71,12 @@ export const mutations: MutationTree<DefiState> = {
   },
   airdrops(state: DefiState, airdrops: Airdrops) {
     state.airdrops = airdrops;
+  },
+  balancerBalances(state: DefiState, balances: BalancerBalances) {
+    state.balancerBalances = balances;
+  },
+  balancerTrades(state: DefiState, trades: DexTrades) {
+    state.balancerTrades = trades;
   },
   reset(state: DefiState) {
     Object.assign(state, defaultState());

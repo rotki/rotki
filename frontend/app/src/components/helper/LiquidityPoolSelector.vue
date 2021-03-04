@@ -1,9 +1,9 @@
-﻿<template>
+<template>
   <v-card v-bind="$attrs">
     <div class="mx-4 pt-2">
       <v-autocomplete
         :value="value"
-        :items="uniswapAssets"
+        :items="pools"
         multiple
         clearable
         deletable-chips
@@ -25,12 +25,7 @@
             @click:close="remove(data.item)"
           >
             <span class="font-weight-medium">
-              {{
-                $t('uniswap.pool_header', {
-                  asset1: assetName(data.item.assets[0]),
-                  asset2: assetName(data.item.assets[1])
-                })
-              }}
+              {{ data.item.name }}
             </span>
           </v-chip>
         </template>
@@ -40,12 +35,7 @@
             class="font-weight-medium"
           >
             <v-list-item-title>
-              {{
-                $t('uniswap.pool_header', {
-                  asset1: assetName(item.assets[0]),
-                  asset2: assetName(item.assets[1])
-                })
-              }}
+              {{ item.name }}
             </v-list-item-title>
           </v-list-item-content>
         </template>
@@ -59,33 +49,34 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
-import { GETTER_UNISWAP_ASSETS } from '@/store/defi/const';
-import { UniswapPool } from '@/store/defi/types';
 import { assetName } from '@/store/defi/utils';
 
+export interface Pool {
+  readonly address: string;
+  readonly name: string;
+}
+
 @Component({
-  computed: {
-    ...mapGetters('defi', [GETTER_UNISWAP_ASSETS])
-  }
+  name: 'LiquidityPoolSelector'
 })
-export default class UniswapPoolFilter extends Vue {
-  uniswapAssets!: UniswapPool[];
+export default class LiquidityPoolSelector extends Vue {
+  @Prop({ required: true })
+  pools!: Pool[];
   readonly assetName = assetName;
   @Prop({ required: true, type: Array })
   value!: string[];
   @Emit()
   input(_value: string[]) {}
 
-  filter(item: UniswapPool, queryText: string) {
+  filter(item: Pool, queryText: string) {
     const searchString = queryText.toLocaleLowerCase();
-    const asset1 = assetName(item.assets[0]).toLocaleLowerCase();
-    const asset2 = assetName(item.assets[1]).toLocaleLowerCase();
+    const asset1 = item.name.toLocaleLowerCase();
+    const asset2 = item.name.toLocaleLowerCase();
     const name = `${asset1}/${asset2}`;
     return name.indexOf(searchString) > -1;
   }
 
-  remove(asset: UniswapPool) {
+  remove(asset: Pool) {
     const addresses = [...this.value];
     const index = addresses.findIndex(address => address === asset.address);
     addresses.splice(index, 1);

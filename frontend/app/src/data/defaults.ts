@@ -34,6 +34,7 @@ export const EXCHANGE_ICONOMI = 'iconomi';
 export const EXCHANGE_KUCOIN = 'kucoin';
 
 export const EXCHANGE_UNISWAP = 'uniswap';
+export const EXCHANGE_BALANCER = 'balancer';
 
 export const TRADE_LOCATION_EXTERNAL = 'external';
 export const TRADE_LOCATION_BANKS = 'banks';
@@ -64,6 +65,7 @@ export const SUPPORTED_EXCHANGES = [
 
 export const SUPPORTED_TRADE_LOCATIONS = [
   EXCHANGE_UNISWAP,
+  EXCHANGE_BALANCER,
   EXCHANGE_CRYPTOCOM,
   TRADE_LOCATION_EXTERNAL,
   TRADE_LOCATION_BANKS,

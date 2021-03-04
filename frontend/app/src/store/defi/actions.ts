@@ -1,4 +1,4 @@
-import { ActionTree } from 'vuex';
+import { ActionContext, ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
@@ -27,18 +27,19 @@ import {
 } from '@/services/defi/types/yearn';
 import { api } from '@/services/rotkehlchen-api';
 import {
-  MODULE_MAKERDAO_VAULTS,
-  MODULE_MAKERDAO_DSR,
-  MODULE_UNISWAP,
-  MODULE_YEARN,
   MODULE_AAVE,
-  MODULE_COMPOUND
+  MODULE_BALANCER,
+  MODULE_COMPOUND,
+  MODULE_MAKERDAO_DSR,
+  MODULE_MAKERDAO_VAULTS,
+  MODULE_UNISWAP,
+  MODULE_YEARN
 } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
 import {
   uniswapEventsNumericKeys,
   uniswapNumericKeys,
-  uniswapTradeNumericKeys
+  dexTradeNumericKeys
 } from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
 import {
@@ -49,12 +50,12 @@ import {
   DSRHistory,
   MakerDAOVaultDetails,
   UniswapEvents,
-  UniswapTrades
+  DexTrades
 } from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
-import { isLoading, setStatus } from '@/store/utils';
+import { fetchAsync, isLoading, setStatus } from '@/store/utils';
 
 export const actions: ActionTree<DefiState, RotkehlchenState> = {
   async fetchDSRBalances(
@@ -850,14 +851,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const task = createTask(taskId, taskType, {
         title: i18n.tc('actions.defi.uniswap_trades.task.title'),
         ignoreResult: false,
-        numericKeys: uniswapTradeNumericKeys
+        numericKeys: dexTradeNumericKeys
       });
 
       commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<UniswapTrades, TaskMeta>(
-        taskType
-      );
+      const { result } = await taskCompletion<DexTrades, TaskMeta>(taskType);
 
       commit('uniswapTrades', result);
     } catch (e) {
@@ -968,5 +967,65 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       );
     }
     setStatus(Status.LOADED, section, status, commit);
+  },
+  async fetchBalancerBalances(
+    context: ActionContext<DefiState, RotkehlchenState>,
+    refresh: boolean = false
+  ) {
+    const meta: TaskMeta = {
+      title: i18n.t('actions.defi.balancer_balances.task.title').toString(),
+      ignoreResult: false,
+      numericKeys: [...balanceKeys, 'total_amount', 'usd_price']
+    };
+
+    await fetchAsync(context, {
+      query: async () => await api.defi.fetchBalancerBalances(),
+      mutation: 'balancerBalances',
+      taskType: TaskType.BALANCER_BALANCES,
+      section: Section.DEFI_BALANCER_BALANCES,
+      module: MODULE_BALANCER,
+      meta: meta,
+      refresh,
+      checkPremium: true,
+      onError: {
+        title: i18n.t('actions.defi.balancer_balances.error.title').toString(),
+        error: message =>
+          i18n
+            .t('actions.defi.balancer_balances.error.description', {
+              message
+            })
+            .toString()
+      }
+    });
+  },
+  async fetchBalancerTrades(
+    context: ActionContext<DefiState, RotkehlchenState>,
+    refresh: boolean = false
+  ) {
+    const meta: TaskMeta = {
+      title: i18n.t('actions.defi.balancer_trades.task.title').toString(),
+      ignoreResult: false,
+      numericKeys: dexTradeNumericKeys
+    };
+
+    await fetchAsync(context, {
+      query: async () => await api.defi.fetchBalancerTrades(),
+      mutation: 'balancerTrades',
+      taskType: TaskType.BALANCER_TRADES,
+      section: Section.DEFI_BALANCER_TRADES,
+      module: MODULE_BALANCER,
+      meta: meta,
+      checkPremium: true,
+      refresh,
+      onError: {
+        title: i18n.t('actions.defi.balancer_trades.error.title').toString(),
+        error: message =>
+          i18n
+            .t('actions.defi.balancer_trades.error.description', {
+              message
+            })
+            .toString()
+      }
+    });
   }
 };

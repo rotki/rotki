@@ -1,5 +1,6 @@
 import { TradeLocationData } from '@/components/history/type';
 import {
+  EXCHANGE_BALANCER,
   EXCHANGE_BINANCE,
   EXCHANGE_BINANCE_US,
   EXCHANGE_BITCOIN_DE,
@@ -116,6 +117,13 @@ export const tradeLocations: TradeLocationData[] = [
     identifier: EXCHANGE_UNISWAP,
     name: 'Uniswap',
     icon: require('@/assets/images/defi/uniswap.svg'),
+    imageIcon: true,
+    exchange: false
+  },
+  {
+    identifier: EXCHANGE_BALANCER,
+    name: 'Balancer',
+    icon: require('@/assets/images/defi/balancer.svg'),
     imageIcon: true,
     exchange: false
   },

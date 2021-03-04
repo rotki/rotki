@@ -48,6 +48,10 @@
     "price": "Price",
     "value": "Value"
   },
+  "balancer": {
+    "loading": "Please wait while your liquidity pools are getting loaded...",
+    "premium": "Balancer feature "
+  },
   "blockchain_account_selector": {
     "all": "all",
     "default_label": "Filter account(s)",
@@ -395,6 +399,10 @@
     },
     "subtitle": "Control which ledger actions are considered taxable or not during the profit/loss report generation. That means which ones will add/subtract to/from the profit loss. All ledger actions irrespective of this setting will be taken into account for cost basis calculation.",
     "title": "Taxable ledger actions"
+  },
+  "liquidity": {
+    "balancer": "Balancer",
+    "uniswap": "Uniswap"
   },
   "loan_liquidation": {
     "liquidated_collateral": "Liquidated collateral",
@@ -771,7 +779,7 @@
     }
   },
   "module_not_active": {
-    "not_active": "The {module} module is not activated. Please visit the {link} to activate it",
+    "not_active": "{module} module(s) is/are not activated. Please visit the {link} to activate it/them",
     "settings_link": "Defi settings"
   },
   "premium_credentials": {
@@ -911,8 +919,15 @@
       "subtitle": "Protocol asset details"
     }
   },
-  "uniswap_pool_filter": {
+  "liquidity_pool_selector": {
     "label": "Filter by pool(s)"
+  },
+  "uniswap_pool_details": {
+    "asset_liquidity": "Total in LP",
+    "price": "Price",
+    "title": "Details",
+    "tooltip": "Show details about the pool assets",
+    "liquidity": "Liquidity"
   },
   "update_indicator": {
     "version": "An Updated Version ({appVersion}) of Rotki is available"
@@ -1081,6 +1096,24 @@
         },
         "task": {
           "title": "Querying airdrops"
+        }
+      },
+      "balancer_balances": {
+        "error": {
+          "description": "Failed to query Balancer balances: {message}",
+          "title": "Querying Balancer balances"
+        },
+        "task": {
+          "title": "Querying Balancer balances"
+        }
+      },
+      "balancer_trades": {
+        "error": {
+          "description": "Failed to query Balancer trades: {message}",
+          "title": "Querying Balancer trades"
+        },
+        "task": {
+          "title": "Querying Balancer trades"
         }
       },
       "balances": {
@@ -2106,7 +2139,6 @@
     "title": "Uniswap Pools",
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "pool_header": "UNIv2 {asset1}/{asset2}",
-    "liquidity": "Liquidity:",
     "balance": "Balance",
     "asset_supply": "{asset} supply:",
     "asset_price": "({asset} price: {price})"

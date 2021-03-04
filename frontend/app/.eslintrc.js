@@ -108,7 +108,7 @@ module.exports = {
       }
     ],
     '@intlify/vue-i18n/no-raw-text': [
-      'error',
+      process.env.NODE_ENV === 'development' ? 'warn' : 'error',
       {
         ignoreNodes: ['md-icon', 'v-icon'],
         ignorePattern: '^[-#:()&]+$',
