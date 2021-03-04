@@ -5,6 +5,7 @@ import {
   DBSettings,
   ExternalServiceKeys
 } from '@/model/action-result';
+import { AssetApi } from '@/services/assets/asset-api';
 import {
   axiosCamelCaseTransformer,
   axiosSnakeCaseTransformer,
@@ -75,6 +76,7 @@ export class RotkehlchenApi {
   private _session: SessionApi;
   private _balances: BalancesApi;
   private _history: HistoryApi;
+  private _assets: AssetApi;
 
   constructor() {
     this.axios = axios.create({
@@ -85,6 +87,7 @@ export class RotkehlchenApi {
     this._session = new SessionApi(this.axios);
     this._balances = new BalancesApi(this.axios);
     this._history = new HistoryApi(this.axios);
+    this._assets = new AssetApi(this.axios);
   }
 
   get defi(): DefiApi {
@@ -101,6 +104,10 @@ export class RotkehlchenApi {
 
   get history(): HistoryApi {
     return this._history;
+  }
+
+  get assets(): AssetApi {
+    return this._assets;
   }
 
   setup(serverUrl: string) {
