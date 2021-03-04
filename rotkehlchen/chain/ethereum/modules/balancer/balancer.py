@@ -216,6 +216,8 @@ class Balancer(EthereumModule):
         else:
             raise AssertionError(f'Unexpected event type: {event_type}.')
 
+        query_id = '0'
+        query_offset = 0
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
@@ -225,8 +227,8 @@ class Balancer(EthereumModule):
         }
         param_values = {
             'limit': GRAPH_QUERY_LIMIT,
-            'offset': 0,
-            'id': '0',
+            'offset': query_offset,
+            'id': query_id,
             'addresses': addresses_lower,
             'transactions': transactions,
         }
@@ -270,12 +272,11 @@ class Balancer(EthereumModule):
             if len(raw_events) < GRAPH_QUERY_LIMIT:
                 break
 
-            if param_values['offset'] == GRAPH_QUERY_SKIP_LIMIT:
+            if query_offset == GRAPH_QUERY_SKIP_LIMIT:
                 query_id = f'{bpt_event.tx_hash}-{bpt_event.log_index}'
                 query_offset = 0
             else:
-                query_id = param_values['id']  # type: ignore
-                query_offset = param_values['offset'] + GRAPH_QUERY_LIMIT  # type: ignore
+                query_offset += GRAPH_QUERY_LIMIT
 
             param_values = {
                 **param_values,
@@ -398,6 +399,8 @@ class Balancer(EthereumModule):
         else:
             raise AssertionError(f'Unexpected event type: {event_type}.')
 
+        query_start_ts = start_ts
+        query_offset = 0
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
@@ -407,9 +410,9 @@ class Balancer(EthereumModule):
         }
         param_values = {
             'limit': GRAPH_QUERY_LIMIT,
-            'offset': 0,
+            'offset': query_offset,
             'addresses': addresses_lower,
-            'start_ts': start_ts,
+            'start_ts': query_start_ts,
             'end_ts': end_ts,
         }
         address_to_unique_invest_events: DDAddressToUniqueInvestEvents = defaultdict(set)
@@ -454,12 +457,11 @@ class Balancer(EthereumModule):
             if len(raw_events) < GRAPH_QUERY_LIMIT:
                 break
 
-            if param_values['offset'] == GRAPH_QUERY_SKIP_LIMIT:
+            if query_offset == GRAPH_QUERY_SKIP_LIMIT:
                 query_start_ts = invest_event.timestamp
                 query_offset = 0
             else:
-                query_start_ts = param_values['start_ts']  # type: ignore
-                query_offset = param_values['offset'] + GRAPH_QUERY_LIMIT  # type: ignore
+                query_offset += GRAPH_QUERY_LIMIT
 
             param_values = {
                 **param_values,
@@ -580,6 +582,8 @@ class Balancer(EthereumModule):
         """
         addresses_lower = [address.lower() for address in addresses]
         querystr = format_query_indentation(SWAPS_QUERY.format())
+        query_start_ts = start_ts
+        query_offset = 0
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
@@ -589,9 +593,9 @@ class Balancer(EthereumModule):
         }
         param_values = {
             'limit': GRAPH_QUERY_LIMIT,
-            'offset': 0,
+            'offset': query_offset,
             'addresses': addresses_lower,
-            'start_ts': start_ts,
+            'start_ts': query_start_ts,
             'end_ts': end_ts,
         }
         address_to_unique_swaps: DDAddressToUniqueSwaps = defaultdict(set)
@@ -636,12 +640,11 @@ class Balancer(EthereumModule):
             if len(raw_swaps) < GRAPH_QUERY_LIMIT:
                 break
 
-            if param_values['offset'] == GRAPH_QUERY_SKIP_LIMIT:
+            if query_offset == GRAPH_QUERY_SKIP_LIMIT:
                 query_start_ts = amm_swap.timestamp
                 query_offset = 0
             else:
-                query_start_ts = param_values['start_ts']  # type: ignore
-                query_offset = param_values['offset'] + GRAPH_QUERY_LIMIT  # type: ignore
+                query_offset += GRAPH_QUERY_LIMIT
 
             param_values = {
                 **param_values,
@@ -928,6 +931,7 @@ class Balancer(EthereumModule):
         unknown_tokens: Set[UnknownEthereumToken] = set()
         addresses_lower = [address.lower() for address in addresses]
         querystr = format_query_indentation(POOLSHARES_QUERY.format())
+        query_offset = 0
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
@@ -936,7 +940,7 @@ class Balancer(EthereumModule):
         }
         param_values = {
             'limit': GRAPH_QUERY_LIMIT,
-            'offset': 0,
+            'offset': query_offset,
             'addresses': addresses_lower,
             'balance': '0',
         }
@@ -987,9 +991,10 @@ class Balancer(EthereumModule):
             if len(raw_pool_shares) < GRAPH_QUERY_LIMIT:
                 break
 
+            query_offset += GRAPH_QUERY_LIMIT
             param_values = {
                 **param_values,
-                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
+                'offset': query_offset,
             }
 
         protocol_balance = ProtocolBalance(
@@ -1062,6 +1067,7 @@ class Balancer(EthereumModule):
         """
         unknown_token_addresses_lower = [address.lower() for address in unknown_token_addresses]
         querystr = format_query_indentation(TOKENPRICES_QUERY.format())
+        query_offset = 0
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
@@ -1069,7 +1075,7 @@ class Balancer(EthereumModule):
         }
         param_values = {
             'limit': GRAPH_QUERY_LIMIT,
-            'offset': 0,
+            'offset': query_offset,
             'token_ids': unknown_token_addresses_lower,
         }
         token_to_prices: TokenToPrices = {}
@@ -1112,9 +1118,10 @@ class Balancer(EthereumModule):
             if len(raw_token_prices) < GRAPH_QUERY_LIMIT:
                 break
 
+            query_offset += GRAPH_QUERY_LIMIT
             param_values = {
                 **param_values,
-                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
+                'offset': query_offset,
             }
 
         return token_to_prices
@@ -1173,6 +1180,7 @@ class Balancer(EthereumModule):
                 datetime.time.min,
             ).timestamp(),
         )
+        query_offset = 0
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
@@ -1181,7 +1189,7 @@ class Balancer(EthereumModule):
         }
         param_values = {
             'limit': GRAPH_QUERY_LIMIT,
-            'offset': 0,
+            'offset': query_offset,
             'token_ids': unknown_token_addresses_lower,
             'datetime': midnight_epoch,
         }
@@ -1225,9 +1233,10 @@ class Balancer(EthereumModule):
             if len(raw_token_day_datas) < GRAPH_QUERY_LIMIT:
                 break
 
+            query_offset += GRAPH_QUERY_LIMIT
             param_values = {
                 **param_values,
-                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
+                'offset': query_offset,
             }
 
         return token_to_prices
