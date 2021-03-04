@@ -10,7 +10,7 @@
     </template>
   </progress-screen>
   <v-container v-else>
-    <balancer-balances class="mt-4" />
+    <balancer-balances class="mt-4" :refreshing="refreshing" />
   </v-container>
 </template>
 
