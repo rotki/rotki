@@ -4742,7 +4742,10 @@ Getting Balancer events
                           "amount": "0.042569019597126949",
                           "usd_value": "19.779488662371895"
                         },
-                        "amounts": { "WETH": "0.05" }
+                        "amounts": {
+                          "WETH": "0.05"
+                          "BAL": "0"
+                        }
                       },
                       {
                         "tx_hash": "0xfa1dfeb83480e51a15137a93cb0eba9ac92c1b6b0ee0bd8551a422c1ed83695b",
@@ -4777,7 +4780,7 @@ Getting Balancer events
        - log_index: The index of the event in the transaction.
        - timestamp: The Unix timestamp in UTC when the event happened (in seconds).
        - event_type: The type of interaction, i.e. "mint" (add liquidity) and "burn" (remove liquidity).
-       - amounts: A mapping between the pool token identifier and the amount added or removed.
+       - amounts: A mapping between each pool token identifier and the amount added or removed on the event.
        - lp_balance: The amount of liquidity token (i.e. BPT) involved in the event and its estimated USD amount. This amount is set to zero if the endpoint is not able to get the USD value of the event token at a particular timestamp.
 
    :resjson string pool_address: The contract address of the pool.

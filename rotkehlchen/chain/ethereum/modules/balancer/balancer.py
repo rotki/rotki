@@ -157,12 +157,14 @@ class Balancer(EthereumModule):
                 pool_addr_to_usd_value[pool_balance.address] += pool_balance.tokens[idx].user_balance.usd_value  # noqa: E501
 
         for pool_address, pool_events in pool_addr_to_events.items():
+            pool_tokens = pool_addr_to_pool[pool_address].tokens
+            profit_loss_amounts = pool_addr_to_profit_loss_amounts[pool_address][:len(pool_tokens)]
             pool_events_balance = BalancerPoolEventsBalance(
                 address=address,
                 pool_address=pool_address,
-                pool_tokens=pool_addr_to_pool[pool_address].tokens,
+                pool_tokens=pool_tokens,
                 events=pool_events,  # Already sorted by timestamp and log_index
-                profit_loss_amounts=pool_addr_to_profit_loss_amounts[pool_address],
+                profit_loss_amounts=profit_loss_amounts,
                 usd_profit_loss=pool_addr_to_usd_value[pool_address],
             )
             pool_events_balances.append(pool_events_balance)

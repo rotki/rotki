@@ -257,11 +257,8 @@ class BalancerEvent(NamedTuple):
     ) -> Dict[str, Any]:
         amounts: Union[List[str], Dict[str, Any]]
         if isinstance(pool_tokens, list) and len(pool_tokens) > 0:
-            # Excludes assets with zero amount
             amounts = {}
             for pool_token, amount in zip(pool_tokens, self.amounts):
-                if amount == AssetAmount(ZERO):
-                    continue
                 token_identifier = pool_token.token.identifier
                 amounts[token_identifier] = str(amount)
         else:
