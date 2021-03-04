@@ -30,6 +30,25 @@ Changelog
   - `Maps.me Token (MAPS) <https://www.coingecko.com/en/coins/maps>`__
   - `xToken (XTK) <https://www.coingecko.com/en/coins/xtoken>`__
   - `Mobile Coin (MOB) <https://www.coingecko.com/en/coins/mobilecoin>`__
+  - `AC Milan Fan Token (ACM) <https://www.coingecko.com/en/coins/ac-milan-fan-token>`__
+  - `Bounce Token (AUCTION) <https://www.coingecko.com/en/coins/auction>`__
+  - `DODO bird (DODO) <https://www.coingecko.com/en/coins/dodo>`__
+  - `StaFi (FIS) <https://www.coingecko.com/en/coins/stafi>`__
+  - `Frax Share (FXS) <https://www.coingecko.com/en/coins/frax-share>`__
+  - `Phala (PHA) <https://www.coingecko.com/en/coins/pha>`__
+  - `UniLend Finance Token (UFT) <https://www.coingecko.com/en/coins/unlend-finance>`__
+  - `SOLBIT (SBT) <https://www.coingecko.com/en/coins/solbit>`__
+  - `SMARTCREDIT Token (SMARTCREDIT) <https://www.coingecko.com/en/coins/smartcredit-token>`__
+  - `TheFutbolCoin (TFC) <https://www.coingecko.com/en/coins/thefutbolcoin>`__
+  - `Oraichain Token (ORAI) <https://www.coingecko.com/en/coins/oraichain-token>`__
+  - `Bridge Oracle (BRG) <https://www.coingecko.com/en/coins/bridge-oracle>`__
+  - `Lattice Token (LTX) <https://www.coingecko.com/en/coins/lattice-token>`__
+  - `ZeroSwapToken (ZEE) <https://www.coingecko.com/en/coins/zeroswap>`__
+  - `Mask Network (MASK) <https://www.coingecko.com/en/coins/mask-network>`__
+  - `IDEAOLOGY (IDEA) <https://www.coingecko.com/en/coins/ideaology>`__
+  - `SparkPoint (SRK) <https://www.coingecko.com/en/coins/sparkpoint>`__
+  - `VesperToken (VSP) <https://www.coingecko.com/en/coins/vesper-finance>`__
+  - `ZKs (ZKS) <https://www.coingecko.com/en/coins/zkswap>`__
 
 * :release:`1.14.1 <2021-02-17>`
 * :bug:`2391` The signed version of the MacOS binary should now work properly for all users.

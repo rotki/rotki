@@ -3346,7 +3346,7 @@
         "type": "ethereum token"
     },
     "DADI": {
-        "coingecko": "dadi",
+        "coingecko": "",
         "ethereum_address": "0xFb2f26F266Fb2805a387230f2aa0a331b4d96Fba",
         "ethereum_token_decimals": 18,
         "name": "Edge",
@@ -8628,7 +8628,7 @@
         "type": "own chain"
     },
     "NOBS": {
-        "coingecko": "no-bs-crypto",
+        "coingecko": "",
         "ethereum_address": "0xF4FaEa455575354d2699BC209B0a65CA99F69982",
         "ethereum_token_decimals": 18,
         "name": "No BS Crypto",
@@ -11205,7 +11205,7 @@
         "type": "own chain"
     },
     "SPF": {
-        "coingecko": "sportyco",
+        "coingecko": "",
         "ethereum_address": "0x85089389C14Bd9c77FC2b8F0c3d1dC3363Bf06Ef",
         "ethereum_token_decimals": 18,
         "name": "SportyCo",
@@ -12871,7 +12871,7 @@
         "type": "own chain"
     },
     "VRA": {
-        "coingecko": "verasity-old",
+        "coingecko": "",
         "ethereum_address": "0xdF1D6405df92d981a2fB3ce68F6A03baC6C0E41F",
         "ethereum_token_decimals": 18,
         "name": "Verasity old",
@@ -12881,7 +12881,7 @@
         "swapped_for": "VRAv2"
     },
     "VRAv2": {
-        "coingecko": "verasity-new",
+        "coingecko": "verasity",
         "ethereum_address": "0xF411903cbC70a74d22900a5DE66A2dda66507255",
         "ethereum_token_decimals": 18,
         "name": "Verasity",
@@ -16255,6 +16255,174 @@
         "name": "Finiko",
         "started": 1606832874,
         "symbol": "FNK",
+        "type": "ethereum token"
+    },
+    "ACM": {
+        "coingecko": "ac-milan-fan-token",
+        "cryptocompare": "",
+        "name": "AC Milan Fan Token",
+        "started": 1613046600,
+        "symbol": "ACM",
+        "type": "own chain"
+    },
+    "AUCTION": {
+        "coingecko": "auction",
+        "ethereum_address": "0xA9B1Eb5908CfC3cdf91F9B8B3a74108598009096",
+        "ethereum_token_decimals": 18,
+        "name": "Bounce Token",
+        "started": 1611896951,
+        "symbol": "AUCTION",
+        "type": "ethereum token"
+    },
+    "DODO": {
+        "coingecko": "dodo",
+        "ethereum_address": "0x43Dfc4159D86F3A37A5A4B3D4580b888ad7d4DDd",
+        "ethereum_token_decimals": 18,
+        "name": "DODO bird",
+        "started": 1601377130,
+        "symbol": "DODO",
+        "type": "ethereum token"
+    },
+    "FIS": {
+        "coingecko": "stafi",
+        "ethereum_address": "0xef3A930e1FfFFAcd2fc13434aC81bD278B0ecC8d",
+        "ethereum_token_decimals": 18,
+        "name": "StaFi",
+        "started": 1606805271,
+        "symbol": "FIS",
+        "type": "ethereum token and more"
+    },
+    "FXS": {
+        "coingecko": "frax-share",
+        "ethereum_address": "0x3432B6A60D23Ca0dFCa7761B7ab56459D9C964D0",
+        "ethereum_token_decimals": 18,
+        "name": "Frax Share",
+        "started": 1608140560,
+        "symbol": "FXS",
+        "type": "ethereum token"
+    },
+    "PHA": {
+        "coingecko": "pha",
+        "ethereum_address": "0x6c5bA91642F10282b576d91922Ae6448C9d52f4E",
+        "ethereum_token_decimals": 18,
+        "name": "Phala",
+        "started": 1588271785,
+        "symbol": "PHA",
+        "type": "ethereum token"
+    },
+    "UFT": {
+        "coingecko": "unlend-finance",
+        "ethereum_address": "0x0202Be363B8a4820f3F4DE7FaF5224fF05943AB1",
+        "ethereum_token_decimals": 18,
+        "name": "UniLend Finance Token",
+        "started": 1602276451,
+        "symbol": "UFT",
+        "type": "ethereum token"
+    },
+    "SBT": {
+        "coingecko": "solbit",
+        "cryptocompare": "",
+        "name": "SOLBIT",
+        "started": 1572825600,
+        "symbol": "SBT",
+        "type": "own chain"
+    },
+    "SMARTCREDIT": {
+        "coingecko": "smartcredit-token",
+        "ethereum_address": "0x72e9D9038cE484EE986FEa183f8d8Df93f9aDA13",
+        "ethereum_token_decimals": 18,
+        "name": "SMARTCREDIT Token",
+        "started": 1602058612,
+        "symbol": "SMARTCREDIT",
+        "type": "ethereum token"
+    },
+    "TFC": {
+        "coingecko": "thefutbolcoin",
+        "cryptocompare": "",
+        "name": "TheFutbolCoin",
+        "started": 1609113600,
+        "symbol": "TFC",
+        "type": "stellar token"
+    },
+    "ORAI": {
+        "coingecko": "oraichain-token",
+        "ethereum_address": "0x4c11249814f11b9346808179Cf06e71ac328c1b5",
+        "ethereum_token_decimals": 18,
+        "name": "Oraichain Token",
+        "started": 1600914971,
+        "symbol": "ORAI",
+        "type": "ethereum token"
+    },
+    "BRG": {
+        "coingecko": "bridge-oracle",
+        "name": "Bridge Oracle",
+        "started": 1612310400,
+        "symbol": "BRG",
+        "type": "tron token"
+    },
+    "LTX": {
+        "coingecko": "lattice-token",
+        "cryptocompare": "",
+        "ethereum_address": "0xa393473d64d2F9F026B60b6Df7859A689715d092",
+        "ethereum_token_decimals": 8,
+        "name": "Lattice Token",
+        "started": 1604008675,
+        "symbol": "LTX",
+        "type": "ethereum token"
+    },
+    "ZEE": {
+        "coingecko": "zeroswap",
+        "ethereum_address": "0x2eDf094dB69d6Dcd487f1B3dB9febE2eeC0dd4c5",
+        "ethereum_token_decimals": 18,
+        "name": "ZeroSwapToken",
+        "started": 1602352650,
+        "symbol": "ZEE",
+        "type": "ethereum token"
+    },
+    "MASK": {
+        "coingecko": "mask-network",
+        "cryptocompare": "",
+        "ethereum_address": "0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074",
+        "ethereum_token_decimals": 18,
+        "name": "Mask Network",
+        "started": 1613723201,
+        "symbol": "MASK",
+        "type": "ethereum token"
+    },
+    "IDEA": {
+        "coingecko": "ideaology",
+        "ethereum_address": "0x5d3a4F62124498092Ce665f865E0b38fF6F5FbEa",
+        "ethereum_token_decimals": 18,
+        "name": "IDEAOLOGY",
+        "started": 1601532735,
+        "symbol": "IDEA",
+        "type": "ethereum token"
+    },
+    "SRK": {
+        "coingecko": "sparkpoint",
+        "ethereum_address": "0x0488401c3F535193Fa8Df029d9fFe615A06E74E6",
+        "ethereum_token_decimals": 18,
+        "name": "SparkPoint",
+        "started": 1552531478,
+        "symbol": "SRK",
+        "type": "ethereum token"
+    },
+    "VSP": {
+        "coingecko": "vesper-finance",
+        "ethereum_address": "0x1b40183EFB4Dd766f11bDa7A7c3AD8982e998421",
+        "ethereum_token_decimals": 18,
+        "name": "VesperToken",
+        "started": 1613051449,
+        "symbol": "VSP",
+        "type": "ethereum token"
+    },
+    "ZKS": {
+        "coingecko": "zkswap",
+        "ethereum_address": "0xe4815AE53B124e7263F08dcDBBB757d41Ed658c6",
+        "ethereum_token_decimals": 18,
+        "name": "ZKs",
+        "started": 1606014225,
+        "symbol": "ZKS",
         "type": "ethereum token"
     }
 }
