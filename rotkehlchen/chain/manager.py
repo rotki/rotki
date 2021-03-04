@@ -1268,4 +1268,4 @@ class ChainManager(CacheableObject, LockableQueryObject):
             for asset, balance in assets.items():
                 aggregated_balances[asset] += balance
 
-        return aggregated_balances
+        return dict(aggregated_balances)
