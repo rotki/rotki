@@ -817,7 +817,7 @@ class Balancer(EthereumModule):
                 key = (invest_event.tx_hash, invest_event.pool_address)
                 tx_hash_and_pool_addr_to_invest_events[key].append(invest_event)
 
-            # Create a <BalancerEvent> by aggregating invest and bpt events that happend
+            # Create a <BalancerEvent> by aggregating invest and bpt events that happened
             # in the same transaction and for the same pool. Optionally create a
             # <BalancerEventPool> if it does not exist in the DB.
             for bpt_event in cast(List[BalancerBPTEvent], getattr(events, attr_bpt_events)):
@@ -827,9 +827,8 @@ class Balancer(EthereumModule):
                 # Otherwise the subgraph is missing required data
                 if len(invest_events) == 0:
                     log.error(
-                        f'Failed to generate a balancer event. Missing {invest_events} for {event_type} event',  # noqa: E501
+                        f'Failed to generate a balancer event. Missing {attr_invest_events} events for {event_type} event',  # noqa: E501
                         bpt_event=bpt_event,
-                        invest_events=invest_events,
                     )
                     raise RemoteError('Failed to deserialize balancer events')
 
@@ -1019,6 +1018,9 @@ class Balancer(EthereumModule):
                     timestamp=timestamp,
                 )
             except RemoteError:
+                # This error hiding is exclusive to the Balancer module. The Uniswap
+                # module also calls tokenDayDatas and processes the results in the
+                # same way, so in case of an error we should know.
                 pass
 
             usd_price = token_to_prices.get(token.ethereum_address, Price(ZERO))
@@ -1137,7 +1139,7 @@ class Balancer(EthereumModule):
             try:
                 token_to_prices_uni = self._get_unknown_token_to_prices_uniswap_graph(still_unknown_token_addresses)  # noqa: E501
             except RemoteError:
-                # This error hiding is exclusive of the Balancer module. The Uniswap
+                # This error hiding is exclusive to the Balancer module. The Uniswap
                 # module also calls tokenDayDatas and processes the results in the
                 # same way, so in case of an error we should know.
                 token_to_prices_uni = {}
