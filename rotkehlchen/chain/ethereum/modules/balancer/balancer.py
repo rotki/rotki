@@ -1,6 +1,5 @@
 import datetime
 import logging
-import time
 from collections import defaultdict
 from operator import add, sub
 from typing import TYPE_CHECKING, DefaultDict, List, Optional, Set, Union, cast
@@ -29,6 +28,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
+from rotkehlchen.utils.misc import ts_now
 
 from .graph import (
     ADD_LIQUIDITIES_QUERY,
@@ -1163,7 +1163,7 @@ class Balancer(EthereumModule):
         """
         unknown_token_addresses_lower = [address.lower() for address in unknown_token_addresses]
         querystr = format_query_indentation(TOKEN_DAY_DATAS_QUERY.format())
-        from_timestamp = time.time() if timestamp is None else float(timestamp)
+        from_timestamp = ts_now() if timestamp is None else timestamp
         midnight_epoch = int(
             datetime.datetime.combine(
                 datetime.datetime.fromtimestamp(from_timestamp),
