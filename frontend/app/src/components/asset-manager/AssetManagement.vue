@@ -7,7 +7,7 @@
       @refresh="refresh"
     />
     <asset-table
-      class="mt-8"
+      class="mt-12"
       :tokens="tokens"
       :loading="loading"
       @add="showForm = true"

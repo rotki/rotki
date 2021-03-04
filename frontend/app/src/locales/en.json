@@ -44,6 +44,7 @@
     }
   },
   "asset_table": {
+    "assets": "Assets",
     "delete_tooltip": "Delete the asset",
     "edit_tooltip": "Edit the asset",
     "headers": {
@@ -52,7 +53,8 @@
       "coingecko": "CoinGecko",
       "cryptocompare": "CryptoCompare",
       "started": "Started"
-    }
+    },
+    "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts"
   },
   "assets": {
     "amount": "Total Owned",
@@ -268,9 +270,9 @@
     "loading": "Please wait while your eth2 staking details are getting loaded..."
   },
   "asset_management": {
-    "title": "Ethereum Tokens",
-    "add_title": "Add a new ethereum token",
-    "edit_title": "Edit an ethereum token"
+    "title": "Asset Management",
+    "add_title": "Add a new asset",
+    "edit_title": "Edit an asset"
   },
   "exchange_balances": {
     "no_connected_exchanges": "You do not have any connected exchanges. {0} to set up an Exchange Connection.",
@@ -1617,7 +1619,8 @@
     "staking_sub": {
       "adex": "AdEx",
       "eth2": "Eth2"
-    }
+    },
+    "manage_assets": "Manage Assets"
   },
   "trade_history": {
     "loading": "Please wait while your trades are getting loaded...",

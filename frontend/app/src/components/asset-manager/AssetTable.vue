@@ -1,44 +1,48 @@
 <template>
-  <v-card>
+  <card outlined-body>
+    <template #title>
+      {{ $t('asset_table.assets') }}
+    </template>
+    <template #subtitle>
+      {{ $t('asset_table.subtitle') }}
+    </template>
     <v-btn absolute fab top right dark color="primary" @click="add">
       <v-icon> mdi-plus </v-icon>
     </v-btn>
-    <v-card-text>
-      <v-data-table
-        :items="tokens"
-        :loading="loading"
-        :headers="headers"
-        item-key="address"
-        sort-by="name"
-        :footer-props="footerProps"
-      >
-        <template #item.name="{ item }">
-          <asset-details-base opens-details :asset="item" />
-        </template>
-        <template #item.address="{ item }">
-          <hash-link :text="item.address" />
-        </template>
-        <template #item.started="{ item }">
-          <date-display :timestamp="item.started" />
-        </template>
-        <template #item.actions="{ item }">
-          <row-actions
-            :edit-tooltip="$t('asset_table.edit_tooltip')"
-            :delete-tooltip="$t('asset_table.delete_tooltip')"
-            @edit-click="edit(item)"
-            @delete-click="deleteToken(item.address)"
-          />
-        </template>
-        <template #item.expand="{ item }">
-          <row-expander
-            v-if="item.underlyingTokens && item.underlyingTokens.length > 0"
-            :expanded="expanded.includes(item)"
-            @click="expanded = expanded.includes(item) ? [] : [item]"
-          />
-        </template>
-      </v-data-table>
-    </v-card-text>
-  </v-card>
+    <v-data-table
+      :items="tokens"
+      :loading="loading"
+      :headers="headers"
+      item-key="address"
+      sort-by="name"
+      :footer-props="footerProps"
+    >
+      <template #item.name="{ item }">
+        <asset-details-base opens-details :asset="item" />
+      </template>
+      <template #item.address="{ item }">
+        <hash-link :text="item.address" />
+      </template>
+      <template #item.started="{ item }">
+        <date-display :timestamp="item.started" />
+      </template>
+      <template #item.actions="{ item }">
+        <row-actions
+          :edit-tooltip="$t('asset_table.edit_tooltip')"
+          :delete-tooltip="$t('asset_table.delete_tooltip')"
+          @edit-click="edit(item)"
+          @delete-click="deleteToken(item.address)"
+        />
+      </template>
+      <template #item.expand="{ item }">
+        <row-expander
+          v-if="item.underlyingTokens && item.underlyingTokens.length > 0"
+          :expanded="expanded.includes(item)"
+          @click="expanded = expanded.includes(item) ? [] : [item]"
+        />
+      </template>
+    </v-data-table>
+  </card>
 </template>
 
 <script lang="ts">
