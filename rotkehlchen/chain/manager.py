@@ -1254,19 +1254,18 @@ class ChainManager(CacheableObject, LockableQueryObject):
         """Query loopring balances if the module is activated"""
         # Check if the loopring module is activated
         loopring_module = self.get_module('loopring')
-        if loopring_module:
-            addresses = self.queried_addresses_for_module('loopring')
-            balances = loopring_module.get_balances(addresses=addresses)
 
-            # Now that we have balances for the addresses we need to agregate the
-            # assets in the different addresses
-            aggregated_balances: Dict[Asset, Balance] = {}
-            for _, assets in balances.items():
-                for asset, balance in assets.items():
-                    if asset in aggregated_balances:
-                        aggregated_balances[asset] += balance
-                    else:
-                        aggregated_balances[asset] = balance
-            return aggregated_balances
+        if loopring_module is None:
+            return {}
 
-        return {}
+        addresses = self.queried_addresses_for_module('loopring')
+        balances = loopring_module.get_balances(addresses=addresses)
+
+        # Now that we have balances for the addresses we need to aggregate the
+        # assets in the different addresses
+        aggregated_balances: Dict[Asset, Balance] = defaultdict(Balance)
+        for _, assets in balances.items():
+            for asset, balance in assets.items():
+                aggregated_balances[asset] += balance
+
+        return aggregated_balances
