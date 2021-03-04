@@ -4743,7 +4743,7 @@ Getting Balancer events
                           "usd_value": "19.779488662371895"
                         },
                         "amounts": {
-                          "WETH": "0.05"
+                          "WETH": "0.05",
                           "BAL": "0"
                         }
                       },
