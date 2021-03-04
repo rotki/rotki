@@ -779,7 +779,7 @@
     }
   },
   "module_not_active": {
-    "not_active": "The {module} module is not activated. Please visit the {link} to activate it",
+    "not_active": "{module} module(s) is/are not activated. Please visit the {link} to activate it/them",
     "settings_link": "Defi settings"
   },
   "premium_credentials": {

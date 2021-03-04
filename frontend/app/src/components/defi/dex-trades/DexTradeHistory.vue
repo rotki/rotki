@@ -1,14 +1,17 @@
 <template>
   <v-container>
-    <module-not-active v-if="!isUniswapEnabled" :module="MODULE_UNISWAP" />
+    <module-not-active
+      v-if="!isUniswapEnabled && !isBalancerEnabled"
+      :modules="[MODULE_UNISWAP, balancerModule]"
+    />
     <no-premium-placeholder
       v-else-if="!premium"
       :text="$t('dex_trade.title')"
     />
-    <progress-screen v-else-if="loading">
+    <progress-screen v-else-if="dexLoading">
       <template #message>{{ $t('dex_trades.loading') }}</template>
     </progress-screen>
-    <dex-trades-table v-else :refreshing="refreshing" />
+    <dex-trades-table v-else :refreshing="anyRefreshing" />
   </v-container>
 </template>
 
@@ -41,8 +44,17 @@ export default class DexTradeHistory extends Mixins(
   DefiModuleMixin
 ) {
   section = Section.DEFI_UNISWAP_TRADES;
+  secondSection = Section.DEFI_BALANCER_TRADES;
+
   fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
   fetchBalancerTrades!: (refresh: boolean) => Promise<void>;
+
+  get dexLoading(): boolean {
+    return (
+      (this.isUniswapEnabled && this.loading) ||
+      (this.isBalancerEnabled && this.secondaryLoading)
+    );
+  }
 
   async mounted() {
     await Promise.all([

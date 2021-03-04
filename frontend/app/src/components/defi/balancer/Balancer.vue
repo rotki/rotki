@@ -1,6 +1,9 @@
 <template>
   <no-premium-placeholder v-if="!premium" :text="$t('balancer.premium')" />
-  <module-not-active v-else-if="!isBalancerEnabled" :module="balancerModule" />
+  <module-not-active
+    v-else-if="!isBalancerEnabled"
+    :modules="[balancerModule]"
+  />
   <progress-screen v-else-if="loading">
     <template #message>
       {{ $t('balancer.loading') }}

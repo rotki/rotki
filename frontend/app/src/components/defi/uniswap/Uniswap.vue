@@ -1,5 +1,5 @@
 <template>
-  <module-not-active v-if="!isUniswapEnabled" :module="MODULE_UNISWAP" />
+  <module-not-active v-if="!isUniswapEnabled" :modules="[MODULE_UNISWAP]" />
   <progress-screen v-else-if="loading">
     <template #message>
       {{ $t('uniswap.loading') }}
