@@ -3,19 +3,28 @@
     <v-text-field
       v-model="address"
       outlined
+      :error-messages="errors['address']"
       :label="$t('asset_form.labels.address')"
+      :disabled="saving"
+      @focus="delete errors['address']"
     />
     <v-text-field
       v-model="name"
       outlined
+      :error-messages="errors['name']"
       :label="$t('asset_form.labels.name')"
+      :disabled="saving"
+      @focus="delete errors['name']"
     />
     <v-row>
       <v-col cols="12" md="6">
         <v-text-field
           v-model="symbol"
           outlined
+          :error-messages="errors['symbol']"
           :label="$t('asset_form.labels.symbol')"
+          :disabled="saving"
+          @focus="delete errors['symbol']"
         />
       </v-col>
       <v-col cols="12" md="6">
@@ -24,6 +33,9 @@
           type="number"
           outlined
           :label="$t('asset_form.labels.decimals')"
+          :error-messages="errors['decimals']"
+          :disabled="saving"
+          @focus="delete errors['decimals']"
         />
       </v-col>
     </v-row>
@@ -32,6 +44,9 @@
       seconds
       outlined
       :label="$t('asset_form.labels.started')"
+      :error-messages="errors['started']"
+      :disabled="saving"
+      @focus="delete errors['started']"
     />
     <v-row>
       <v-col>
@@ -40,6 +55,9 @@
           outlined
           :hint="$t('asset_form.labels.coingecko_hint')"
           :label="$t('asset_form.labels.coingecko')"
+          :error-messages="errors['coingecko']"
+          :disabled="saving"
+          @focus="delete errors['coingecko']"
         />
       </v-col>
       <v-col>
@@ -48,6 +66,9 @@
           outlined
           :label="$t('asset_form.labels.cryptocompare')"
           :hint="$t('asset_form.labels.cryptocompare_hint')"
+          :error-messages="errors['cryptocompare']"
+          :disabled="saving"
+          @focus="delete errors['cryptocompare']"
         />
       </v-col>
     </v-row>
@@ -81,6 +102,7 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { UnderlyingToken, CustomEthereumToken } from '@/services/assets/types';
+import { deserializeApiErrorMessage } from '@/services/converters';
 import { showError } from '@/store/utils';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
@@ -104,11 +126,15 @@ export default class AssetForm extends Vue {
   underlyingTokens: UnderlyingToken[] = [];
   icon: File | null = null;
 
+  errors: { [key: string]: string[] } = {};
+
   @Prop({ required: true, type: Boolean })
   value!: boolean;
 
   @Prop({ required: false, default: () => null })
   edit!: CustomEthereumToken | null;
+  @Prop({ required: false, type: Boolean, default: false })
+  saving!: boolean;
 
   @Emit()
   input(_value: boolean) {}
@@ -182,6 +208,25 @@ export default class AssetForm extends Vue {
       await this.saveIcon(identifier);
       return true;
     } catch (e) {
+      const { token } = deserializeApiErrorMessage(e.message) as any;
+      this.errors = token;
+      const underlyingTokens = token.underlying_tokens;
+      if (underlyingTokens) {
+        const messages: string[] = [];
+        for (const underlyingToken of Object.values(underlyingTokens)) {
+          if (underlyingToken.address) {
+            messages.push(...underlyingToken.address);
+          }
+          if (underlyingTokens.weight) {
+            messages.push(...underlyingToken.weight);
+          }
+        }
+
+        showError(
+          messages.join(','),
+          this.$t('asset_form.underlying_tokens').toString()
+        );
+      }
       return false;
     }
   }

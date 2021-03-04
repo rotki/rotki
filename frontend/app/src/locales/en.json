@@ -181,7 +181,8 @@
     "icon_upload": {
       "title": "Icon upload",
       "description": "The icon upload failed: {message}"
-    }
+    },
+    "underlying_tokens": "Underlying tokens"
   },
   "data_management": {
     "confirm": {

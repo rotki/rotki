@@ -18,12 +18,18 @@
       :display="showForm"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
-      :action-disabled="!validForm"
+      :action-disabled="!validForm || saving"
       :primary-action="'save'"
+      :loading="saving"
       @confirm="save()"
       @cancel="closeDialog()"
     >
-      <asset-form ref="form" v-model="validForm" :edit="token" />
+      <asset-form
+        ref="form"
+        v-model="validForm"
+        :edit="token"
+        :saving="saving"
+      />
     </big-dialog>
   </v-container>
 </template>
@@ -43,6 +49,7 @@ export default class AssetManagement extends Vue {
   tokens: CustomEthereumToken[] = [];
   validForm: boolean = false;
   showForm: boolean = false;
+  saving: boolean = false;
   token: CustomEthereumToken | null = null;
 
   get dialogTitle(): string {
@@ -71,12 +78,14 @@ export default class AssetManagement extends Vue {
   }
 
   async save() {
-    this.showForm = false;
+    this.saving = true;
     const success = await (this.$refs.form as any).save();
     if (success) {
+      this.showForm = false;
       await this.refresh();
       this.token = null;
     }
+    this.saving = false;
   }
 
   async deleteToken(address: string) {
