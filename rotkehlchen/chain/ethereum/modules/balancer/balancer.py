@@ -142,13 +142,7 @@ class Balancer(EthereumModule):
         # Calculate the profit and loss of the pool events
         for event in events:
             pool_addr_to_events[event.pool_address].append(event)
-            if event.event_type == BalancerBPTEventType.MINT:
-                operator = sub
-            elif event.event_type == BalancerBPTEventType.BURN:
-                operator = add
-            else:
-                raise AssertionError(f'Unexpected event type: {event.event_type}.')
-
+            operator = sub if event.event_type == BalancerBPTEventType.MINT else add
             profit_loss_amounts = pool_addr_to_profit_loss_amounts[event.pool_address]
             event_amounts = event.amounts + [AssetAmount(ZERO)] * (POOL_MAX_NUMBER_TOKENS - len(event.amounts))  # noqa: E501
             pool_addr_to_profit_loss_amounts[event.pool_address] = list(

@@ -227,12 +227,10 @@ class BalancerEvent(NamedTuple):
         15 - amount7
         """
         event_tuple_type = event_tuple[4]
-        if event_tuple_type == str(BalancerBPTEventType.MINT):
-            event_type = BalancerBPTEventType.MINT
-        elif event_tuple_type == str(BalancerBPTEventType.BURN):
-            event_type = BalancerBPTEventType.BURN
-        else:
-            raise DeserializationError(f'Unexpected event type: {event_tuple_type}.')
+        try:
+            event_type = getattr(BalancerBPTEventType, event_tuple_type.upper())
+        except AttributeError as e:
+            raise DeserializationError(f'Unexpected event type: {event_tuple_type}.') from e
 
         amounts: List[AssetAmount] = [
             deserialize_asset_amount(item)
