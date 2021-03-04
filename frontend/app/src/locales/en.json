@@ -922,6 +922,13 @@
   "liquidity_pool_selector": {
     "label": "Filter by pool(s)"
   },
+  "uniswap_pool_details": {
+    "asset_liquidity": "Total in LP",
+    "price": "Price",
+    "title": "Details",
+    "tooltip": "Show details about the pool assets",
+    "liquidity": "Liquidity"
+  },
   "update_indicator": {
     "version": "An Updated Version ({appVersion}) of Rotki is available"
   },
@@ -2132,7 +2139,6 @@
     "title": "Uniswap Pools",
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "pool_header": "UNIv2 {asset1}/{asset2}",
-    "liquidity": "Liquidity:",
     "balance": "Balance",
     "asset_supply": "{asset} supply:",
     "asset_price": "({asset} price: {price})"

@@ -15,7 +15,7 @@ import { BalancerUnderlyingToken } from '@/store/defi/types';
 
 @Component({})
 export default class BalancerPoolAsset extends Vue {
-  @Prop({ required: true, type: Array, validator: value => value.length === 2 })
+  @Prop({ required: true, type: Array, validator: value => value.length >= 2 })
   assets!: BalancerUnderlyingToken[];
 
   assetIdentifier(token: BalancerUnderlyingToken): string {
