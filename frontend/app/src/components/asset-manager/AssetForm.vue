@@ -214,11 +214,12 @@ export default class AssetForm extends Vue {
       if (underlyingTokens) {
         const messages: string[] = [];
         for (const underlyingToken of Object.values(underlyingTokens)) {
-          if (underlyingToken.address) {
-            messages.push(...underlyingToken.address);
+          const ut = underlyingToken as any;
+          if (ut.address) {
+            messages.push(...(ut.address as string[]));
           }
           if (underlyingTokens.weight) {
-            messages.push(...underlyingToken.weight);
+            messages.push(...(ut.weight as string[]));
           }
         }
 
