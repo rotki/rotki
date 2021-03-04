@@ -30,7 +30,12 @@ from rotkehlchen.chain.ethereum.modules.adex import (
     UnbondRequest,
     deserialize_adex_event_from_db,
 )
-from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_TRADES_PREFIX
+from rotkehlchen.chain.ethereum.modules.balancer import (
+    BALANCER_EVENTS_PREFIX,
+    BALANCER_TRADES_PREFIX,
+    BalancerEvent,
+    BalancerEventPool,
+)
 from rotkehlchen.chain.ethereum.modules.uniswap import (
     UNISWAP_EVENTS_PREFIX,
     UNISWAP_TRADES_PREFIX,
@@ -949,6 +954,277 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
+    def add_balancer_events(
+            self,
+            events: Sequence[BalancerEvent],
+    ) -> None:
+        query = (
+            """
+            INSERT INTO balancer_events (
+                tx_hash,
+                log_index,
+                address,
+                timestamp,
+                type,
+                pool_address,
+                lp_amount,
+                usd_value,
+                amount0,
+                amount1,
+                amount2,
+                amount3,
+                amount4,
+                amount5,
+                amount6,
+                amount7
+            )
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """
+        )
+        cursor = self.conn.cursor()
+        for event in events:
+            event_tuple = event.to_db_tuple()
+            try:
+                cursor.execute(query, event_tuple)
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                self.msg_aggregator.add_warning(
+                    f'Tried to add a Balancer event that already exists in the DB. '
+                    f'Event data: {event_tuple}. Skipping event.',
+                )
+                continue
+
+        self.conn.commit()
+        self.update_last_write()
+
+    def add_balancer_pools(
+            self,
+            pools: Sequence[BalancerEventPool],
+    ) -> None:
+        query = (
+            """
+            INSERT INTO balancer_pools (
+                address,
+                tokens_number,
+                is_token0_unknown,
+                token0_address,
+                token0_symbol,
+                token0_name,
+                token0_decimals,
+                token0_weight,
+                is_token1_unknown,
+                token1_address,
+                token1_symbol,
+                token1_name,
+                token1_decimals,
+                token1_weight,
+                is_token2_unknown,
+                token2_address,
+                token2_symbol,
+                token2_name,
+                token2_decimals,
+                token2_weight,
+                is_token3_unknown,
+                token3_address,
+                token3_symbol,
+                token3_name,
+                token3_decimals,
+                token3_weight,
+                is_token4_unknown,
+                token4_address,
+                token4_symbol,
+                token4_name,
+                token4_decimals,
+                token4_weight,
+                is_token5_unknown,
+                token5_address,
+                token5_symbol,
+                token5_name,
+                token5_decimals,
+                token5_weight,
+                is_token6_unknown,
+                token6_address,
+                token6_symbol,
+                token6_name,
+                token6_decimals,
+                token6_weight,
+                is_token7_unknown,
+                token7_address,
+                token7_symbol,
+                token7_name,
+                token7_decimals,
+                token7_weight
+            )
+            VALUES (
+                ?,?,
+                ?,?,?,?,?,?,
+                ?,?,?,?,?,?,
+                ?,?,?,?,?,?,
+                ?,?,?,?,?,?,
+                ?,?,?,?,?,?,
+                ?,?,?,?,?,?,
+                ?,?,?,?,?,?,
+                ?,?,?,?,?,?
+            )
+            """
+        )
+        cursor = self.conn.cursor()
+        for pool in pools:
+            pool_tuple = pool.to_db_tuple()
+            try:
+                cursor.execute(query, pool_tuple)
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                self.msg_aggregator.add_warning(
+                    f'Tried to add a Balancer pool that already exists in the DB. '
+                    f'Pool data: {pool_tuple}. Skipping pool.',
+                )
+                continue
+
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_balancer_events(
+            self,
+            from_timestamp: Optional[Timestamp] = None,
+            to_timestamp: Optional[Timestamp] = None,
+            address: Optional[ChecksumEthAddress] = None,
+    ) -> List[BalancerEvent]:
+        """Returns a list of Balancer events optionally filtered by time and address"""
+        cursor = self.conn.cursor()
+        query = (
+            'SELECT '
+            'tx_hash, '
+            'log_index, '
+            'address, '
+            'timestamp, '
+            'type, '
+            'pool_address, '
+            'lp_amount, '
+            'usd_value, '
+            'amount0, '
+            'amount1, '
+            'amount2, '
+            'amount3, '
+            'amount4, '
+            'amount5, '
+            'amount6, '
+            'amount7 '
+            'FROM balancer_events '
+        )
+        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
+        filters = []
+        if address is not None:
+            filters.append(f'address="{address}" ')
+
+        if filters:
+            query += 'WHERE '
+            query += 'AND '.join(filters)
+
+        query, bindings = form_query_to_filter_timestamps(
+            query=query,
+            timestamp_attribute='timestamp',
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+        )
+        results = cursor.execute(query, bindings)
+
+        events = []
+        for event_tuple in results:
+            try:
+                event = BalancerEvent.deserialize_from_db(event_tuple)
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing Balancer event from the DB. Skipping event. '
+                    f'Error was: {str(e)}',
+                )
+                continue
+            events.append(event)
+
+        return events
+
+    def get_balancer_pools(
+            self,
+            addresses: Optional[List[ChecksumEthAddress]] = None,
+    ) -> List[BalancerEventPool]:
+        """Returns a list of Balancer pools optionally filtered by addresses"""
+        cursor = self.conn.cursor()
+        query = (
+            'SELECT '
+            'address, '
+            'tokens_number, '
+            'is_token0_unknown, '
+            'token0_address, '
+            'token0_symbol, '
+            'token0_name, '
+            'token0_decimals, '
+            'token0_weight, '
+            'is_token1_unknown, '
+            'token1_address, '
+            'token1_symbol, '
+            'token1_name, '
+            'token1_decimals, '
+            'token1_weight, '
+            'is_token2_unknown, '
+            'token2_address, '
+            'token2_symbol, '
+            'token2_name, '
+            'token2_decimals, '
+            'token2_weight, '
+            'is_token3_unknown, '
+            'token3_address, '
+            'token3_symbol, '
+            'token3_name, '
+            'token3_decimals, '
+            'token3_weight, '
+            'is_token4_unknown, '
+            'token4_address, '
+            'token4_symbol, '
+            'token4_name, '
+            'token4_decimals, '
+            'token4_weight, '
+            'is_token5_unknown, '
+            'token5_address, '
+            'token5_symbol, '
+            'token5_name, '
+            'token5_decimals, '
+            'token5_weight, '
+            'is_token6_unknown, '
+            'token6_address, '
+            'token6_symbol, '
+            'token6_name, '
+            'token6_decimals, '
+            'token6_weight, '
+            'is_token7_unknown, '
+            'token7_address, '
+            'token7_symbol, '
+            'token7_name, '
+            'token7_decimals, '
+            'token7_weight '
+            'FROM balancer_pools '
+        )
+        bindings = []
+        if addresses is not None and len(addresses) != 0:
+            questionmarks = '?' * len(addresses)
+            query += f'WHERE address IN ({",".join(questionmarks)});'
+            bindings.extend(addresses)
+        else:
+            query += ';'
+
+        results = cursor.execute(query, bindings)
+
+        pools = []
+        for pool_tuple in results:
+            try:
+                pool = BalancerEventPool.deserialize_from_db(pool_tuple)
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing Balancer pool from the DB. Skipping pool. '
+                    f'Error was: {str(e)}',
+                )
+                continue
+            pools.append(pool)
+
+        return pools
+
     def delete_balancer_trades_data(self) -> None:
         """Delete all historical Balancer trades data"""
         cursor = self.conn.cursor()
@@ -957,6 +1233,17 @@ class DBHandler:
         )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_TRADES_PREFIX}%";',
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_balancer_events_data(self) -> None:
+        """Delete all historical Balancer events data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM balancer_events;')
+        cursor.execute('DELETE FROM balancer_pools;')
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_EVENTS_PREFIX}%";',
         )
         self.conn.commit()
         self.update_last_write()
@@ -1074,6 +1361,8 @@ class DBHandler:
         if module_name is None:
             self.delete_uniswap_trades_data()
             self.delete_uniswap_events_data()
+            self.delete_balancer_trades_data()
+            self.delete_balancer_events_data()
             self.delete_aave_data()
             self.delete_adex_events_data()
             self.delete_yearn_vaults_data()
@@ -1084,6 +1373,9 @@ class DBHandler:
         if module_name == 'uniswap':
             self.delete_uniswap_trades_data()
             self.delete_uniswap_events_data()
+        elif module_name == 'balancer':
+            self.delete_balancer_trades_data()
+            self.delete_balancer_events_data()
         elif module_name == 'aave':
             self.delete_aave_data()
         elif module_name == 'adex':
@@ -2306,6 +2598,9 @@ class DBHandler:
             f'DELETE FROM used_query_ranges WHERE name="{ADEX_EVENTS_PREFIX}_{address}";',
         )
         cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name="{BALANCER_EVENTS_PREFIX}_{address}";',
+        )
+        cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name="{BALANCER_TRADES_PREFIX}_{address}";',
         )
         cursor.execute(
@@ -2320,6 +2615,7 @@ class DBHandler:
         cursor.execute('DELETE FROM ethereum_accounts_details WHERE account = ?', (address,))
         cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
         cursor.execute('DELETE FROM adex_events WHERE address = ?', (address,))
+        cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
         cursor.execute('DELETE FROM uniswap_events WHERE address=?;', (address,))
         cursor.execute(
             'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',

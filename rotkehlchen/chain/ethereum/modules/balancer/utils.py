@@ -2,6 +2,7 @@ import logging
 from typing import Any, Dict, List, Tuple
 
 from eth_utils import to_checksum_address
+from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.utils import get_ethereum_token
@@ -16,7 +17,15 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Location, Price, TradeType
 
-from .typing import BalancerPool, BalancerPoolToken
+from .typing import (
+    BalancerBPTEvent,
+    BalancerBPTEventPoolToken,
+    BalancerBPTEventType,
+    BalancerInvestEvent,
+    BalancerInvestEventType,
+    BalancerPoolBalance,
+    BalancerPoolTokenBalance,
+)
 
 SUBGRAPH_REMOTE_ERROR_MSG = (
     "Failed to request the Balancer subgraph due to {error_msg}. "
@@ -35,42 +44,177 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def deserialize_pool_share(
-        raw_pool_share: Dict[str, Any],
-) -> Tuple[ChecksumEthAddress, BalancerPool]:
+def deserialize_bpt_event(
+        raw_event: Dict[str, Any],
+        event_type: Literal[BalancerBPTEventType.MINT, BalancerBPTEventType.BURN],
+) -> BalancerBPTEvent:
     """May raise DeserializationError"""
     try:
-        user_address = raw_pool_share['userAddress']['id']
+        tx_hash, log_index = deserialize_transaction_id(raw_event['id'])
+        raw_user_address = raw_event['user']['id']
+        amount = deserialize_asset_amount(raw_event['amount'])
+        raw_pool = raw_event['pool']
+        raw_pool_address = raw_pool['id']
+        raw_pool_tokens = raw_pool['tokens']
+        total_weight = deserialize_asset_amount(raw_pool['totalWeight'])
+    except KeyError as e:
+        raise DeserializationError(f'Missing key: {str(e)}.') from e
+
+    if total_weight == ZERO:
+        raise DeserializationError('Pool weight is zero.')
+
+    try:
+        user_address = to_checksum_address(raw_user_address)
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {raw_user_address} in user.id.',
+        ) from e
+
+    try:
+        pool_address = to_checksum_address(raw_pool_address)
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {raw_pool_address} in pool.id.',
+        ) from e
+
+    pool_tokens = []
+    for raw_token in raw_pool_tokens:
+        try:
+            raw_token_address = raw_token['address']
+            token_symbol = raw_token['symbol']
+            token_name = raw_token['name']
+            token_decimals = raw_token['decimals']
+            token_weight = deserialize_asset_amount(raw_token['denormWeight'])
+        except KeyError as e:
+            raise DeserializationError(f'Missing key: {str(e)}.') from e
+
+        try:
+            token_address = to_checksum_address(raw_token_address)
+        except ValueError as e:
+            raise DeserializationError(
+                f'Invalid ethereum address: {raw_token_address} in {token_symbol} token.address.',  # noqa: E501
+            ) from e
+
+        token = get_ethereum_token(
+            symbol=token_symbol,
+            ethereum_address=token_address,
+            name=token_name,
+            decimals=token_decimals,
+        )
+        pool_token = BalancerBPTEventPoolToken(
+            token=token,
+            weight=token_weight * 100 / total_weight,
+        )
+        pool_tokens.append(pool_token)
+
+    pool_tokens.sort(key=lambda pool_token: pool_token.token.ethereum_address)
+    bpt_event = BalancerBPTEvent(
+        tx_hash=tx_hash,
+        log_index=log_index,
+        address=user_address,
+        event_type=event_type,
+        pool_address=pool_address,
+        pool_tokens=pool_tokens,
+        amount=amount,
+    )
+    return bpt_event
+
+
+def deserialize_invest_event(
+        raw_event: Dict[str, Any],
+        event_type: Literal[
+            BalancerInvestEventType.ADD_LIQUIDITY,
+            BalancerInvestEventType.REMOVE_LIQUIDITY,
+        ],
+) -> BalancerInvestEvent:
+    """May raise DeserializationError"""
+    try:
+        tx_hash, log_index = deserialize_transaction_id(raw_event['id'])
+        timestamp = deserialize_timestamp(raw_event['timestamp'])
+        raw_user_address = raw_event['userAddress']['id']
+        raw_pool_address = raw_event['poolAddress']['id']
+        if event_type == BalancerInvestEventType.ADD_LIQUIDITY:
+            raw_token_address = raw_event['tokenIn']['address']
+            amount = deserialize_asset_amount(raw_event['tokenAmountIn'])
+        elif event_type == BalancerInvestEventType.REMOVE_LIQUIDITY:
+            raw_token_address = raw_event['tokenOut']['address']
+            amount = deserialize_asset_amount(raw_event['tokenAmountOut'])
+        else:
+            raise AssertionError(f'Unexpected event type: {event_type}.')
+
+    except KeyError as e:
+        raise DeserializationError(f'Missing key: {str(e)}.') from e
+
+    try:
+        user_address = to_checksum_address(raw_user_address)
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {raw_user_address} in userAddress.',
+        ) from e
+
+    try:
+        pool_address = to_checksum_address(raw_pool_address)
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {raw_pool_address} in poolAddress.',
+        ) from e
+
+    try:
+        token_address = to_checksum_address(raw_token_address)
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {raw_token_address} in tokenIn.',
+        ) from e
+
+    invest_event = BalancerInvestEvent(
+        tx_hash=tx_hash,
+        log_index=log_index,
+        address=user_address,
+        timestamp=timestamp,
+        event_type=event_type,
+        pool_address=pool_address,
+        token_address=token_address,
+        amount=amount,
+    )
+    return invest_event
+
+
+def deserialize_pool_share(
+        raw_pool_share: Dict[str, Any],
+) -> Tuple[ChecksumEthAddress, BalancerPoolBalance]:
+    """May raise DeserializationError"""
+    try:
+        raw_user_address = raw_pool_share['userAddress']['id']
         user_amount = deserialize_asset_amount(raw_pool_share['balance'])
         raw_pool = raw_pool_share['poolId']
         total_amount = deserialize_asset_amount(raw_pool['totalShares'])
-        address = raw_pool['id']
+        raw_address = raw_pool['id']
         raw_tokens = raw_pool['tokens']
         total_weight = deserialize_asset_amount(raw_pool['totalWeight'])
     except KeyError as e:
         raise DeserializationError(f'Missing key: {str(e)}.') from e
 
     if total_weight == ZERO:
-        raise DeserializationError('Pool weight is zero')
+        raise DeserializationError('Pool weight is zero.')
 
     try:
-        user_address = to_checksum_address(user_address)
+        user_address = to_checksum_address(raw_user_address)
     except ValueError as e:
         raise DeserializationError(
-            f'Invalid ethereum address: {address} in pool userAddress.',
+            f'Invalid ethereum address: {raw_user_address} in userAddress.id.',
         ) from e
 
     try:
-        address = to_checksum_address(address)
+        address = to_checksum_address(raw_address)
     except ValueError as e:
         raise DeserializationError(
-            f'Invalid ethereum address: {address} in pool id.',
+            f'Invalid ethereum address: {raw_address} in poolId.id.',
         ) from e
 
     pool_tokens = []
     for raw_token in raw_tokens:
         try:
-            token_address = raw_token['address']
+            raw_token_address = raw_token['address']
             token_symbol = raw_token['symbol']
             token_name = raw_token['name']
             token_decimals = raw_token['decimals']
@@ -80,10 +224,10 @@ def deserialize_pool_share(
             raise DeserializationError(f'Missing key: {str(e)}.') from e
 
         try:
-            token_address = to_checksum_address(token_address)
+            token_address = to_checksum_address(raw_token_address)
         except ValueError as e:
             raise DeserializationError(
-                f'Invalid ethereum address: {token_address} in pool token: {token_symbol}.',  # noqa: E501
+                f'Invalid ethereum address: {raw_token_address} in {token_symbol} token.address.',  # noqa: E501
             ) from e
 
         token = get_ethereum_token(
@@ -93,11 +237,11 @@ def deserialize_pool_share(
             decimals=token_decimals,
         )
         if token_total_amount == ZERO:
-            raise DeserializationError(f'Token {token.identifier} balance is zero')
+            raise DeserializationError(f'Token {token.identifier} balance is zero.')
 
         token_user_amount = user_amount / total_amount * token_total_amount
         weight = token_weight * 100 / total_weight
-        pool_token = BalancerPoolToken(
+        pool_token = BalancerPoolTokenBalance(
             token=token,
             total_amount=token_total_amount,
             user_balance=Balance(amount=token_user_amount),
@@ -105,7 +249,8 @@ def deserialize_pool_share(
         )
         pool_tokens.append(pool_token)
 
-    pool = BalancerPool(
+    pool_tokens.sort(key=lambda pool_token: pool_token.token.ethereum_address)
+    pool = BalancerPoolBalance(
         address=address,
         tokens=pool_tokens,
         total_amount=total_amount,
@@ -119,7 +264,7 @@ def deserialize_transaction_id(raw_tx_id: str) -> Tuple[str, int]:
         tx_hash, raw_log_index = raw_tx_id.split('-')
         log_index = int(raw_log_index)
     except ValueError as e:
-        raise DeserializationError(f'Unexpected transaction id: {raw_tx_id}') from e
+        raise DeserializationError(f'Unexpected transaction id: {raw_tx_id}.') from e
     return tx_hash, log_index
 
 
@@ -142,15 +287,15 @@ def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
         raise DeserializationError(f'Missing key: {str(e)}.') from e
 
     if amount0_in == ZERO:
-        # Prevent a DivisionByZero when creating the trade
-        raise DeserializationError('TokenAmountIn balance is zero')
+        # Prevent a division by zero error when creating the trade
+        raise DeserializationError('TokenAmountIn balance is zero.')
 
     # Checksum addresses
     try:
         user_address = to_checksum_address(raw_user_address)
     except ValueError as e:
         raise DeserializationError(
-            f'Invalid ethereum address: {raw_user_address} in userAddress.',
+            f'Invalid ethereum address: {raw_user_address} in userAddress.id.',
         ) from e
 
     try:
@@ -164,7 +309,7 @@ def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
         pool_address = to_checksum_address(raw_pool_address)
     except ValueError as e:
         raise DeserializationError(
-            f'Invalid ethereum address: {raw_pool_address} in poolAddress.',
+            f'Invalid ethereum address: {raw_pool_address} in poolAddress.id.',
         ) from e
 
     try:
@@ -273,7 +418,10 @@ def deserialize_token_day_data(
     return token_address, usd_price
 
 
-def calculate_trade_from_swaps(swaps: List[AMMSwap]) -> AMMTrade:
+def calculate_trade_from_swaps(
+        swaps: List[AMMSwap],
+        trade_index: int = 0,
+) -> AMMTrade:
     """Given a list of 1 or more AMMSwap (swap) return an AMMTrade (trade).
     The trade is calculated using the first swap token (QUOTE) and last swap
     token (BASE). Be aware that any token data in between will be ignored for
@@ -289,6 +437,7 @@ def calculate_trade_from_swaps(swaps: List[AMMSwap]) -> AMMTrade:
     assert len(swaps) != 0, "Swaps can't be an empty list here"
 
     if swaps[0].amount0_in == ZERO:
+        # Prevent a division by zero error when creating the trade.
         # Swaps with `tokenIn` amount (<AMMSwap>.amount0_in) equals to zero are
         # not expected nor supported. The function `deserialize_swap` will raise
         # a DeserializationError, preventing to store them in the DB. In case
@@ -297,7 +446,7 @@ def calculate_trade_from_swaps(swaps: List[AMMSwap]) -> AMMTrade:
             'Failed to deserialize swap from db. First swap amount0_in is zero',
             swaps=swaps,
         )
-        raise DeserializationError('First swap amount0_in is zero')
+        raise DeserializationError('First swap amount0_in is zero.')
 
     amm_trade = AMMTrade(
         trade_type=TradeType.BUY,  # AMMTrade is always a buy
@@ -306,7 +455,7 @@ def calculate_trade_from_swaps(swaps: List[AMMSwap]) -> AMMTrade:
         amount=swaps[-1].amount1_out,
         rate=Price(swaps[-1].amount1_out / swaps[0].amount0_in),
         swaps=swaps,
-        trade_index=0,
+        trade_index=trade_index,
     )
     return amm_trade
 
@@ -331,21 +480,24 @@ def get_trades_from_tx_swaps(swaps: List[AMMSwap]) -> List[AMMTrade]:
     trades: List[AMMTrade] = []
     trade_swaps: List[AMMSwap] = []
     last_idx = len(swaps) - 1
+    trade_index = 0
     for idx, swap in enumerate(swaps):
         trade_swaps.append(swap)
         if idx == last_idx:
-            trade = calculate_trade_from_swaps(trade_swaps)
+            trade = calculate_trade_from_swaps(swaps=trade_swaps, trade_index=trade_index)
             trades.append(trade)
             break
 
+        # Create the trade when the current swap can't be aggregated with the next one
         next_swap = swaps[idx + 1]
-        is_aggregable = (
+        is_not_aggregable = (
             swap.amount1_out != next_swap.amount0_in or
             swap.token1.ethereum_address != next_swap.token0.ethereum_address
         )
-        if is_aggregable:
-            trade = calculate_trade_from_swaps(trade_swaps)
+        if is_not_aggregable:
+            trade = calculate_trade_from_swaps(swaps=trade_swaps, trade_index=trade_index)
             trades.append(trade)
+            trade_index = trade_index + 1 if swap.tx_hash == next_swap.tx_hash else 0
             trade_swaps = []
 
     return trades

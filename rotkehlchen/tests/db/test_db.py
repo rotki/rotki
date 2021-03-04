@@ -27,16 +27,16 @@ from rotkehlchen.db.settings import (
     DEFAULT_DISPLAY_DATE_IN_LOCALTIME,
     DEFAULT_HISTORICAL_PRICE_ORACLES,
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
-    DEFAULT_TAXABLE_LEDGER_ACTIONS,
     DEFAULT_INCLUDE_GAS_COSTS,
     DEFAULT_KRAKEN_ACCOUNT_TYPE,
     DEFAULT_MAIN_CURRENCY,
+    DEFAULT_TAXABLE_LEDGER_ACTIONS,
     DEFAULT_UI_FLOATING_PRECISION,
     ROTKEHLCHEN_DB_VERSION,
     DBSettings,
     ModifiableDBSettings,
 )
-from rotkehlchen.db.utils import DBAssetBalance, BlockchainAccounts, LocationData
+from rotkehlchen.db.utils import BlockchainAccounts, DBAssetBalance, LocationData
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
@@ -109,6 +109,8 @@ TABLES_AT_INIT = [
     'ledger_action_type',
     'ignored_actions',
     'action_type',
+    'balancer_pools',
+    'balancer_events',
 ]
 
 
