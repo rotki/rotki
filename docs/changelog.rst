@@ -8,6 +8,7 @@ Changelog
 * :feature:`2384` Users will now see their loopring balances on dashboard nested underneath the Ethereum balances.
 * :feature:`1448` When querying trades, deposits and withdrawals the entries that have already been queried will now be instantly shown to the user, while waiting for the query of the latest entries to complete.
 * :feature:`1799` Modules will now be dynamically activated/deactivated at the moment the user modifies the settings from the frontend. Restarts of the app will no longer be necessary.
+* :feature:`2401` Balances in loopring will now be included in the balance snapshots.
 
 * :release:`1.14.2 <2021-02-24>`
 * :bug:`2399` Users will now see a warning if the loopring module is not activated when adding an API key, and balances will be fetched automatically if it is.

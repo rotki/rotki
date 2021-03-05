@@ -30,7 +30,7 @@ from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.interfaces import EthereumModule
+from rotkehlchen.utils.interfaces import EthereumModule, LockableQueryObject, protect_with_lock
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
@@ -162,7 +162,7 @@ class LoopringAPIKeyMismatch(Exception):
     pass
 
 
-class Loopring(ExternalServiceWithApiKey, EthereumModule):
+class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryObject):
 
     def __init__(
             self,
@@ -342,6 +342,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule):
 
         return balances
 
+    @protect_with_lock()
     def get_balances(
             self,
             addresses: List[ChecksumEthAddress],

@@ -805,6 +805,10 @@ class Rotkehlchen():
             liabilities = {}
             log.error(f'Querying blockchain balances failed due to: {str(e)}')
 
+        # retrieve loopring balances if module is activated
+        if self.chain_manager.get_module('loopring'):
+            balances[str(Location.LOOPRING)] = self.chain_manager.get_loopring_balances()
+
         balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)
 
         # Calculate usd totals
