@@ -13,6 +13,7 @@ from rotkehlchen.errors import (
     UnknownAsset,
 )
 from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 
 from .schema import DB_SCRIPT_CREATE_TABLES
 
@@ -357,14 +358,24 @@ class GlobalDBHandler():
         cursor = GlobalDBHandler()._conn.cursor()
         for underlying_token in underlying_tokens:
             # make sure underlying token address is tracked if not already there
-            try:
-                cursor.execute(
-                    'INSERT INTO ethereum_tokens(address) VALUES(?)',
-                    (underlying_token.address,),
-                )
-            except sqlite3.IntegrityError:
-                pass  # already there
-
+            asset_id = GlobalDBHandler.get_ethereum_token_identifier(underlying_token.address)
+            if asset_id is None:
+                try:  # underlying token does not exist. Track it
+                    cursor.execute(
+                        'INSERT INTO ethereum_tokens(address) VALUES(?)',
+                        (underlying_token.address,),
+                    )
+                    asset_id = ETHEREUM_DIRECTIVE + underlying_token.address
+                    cursor.execute(
+                        'INSERT INTO assets(identifier, type, details_reference) '
+                        'VALUES(?, ?, ?) ',
+                        (asset_id, 'C', underlying_token.address),
+                    )
+                except sqlite3.IntegrityError as e:
+                    raise InputError(
+                        f'Failed to add underlying tokens for {parent_token_address} '
+                        f'due to {str(e)}',
+                    ) from e
             try:
                 cursor.execute(
                     'INSERT INTO underlying_tokens_list(address, weight, parent_token_entry) '

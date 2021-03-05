@@ -18,6 +18,9 @@ from rotkehlchen.tests.utils.globaldb import (
     INITIAL_EXPECTED_TOKENS,
     INITIAL_TOKENS,
     custom_address1,
+    underlying_address1,
+    underlying_address2,
+    underlying_address3,
     underlying_address4,
 )
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
@@ -113,6 +116,19 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.CONFLICT,
     )
+
+    # also test that the addition of underlying tokens has created proper asset entires for them
+    cursor = GlobalDBHandler()._conn.cursor()
+    result = cursor.execute(
+        'SELECT COUNT(*) from assets WHERE identifier IN (?, ?, ?, ?)',
+        [ETHEREUM_DIRECTIVE + x for x in [underlying_address1, underlying_address2, underlying_address3, underlying_address4]],  # noqa: E501
+    ).fetchone()[0]
+    assert result == 4
+    result = cursor.execute(
+        'SELECT COUNT(*) from ethereum_tokens WHERE address IN (?, ?, ?, ?)',
+        (underlying_address1, underlying_address2, underlying_address3, underlying_address4),  # noqa: E501
+    ).fetchone()[0]
+    assert result == 4
 
     # now test that adding a token with underlying tokens adding up to more than 100% is caught
     bad_token = CustomEthereumToken(
