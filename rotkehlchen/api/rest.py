@@ -2501,7 +2501,10 @@ class RestAPI():
 
     def upload_asset_icon(self, asset: Asset, filepath: Path) -> Response:
         self.rotkehlchen.icon_manager.add_icon(asset=asset, icon_path=filepath)
-        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+        return api_response(
+            result=_wrap_in_ok_result({'identifier': asset.identifier}),
+            status_code=HTTPStatus.OK,
+        )
 
     @staticmethod
     def _get_current_assets_price(

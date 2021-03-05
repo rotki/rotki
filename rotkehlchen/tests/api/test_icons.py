@@ -45,7 +45,7 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
         )
 
     result = assert_proper_response_with_result(response)
-    assert result is True
+    assert result == {'identifier': 'GNO'}
     uploaded_icon = data_dir / 'icons' / 'custom' / 'GNO.png'
     assert uploaded_icon.is_file()
     assert filecmp.cmp(uploaded_icon, filepath)

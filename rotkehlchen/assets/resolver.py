@@ -193,7 +193,7 @@ def _attempt_initialization(
             if not asset_type:
                 log.error(
                     f'At initial load of asset.json, skipping asset with id '
-                    f'{asset_id} due to unknown type {data["type"]}'
+                    f'{asset_id} due to unknown type {data["type"]}',
                 )
                 continue
 
@@ -296,7 +296,6 @@ class AssetResolver():
 
         if check_json:  # still need to resolve out of the in memory all_assets.json
             if instance.all_assets is None:
-                __import__("pdb").set_trace()
                 raise AssertionError(
                     'We need to check all_assets.json and cached data has been deleted',
                 )

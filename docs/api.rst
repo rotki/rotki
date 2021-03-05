@@ -2371,9 +2371,9 @@ Uploading custom asset icons
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      {"result": true, "message": ""}
+      {"result": {"identifier": "GNO"}, "message": ""}
 
-
+   :resjson strin identifier: The identifier of the asset for which the icon was uploaded.
    :statuscode 200: Icon succesfully uploaded
    :statuscode 500: Internal Rotki error
 
