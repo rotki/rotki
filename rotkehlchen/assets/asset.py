@@ -239,7 +239,7 @@ class Asset():
         return self.asset_type == AssetType.FIAT
 
     def is_eth_token(self) -> bool:
-        return self.asset_type in (AssetType.ETH_TOKEN, AssetType.ETH_TOKEN_AND_MORE)
+        return self.asset_type in (AssetType.ETHEREUM_TOKEN, AssetType.ETHEREUM_TOKEN_AND_MORE)
 
     def __str__(self) -> str:
         return self.name

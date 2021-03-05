@@ -244,11 +244,11 @@ class SupportedBlockchain(Enum):
 class AssetType(Enum):
     FIAT = 1
     OWN_CHAIN = 2
-    ETH_TOKEN = 3
+    ETHEREUM_TOKEN = 3
     OMNI_TOKEN = 4
     NEO_TOKEN = 5
-    XCP_TOKEN = 6
-    BTS_TOKEN = 7
+    COUNTERPARTY_TOKEN = 6
+    BITSHARES_TOKEN = 7
     ARDOR_TOKEN = 8
     NXT_TOKEN = 9
     UBIQ_TOKEN = 10
@@ -259,7 +259,7 @@ class AssetType(Enum):
     STELLAR_TOKEN = 15
     TRON_TOKEN = 16
     ONTOLOGY_TOKEN = 17
-    ETH_TOKEN_AND_MORE = 18  # only in all_assets.json -- in DB turned to eth token
+    ETHEREUM_TOKEN_AND_MORE = 18  # only in all_assets.json -- in DB turned to eth token
     EXCHANGE_SPECIFIC = 19
     VECHAIN_TOKEN = 20
     BINANCE_TOKEN = 21
@@ -275,7 +275,7 @@ class AssetType(Enum):
         return chr(self.value + 64)
 
     def is_eth_token(self) -> bool:
-        return self in (AssetType.ETH_TOKEN, AssetType.ETH_TOKEN_AND_MORE)
+        return self in (AssetType.ETHEREUM_TOKEN, AssetType.ETHEREUM_TOKEN_AND_MORE)
 
     @staticmethod
     def deserialize_from_db(value: str) -> 'AssetType':

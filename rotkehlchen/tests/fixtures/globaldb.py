@@ -25,7 +25,7 @@ def create_globaldb(
     if custom_ethereum_tokens is not None:
         for entry in custom_ethereum_tokens:
             asset_id = ETHEREUM_DIRECTIVE + entry.address
-            handler.add_asset(asset_id=asset_id, asset_type=AssetType.ETH_TOKEN, data=entry)
+            handler.add_asset(asset_id=asset_id, asset_type=AssetType.ETHEREUM_TOKEN, data=entry)
 
     return handler
 

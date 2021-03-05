@@ -16,13 +16,12 @@ log = logging.getLogger(__name__)
 asset_type_mapping = {
     'fiat': AssetType.FIAT,
     'own chain': AssetType.OWN_CHAIN,
-    'ethereum token and own chain': AssetType.OWN_CHAIN,
-    'ethereum token and more': AssetType.ETH_TOKEN_AND_MORE,
-    'ethereum token': AssetType.ETH_TOKEN,
+    'ethereum token and more': AssetType.ETHEREUM_TOKEN_AND_MORE,
+    'ethereum token': AssetType.ETHEREUM_TOKEN,
     'omni token': AssetType.OMNI_TOKEN,
     'neo token': AssetType.NEO_TOKEN,
-    'counterparty token': AssetType.XCP_TOKEN,
-    'bitshares token': AssetType.BTS_TOKEN,
+    'counterparty token': AssetType.COUNTERPARTY_TOKEN,
+    'bitshares token': AssetType.BITSHARES_TOKEN,
     'ardor token': AssetType.ARDOR_TOKEN,
     'nxt token': AssetType.NXT_TOKEN,
     'Ubiq token': AssetType.UBIQ_TOKEN,
@@ -135,6 +134,8 @@ def _maybe_prime_globaldb(assets_dir: Path) -> None:
     ethereum_tokens = []
     other_assets = []
     for asset_id, entry in assets.items():
+        if asset_id == 'XD':
+            continue  # https://github.com/rotki/rotki/issues/2503
         entry['identifier'] = asset_id
         asset_type = asset_type_mapping.get(entry['type'], None)
         if not asset_type:

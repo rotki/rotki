@@ -1269,7 +1269,7 @@ class RestAPI():
         try:
             GlobalDBHandler().add_asset(
                 asset_id=identifier,
-                asset_type=AssetType.ETH_TOKEN,
+                asset_type=AssetType.ETHEREUM_TOKEN,
                 data=token,
             )
         except InputError as e:

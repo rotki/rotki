@@ -131,7 +131,7 @@ class GlobalDBHandler():
         cursor = connection.cursor()
 
         # first ethereum tokens
-        # forcing ETH_TOKEN type, even if it's ETH_TOKEN_AND_MORE since the latter
+        # forcing ETHEREUM_TOKEN type, even if it's ETHEREUM_TOKEN_AND_MORE since the latter
         # is going to be deprecated
         cursor.executemany(
             'INSERT OR IGNORE INTO assets(identifier, type, details_reference) '
@@ -195,6 +195,8 @@ class GlobalDBHandler():
 
     @staticmethod
     def get_asset_data(identifier: str) -> Optional[AssetData]:
+        if identifier == 'XD':
+            identifier = 'SCRL'  # https://github.com/rotki/rotki/issues/2503
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
             'SELECT type, details_reference from assets WHERE identifier=?;',
@@ -268,7 +270,7 @@ class GlobalDBHandler():
             )
             return None
 
-        if asset_type in (AssetType.ETH_TOKEN, AssetType.ETH_TOKEN_AND_MORE):
+        if asset_type.is_eth_token():
             address = cast(ChecksumEthAddress, details_reference)  # reference is an address
             token = GlobalDBHandler().get_ethereum_token(address)
             if token is None:

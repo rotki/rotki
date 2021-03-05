@@ -2152,7 +2152,7 @@
     },
     "BULL": {
         "coingecko": "",
-        "ethereum_address": "0x016ee7373248a80BDe1fD6bAA001311d233b3CFa",
+        "ethereum_address": "0x68eb95Dc9934E19B86687A10DF8e364423240E94",
         "ethereum_token_decimals": 18,
         "name": "3X Long Bitcoin Token",
         "started": 1552867200,
@@ -2543,7 +2543,7 @@
     "CET": {
         "active": true,
         "coingecko": "coinex-token",
-        "ethereum_address": "0xF660cA1e228e7BE1fA8B4f5583145E31147FB577",
+        "ethereum_address": "0x081F67aFA0cCF8c7B17540767BBe95DF2bA8D97F",
         "ethereum_token_decimals": 18,
         "name": "CoinEx Token",
         "started": 1531094400,
@@ -4519,12 +4519,10 @@
     },
     "EOS": {
         "coingecko": "eos",
-        "ethereum_address": "0x86Fa049857E0209aa7D9e616F7eb3b3B78ECfdb0",
-        "ethereum_token_decimals": 18,
         "name": "EOS.io",
         "started": 1494028800,
         "symbol": "EOS",
-        "type": "ethereum token and own chain"
+        "type": "own chain"
     },
     "EOSBEAR": {
         "coingecko": "3x-short-eos-token",
@@ -6459,13 +6457,13 @@
         "symbol": "IDXM",
         "type": "ethereum token"
     },
-    "IETH": {
+    "iETH-2": {
         "coingecko": "iethereum",
-        "ethereum_address": "0x859a9C0b44cb7066D956a958B0b82e54C9e44b4B",
+        "ethereum_address": "0xC71D8BaAa436aa7E42DA1f40bEc48F11AB3c9E4A",
         "ethereum_token_decimals": 8,
         "name": "iEthereum",
         "started": 1507543294,
-        "symbol": "IETH",
+        "symbol": "iETH",
         "type": "ethereum token"
     },
     "IFC": {
@@ -6857,7 +6855,7 @@
     },
     "KAI": {
         "coingecko": "kardiachain",
-        "ethereum_address": "0x1410434b0346f5bE678d0FB554E5c7ab620f8f4a",
+        "ethereum_address": "0xD9Ec3ff1f8be459Bb9369b4E79e9Ebcf7141C093",
         "ethereum_token_decimals": 18,
         "name": "KardiaChain Token",
         "started": 1601182047,
@@ -7803,12 +7801,10 @@
     },
     "META": {
         "coingecko": "metadium",
-        "ethereum_address": "0xDE2F7766C8BF14CA67193128535E5c7454f8387C",
-        "ethereum_token_decimals": 18,
         "name": "Metadium",
         "started": 1534896000,
         "symbol": "META",
-        "type": "ethereum token and own chain"
+        "type": "own chain"
     },
     "METM": {
         "coingecko": "metamorph",
@@ -8526,12 +8522,10 @@
     },
     "NIM": {
         "coingecko": "nimiq-2",
-        "ethereum_address": "0xcfb98637bcae43C13323EAa1731cED2B716962fD",
-        "ethereum_token_decimals": 18,
         "name": "Nimiq",
         "started": 1496707200,
         "symbol": "NIM",
-        "type": "ethereum token and own chain"
+        "type": "own chain"
     },
     "NIMFA": {
         "active": false,
@@ -10011,9 +10005,9 @@
     "R": {
         "coingecko": "revain",
         "cryptocompare": "REV",
-        "ethereum_address": "0x2ef52Ed7De8c5ce03a4eF0efbe9B7450F2D7Edc9",
+        "ethereum_address": "0x48f775EFBE4F5EcE6e0DF2f7b5932dF56823B990",
         "ethereum_token_decimals": 6,
-        "name": "Revain",
+        "name": "Revain old",
         "started": 1501804800,
         "symbol": "REV",
         "type": "ethereum token"
@@ -10634,7 +10628,7 @@
         "cryptocompare": "SCRL",
         "ethereum_address": "0x24DCc881E7Dd730546834452F21872D5cb4b5293",
         "ethereum_token_decimals": 18,
-        "name": "Data Transaction Token ",
+        "name": "Data Transaction Token",
         "started": 1504656000,
         "symbol": "XD",
         "type": "ethereum token"

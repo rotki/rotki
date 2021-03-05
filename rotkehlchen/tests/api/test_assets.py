@@ -222,8 +222,15 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_query_all_assets(rotkehlchen_api_server):
-    """Test that using the query all owned assets endpoint works"""
+    """Test that using the query all owned assets endpoint works
+
+    Compare with the contents of all_assets.json. Essentially tests that priming the DB works.
+
+    That's why there is quite a few extra checks for things that changed
+    when moving to global DB
+    """
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -238,6 +245,36 @@ def test_query_all_assets(rotkehlchen_api_server):
     with open(os.path.join(dir_path, 'data', 'all_assets.json'), 'r') as f:
         expected_assets = json.loads(f.read())
 
-    assert len(data['result']) == len(expected_assets)
-    for key, entry in data['result'].items():
-        assert expected_assets[key] == entry
+    returned_ids = set(data['result'].keys())
+    expected_ids = set(expected_assets.keys())
+    expected_missing_ids = {'XD'}
+    assert expected_ids - returned_ids == expected_missing_ids, f'Missing ids: {expected_ids - returned_ids - expected_missing_ids}'  # noqa: E501
+
+    for asset_id, entry_data in data['result'].items():
+        for key, val in entry_data.items():
+            if key in ('active', 'ended'):
+                continue  # we ignore these keys after DB insertion
+
+            other_key = key
+            if key == 'asset_type':
+                other_key = 'type'
+            elif key == 'decimals':
+                other_key = 'ethereum_token_decimals'
+
+            if val is not None:
+                is_ethereum_token_and_more = (
+                    key == 'asset_type' and
+                    val == 'ethereum token' and
+                    expected_assets[asset_id][other_key] == 'ethereum token and more'
+                )
+                if is_ethereum_token_and_more:
+                    continue  # we ignore this distinction in the DB
+
+                expected_val = expected_assets[asset_id][other_key]
+                if key == 'asset_type':
+                    expected_val = expected_val.lower()
+                    if expected_val == 'ethereum token and own chain':
+                        expected_val = 'own chain'
+                assert val == expected_val, f'mismatch of {other_key} for {asset_id}'  # noqa: E501
+            else:
+                assert other_key not in expected_assets[asset_id]
