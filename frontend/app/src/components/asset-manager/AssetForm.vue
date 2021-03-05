@@ -1,13 +1,27 @@
 <template>
   <v-form :value="value" class="pt-2" @input="input">
-    <v-text-field
-      v-model="address"
-      outlined
-      :error-messages="errors['address']"
-      :label="$t('asset_form.labels.address')"
-      :disabled="saving"
-      @focus="delete errors['address']"
-    />
+    <v-row>
+      <v-col cols="12" md="4" xl="2">
+        <v-select
+          v-model="assetType"
+          outlined
+          :label="$t('asset_form.labels.asset_type')"
+          disabled
+          :items="types"
+        />
+      </v-col>
+
+      <v-col>
+        <v-text-field
+          v-model="address"
+          outlined
+          :error-messages="errors['address']"
+          :label="$t('asset_form.labels.address')"
+          :disabled="saving"
+          @focus="delete errors['address']"
+        />
+      </v-col>
+    </v-row>
     <v-text-field
       v-model="name"
       outlined
@@ -39,20 +53,12 @@
         />
       </v-col>
     </v-row>
-    <date-time-picker
-      v-model="started"
-      seconds
-      outlined
-      :label="$t('asset_form.labels.started')"
-      :error-messages="errors['started']"
-      :disabled="saving"
-      @focus="delete errors['started']"
-    />
     <v-row>
-      <v-col>
+      <v-col cols="12" md="6">
         <v-text-field
           v-model="coingecko"
           outlined
+          persistent-hint
           :hint="$t('asset_form.labels.coingecko_hint')"
           :label="$t('asset_form.labels.coingecko')"
           :error-messages="errors['coingecko']"
@@ -60,10 +66,11 @@
           @focus="delete errors['coingecko']"
         />
       </v-col>
-      <v-col>
+      <v-col cols="12" md="6">
         <v-text-field
           v-model="cryptocompare"
           outlined
+          persistent-hint
           :label="$t('asset_form.labels.cryptocompare')"
           :hint="$t('asset_form.labels.cryptocompare_hint')"
           :error-messages="errors['cryptocompare']"
@@ -72,7 +79,29 @@
         />
       </v-col>
     </v-row>
-    <underlying-token-manager v-model="underlyingTokens" />
+
+    <v-sheet outlined rounded class="mt-2">
+      <v-expansion-panels flat tile>
+        <v-expansion-panel>
+          <v-expansion-panel-header>
+            {{ $t('asset_form.optional') }}
+          </v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <date-time-picker
+              v-model="started"
+              seconds
+              outlined
+              :label="$t('asset_form.labels.started')"
+              :error-messages="errors['started']"
+              :disabled="saving"
+              @focus="delete errors['started']"
+            />
+            <underlying-token-manager v-model="underlyingTokens" />
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+      </v-expansion-panels>
+    </v-sheet>
+
     <v-row class="mt-4">
       <v-col cols="auto">
         <v-sheet outlined rounded class="asset-form__icon">
@@ -122,6 +151,9 @@ export default class AssetForm extends Vue {
   started: string = '';
   coingecko: string = '';
   cryptocompare: string = '';
+  assetType: string = 'Ethereum token';
+  types: string[] = ['Ethereum token'];
+  identifier: string = '';
 
   underlyingTokens: UnderlyingToken[] = [];
   icon: File | null = null;
@@ -166,6 +198,7 @@ export default class AssetForm extends Vue {
     this.coingecko = token.coingecko;
     this.cryptocompare = token.cryptocompare;
     this.underlyingTokens = token.underlyingTokens ?? [];
+    this.identifier = token.identifier ?? '';
   }
 
   async saveIcon(identifier: string) {
@@ -205,6 +238,7 @@ export default class AssetForm extends Vue {
       } else {
         ({ identifier } = await this.$api.assets.addCustomToken(token));
       }
+      this.identifier = identifier;
       await this.saveIcon(identifier);
       return true;
     } catch (e) {

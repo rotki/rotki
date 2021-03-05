@@ -4,6 +4,7 @@ export interface UnderlyingToken {
 }
 
 export interface CustomEthereumToken {
+  readonly identifier?: string;
   readonly address: string;
   readonly decimals: number;
   readonly name: string;

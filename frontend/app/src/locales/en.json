@@ -150,6 +150,7 @@
   "underlying_token_manager": {
     "delete_tooltip": "Delete the underlying token",
     "edit_tooltip": "Edit an underlying token",
+    "hint": "The percentage of an underlying asset in the token. e.g. A uniswap lp token is consisted of two underlying tokens with a 50% weight each.",
     "labels": {
       "address": "Address",
       "tokens": "Underlying tokens",
@@ -170,15 +171,17 @@
   "asset_form": {
     "labels": {
       "address": "Address",
+      "asset_type": "Asset Type",
       "coingecko": "Coingecko",
-      "coingecko_hint": "The identifier of the asset on Coingecko",
+      "coingecko_hint": "The identifier of the asset on Coingecko. If not set rotki will not be able to retrieve prices for the asset from Coingecko.",
       "cryptocompare": "CryptoCompare",
-      "cryptocompare_hint": "The identifier of the asset on CryptoCompare",
+      "cryptocompare_hint": "The identifier of the asset on CryptoCompare. If not set rotki will not be able to retrieve prices for the asset from CryptoCompare",
       "decimals": "Decimals",
       "name": "Name",
       "started": "Started",
       "symbol": "Symbol"
     },
+    "optional": "Optional Fields",
     "replaced": "This icon will be replaced with {name} on save.",
     "icon_upload": {
       "title": "Icon upload",

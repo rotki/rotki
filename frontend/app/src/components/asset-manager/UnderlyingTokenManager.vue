@@ -4,7 +4,7 @@
       {{ $t('underlying_token_manager.labels.tokens') }}
     </div>
     <v-row class="mt-2">
-      <v-col>
+      <v-col cols="12" md="8">
         <v-text-field
           v-model="underlyingAddress"
           :rules="addressRules"
@@ -12,21 +12,24 @@
           :label="$t('underlying_token_manager.labels.address')"
         />
       </v-col>
-      <v-col>
+      <v-col cols="12" md="4">
         <v-text-field
           v-model="underlyingWeight"
           type="number"
           max="100"
           min="1"
           :rules="rules"
+          persistent-hint
+          :hint="$t('underlying_token_manager.hint')"
           outlined
           :label="$t('underlying_token_manager.labels.weight')"
-        />
-      </v-col>
-      <v-col cols="auto">
-        <v-btn icon class="mt-3" :disabled="!valid" @click="addToken">
-          <v-icon>mdi-plus</v-icon>
-        </v-btn>
+        >
+          <template #append-outer>
+            <v-btn icon :disabled="!valid" class="pb-2" @click="addToken">
+              <v-icon>mdi-plus</v-icon>
+            </v-btn>
+          </template>
+        </v-text-field>
       </v-col>
     </v-row>
     <v-sheet outlined rounded class="underlying-tokens">
