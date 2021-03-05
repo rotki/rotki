@@ -455,7 +455,7 @@ def deserialize_location(symbol: str) -> Location:
         return Location.GEMINI
     if symbol == 'equities':
         return Location.EQUITIES
-    if symbol == 'real estate':
+    if symbol == 'realestate':
         return Location.REALESTATE
     if symbol == 'commodities':
         return Location.COMMODITIES
