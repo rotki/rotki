@@ -18,7 +18,13 @@
       :footer-props="footerProps"
     >
       <template #item.name="{ item }">
-        <asset-details-base opens-details :asset="item" />
+        <asset-details-base
+          opens-details
+          :asset="{
+            ...item,
+            symbol: item.identifier ? item.identifier : item.symbol
+          }"
+        />
       </template>
       <template #item.address="{ item }">
         <hash-link :text="item.address" />

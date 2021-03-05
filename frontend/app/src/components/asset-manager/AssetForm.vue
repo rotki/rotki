@@ -105,7 +105,7 @@
     <v-row class="mt-4">
       <v-col cols="auto">
         <v-sheet outlined rounded class="asset-form__icon">
-          <crypto-icon v-if="!!symbol" :symbol="symbol" size="72" />
+          <crypto-icon v-if="preview" :symbol="preview" size="72" />
         </v-sheet>
       </v-col>
       <v-col>
@@ -170,6 +170,10 @@ export default class AssetForm extends Vue {
 
   @Emit()
   input(_value: boolean) {}
+
+  get preview(): string | null {
+    return this.identifier ?? this.symbol ?? null;
+  }
 
   get token(): CustomEthereumToken {
     return {
