@@ -13,6 +13,8 @@ export interface CustomEthereumToken {
   readonly coingecko: string;
   readonly cryptocompare: string;
   readonly underlyingTokens: UnderlyingToken[] | undefined;
+  readonly swappedFor: string;
+  readonly protocol: string;
 }
 
 export interface CustomTokenResponse {

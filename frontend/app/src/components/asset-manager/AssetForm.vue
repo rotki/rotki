@@ -96,6 +96,30 @@
               :disabled="saving"
               @focus="delete errors['started']"
             />
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="protocol"
+                  outlined
+                  persistent-hint
+                  :label="$t('asset_form.labels.protocol')"
+                  :error-messages="errors['protocol']"
+                  :disabled="saving"
+                  @focus="delete errors['protocol']"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="swappedFrom"
+                  outlined
+                  persistent-hint
+                  :label="$t('asset_form.labels.swapped_from')"
+                  :error-messages="errors['swapped_from']"
+                  :disabled="saving"
+                  @focus="delete errors['swapped_from']"
+                />
+              </v-col>
+            </v-row>
             <underlying-token-manager v-model="underlyingTokens" />
           </v-expansion-panel-content>
         </v-expansion-panel>
@@ -154,6 +178,8 @@ export default class AssetForm extends Vue {
   assetType: string = 'Ethereum token';
   types: string[] = ['Ethereum token'];
   identifier: string = '';
+  protocol: string = '';
+  swappedFrom: string = '';
 
   underlyingTokens: UnderlyingToken[] = [];
   icon: File | null = null;
@@ -185,7 +211,9 @@ export default class AssetForm extends Vue {
       cryptocompare: this.cryptocompare,
       started: convertToTimestamp(this.started),
       underlyingTokens:
-        this.underlyingTokens.length > 0 ? this.underlyingTokens : undefined
+        this.underlyingTokens.length > 0 ? this.underlyingTokens : undefined,
+      swappedFor: this.swappedFrom,
+      protocol: this.swappedFrom
     };
   }
 
@@ -203,6 +231,8 @@ export default class AssetForm extends Vue {
     this.cryptocompare = token.cryptocompare;
     this.underlyingTokens = token.underlyingTokens ?? [];
     this.identifier = token.identifier ?? '';
+    this.swappedFrom = token.swappedFor;
+    this.protocol = token.protocol;
   }
 
   async saveIcon(identifier: string) {

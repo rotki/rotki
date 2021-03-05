@@ -178,7 +178,9 @@
       "cryptocompare_hint": "The identifier of the asset on CryptoCompare. If not set rotki will not be able to retrieve prices for the asset from CryptoCompare",
       "decimals": "Decimals",
       "name": "Name",
+      "protocol": "Protocol",
       "started": "Started",
+      "swapped_from": "Swapped from",
       "symbol": "Symbol"
     },
     "optional": "Optional Fields",
