@@ -136,7 +136,13 @@ def _maybe_prime_globaldb(assets_dir: Path) -> None:
     other_assets = []
     for asset_id, entry in assets.items():
         entry['identifier'] = asset_id
-        asset_type = asset_type_mapping.get(entry['type'], AssetType.OWN_CHAIN)
+        asset_type = asset_type_mapping.get(entry['type'], None)
+        if not asset_type:
+            log.error(
+                f'During priming GlobalDB skipping asset with id {asset_id} '
+                f'due to unknown type {entry["type"]}',
+            )
+            continue
         entry['type'] = asset_type
         if asset_type.is_eth_token():
             ethereum_tokens.append(entry)
@@ -183,12 +189,20 @@ def _attempt_initialization(
 
         all_assets_mapping = {}
         for asset_id, data in assets.items():
+            asset_type = asset_type_mapping.get(data['type'], None)
+            if not asset_type:
+                log.error(
+                    f'At initial load of asset.json, skipping asset with id '
+                    f'{asset_id} due to unknown type {data["type"]}'
+                )
+                continue
+
             all_assets_mapping[asset_id] = AssetData(
                 identifier=asset_id,
                 symbol=data['symbol'],
                 name=data['name'],
                 active=data.get('active', True),
-                asset_type=asset_type_mapping.get(data['type'], AssetType.OWN_CHAIN),
+                asset_type=asset_type,
                 started=data.get('started', None),
                 ended=data.get('ended', None),
                 forked=data.get('forked', None),
@@ -247,7 +261,8 @@ class AssetResolver():
                 read_assets=False,
             )
             AssetResolver.__instance = object.__new__(cls)
-            assert all_assets_mapping is not None, 'should have read built-in all_assets.json'
+            if not check_happened:  # check_happened can be true after first init only for tests
+                assert all_assets_mapping is not None, 'should have read built-in all_assets.json'
             AssetResolver.__instance.all_assets = all_assets_mapping
 
         AssetResolver.__instance.remote_check_happened = check_happened
@@ -281,6 +296,7 @@ class AssetResolver():
 
         if check_json:  # still need to resolve out of the in memory all_assets.json
             if instance.all_assets is None:
+                __import__("pdb").set_trace()
                 raise AssertionError(
                     'We need to check all_assets.json and cached data has been deleted',
                 )

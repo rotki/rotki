@@ -39,12 +39,16 @@ def asset_resolver(
         mock_asset_meta_github_response,
         mock_asset_github_response,
         force_reinitialize_asset_resolver,
+        use_clean_caching_directory,
 ):
     """Run the first initialization of the AssetResolver singleton
 
     It's an autouse fixture so that it always gets initialized
     """
-    if force_reinitialize_asset_resolver:
+    # If we need to reinitialize asset resolver, do it. We need to if:
+    # (1) test asks for it
+    # (2) test uses clean directory, so the previously primed DB no longer exists
+    if force_reinitialize_asset_resolver or use_clean_caching_directory:
         AssetResolver._AssetResolver__instance = None
 
     if query_github_for_assets:
