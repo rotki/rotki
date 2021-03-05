@@ -105,7 +105,21 @@ class Balancer(EthereumModule):
         self.msg_aggregator = msg_aggregator
         self.trades_lock = Semaphore()
         try:
+            # TODO: add more flexibility on the module/endpoints availability
+            # (e.g. when raise ModuleInitializationFailure), and take into account how
+            # it can impact other rotki's functionalities (e.g. EventsHistorian.get_history()
+            # and other trades-related stuff).
+            #
+            # Matrix of endpoint - subgraph compatibility:
+            # - Balances: required official subgraph.
+            # - Trades: either official or unofficial subgraph.
+            # - Events (incl. current balances): required official subgraph
+            # (balances) and required unofficial subgraph (events).
+            # - Events (not incl. current balances): required unofficial subgraph.
             self.graph = Graph(
+                'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer',
+            )
+            self.graph_events = Graph(
                 'https://api.thegraph.com/subgraphs/name/yurycooliq/balancer',
             )
         except RemoteError as e:
@@ -237,7 +251,7 @@ class Balancer(EthereumModule):
         address_to_unique_bpt_events: DDAddressToUniqueBPTEvents = defaultdict(set)
         while True:
             try:
-                result = self.graph.query(
+                result = self.graph_events.query(
                     querystr=querystr,
                     param_types=param_types,
                     param_values=param_values,
@@ -420,7 +434,7 @@ class Balancer(EthereumModule):
         address_to_unique_invest_events: DDAddressToUniqueInvestEvents = defaultdict(set)
         while True:
             try:
-                result = self.graph.query(
+                result = self.graph_events.query(
                     querystr=querystr,
                     param_types=param_types,
                     param_values=param_values,
