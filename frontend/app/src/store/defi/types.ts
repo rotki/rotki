@@ -427,3 +427,9 @@ interface BalancerPoolDetails {
 export interface BalancerEvents {
   readonly [address: string]: BalancerPoolDetails[];
 }
+
+export interface BalancerProfitLoss {
+  readonly pool: Pool;
+  readonly usdProfitLoss: BigNumber;
+  readonly profitLossAmount: PoolAmounts;
+}

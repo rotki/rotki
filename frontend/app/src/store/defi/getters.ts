@@ -65,7 +65,8 @@ import {
   DexTrade,
   DexTrades,
   BalancerEvent,
-  Pool
+  Pool,
+  BalancerProfitLoss
 } from '@/store/defi/types';
 import {
   assetName,
@@ -138,6 +139,7 @@ interface DefiGetters {
   balancerAddresses: string[];
   balancerEvents: (addresses: string[]) => BalancerEvent[];
   balancerPools: Pool[];
+  balancerProfitLoss: (addresses: string[]) => BalancerProfitLoss[];
 }
 
 export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
@@ -1512,5 +1514,26 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       };
     }
     return Object.values(pools);
+  },
+  balancerProfitLoss: ({ balancerEvents }) => addresses => {
+    const balancerProfitLoss: { [pool: string]: BalancerProfitLoss } = {};
+    filterAddresses(balancerEvents, addresses, item => {
+      for (let i = 0; i < item.length; i++) {
+        const entry = item[i];
+        if (!balancerProfitLoss[entry.poolAddress]) {
+          balancerProfitLoss[entry.poolAddress] = {
+            pool: {
+              address: entry.poolAddress,
+              name: entry.poolTokens
+                .map(token => assetName(token.token))
+                .join('/')
+            },
+            profitLossAmount: entry.profitLossAmounts,
+            usdProfitLoss: entry.usdProfitLoss
+          };
+        }
+      }
+    });
+    return Object.values(balancerProfitLoss);
   }
 };
