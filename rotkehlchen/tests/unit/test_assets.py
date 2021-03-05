@@ -107,6 +107,10 @@ def test_cryptocompare_asset_support(cryptocompare):
         'FNK',     # Finiko token but FunKeyPai network in CC
         'LOTTO',   # Lotto token but LottoCoin in CC
         'XFI',     # Dfinance token but XFinance in CC
+        'GOLD',    # Gold token but Golden Goose in CC
+        'ACM',     # AC Milan Fan Token but Actinium in CC
+        'TFC',     # TheFutbolCoin but The Freedom Coin in CC
+        'MASK',    # Mask Network but NFTX Hashmask Index in CC
     )
     for identifier, asset_data in AssetResolver().assets.items():
         potential_support = (
