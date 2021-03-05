@@ -1027,5 +1027,40 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
             .toString()
       }
     });
+  },
+  async fetchBalancerEvents(
+    context: ActionContext<DefiState, RotkehlchenState>,
+    refresh: boolean = false
+  ) {
+    const meta: TaskMeta = {
+      title: i18n.t('actions.defi.balancer_events.task.title').toString(),
+      ignoreResult: false,
+      numericKeys: [
+        ...balanceKeys,
+        'amounts',
+        'profit_loss_amounts',
+        'usd_profit_loss'
+      ]
+    };
+
+    await fetchAsync(context, {
+      query: async () => await api.defi.fetchBalancerEvents(),
+      mutation: 'balancerEvents',
+      taskType: TaskType.BALANCER_EVENT,
+      section: Section.DEFI_BALANCER_EVENT,
+      module: MODULE_BALANCER,
+      meta: meta,
+      checkPremium: true,
+      refresh,
+      onError: {
+        title: i18n.t('actions.defi.balancer_events.error.title').toString(),
+        error: message =>
+          i18n
+            .t('actions.defi.balancer_events.error.description', {
+              message
+            })
+            .toString()
+      }
+    });
   }
 };

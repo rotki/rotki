@@ -75,4 +75,15 @@ describe('axios transformers', () => {
       amount: bigNumberify('5.2211e+2')
     });
   });
+
+  test('transformer supports numeric subkeys', () => {
+    const json = '{"amount": { "ABC": "1", "BCD": "2"}}';
+    const parsed = setupJsonTransformer(['amount'])(json);
+    expect(axiosCamelCaseTransformer(parsed)).toMatchObject({
+      amount: {
+        ABC: bigNumberify(1),
+        BCD: bigNumberify(2)
+      }
+    });
+  });
 });
