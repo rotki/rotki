@@ -2,7 +2,6 @@ from typing import List, Optional, Sequence
 
 import pytest
 
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
@@ -21,7 +20,7 @@ from rotkehlchen.tests.utils.substrate import (
     KUSAMA_TOKEN_DECIMALS,
     wait_until_all_substrate_nodes_connected,
 )
-from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, EthTokenInfo
+from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
 
 
 @pytest.fixture(name='number_of_eth_accounts')
@@ -70,11 +69,6 @@ def fixture_ethrpc_endpoint() -> Optional[str]:
 @pytest.fixture(name='ethereum_manager_connect_at_start')
 def fixture_ethereum_manager_connect_at_start() -> Sequence[NodeName]:
     return ()
-
-
-@pytest.fixture
-def all_eth_tokens() -> List[EthTokenInfo]:
-    return AssetResolver().get_all_eth_token_info()
 
 
 @pytest.fixture(name='etherscan')

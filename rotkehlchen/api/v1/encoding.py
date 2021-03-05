@@ -1511,6 +1511,7 @@ class EthereumTokenSchema(Schema):
                     address=entry['address'],
                     weight=entry['weight'],
                 ))
+        # TODO: How to give identifier here?
         return CustomEthereumToken(**data, underlying_tokens=underlying_tokens)
 
 

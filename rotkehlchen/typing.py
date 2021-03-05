@@ -6,6 +6,7 @@ from eth_typing import ChecksumAddress
 from typing_extensions import Literal
 
 from rotkehlchen.chain.substrate.typing import KusamaAddress
+from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 
 ModuleName = Literal[
@@ -138,14 +139,6 @@ ListOfBlockchainAddresses = Union[
 ]
 
 
-class EthTokenInfo(NamedTuple):
-    identifier: str
-    address: ChecksumEthAddress
-    symbol: str
-    name: str
-    decimals: int
-
-
 T_EmptyStr = str
 EmptyStr = NewType('EmptyStr', T_EmptyStr)
 
@@ -266,13 +259,31 @@ class AssetType(Enum):
     STELLAR_TOKEN = 15
     TRON_TOKEN = 16
     ONTOLOGY_TOKEN = 17
-    ETH_TOKEN_AND_MORE = 18
+    ETH_TOKEN_AND_MORE = 18  # only in all_assets.json -- in DB turned to eth token
     EXCHANGE_SPECIFIC = 19
     VECHAIN_TOKEN = 20
     BINANCE_TOKEN = 21
     EOS_TOKEN = 22
     FUSION_TOKEN = 23
     LUNIVERSE_TOKEN = 24
+    OTHER = 25
+
+    def __str__(self) -> str:
+        return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member
+
+    def serialize_for_db(self) -> str:
+        return chr(self.value + 64)
+
+    def is_eth_token(self) -> bool:
+        return self in (AssetType.ETH_TOKEN, AssetType.ETH_TOKEN_AND_MORE)
+
+    @staticmethod
+    def deserialize_from_db(value: str) -> 'AssetType':
+        """May raise a DeserializationError if something is wrong with the DB data"""
+        number = ord(value)
+        if number < 65 or number > list(AssetType)[-1].value + 64:
+            raise DeserializationError(f'Failed to deserialize AssetType DB value {value}')
+        return AssetType(number - 64)
 
 
 class AssetData(NamedTuple):
@@ -293,6 +304,12 @@ class AssetData(NamedTuple):
     # None means, no special mapping. '' means not supported
     cryptocompare: Optional[str]
     coingecko: Optional[str]
+
+    def serialize(self) -> Dict[str, Any]:
+        result = self._asdict()  # pylint: disable=no-member
+        result.pop('identifier')
+        result['asset_type'] = str(self.asset_type)
+        return result
 
 
 class TradeType(Enum):

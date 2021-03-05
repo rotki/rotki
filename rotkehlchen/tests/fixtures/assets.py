@@ -34,6 +34,7 @@ def fixture_force_reinitialize_asset_resolver() -> bool:
 @pytest.fixture(autouse=True)
 def asset_resolver(
         data_dir,
+        globaldb,  # pylint: disable=unused-argument
         query_github_for_assets,
         mock_asset_meta_github_response,
         mock_asset_github_response,

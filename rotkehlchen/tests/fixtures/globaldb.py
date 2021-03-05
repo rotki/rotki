@@ -1,8 +1,11 @@
+from typing import List, Optional
+
 import pytest
 
-from typing import Optional, List
-from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
+from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.typing import AssetType
 
 
 @pytest.fixture(name='custom_ethereum_tokens')
@@ -21,7 +24,8 @@ def create_globaldb(
     handler = GlobalDBHandler(data_dir=data_directory)
     if custom_ethereum_tokens is not None:
         for entry in custom_ethereum_tokens:
-            handler.add_ethereum_token(entry)
+            asset_id = ETHEREUM_DIRECTIVE + entry.address
+            handler.add_asset(asset_id=asset_id, asset_type=AssetType.ETH_TOKEN, data=entry)
 
     return handler
 

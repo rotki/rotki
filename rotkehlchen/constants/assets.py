@@ -1,11 +1,10 @@
 from rotkehlchen.assets.asset import Asset, EthereumToken
 
-A_USD = Asset('USD')
-
 S_BTC = 'BTC'
 S_ETH = 'ETH'
 S_KSM = 'KSM'
 
+A_USD = Asset('USD')
 A_BTC = Asset(S_BTC)
 A_BCH = Asset('BCH')
 A_BAL = Asset('BAL')

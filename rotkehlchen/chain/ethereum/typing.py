@@ -7,7 +7,6 @@ from eth_typing import HexAddress, HexStr
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.utils.misc import from_gwei
@@ -382,12 +381,11 @@ class CustomEthereumToken:
     protocol: Optional[str] = None
     underlying_tokens: Optional[List[UnderlyingToken]] = None
 
-    def identifier(self) -> str:
-        """Returns the asset identifier for this ethereum token as a custom ethereum token
-
-        If we already got it from all_assets.json then this won't match the identifier from there
-        """
-        return ETHEREUM_DIRECTIVE + self.address
+    @property
+    def identifier(self) -> Optional[str]:
+        # TODO: Fix this import requirement. Is in here only to avoid cyclic imports
+        from rotkehlchen.globaldb.handler import GlobalDBHandler  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
+        return GlobalDBHandler().get_ethereum_token_identifier(self.address)
 
     def missing_basic_data(self) -> bool:
         return self.name is None or self.symbol is None or self.decimals is None

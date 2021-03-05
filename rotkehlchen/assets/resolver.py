@@ -1,21 +1,18 @@
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import requests
-from eth_utils.address import to_checksum_address
 
-from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE, ETHEREUM_DIRECTIVE_LENGTH
-from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.errors import UnknownAsset, ModuleInitializationFailure
 from rotkehlchen.globaldb import GlobalDBHandler
-from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress, EthTokenInfo
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
+from rotkehlchen.typing import AssetData, AssetType
 
 log = logging.getLogger(__name__)
 
+# this needs to also be reflected in the globaldb enum.
+# but we should also aim to get rid of it
 asset_type_mapping = {
     'fiat': AssetType.FIAT,
     'own chain': AssetType.OWN_CHAIN,
@@ -42,32 +39,28 @@ asset_type_mapping = {
     'eos token': AssetType.EOS_TOKEN,
     'fusion token': AssetType.FUSION_TOKEN,
     'luniverse token': AssetType.LUNIVERSE_TOKEN,
+    'other': AssetType.OTHER,
 }
 
 
-def _extract_custom_token_data(asset_identifier: str) -> Optional['CustomEthereumToken']:
-    try:
-        address = to_checksum_address(asset_identifier[ETHEREUM_DIRECTIVE_LENGTH:])
-    except (ValueError, TypeError):
-        log.debug(f'Could not extract ethereum address from {asset_identifier}')
-        return None
-
-    return GlobalDBHandler().get_ethereum_token(address=address)
-
-
-def _get_latest_assets(data_directory: Path) -> Dict[str, Any]:
+def _get_latest_assets(data_directory: Path) -> Tuple[bool, Path]:
     """Gets the latest assets either locally or from the remote
 
     Checks the remote (github) and if there is a newer file there it pulls it,
-    saves it and its md5 hash locally and returns the new assets.
+    saves it and its md5 hash locally and returns the new assets..
 
     If there is no new file (same hash) or if there is any problem contacting the remote
-    then the builtin assets file is used.
+    then nothing is done.
+
+    Returns a tuple. First part is a boolean returning True if there is a
+    new file downloaded and False otherwise.
+    Second part is the directory path of the all_assets.json to prime the db from
     """
     root_dir = Path(__file__).resolve().parent.parent
-    our_downloaded_meta = data_directory / 'assets' / 'all_assets.meta'
-    our_builtin_meta = root_dir / 'data' / 'all_assets.meta'
-    assets_file = root_dir / 'data' / 'all_assets.json'
+    downloaded_dir = data_directory / 'assets'
+    builtin_dir = root_dir / 'data'
+    our_downloaded_meta = downloaded_dir / 'all_assets.meta'
+    our_builtin_meta = builtin_dir / 'all_assets.meta'
     try:
         response = requests.get('https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.meta')  # noqa: E501
         remote_meta = response.json()
@@ -81,18 +74,20 @@ def _get_latest_assets(data_directory: Path) -> Dict[str, Any]:
                 downloaded_meta = json.loads(f.read())
 
         if builtin_meta['version'] >= remote_meta['version']:
-            assets_file = root_dir / 'data' / 'all_assets.json'
             log.debug(
                 f'Builtin assets file has version {builtin_meta["version"]} greater than '
                 f'the remote one {remote_meta["version"]}. Keeping the built in.',
             )
-        elif downloaded_meta and downloaded_meta['version'] > remote_meta['version']:
-            assets_file = data_directory / 'assets' / 'all_assets.json'
+            return False, builtin_dir
+
+        if downloaded_meta and downloaded_meta['version'] > remote_meta['version']:
             log.debug(
                 f'Downloaded assets file has version {downloaded_meta["version"]} greater than '
                 f'the remote one {remote_meta["version"]}. Keeping the downloaded one.',
             )
-        elif remote_meta['version'] > builtin_meta['version']:
+            return False, downloaded_dir
+
+        if remote_meta['version'] > builtin_meta['version']:
             # we need to download and save the new assets from github
             response = requests.get('https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.json')  # noqa: E501
             remote_asset_data = response.text
@@ -109,20 +104,58 @@ def _get_latest_assets(data_directory: Path) -> Dict[str, Any]:
                 f'Found newer remote assets file with version: {remote_meta["version"]} '
                 f' and {remote_meta["md5"]} md5 hash. Replaced local file',
             )
-            return json.loads(remote_asset_data)
+            return True, downloaded_dir
 
         # else, same as all error cases use the built-in one
     except (requests.exceptions.RequestException, KeyError, json.decoder.JSONDecodeError):
         pass
 
-    with open(assets_file, 'r') as f:
-        return json.loads(f.read())
+    return False, builtin_dir
+
+
+def _maybe_prime_globaldb(assets_dir: Path) -> None:
+    """Maybe prime globaldb with assets from all_assets.json of the given directory
+
+    May raise:
+    - OSError if a file can't be found
+    - KeyError if a key is missing from any of the expected dicts (should not happen)
+    """
+    with open(assets_dir / 'all_assets.meta', 'r') as f:
+        meta_data = json.loads(f.read())
+
+    last_version = GlobalDBHandler().get_setting_value('last_assets_json_version', 0)
+    if last_version >= meta_data['version']:
+        # also delete the all assets_cache once priming is done
+        AssetResolver().clean_asset_json_cache()
+        return
+
+    with open(assets_dir / 'all_assets.json', 'r') as f:
+        assets = json.loads(f.read())
+
+    ethereum_tokens = []
+    other_assets = []
+    for asset_id, entry in assets.items():
+        entry['identifier'] = asset_id
+        asset_type = asset_type_mapping.get(entry['type'], AssetType.OWN_CHAIN)
+        entry['type'] = asset_type
+        if asset_type.is_eth_token():
+            ethereum_tokens.append(entry)
+        else:
+            other_assets.append(entry)
+
+    GlobalDBHandler().add_all_assets_from_json(ethereum_tokens=ethereum_tokens, other_assets=other_assets)  # noqa: E501
+
+    # in the end set the last version primed
+    GlobalDBHandler().add_setting_value('last_assets_json_version', meta_data['version'])
+    # also delete the all assets_cache once priming is done
+    AssetResolver().clean_asset_json_cache()
+    return
 
 
 def _attempt_initialization(
         data_directory: Optional[Path],
-        saved_assets: Optional[Dict[str, Any]],
-) -> Tuple[Dict[str, Any], bool]:
+        read_assets: bool,
+) -> Tuple[bool, Optional[Dict[str, AssetData]]]:
     """Reads the asset data either from builtin data or from the remote
 
     1. If it's the very first time data is initialized (and data directory is not given)
@@ -131,32 +164,55 @@ def _attempt_initialization(
     3. If data directory is given then we can finally do the comparison of local
     saved and builtin file with the remote and return the most recent assets.
 
-    Returns a tuple of the most recent assets mapping it can get and a boolean denoting
-    if the remote check happened or not. If it did then we have the most recent assets.
+    Returns a Tuple. First part is a boolean denoting if the remote check happened or not.
+    If it did then we have the most recent assets.
+    Second part contains the built in all_assets.json file in memory mapping loaded
+    only at the start.
     """
     if not data_directory:
-        if saved_assets is not None:
+        if read_assets:
             # Do not read the all_assets file again if it has been already read
-            return saved_assets, False
+            return False, None
 
-        # First initialization. Read the builtin all_assets.json
+        # First initialization. Read the builtin all_assets.json and use it for asset
+        # resolution until the DB is primed
         root_dir = Path(__file__).resolve().parent.parent
-        with open(root_dir / 'data' / 'all_assets.json', 'r') as f:
+        assets_data_dir = root_dir / 'data'
+        with open(assets_data_dir / 'all_assets.json', 'r') as f:
             assets = json.loads(f.read())
 
-        return assets, False
+        all_assets_mapping = {}
+        for asset_id, data in assets.items():
+            all_assets_mapping[asset_id] = AssetData(
+                identifier=asset_id,
+                symbol=data['symbol'],
+                name=data['name'],
+                active=data.get('active', True),
+                asset_type=asset_type_mapping.get(data['type'], AssetType.OWN_CHAIN),
+                started=data.get('started', None),
+                ended=data.get('ended', None),
+                forked=data.get('forked', None),
+                swapped_for=data.get('swapped_for', None),
+                ethereum_address=data.get('ethereum_address', None),
+                decimals=data.get('ethereum_token_decimals', None),
+                cryptocompare=data.get('cryptocompare', None),
+                coingecko=data.get('coingecko', None),
+            )
+        return False, all_assets_mapping
 
-    # else we got the data directory so we can finally do the remote check
-    assets = _get_latest_assets(data_directory)
-    return assets, True
+    # else we got the data directory so we can finally do the remote check and prime the db
+    _, assets_dir = _get_latest_assets(data_directory)
+    _maybe_prime_globaldb(assets_dir=assets_dir)
+    return True, None
 
 
 class AssetResolver():
     __instance = None
     remote_check_happened: bool = False
-    assets: Dict[str, Dict[str, Any]] = {}
-    lowercase_mapping: Dict[str, str] = {}
-    eth_token_info: Optional[List[EthTokenInfo]] = None
+    # all_assets.json loaded in memory until the DB is primed
+    all_assets: Dict[str, AssetData] = {}
+    # A cache so that the DB is not hit every time
+    assets_cache: Dict[str, AssetData] = {}
 
     def __new__(
             cls,
@@ -165,62 +221,44 @@ class AssetResolver():
         """Lazily initializes AssetResolver
 
         As long as it's called without a data_directory path it uses the builtin
-        all_assets file. Once a data directory is given it attempts to see if a
-        newer file exists on the remote and uses that. Once that's done the remote
+        all_assets file loaded in memory.
+
+        Once a data directory is given it attempts to see if a
+        newer file exists on the remote and uses that. Also primes the DB with
+        the assets of the newest file if needed. Once that's done the remote
         check flag is set to True.
 
-        From that point on all calls to AssetResolver() return the same data.
+        From that point on all calls to AssetResolver() return the same data and
+        use the DB.
         """
         if AssetResolver.__instance is not None:
             if AssetResolver.__instance.remote_check_happened:  # type: ignore
                 return AssetResolver.__instance
 
             # else we still have not performed the remote check
-            assets, check_happened = _attempt_initialization(
+            check_happened, _ = _attempt_initialization(
                 data_directory=data_directory,
-                saved_assets=AssetResolver.__instance.assets,
+                read_assets=True,
             )
         else:
             # first initialization
-            assets, check_happened = _attempt_initialization(
+            check_happened, all_assets_mapping = _attempt_initialization(
                 data_directory=data_directory,
-                saved_assets=None,
+                read_assets=False,
             )
             AssetResolver.__instance = object.__new__(cls)
+            assert all_assets_mapping is not None, 'should have read built-in all_assets.json'
+            AssetResolver.__instance.all_assets = all_assets_mapping
 
-        AssetResolver.__instance.assets = assets
-        # Mapping of lowercase identifier to file identifier to make sure our comparisons
-        # are case insensitive. TODO: Eventually we can make this go away. We can achieve that by:
-        # 1. Lowercasing all identifiers in the assets.json file
-        # 2. Writing a DB upgrade to do the same everywhere in the DB where
-        # an asset identifier is used for the user. That last part is doable but
-        # a bit more tricky. See v13_v14 upgrade, plus consider all new tables
-        # which have assets added to them.
-        # 3. Everywhere in the code where we use identifiers such as mappings
-        # we should now use the new lowercase identifiers. This is probably also
-        # PITA.
-        # ---> Think about it and if worth doing it address it
-        AssetResolver.__instance.lowercase_mapping = {k.lower(): k for k, _ in assets.items()}
         AssetResolver.__instance.remote_check_happened = check_happened
 
         return AssetResolver.__instance
 
     @staticmethod
-    def is_identifier_canonical(asset_identifier: str) -> Optional[str]:
-        """Checks if an asset identifier exists and if yes returns its canonical form
-
-        The canonical form is the one in the all_assets.json file and in the DB
-
-        Also search for custom eth tokens if identifier starts with the ethereum
-        directive. After the directive an ethereum address should follow
-        """
-        instance = AssetResolver()
-        if asset_identifier.startswith(ETHEREUM_DIRECTIVE):
-            token_data = _extract_custom_token_data(asset_identifier)
-            return asset_identifier if token_data else None
-
-        # else only other choice is all_assets.json
-        return instance.lowercase_mapping.get(asset_identifier.lower(), None)
+    def clean_asset_json_cache() -> None:
+        assert AssetResolver.__instance is not None, 'when cleaning the cache instance should be set'  # noqa: E501
+        del AssetResolver.__instance.all_assets
+        AssetResolver.__instance.all_assets = None
 
     @staticmethod
     def get_asset_data(asset_identifier: str) -> AssetData:
@@ -228,119 +266,35 @@ class AssetResolver():
 
         Raises UnknownAsset if no data can be found
         """
-        ended = None
-        forked = None
-        swapped_for = None
+        instance = AssetResolver()
+        cached_data = instance.assets_cache.get(asset_identifier, None)
+        if cached_data is not None:
+            return cached_data
 
-        if asset_identifier.startswith(ETHEREUM_DIRECTIVE):
-            token_data = _extract_custom_token_data(asset_identifier)
-            if token_data is None:
-                raise UnknownAsset(asset_identifier)
+        check_json = False
+        try:
+            dbinstance = GlobalDBHandler()
+            if dbinstance.get_setting_value('last_assets_json_version', 0) == 0:
+                check_json = True
+        except ModuleInitializationFailure:
+            check_json = True
 
-            asset_type = AssetType.ETH_TOKEN
-            ethereum_address = token_data.address
-            if token_data.missing_basic_data():
-                log.debug(
-                    f'Considering ethereum token with address {ethereum_address}) '
-                    f'as unknown since its missing either decimals or name or symbol',
+        if check_json:  # still need to resolve out of the in memory all_assets.json
+            if instance.all_assets is None:
+                raise AssertionError(
+                    'We need to check all_assets.json and cached data has been deleted',
                 )
+
+            result = instance.all_assets.get(asset_identifier, None)
+            if result is None:
                 raise UnknownAsset(asset_identifier)
+            return result
 
-            decimals = token_data.decimals
-            name = token_data.name
-            symbol = token_data.symbol
-            started = token_data.started
-            coingecko = token_data.coingecko
-            cryptocompare = token_data.cryptocompare
+        # At this point we can use the global DB
+        asset_data = dbinstance.get_asset_data(asset_identifier)
+        if asset_data is None:
+            raise UnknownAsset(asset_identifier)
 
-        else:  # the most common case of an all assets entry
-            data = AssetResolver().assets.get(asset_identifier, None)
-            if data is None:
-                raise UnknownAsset(asset_identifier)
-
-            # If an unknown asset is found (can happen if list is updated but code is not)
-            # then default to the "own chain" type"
-            asset_type = asset_type_mapping.get(data['type'], AssetType.OWN_CHAIN)
-
-            symbol = data['symbol']
-            name = data['name']
-            active = data.get('active', True)
-            started = data.get('started', None)
-            ended = data.get('ended', None)
-            forked = data.get('forked', None)
-            swapped_for = data.get('swapped_for', None)
-            ethereum_address = data.get('ethereum_address', None)
-            decimals = data.get('ethereum_token_decimals', None)
-            cryptocompare = data.get('cryptocompare', None)
-            coingecko = data.get('coingecko', None)
-
-        return AssetData(
-            identifier=asset_identifier,
-            symbol=symbol,  # type: ignore  # checked with missing_basic_data
-            name=name,  # type: ignore  # checked with missing_basic_data
-            active=active,
-            asset_type=asset_type,
-            started=started,
-            ended=ended,
-            forked=forked,
-            swapped_for=swapped_for,
-            ethereum_address=ethereum_address,
-            decimals=decimals,
-            cryptocompare=cryptocompare,
-            coingecko=coingecko,
-        )
-
-    @staticmethod
-    def get_all_asset_data() -> Dict[str, Dict[str, Any]]:
-        """Gets all the supported/known assets.
-
-        Essentially the contents of all_assets.json and the custom ethereum
-        tokens from the global DB
-        """
-        all_assets = AssetResolver().assets
-        global_db_tokens = GlobalDBHandler().get_ethereum_tokens()
-        all_assets.update({
-            ETHEREUM_DIRECTIVE + x.address: x.serialize() for x in global_db_tokens
-        })
-        return all_assets
-
-    @staticmethod
-    def get_all_eth_token_info() -> List[EthTokenInfo]:
-        """Gets all of the information about ethereum tokens we know
-
-        Takes them out of all_assets.json and global token db
-        """
-        if AssetResolver().eth_token_info is not None:
-            return AssetResolver().eth_token_info  # type: ignore
-        all_tokens = []
-
-        for identifier, asset_data in AssetResolver().assets.items():
-            # If an unknown asset is found (can happen if list is updated but code is not)
-            # then default to the "own chain" type"
-            asset_type = asset_type_mapping.get(asset_data['type'], AssetType.OWN_CHAIN)
-            if asset_type not in (AssetType.ETH_TOKEN_AND_MORE, AssetType.ETH_TOKEN):
-                continue
-
-            all_tokens.append(EthTokenInfo(
-                identifier=identifier,
-                address=ChecksumEthAddress(asset_data['ethereum_address']),
-                symbol=asset_data['symbol'],
-                name=asset_data['name'],
-                decimals=int(asset_data['ethereum_token_decimals']),
-            ))
-
-        global_db_tokens = GlobalDBHandler().get_ethereum_tokens()
-        for entry in global_db_tokens:
-            if entry.missing_basic_data():
-                continue
-
-            all_tokens.append(EthTokenInfo(
-                identifier=ETHEREUM_DIRECTIVE + entry.address,
-                address=entry.address,
-                symbol=entry.symbol,  # type: ignore  # checked with missing_basic_data
-                name=entry.name,  # type: ignore  # checked with missing_basic_data
-                decimals=entry.decimals,  # type: ignore  # checked with missing_basic_data
-            ))
-
-        AssetResolver().eth_token_info = all_tokens
-        return all_tokens
+        # save in the memory cache
+        instance.assets_cache[asset_identifier] = asset_data
+        return asset_data

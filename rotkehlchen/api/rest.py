@@ -34,7 +34,6 @@ from rotkehlchen.accounting.structures import (
 )
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
     add_manually_tracked_balances,
@@ -49,6 +48,7 @@ from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -85,6 +85,7 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    AssetType,
     BlockchainAccountData,
     ChecksumEthAddress,
     EthereumTransaction,
@@ -1214,7 +1215,8 @@ class RestAPI():
     @staticmethod
     def query_all_assets() -> Response:
         """Returns all supported assets"""
-        assets = AssetResolver().get_all_asset_data()
+        # type ignore is due to: https://github.com/python/mypy/issues/7781
+        assets = GlobalDBHandler().get_all_asset_data(mapping=True)  # type: ignore
         return api_response(
             _wrap_in_ok_result(assets),
             status_code=HTTPStatus.OK,
@@ -1257,12 +1259,19 @@ class RestAPI():
         return api_response(
             _wrap_in_ok_result([x.serialize() for x in tokens]),
             status_code=HTTPStatus.OK,
+            log_result=False,
         )
 
     @staticmethod
     def add_custom_ethereum_token(token: CustomEthereumToken) -> Response:
+        # TODO: hacky. Clean this up when we allow addition of all assets
+        identifier = ETHEREUM_DIRECTIVE + token.address
         try:
-            identifier = GlobalDBHandler().add_ethereum_token(token)
+            GlobalDBHandler().add_asset(
+                asset_id=identifier,
+                asset_type=AssetType.ETH_TOKEN,
+                data=token,
+            )
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
