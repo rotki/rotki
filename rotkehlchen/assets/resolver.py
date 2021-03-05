@@ -283,7 +283,8 @@ class AssetResolver():
         Raises UnknownAsset if no data can be found
         """
         instance = AssetResolver()
-        cached_data = instance.assets_cache.get(asset_identifier, None)
+        # attempt read from memory cache -- always lower
+        cached_data = instance.assets_cache.get(asset_identifier.lower(), None)
         if cached_data is not None:
             return cached_data
 
@@ -311,6 +312,6 @@ class AssetResolver():
         if asset_data is None:
             raise UnknownAsset(asset_identifier)
 
-        # save in the memory cache
-        instance.assets_cache[asset_identifier] = asset_data
+        # save in the memory cache -- always lower
+        instance.assets_cache[asset_identifier.lower()] = asset_data
         return asset_data

@@ -150,6 +150,15 @@ def test_asset_identifiers_are_unique_all_lowercased():
         )
 
 
+def test_case_does_not_matter_for_asset_constructor():
+    """Test that whatever case we give to asset constructor result is the same"""
+    a1 = Asset('USDt')
+    a2 = Asset('USDT')
+    assert a1 == a2
+    assert a1.identifier == 'USDT'
+    assert a2.identifier == 'USDT'
+
+
 def test_all_assets_json_assets_have_common_keys():
     """Test that checks that the keys and types of tokens in all_assets.json are correct"""
     root_dir = Path(__file__).resolve().parent.parent.parent

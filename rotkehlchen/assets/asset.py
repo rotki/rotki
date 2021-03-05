@@ -219,6 +219,8 @@ class Asset():
         # TODO: figure out a way to move this out. Moved in here due to cyclic imports
         from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
         data = AssetResolver().get_asset_data(self.identifier)
+        # make sure same case of identifier as in  DB is saved in the structure
+        object.__setattr__(self, 'identifier', data.identifier)
         # Ugly hack to set attributes of a frozen data class as post init
         # https://docs.python.org/3/library/dataclasses.html#frozen-instances
         object.__setattr__(self, 'name', data.name)

@@ -199,7 +199,7 @@ class GlobalDBHandler():
             identifier = 'SCRL'  # https://github.com/rotki/rotki/issues/2503
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT type, details_reference from assets WHERE identifier=?;',
+            'SELECT identifier, type, details_reference from assets WHERE identifier=?;',
             (identifier,),
         )
         results = query.fetchall()
@@ -207,9 +207,9 @@ class GlobalDBHandler():
             return None
 
         return GlobalDBHandler().get_asset_details(
-            identifier=identifier,
-            db_serialized_type=results[0][0],
-            details_reference=results[0][1],
+            identifier=results[0][0],  # get the identifier in the exact case it's saved in the DB
+            db_serialized_type=results[0][1],
+            details_reference=results[0][2],
         )
 
     @overload
