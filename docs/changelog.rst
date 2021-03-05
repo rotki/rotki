@@ -53,6 +53,10 @@ Changelog
   - `Polyient Games Governance Token (PGT) <https://www.coingecko.com/en/coins/polyient-games-governance-token>`__
   - `RARE.UNIQUE (RARE) <https://www.coingecko.com/en/coins/unique-one>`__
   - `UnFederalReserveToken (eRSDL) <https://www.coingecko.com/en/coins/unfederalreserve>`__
+  - `Rari Governance Token (RGT) <https://www.coingecko.com/en/coins/rari-governance-token>`__
+  - `Fuse Token (FUSE) <https://www.coingecko.com/en/coins/fuse-network-token>`__
+  - `SportX (SX) <https://www.coingecko.com/en/coins/sportx>`__
+  - `Rari Stable Pool Token (RSPT) <https://www.coingecko.com/en/coins/rari-stable-pool-token>`__
 
 * :release:`1.14.1 <2021-02-17>`
 * :bug:`2391` The signed version of the MacOS binary should now work properly for all users.

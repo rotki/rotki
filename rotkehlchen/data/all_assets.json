@@ -11815,7 +11815,7 @@
     },
     "TEL": {
         "coingecko": "telcoin",
-        "ethereum_address": "0x85e076361cc813A908Ff672F9BAd1541474402b2",
+        "ethereum_address": "0x467Bccd9d29f223BcE8043b84E8C8B282827790F",
         "ethereum_token_decimals": 2,
         "name": "Telcoin",
         "started": 1510358400,
@@ -16459,6 +16459,43 @@
         "name": "UnFederalReserveToken",
         "started": 1600732997,
         "symbol": "eRSDL",
+        "type": "ethereum token"
+    },
+    "RGT": {
+        "coingecko": "rari-governance-token",
+        "ethereum_address": "0xD291E7a03283640FDc51b121aC401383A46cC623",
+        "ethereum_token_decimals": 18,
+        "name": "Rari Governance Token",
+        "started": 1603212673,
+        "symbol": "RGT",
+        "type": "ethereum token"
+    },
+    "FUSE": {
+        "coingecko": "fuse-network-token",
+        "ethereum_address": "0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d",
+        "ethereum_token_decimals": 18,
+        "name": "Fuse Token",
+        "started": 1567507220,
+        "symbol": "FUSE",
+        "type": "ethereum token and more"
+    },
+    "SX": {
+        "coingecko": "sportx",
+        "ethereum_address": "0x99fE3B1391503A1bC1788051347A1324bff41452",
+        "ethereum_token_decimals": 18,
+        "name": "SportX",
+        "started": 1610747210,
+        "symbol": "SX",
+        "type": "ethereum token"
+    },
+    "RSPT": {
+        "coingecko": "rari-stable-pool-token",
+        "cryptocompare": "",
+        "ethereum_address": "0x016bf078ABcaCB987f0589a6d3BEAdD4316922B0",
+        "ethereum_token_decimals": 18,
+        "name": "Rari Stable Pool Token",
+        "started": 1600740632,
+        "symbol": "RSPT",
         "type": "ethereum token"
     }
 }
