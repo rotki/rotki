@@ -163,6 +163,10 @@ DELISTED_ASSETS = [
     'SPIN',
     'VIEW',
     'VRM',
+    'VRA',
+    'SPF',
+    'NOBS',
+    'DADI',
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [

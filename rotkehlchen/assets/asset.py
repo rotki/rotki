@@ -136,6 +136,8 @@ WORLD_TO_KRAKEN = {
     'MANA': 'MANA',
     'GRT': 'GRT',
     'FLOW': 'FLOW',
+    'OCEAN': 'OCEAN',
+    'EWT': 'EWT',
 }
 
 WORLD_TO_BINANCE = {

@@ -431,9 +431,12 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'NOK',
     'PFE',
     'SLV',  # iShares Silver Trust
+    'SMBSWAP',  # neither in coingecko nor cryptocompare
     'SPY',
     'SQ',
     'TSLA',
+    'UPCO2',  # neither in coingecko nor cryptocompare
+    'WXBTC',  # neither in coingecko nor cryptocompare
 )
 
 

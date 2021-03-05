@@ -155,6 +155,24 @@ TOKENID_TO_ASSET = {
     169: Asset('RFOX'),
     170: Asset('NEC'),
     # 171 -> 172 LP (uniswap?) tokens - need to fill in when we support them
+    173: Asset('SNX'),
+    174: Asset('RGT'),
+    175: Asset('VSP'),
+    176: Asset('SMARTCREDIT'),
+    177: Asset('RAI'),
+    178: Asset('TEL'),
+    179: Asset('BCP'),
+    180: Asset('BADGER'),
+    181: Asset('SUSHI'),
+    182: Asset('MASK'),
+    # 183 -> 195 LP (uniswap?) tokens - need to fill in when we support them
+    196: Asset('YPIE'),
+    197: Asset('FUSE'),
+    # 198 -> 200 LP (uniswap?) tokens - need to fill in when we support them
+    201: Asset('SX'),
+    # 202: REPT
+    203: Asset('RSPT'),
+    # 204 -> 206 LP (uniswap?) tokens - need to fill in when we support them
 }
 
 
