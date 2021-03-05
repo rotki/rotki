@@ -1047,7 +1047,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       query: async () => await api.defi.fetchBalancerEvents(),
       mutation: 'balancerEvents',
       taskType: TaskType.BALANCER_EVENT,
-      section: Section.DEFI_BALANCER_EVENT,
+      section: Section.DEFI_BALANCER_EVENTS,
       module: MODULE_BALANCER,
       meta: meta,
       checkPremium: true,

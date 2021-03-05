@@ -95,3 +95,20 @@ export function isLoading(status: Status): boolean {
     status === Status.REFRESHING
   );
 }
+
+export interface AddressEntries<T> {
+  readonly [address: string]: T;
+}
+
+export function filterAddresses<T>(
+  entries: AddressEntries<T>,
+  addresses: string[],
+  item: (item: T) => void
+) {
+  for (const address in entries) {
+    if (addresses.length > 0 && !addresses.includes(address)) {
+      continue;
+    }
+    item(entries[address]);
+  }
+}

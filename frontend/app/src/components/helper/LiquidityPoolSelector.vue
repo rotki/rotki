@@ -49,12 +49,8 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { Pool } from '@/store/defi/types';
 import { assetName } from '@/store/defi/utils';
-
-export interface Pool {
-  readonly address: string;
-  readonly name: string;
-}
 
 @Component({
   name: 'LiquidityPoolSelector'

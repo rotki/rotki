@@ -397,17 +397,23 @@ interface PoolToken {
   readonly weight: string;
 }
 
-interface PoolAmounts {
+export interface PoolAmounts {
   readonly [asset: string]: BigNumber;
 }
 
-interface BalancerEvent {
+export type Pool = {
+  readonly name: string;
+  readonly address: string;
+};
+
+export interface BalancerEvent {
   readonly txHash: string;
   readonly logIndex: number;
   readonly timestamp: number;
   readonly eventType: EventType;
   readonly lpBalance: Balance;
   readonly amounts: PoolAmounts;
+  readonly pool?: Pool;
 }
 
 interface BalancerPoolDetails {
