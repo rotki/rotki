@@ -382,7 +382,7 @@ class Location(Enum):
         if self == Location.EQUITIES:
             return 'equities'
         if self == Location.REALESTATE:
-            return 'real estate'
+            return 'realestate'
         if self == Location.COMMODITIES:
             return 'commodities'
         if self == Location.CRYPTOCOM:

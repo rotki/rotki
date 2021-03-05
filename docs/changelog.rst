@@ -11,6 +11,7 @@ Changelog
 * :feature:`2401` Balances in loopring will now be included in the balance snapshots.
 * :bug:`2442` Users will now see their accounts sorted by name instead of address when they sort by account in the assets view.
 * :bug:`2443` Users who have no balances in Kraken and try to add an API key will now be able to set it up properly.
+* :bug:`2468` Users should no longer get an error when adding a real estate manual balance.
 
 * :release:`1.14.2 <2021-02-24>`
 * :bug:`2399` Users will now see a warning if the loopring module is not activated when adding an API key, and balances will be fetched automatically if it is.
