@@ -86,8 +86,8 @@ export class AccountBalancesPage {
       .should('contain', capitalize(balance.location));
 
     cy.get('@row')
-      .find('.asset-details__details__symbol')
-      .should('contain', balance.asset);
+      .find('[data-cy=details-symbol]')
+      .should('contain.text', balance.asset);
 
     for (const tag of balance.tags) {
       cy.get('@row').find('.tag').contains(tag).should('be.visible');

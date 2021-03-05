@@ -11,7 +11,10 @@
       :symbol="asset.symbol"
     />
     <span class="asset-details-base__details">
-      <span class="asset-details-base__details__symbol">
+      <span
+        class="asset-details-base__details__symbol"
+        data-cy="details-symbol"
+      >
         {{ symbol }}
       </span>
       <span class="grey--text asset-details-base__details__subtitle">
