@@ -12,6 +12,7 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken, kraken_to_world_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
+from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory
 from rotkehlchen.utils.misc import ts_now
 
@@ -365,3 +366,19 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
     input_trades = test_trades
     input_trades = input_trades.replace('"vol": "1",', '')
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+
+
+def test_emptry_kraken_balance_response():
+    """Balance api query returns a response without a result
+
+    Regression test for: https://github.com/rotki/rotki/issues/2443
+    """
+    kraken = Kraken('a', b'YW55IGNhcm5hbCBwbGVhc3VyZS4=', object(), object())
+
+    def mock_post(url, data):  # pylint: disable=unused-argument
+        return MockResponse(200, '{"error":[]}')
+
+    with patch.object(kraken.session, 'post', wraps=mock_post):
+        result, msg = kraken.query_balances()
+        assert msg == ''
+        assert result == {}
