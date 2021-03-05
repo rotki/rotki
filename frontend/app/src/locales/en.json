@@ -180,7 +180,7 @@
       "name": "Name",
       "protocol": "Protocol",
       "started": "Started",
-      "swapped_from": "Swapped from",
+      "swapped_for": "Swapped for",
       "symbol": "Symbol"
     },
     "optional": "Optional Fields",

@@ -46,6 +46,8 @@
           v-model="decimals"
           type="number"
           outlined
+          min="0"
+          max="18"
           :label="$t('asset_form.labels.decimals')"
           :error-messages="errors['decimals']"
           :disabled="saving"
@@ -102,6 +104,7 @@
                   v-model="protocol"
                   outlined
                   persistent-hint
+                  class="asset-form__protocol"
                   :label="$t('asset_form.labels.protocol')"
                   :error-messages="errors['protocol']"
                   :disabled="saving"
@@ -109,14 +112,14 @@
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="swappedFrom"
+                <asset-select
+                  v-model="swappedFor"
                   outlined
                   persistent-hint
-                  :label="$t('asset_form.labels.swapped_from')"
-                  :error-messages="errors['swapped_from']"
+                  :label="$t('asset_form.labels.swapped_for')"
+                  :error-messages="errors['swapped_for']"
                   :disabled="saving"
-                  @focus="delete errors['swapped_from']"
+                  @focus="delete errors['swapped_for']"
                 />
               </v-col>
             </v-row>
@@ -179,7 +182,7 @@ export default class AssetForm extends Vue {
   types: string[] = ['Ethereum token'];
   identifier: string = '';
   protocol: string = '';
-  swappedFrom: string = '';
+  swappedFor: string = '';
 
   underlyingTokens: UnderlyingToken[] = [];
   icon: File | null = null;
@@ -212,8 +215,8 @@ export default class AssetForm extends Vue {
       started: convertToTimestamp(this.started),
       underlyingTokens:
         this.underlyingTokens.length > 0 ? this.underlyingTokens : undefined,
-      swappedFor: this.swappedFrom,
-      protocol: this.swappedFrom
+      swappedFor: this.swappedFor,
+      protocol: this.swappedFor
     };
   }
 
@@ -231,7 +234,7 @@ export default class AssetForm extends Vue {
     this.cryptocompare = token.cryptocompare;
     this.underlyingTokens = token.underlyingTokens ?? [];
     this.identifier = token.identifier ?? '';
-    this.swappedFrom = token.swappedFor;
+    this.swappedFor = token.swappedFor;
     this.protocol = token.protocol;
   }
 
@@ -311,6 +314,16 @@ export default class AssetForm extends Vue {
     justify-content: center;
     width: 96px;
     height: 100%;
+  }
+
+  &__protocol {
+    ::v-deep {
+      .v-text-field {
+        &__slot {
+          height: 60px;
+        }
+      }
+    }
   }
 }
 </style>

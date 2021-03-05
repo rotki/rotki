@@ -14,6 +14,7 @@
     :item-text="assetText"
     :menu-props="{ closeOnContentClick: true }"
     :outlined="outlined"
+    :class="outlined ? 'asset-select--outlined' : null"
     @input="input"
   >
     <template #selection="{ item }">
@@ -118,6 +119,20 @@ export default class AssetSelect extends Vue {
   &__details {
     padding-top: 4px;
     padding-bottom: 4px;
+  }
+
+  &--outlined {
+    ::v-deep {
+      .v-input {
+        &__icon {
+          &--append {
+            i {
+              bottom: 8px;
+            }
+          }
+        }
+      }
+    }
   }
 }
 </style>
