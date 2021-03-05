@@ -63,11 +63,19 @@ import {
   UniswapPool,
   UniswapPoolProfit,
   DexTrade,
-  DexTrades
+  DexTrades,
+  BalancerEvent,
+  Pool,
+  BalancerProfitLoss
 } from '@/store/defi/types';
-import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
+import {
+  assetName,
+  balanceUsdValueSum,
+  toProfitLossModel
+} from '@/store/defi/utils';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
+import { filterAddresses } from '@/store/utils';
 import { Writeable } from '@/types';
 import { DefiAccount, ETH } from '@/typing/types';
 import { uniqueStrings } from '@/utils/array';
@@ -129,6 +137,9 @@ interface DefiGetters {
   [GETTER_UNISWAP_ASSETS]: UniswapPool[];
   [GETTER_BALANCER_BALANCES]: BalancerBalanceWithOwner[];
   balancerAddresses: string[];
+  balancerEvents: (addresses: string[]) => BalancerEvent[];
+  balancerPools: Pool[];
+  balancerProfitLoss: (addresses: string[]) => BalancerProfitLoss[];
 }
 
 export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
@@ -1457,5 +1468,72 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     }
     return balances;
   },
-  balancerAddresses: ({ balancerBalances }) => Object.keys(balancerBalances)
+  balancerAddresses: ({ balancerBalances }) => Object.keys(balancerBalances),
+  balancerEvents: ({ balancerEvents }) => (addresses): BalancerEvent[] => {
+    const events: BalancerEvent[] = [];
+    filterAddresses(balancerEvents, addresses, item => {
+      for (let i = 0; i < item.length; i++) {
+        const poolDetail = item[i];
+        events.push(
+          ...poolDetail.events.map(value => ({
+            ...value,
+            pool: {
+              name: poolDetail.poolTokens
+                .map(pool => assetName(pool.token))
+                .join('/'),
+              address: poolDetail.poolAddress
+            }
+          }))
+        );
+      }
+    });
+    return events;
+  },
+  balancerPools: (_, { balancerBalances, balancerEvents }) => {
+    const pools: { [address: string]: Pool } = {};
+    const events = balancerEvents([]);
+
+    for (const balance of balancerBalances) {
+      if (pools[balance.address]) {
+        continue;
+      }
+      pools[balance.address] = {
+        name: balance.tokens.map(token => assetName(token.token)).join('/'),
+        address: balance.address
+      };
+    }
+
+    for (const event of events) {
+      const pool = event.pool;
+      if (!pool || pools[pool.address]) {
+        continue;
+      }
+      pools[pool.address] = {
+        name: pool.name,
+        address: pool.address
+      };
+    }
+    return Object.values(pools);
+  },
+  balancerProfitLoss: ({ balancerEvents }) => addresses => {
+    const balancerProfitLoss: { [pool: string]: BalancerProfitLoss } = {};
+    filterAddresses(balancerEvents, addresses, item => {
+      for (let i = 0; i < item.length; i++) {
+        const entry = item[i];
+        if (!balancerProfitLoss[entry.poolAddress]) {
+          balancerProfitLoss[entry.poolAddress] = {
+            pool: {
+              address: entry.poolAddress,
+              name: entry.poolTokens
+                .map(token => assetName(token.token))
+                .join('/')
+            },
+            profitLossAmount: entry.profitLossAmounts,
+            usdProfitLoss: entry.usdProfitLoss
+          };
+        }
+      }
+    });
+    return Object.values(balancerProfitLoss);
+  }
 };

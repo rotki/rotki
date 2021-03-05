@@ -99,4 +99,9 @@ export class DefiApi {
     const url = 'blockchains/ETH/modules/balancer/history/trades';
     return fetchExternalAsync(this.api, url);
   }
+
+  async fetchBalancerEvents(): Promise<PendingTask> {
+    const url = '/blockchains/ETH/modules/balancer/history/events';
+    return fetchExternalAsync(this.api, url);
+  }
 }

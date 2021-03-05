@@ -6,7 +6,8 @@ import {
   EventType,
   MakerDAOVaultEventType,
   SupportedDefiProtocols,
-  TokenDetails
+  TokenDetails,
+  UnknownToken
 } from '@/services/defi/types';
 import {
   AaveBalances,
@@ -38,6 +39,7 @@ import {
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 
 export interface DefiState {
+  balancerEvents: BalancerEvents;
   balancerTrades: DexTrades;
   balancerBalances: BalancerBalances;
   dsrHistory: DSRHistory;
@@ -388,4 +390,46 @@ export interface BalancerBalanceWithOwner extends BalancerBalance {
 
 export interface BalancerBalances {
   readonly [address: string]: BalancerBalance[];
+}
+
+interface PoolToken {
+  readonly token: UnknownToken | string;
+  readonly weight: string;
+}
+
+export interface PoolAmounts {
+  readonly [asset: string]: BigNumber;
+}
+
+export type Pool = {
+  readonly name: string;
+  readonly address: string;
+};
+
+export interface BalancerEvent {
+  readonly txHash: string;
+  readonly logIndex: number;
+  readonly timestamp: number;
+  readonly eventType: EventType;
+  readonly lpBalance: Balance;
+  readonly amounts: PoolAmounts;
+  readonly pool?: Pool;
+}
+
+interface BalancerPoolDetails {
+  readonly poolAddress: string;
+  readonly poolTokens: PoolToken[];
+  readonly events: BalancerEvent[];
+  readonly profitLossAmounts: PoolAmounts;
+  readonly usdProfitLoss: BigNumber;
+}
+
+export interface BalancerEvents {
+  readonly [address: string]: BalancerPoolDetails[];
+}
+
+export interface BalancerProfitLoss {
+  readonly pool: Pool;
+  readonly usdProfitLoss: BigNumber;
+  readonly profitLossAmount: PoolAmounts;
 }

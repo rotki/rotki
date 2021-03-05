@@ -10,7 +10,7 @@
     </template>
   </progress-screen>
   <v-container v-else>
-    <balancer-balances class="mt-4" :refreshing="refreshing" />
+    <balancer-balances class="mt-4" :refreshing="anyRefreshing" />
   </v-container>
 </template>
 
@@ -37,7 +37,7 @@ import { BalancerBalances } from '@/utils/premium';
   },
   computed: {},
   methods: {
-    ...mapActions('defi', ['fetchBalancerBalances'])
+    ...mapActions('defi', ['fetchBalancerBalances', 'fetchBalancerEvents'])
   }
 })
 export default class Balancer extends Mixins(
@@ -46,10 +46,15 @@ export default class Balancer extends Mixins(
   PremiumMixin
 ) {
   readonly section = Section.DEFI_BALANCER_BALANCES;
+  readonly secondSection = Section.DEFI_BALANCER_EVENTS;
   fetchBalancerBalances!: (refresh: boolean) => Promise<void>;
+  fetchBalancerEvents!: (refresh: boolean) => Promise<void>;
 
-  mounted() {
-    this.fetchBalancerBalances(false);
+  async mounted() {
+    await Promise.all([
+      this.fetchBalancerBalances(false),
+      this.fetchBalancerEvents(false)
+    ]);
   }
 }
 </script>

@@ -15,6 +15,15 @@ const createReviver = (
   ) {
     return new BigNumber(value);
   }
+
+  if (numericKeys?.includes(key) && isObject(value)) {
+    for (const sub of Object.keys(value)) {
+      const valueElement = value[sub];
+      if (typeof valueElement === 'string' && isNumber.test(valueElement)) {
+        value[sub] = new BigNumber(valueElement);
+      }
+    }
+  }
   return value;
 };
 
