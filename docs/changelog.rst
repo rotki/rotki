@@ -49,6 +49,10 @@ Changelog
   - `SparkPoint (SRK) <https://www.coingecko.com/en/coins/sparkpoint>`__
   - `VesperToken (VSP) <https://www.coingecko.com/en/coins/vesper-finance>`__
   - `ZKs (ZKS) <https://www.coingecko.com/en/coins/zkswap>`__
+  - `Unifty (NIF) <https://www.coingecko.com/en/coins/unifty>`__
+  - `Polyient Games Governance Token (PGT) <https://www.coingecko.com/en/coins/polyient-games-governance-token>`__
+  - `RARE.UNIQUE (RARE) <https://www.coingecko.com/en/coins/unique-one>`__
+  - `UnFederalReserveToken (eRSDL) <https://www.coingecko.com/en/coins/unfederalreserve>`__
 
 * :release:`1.14.1 <2021-02-17>`
 * :bug:`2391` The signed version of the MacOS binary should now work properly for all users.

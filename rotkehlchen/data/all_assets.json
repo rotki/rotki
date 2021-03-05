@@ -16424,5 +16424,41 @@
         "started": 1606014225,
         "symbol": "ZKS",
         "type": "ethereum token"
+    },
+    "NIF": {
+        "coingecko": "unifty",
+        "ethereum_address": "0x7e291890B01E5181f7ecC98D79ffBe12Ad23df9e",
+        "ethereum_token_decimals": 18,
+        "name": "Unifty",
+        "started": 1605203511,
+        "symbol": "NIF",
+        "type": "ethereum token and more"
+    },
+    "PGT": {
+        "coingecko": "polyient-games-governance-token",
+        "ethereum_address": "0xeaccb6E0f24d66cF4Aa6cBDa33971b9231d332a1",
+        "ethereum_token_decimals": 18,
+        "name": "Polyient Games Governance Token",
+        "started": 1601873708,
+        "symbol": "PGT",
+        "type": "ethereum token"
+    },
+    "RARE": {
+        "coingecko": "unique-one",
+        "ethereum_address": "0x93dfaf57D986B9cA77Df9376c50878E013D9c7C8",
+        "ethereum_token_decimals": 18,
+        "name": "RARE.UNIQUE",
+        "started": 1607473828,
+        "symbol": "RARE",
+        "type": "ethereum token and more"
+    },
+    "eRSDL": {
+        "coingecko": "unfederalreserve",
+        "ethereum_address": "0x5218E472cFCFE0b64A064F055B43b4cdC9EfD3A6",
+        "ethereum_token_decimals": 18,
+        "name": "UnFederalReserveToken",
+        "started": 1600732997,
+        "symbol": "eRSDL",
+        "type": "ethereum token"
     }
 }
