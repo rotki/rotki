@@ -67,7 +67,7 @@ export class AssetApi {
     const data = new FormData();
     data.append('file', file);
     return this.axios
-      .post<ActionResult<boolean>>(`/assets/${identifier}/icon/`, data, {
+      .post<ActionResult<boolean>>(`/assets/${identifier}/icon`, data, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -77,7 +77,7 @@ export class AssetApi {
 
   setIcon(identifier: string, file: string): Promise<boolean> {
     return this.axios
-      .put<ActionResult<boolean>>(`/assets/${identifier}/icon/`, {
+      .put<ActionResult<boolean>>(`/assets/${identifier}/icon`, {
         file
       })
       .then(handleResponse);
