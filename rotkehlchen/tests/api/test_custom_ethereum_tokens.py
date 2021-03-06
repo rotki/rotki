@@ -67,6 +67,8 @@ def test_query_custom_tokens(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     expected_result = [x.serialize() for x in INITIAL_EXPECTED_TOKENS]
     assert_token_entry_exists_in_result(result, expected_result)
+    # This check is to make sure the sqlite query works correctly and queries only for tokens
+    assert all(x['address'] is not None for x in result), 'All returned tokens should have address'
 
     # test that querying an unknown address for a token is properly handled
     unknown_address = make_ethereum_address()

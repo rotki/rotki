@@ -412,8 +412,8 @@ class GlobalDBHandler():
         query = cursor.execute(
             'SELECT A.identifier, B.address, B.decimals, B.name, B.symbol, B.started, '
             'B.swapped_for, B.coingecko, B.cryptocompare, B.protocol '
-            'FROM assets AS A LEFT OUTER JOIN '
-            'ethereum_tokens AS B ON B.address = A.details_reference WHERE address=?;',
+            'FROM ethereum_tokens AS B LEFT OUTER JOIN '
+            'assets AS A ON B.address = A.details_reference WHERE address=?;',
             (address,),
         )
         results = query.fetchall()
@@ -441,8 +441,8 @@ class GlobalDBHandler():
         query = cursor.execute(
             'SELECT A.identifier, B.address, B.decimals, B.name, B.symbol, B.started, '
             'B.swapped_for, B.coingecko, B.cryptocompare, B.protocol '
-            'FROM assets as A LEFT OUTER JOIN '
-            'ethereum_tokens as B on B.address = A.details_reference;',
+            'FROM ethereum_tokens as B LEFT OUTER JOIN '
+            'assets AS A on B.address = A.details_reference;',
         )
         tokens = []
         for entry in query:
