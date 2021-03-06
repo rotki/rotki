@@ -9,12 +9,12 @@ import requests
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.typing import AssetType
 from rotkehlchen.utils.hashing import file_md5
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 log = logging.getLogger(__name__)
 
@@ -136,15 +136,16 @@ class IconManager():
         Returns true if there is more icons left to cache after this batch.
         """
         coingecko_integrated_asset_ids = []
-
-        for identifier, asset_data in AssetResolver().assets.items():
+        # type ignore is due to: https://github.com/python/mypy/issues/7781
+        assets_list = GlobalDBHandler().get_all_asset_data(mapping=False)  # type:ignore
+        for entry in assets_list:
             try:
-                asset_type = asset_type_mapping[asset_data['type']]
-
-                if asset_type != AssetType.FIAT and asset_data['coingecko'] != '':
-                    coingecko_integrated_asset_ids.append(identifier)
+                if entry.asset_type != AssetType.FIAT and entry.coingecko is not None and entry.coingecko != '':  # noqa: E501
+                    coingecko_integrated_asset_ids.append(entry.identifier)
             except KeyError:
-                log.warning(f'Ignoring asset {identifier} during query icons due to KeyError')
+                log.warning(
+                    f'Ignoring asset {entry.identifier} during query icons due to KeyError',
+                )
                 continue
 
         cached_asset_ids = [

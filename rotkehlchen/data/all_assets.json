@@ -472,7 +472,7 @@
         "name": "Alpha Finance",
         "started": 1602288000,
         "symbol": "ALPHA",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "ALQO": {
         "coingecko": "alqo",
@@ -658,7 +658,7 @@
         "name": "APX",
         "started": 1492646400,
         "symbol": "APX",
-        "type": "Ubiq token"
+        "type": "ubiq token"
     },
     "APY": {
         "coingecko": "apy-finance",
@@ -2148,11 +2148,11 @@
         "name": "Bittrex Credits",
         "started": 1571616000,
         "symbol": "BTXCRD",
-        "type": "exchange specific"
+        "type": "own chain"
     },
     "BULL": {
         "coingecko": "",
-        "ethereum_address": "0x016ee7373248a80BDe1fD6bAA001311d233b3CFa",
+        "ethereum_address": "0x68eb95Dc9934E19B86687A10DF8e364423240E94",
         "ethereum_token_decimals": 18,
         "name": "3X Long Bitcoin Token",
         "started": 1552867200,
@@ -2543,7 +2543,7 @@
     "CET": {
         "active": true,
         "coingecko": "coinex-token",
-        "ethereum_address": "0xF660cA1e228e7BE1fA8B4f5583145E31147FB577",
+        "ethereum_address": "0x081F67aFA0cCF8c7B17540767BBe95DF2bA8D97F",
         "ethereum_token_decimals": 18,
         "name": "CoinEx Token",
         "started": 1531094400,
@@ -2679,7 +2679,7 @@
         "name": "Chiliz",
         "started": 1540512000,
         "symbol": "CHZ",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "CINNI": {
         "active": false,
@@ -4519,12 +4519,10 @@
     },
     "EOS": {
         "coingecko": "eos",
-        "ethereum_address": "0x86Fa049857E0209aa7D9e616F7eb3b3B78ECfdb0",
-        "ethereum_token_decimals": 18,
         "name": "EOS.io",
         "started": 1494028800,
         "symbol": "EOS",
-        "type": "ethereum token and own chain"
+        "type": "own chain"
     },
     "EOSBEAR": {
         "coingecko": "3x-short-eos-token",
@@ -5666,7 +5664,7 @@
         "name": "GeoCoin",
         "started": 1421650800,
         "symbol": "GEO",
-        "type": "Ubiq token"
+        "type": "ubiq token"
     },
     "GET": {
         "coingecko": "get-token",
@@ -6459,13 +6457,13 @@
         "symbol": "IDXM",
         "type": "ethereum token"
     },
-    "IETH": {
+    "iETH-2": {
         "coingecko": "iethereum",
-        "ethereum_address": "0x859a9C0b44cb7066D956a958B0b82e54C9e44b4B",
+        "ethereum_address": "0xC71D8BaAa436aa7E42DA1f40bEc48F11AB3c9E4A",
         "ethereum_token_decimals": 8,
         "name": "iEthereum",
         "started": 1507543294,
-        "symbol": "IETH",
+        "symbol": "iETH",
         "type": "ethereum token"
     },
     "IFC": {
@@ -6671,7 +6669,7 @@
         "name": "Starname",
         "started": 1607449409,
         "symbol": "IOV",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "IPL": {
         "coingecko": "insurepal",
@@ -6857,7 +6855,7 @@
     },
     "KAI": {
         "coingecko": "kardiachain",
-        "ethereum_address": "0x1410434b0346f5bE678d0FB554E5c7ab620f8f4a",
+        "ethereum_address": "0xD9Ec3ff1f8be459Bb9369b4E79e9Ebcf7141C093",
         "ethereum_token_decimals": 18,
         "name": "KardiaChain Token",
         "started": 1601182047,
@@ -6949,7 +6947,7 @@
         "name": "Kraken fees",
         "started": 1377993600,
         "symbol": "KFEE",
-        "type": "exchange specific"
+        "type": "own chain"
     },
     "KICK": {
         "coingecko": "kickico",
@@ -7587,7 +7585,7 @@
         "name": "Maps.me Token",
         "started": 1607277936,
         "symbol": "MAPS",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "MARO": {
         "coingecko": "ttc-protocol",
@@ -7803,12 +7801,10 @@
     },
     "META": {
         "coingecko": "metadium",
-        "ethereum_address": "0xDE2F7766C8BF14CA67193128535E5c7454f8387C",
-        "ethereum_token_decimals": 18,
         "name": "Metadium",
         "started": 1534896000,
         "symbol": "META",
-        "type": "ethereum token and own chain"
+        "type": "own chain"
     },
     "METM": {
         "coingecko": "metamorph",
@@ -8526,12 +8522,10 @@
     },
     "NIM": {
         "coingecko": "nimiq-2",
-        "ethereum_address": "0xcfb98637bcae43C13323EAa1731cED2B716962fD",
-        "ethereum_token_decimals": 18,
         "name": "Nimiq",
         "started": 1496707200,
         "symbol": "NIM",
-        "type": "ethereum token and own chain"
+        "type": "own chain"
     },
     "NIMFA": {
         "active": false,
@@ -8693,7 +8687,7 @@
         "name": "NuShares",
         "started": 1411430400,
         "symbol": "NSR",
-        "type": "Nubits token"
+        "type": "nubits token"
     },
     "NTK": {
         "coingecko": "neurotoken",
@@ -9246,7 +9240,7 @@
         "name": "Primalbase Token",
         "started": 1495584000,
         "symbol": "PBT",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "PBTC": {
         "coingecko": "ptokens-btc",
@@ -9892,7 +9886,7 @@
         "name": "Qibuck Asset",
         "started": 1407628800,
         "symbol": "QBK",
-        "type": "Burst token"
+        "type": "burst token"
     },
     "QCAD": {
         "coingecko": "qcad",
@@ -9954,7 +9948,7 @@
         "name": "Quantum Resistant Ledger",
         "started": 1482796800,
         "symbol": "QRL",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "QSP": {
         "coingecko": "quantstamp",
@@ -9981,7 +9975,7 @@
         "name": "Qtum",
         "started": 1482105600,
         "symbol": "QTUM",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "QUN": {
         "coingecko": "qunqun",
@@ -10006,14 +10000,14 @@
         "name": "Qwark",
         "started": 1460937600,
         "symbol": "QWARK",
-        "type": "Ubiq token"
+        "type": "ubiq token"
     },
     "R": {
         "coingecko": "revain",
         "cryptocompare": "REV",
-        "ethereum_address": "0x2ef52Ed7De8c5ce03a4eF0efbe9B7450F2D7Edc9",
+        "ethereum_address": "0x48f775EFBE4F5EcE6e0DF2f7b5932dF56823B990",
         "ethereum_token_decimals": 6,
-        "name": "Revain",
+        "name": "Revain old",
         "started": 1501804800,
         "symbol": "REV",
         "type": "ethereum token"
@@ -10028,7 +10022,7 @@
     },
     "RAI": {
         "coingecko": "rai",
-        "cryptocompare": "",
+        "cryptocompare": "RAI",
         "ethereum_address": "0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919",
         "ethereum_token_decimals": 18,
         "name": "Rai Reflex Index",
@@ -10634,7 +10628,7 @@
         "cryptocompare": "SCRL",
         "ethereum_address": "0x24DCc881E7Dd730546834452F21872D5cb4b5293",
         "ethereum_token_decimals": 18,
-        "name": "Data Transaction Token ",
+        "name": "Data Transaction Token",
         "started": 1504656000,
         "symbol": "XD",
         "type": "ethereum token"
@@ -12125,7 +12119,7 @@
     },
     "TORN": {
         "coingecko": "tornado-cash",
-        "cryptocompare": "",
+        "cryptocompare": "TORN",
         "ethereum_address": "0x77777FeDdddFfC19Ff86DB637967013e6C6A116C",
         "ethereum_token_decimals": 18,
         "name": "TornadoCash",
@@ -12265,7 +12259,7 @@
         "name": "TRON",
         "started": 1504051200,
         "symbol": "TRX",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "TRXBEAR": {
         "coingecko": "3x-short-trx-token",
@@ -15190,7 +15184,7 @@
         "name": "LEO Token",
         "started": 1558444909,
         "symbol": "LEO",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "UOP": {
         "coingecko": "utopia-genesis-foundation",
@@ -15281,7 +15275,7 @@
         "name": "Energi",
         "started": 1603272305,
         "symbol": "NRG",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "XED": {
         "coingecko": "exeedme",
@@ -15358,7 +15352,7 @@
         "name": "Oxen",
         "started": 1601442293,
         "symbol": "OXEN",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "CRE": {
         "coingecko": "carry",
@@ -15987,7 +15981,7 @@
     },
     "OPCT": {
         "coingecko": "opacity",
-        "cryptocompare": "",
+        "cryptocompare": "OPCT",
         "ethereum_address": "0xDb05EA0877A2622883941b939f0bb11d1ac7c400",
         "ethereum_token_decimals": 18,
         "name": "Opacity",
@@ -16183,7 +16177,7 @@
         "name": "HPBCoin",
         "started": 1503574599,
         "symbol": "HPB",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "KAT": {
         "coingecko": "kambria",
@@ -16290,7 +16284,7 @@
         "name": "StaFi",
         "started": 1606805271,
         "symbol": "FIS",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "FXS": {
         "coingecko": "frax-share",
@@ -16432,7 +16426,7 @@
         "name": "Unifty",
         "started": 1605203511,
         "symbol": "NIF",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "PGT": {
         "coingecko": "polyient-games-governance-token",
@@ -16450,7 +16444,7 @@
         "name": "RARE.UNIQUE",
         "started": 1607473828,
         "symbol": "RARE",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "eRSDL": {
         "coingecko": "unfederalreserve",
@@ -16477,7 +16471,7 @@
         "name": "Fuse Token",
         "started": 1567507220,
         "symbol": "FUSE",
-        "type": "ethereum token and more"
+        "type": "ethereum token"
     },
     "SX": {
         "coingecko": "sportx",

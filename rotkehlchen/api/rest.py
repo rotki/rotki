@@ -49,6 +49,7 @@ from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -85,6 +86,7 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    AssetType,
     BlockchainAccountData,
     ChecksumEthAddress,
     EthereumTransaction,
@@ -1214,7 +1216,8 @@ class RestAPI():
     @staticmethod
     def query_all_assets() -> Response:
         """Returns all supported assets"""
-        assets = AssetResolver().get_all_asset_data()
+        # type ignore is due to: https://github.com/python/mypy/issues/7781
+        assets = GlobalDBHandler().get_all_asset_data(mapping=True)  # type: ignore
         return api_response(
             _wrap_in_ok_result(assets),
             status_code=HTTPStatus.OK,
@@ -1257,12 +1260,19 @@ class RestAPI():
         return api_response(
             _wrap_in_ok_result([x.serialize() for x in tokens]),
             status_code=HTTPStatus.OK,
+            log_result=False,
         )
 
     @staticmethod
     def add_custom_ethereum_token(token: CustomEthereumToken) -> Response:
+        # TODO: hacky. Clean this up when we allow addition of all assets
+        identifier = ETHEREUM_DIRECTIVE + token.address
         try:
-            identifier = GlobalDBHandler().add_ethereum_token(token)
+            GlobalDBHandler().add_asset(
+                asset_id=identifier,
+                asset_type=AssetType.ETHEREUM_TOKEN,
+                data=token,
+            )
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -1278,19 +1288,28 @@ class RestAPI():
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        # Also clear the in-memory cache of the asset resolver to requery DB
+        AssetResolver().assets_cache.pop(identifier, None)
+
         return api_response(
-            _wrap_in_ok_result({'identifier': identifier}),
+            result=_wrap_in_ok_result({'identifier': identifier}),
             status_code=HTTPStatus.OK,
         )
 
     @staticmethod
     def delete_custom_ethereum_token(address: ChecksumEthAddress) -> Response:
         try:
-            GlobalDBHandler().delete_ethereum_token(address=address)
+            identifier = GlobalDBHandler().delete_ethereum_token(address=address)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        # Also clear the in-memory cache of the asset resolver
+        AssetResolver().assets_cache.pop(identifier, None)
+
+        return api_response(
+            result=_wrap_in_ok_result({'identifier': identifier}),
+            status_code=HTTPStatus.OK,
+        )
 
     def query_netvalue_data(self) -> Response:
         from_ts = Timestamp(0)
@@ -2492,7 +2511,10 @@ class RestAPI():
 
     def upload_asset_icon(self, asset: Asset, filepath: Path) -> Response:
         self.rotkehlchen.icon_manager.add_icon(asset=asset, icon_path=filepath)
-        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+        return api_response(
+            result=_wrap_in_ok_result({'identifier': asset.identifier}),
+            status_code=HTTPStatus.OK,
+        )
 
     @staticmethod
     def _get_current_assets_price(

@@ -1,10 +1,12 @@
 from dataclasses import dataclass, field
 from functools import total_ordering
-from typing import Any, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, Type, TypeVar
 
-from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
-from rotkehlchen.typing import AssetType, ChecksumEthAddress, EthTokenInfo, Timestamp
+from rotkehlchen.errors import DeserializationError, UnsupportedAsset
+from rotkehlchen.typing import AssetType, ChecksumEthAddress, Timestamp
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 
 WORLD_TO_BITTREX = {
     # In Rotkehlchen Bitswift is BITS-2 but in Bittrex it's BITS
@@ -214,13 +216,11 @@ class Asset():
                 'Tried to initialize an asset out of a non-string identifier',
             )
 
-        canonical_id = AssetResolver().is_identifier_canonical(self.identifier)
-        if canonical_id is None:
-            raise UnknownAsset(self.identifier)
-        # else let's make sure we got the canonical id in our data struct
-        object.__setattr__(self, 'identifier', canonical_id)
-
+        # TODO: figure out a way to move this out. Moved in here due to cyclic imports
+        from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
         data = AssetResolver().get_asset_data(self.identifier)
+        # make sure same case of identifier as in  DB is saved in the structure
+        object.__setattr__(self, 'identifier', data.identifier)
         # Ugly hack to set attributes of a frozen data class as post init
         # https://docs.python.org/3/library/dataclasses.html#frozen-instances
         object.__setattr__(self, 'name', data.name)
@@ -241,7 +241,7 @@ class Asset():
         return self.asset_type == AssetType.FIAT
 
     def is_eth_token(self) -> bool:
-        return self.asset_type in (AssetType.ETH_TOKEN, AssetType.ETH_TOKEN_AND_MORE)
+        return self.asset_type == AssetType.ETHEREUM_TOKEN
 
     def __str__(self) -> str:
         return self.name
@@ -324,6 +324,10 @@ class HasEthereumToken(Asset):
 
     def __post_init__(self) -> None:
         super().__post_init__()
+
+        # TODO: figure out a way to move this out. Moved in here due to cyclic imports
+        from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
+
         data = AssetResolver().get_asset_data(self.identifier)  # pylint: disable=no-member
 
         if not data.ethereum_address:
@@ -342,15 +346,6 @@ T = TypeVar('T', bound='EthereumToken')
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class EthereumToken(HasEthereumToken):
 
-    def token_info(self) -> EthTokenInfo:
-        return EthTokenInfo(
-            identifier=self.identifier,
-            address=self.ethereum_address,
-            symbol=self.symbol,
-            name=self.name,
-            decimals=self.decimals,
-        )
-
     @classmethod
     def from_asset(cls: Type[T], asset: Asset) -> Optional[T]:
         """Attempts to turn an asset into an EthereumToken. If it fails returns None"""
@@ -358,3 +353,23 @@ class EthereumToken(HasEthereumToken):
             return cls(asset.identifier)
         except DeserializationError:
             return None
+
+    def to_custom_ethereum_token(self) -> 'CustomEthereumToken':
+        """TODO:This is just to satisfy its use in one place
+
+        Eventually these two data structures should be consolidated."""
+        # TODO: figure out a way to move this out. Moved in here due to cyclic imports
+        from rotkehlchen.chain.ethereum.typing import CustomEthereumToken  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
+        swapped_for_asset = None if self.swapped_for is None else Asset(self.swapped_for)
+        return CustomEthereumToken(
+            address=self.ethereum_address,
+            decimals=self.decimals,
+            name=self.name,
+            symbol=self.symbol,
+            started=self.started,
+            swapped_for=swapped_for_asset,
+            coingecko=self.coingecko,
+            cryptocompare=self.cryptocompare,
+            protocol=None,
+            underlying_tokens=None,
+        )

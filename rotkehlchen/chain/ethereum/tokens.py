@@ -4,17 +4,18 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
+from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, EthTokenInfo, Price
+from rotkehlchen.typing import ChecksumEthAddress, Price
 from rotkehlchen.utils.misc import get_chunks, ts_now
 
 logger = logging.getLogger(__name__)
@@ -66,8 +67,8 @@ class EthTokens():
             self,
             address: ChecksumEthAddress,
             token_usd_price: Dict[EthereumToken, Price],
-            etherscan_chunks: List[List[EthTokenInfo]],
-            other_chunks: List[List[EthTokenInfo]],
+            etherscan_chunks: List[List[CustomEthereumToken]],
+            other_chunks: List[List[CustomEthereumToken]],
     ) -> Dict[EthereumToken, FVal]:
         balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
         if self.ethereum.connected_to_any_web3():
@@ -116,7 +117,7 @@ class EthTokens():
             'Querying/detecting token balances for all addresses',
             force_detection=force_detection,
         )
-        all_tokens = AssetResolver().get_all_eth_token_info()
+        all_tokens = GlobalDBHandler().get_ethereum_tokens()
         # With etherscan with chunks > 120, we get request uri too large
         # so the limitation is not in the gas, but in the request uri length
         etherscan_chunks = list(get_chunks(all_tokens, n=ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH))
@@ -141,7 +142,7 @@ class EthTokens():
                 balances = defaultdict(FVal)
                 self._get_tokens_balance_and_price(
                     address=address,
-                    tokens=[x.token_info() for x in saved_list],
+                    tokens=[x.to_custom_ethereum_token() for x in saved_list],
                     balances=balances,
                     token_usd_price=token_usd_price,
                     call_order=None,  # use defaults
@@ -154,7 +155,7 @@ class EthTokens():
     def _get_tokens_balance_and_price(
             self,
             address: ChecksumEthAddress,
-            tokens: List[EthTokenInfo],
+            tokens: List[CustomEthereumToken],
             balances: Dict[EthereumToken, FVal],
             token_usd_price: Dict[EthereumToken, Price],
             call_order: Optional[Sequence[NodeName]],
@@ -178,7 +179,7 @@ class EthTokens():
 
     def _get_multitoken_multiaccount_balance(
             self,
-            tokens: List[EthTokenInfo],
+            tokens: List[CustomEthereumToken],
             accounts: List[ChecksumEthAddress],
     ) -> Dict[str, Dict[ChecksumEthAddress, FVal]]:
         """Queries a list of accounts for balances of multiple tokens
@@ -207,14 +208,17 @@ class EthTokens():
             for tk_idx, token in enumerate(tokens):
                 token_amount = result[acc_idx][tk_idx]
                 if token_amount != 0:
-                    balances[token.identifier][account] = token_normalized_value(
+                    token_id = token.identifier
+                    if token_id is None:
+                        continue  # not very likely this can happen but need to guard against it
+                    balances[token_id][account] = token_normalized_value(
                         token_amount=token_amount, token=token,
                     )
         return balances
 
     def _get_multitoken_account_balance(
             self,
-            tokens: List[EthTokenInfo],
+            tokens: List[CustomEthereumToken],
             account: ChecksumEthAddress,
             call_order: Optional[Sequence[NodeName]],
     ) -> Dict[str, FVal]:
@@ -244,5 +248,8 @@ class EthTokens():
         for tk_idx, token in enumerate(tokens):
             token_amount = result[tk_idx]
             if token_amount != 0:
-                balances[token.identifier] = token_normalized_value(token_amount, token)
+                token_id = token.identifier
+                if token_id is None:
+                    continue  # not very likely this can happen but need to guard against it
+                balances[token_id] = token_normalized_value(token_amount, token)
         return balances

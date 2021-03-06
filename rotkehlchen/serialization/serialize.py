@@ -60,7 +60,6 @@ from rotkehlchen.typing import (
     AssetMovementCategory,
     BlockchainAccountData,
     EthereumTransaction,
-    EthTokenInfo,
     Location,
     TradeType,
 )
@@ -139,7 +138,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         return process_result(entry.serialize())
     if isinstance(entry, (
             DBSettings,
-            EthTokenInfo,
             CompoundEvent,
             VersionCheckResult,
             DBSettings,

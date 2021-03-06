@@ -10,8 +10,9 @@ from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.constants.assets import A_DAI
-from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.errors import DeserializationError, UnknownAsset, InputError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.typing import AssetType
 from rotkehlchen.utils.hashing import file_md5
 
@@ -112,44 +113,57 @@ def test_cryptocompare_asset_support(cryptocompare):
         'TFC',     # TheFutbolCoin but The Freedom Coin in CC
         'MASK',    # Mask Network but NFTX Hashmask Index in CC
     )
-    for identifier, asset_data in AssetResolver().assets.items():
+    for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
-            asset_data.get('cryptocompare', None) == '' and
-            asset_data['symbol'] in cc_assets and
-            identifier not in exceptions
+            asset_data.cryptocompare == '' and
+            asset_data.symbol in cc_assets and
+            asset_data.identifier not in exceptions
         )
         if potential_support:
             msg = (
-                f'We have {identifier} as not supported by cryptocompare but '
+                f'We have {asset_data.identifier} as not supported by cryptocompare but '
                 f'the symbol appears in its supported assets'
             )
             test_warnings.warn(UserWarning(msg))
 
 
-def test_tokens_address_is_checksummed():
+def test_all_assets_json_tokens_address_is_checksummed():
     """Test that all ethereum saved token asset addresses are checksummed"""
-    for _, asset_data in AssetResolver().assets.items():
-        asset_type = asset_type_mapping[asset_data['type']]
-        if asset_type not in (AssetType.ETH_TOKEN_AND_MORE, AssetType.ETH_TOKEN):
+    for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
+        if not asset_data.asset_type == AssetType.ETHEREUM_TOKEN:
             continue
 
         msg = (
-            f'Ethereum token\'s {asset_data["name"]} ethereum address '
-            f'is not checksummed {asset_data["ethereum_address"]}'
+            f'Ethereum token\'s {asset_data.name} ethereum address '
+            f'is not checksummed {asset_data.ethereum_address}'
         )
-        assert is_checksum_address(asset_data['ethereum_address']), msg
+        assert is_checksum_address(asset_data.ethereum_address), msg
 
 
 def test_asset_identifiers_are_unique_all_lowercased():
-    """Test that all asset identifiers would be unique if we do a lowercase comparison"""
-    identifier_set = set()
-    for asset_id, _ in AssetResolver().assets.items():
-        assert asset_id.lower() not in identifier_set, f'id {asset_id} already in the assets set'
-        identifier_set.add(asset_id)
+    """Test that adding an identifier that exists but with different case, would fail"""
+    with pytest.raises(InputError):
+        GlobalDBHandler().add_asset(
+            'Eth',
+            AssetType.BINANCE_TOKEN,
+            {'name': 'a', 'symbol': 'b'},
+        )
 
 
-def test_assets_have_common_keys():
+def test_case_does_not_matter_for_asset_constructor():
+    """Test that whatever case we give to asset constructor result is the same"""
+    a1 = Asset('USDt')
+    a2 = Asset('USDT')
+    assert a1 == a2
+    assert a1.identifier == 'USDT'
+    assert a2.identifier == 'USDT'
+
+
+def test_all_assets_json_assets_have_common_keys():
     """Test that checks that the keys and types of tokens in all_assets.json are correct"""
+    root_dir = Path(__file__).resolve().parent.parent.parent
+    with open(root_dir / 'data' / 'all_assets.json', 'r') as f:
+        assets = json.loads(f.read())
     # Create a list of pairs with fields with their types. We'll add more fields to check
     # if we are dealing with a token
     verify = (("symbol", str), ("name", str), ("type", str), ("started", int))
@@ -159,14 +173,12 @@ def test_assets_have_common_keys():
     optional = (("active", bool), ("ended", int), ("forked", str), ("swapped_for", str),
                 ("cryptocompare", str), ("coingecko", str))
 
-    resolver = AssetResolver()
-
-    for asset_id, asset_data in resolver.assets.items():
+    for asset_id, asset_data in assets.items():
         verify_against = verify
 
         # Check if the asset is a token and update the keys to verify
-        asset_type = resolver.get_asset_data(asset_id).asset_type
-        if asset_type in (AssetType.ETH_TOKEN, AssetType.ETH_TOKEN_AND_MORE):
+        asset_type = asset_type_mapping[asset_data['type']]
+        if asset_type == AssetType.ETHEREUM_TOKEN:
             verify_against = verify_token
         elif asset_type == AssetType.FIAT:
             verify_against = verify_fiat
@@ -190,17 +202,17 @@ def test_coingecko_identifiers_are_reachable(data_dir):
     coingecko = Coingecko(data_directory=data_dir)
     all_coins = coingecko.all_coins()
 
-    for identifier, asset_data in AssetResolver().assets.items():
+    for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
+        identifier = asset_data.identifier
         if identifier in DELISTED_ASSETS:
             # delisted assets won't be in the mapping
             continue
 
-        asset_type = asset_type_mapping[asset_data['type']]
-        if asset_type == AssetType.FIAT:
+        if asset_data.asset_type == AssetType.FIAT:
             continue
 
         found = True
-        coingecko_str = asset_data.get('coingecko', None)
+        coingecko_str = asset_data.coingecko
         msg = f'Asset {identifier} does not have a coingecko entry'
         assert coingecko_str is not None, msg
         if coingecko_str != '':
@@ -213,11 +225,11 @@ def test_coingecko_identifiers_are_reachable(data_dir):
         suggestions = []
         if not found:
             for entry in all_coins:
-                if entry['symbol'].upper() == asset_data['symbol'].upper():
+                if entry['symbol'].upper() == asset_data.symbol.upper():
                     suggestions.append((entry['id'], entry['name'], entry['symbol']))
                     continue
 
-                if entry['name'].upper() == asset_data['symbol'].upper():
+                if entry['name'].upper() == asset_data.symbol.upper():
                     suggestions.append((entry['id'], entry['name'], entry['symbol']))
                     continue
 
@@ -232,7 +244,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '6ea5b4541c6c2664c3405762ada73c2f', 'version': 68}
+    last_meta = {'md5': '818b121f8ddf1ad23e941257a565be71', 'version': 69}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 
@@ -268,24 +280,21 @@ def test_assets_pulling_from_github_works(asset_resolver):  # pylint: disable=un
     AssetResolver._AssetResolver__instance = None
 
 
-@pytest.mark.skip('Fails instantiating GlobalDBHandler. I will be fixed soon')
 @pytest.mark.parametrize('mock_asset_meta_github_response', ['{"md5": "", "version": 99999999}'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('mock_asset_github_response', ["""{
-"COMPRLASSET": {
+"COMPRLASSET2": {
     "coingecko": "",
     "name": "Completely real asset, totally not for testing only",
-    "symbol": "COMPRLASSET",
+    "symbol": "COMPRLASSET2",
     "type": "not existing type"
 }
 }"""])
 @pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
 def test_asset_with_unknown_type_does_not_crash(asset_resolver):  # pylint: disable=unused-argument
     """Test that finding an asset with an unknown type does not crash Rotki"""
-    new_asset = Asset("COMPRLASSET")
-    assert new_asset.name == 'Completely real asset, totally not for testing only'
-    token_list = AssetResolver().get_all_eth_token_info()
-    assert len(token_list) == 0
+    with pytest.raises(UnknownAsset):
+        Asset('COMPRLASSET2')
     # After the test runs we must reset the asset resolver so that it goes back to
     # the normal list of assets
     AssetResolver._AssetResolver__instance = None

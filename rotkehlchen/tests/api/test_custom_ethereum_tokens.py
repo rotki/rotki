@@ -4,65 +4,26 @@ import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
+from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response_with_result,
 )
-from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.tests.utils.constants import A_BAT
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import Timestamp
-from rotkehlchen.fval import FVal
-
-underlying_address1 = make_ethereum_address()
-underlying_address2 = make_ethereum_address()
-underlying_address3 = make_ethereum_address()
-
-custom_address1 = make_ethereum_address()
-custom_address2 = make_ethereum_address()
-INITIAL_TOKENS = [
-    CustomEthereumToken(
-        address=custom_address1,
-        decimals=4,
-        name='Custom 1',
-        symbol='CST1',
-        started=Timestamp(0),
-        coingecko='foo',
-        cryptocompare='boo',
-        underlying_tokens=[
-            UnderlyingToken(address=underlying_address1, weight=FVal('0.5055')),
-            UnderlyingToken(address=underlying_address2, weight=FVal('0.1545')),
-            UnderlyingToken(address=underlying_address3, weight=FVal('0.34')),
-        ],
-    ),
-    CustomEthereumToken(
-        address=custom_address2,
-        decimals=18,
-        name='Custom 2',
-        symbol='CST2',
-    ),
-]
-
-INITIAL_EXPECTED_TOKENS = [INITIAL_TOKENS[0]] + [
-    CustomEthereumToken(underlying_address1),
-    CustomEthereumToken(underlying_address2),
-    CustomEthereumToken(underlying_address3),
-] + [INITIAL_TOKENS[1]]
-
-
-underlying_address4 = make_ethereum_address()
-custom_address3 = make_ethereum_address()
-CUSTOM_TOKEN3 = CustomEthereumToken(
-    address=custom_address3,
-    decimals=15,
-    name='Custom 3',
-    symbol='CST3',
-    cryptocompare='goo',
-    underlying_tokens=[
-        UnderlyingToken(address=custom_address1, weight=FVal('0.55')),
-        UnderlyingToken(address=underlying_address4, weight=FVal('0.45')),
-    ],
+from rotkehlchen.tests.utils.globaldb import (
+    CUSTOM_TOKEN3,
+    INITIAL_EXPECTED_TOKENS,
+    INITIAL_TOKENS,
+    custom_address1,
+    underlying_address1,
+    underlying_address2,
+    underlying_address3,
+    underlying_address4,
 )
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -88,7 +49,9 @@ def test_query_custom_tokens(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == [x.serialize() for x in INITIAL_EXPECTED_TOKENS]
+    expected_result = [x.serialize() for x in INITIAL_EXPECTED_TOKENS]
+    for entry in expected_result:
+        assert entry in result
 
     # test that querying an unknown address for a token is properly handled
     unknown_address = make_ethereum_address()
@@ -119,7 +82,7 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
         json={'token': CUSTOM_TOKEN3.serialize()},
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'identifier': CUSTOM_TOKEN3.identifier()}
+    assert result == {'identifier': ETHEREUM_DIRECTIVE + CUSTOM_TOKEN3.address}
 
     response = requests.get(
         api_url_for(
@@ -132,7 +95,9 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
         CUSTOM_TOKEN3,
         CustomEthereumToken(address=underlying_address4),
     ]
-    assert result == [x.serialize() for x in expected_tokens]
+    expected_result = [x.serialize() for x in expected_tokens]
+    for entry in expected_result:
+        assert entry in result
 
     # test that adding an already existing address is handled properly
     response = requests.put(
@@ -151,15 +116,19 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.CONFLICT,
     )
-    # and that same tokens as before are in the DB
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'ethereumassetsresource',
-        ),
-    )
-    result = assert_proper_response_with_result(response)
-    assert result == [x.serialize() for x in expected_tokens]
+
+    # also test that the addition of underlying tokens has created proper asset entires for them
+    cursor = GlobalDBHandler()._conn.cursor()
+    result = cursor.execute(
+        'SELECT COUNT(*) from assets WHERE identifier IN (?, ?, ?, ?)',
+        [ETHEREUM_DIRECTIVE + x for x in [underlying_address1, underlying_address2, underlying_address3, underlying_address4]],  # noqa: E501
+    ).fetchone()[0]
+    assert result == 4
+    result = cursor.execute(
+        'SELECT COUNT(*) from ethereum_tokens WHERE address IN (?, ?, ?, ?)',
+        (underlying_address1, underlying_address2, underlying_address3, underlying_address4),  # noqa: E501
+    ).fetchone()[0]
+    assert result == 4
 
     # now test that adding a token with underlying tokens adding up to more than 100% is caught
     bad_token = CustomEthereumToken(
@@ -223,8 +192,12 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
     new_token1 = INITIAL_TOKENS[0].serialize()
     new_name = 'Edited token'
     new_symbol = 'ESMBL'
+    new_protocol = 'curve'
+    new_swapped_for = A_BAT.identifier
     new_token1['name'] = new_name
     new_token1['symbol'] = new_symbol
+    new_token1['swapped_for'] = new_swapped_for
+    new_token1['protocol'] = new_protocol
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
@@ -233,7 +206,8 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
         json={'token': new_token1},
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'identifier': INITIAL_TOKENS[0].identifier()}
+    token0_id = ETHEREUM_DIRECTIVE + INITIAL_TOKENS[0].address
+    assert result == {'identifier': token0_id}
 
     response = requests.get(
         api_url_for(
@@ -245,7 +219,11 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
     expected_tokens = INITIAL_EXPECTED_TOKENS.copy()
     expected_tokens[0].name = new_name
     expected_tokens[0].symbol = new_symbol
-    assert result == [x.serialize() for x in expected_tokens]
+    expected_tokens[0].protocol = new_protocol
+    expected_tokens[0].swapped_for = A_BAT
+    expected_result = [x.serialize() for x in expected_tokens]
+    for entry in expected_result:
+        assert entry in result
 
     # test that editing an non existing address is handled properly
     non_existing_token = INITIAL_TOKENS[0].serialize()
@@ -267,15 +245,6 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.CONFLICT,
     )
-    # and that same tokens as before are in the DB
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'ethereumassetsresource',
-        ),
-    )
-    result = assert_proper_response_with_result(response)
-    assert result == [x.serialize() for x in expected_tokens]
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -283,6 +252,15 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
 @pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
 def test_deleting_custom_tokens(rotkehlchen_api_server):
     """Test that the endpoint for deleting a custom ethereum token works"""
+    token0_id = ETHEREUM_DIRECTIVE + INITIAL_TOKENS[0].address
+    token1_id = ETHEREUM_DIRECTIVE + INITIAL_TOKENS[1].address
+    cursor = GlobalDBHandler()._conn.cursor()
+    # Make sure the equivalent assets we will delete exist in the DB
+    result = cursor.execute(
+        'SELECT COUNT(*) from assets WHERE identifier IN (?, ?)',
+        (token0_id, token1_id),
+    ).fetchone()[0]
+    assert result == 2
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -291,7 +269,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
         json={'address': INITIAL_TOKENS[1].address},
     )
     result = assert_proper_response_with_result(response)
-    assert result is True
+    assert result == {'identifier': token1_id}
 
     response = requests.get(
         api_url_for(
@@ -301,9 +279,10 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     expected_tokens = INITIAL_EXPECTED_TOKENS[:-1]
-    assert result == [x.serialize() for x in expected_tokens]
+    expected_result = [x.serialize() for x in expected_tokens]
+    for entry in expected_result:
+        assert entry in result
     # also check the mapping for the underlying still tokens exists
-    cursor = GlobalDBHandler()._conn.cursor()
     result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
     assert result == 3
 
@@ -325,15 +304,6 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.CONFLICT,
     )
-    # and that same tokens as before are in the DB
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'ethereumassetsresource',
-        ),
-    )
-    result = assert_proper_response_with_result(response)
-    assert result == [x.serialize() for x in expected_tokens]
 
     # now test that deleting the token with underlying tokens works
     response = requests.delete(
@@ -344,7 +314,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
         json={'address': INITIAL_TOKENS[0].address},
     )
     result = assert_proper_response_with_result(response)
-    assert result is True
+    assert result == {'identifier': token0_id}
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -353,7 +323,15 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     expected_tokens = INITIAL_EXPECTED_TOKENS[1:-1]
-    assert result == [x.serialize() for x in expected_tokens]
+    expected_result = [x.serialize() for x in expected_tokens]
+    for entry in expected_result:
+        assert entry in result
     # and removes the mapping of all underlying tokens
     result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
+    assert result == 0
+    # and that the equivalent asset entries were also deleted
+    result = cursor.execute(
+        'SELECT COUNT(*) from assets WHERE identifier IN (?, ?)',
+        (token0_id, token1_id),
+    ).fetchone()[0]
     assert result == 0

@@ -143,6 +143,8 @@ class Rotkehlchen():
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
+        # Initialize the GlobalDBHandler singleton. Has to be initialized BEFORE asset resolver
+        GlobalDBHandler(data_dir=self.data_dir)
         # Initialize the AssetResolver singleton
         AssetResolver(data_directory=self.data_dir)
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
@@ -163,8 +165,6 @@ class Rotkehlchen():
             cryptocompare=self.cryptocompare,
             coingecko=self.coingecko,
         )
-        # Initialize the GlobalDBHandler singleton
-        GlobalDBHandler(data_dir=self.data_dir)
         # Keeps how many trades we have found per location. Used for free user limiting
         self.actions_per_location: Dict[str, Dict[Location, int]] = {
             'trade': defaultdict(int),

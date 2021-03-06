@@ -105,17 +105,7 @@ class Balancer(EthereumModule):
         self.msg_aggregator = msg_aggregator
         self.trades_lock = Semaphore()
         try:
-            # TODO: add more flexibility on the module/endpoints availability
-            # (e.g. when raise ModuleInitializationFailure), and take into account how
-            # it can impact other rotki's functionalities (e.g. EventsHistorian.get_history()
-            # and other trades-related stuff).
-            #
-            # Matrix of endpoint - subgraph compatibility:
-            # - Balances: required official subgraph.
-            # - Trades: either official or unofficial subgraph.
-            # - Events (incl. current balances): required official subgraph
-            # (balances) and required unofficial subgraph (events).
-            # - Events (not incl. current balances): required unofficial subgraph.
+            # If both fail, let's take the safest approach and consider the module unusable
             self.graph = Graph(
                 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer',
             )

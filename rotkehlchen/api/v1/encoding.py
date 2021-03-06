@@ -1470,8 +1470,10 @@ class EthereumTokenSchema(Schema):
     name = fields.String(required=True)
     symbol = fields.String(required=True)
     started = TimestampField(missing=None)
+    swapped_for = AssetField(missing=None)
     coingecko = fields.String(missing=None)
     cryptocompare = fields.String(missing=None)
+    protocol = fields.String(missing=None)
     underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), missing=None)
 
     @validates_schema  # type: ignore
@@ -1509,6 +1511,7 @@ class EthereumTokenSchema(Schema):
                     address=entry['address'],
                     weight=entry['weight'],
                 ))
+        # TODO: How to give identifier here?
         return CustomEthereumToken(**data, underlying_tokens=underlying_tokens)
 
 

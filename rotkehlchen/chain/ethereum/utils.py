@@ -11,11 +11,12 @@ from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.constants.ethereum import ETH_MULTICALL
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import ChecksumEthAddress, EthTokenInfo
+from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
+    from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 
 ABI_CODEC = Web3().codec
 # TODO: remove this once web3.py updates ENS library for supporting multichain
@@ -50,8 +51,12 @@ def token_normalized_value_decimals(token_amount: int, token_decimals: int) -> F
     return token_amount / (FVal(10) ** FVal(token_decimals))
 
 
-def token_normalized_value(token_amount: int, token: Union[EthereumToken, EthTokenInfo]) -> FVal:
-    return token_normalized_value_decimals(token_amount, token.decimals)
+def token_normalized_value(
+        token_amount: int,
+        token: Union[EthereumToken, 'CustomEthereumToken'],
+) -> FVal:
+    # Here CustomEthereumToken should have decimals due to the basic info check
+    return token_normalized_value_decimals(token_amount, token.decimals)  # type: ignore
 
 
 def asset_normalized_value(amount: int, asset: Asset) -> FVal:
