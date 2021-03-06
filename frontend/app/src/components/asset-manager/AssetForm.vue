@@ -210,13 +210,13 @@ export default class AssetForm extends Vue {
       name: this.name,
       symbol: this.symbol,
       decimals: parseInt(this.decimals),
-      coingecko: this.coingecko,
-      cryptocompare: this.cryptocompare,
-      started: convertToTimestamp(this.started),
+      coingecko: this.coingecko ? this.coingecko : undefined,
+      cryptocompare: this.cryptocompare ? this.cryptocompare : undefined,
+      started: this.started ? convertToTimestamp(this.started) : undefined,
       underlyingTokens:
         this.underlyingTokens.length > 0 ? this.underlyingTokens : undefined,
-      swappedFor: this.swappedFor,
-      protocol: this.swappedFor
+      swappedFor: this.swappedFor ? this.swappedFor : undefined,
+      protocol: this.protocol ? this.protocol : undefined
     };
   }
 
@@ -229,13 +229,15 @@ export default class AssetForm extends Vue {
     this.name = token.name;
     this.symbol = token.symbol;
     this.decimals = token.decimals.toString();
-    this.started = convertFromTimestamp(token.started, true);
-    this.coingecko = token.coingecko;
-    this.cryptocompare = token.cryptocompare;
+    this.started = token.started
+      ? convertFromTimestamp(token.started, true)
+      : '';
+    this.coingecko = token.coingecko ?? '';
+    this.cryptocompare = token.cryptocompare ?? '';
     this.underlyingTokens = token.underlyingTokens ?? [];
     this.identifier = token.identifier ?? '';
-    this.swappedFor = token.swappedFor;
-    this.protocol = token.protocol;
+    this.swappedFor = token.swappedFor ?? '';
+    this.protocol = token.protocol ?? '';
   }
 
   async saveIcon(identifier: string) {
@@ -279,26 +281,35 @@ export default class AssetForm extends Vue {
       await this.saveIcon(identifier);
       return true;
     } catch (e) {
-      const { token } = deserializeApiErrorMessage(e.message) as any;
-      this.errors = token;
-      const underlyingTokens = token.underlying_tokens;
-      if (underlyingTokens) {
-        const messages: string[] = [];
-        for (const underlyingToken of Object.values(underlyingTokens)) {
-          const ut = underlyingToken as any;
-          if (ut.address) {
-            messages.push(...(ut.address as string[]));
-          }
-          if (underlyingTokens.weight) {
-            messages.push(...(ut.weight as string[]));
-          }
-        }
-
+      const message = deserializeApiErrorMessage(e.message) as any;
+      if (!message) {
         showError(
-          messages.join(','),
+          e.message,
           this.$t('asset_form.underlying_tokens').toString()
         );
+      } else {
+        const token = message.token;
+        this.errors = token;
+        const underlyingTokens = token.underlying_tokens;
+        if (underlyingTokens) {
+          const messages: string[] = [];
+          for (const underlyingToken of Object.values(underlyingTokens)) {
+            const ut = underlyingToken as any;
+            if (ut.address) {
+              messages.push(...(ut.address as string[]));
+            }
+            if (underlyingTokens.weight) {
+              messages.push(...(ut.weight as string[]));
+            }
+          }
+
+          showError(
+            messages.join(','),
+            this.$t('asset_form.underlying_tokens').toString()
+          );
+        }
       }
+
       return false;
     }
   }

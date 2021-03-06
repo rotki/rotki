@@ -9,12 +9,12 @@ export interface CustomEthereumToken {
   readonly decimals: number;
   readonly name: string;
   readonly symbol: string;
-  readonly started: number;
-  readonly coingecko: string;
-  readonly cryptocompare: string;
-  readonly underlyingTokens: UnderlyingToken[] | undefined;
-  readonly swappedFor: string;
-  readonly protocol: string;
+  readonly started?: number;
+  readonly coingecko?: string;
+  readonly cryptocompare?: string;
+  readonly underlyingTokens?: UnderlyingToken[];
+  readonly swappedFor?: string;
+  readonly protocol?: string;
 }
 
 export interface CustomTokenResponse {
