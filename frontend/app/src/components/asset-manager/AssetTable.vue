@@ -33,10 +33,12 @@
     >
       <template #item.name="{ item }">
         <asset-details-base
+          :changeable="change"
           opens-details
           :asset="{
-            ...item,
-            symbol: item.identifier ? item.identifier : item.symbol
+            name: item.name,
+            symbol: item.symbol,
+            identifier: item.identifier
           }"
         />
       </template>
@@ -82,6 +84,8 @@ export default class AssetTable extends Vue {
   tokens!: CustomEthereumToken[];
   @Prop({ required: false, type: Boolean, default: false })
   loading!: string;
+  @Prop({ required: true, type: Boolean })
+  change!: boolean;
 
   @Emit()
   add() {}

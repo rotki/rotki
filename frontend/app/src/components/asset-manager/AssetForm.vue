@@ -132,7 +132,7 @@
     <v-row class="mt-4">
       <v-col cols="auto">
         <v-sheet outlined rounded class="asset-form__icon">
-          <crypto-icon v-if="preview" :symbol="preview" size="72" />
+          <crypto-icon v-if="preview" :symbol="preview" size="72" changeable />
         </v-sheet>
       </v-col>
       <v-col>

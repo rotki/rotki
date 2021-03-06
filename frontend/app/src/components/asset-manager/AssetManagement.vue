@@ -10,6 +10,7 @@
       class="mt-12"
       :tokens="tokens"
       :loading="loading"
+      :change="!loading"
       @add="showForm = true"
       @edit="edit($event)"
       @delete-token="deleteToken($event)"

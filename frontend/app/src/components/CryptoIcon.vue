@@ -32,6 +32,8 @@ export default class CryptoIcon extends Vue {
   @Prop({ required: true, type: String })
   size!: string;
   error: boolean = false;
+  @Prop({ required: false, type: Boolean, default: false })
+  changeable!: boolean;
 
   @Watch('symbol')
   onSymbolChange() {
@@ -62,7 +64,8 @@ export default class CryptoIcon extends Vue {
     if (this.asset === 'WETH') {
       return require(`@/assets/images/defi/weth.svg`);
     }
-    return `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.asset}/icon/small`;
+    const url = `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.asset}/icon/small`;
+    return this.changeable ? `${url}?t=${Date.now()}` : url;
   }
 }
 </script>

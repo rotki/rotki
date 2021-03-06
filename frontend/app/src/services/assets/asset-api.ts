@@ -16,7 +16,7 @@ export class AssetApi {
 
   constructor(axios: AxiosInstance) {
     this.axios = axios;
-    this.baseTransformer = setupTransformer();
+    this.baseTransformer = setupTransformer([]);
   }
 
   customTokens(): Promise<CustomEthereumToken[]> {

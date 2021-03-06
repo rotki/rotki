@@ -6,9 +6,10 @@
     @click="navigate"
   >
     <crypto-icon
+      :changeable="changeable"
       size="26px"
       class="asset-details-base__icon"
-      :symbol="asset.symbol"
+      :symbol="identifier"
     />
     <span class="asset-details-base__details">
       <span
@@ -39,6 +40,7 @@ import { Routes } from '@/router/routes';
 type Asset = {
   readonly symbol: string;
   readonly name: string;
+  readonly identifier?: string;
 };
 
 @Component({
@@ -50,6 +52,12 @@ export default class AssetDetailsBase extends Vue {
 
   @Prop({ required: false, type: Boolean, default: false })
   opensDetails!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  changeable!: boolean;
+
+  get identifier(): string {
+    return this.asset.identifier ?? this.symbol;
+  }
 
   get symbol(): string {
     return this.asset.symbol;
@@ -82,7 +90,10 @@ export default class AssetDetailsBase extends Vue {
       return;
     }
     this.$router.push({
-      path: Routes.ASSETS.replace(':identifier', this.asset.symbol)
+      path: Routes.ASSETS.replace(
+        ':identifier',
+        this.asset.identifier ?? this.asset.symbol
+      )
     });
   }
 }
