@@ -6,6 +6,19 @@
     <template #subtitle>
       {{ $t('asset_table.subtitle') }}
     </template>
+    <template #search>
+      <v-row justify="end" no-gutters>
+        <v-col cols="12" sm="4">
+          <v-text-field
+            v-model="search"
+            dense
+            prepend-inner-icon="mdi-magnify"
+            :label="$t('asset_table.search')"
+            outlined
+          />
+        </v-col>
+      </v-row>
+    </template>
     <v-btn absolute fab top right dark color="primary" @click="add">
       <v-icon> mdi-plus </v-icon>
     </v-btn>
@@ -15,6 +28,7 @@
       :headers="headers"
       item-key="address"
       sort-by="name"
+      :search.sync="search"
       :footer-props="footerProps"
     >
       <template #item.name="{ item }">
@@ -77,6 +91,7 @@ export default class AssetTable extends Vue {
   deleteToken(_address: string) {}
 
   expand = [];
+  search: string = '';
   readonly footerProps = footerProps;
   readonly headers: DataTableHeader[] = [
     {

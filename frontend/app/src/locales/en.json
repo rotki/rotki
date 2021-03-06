@@ -54,6 +54,7 @@
       "cryptocompare": "CryptoCompare",
       "started": "Started"
     },
+    "search": "Filter",
     "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts"
   },
   "assets": {
