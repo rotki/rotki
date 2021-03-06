@@ -1,6 +1,7 @@
 [
   {
     "asset": "XMR",
+    "keyword": "XMR",
     "label": "My monero wallet",
     "amount": "50.315",
     "tags": [
@@ -10,6 +11,7 @@
   },
   {
     "asset": "EUR",
+    "keyword": "EUR",
     "label": "My Bank Account",
     "amount": "150",
     "tags": [],
@@ -17,6 +19,7 @@
   },
   {
     "asset": "USD",
+    "keyword": "United States Dollar",
     "label": "My USD Bank Account",
     "amount": "100",
     "tags": [],
