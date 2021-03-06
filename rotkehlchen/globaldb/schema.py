@@ -33,15 +33,15 @@ CREATE TABLE IF NOT EXISTS asset_types (
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('A', 1);
 /* OWN CHAIN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('B', 2);
-/* ETH TOKEN */
+/* ETHEREUM TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('C', 3);
 /* OMNI TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('D', 4);
 /* NEO TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('E', 5);
-/* XCP TOKEN */
+/* COUNTERPARTY TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('F', 6);
-/* BTS TOKEN */
+/* BITSHARES TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('G', 7);
 /* ARDOR TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('H', 8);
@@ -63,22 +63,18 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('O', 15);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('P', 16);
 /* ONTOLOGY_TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Q', 17);
-/* ETH TOKEN AND MORE */
-INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('R', 18);
-/* EXCHANGE SPECIFIC */
-INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('S', 19);
 /* VECHAIN TOKEN */
-INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('T', 20);
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('R', 18);
 /* BINANCE TOKEN */
-INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('U', 21);
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('S', 19);
 /* EOS TOKEN */
-INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('V', 22);
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('T', 20);
 /* FUSION TOKEN */
-INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('W', 23);
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('U', 21);
 /* LUNIVERSE TOKEN */
-INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('X', 24);
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('V', 22);
 /* OTHER */
-INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Y', 25);
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('W', 23);
 """
 
 # Using asset_id as a primary key here since nothing else is guaranteed to be unique

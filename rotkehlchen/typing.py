@@ -259,23 +259,18 @@ class AssetType(Enum):
     STELLAR_TOKEN = 15
     TRON_TOKEN = 16
     ONTOLOGY_TOKEN = 17
-    ETHEREUM_TOKEN_AND_MORE = 18  # only in all_assets.json -- in DB turned to eth token
-    EXCHANGE_SPECIFIC = 19
-    VECHAIN_TOKEN = 20
-    BINANCE_TOKEN = 21
-    EOS_TOKEN = 22
-    FUSION_TOKEN = 23
-    LUNIVERSE_TOKEN = 24
-    OTHER = 25
+    VECHAIN_TOKEN = 18
+    BINANCE_TOKEN = 19
+    EOS_TOKEN = 20
+    FUSION_TOKEN = 21
+    LUNIVERSE_TOKEN = 22
+    OTHER = 23
 
     def __str__(self) -> str:
         return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member
 
     def serialize_for_db(self) -> str:
         return chr(self.value + 64)
-
-    def is_eth_token(self) -> bool:
-        return self in (AssetType.ETHEREUM_TOKEN, AssetType.ETHEREUM_TOKEN_AND_MORE)
 
     @staticmethod
     def deserialize_from_db(value: str) -> 'AssetType':

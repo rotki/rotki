@@ -98,7 +98,7 @@ class GlobalDBHandler():
         cursor = connection.cursor()
 
         details_id: Union[str, ChecksumEthAddress]
-        if asset_type.is_eth_token():
+        if asset_type == AssetType.ETHEREUM_TOKEN:
             token = cast(CustomEthereumToken, data)
             GlobalDBHandler().add_ethereum_token(token)
             details_id = token.address
@@ -131,8 +131,6 @@ class GlobalDBHandler():
         cursor = connection.cursor()
 
         # first ethereum tokens
-        # forcing ETHEREUM_TOKEN type, even if it's ETHEREUM_TOKEN_AND_MORE since the latter
-        # is going to be deprecated
         cursor.executemany(
             'INSERT OR IGNORE INTO assets(identifier, type, details_reference) '
             'VALUES(?, ?, ?)',
@@ -270,7 +268,7 @@ class GlobalDBHandler():
             )
             return None
 
-        if asset_type.is_eth_token():
+        if asset_type == AssetType.ETHEREUM_TOKEN:
             address = cast(ChecksumEthAddress, details_reference)  # reference is an address
             token = GlobalDBHandler().get_ethereum_token(address)
             if token is None:

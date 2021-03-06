@@ -130,7 +130,7 @@ def test_cryptocompare_asset_support(cryptocompare):
 def test_all_assets_json_tokens_address_is_checksummed():
     """Test that all ethereum saved token asset addresses are checksummed"""
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
-        if not asset_data.asset_type.is_eth_token():
+        if not asset_data.asset_type == AssetType.ETHEREUM_TOKEN:
             continue
 
         msg = (
@@ -178,7 +178,7 @@ def test_all_assets_json_assets_have_common_keys():
 
         # Check if the asset is a token and update the keys to verify
         asset_type = asset_type_mapping[asset_data['type']]
-        if asset_type.is_eth_token():
+        if asset_type == AssetType.ETHEREUM_TOKEN:
             verify_against = verify_token
         elif asset_type == AssetType.FIAT:
             verify_against = verify_fiat
@@ -244,7 +244,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 def test_assets_json_meta():
     """Test that all_assets.json md5 matches and that if md5 changes since last
     time then version is also bumped"""
-    last_meta = {'md5': '836f8c15358d7c61db802ef7dbf85c2a', 'version': 69}
+    last_meta = {'md5': '818b121f8ddf1ad23e941257a565be71', 'version': 69}
     data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
     data_md5 = file_md5(data_dir / 'all_assets.json')
 

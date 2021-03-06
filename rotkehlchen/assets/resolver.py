@@ -16,7 +16,6 @@ log = logging.getLogger(__name__)
 asset_type_mapping = {
     'fiat': AssetType.FIAT,
     'own chain': AssetType.OWN_CHAIN,
-    'ethereum token and more': AssetType.ETHEREUM_TOKEN_AND_MORE,
     'ethereum token': AssetType.ETHEREUM_TOKEN,
     'omni token': AssetType.OMNI_TOKEN,
     'neo token': AssetType.NEO_TOKEN,
@@ -24,15 +23,14 @@ asset_type_mapping = {
     'bitshares token': AssetType.BITSHARES_TOKEN,
     'ardor token': AssetType.ARDOR_TOKEN,
     'nxt token': AssetType.NXT_TOKEN,
-    'Ubiq token': AssetType.UBIQ_TOKEN,
-    'Nubits token': AssetType.NUBITS_TOKEN,
-    'Burst token': AssetType.BURST_TOKEN,
+    'ubiq token': AssetType.UBIQ_TOKEN,
+    'nubits token': AssetType.NUBITS_TOKEN,
+    'burst token': AssetType.BURST_TOKEN,
     'waves token': AssetType.WAVES_TOKEN,
     'qtum token': AssetType.QTUM_TOKEN,
     'stellar token': AssetType.STELLAR_TOKEN,
     'tron token': AssetType.TRON_TOKEN,
     'ontology token': AssetType.ONTOLOGY_TOKEN,
-    'exchange specific': AssetType.EXCHANGE_SPECIFIC,
     'vechain token': AssetType.VECHAIN_TOKEN,
     'binance token': AssetType.BINANCE_TOKEN,
     'eos token': AssetType.EOS_TOKEN,
@@ -145,7 +143,7 @@ def _maybe_prime_globaldb(assets_dir: Path) -> None:
             )
             continue
         entry['type'] = asset_type
-        if asset_type.is_eth_token():
+        if asset_type == AssetType.ETHEREUM_TOKEN:
             ethereum_tokens.append(entry)
         else:
             other_assets.append(entry)
