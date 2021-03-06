@@ -269,7 +269,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
         json={'address': INITIAL_TOKENS[1].address},
     )
     result = assert_proper_response_with_result(response)
-    assert result is True
+    assert result == {'identifier': token1_id}
 
     response = requests.get(
         api_url_for(
@@ -314,7 +314,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
         json={'address': INITIAL_TOKENS[0].address},
     )
     result = assert_proper_response_with_result(response)
-    assert result is True
+    assert result == {'identifier': token0_id}
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,

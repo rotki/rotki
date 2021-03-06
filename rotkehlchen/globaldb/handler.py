@@ -530,7 +530,7 @@ class GlobalDBHandler():
         return rotki_id
 
     @staticmethod
-    def delete_ethereum_token(address: ChecksumEthAddress) -> None:
+    def delete_ethereum_token(address: ChecksumEthAddress) -> str:
         """Deletes an ethereum token from the global DB
 
         May raise InputError if the token does not exist in the DB
@@ -548,7 +548,21 @@ class GlobalDBHandler():
                 f'but it was not found in the DB',
             )
 
-        # also delete the assets entry
+        # get the rotki identifier of the token
+        query = cursor.execute(
+            'SELECT identifier from assets where details_reference=?;',
+            (address,),
+        )
+        result = query.fetchall()
+        if len(result) == 0:
+            connection.rollback()
+            raise InputError(
+                f'Tried to delete ethereum token with address {address} '
+                f'from the assets table but it was not found in the DB',
+            )
+        rotki_id = result[0][0]
+
+        # finally delete the assets entry
         cursor.execute(
             'DELETE FROM assets WHERE details_reference=?;',
             (address,),
@@ -562,6 +576,7 @@ class GlobalDBHandler():
             )
 
         connection.commit()
+        return rotki_id
 
     @staticmethod
     def add_common_asset_details(data: Dict[str, Any]) -> None:

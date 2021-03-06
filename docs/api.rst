@@ -2279,7 +2279,7 @@ Deleting custom ethereum tokens
 
 .. http:delete:: /api/(version)/assets/ethereum
 
-   Doing a DELETE on the ethereum assets endpoint will allow you to delete an existing ethereum token from the global rotki DB.
+   Doing a DELETE on the ethereum assets endpoint will allow you to delete an existing ethereum token from the global rotki DB by address.
 
    **Example Request**:
 
@@ -2300,12 +2300,12 @@ Deleting custom ethereum tokens
       Content-Type: application/json
 
       {
-          "result": true,
+          "result": {"identifier": "GNO"},
           "message": ""
       }
 
 
-   :resjson bool result: True for success, null for error.
+   :resjson string identifier: The rotki identifier of the token that was deleted.
    :statuscode 200: Asset succesfully deleted.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: Some conflict at deleting. For example token address does not exist in the DB.

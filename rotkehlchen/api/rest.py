@@ -34,6 +34,7 @@ from rotkehlchen.accounting.structures import (
 )
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
     add_manually_tracked_balances,
@@ -1287,19 +1288,28 @@ class RestAPI():
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        # Also clear the in-memory cache of the asset resolver to requery DB
+        AssetResolver().assets_cache.pop(identifier, None)
+
         return api_response(
-            _wrap_in_ok_result({'identifier': identifier}),
+            result=_wrap_in_ok_result({'identifier': identifier}),
             status_code=HTTPStatus.OK,
         )
 
     @staticmethod
     def delete_custom_ethereum_token(address: ChecksumEthAddress) -> Response:
         try:
-            GlobalDBHandler().delete_ethereum_token(address=address)
+            identifier = GlobalDBHandler().delete_ethereum_token(address=address)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        # Also clear the in-memory cache of the asset resolver
+        AssetResolver().assets_cache.pop(identifier, None)
+
+        return api_response(
+            result=_wrap_in_ok_result({'identifier': identifier}),
+            status_code=HTTPStatus.OK,
+        )
 
     def query_netvalue_data(self) -> Response:
         from_ts = Timestamp(0)
