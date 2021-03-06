@@ -5,7 +5,12 @@ from typing import Any, Dict, List, Optional, Union, cast, overload
 
 from typing_extensions import Literal
 
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
+from rotkehlchen.chain.ethereum.typing import (
+    CustomEthereumToken,
+    CustomEthereumTokenWithIdentifier,
+    UnderlyingToken,
+)
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.errors import (
     DeserializationError,
     InputError,
@@ -13,7 +18,6 @@ from rotkehlchen.errors import (
     UnknownAsset,
 )
 from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress
-from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 
 from .schema import DB_SCRIPT_CREATE_TABLES
 
@@ -403,12 +407,13 @@ class GlobalDBHandler():
         return result[0][0]
 
     @staticmethod
-    def get_ethereum_token(address: ChecksumEthAddress) -> Optional[CustomEthereumToken]:
+    def get_ethereum_token(address: ChecksumEthAddress) -> Optional[CustomEthereumTokenWithIdentifier]:  # noqa: E501
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT decimals, name, symbol, started, swapped_for, '
-            'coingecko, cryptocompare, protocol '
-            'FROM ethereum_tokens where address=?;',
+            'SELECT A.identifier, B.address, B.decimals, B.name, B.symbol, B.started, '
+            'B.swapped_for, B.coingecko, B.cryptocompare, B.protocol '
+            'FROM assets AS A LEFT OUTER JOIN '
+            'ethereum_tokens AS B ON B.address = A.details_reference WHERE address=?;',
             (address,),
         )
         results = query.fetchall()
@@ -419,8 +424,8 @@ class GlobalDBHandler():
         underlying_tokens = GlobalDBHandler()._fetch_underlying_tokens(address)
 
         try:
-            return CustomEthereumToken.deserialize_from_db(
-                entry=(address, *token_data),  # type: ignore
+            return CustomEthereumTokenWithIdentifier.deserialize_from_db(
+                entry=token_data,
                 underlying_tokens=underlying_tokens,
             )
         except UnknownAsset as e:
@@ -431,23 +436,24 @@ class GlobalDBHandler():
             return None
 
     @staticmethod
-    def get_ethereum_tokens() -> List[CustomEthereumToken]:
+    def get_ethereum_tokens() -> List[CustomEthereumTokenWithIdentifier]:
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT address, decimals, name, symbol, started, '
-            'swapped_for, coingecko, cryptocompare, protocol '
-            'FROM ethereum_tokens;',
+            'SELECT A.identifier, B.address, B.decimals, B.name, B.symbol, B.started, '
+            'B.swapped_for, B.coingecko, B.cryptocompare, B.protocol '
+            'FROM assets as A LEFT OUTER JOIN '
+            'ethereum_tokens as B on B.address = A.details_reference;',
         )
         tokens = []
         for entry in query:
-            underlying_tokens = GlobalDBHandler()._fetch_underlying_tokens(entry[0])
+            underlying_tokens = GlobalDBHandler()._fetch_underlying_tokens(entry[1])
             try:
-                token = CustomEthereumToken.deserialize_from_db(entry, underlying_tokens)
+                token = CustomEthereumTokenWithIdentifier.deserialize_from_db(entry, underlying_tokens)  # noqa: E501
                 tokens.append(token)
             except UnknownAsset as e:
                 log.error(
                     f'Found unknown swapped_for asset {str(e)} in '
-                    f'the DB when deserializing a CustomEthereumToken',
+                    f'the DB when deserializing a CustomEthereumTokenWithIdentifier',
                 )
 
         return tokens
@@ -516,7 +522,7 @@ class GlobalDBHandler():
                 underlying_tokens=entry.underlying_tokens,
             )
 
-        rotki_id = entry.identifier
+        rotki_id = GlobalDBHandler().get_ethereum_token_identifier(entry.address)
         if rotki_id is None:
             connection.rollback()
             raise InputError(

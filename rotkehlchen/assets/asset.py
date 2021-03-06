@@ -6,7 +6,7 @@ from rotkehlchen.errors import DeserializationError, UnsupportedAsset
 from rotkehlchen.typing import AssetType, ChecksumEthAddress, Timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
+    from rotkehlchen.chain.ethereum.typing import CustomEthereumTokenWithIdentifier
 
 WORLD_TO_BITTREX = {
     # In Rotkehlchen Bitswift is BITS-2 but in Bittrex it's BITS
@@ -354,14 +354,15 @@ class EthereumToken(HasEthereumToken):
         except DeserializationError:
             return None
 
-    def to_custom_ethereum_token(self) -> 'CustomEthereumToken':
+    def to_custom_ethereum_token(self) -> 'CustomEthereumTokenWithIdentifier':
         """TODO:This is just to satisfy its use in one place
 
         Eventually these two data structures should be consolidated."""
         # TODO: figure out a way to move this out. Moved in here due to cyclic imports
-        from rotkehlchen.chain.ethereum.typing import CustomEthereumToken  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
+        from rotkehlchen.chain.ethereum.typing import CustomEthereumTokenWithIdentifier  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
         swapped_for_asset = None if self.swapped_for is None else Asset(self.swapped_for)
-        return CustomEthereumToken(
+        return CustomEthereumTokenWithIdentifier(
+            identifier=self.identifier,
             address=self.ethereum_address,
             decimals=self.decimals,
             name=self.name,

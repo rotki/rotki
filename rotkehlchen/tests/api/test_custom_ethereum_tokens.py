@@ -1,9 +1,11 @@
 from http import HTTPStatus
+from typing import Any, Dict, List
 
 import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
@@ -23,7 +25,18 @@ from rotkehlchen.tests.utils.globaldb import (
     underlying_address3,
     underlying_address4,
 )
-from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
+
+
+def assert_token_entry_exists_in_result(
+        result: List[Dict[str, Any]],
+        expected_result: List[Dict[str, Any]]):
+    """Make sure token entry exists in result.
+
+    We append the identifier to each entry since it's returned
+    """
+    for entry in expected_result:
+        entry['identifier'] = ETHEREUM_DIRECTIVE + entry['address']
+        assert entry in result
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -31,6 +44,7 @@ from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 @pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
 def test_query_custom_tokens(rotkehlchen_api_server):
     """Test that using the query custom ethereum tokens endpoint works"""
+    # Test querying by address
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -39,9 +53,11 @@ def test_query_custom_tokens(rotkehlchen_api_server):
         json={'address': custom_address1},
     )
     result = assert_proper_response_with_result(response)
+    expected_result = INITIAL_TOKENS[0].serialize()
+    expected_result['identifier'] = ETHEREUM_DIRECTIVE + custom_address1
+    assert result == expected_result
 
-    assert result == INITIAL_TOKENS[0].serialize()
-
+    # Test querying all
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -50,8 +66,7 @@ def test_query_custom_tokens(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     expected_result = [x.serialize() for x in INITIAL_EXPECTED_TOKENS]
-    for entry in expected_result:
-        assert entry in result
+    assert_token_entry_exists_in_result(result, expected_result)
 
     # test that querying an unknown address for a token is properly handled
     unknown_address = make_ethereum_address()
@@ -96,8 +111,7 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
         CustomEthereumToken(address=underlying_address4),
     ]
     expected_result = [x.serialize() for x in expected_tokens]
-    for entry in expected_result:
-        assert entry in result
+    assert_token_entry_exists_in_result(result, expected_result)
 
     # test that adding an already existing address is handled properly
     response = requests.put(
@@ -222,8 +236,7 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
     expected_tokens[0].protocol = new_protocol
     expected_tokens[0].swapped_for = A_BAT
     expected_result = [x.serialize() for x in expected_tokens]
-    for entry in expected_result:
-        assert entry in result
+    assert_token_entry_exists_in_result(result, expected_result)
 
     # test that editing an non existing address is handled properly
     non_existing_token = INITIAL_TOKENS[0].serialize()
@@ -280,8 +293,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     expected_tokens = INITIAL_EXPECTED_TOKENS[:-1]
     expected_result = [x.serialize() for x in expected_tokens]
-    for entry in expected_result:
-        assert entry in result
+    assert_token_entry_exists_in_result(result, expected_result)
     # also check the mapping for the underlying still tokens exists
     result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
     assert result == 3
@@ -324,8 +336,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     expected_tokens = INITIAL_EXPECTED_TOKENS[1:-1]
     expected_result = [x.serialize() for x in expected_tokens]
-    for entry in expected_result:
-        assert entry in result
+    assert_token_entry_exists_in_result(result, expected_result)
     # and removes the mapping of all underlying tokens
     result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
     assert result == 0

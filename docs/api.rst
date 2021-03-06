@@ -2135,6 +2135,7 @@ Getting custom ethereum tokens
 
       {
           "result": [{
+              "identifier": "FTK",
               "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
               "decimals": 18,
               "name": "foo",
@@ -2159,6 +2160,7 @@ Getting custom ethereum tokens
    .. _custom_ethereum_token:
 
    :resjson list result: A list of ethereum tokens
+   :resjsonarr string identifier: The rotki identifier of the token. This is only returned from the GET endpoint and not input from the add/edit one.
    :resjsonarr string address: The address of the token. Can not be optional.
    :resjsonarr integer decimals: Ethereum token decimals. Can be missing if not known.
    :resjsonarr string name: Asset name. Can be missing if not known.
