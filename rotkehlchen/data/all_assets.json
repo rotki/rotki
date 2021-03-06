@@ -10022,7 +10022,7 @@
     },
     "RAI": {
         "coingecko": "rai",
-        "cryptocompare": "",
+        "cryptocompare": "RAI",
         "ethereum_address": "0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919",
         "ethereum_token_decimals": 18,
         "name": "Rai Reflex Index",
@@ -12119,7 +12119,7 @@
     },
     "TORN": {
         "coingecko": "tornado-cash",
-        "cryptocompare": "",
+        "cryptocompare": "TORN",
         "ethereum_address": "0x77777FeDdddFfC19Ff86DB637967013e6C6A116C",
         "ethereum_token_decimals": 18,
         "name": "TornadoCash",
@@ -15981,7 +15981,7 @@
     },
     "OPCT": {
         "coingecko": "opacity",
-        "cryptocompare": "",
+        "cryptocompare": "OPCT",
         "ethereum_address": "0xDb05EA0877A2622883941b939f0bb11d1ac7c400",
         "ethereum_token_decimals": 18,
         "name": "Opacity",
