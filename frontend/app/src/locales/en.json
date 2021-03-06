@@ -176,7 +176,7 @@
       "coingecko": "Coingecko",
       "coingecko_hint": "The identifier of the asset on Coingecko. If not set rotki will not be able to retrieve prices for the asset from Coingecko.",
       "cryptocompare": "CryptoCompare",
-      "cryptocompare_hint": "The identifier of the asset on CryptoCompare. If not set rotki will not be able to retrieve prices for the asset from CryptoCompare",
+      "cryptocompare_hint": "The identifier of the asset on CryptoCompare. If not given, the symbol is assumed as default. If that does not work and if not otherwise set rotki will not be able to retrieve prices for the asset from CryptoCompare",
       "decimals": "Decimals",
       "name": "Name",
       "protocol": "Protocol",
