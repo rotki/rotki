@@ -97,7 +97,7 @@ class GlobalDBHandler():
             asset_type: AssetType,
             data: Union[CustomEthereumToken, Dict[str, Any]],
     ) -> None:
-        """May raise InputError in case of error, meaning the asset exists"""
+        """May raise InputError in case of error, meaning asset exists or some constraint hit"""
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
 
@@ -401,9 +401,14 @@ class GlobalDBHandler():
 
     @staticmethod
     def _add_underlying_tokens(
+            connection: sqlite3.Connection,
             parent_token_address: ChecksumEthAddress,
             underlying_tokens: List[UnderlyingToken],
     ) -> None:
+        """Add the underlying tokens for the parent token
+
+        Passing in the connection so it can be rolled back in case of error
+        """
         cursor = GlobalDBHandler()._conn.cursor()
         for underlying_token in underlying_tokens:
             # make sure underlying token address is tracked if not already there
@@ -421,6 +426,7 @@ class GlobalDBHandler():
                         (asset_id, 'C', underlying_token.address),
                     )
                 except sqlite3.IntegrityError as e:
+                    connection.rollback()
                     raise InputError(
                         f'Failed to add underlying tokens for {parent_token_address} '
                         f'due to {str(e)}',
@@ -432,6 +438,7 @@ class GlobalDBHandler():
                     (underlying_token.address, str(underlying_token.weight), parent_token_address),
                 )
             except sqlite3.IntegrityError as e:
+                connection.rollback()
                 raise InputError(
                     f'Failed to add underlying tokens for {parent_token_address} due to {str(e)}',
                 ) from e
@@ -522,12 +529,20 @@ class GlobalDBHandler():
                 entry.to_db_tuple(),
             )
         except sqlite3.IntegrityError as e:
-            raise InputError(
-                f'Ethereum token with address {entry.address} already exists in the DB',
-            ) from e
+            exception_msg = str(e)
+            if 'FOREIGN KEY' in exception_msg:
+                # should not really happen since API should check for this
+                msg = (
+                    f'Ethereum token with address {entry.address} can not be put '
+                    f'in the DB due to swapped for entry not existing'
+                )
+            else:
+                msg = f'Ethereum token with address {entry.address} already exists in the DB'
+            raise InputError(msg) from e
 
         if entry.underlying_tokens is not None:
             GlobalDBHandler()._add_underlying_tokens(
+                connection=connection,
                 parent_token_address=entry.address,
                 underlying_tokens=entry.underlying_tokens,
             )
@@ -546,11 +561,18 @@ class GlobalDBHandler():
         cursor = connection.cursor()
         db_tuple = entry.to_db_tuple()
         swapped_tuple = (*db_tuple[1:], db_tuple[0])
-        cursor.execute(
-            'UPDATE ethereum_tokens SET decimals=?, name=?, symbol=?, started=?, swapped_for=?, '
-            'coingecko=?, cryptocompare=?, protocol=? WHERE address = ?',
-            swapped_tuple,
-        )
+        try:
+            cursor.execute(
+                'UPDATE ethereum_tokens SET decimals=?, name=?, symbol=?, started=?, swapped_for=?, '  # noqa: E501
+                'coingecko=?, cryptocompare=?, protocol=? WHERE address = ?',
+                swapped_tuple,
+            )
+        except sqlite3.IntegrityError as e:
+            raise InputError(
+                f'Failed to update DB entry for ethereum token with address {entry.address} '
+                f'due to a consraint being hit. Make sure the new values are valid ',
+            ) from e
+
         if cursor.rowcount != 1:
             raise InputError(
                 f'Tried to edit non existing ethereum token with address {entry.address}',
@@ -563,6 +585,7 @@ class GlobalDBHandler():
         )
         if entry.underlying_tokens is not None:  # and now add any if needed
             GlobalDBHandler()._add_underlying_tokens(
+                connection=connection,
                 parent_token_address=entry.address,
                 underlying_tokens=entry.underlying_tokens,
             )
