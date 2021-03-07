@@ -162,8 +162,10 @@ export default class AssetTable extends Vue {
   ];
 
   getAsset(item: CustomEthereumToken) {
+    const name =
+      item.name ?? item.symbol ?? item.identifier?.replace('_ceth_', '');
     return {
-      name: item.name ?? item.symbol ?? item.identifier,
+      name,
       symbol: item.symbol ?? '',
       identifier: item.identifier
     };
