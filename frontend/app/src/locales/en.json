@@ -277,6 +277,7 @@
     "loading": "Please wait while your eth2 staking details are getting loaded..."
   },
   "asset_management": {
+    "delete_error": "Could not delete {address}: {message}",
     "title": "Asset Management",
     "add_title": "Add a new asset",
     "edit_title": "Edit an asset"

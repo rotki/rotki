@@ -41,6 +41,7 @@ import AssetForm from '@/components/asset-manager/AssetForm.vue';
 import AssetTable from '@/components/asset-manager/AssetTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { CustomEthereumToken } from '@/services/assets/types';
+import { showError } from '@/store/utils';
 
 @Component({
   components: { AssetForm, BigDialog, AssetTable }
@@ -95,9 +96,18 @@ export default class AssetManagement extends Vue {
   }
 
   async deleteToken(address: string) {
-    const success = await this.$api.assets.deleteCustomToken(address);
-    if (success) {
-      await this.refresh();
+    try {
+      const success = await this.$api.assets.deleteCustomToken(address);
+      if (success) {
+        await this.refresh();
+      }
+    } catch (e) {
+      showError(
+        this.$t('asset_management.delete_error', {
+          address,
+          message: e.message
+        }).toString()
+      );
     }
   }
 
