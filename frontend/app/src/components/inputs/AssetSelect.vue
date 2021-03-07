@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-autocomplete
     :value="value"
     :disabled="disabled"
@@ -8,6 +8,7 @@
     single-line
     :label="label"
     :rules="rules"
+    :clearable="clearable"
     :success-messages="successMessages"
     :error-messages="errorMessages"
     item-value="key"
@@ -77,6 +78,9 @@ export default class AssetSelect extends Vue {
   @Prop({ default: false, required: false, type: Boolean })
   outlined!: boolean;
 
+  @Prop({ default: false, required: false, type: Boolean })
+  clearable!: boolean;
+
   @Emit()
   input(_value: string) {}
 
@@ -127,6 +131,12 @@ export default class AssetSelect extends Vue {
         &__icon {
           &--append {
             i {
+              bottom: 8px;
+            }
+          }
+
+          &--clear {
+            button {
               bottom: 8px;
             }
           }

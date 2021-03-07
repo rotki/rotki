@@ -104,6 +104,8 @@
                   v-model="protocol"
                   outlined
                   persistent-hint
+                  clearable
+                  clear-icon="mdi-close"
                   class="asset-form__protocol"
                   :label="$t('asset_form.labels.protocol')"
                   :error-messages="errors['protocol']"
@@ -116,6 +118,7 @@
                   v-model="swappedFor"
                   outlined
                   persistent-hint
+                  clearable
                   :label="$t('asset_form.labels.swapped_for')"
                   :error-messages="errors['swapped_for']"
                   :disabled="saving"
