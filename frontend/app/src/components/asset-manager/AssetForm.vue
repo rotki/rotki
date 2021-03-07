@@ -61,6 +61,7 @@
           <v-text-field
             v-model="coingecko"
             outlined
+            clearable
             persistent-hint
             :hint="$t('asset_form.labels.coingecko_hint')"
             :label="$t('asset_form.labels.coingecko')"
@@ -74,6 +75,7 @@
             v-model="cryptocompare"
             outlined
             persistent-hint
+            clearable
             :label="$t('asset_form.labels.cryptocompare')"
             :hint="$t('asset_form.labels.cryptocompare_hint')"
             :error-messages="errors['cryptocompare']"
