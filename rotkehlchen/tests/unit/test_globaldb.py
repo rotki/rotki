@@ -19,7 +19,6 @@ def test_get_ethereum_token_identifier(globaldb):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
 def test_add_edit_token_with_wrong_swapped_for(globaldb):
     """Test that giving a non-existing swapped_for token in the DB raises InputError
 

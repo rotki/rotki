@@ -1499,6 +1499,11 @@ class EthereumTokenSchema(Schema):
                     f'The sum of underlying token weights for {data["address"]} '
                     f'is {weight_sum * 100} and exceeds 100%',
                 )
+            if weight_sum < FVal(1):
+                raise ValidationError(
+                    f'The sum of underlying token weights for {data["address"]} '
+                    f'is {weight_sum * 100} and does not add up to 100%',
+                )
 
     @post_load  # type: ignore
     def transform_data(  # pylint: disable=no-self-use

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from http import HTTPStatus
 from typing import Any, Dict, List
 
@@ -173,6 +174,33 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    # and test that adding a token with underlying tokens adding up to less than 100% is caught
+    bad_token = CustomEthereumToken(
+        address=make_ethereum_address(),
+        decimals=18,
+        name='foo',
+        symbol='BBB',
+        underlying_tokens=[
+            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.1055')),
+            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.2055')),
+        ],
+    )
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumassetsresource',
+        ),
+        json={'token': bad_token.serialize()},
+    )
+    expected_msg = (
+        f'The sum of underlying token weights for {bad_token.address} is '
+        f'31.1000 and does not add up to 100%'
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=expected_msg,
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
     # and test that adding a token with empty list of underlying tokens and not null is an error
     bad_token = CustomEthereumToken(
         address=make_ethereum_address(),
@@ -232,7 +260,7 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    expected_tokens = INITIAL_EXPECTED_TOKENS.copy()
+    expected_tokens = deepcopy(INITIAL_EXPECTED_TOKENS)
     expected_tokens[0].name = new_name
     expected_tokens[0].symbol = new_symbol
     expected_tokens[0].protocol = new_protocol
@@ -342,7 +370,19 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
         status_code=HTTPStatus.CONFLICT,
     )
 
-    # test that trying to delete a token that is used as swapped_for
+    # Check that the initial token of the test has MKR as swapped for token
+    # this is just a sanity check as the fixture initialization should take care of it
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumassetsresource',
+        ),
+        json={'address': INITIAL_TOKENS[0].address},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['swapped_for'] == 'MKR'
+
+    # test that trying to delete a token (MKR) that is used as swapped_for
     # of another token is handled correctly
     non_existing_address = make_ethereum_address()
     response = requests.delete(
