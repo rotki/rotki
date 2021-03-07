@@ -326,6 +326,11 @@ export default class AssetForm extends Vue {
             messages.join(','),
             this.$t('asset_form.underlying_tokens').toString()
           );
+        } else if (token._schema) {
+          showError(
+            token._schema[0],
+            this.$t('asset_form.underlying_tokens').toString()
+          );
         }
       }
 
