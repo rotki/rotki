@@ -16,26 +16,7 @@ Changelog
 
 * :feature:`-` Added support for the following tokens:
 
-  - `Quickswap (QUICK) <https://www.coingecko.com/en/coins/quick>` __
-
-* :release:`1.14.2 <2021-02-24>`
-* :bug:`2399` Users will now see a warning if the loopring module is not activated when adding an API key, and balances will be fetched automatically if it is.
-* :bug:`2151` Users will now see the datetime picker properly displaying the selected date when editing ledger actions.
-* :bug:`2405` Legacy bitcoin address balances and xpub derivation should now work properly again after blockchain.info decided to yolo change their api response format.
-* :bug:`2400` Loopring balances should now be queried properly for users who own USDT.
-* :bug:`2398` An edge case of Kucoin historical trade query parsing is fixed. So now even users with some specific ids in their trades will be able to query history properly for Kucoin.
-
-* :feature:`-` Added support for the following tokens:
-
-  - `Rai Reflex Index (RAI) <https://www.coingecko.com/en/coins/rai>`__
-  - `PoolTogether (POOL) <https://www.coingecko.com/en/coins/pooltogether>`__
-  - `Lotto (LOTTO) <https://www.coingecko.com/en/coins/lotto>`__
-  - `FTX Token (FTT) <https://www.coingecko.com/en/coins/ftx-token>`__
-  - `Akash Network (AKT) <https://www.coingecko.com/en/coins/akash-network>`__
-  - `Dfinance (XFI) <https://www.coingecko.com/en/coins/dfinance>`__
-  - `Maps.me Token (MAPS) <https://www.coingecko.com/en/coins/maps>`__
-  - `xToken (XTK) <https://www.coingecko.com/en/coins/xtoken>`__
-  - `Mobile Coin (MOB) <https://www.coingecko.com/en/coins/mobilecoin>`__
+  - `Quickswap (QUICK) <https://www.coingecko.com/en/coins/quick>`__
   - `AC Milan Fan Token (ACM) <https://www.coingecko.com/en/coins/ac-milan-fan-token>`__
   - `Bounce Token (AUCTION) <https://www.coingecko.com/en/coins/auction>`__
   - `DODO bird (DODO) <https://www.coingecko.com/en/coins/dodo>`__
@@ -62,7 +43,26 @@ Changelog
   - `Rari Governance Token (RGT) <https://www.coingecko.com/en/coins/rari-governance-token>`__
   - `Fuse Token (FUSE) <https://www.coingecko.com/en/coins/fuse-network-token>`__
   - `SportX (SX) <https://www.coingecko.com/en/coins/sportx>`__
-  - `Rari Stable Pool Token (RSPT) <https://www.coingecko.com/en/coins/rari-stable-pool-token>`__
+  - `Rari Stable Pool Token (RSPT) <https://www.coingecko.com/en/coins/rari-stable-pool-token>`__2
+
+* :release:`1.14.2 <2021-02-24>`
+* :bug:`2399` Users will now see a warning if the loopring module is not activated when adding an API key, and balances will be fetched automatically if it is.
+* :bug:`2151` Users will now see the datetime picker properly displaying the selected date when editing ledger actions.
+* :bug:`2405` Legacy bitcoin address balances and xpub derivation should now work properly again after blockchain.info decided to yolo change their api response format.
+* :bug:`2400` Loopring balances should now be queried properly for users who own USDT.
+* :bug:`2398` An edge case of Kucoin historical trade query parsing is fixed. So now even users with some specific ids in their trades will be able to query history properly for Kucoin.
+
+* :feature:`-` Added support for the following tokens:
+
+  - `Rai Reflex Index (RAI) <https://www.coingecko.com/en/coins/rai>`__
+  - `PoolTogether (POOL) <https://www.coingecko.com/en/coins/pooltogether>`__
+  - `Lotto (LOTTO) <https://www.coingecko.com/en/coins/lotto>`__
+  - `FTX Token (FTT) <https://www.coingecko.com/en/coins/ftx-token>`__
+  - `Akash Network (AKT) <https://www.coingecko.com/en/coins/akash-network>`__
+  - `Dfinance (XFI) <https://www.coingecko.com/en/coins/dfinance>`__
+  - `Maps.me Token (MAPS) <https://www.coingecko.com/en/coins/maps>`__
+  - `xToken (XTK) <https://www.coingecko.com/en/coins/xtoken>`__
+  - `Mobile Coin (MOB) <https://www.coingecko.com/en/coins/mobilecoin>`__
 
 * :release:`1.14.1 <2021-02-17>`
 * :bug:`2391` The signed version of the MacOS binary should now work properly for all users.
