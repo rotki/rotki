@@ -338,6 +338,10 @@ class BlockchainField(fields.Field):
 
 class AssetField(fields.Field):
 
+    def __init__(self, *, form_with_incomplete_data: bool = False, **kwargs: Any) -> None:  # noqa: E501
+        self.form_with_incomplete_data = form_with_incomplete_data
+        super().__init__(**kwargs)
+
     @staticmethod
     def _serialize(
             value: Asset,
@@ -355,7 +359,7 @@ class AssetField(fields.Field):
             **_kwargs: Any,
     ) -> Asset:
         try:
-            asset = Asset(value)
+            asset = Asset(value, form_with_incomplete_data=self.form_with_incomplete_data)
         except (DeserializationError, UnknownAsset) as e:
             raise ValidationError(str(e)) from e
 
@@ -1536,7 +1540,7 @@ class DataImportSchema(Schema):
 
 
 class AssetIconUploadSchema(Schema):
-    asset = AssetField(required=True)
+    asset = AssetField(required=True, form_with_incomplete_data=True)
     file = FileField(required=True, allowed_extensions=ALLOWED_ICON_EXTENSIONS)
 
 
@@ -1584,7 +1588,7 @@ class WatchersDeleteSchema(Schema):
 
 
 class AssetIconsSchema(Schema):
-    asset = AssetField(required=True)
+    asset = AssetField(required=True, form_with_incomplete_data=True)
     size = fields.String(
         validate=webargs.validate.OneOf(choices=('thumb', 'small', 'large')),
         missing='thumb',

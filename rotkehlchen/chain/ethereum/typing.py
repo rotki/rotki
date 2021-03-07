@@ -367,6 +367,19 @@ CustomEthereumTokenDBTuple = Tuple[
     Optional[str],        # protocol
 ]
 
+CustomEthereumTokenWithIdentifierDBTuple = Tuple[
+    str,                  # identifier
+    str,                  # address
+    Optional[int],        # decimals
+    Optional[str],        # name
+    Optional[str],        # symbol
+    Optional[int],        # started
+    Optional[str],        # swapped_for
+    Optional[str],        # coingecko
+    Optional[str],        # cryptocompare
+    Optional[str],        # protocol
+]
+
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class CustomEthereumToken:
@@ -380,12 +393,6 @@ class CustomEthereumToken:
     cryptocompare: Optional[str] = None
     protocol: Optional[str] = None
     underlying_tokens: Optional[List[UnderlyingToken]] = None
-
-    @property
-    def identifier(self) -> Optional[str]:
-        # TODO: Fix this import requirement. Is in here only to avoid cyclic imports
-        from rotkehlchen.globaldb.handler import GlobalDBHandler  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
-        return GlobalDBHandler().get_ethereum_token_identifier(self.address)
 
     def missing_basic_data(self) -> bool:
         return self.name is None or self.symbol is None or self.decimals is None
@@ -442,5 +449,71 @@ class CustomEthereumToken:
             coingecko=entry[6],
             cryptocompare=entry[7],
             protocol=entry[8],
+            underlying_tokens=underlying_tokens,
+        )
+
+
+# Not using inheritance here due to problems with:
+# Having to make identifier optional and some mypy warnings for incompatible overrides
+# https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class CustomEthereumTokenWithIdentifier():
+
+    identifier: str
+    address: ChecksumEthAddress
+    decimals: Optional[int] = None
+    name: Optional[str] = None
+    symbol: Optional[str] = None
+    started: Optional[Timestamp] = None
+    swapped_for: Optional[Asset] = None
+    coingecko: Optional[str] = None
+    cryptocompare: Optional[str] = None
+    protocol: Optional[str] = None
+    underlying_tokens: Optional[List[UnderlyingToken]] = None
+
+    def missing_basic_data(self) -> bool:
+        return self.name is None or self.symbol is None or self.decimals is None
+
+    def serialize(self) -> Dict[str, Any]:
+        result: Dict[str, Any] = {
+            'identifier': self.identifier,
+            'address': self.address,
+            'decimals': self.decimals,
+            'name': self.name,
+            'symbol': self.symbol,
+            'started': self.started,
+            'swapped_for': self.swapped_for.identifier if self.swapped_for else None,
+            'coingecko': self.coingecko,
+            'cryptocompare': self.cryptocompare,
+            'protocol': self.protocol,
+            'underlying_tokens': None,
+        }
+        if self.underlying_tokens:
+            result['underlying_tokens'] = [x.serialize() for x in self.underlying_tokens]
+
+        return result
+
+    @classmethod
+    def deserialize_from_db(
+            cls,
+            entry: CustomEthereumTokenWithIdentifierDBTuple,
+            underlying_tokens: Optional[List[UnderlyingToken]] = None,
+    ) -> 'CustomEthereumTokenWithIdentifier':
+        """May raise UnknownAsset if the swapped for asset can't be recognized
+
+        That error would be bad because it would mean somehow an unknown id made it into the DB
+        """
+        swapped_for = Asset(entry[6]) if entry[6] is not None else None
+        return CustomEthereumTokenWithIdentifier(
+            identifier=entry[0],
+            address=string_to_ethereum_address(entry[1]),
+            decimals=entry[2],
+            name=entry[3],
+            symbol=entry[4],
+            started=Timestamp(entry[5]),  # type: ignore
+            swapped_for=swapped_for,
+            coingecko=entry[7],
+            cryptocompare=entry[8],
+            protocol=entry[9],
             underlying_tokens=underlying_tokens,
         )

@@ -288,6 +288,15 @@
         "symbol": "ADT",
         "type": "ethereum token"
     },
+    "ADX": {
+        "coingecko": "adex",
+        "ethereum_address": "0xADE00C28244d5CE17D72E40330B1c318cD12B7c3",
+        "ethereum_token_decimals": 18,
+        "name": "AdEx Network",
+        "started": 1496102400,
+        "symbol": "ADX",
+        "type": "ethereum token"
+    },
     "ADXv1": {
         "coingecko": "adex",
         "ethereum_address": "0x4470BB87d77b963A013DB939BE332f927f2b992e",
@@ -296,15 +305,6 @@
         "started": 1496102400,
         "symbol": "ADX",
         "swapped_for": "ADX",
-        "type": "ethereum token"
-    },
-    "ADX": {
-        "coingecko": "adex",
-        "ethereum_address": "0xADE00C28244d5CE17D72E40330B1c318cD12B7c3",
-        "ethereum_token_decimals": 18,
-        "name": "AdEx Network",
-        "started": 1496102400,
-        "symbol": "ADX",
         "type": "ethereum token"
     },
     "AE": {
@@ -329,6 +329,15 @@
         "started": 1542844800,
         "symbol": "AERGO",
         "type": "ethereum token"
+    },
+    "AM": {
+        "active": false,
+        "coingecko": "",
+        "ended": 1474761600,
+        "name": "AeroME",
+        "started": 1420934400,
+        "symbol": "AM",
+        "type": "own chain"
     },
     "AERO": {
         "active": false,
@@ -491,15 +500,6 @@
         "symbol": "ALX",
         "type": "ethereum token"
     },
-    "AM": {
-        "active": false,
-        "coingecko": "",
-        "ended": 1474761600,
-        "name": "AeroME",
-        "started": 1420934400,
-        "symbol": "AM",
-        "type": "own chain"
-    },
     "AMB": {
         "coingecko": "amber",
         "ethereum_address": "0x4DC3643DbC642b72C158E7F3d2ff232df61cb6CE",
@@ -581,16 +581,6 @@
         "symbol": "ANKR",
         "type": "ethereum token"
     },
-    "ANT": {
-        "coingecko": "aragon",
-        "ethereum_address": "0x960b236A07cf122663c4303350609A66A7B288C0",
-        "ethereum_token_decimals": 18,
-        "name": "Aragon",
-        "started": 1493942400,
-        "symbol": "ANT",
-        "type": "ethereum token",
-        "swapped_for": "ANTv2"
-    },
     "ANTv2": {
         "coingecko": "aragon",
         "cryptocompare": "ANT",
@@ -600,6 +590,16 @@
         "started": 1602761920,
         "symbol": "ANT",
         "type": "ethereum token"
+    },
+    "ANT": {
+        "coingecko": "aragon",
+        "ethereum_address": "0x960b236A07cf122663c4303350609A66A7B288C0",
+        "ethereum_token_decimals": 18,
+        "name": "Aragon",
+        "started": 1493942400,
+        "symbol": "ANT",
+        "type": "ethereum token",
+        "swapped_for": "ANTv2"
     },
     "ANY": {
         "coingecko": "anyswap",
@@ -925,6 +925,15 @@
         "started": 1393479207,
         "symbol": "AUR",
         "type": "own chain"
+    },
+    "IDEX": {
+        "coingecko": "aurora-dao",
+        "ethereum_address": "0xB705268213D593B8FD88d3FDEFF93AFF5CbDcfAE",
+        "ethereum_token_decimals": 18,
+        "name": "IDEX Token",
+        "started": 1556828898,
+        "symbol": "IDEX",
+        "type": "ethereum token"
     },
     "AURA": {
         "coingecko": "aurora-dao",
@@ -3390,7 +3399,6 @@
         "ethereum_token_decimals": 16,
         "name": "The DAO",
         "started": 1461980578,
-        "swapped_for": "ETH",
         "symbol": "DAO",
         "type": "ethereum token"
     },
@@ -4472,6 +4480,13 @@
         "started": 1469491200,
         "symbol": "EMV",
         "type": "ethereum token"
+    },
+    "SCRT": {
+        "coingecko": "secret",
+        "name": "Secret",
+        "started": 1601510400,
+        "symbol": "SCRT",
+        "type": "own chain"
     },
     "ENG": {
         "coingecko": "enigma",
@@ -6421,15 +6436,6 @@
         "symbol": "ICX",
         "type": "own chain"
     },
-    "IDEX": {
-        "coingecko": "aurora-dao",
-        "ethereum_address": "0xB705268213D593B8FD88d3FDEFF93AFF5CbDcfAE",
-        "ethereum_token_decimals": 18,
-        "name": "IDEX Token",
-        "started": 1556828898,
-        "symbol": "IDEX",
-        "type": "ethereum token"
-    },
     "IDH": {
         "coingecko": "indahash",
         "ethereum_address": "0x5136C98A80811C3f46bDda8B5c4555CFd9f812F0",
@@ -7388,6 +7394,16 @@
         "name": "Locus Chain",
         "started": 1523348276,
         "symbol": "LOCUS",
+        "type": "ethereum token"
+    },
+    "OXEN": {
+        "coingecko": "loki-network",
+        "cryptocompare": "loki",
+        "ethereum_address": "0x5ff668ddfDcBB7505f41ED56e626E4D4719DcB26",
+        "ethereum_token_decimals": 9,
+        "name": "Oxen",
+        "started": 1601442293,
+        "symbol": "OXEN",
         "type": "ethereum token"
     },
     "LOKI": {
@@ -8594,6 +8610,14 @@
         "symbol": "NMR",
         "type": "ethereum token"
     },
+    "NOAHP": {
+        "coingecko": "noah-coin",
+        "cryptocompare": "NOAH",
+        "name": "Noah Platinum",
+        "started": 1569888000,
+        "symbol": "NOAHP",
+        "type": "own chain"
+    },
     "NOAH": {
         "coingecko": "noah-coin",
         "ethereum_address": "0x58a4884182d9E835597f405e5F258290E46ae7C2",
@@ -8603,14 +8627,6 @@
         "swapped_for": "NOAHP",
         "symbol": "NOAH",
         "type": "ethereum token"
-    },
-    "NOAHP": {
-        "coingecko": "noah-coin",
-        "cryptocompare": "NOAH",
-        "name": "Noah Platinum",
-        "started": 1569888000,
-        "symbol": "NOAHP",
-        "type": "own chain"
     },
     "NOBL": {
         "active": false,
@@ -10225,16 +10241,6 @@
         "symbol": "renZEC",
         "type": "ethereum token"
     },
-    "REP": {
-        "coingecko": "augur",
-        "ethereum_address": "0x1985365e9f78359a9B6AD760e32412f4a445E862",
-        "ethereum_token_decimals": 18,
-        "name": "Augur",
-        "started": 1416182400,
-        "swapped_for": "REPV2",
-        "symbol": "REP",
-        "type": "ethereum token"
-    },
     "REPV2": {
         "coingecko": "augur",
         "cryptocompare": "REP",
@@ -10243,6 +10249,16 @@
         "name": "Augur",
         "started": 1595886655,
         "symbol": "REPv2",
+        "type": "ethereum token"
+    },
+    "REP": {
+        "coingecko": "augur",
+        "ethereum_address": "0x1985365e9f78359a9B6AD760e32412f4a445E862",
+        "ethereum_token_decimals": 18,
+        "name": "Augur",
+        "started": 1416182400,
+        "swapped_for": "REPV2",
+        "symbol": "REP",
         "type": "ethereum token"
     },
     "REQ": {
@@ -10642,13 +10658,6 @@
         "symbol": "XD",
         "type": "ethereum token"
     },
-    "SCRT": {
-        "coingecko": "secret",
-        "name": "Secret",
-        "started": 1601510400,
-        "symbol": "SCRT",
-        "type": "own chain"
-    },
     "SDC": {
         "coingecko": "",
         "name": "ShadowCash",
@@ -10852,6 +10861,15 @@
         "started": 1522368000,
         "symbol": "SIX",
         "type": "stellar token"
+    },
+    "STORJ": {
+        "coingecko": "storj",
+        "ethereum_address": "0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC",
+        "ethereum_token_decimals": 8,
+        "name": "Storj",
+        "started": 1497888995,
+        "symbol": "STORJ",
+        "type": "ethereum token"
     },
     "SJCX": {
         "active": false,
@@ -11426,15 +11444,6 @@
         "name": "StormX",
         "started": 1589218931,
         "symbol": "STMX",
-        "type": "ethereum token"
-    },
-    "STORJ": {
-        "coingecko": "storj",
-        "ethereum_address": "0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC",
-        "ethereum_token_decimals": 8,
-        "name": "Storj",
-        "started": 1497888995,
-        "symbol": "STORJ",
         "type": "ethereum token"
     },
     "STORM": {
@@ -12703,6 +12712,13 @@
         "symbol": "VEE",
         "type": "ethereum token"
     },
+    "VET": {
+        "coingecko": "vechain",
+        "name": "VeChain",
+        "started": 1533254400,
+        "symbol": "VET",
+        "type": "own chain"
+    },
     "VEN": {
         "active": false,
         "coingecko": "vechain",
@@ -12732,13 +12748,6 @@
         "started": 1492951503,
         "symbol": "VERI",
         "type": "ethereum token"
-    },
-    "VET": {
-        "coingecko": "vechain",
-        "name": "VeChain",
-        "started": 1533254400,
-        "symbol": "VET",
-        "type": "own chain"
     },
     "VIA": {
         "coingecko": "viacoin",
@@ -12873,6 +12882,15 @@
         "symbol": "VOOT",
         "type": "own chain"
     },
+    "VRAv2": {
+        "coingecko": "verasity",
+        "ethereum_address": "0xF411903cbC70a74d22900a5DE66A2dda66507255",
+        "ethereum_token_decimals": 18,
+        "name": "Verasity",
+        "started": 1611749669,
+        "symbol": "VRA",
+        "type": "ethereum token"
+    },
     "VRA": {
         "coingecko": "",
         "ethereum_address": "0xdF1D6405df92d981a2fB3ce68F6A03baC6C0E41F",
@@ -12882,15 +12900,6 @@
         "symbol": "VRA",
         "type": "ethereum token",
         "swapped_for": "VRAv2"
-    },
-    "VRAv2": {
-        "coingecko": "verasity",
-        "ethereum_address": "0xF411903cbC70a74d22900a5DE66A2dda66507255",
-        "ethereum_token_decimals": 18,
-        "name": "Verasity",
-        "started": 1611749669,
-        "symbol": "VRA",
-        "type": "ethereum token"
     },
     "VRC": {
         "coingecko": "vericoin",
@@ -13349,6 +13358,13 @@
         "name": "Crypti",
         "started": 1407369600,
         "symbol": "XCR",
+        "type": "own chain"
+    },
+    "XDC": {
+        "coingecko": "xdce-crowd-sale",
+        "name": "XinFin",
+        "started": 1585699200,
+        "symbol": "XDC",
         "type": "own chain"
     },
     "XDCE": {
@@ -15129,13 +15145,6 @@
         "symbol": "XAUT",
         "type": "ethereum token"
     },
-    "XDC": {
-        "coingecko": "xdce-crowd-sale",
-        "name": "XinFin",
-        "started": 1585699200,
-        "symbol": "XDC",
-        "type": "own chain"
-    },
     "RIF": {
         "coingecko": "rif-token",
         "name": "RIF Token",
@@ -15351,16 +15360,6 @@
         "name": "KOK Coin",
         "started": 1578456549,
         "symbol": "KOK",
-        "type": "ethereum token"
-    },
-    "OXEN": {
-        "coingecko": "loki-network",
-        "cryptocompare": "loki",
-        "ethereum_address": "0x5ff668ddfDcBB7505f41ED56e626E4D4719DcB26",
-        "ethereum_token_decimals": 9,
-        "name": "Oxen",
-        "started": 1601442293,
-        "symbol": "OXEN",
         "type": "ethereum token"
     },
     "CRE": {

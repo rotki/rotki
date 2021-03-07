@@ -226,6 +226,10 @@ export default new Router({
       component: () => import('../views/Assets.vue'),
       props: true
     },
+    {
+      path: Routes.ASSET_MANAGER,
+      component: () => import('../views/AssetManager.vue')
+    },
     ...(process.env.NODE_ENV === 'development'
       ? [
           {

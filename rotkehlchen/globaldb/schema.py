@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS ethereum_tokens (
     swapped_for TEXT,
     coingecko TEXT,
     cryptocompare TEXT,
-    protocol TEXT
+    protocol TEXT,
+    FOREIGN KEY(swapped_for) REFERENCES assets(identifier)
 );
 """
 
@@ -89,7 +90,9 @@ CREATE TABLE IF NOT EXISTS common_asset_details (
     swapped_for STRING,
     coingecko TEXT,
     cryptocompare TEXT,
-    FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON DELETE CASCADE
+    FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON DELETE CASCADE,
+    FOREIGN KEY(swapped_for) REFERENCES assets(identifier),
+    FOREIGN KEY(forked) REFERENCES assets(identifier)
 );
 """
 

@@ -42,11 +42,24 @@ class IconManager():
     def iconfile_path(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Path:
         return self.icons_dir / f'{asset.identifier}_{size}.png'
 
+    def custom_iconfile_path(self, asset: Asset) -> Optional[Path]:
+        for suffix in ALLOWED_ICON_EXTENSIONS:
+            icon_path = self.custom_icons_dir / f'{asset.identifier}{suffix}'
+            if icon_path.is_file():
+                return icon_path
+
+        return None
+
     def iconfile_md5(
             self,
             asset: Asset,
             size: Literal['thumb', 'small', 'large'],
     ) -> Optional[str]:
+        # First try with the custom icon path
+        custom_icon_path = self.custom_iconfile_path(asset)
+        if custom_icon_path is not None:
+            return file_md5(custom_icon_path)
+
         path = self.iconfile_path(asset, size)
         if not path.is_file():
             return None
@@ -103,13 +116,13 @@ class IconManager():
         locally before the requested data are returned.
         """
         # First search custom icons
-        for suffix in ALLOWED_ICON_EXTENSIONS:
-            icon_path = self.custom_icons_dir / f'{asset.identifier}{suffix}'
-            if icon_path.is_file():
-                with open(icon_path, 'rb') as f:
-                    image_data = f.read()
-                return image_data
+        custom_icon_path = self.custom_iconfile_path(asset)
+        if custom_icon_path is not None:
+            with open(custom_icon_path, 'rb') as f:
+                image_data = f.read()
+            return image_data
 
+        # Then our only chance is coingecko
         if not asset.has_coingecko():
             return None
 

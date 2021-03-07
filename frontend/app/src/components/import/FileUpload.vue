@@ -27,13 +27,13 @@
           <input
             ref="select"
             type="file"
-            accept=".csv"
+            :accept="fileFilter"
             hidden
             @change="onSelect"
           />
           <i18n
             path="file_upload.drop_area"
-            class="mt-2 text-caption text--secondary d-flex flex-column"
+            class="mt-2 text-caption text--secondary d-flex flex-column text-center"
             tag="div"
           >
             <v-btn
@@ -57,12 +57,23 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+
+const SOURCES = ['cointracking.info', 'crypto.com', 'icon'];
 
 @Component({})
 export default class FileUpload extends Vue {
-  @Prop({ required: true, type: String })
+  @Prop({
+    required: true,
+    type: String,
+    validator: value => SOURCES.includes(value)
+  })
   source!: string;
+  @Prop({ required: false, default: '.csv' })
+  fileFilter!: string;
+
+  @Emit()
+  selected(_file: File) {}
 
   error: string = '';
   active: boolean = false;
@@ -83,7 +94,11 @@ export default class FileUpload extends Vue {
       return;
     }
 
-    this.upload(event.dataTransfer.files);
+    if (this.source !== 'icon') {
+      this.upload(event.dataTransfer.files);
+    } else {
+      this.selected(event.dataTransfer.files[0]);
+    }
   }
 
   onEnter(event: DragEvent) {
@@ -106,7 +121,11 @@ export default class FileUpload extends Vue {
     if (!target || !target.files) {
       return;
     }
-    this.upload(target.files);
+    if (this.source !== 'icon') {
+      this.upload(target.files);
+    } else {
+      this.selected(target.files[0]);
+    }
   }
 
   onError(message: string) {
@@ -135,7 +154,11 @@ export default class FileUpload extends Vue {
     }
 
     if (!files[0].name.endsWith('.csv')) {
-      this.onError(this.$tc('file_upload.only_csv'));
+      this.onError(
+        this.$t('file_upload.only_files', {
+          fileFilter: this.fileFilter
+        }).toString()
+      );
       return;
     }
 

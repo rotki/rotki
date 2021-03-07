@@ -222,6 +222,13 @@ export default class NavigationMenu extends Vue {
     },
     {
       type: 'item',
+      text: this.$t('navigation_menu.manage_assets').toString(),
+      route: Routes.ASSET_MANAGER,
+      class: 'asset-manager',
+      icon: 'mdi-database-edit'
+    },
+    {
+      type: 'item',
       text: this.$tc('navigation_menu.api_keys'),
       route: '/settings/api-keys/rotki-premium',
       class: 'settings__api-keys',

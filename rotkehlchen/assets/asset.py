@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, InitVar
 from functools import total_ordering
 from typing import TYPE_CHECKING, Any, Optional, Type, TypeVar
 
@@ -6,7 +6,7 @@ from rotkehlchen.errors import DeserializationError, UnsupportedAsset
 from rotkehlchen.typing import AssetType, ChecksumEthAddress, Timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
+    from rotkehlchen.chain.ethereum.typing import CustomEthereumTokenWithIdentifier
 
 WORLD_TO_BITTREX = {
     # In Rotkehlchen Bitswift is BITS-2 but in Bittrex it's BITS
@@ -188,6 +188,7 @@ WORLD_TO_ICONOMI = {
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class Asset():
     identifier: str
+    form_with_incomplete_data: InitVar[bool] = field(default=False)
     name: str = field(init=False)
     symbol: str = field(init=False)
     active: bool = field(init=False)
@@ -200,7 +201,7 @@ class Asset():
     cryptocompare: Optional[str] = field(init=False)
     coingecko: Optional[str] = field(init=False)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, form_with_incomplete_data: bool = False) -> None:
         """
         Asset post initialization
 
@@ -208,6 +209,12 @@ class Asset():
 
         If a non string is given then it's probably a deserialization error or
         invalid data were given to us by the server if an API was queried.
+
+        If `form_with_incomplete_data` is given and is True then we allow the generation
+        of an asset object even if the corresponding underlying object is missing
+        important data such as name, symbol, token decimals etc. In most case this
+        is not wanted except for some exception like passing in some functions for
+        icon generation.
 
         May raise UnknownAsset if the asset identifier can't be matched to anything
         """
@@ -218,7 +225,7 @@ class Asset():
 
         # TODO: figure out a way to move this out. Moved in here due to cyclic imports
         from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
-        data = AssetResolver().get_asset_data(self.identifier)
+        data = AssetResolver().get_asset_data(self.identifier, form_with_incomplete_data)
         # make sure same case of identifier as in  DB is saved in the structure
         object.__setattr__(self, 'identifier', data.identifier)
         # Ugly hack to set attributes of a frozen data class as post init
@@ -322,7 +329,7 @@ class HasEthereumToken(Asset):
     ethereum_address: ChecksumEthAddress = field(init=False)
     decimals: int = field(init=False)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, form_with_incomplete_data: bool = False) -> None:
         super().__post_init__()
 
         # TODO: figure out a way to move this out. Moved in here due to cyclic imports
@@ -354,14 +361,15 @@ class EthereumToken(HasEthereumToken):
         except DeserializationError:
             return None
 
-    def to_custom_ethereum_token(self) -> 'CustomEthereumToken':
+    def to_custom_ethereum_token(self) -> 'CustomEthereumTokenWithIdentifier':
         """TODO:This is just to satisfy its use in one place
 
         Eventually these two data structures should be consolidated."""
         # TODO: figure out a way to move this out. Moved in here due to cyclic imports
-        from rotkehlchen.chain.ethereum.typing import CustomEthereumToken  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
+        from rotkehlchen.chain.ethereum.typing import CustomEthereumTokenWithIdentifier  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
         swapped_for_asset = None if self.swapped_for is None else Asset(self.swapped_for)
-        return CustomEthereumToken(
+        return CustomEthereumTokenWithIdentifier(
+            identifier=self.identifier,
             address=self.ethereum_address,
             decimals=self.decimals,
             name=self.name,

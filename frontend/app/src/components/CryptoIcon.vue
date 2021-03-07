@@ -11,12 +11,12 @@
     :max-width="size"
     :min-width="size"
     contain
-    @error="error = true"
+    @error="statusChange(true)"
   />
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import GeneretedIcon from '@/components/helper/GeneretedIcon.vue';
 import { currencies } from '@/data/currencies';
 import { TokenDetails } from '@/services/defi/types';
@@ -32,10 +32,22 @@ export default class CryptoIcon extends Vue {
   @Prop({ required: true, type: String })
   size!: string;
   error: boolean = false;
+  @Prop({ required: false, type: Boolean, default: false })
+  changeable!: boolean;
 
   @Watch('symbol')
   onSymbolChange() {
     this.error = false;
+  }
+
+  @Watch('changeable')
+  onChange() {
+    this.statusChange(false);
+  }
+
+  @Emit()
+  statusChange(_error: boolean) {
+    this.error = _error;
   }
 
   get isUnknown(): boolean {
@@ -62,7 +74,8 @@ export default class CryptoIcon extends Vue {
     if (this.asset === 'WETH') {
       return require(`@/assets/images/defi/weth.svg`);
     }
-    return `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.asset}/icon/small`;
+    const url = `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.asset}/icon/small`;
+    return this.changeable ? `${url}?t=${Date.now()}` : url;
   }
 }
 </script>

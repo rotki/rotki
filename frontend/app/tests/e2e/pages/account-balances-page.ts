@@ -8,6 +8,7 @@ function formatAmount(amount: string) {
 
 export interface FixtureManualBalance {
   readonly asset: string;
+  readonly keyword: string;
   readonly label: string;
   readonly amount: string;
   readonly location: TradeLocation;
@@ -22,7 +23,7 @@ export class AccountBalancesPage {
 
   addBalance(balances: FixtureManualBalance) {
     cy.get('.big-dialog').should('be.visible');
-    cy.get('.manual-balances-form__asset').type(balances.asset);
+    cy.get('.manual-balances-form__asset').type(balances.keyword);
     cy.get(`#asset-${balances.asset.toLocaleLowerCase()}`).click();
     cy.get('.manual-balances-form__label').type(balances.label);
     cy.get('.manual-balances-form__amount').type(balances.amount);
@@ -86,8 +87,8 @@ export class AccountBalancesPage {
       .should('contain', capitalize(balance.location));
 
     cy.get('@row')
-      .find('.asset-details__details__symbol')
-      .should('contain', balance.asset);
+      .find('[data-cy=details-symbol]')
+      .should('contain.text', balance.asset);
 
     for (const tag of balance.tags) {
       cy.get('@row').find('.tag').contains(tag).should('be.visible');

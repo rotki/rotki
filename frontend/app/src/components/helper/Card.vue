@@ -14,6 +14,7 @@
       </div>
     </v-card-subtitle>
     <v-card-text>
+      <slot name="search" />
       <v-sheet v-if="$slots.actions" outlined rounded class="pa-3 mb-4">
         <slot name="actions" />
       </v-sheet>

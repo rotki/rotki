@@ -14,5 +14,6 @@ export const Routes = {
   HISTORY_LEDGER_ACTIONS: '/history/ledger-actions',
   ASSETS: '/assets/:identifier',
   DEFI_DEPOSITS_LIQUIDITY_UNISWAP: '/defi/deposits/liquidity/uniswap',
-  DEFI_DEPOSITS_LIQUIDITY_BALANCER: '/defi/deposits/liquidity/balancer'
+  DEFI_DEPOSITS_LIQUIDITY_BALANCER: '/defi/deposits/liquidity/balancer',
+  ASSET_MANAGER: '/asset-manager'
 };

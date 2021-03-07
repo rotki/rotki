@@ -43,6 +43,21 @@
       "value": "{symbol} value"
     }
   },
+  "asset_table": {
+    "assets": "Assets",
+    "delete_tooltip": "Delete the asset",
+    "edit_tooltip": "Edit the asset",
+    "headers": {
+      "address": "Address",
+      "asset": "Asset",
+      "coingecko": "CoinGecko",
+      "cryptocompare": "CryptoCompare",
+      "started": "Started"
+    },
+    "search": "Filter",
+    "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts",
+    "underlying_tokens": "Underlying Tokens"
+  },
   "assets": {
     "amount": "Total Owned",
     "price": "Price",
@@ -134,6 +149,50 @@
     "hint": "Select as the main currency",
     "profit_currency": "Profit Currency"
   },
+  "underlying_token_manager": {
+    "delete_tooltip": "Delete the underlying token",
+    "edit_tooltip": "Edit an underlying token",
+    "hint": "The percentage of an underlying asset in the token. e.g. A uniswap lp token is consisted of two underlying tokens with a 50% weight each.",
+    "labels": {
+      "address": "Address",
+      "tokens": "Underlying tokens",
+      "weight": "Weight"
+    },
+    "tokens": {
+      "address": "Address",
+      "weight": "Weight",
+      "weight_percentage": "{weight} %"
+    },
+    "validation":  {
+      "non_empty": "Please set a weight value",
+      "address_non_empty": "Address cannot be empty",
+      "not_valid": "The specified weight does not seem like a valid value",
+      "out_of_range": "Weight can be from 1-100%"
+    }
+  },
+  "asset_form": {
+    "labels": {
+      "address": "Address",
+      "asset_type": "Asset Type",
+      "coingecko": "Coingecko",
+      "coingecko_hint": "The identifier of the asset on Coingecko. If not set rotki will not be able to retrieve prices for the asset from Coingecko.",
+      "cryptocompare": "CryptoCompare",
+      "cryptocompare_hint": "The identifier of the asset on CryptoCompare. If not given, the symbol is assumed as default. If that does not work and if not otherwise set rotki will not be able to retrieve prices for the asset from CryptoCompare",
+      "decimals": "Decimals",
+      "name": "Name",
+      "protocol": "Protocol",
+      "started": "Started",
+      "swapped_for": "Swapped for",
+      "symbol": "Symbol"
+    },
+    "optional": "Optional Fields",
+    "replaced": "This icon will be replaced with {name} on save.",
+    "icon_upload": {
+      "title": "Icon upload",
+      "description": "The icon upload failed: {message}"
+    },
+    "underlying_tokens": "Underlying tokens"
+  },
   "data_management": {
     "confirm": {
       "message": "Are you sure you want to purge the cached data for {source}?",
@@ -217,6 +276,12 @@
   "eth2page": {
     "loading": "Please wait while your eth2 staking details are getting loaded..."
   },
+  "asset_management": {
+    "delete_error": "Could not delete {address}: {message}",
+    "title": "Asset Management",
+    "add_title": "Add a new asset",
+    "edit_title": "Edit an asset"
+  },
   "exchange_balances": {
     "no_connected_exchanges": "You do not have any connected exchanges. {0} to set up an Exchange Connection.",
     "click_here": "Click here",
@@ -277,11 +342,11 @@
     "title": "External Services"
   },
   "file_upload": {
-    "drop_area": "Drop the csv file or {0}",
+    "drop_area": "Drop the file or {0}",
     "import_complete": "Import was completed successfully.",
     "select_file": "Select file",
-    "many_files_selected": "One one csv file must be selected",
-    "only_csv": "Only csv files are allowed"
+    "many_files_selected": "One one file must be selected",
+    "only_files": "Only {fileFilter} files are allowed"
   },
   "generate": {
     "custom_selection": "Custom",
@@ -1562,7 +1627,8 @@
     "staking_sub": {
       "adex": "AdEx",
       "eth2": "Eth2"
-    }
+    },
+    "manage_assets": "Manage Assets"
   },
   "trade_history": {
     "loading": "Please wait while your trades are getting loaded...",

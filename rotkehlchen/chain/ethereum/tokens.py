@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
+from rotkehlchen.chain.ethereum.typing import CustomEthereumTokenWithIdentifier
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.constants.misc import ZERO
@@ -67,8 +67,8 @@ class EthTokens():
             self,
             address: ChecksumEthAddress,
             token_usd_price: Dict[EthereumToken, Price],
-            etherscan_chunks: List[List[CustomEthereumToken]],
-            other_chunks: List[List[CustomEthereumToken]],
+            etherscan_chunks: List[List[CustomEthereumTokenWithIdentifier]],
+            other_chunks: List[List[CustomEthereumTokenWithIdentifier]],
     ) -> Dict[EthereumToken, FVal]:
         balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
         if self.ethereum.connected_to_any_web3():
@@ -155,7 +155,7 @@ class EthTokens():
     def _get_tokens_balance_and_price(
             self,
             address: ChecksumEthAddress,
-            tokens: List[CustomEthereumToken],
+            tokens: List[CustomEthereumTokenWithIdentifier],
             balances: Dict[EthereumToken, FVal],
             token_usd_price: Dict[EthereumToken, Price],
             call_order: Optional[Sequence[NodeName]],
@@ -179,7 +179,7 @@ class EthTokens():
 
     def _get_multitoken_multiaccount_balance(
             self,
-            tokens: List[CustomEthereumToken],
+            tokens: List[CustomEthereumTokenWithIdentifier],
             accounts: List[ChecksumEthAddress],
     ) -> Dict[str, Dict[ChecksumEthAddress, FVal]]:
         """Queries a list of accounts for balances of multiple tokens
@@ -208,17 +208,14 @@ class EthTokens():
             for tk_idx, token in enumerate(tokens):
                 token_amount = result[acc_idx][tk_idx]
                 if token_amount != 0:
-                    token_id = token.identifier
-                    if token_id is None:
-                        continue  # not very likely this can happen but need to guard against it
-                    balances[token_id][account] = token_normalized_value(
+                    balances[token.identifier][account] = token_normalized_value(
                         token_amount=token_amount, token=token,
                     )
         return balances
 
     def _get_multitoken_account_balance(
             self,
-            tokens: List[CustomEthereumToken],
+            tokens: List[CustomEthereumTokenWithIdentifier],
             account: ChecksumEthAddress,
             call_order: Optional[Sequence[NodeName]],
     ) -> Dict[str, FVal]:
@@ -248,8 +245,5 @@ class EthTokens():
         for tk_idx, token in enumerate(tokens):
             token_amount = result[tk_idx]
             if token_amount != 0:
-                token_id = token.identifier
-                if token_id is None:
-                    continue  # not very likely this can happen but need to guard against it
-                balances[token_id] = token_normalized_value(token_amount, token)
+                balances[token.identifier] = token_normalized_value(token_amount, token)
         return balances
