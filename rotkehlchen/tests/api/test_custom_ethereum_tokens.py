@@ -174,6 +174,33 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    # and test that adding a token with underlying tokens adding up to less than 100% is caught
+    bad_token = CustomEthereumToken(
+        address=make_ethereum_address(),
+        decimals=18,
+        name='foo',
+        symbol='BBB',
+        underlying_tokens=[
+            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.1055')),
+            UnderlyingToken(address=make_ethereum_address(), weight=FVal('0.2055')),
+        ],
+    )
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumassetsresource',
+        ),
+        json={'token': bad_token.serialize()},
+    )
+    expected_msg = (
+        f'The sum of underlying token weights for {bad_token.address} is '
+        f'31.1000 and does not add up to 100%'
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=expected_msg,
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
     # and test that adding a token with empty list of underlying tokens and not null is an error
     bad_token = CustomEthereumToken(
         address=make_ethereum_address(),
