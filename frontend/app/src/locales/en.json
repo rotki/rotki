@@ -55,7 +55,8 @@
       "started": "Started"
     },
     "search": "Filter",
-    "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts"
+    "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts",
+    "underlying_tokens": "Underlying Tokens"
   },
   "assets": {
     "amount": "Total Owned",

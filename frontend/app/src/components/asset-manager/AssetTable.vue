@@ -26,6 +26,8 @@
       :items="tokens"
       :loading="loading"
       :headers="headers"
+      single-expand
+      :expanded="expanded"
       item-key="address"
       sort-by="name"
       :search.sync="search"
@@ -35,18 +37,15 @@
         <asset-details-base
           :changeable="change"
           opens-details
-          :asset="{
-            name: item.name,
-            symbol: item.symbol,
-            identifier: item.identifier
-          }"
+          :asset="getAsset(item)"
         />
       </template>
       <template #item.address="{ item }">
         <hash-link :text="item.address" />
       </template>
       <template #item.started="{ item }">
-        <date-display :timestamp="item.started" />
+        <date-display v-if="item.started" :timestamp="item.started" />
+        <span v-else>-</span>
       </template>
       <template #item.actions="{ item }">
         <row-actions
@@ -55,6 +54,40 @@
           @edit-click="edit(item)"
           @delete-click="deleteToken(item.address)"
         />
+      </template>
+      <template #expanded-item="{ item, headers }">
+        <td
+          :colspan="$vuetify.breakpoint.xsOnly ? 2 : headers.length"
+          class="asset-table__underlying-tokens"
+        >
+          <div class="text-h6 mb-4">
+            {{ $t('asset_table.underlying_tokens') }}
+          </div>
+          <v-sheet outlined rounded>
+            <v-simple-table>
+              <thead>
+                <tr>
+                  <th>{{ $t('underlying_token_manager.tokens.address') }}</th>
+                  <th>{{ $t('underlying_token_manager.tokens.weight') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="token in item.underlyingTokens" :key="token.address">
+                  <td class="grow">
+                    <hash-link :text="token.address" full-address />
+                  </td>
+                  <td class="shrink">
+                    {{
+                      $t('underlying_token_manager.tokens.weight_percentage', {
+                        weight: token.weight
+                      })
+                    }}
+                  </td>
+                </tr>
+              </tbody>
+            </v-simple-table>
+          </v-sheet>
+        </td>
       </template>
       <template #item.expand="{ item }">
         <row-expander
@@ -94,7 +127,7 @@ export default class AssetTable extends Vue {
   @Emit()
   deleteToken(_address: string) {}
 
-  expand = [];
+  expanded = [];
   search: string = '';
   readonly footerProps = footerProps;
   readonly headers: DataTableHeader[] = [
@@ -127,7 +160,23 @@ export default class AssetTable extends Vue {
       value: 'expand'
     }
   ];
+
+  getAsset(item: CustomEthereumToken) {
+    return {
+      name: item.name ?? item.symbol ?? item.identifier,
+      symbol: item.symbol ?? '',
+      identifier: item.identifier
+    };
+  }
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.asset-table {
+  &__underlying-tokens {
+    padding-top: 16px !important;
+    padding-bottom: 16px !important;
+    background-color: var(--v-rotki-light-grey-base) !important;
+  }
+}
+</style>

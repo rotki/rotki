@@ -1,86 +1,88 @@
 <template>
-  <v-form :value="value" class="pt-2" @input="input">
-    <v-row>
-      <v-col cols="12" md="4" xl="2">
-        <v-select
-          v-model="assetType"
-          outlined
-          :label="$t('asset_form.labels.asset_type')"
-          disabled
-          :items="types"
-        />
-      </v-col>
+  <fragment>
+    <v-form :value="value" class="pt-2" @input="input">
+      <v-row>
+        <v-col cols="12" md="4" xl="2">
+          <v-select
+            v-model="assetType"
+            outlined
+            :label="$t('asset_form.labels.asset_type')"
+            disabled
+            :items="types"
+          />
+        </v-col>
 
-      <v-col>
-        <v-text-field
-          v-model="address"
-          outlined
-          :error-messages="errors['address']"
-          :label="$t('asset_form.labels.address')"
-          :disabled="saving"
-          @focus="delete errors['address']"
-        />
-      </v-col>
-    </v-row>
-    <v-text-field
-      v-model="name"
-      outlined
-      :error-messages="errors['name']"
-      :label="$t('asset_form.labels.name')"
-      :disabled="saving"
-      @focus="delete errors['name']"
-    />
-    <v-row>
-      <v-col cols="12" md="6">
-        <v-text-field
-          v-model="symbol"
-          outlined
-          :error-messages="errors['symbol']"
-          :label="$t('asset_form.labels.symbol')"
-          :disabled="saving"
-          @focus="delete errors['symbol']"
-        />
-      </v-col>
-      <v-col cols="12" md="6">
-        <v-text-field
-          v-model="decimals"
-          type="number"
-          outlined
-          min="0"
-          max="18"
-          :label="$t('asset_form.labels.decimals')"
-          :error-messages="errors['decimals']"
-          :disabled="saving"
-          @focus="delete errors['decimals']"
-        />
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col cols="12" md="6">
-        <v-text-field
-          v-model="coingecko"
-          outlined
-          persistent-hint
-          :hint="$t('asset_form.labels.coingecko_hint')"
-          :label="$t('asset_form.labels.coingecko')"
-          :error-messages="errors['coingecko']"
-          :disabled="saving"
-          @focus="delete errors['coingecko']"
-        />
-      </v-col>
-      <v-col cols="12" md="6">
-        <v-text-field
-          v-model="cryptocompare"
-          outlined
-          persistent-hint
-          :label="$t('asset_form.labels.cryptocompare')"
-          :hint="$t('asset_form.labels.cryptocompare_hint')"
-          :error-messages="errors['cryptocompare']"
-          :disabled="saving"
-          @focus="delete errors['cryptocompare']"
-        />
-      </v-col>
-    </v-row>
+        <v-col>
+          <v-text-field
+            v-model="address"
+            outlined
+            :error-messages="errors['address']"
+            :label="$t('asset_form.labels.address')"
+            :disabled="saving"
+            @focus="delete errors['address']"
+          />
+        </v-col>
+      </v-row>
+      <v-text-field
+        v-model="name"
+        outlined
+        :error-messages="errors['name']"
+        :label="$t('asset_form.labels.name')"
+        :disabled="saving"
+        @focus="delete errors['name']"
+      />
+      <v-row>
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="symbol"
+            outlined
+            :error-messages="errors['symbol']"
+            :label="$t('asset_form.labels.symbol')"
+            :disabled="saving"
+            @focus="delete errors['symbol']"
+          />
+        </v-col>
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="decimals"
+            type="number"
+            outlined
+            min="0"
+            max="18"
+            :label="$t('asset_form.labels.decimals')"
+            :error-messages="errors['decimals']"
+            :disabled="saving"
+            @focus="delete errors['decimals']"
+          />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="coingecko"
+            outlined
+            persistent-hint
+            :hint="$t('asset_form.labels.coingecko_hint')"
+            :label="$t('asset_form.labels.coingecko')"
+            :error-messages="errors['coingecko']"
+            :disabled="saving"
+            @focus="delete errors['coingecko']"
+          />
+        </v-col>
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="cryptocompare"
+            outlined
+            persistent-hint
+            :label="$t('asset_form.labels.cryptocompare')"
+            :hint="$t('asset_form.labels.cryptocompare_hint')"
+            :error-messages="errors['cryptocompare']"
+            :disabled="saving"
+            @focus="delete errors['cryptocompare']"
+          />
+        </v-col>
+      </v-row>
+    </v-form>
 
     <v-sheet outlined rounded class="mt-2">
       <v-expansion-panels flat tile>
@@ -151,22 +153,24 @@
         {{ $t('asset_form.replaced', { name: icon.name }) }}
       </v-col>
     </v-row>
-  </v-form>
+  </fragment>
 </template>
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+import Fragment from '@/components/helper/Fragment';
 import RowActions from '@/components/helper/RowActions.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
-import { UnderlyingToken, CustomEthereumToken } from '@/services/assets/types';
+import { CustomEthereumToken, UnderlyingToken } from '@/services/assets/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { showError } from '@/store/utils';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 @Component({
   components: {
+    Fragment,
     UnderlyingTokenManager,
     RowActions,
     FileUpload,
