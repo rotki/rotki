@@ -1,10 +1,10 @@
 [
   {
     "time": "08/10/2015 10:48:55",
-    "pair": "BTC_EUR",
+    "pair": "DAI_EUR",
     "rate": "268.678317859",
     "fee": "0",
-    "fee_currency": "BTC",
+    "fee_currency": "DAI",
     "amount": "82",
     "trade_type": "buy",
     "link": "http://buy",
@@ -12,10 +12,10 @@
   },
   {
     "time": "08/10/2015 10:48:55",
-    "pair": "BTC_EUR",
+    "pair": "DAI_EUR",
     "rate": "278.678317859",
     "fee": "0",
-    "fee_currency": "BTC",
+    "fee_currency": "DAI",
     "amount": "40",
     "trade_type": "sell",
     "link": "http://sell",
