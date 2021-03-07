@@ -196,7 +196,7 @@ class GlobalDBHandler():
         connection.commit()
 
     @staticmethod
-    def get_asset_data(identifier: str) -> Optional[AssetData]:
+    def get_asset_data(identifier: str, form_with_incomplete_data: bool = False) -> Optional[AssetData]:  # noqa: E501
         if identifier == 'XD':
             identifier = 'SCRL'  # https://github.com/rotki/rotki/issues/2503
         cursor = GlobalDBHandler()._conn.cursor()
@@ -212,6 +212,7 @@ class GlobalDBHandler():
             identifier=results[0][0],  # get the identifier in the exact case it's saved in the DB
             db_serialized_type=results[0][1],
             details_reference=results[0][2],
+            form_with_incomplete_data=form_with_incomplete_data,
         )
 
     @overload
@@ -247,6 +248,7 @@ class GlobalDBHandler():
                 identifier=entry[0],
                 db_serialized_type=entry[1],
                 details_reference=entry[2],
+                form_with_incomplete_data=False,
             )
             if data is None:
                 continue
@@ -262,6 +264,7 @@ class GlobalDBHandler():
             identifier: str,
             db_serialized_type: str,
             details_reference: str,
+            form_with_incomplete_data: bool,
     ) -> Optional[AssetData]:
         try:
             asset_type = AssetType.deserialize_from_db(db_serialized_type)
@@ -282,7 +285,7 @@ class GlobalDBHandler():
                 )
                 return None
 
-            if token.missing_basic_data():
+            if token.missing_basic_data() and form_with_incomplete_data is False:
                 log.debug(
                     f'Considering ethereum token with address {address} '
                     f'as unknown since its missing either decimals or name or symbol',

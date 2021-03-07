@@ -275,7 +275,10 @@ class AssetResolver():
         AssetResolver.__instance.all_assets = None
 
     @staticmethod
-    def get_asset_data(asset_identifier: str) -> AssetData:
+    def get_asset_data(
+            asset_identifier: str,
+            form_with_incomplete_data: bool = False,
+    ) -> AssetData:
         """Get all asset data for a valid asset identifier
 
         Raises UnknownAsset if no data can be found
@@ -306,7 +309,7 @@ class AssetResolver():
             return result
 
         # At this point we can use the global DB
-        asset_data = dbinstance.get_asset_data(asset_identifier)
+        asset_data = dbinstance.get_asset_data(asset_identifier, form_with_incomplete_data)
         if asset_data is None:
             raise UnknownAsset(asset_identifier)
 
