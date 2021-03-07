@@ -11,7 +11,7 @@
       :tokens="tokens"
       :loading="loading"
       :change="!loading"
-      @add="showForm = true"
+      @add="add()"
       @edit="edit($event)"
       @delete-token="deleteToken($event)"
     />
@@ -71,6 +71,11 @@ export default class AssetManagement extends Vue {
     this.loading = true;
     this.tokens = await this.$api.assets.customTokens();
     this.loading = false;
+  }
+
+  add() {
+    this.token = null;
+    this.showForm = true;
   }
 
   edit(token: CustomEthereumToken) {

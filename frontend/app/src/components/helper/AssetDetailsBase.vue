@@ -10,6 +10,7 @@
       size="26px"
       class="asset-details-base__icon"
       :symbol="identifier"
+      @status-change="forceSymbol = $event"
     />
     <span class="asset-details-base__details">
       <span
@@ -49,13 +50,16 @@ type Asset = {
 export default class AssetDetailsBase extends Vue {
   @Prop({ required: true })
   asset!: Asset;
-
   @Prop({ required: false, type: Boolean, default: false })
   opensDetails!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   changeable!: boolean;
+  forceSymbol = false;
 
   get identifier(): string {
+    if (this.forceSymbol) {
+      return this.symbol;
+    }
     return this.asset.identifier ?? this.symbol;
   }
 
@@ -65,6 +69,10 @@ export default class AssetDetailsBase extends Vue {
 
   get fullName(): string {
     return this.asset.name;
+  }
+
+  mounted() {
+    this.forceSymbol = false;
   }
 
   get name(): string {

@@ -11,12 +11,12 @@
     :max-width="size"
     :min-width="size"
     contain
-    @error="error = true"
+    @error="statusChange(true)"
   />
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import GeneretedIcon from '@/components/helper/GeneretedIcon.vue';
 import { currencies } from '@/data/currencies';
 import { TokenDetails } from '@/services/defi/types';
@@ -38,6 +38,16 @@ export default class CryptoIcon extends Vue {
   @Watch('symbol')
   onSymbolChange() {
     this.error = false;
+  }
+
+  @Watch('changeable')
+  onChange() {
+    this.statusChange(false);
+  }
+
+  @Emit()
+  statusChange(_error: boolean) {
+    this.error = _error;
   }
 
   get isUnknown(): boolean {
