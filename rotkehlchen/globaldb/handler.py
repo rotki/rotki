@@ -540,14 +540,25 @@ class GlobalDBHandler():
     def delete_ethereum_token(address: ChecksumEthAddress) -> str:
         """Deletes an ethereum token from the global DB
 
-        May raise InputError if the token does not exist in the DB
+        May raise InputError if the token does not exist in the DB or
+        some other constraint is hit. Such as for example trying to delete
+        a token that is in another token's underlying tokens list.
         """
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
-        cursor.execute(
-            'DELETE FROM ethereum_tokens WHERE address=?;',
-            (address,),
-        )
+        try:
+            cursor.execute(
+                'DELETE FROM ethereum_tokens WHERE address=?;',
+                (address,),
+            )
+        except sqlite3.IntegrityError:
+            raise InputError(
+                f'Tried to delete ethereum token with address {address} '
+                f'but its deletion would violate a constraint so deletion '
+                f'failed. Make sure that this token is not already used by '
+                f'other tokens as an underlying or swapped for token',
+            )
+
         affected_rows = cursor.rowcount
         if affected_rows != 1:
             raise InputError(

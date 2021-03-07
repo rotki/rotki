@@ -269,13 +269,16 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     """Test that the endpoint for deleting a custom ethereum token works"""
     token0_id = ETHEREUM_DIRECTIVE + INITIAL_TOKENS[0].address
     token1_id = ETHEREUM_DIRECTIVE + INITIAL_TOKENS[1].address
+    underlying1_id = ETHEREUM_DIRECTIVE + underlying_address1
+    underlying2_id = ETHEREUM_DIRECTIVE + underlying_address2
+    underlying3_id = ETHEREUM_DIRECTIVE + underlying_address3
     cursor = GlobalDBHandler()._conn.cursor()
     # Make sure the equivalent assets we will delete exist in the DB
     result = cursor.execute(
-        'SELECT COUNT(*) from assets WHERE identifier IN (?, ?)',
-        (token0_id, token1_id),
+        'SELECT COUNT(*) from assets WHERE identifier IN (?, ?, ?, ?, ?)',
+        (token0_id, token1_id, underlying1_id, underlying2_id, underlying3_id),
     ).fetchone()[0]
-    assert result == 2
+    assert result == 5
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -300,7 +303,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
     assert result == 3
 
-    # test that deleting an non existing address is handled properly
+    # test that deleting a non existing address is handled properly
     non_existing_address = make_ethereum_address()
     response = requests.delete(
         api_url_for(
@@ -312,6 +315,26 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     expected_msg = (
         f'Tried to delete ethereum token with address {non_existing_address} '
         f'but it was not found in the DB',
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=expected_msg,
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # test that trying to delete an underlying token that exists in a mapping
+    # of another token is handled correctly
+    non_existing_address = make_ethereum_address()
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumassetsresource',
+        ),
+        json={'address': underlying_address1},
+    )
+    expected_msg = (
+        f'Tried to delete ethereum token with address {underlying_address1} '
+        f'but its deletion would violate a constraint so deletion failed'
     )
     assert_error_response(
         response=response,
