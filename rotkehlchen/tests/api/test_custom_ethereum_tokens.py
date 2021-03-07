@@ -13,7 +13,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response_with_result,
 )
-from rotkehlchen.tests.utils.constants import A_BAT
+from rotkehlchen.tests.utils.constants import A_BAT, A_MKR
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import (
     CUSTOM_TOKEN3,
@@ -334,6 +334,26 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     )
     expected_msg = (
         f'Tried to delete ethereum token with address {underlying_address1} '
+        f'but its deletion would violate a constraint so deletion failed'
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=expected_msg,
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # test that trying to delete a token that is used as swapped_for
+    # of another token is handled correctly
+    non_existing_address = make_ethereum_address()
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumassetsresource',
+        ),
+        json={'address': A_MKR.ethereum_address},
+    )
+    expected_msg = (
+        f'Tried to delete ethereum token with address {A_MKR.ethereum_address} '
         f'but its deletion would violate a constraint so deletion failed'
     )
     assert_error_response(

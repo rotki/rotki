@@ -616,13 +616,14 @@ class GlobalDBHandler():
                 'DELETE FROM ethereum_tokens WHERE address=?;',
                 (address,),
             )
-        except sqlite3.IntegrityError:
+        except sqlite3.IntegrityError as e:
+            connection.rollback()
             raise InputError(
                 f'Tried to delete ethereum token with address {address} '
                 f'but its deletion would violate a constraint so deletion '
                 f'failed. Make sure that this token is not already used by '
                 f'other tokens as an underlying or swapped for token',
-            )
+            ) from e
 
         affected_rows = cursor.rowcount
         if affected_rows != 1:
@@ -646,10 +647,20 @@ class GlobalDBHandler():
         rotki_id = result[0][0]
 
         # finally delete the assets entry
-        cursor.execute(
-            'DELETE FROM assets WHERE details_reference=?;',
-            (address,),
-        )
+        try:
+            cursor.execute(
+                'DELETE FROM assets WHERE details_reference=?;',
+                (address,),
+            )
+        except sqlite3.IntegrityError as e:
+            connection.rollback()
+            raise InputError(
+                f'Tried to delete ethereum token with address {address} '
+                f'but its deletion would violate a constraint so deletion '
+                f'failed. Make sure that this token is not already used by '
+                f'other tokens as an underlying or swapped for token',
+            ) from e
+
         affected_rows = cursor.rowcount
         if affected_rows != 1:
             connection.rollback()
