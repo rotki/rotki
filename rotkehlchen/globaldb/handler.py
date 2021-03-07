@@ -131,31 +131,28 @@ class GlobalDBHandler():
             ethereum_tokens: List[Dict[str, Any]],
             other_assets: List[Dict[str, Any]],
     ) -> None:
+        """Attempts to add all assets from the lists to the all assets.json
+
+        If an integrity error occurs then log it as an error and make sure nothing
+        is inserted so we don't end up with a DB with incomplete state
+        """
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
 
-        # first ethereum tokens
-        cursor.executemany(
-            'INSERT OR IGNORE INTO assets(identifier, type, details_reference) '
-            'VALUES(?, ?, ?)',
-            [(x['identifier'], 'C', x['ethereum_address']) for x in ethereum_tokens],
-        )
-        cursor.executemany(
-            'INSERT OR IGNORE INTO ethereum_tokens(address, decimals, name, symbol, '
-            'started, swapped_for, coingecko, cryptocompare, protocol) '
-            'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [(
-                x['ethereum_address'],
-                x['ethereum_token_decimals'],
-                x['name'],
-                x['symbol'],
-                x.get('started', None),
-                x.get('swapped_for', None),
-                x.get('coingecko', None),
-                x.get('cryptocompare', None),
-                None,  # all_assets entries do not have a protocol as of yet
-            ) for x in ethereum_tokens],
-        )
+        # first add ethereum tokens to the assets table
+        try:
+            cursor.executemany(
+                'INSERT OR IGNORE INTO assets(identifier, type, details_reference) '
+                'VALUES(?, ?, ?)',
+                [(x['identifier'], 'C', x['ethereum_address']) for x in ethereum_tokens],
+            )
+        except sqlite3.IntegrityError as e:
+            log.error(
+                f'Attempting to insert into assets table for tokens during global DB priming '
+                f'encountered integrity error {str(e)}. Global DB is left unchanged',
+            )
+            connection.rollback()
+            return
 
         # now other assets. First see which ones are already in the DB
         query = cursor.execute(
@@ -167,31 +164,76 @@ class GlobalDBHandler():
         existing_ids = [x[0] for x in result]
         new_other_assets = [x for x in other_assets if x['identifier'] not in existing_ids]
 
-        # then add the new ones
-        cursor.executemany(
-            'INSERT OR IGNORE INTO assets(identifier, type, details_reference) '
-            'VALUES(?, ?, ?)',
-            [(
-                x['identifier'],
-                x['type'].serialize_for_db(),
-                x['identifier'],
-            ) for idx, x in enumerate(new_other_assets)],
-        )
-        cursor.executemany(
-            'INSERT OR IGNORE INTO common_asset_details(asset_id, name, symbol, started, forked, '
-            'swapped_for, coingecko, cryptocompare) '
-            'VALUES(?, ?, ?, ?, ?, ?, ?, ?)',
-            [(
-                x['identifier'],
-                x['name'],
-                x['symbol'],
-                x.get('started', None),
-                x.get('forked', None),
-                x.get('swapped_for', None),
-                x.get('coingecko', None),
-                x.get('cryptocompare', None),
-            ) for x in new_other_assets],
-        )
+        # and then add the new ones
+        try:
+            cursor.executemany(
+                'INSERT OR IGNORE INTO assets(identifier, type, details_reference) '
+                'VALUES(?, ?, ?)',
+                [(
+                    x['identifier'],
+                    x['type'].serialize_for_db(),
+                    x['identifier'],
+                ) for idx, x in enumerate(new_other_assets)],
+            )
+        except sqlite3.IntegrityError as e:
+            log.error(
+                f'Attempting to insert into assets table for common assets during global DB '
+                f'priming encountered integrity error {str(e)}. Global DB is left unchanged',
+            )
+            connection.rollback()
+            return
+
+        # At this point the assets DB table is populated for all assets. Time to add the details
+        # First add the token details for all
+        try:
+            cursor.executemany(
+                'INSERT OR IGNORE INTO ethereum_tokens(address, decimals, name, symbol, '
+                'started, swapped_for, coingecko, cryptocompare, protocol) '
+                'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [(
+                    x['ethereum_address'],
+                    x['ethereum_token_decimals'],
+                    x['name'],
+                    x['symbol'],
+                    x.get('started', None),
+                    x.get('swapped_for', None),
+                    x.get('coingecko', None),
+                    x.get('cryptocompare', None),
+                    None,  # all_assets entries do not have a protocol as of yet
+                ) for x in ethereum_tokens],
+            )
+        except sqlite3.IntegrityError as e:
+            log.error(
+                f'Attempting to insert into ethereum tokens table during global DB priming '
+                f'encountered integrity error {str(e)}. Global DB is left unchanged',
+            )
+            connection.rollback()
+            return
+
+        # and finally add the common asset details for all
+        try:
+            cursor.executemany(
+                'INSERT OR IGNORE INTO common_asset_details(asset_id, name, symbol, started, forked, '  # noqa: E501
+                'swapped_for, coingecko, cryptocompare) '
+                'VALUES(?, ?, ?, ?, ?, ?, ?, ?)',
+                [(
+                    x['identifier'],
+                    x['name'],
+                    x['symbol'],
+                    x.get('started', None),
+                    x.get('forked', None),
+                    x.get('swapped_for', None),
+                    x.get('coingecko', None),
+                    x.get('cryptocompare', None),
+                ) for x in new_other_assets],
+            )
+        except sqlite3.IntegrityError as e:
+            log.error(
+                f'Attempting to insert into common asset details table during global DB '
+                f'priming encountered integrity error {str(e)}. Global DB is left unchanged',
+            )
+            connection.rollback()
+            return
 
         connection.commit()
 
