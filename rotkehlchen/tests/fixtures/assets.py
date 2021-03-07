@@ -3,7 +3,9 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.typing import AssetType
 
 
 @pytest.fixture(name='mock_asset_meta_github_response')
@@ -34,12 +36,13 @@ def fixture_force_reinitialize_asset_resolver() -> bool:
 @pytest.fixture(autouse=True)
 def asset_resolver(
         data_dir,
-        globaldb,  # pylint: disable=unused-argument
+        globaldb,
         query_github_for_assets,
         mock_asset_meta_github_response,
         mock_asset_github_response,
         force_reinitialize_asset_resolver,
         use_clean_caching_directory,
+        custom_ethereum_tokens,
 ):
     """Run the first initialization of the AssetResolver singleton
 
@@ -52,18 +55,25 @@ def asset_resolver(
         AssetResolver._AssetResolver__instance = None
 
     if query_github_for_assets:
-        AssetResolver(data_dir)
-        return
+        resolver = AssetResolver(data_dir)
+    else:
+        # mock the github request to return version lower than anything possible
+        def mock_get_request(url: str) -> MockResponse:
+            if url == 'https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.meta':  # noqa: E501
+                return MockResponse(200, mock_asset_meta_github_response)
+            if url == 'https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.json':  # noqa: E501
+                return MockResponse(200, mock_asset_github_response)
+            # else
+            raise AssertionError('This mock should receive no other urls')
 
-    # else mock the github request to return version lower than anything possible
-    def mock_get_request(url: str) -> MockResponse:
-        if url == 'https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.meta':  # noqa: E501
-            return MockResponse(200, mock_asset_meta_github_response)
-        if url == 'https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/all_assets.json':  # noqa: E501
-            return MockResponse(200, mock_asset_github_response)
-        # else
-        raise AssertionError('This mock should receive no other urls')
+        get_patch = patch('requests.get', side_effect=mock_get_request)
+        with get_patch:
+            resolver = AssetResolver(data_dir)
 
-    get_patch = patch('requests.get', side_effect=mock_get_request)
-    with get_patch:
-        AssetResolver(data_dir)
+    # add any custom ethereum tokens given by the fixtures for a test
+    if custom_ethereum_tokens is not None:
+        for entry in custom_ethereum_tokens:
+            asset_id = ETHEREUM_DIRECTIVE + entry.address
+            globaldb.add_asset(asset_id=asset_id, asset_type=AssetType.ETHEREUM_TOKEN, data=entry)
+
+    return resolver
