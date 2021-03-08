@@ -11,7 +11,7 @@
             tooltip
             show-currency="symbol"
             fiat-currency="USD"
-            :price-asset="identifier"
+            :price-asset="symbol"
             :value="info.usdPrice"
           />
         </v-card-text>
@@ -23,11 +23,7 @@
           <card-title>{{ $t('assets.amount') }}</card-title>
         </v-card-title>
         <v-card-text class="text-end text-h5 font-weight-medium">
-          <amount-display
-            class="pt-4"
-            :value="info.amount"
-            :asset="identifier"
-          />
+          <amount-display class="pt-4" :value="info.amount" :asset="symbol" />
         </v-card-text>
       </v-card>
     </v-col>
@@ -64,6 +60,8 @@ import { AssetPriceInfo } from '@/store/balances/types';
 export default class AssetValueRow extends Vue {
   @Prop({ required: true, type: String })
   identifier!: string;
+  @Prop({ required: true, type: String })
+  symbol!: string;
   assetPriceInfo!: (asset: string) => AssetPriceInfo;
 
   get info(): AssetPriceInfo {
