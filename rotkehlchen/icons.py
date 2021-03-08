@@ -18,7 +18,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 log = logging.getLogger(__name__)
 
-ALLOWED_ICON_EXTENSIONS = ('.png', '.svg', 'jpeg', 'jpg')
+ALLOWED_ICON_EXTENSIONS = ('.png', '.svg', '.jpeg', '.jpg', '.webp')
 
 
 class IconManager():
