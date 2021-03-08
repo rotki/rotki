@@ -45,12 +45,16 @@ export default class Assets extends Mixins(PremiumMixin) {
 
   get assetName(): string {
     const asset = this.assetInfo(this.identifier);
-    return asset ? asset.name : '';
+    return asset ? (asset.name ? asset.name : '') : '';
   }
 
   get symbol(): string {
     const asset = this.assetInfo(this.identifier);
-    return asset.symbol ? asset.symbol : this.identifier;
+    return asset
+      ? asset.symbol
+        ? asset.symbol
+        : this.identifier
+      : this.identifier;
   }
 }
 </script>
