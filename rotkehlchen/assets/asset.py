@@ -162,6 +162,8 @@ WORLD_TO_BINANCE = {
     'STX-2': 'STX',
     # ONE is Harmony in Binance
     'ONE-2': 'ONE',
+    # FTT is FTX in Binance
+    'FTT-2': 'FTT',
 }
 
 WORLD_TO_BITFINEX = {
