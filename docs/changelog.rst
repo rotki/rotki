@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.15.0 <2021-03-08>`
 * :feature:`1492` Balancer protocol is now supported. Premium users can see their LP balances, swaps history and LP pool join/exits. Finally the balancer trades are now taken into account in the profit/loss report.
 * :feature:`1519` Users can now add custom ethereum tokens to rotki. They can also add custom icons to any of those tokens or any other asset of rotki. Custom icons always take precedence.
 * :feature:`916` Users will have the option to set an automatic balance refresh period.
