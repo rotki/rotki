@@ -695,8 +695,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async fetchSupportedAssets({ commit, state }) {
-    if (state.supportedAssets.length > 0) {
+  async fetchSupportedAssets({ commit, state }, refresh: boolean) {
+    if (state.supportedAssets.length > 0 && !refresh) {
       return;
     }
     try {

@@ -34,7 +34,7 @@ export default class AssetDetails extends Vue {
     return {
       symbol: details ? details.symbol : this.asset,
       name: details ? details.name : this.asset,
-      identifier: details? details.key : this.asset,
+      identifier: details ? details.key : this.asset
     };
   }
 }

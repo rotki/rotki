@@ -166,6 +166,7 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { mapActions } from 'vuex';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
@@ -183,7 +184,8 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
     RowActions,
     FileUpload,
     BigDialog
-  }
+  },
+  methods: { ...mapActions('balances', ['fetchSupportedAssets']) }
 })
 export default class AssetForm extends Vue {
   address: string = '';
@@ -198,6 +200,7 @@ export default class AssetForm extends Vue {
   identifier: string = '';
   protocol: string = '';
   swappedFor: string = '';
+  fetchSupportedAssets!: (refresh: boolean) => Promise<void>;
 
   underlyingTokens: UnderlyingToken[] = [];
   icon: File | null = null;
@@ -298,6 +301,7 @@ export default class AssetForm extends Vue {
       }
       this.identifier = identifier;
       await this.saveIcon(identifier);
+      await this.fetchSupportedAssets(true);
       return true;
     } catch (e) {
       const message = deserializeApiErrorMessage(e.message) as any;
