@@ -13282,6 +13282,24 @@
         "symbol": "X8X",
         "type": "ethereum token"
     },
+    "xAAVEa": {
+        "coingecko": "xaavea",
+        "ethereum_address": "0x80DC468671316E50D4E9023D3db38D3105c1C146",
+        "ethereum_token_decimals": 18,
+        "name": "xAAVEa",
+        "started": 1606451749,
+        "symbol": "xAAVEa",
+        "type": "ethereum token"
+    },
+    "xAAVEb": {
+        "coingecko": "xaaveb",
+        "ethereum_address": "0x704De5696dF237c5B9ba0De9ba7e0C63dA8eA0Df",
+        "ethereum_token_decimals": 18,
+        "name": "xAAVEb",
+        "started": 1606456410,
+        "symbol": "xAAVEb",
+        "type": "ethereum token"
+    },
     "XAI": {
         "active": false,
         "coingecko": "",
@@ -13453,6 +13471,24 @@
         "symbol": "XID",
         "type": "ethereum token"
     },
+    "xINCHa": {
+        "coingecko": "xincha",
+        "ethereum_address": "0x8F6A193C8B3c949E1046f1547C3A3f0836944E4b",
+        "ethereum_token_decimals": 18,
+        "name": "xINCHa",
+        "started": 1611777065,
+        "symbol": "xINCHa",
+        "type": "ethereum token"
+    },
+    "xINCHb": {
+        "coingecko": "xinchb",
+        "ethereum_address": "0x6B33f15360cedBFB8F60539ec828ef52910acA9b",
+        "ethereum_token_decimals": 18,
+        "name": "xINCHb",
+        "started": 1611779302,
+        "symbol": "xINCHb",
+        "type": "ethereum token"
+    },
     "XLB": {
         "active": false,
         "coingecko": "",
@@ -13618,6 +13654,15 @@
         "started": 1398211200,
         "symbol": "XSI",
         "type": "own chain"
+    },
+    "xSNXa": {
+        "coingecko": "xsnxa",
+        "ethereum_address": "0x2367012aB9c3da91290F71590D5ce217721eEfE4",
+        "ethereum_token_decimals": 18,
+        "name": "xSNXa",
+        "started": 1601566970,
+        "symbol": "xSNXa",
+        "type": "ethereum token"
     },
     "XSR": {
         "active": true,
