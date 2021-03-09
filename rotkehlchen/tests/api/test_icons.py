@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 import pytest
 import requests
 
+from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -86,6 +87,6 @@ def test_upload_custom_icon_errors(rotkehlchen_api_server, file_upload):
 
     assert_error_response(
         response=response,
-        contained_in_msg='does not end in any of .png,.svg,jpeg,jpg',
+        contained_in_msg=f'does not end in any of {",".join(ALLOWED_ICON_EXTENSIONS)}',
         status_code=HTTPStatus.BAD_REQUEST,
     )

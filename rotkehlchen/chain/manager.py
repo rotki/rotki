@@ -1235,14 +1235,25 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 to_timestamp=to_timestamp,
             )
             for stats_entry in stats:
+                got_asset = got_balance = spent_asset = spent_balance = None
+                if stats_entry.pnl_balance.amount == ZERO:
+                    continue
+
+                if stats_entry.pnl_balance.amount > ZERO:
+                    got_asset = A_ETH
+                    got_balance = stats_entry.pnl_balance
+                else:  # negative
+                    spent_asset = A_ETH
+                    spent_balance = -stats_entry.pnl_balance
+
                 defi_events.append(DefiEvent(
                     timestamp=stats_entry.timestamp,
                     wrapped_event=stats_entry,
                     event_type=DefiEventType.ETH2_EVENT,
-                    got_asset=A_ETH,
-                    got_balance=stats_entry.pnl_balance,
-                    spent_asset=None,
-                    spent_balance=None,
+                    got_asset=got_asset,
+                    got_balance=got_balance,
+                    spent_asset=spent_asset,
+                    spent_balance=spent_balance,
                     pnl=[AssetBalance(asset=A_ETH, balance=stats_entry.pnl_balance)],
                     count_spent_got_cost_basis=True,
                 ))

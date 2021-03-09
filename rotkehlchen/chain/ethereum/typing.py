@@ -109,6 +109,7 @@ ValidatorDailyStatsDBTuple = Tuple[
 
 
 class ValidatorDailyStats(NamedTuple):
+    validator_index: int  # keeping the index here so it can be shown in accounting
     timestamp: Timestamp
     start_usd_price: FVal = ZERO
     end_usd_price: FVal = ZERO
@@ -124,6 +125,9 @@ class ValidatorDailyStats(NamedTuple):
     proposer_attester_slashings: int = 0
     deposits_number: int = 0
     amount_deposited: FVal = ZERO
+
+    def __str__(self) -> str:
+        return f'ETH2 validator {self.validator_index} daily stats'
 
     @property
     def pnl_balance(self) -> Balance:
@@ -154,9 +158,9 @@ class ValidatorDailyStats(NamedTuple):
             usd_value=self.amount_deposited * self.start_usd_price,
         )
 
-    def to_db_tuple(self, validator_index: int) -> ValidatorDailyStatsDBTuple:
+    def to_db_tuple(self) -> ValidatorDailyStatsDBTuple:
         return (
-            validator_index,
+            self.validator_index,
             self.timestamp,
             str(self.start_usd_price),
             str(self.end_usd_price),
@@ -177,6 +181,7 @@ class ValidatorDailyStats(NamedTuple):
     @classmethod
     def deserialize_from_db(cls, entry: ValidatorDailyStatsDBTuple) -> 'ValidatorDailyStats':
         return cls(
+            validator_index=entry[0],
             timestamp=Timestamp(entry[1]),
             start_usd_price=FVal(entry[2]),
             end_usd_price=FVal(entry[3]),
