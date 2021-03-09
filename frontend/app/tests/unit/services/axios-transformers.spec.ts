@@ -1,5 +1,6 @@
 import {
   axiosCamelCaseTransformer,
+  axiosNoRootCamelCaseTransformer,
   axiosSnakeCaseTransformer,
   setupJsonTransformer
 } from '@/services/axios-tranformers';
@@ -83,6 +84,18 @@ describe('axios transformers', () => {
       amount: {
         ABC: bigNumberify(1),
         BCD: bigNumberify(2)
+      }
+    });
+  });
+
+  test('transformer no root', () => {
+    const json = '{"_amount_": { "a_cbc": "1", "a_abc": "2"}}';
+    const parsed = setupJsonTransformer([])(json);
+    const transformed = axiosNoRootCamelCaseTransformer(parsed);
+    expect(transformed).toMatchObject({
+      _amount_: {
+        aCbc: '1',
+        aAbc: '2'
       }
     });
   });

@@ -829,7 +829,7 @@ export class RotkehlchenApi {
     return this.axios
       .get<ActionResult<SupportedAssets>>('assets/all', {
         validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
+        transformResponse: setupTransformer([], true)
       })
       .then(handleResponse);
   }
