@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 
 
 class BalanceType(Enum):
-    ASSET = 0
-    LIABILITY = 1
+    ASSET = 1
+    LIABILITY = 2
 
     def __str__(self) -> str:
         if self == BalanceType.ASSET:
@@ -287,14 +287,14 @@ def _evaluate_balance_sheet_input(other: Any, operation: str) -> BalanceSheet:
 
 
 class LedgerActionType(Enum):
-    INCOME = 0
-    EXPENSE = 1
-    LOSS = 2
-    DIVIDENDS_INCOME = 3
-    DONATION_RECEIVED = 4
-    AIRDROP = 5
-    GIFT = 6
-    GRANT = 7
+    INCOME = 1
+    EXPENSE = 2
+    LOSS = 3
+    DIVIDENDS_INCOME = 4
+    DONATION_RECEIVED = 5
+    AIRDROP = 6
+    GIFT = 7
+    GRANT = 8
 
     def serialize(self) -> str:
         return str(self)
@@ -381,10 +381,10 @@ class LedgerAction:
 
 
 class ActionType(Enum):
-    TRADE = 0
-    ASSET_MOVEMENT = 1
-    ETHEREUM_TX = 2
-    LEDGER_ACTION = 3
+    TRADE = 1
+    ASSET_MOVEMENT = 2
+    ETHEREUM_TX = 3
+    LEDGER_ACTION = 4
 
     def __str__(self) -> str:
         if self == ActionType.TRADE:
