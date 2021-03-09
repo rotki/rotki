@@ -2181,7 +2181,7 @@ Adding custom ethereum tokens
 
 .. http:put:: /api/(version)/assets/ethereum
 
-   Doing a PUT on the ethereum assets endpoint will allow you to add a new ethereum token in the global rotki DB. Returns the asset identifier of the new custom token. For ethereum ones it's ``+ceth+0xADDRESS``
+   Doing a PUT on the ethereum assets endpoint will allow you to add a new ethereum token in the global rotki DB. Returns the asset identifier of the new custom token. For ethereum ones it's ``_ceth_0xADDRESS``
 
    **Example Request**:
 
@@ -2217,7 +2217,7 @@ Adding custom ethereum tokens
       Content-Type: application/json
 
       {
-          "result": {"identifier": "+ceth+0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
+          "result": {"identifier": "_ceth_0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
           "message": ""
       }
 
@@ -2265,7 +2265,7 @@ Editing custom ethereum tokens
       Content-Type: application/json
 
       {
-          "result": {"identifier": "+ceth+0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
+          "result": {"identifier": "_ceth_0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
           "message": ""
       }
 
