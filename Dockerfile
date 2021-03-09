@@ -14,7 +14,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 RUN git clone https://github.com/sqlcipher/sqlcipher && \
     cd sqlcipher && \
-    git checkout v4.4.2 && \
+    git checkout v4.4.0 && \
     ./configure \
     --enable-tempstore=yes \
     CFLAGS="-DSQLITE_HAS_CODEC -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS" \
@@ -30,7 +30,7 @@ RUN pip install -r requirements.txt
 COPY . /app
 
 RUN pip install -e . && \
-    pip install pyinstaller==4.2 && \
+    pip install pyinstaller==3.5 && \
     python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 
