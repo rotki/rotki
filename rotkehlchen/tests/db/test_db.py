@@ -54,6 +54,8 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_action_type,
     deserialize_ledger_action_type_from_db,
     deserialize_ledger_action_type,
+    deserialize_asset_movement_category_from_db,
+    deserialize_asset_movement_category,
 )
 from rotkehlchen.tests.utils.constants import (
     A_DAO,
@@ -1290,175 +1292,69 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
     assert 'Overflow error while trying to add "asset_movement" tuples to the DB. Tuples:' in caplog.text  # noqa: E501
 
 
-def test_all_location_in_db(database):
+@pytest.mark.parametrize("enum_class, query, deserialize_from_db, deserialize", [
+    (Location, 'SELECT location, seq from location',
+        deserialize_location_from_db, deserialize_location),
+    (TradeType, 'SELECT type, seq from trade_type',
+        deserialize_trade_type_from_db, deserialize_trade_type),
+    (ActionType, 'SELECT type, seq from action_type',
+        deserialize_action_type_from_db, deserialize_action_type),
+    (LedgerActionType, 'SELECT type, seq from ledger_action_type',
+        deserialize_ledger_action_type_from_db, deserialize_ledger_action_type),
+    (AssetMovementCategory, 'SELECT category, seq from asset_movement_category',
+        deserialize_asset_movement_category_from_db, deserialize_asset_movement_category),
+])
+def test_enum_in_db(database, enum_class, query, deserialize_from_db, deserialize):
     """
-    Test that all locations in DB deserialize to a valid Location
+    Test that all enum represented in DB deserialize to a valid matching Enum class
     """
-    # Query for all locations
+    # Query for all objects in the db table
     cursor = database.conn.cursor()
-    locations = cursor.execute("SELECT location,seq from location")
+    query_result = cursor.execute(query)
 
     # We deserialize, then serialize and compare the result
-    for location_letter, seq in locations:
-        deserialized_location = deserialize_location_from_db(location_letter)
-        assert deserialized_location.value == seq
-        assert Location(seq).serialize_for_db() == location_letter
-        location_name = deserialize_location(str(deserialized_location))
-        assert location_name == deserialized_location
-
-
-def test_all_locations_are_present(database):
-    """
-    Test that all Location are present in db
-    """
-    cursor = database.conn.cursor()
-    for location in Location:
-        r = cursor.execute("SELECT EXISTS(SELECT 1 FROM location WHERE seq=?)", (location.value,))
-        assert r.fetchone() == (1,)
-
-
-def test_all_trade_types_in_db(database):
-    """
-    Test that all trade_types in DB deserialize to a valid TradeType
-    """
-    # Query for all locations
-    cursor = database.conn.cursor()
-    trade_types = cursor.execute("SELECT type, seq from trade_type")
-
-    # We deserialize, then serialize and compare the result
-    for trade_type, seq in trade_types:
-        deserialized_trade_type = deserialize_trade_type_from_db(trade_type)
-        assert deserialized_trade_type.value == seq
-        assert TradeType(seq).serialize_for_db() == trade_type
-        trade_type_name = deserialize_trade_type(str(deserialized_trade_type))
-        assert trade_type_name == deserialized_trade_type
-
-
-def test_all_trade_types_are_present(database):
-    """
-    Test that all TradeType are present in db
-    """
-    cursor = database.conn.cursor()
-    for trade_type in TradeType:
-        r = cursor.execute(
-            "SELECT EXISTS(SELECT 1 FROM trade_type WHERE seq=?)",
-            (trade_type.value,))
-        assert r.fetchone() == (1,)
-
-
-def test_all_action_types_in_db(database):
-    """
-    Test that all action_type in DB deserialize to a valid ActionType
-    """
-    # Query for all locations
-    cursor = database.conn.cursor()
-    action_types = cursor.execute("SELECT type, seq from action_type")
-
-    # We deserialize, then serialize and compare the result
-    for action_type, seq in action_types:
-        deserialized_action_type = deserialize_action_type_from_db(action_type)
-        assert deserialized_action_type.value == seq - 1
-        action_type_name = deserialize_action_type(str(deserialized_action_type))
-        assert action_type_name == deserialized_action_type
-
-
-def test_all_action_types_are_present(database):
-    """
-    Test that all ActionType are present in db
-    """
-    cursor = database.conn.cursor()
-    for action_type in ActionType:
-        r = cursor.execute(
-            "SELECT EXISTS(SELECT 1 FROM action_type WHERE seq=?)",
-            (action_type.value + 1,))
-        assert r.fetchone() == (1,)
-
-
-def test_all_ledger_action_types_in_db(database):
-    """
-    Test that all ledger_action_type in DB deserialize to a valid LedgerActionType
-    """
-    # Query for all locations
-    cursor = database.conn.cursor()
-    ledger_action_types = cursor.execute("SELECT type, seq from ledger_action_type")
-
-    # We deserialize, then serialize and compare the result
-    for ledger_action_type, seq in ledger_action_types:
-        deserialized_ledger_action_type = deserialize_ledger_action_type_from_db(
-            ledger_action_type,
-        )
-        assert deserialized_ledger_action_type.value == seq - 1
-        ledger_action_type_name = deserialize_ledger_action_type(
-            str(deserialized_ledger_action_type),
-        )
-        assert ledger_action_type_name == deserialized_ledger_action_type
-
-
-def test_all_ledger_action_types_are_present(database):
-    """
-    Test that all LedgerActionType are present in db
-    """
-    cursor = database.conn.cursor()
-    for ledger_action_type in LedgerActionType:
-        r = cursor.execute(
-            "SELECT EXISTS(SELECT 1 FROM ledger_action_type WHERE seq=?)",
-            (ledger_action_type.value + 1,))
-        assert r.fetchone() == (1,)
+    for letter, seq in query_result:
+        deserialized = deserialize_from_db(letter)
+        assert deserialized.value == seq
+        assert enum_class(seq).serialize_for_db() == letter
+        name = deserialize(str(deserialized))
+        assert name == deserialized
 
 
 def test_all_balance_types_in_db(database):
     """
     Test that all balance_category in DB deserialize to a valid BalanceType
     """
-    # Query for all locations
+    # Query for all balace_category rows
     cursor = database.conn.cursor()
-    balance_types = cursor.execute("SELECT category, seq from balance_category")
+    balance_types = cursor.execute('SELECT category, seq from balance_category')
 
     # We deserialize, then serialize and compare the result
     for category, seq in balance_types:
         deserialized_balance_type = BalanceType.deserialize_from_db(category)
-        assert deserialized_balance_type.value == seq - 1
+        assert deserialized_balance_type.value == seq
         balance_type_serialization = BalanceType(
             deserialized_balance_type.value,
         ).serialize_for_db()
         assert category == balance_type_serialization
 
 
-def test_all_balance_types_are_present(database):
+@pytest.mark.parametrize('enum_class, table_name', [
+    (Location, 'location'),
+    (TradeType, 'trade_type'),
+    (ActionType, 'action_type'),
+    (LedgerActionType, 'ledger_action_type'),
+    (BalanceType, 'balance_category'),
+    (AssetMovementCategory, 'asset_movement_category'),
+])
+def test_values_are_present_in_db(database, enum_class, table_name):
     """
-    Test that all BalanceType are present in db
-    """
-    cursor = database.conn.cursor()
-    for trade_type in BalanceType:
-        r = cursor.execute(
-            "SELECT EXISTS(SELECT 1 FROM balance_category WHERE seq=?)",
-            (trade_type.value + 1,))
-        assert r.fetchone() == (1,)
-
-
-def test_all_asset_movement_types_in_db(database):
-    """
-    Test that all asset_movements in DB deserialize to a valid AssetMovementCategory
-    """
-    # Query for all locations
-    cursor = database.conn.cursor()
-    movement_types = cursor.execute("SELECT category, seq from asset_movement_category")
-
-    # We deserialize, then serialize and compare the result
-    for category, seq in movement_types:
-        movement_type_serialization = AssetMovementCategory(
-            seq,
-        ).serialize_for_db()
-        assert category == movement_type_serialization
-
-
-def test_all_movement_types_are_present(database):
-    """
-    Test that all AssetMovementCategory are present in db
+    Check that all enum classes have the same number of possible values
+    in the class definition as in the database
     """
     cursor = database.conn.cursor()
-    for trade_type in AssetMovementCategory:
-        r = cursor.execute(
-            "SELECT EXISTS(SELECT 1 FROM asset_movement_category WHERE seq=?)",
-            (trade_type.value,))
+    query = 'SELECT COUNT(*) FROM {} WHERE seq=?'.format(table_name)
+
+    for enum_class_entry in enum_class:
+        r = cursor.execute(query, (enum_class_entry.value,))
         assert r.fetchone() == (1,)
