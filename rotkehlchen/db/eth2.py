@@ -96,11 +96,7 @@ class DBEth2():
 
         return [Eth2Deposit.deserialize_from_db(deposit_tuple) for deposit_tuple in results]
 
-    def add_validator_daily_stats(
-            self,
-            validator_index: int,
-            stats: List[ValidatorDailyStats],
-    ) -> None:
+    def add_validator_daily_stats(self, stats: List[ValidatorDailyStats]) -> None:
         """Adds given daily stats for validator in the DB. If an entry exists it's skipped"""
         cursor = self.db.conn.cursor()
         for entry in stats:  # not doing executemany to just ignore existing entry
@@ -123,7 +119,7 @@ class DBEth2():
                     '    proposer_attester_slashings,'
                     '    deposits_number,'
                     '    amount_deposited) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                    entry.to_db_tuple(validator_index=validator_index),
+                    entry.to_db_tuple(),
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 logger.debug(
