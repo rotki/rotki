@@ -7,7 +7,11 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures import BalanceType
+from rotkehlchen.accounting.structures import (
+    BalanceType,
+    ActionType,
+    LedgerActionType,
+)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import YEAR_IN_SECONDS
@@ -41,6 +45,18 @@ from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import PremiumCredentials
+from rotkehlchen.serialization.deserialize import (
+    deserialize_location_from_db,
+    deserialize_location,
+    deserialize_trade_type_from_db,
+    deserialize_trade_type,
+    deserialize_action_type_from_db,
+    deserialize_action_type,
+    deserialize_ledger_action_type_from_db,
+    deserialize_ledger_action_type,
+    deserialize_asset_movement_category_from_db,
+    deserialize_asset_movement_category,
+)
 from rotkehlchen.tests.utils.constants import (
     A_DAO,
     A_DOGE,
@@ -1274,3 +1290,71 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
     assert len(errors) == 1
     assert 'Failed to add "asset_movement" to the DB with overflow error' in errors[0]
     assert 'Overflow error while trying to add "asset_movement" tuples to the DB. Tuples:' in caplog.text  # noqa: E501
+
+
+@pytest.mark.parametrize("enum_class, query, deserialize_from_db, deserialize", [
+    (Location, 'SELECT location, seq from location',
+        deserialize_location_from_db, deserialize_location),
+    (TradeType, 'SELECT type, seq from trade_type',
+        deserialize_trade_type_from_db, deserialize_trade_type),
+    (ActionType, 'SELECT type, seq from action_type',
+        deserialize_action_type_from_db, deserialize_action_type),
+    (LedgerActionType, 'SELECT type, seq from ledger_action_type',
+        deserialize_ledger_action_type_from_db, deserialize_ledger_action_type),
+    (AssetMovementCategory, 'SELECT category, seq from asset_movement_category',
+        deserialize_asset_movement_category_from_db, deserialize_asset_movement_category),
+])
+def test_enum_in_db(database, enum_class, query, deserialize_from_db, deserialize):
+    """
+    Test that all enum represented in DB deserialize to a valid matching Enum class
+    """
+    # Query for all objects in the db table
+    cursor = database.conn.cursor()
+    query_result = cursor.execute(query)
+
+    # We deserialize, then serialize and compare the result
+    for letter, seq in query_result:
+        deserialized = deserialize_from_db(letter)
+        assert deserialized.value == seq
+        assert enum_class(seq).serialize_for_db() == letter
+        name = deserialize(str(deserialized))
+        assert name == deserialized
+
+
+def test_all_balance_types_in_db(database):
+    """
+    Test that all balance_category in DB deserialize to a valid BalanceType
+    """
+    # Query for all balace_category rows
+    cursor = database.conn.cursor()
+    balance_types = cursor.execute('SELECT category, seq from balance_category')
+
+    # We deserialize, then serialize and compare the result
+    for category, seq in balance_types:
+        deserialized_balance_type = BalanceType.deserialize_from_db(category)
+        assert deserialized_balance_type.value == seq
+        balance_type_serialization = BalanceType(
+            deserialized_balance_type.value,
+        ).serialize_for_db()
+        assert category == balance_type_serialization
+
+
+@pytest.mark.parametrize('enum_class, table_name', [
+    (Location, 'location'),
+    (TradeType, 'trade_type'),
+    (ActionType, 'action_type'),
+    (LedgerActionType, 'ledger_action_type'),
+    (BalanceType, 'balance_category'),
+    (AssetMovementCategory, 'asset_movement_category'),
+])
+def test_values_are_present_in_db(database, enum_class, table_name):
+    """
+    Check that all enum classes have the same number of possible values
+    in the class definition as in the database
+    """
+    cursor = database.conn.cursor()
+    query = 'SELECT COUNT(*) FROM {} WHERE seq=?'.format(table_name)
+
+    for enum_class_entry in enum_class:
+        r = cursor.execute(query, (enum_class_entry.value,))
+        assert r.fetchone() == (1,)
