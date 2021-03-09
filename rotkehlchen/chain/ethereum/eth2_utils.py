@@ -165,6 +165,7 @@ def _scrape_validator_daily_stats(
             for time in (timestamp, Timestamp(timestamp + DAY_IN_SECONDS))
         ]
         stats.append(ValidatorDailyStats(
+            validator_index=validator_index,
             timestamp=timestamp,
             start_usd_price=prices[0],
             end_usd_price=prices[1],
@@ -216,7 +217,7 @@ def get_validator_daily_stats(
     )
 
     if len(new_stats) != 0:
-        dbeth2.add_validator_daily_stats(validator_index=validator_index, stats=new_stats)
+        dbeth2.add_validator_daily_stats(stats=new_stats)
 
     return dbeth2.get_validator_daily_stats(
         validator_index=validator_index,

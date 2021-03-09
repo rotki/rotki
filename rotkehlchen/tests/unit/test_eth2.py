@@ -485,14 +485,16 @@ def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer, price_
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
 def test_validator_daily_stats(price_historian, function_scope_messages_aggregator):  # pylint: disable=unused-argument  # noqa: E501
+    validator_index = 33710
     stats = _scrape_validator_daily_stats(
-        validator_index=33710,
+        validator_index=validator_index,
         last_known_timestamp=0,
         msg_aggregator=function_scope_messages_aggregator,
     )
 
     assert len(stats) >= 81
     expected_stats = [ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1607126400,    # 2020/12/05
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -502,6 +504,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         deposits_number=1,
         amount_deposited=FVal(32),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1607212800,    # 2020/12/06
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -509,6 +512,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal(32),
         end_amount=FVal(32),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1607299200,    # 2020/12/07
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -516,6 +520,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal(32),
         end_amount=FVal(32),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1607385600,  # 2020/12/08
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -523,6 +528,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal(32),
         end_amount=FVal(32),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1607472000,  # 2020/12/09
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -530,6 +536,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal(32),
         end_amount=FVal(32),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1607558400,  # 2020/12/10
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -537,6 +544,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal(32),
         end_amount=FVal(32),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1607644800,  # 2020/12/11
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -544,6 +552,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal(32),
         end_amount=FVal(32),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1607731200,  # 2020/12/12
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -551,6 +560,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal(32),
         end_amount=FVal(32),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1607817600,  # 2020/12/13
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -558,6 +568,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal(32),
         end_amount=FVal(32),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1607904000,  # 2020/12/14
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -565,6 +576,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal(32),
         end_amount=FVal(32),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1607990400,  # 2020/12/15
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -573,6 +585,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal('32.01'),
         proposed_blocks=1,
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1608076800,  # 2020/12/16
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -580,6 +593,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal('32.01'),
         end_amount=FVal('32.03'),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1608163200,  # 2020/12/17
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -588,6 +602,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal('32.03'),
         missed_attestations=126,
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1608249600,  # 2020/12/18
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -595,6 +610,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal('32.03'),
         end_amount=FVal('32.04'),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1608336000,  # 2020/12/19
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -602,6 +618,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal('32.04'),
         end_amount=FVal('32.05'),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1608422400,  # 2020/12/20
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -611,6 +628,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         missed_attestations=1,
         proposed_blocks=1,
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1608508800,  # 2020/12/21
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -618,6 +636,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal('32.07'),
         end_amount=FVal('32.08'),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1608595200,  # 2020/12/22
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -626,6 +645,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal('32.09'),
         missed_attestations=1,
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1608681600,  # 2020/12/23
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -633,6 +653,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal('32.09'),
         end_amount=FVal('32.10'),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1608768000,  # 2020/12/24
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -640,6 +661,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         start_amount=FVal('32.1'),
         end_amount=FVal('32.11'),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1608854400,  # 2020/12/25
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -657,14 +679,16 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         price_historian,
         function_scope_messages_aggregator,
 ):
+    validator_index = 33710
     stats = _scrape_validator_daily_stats(
-        validator_index=33710,
+        validator_index=validator_index,
         last_known_timestamp=1613520000,
         msg_aggregator=function_scope_messages_aggregator,
     )
 
     assert len(stats) >= 6
     expected_stats = [ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1613606400,    # 2021/02/18
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -673,6 +697,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         end_amount=FVal('32.67'),
         missed_attestations=1,
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1613692800,    # 2021/02/19
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -681,6 +706,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         end_amount=FVal('32.68'),
         missed_attestations=19,
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1613779200,    # 2021/02/20
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -688,6 +714,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         start_amount=FVal('32.68'),
         end_amount=FVal('32.68'),
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1613865600,    # 2021/02/21
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -697,6 +724,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         missed_attestations=3,
         proposed_blocks=1,
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1613952000,    # 2021/02/22
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -705,6 +733,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         end_amount=FVal('32.7'),
         missed_attestations=1,
     ), ValidatorDailyStats(
+        validator_index=validator_index,
         timestamp=1614038400,    # 2021/02/23
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -729,10 +758,11 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         wraps=requests.get,
     )
 
+    validator_index = 33710
     with stats_call_patch as stats_call:
         stats = get_validator_daily_stats(
             db=database,
-            validator_index=33710,
+            validator_index=validator_index,
             msg_aggregator=function_scope_messages_aggregator,
             from_timestamp=1613606300,
             to_timestamp=1614038500,
@@ -741,6 +771,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         assert stats_call.call_count == 1
         assert len(stats) >= 6
         expected_stats = [ValidatorDailyStats(
+            validator_index=validator_index,
             timestamp=1613606400,    # 2021/02/18
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
@@ -749,6 +780,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             end_amount=FVal('32.67'),
             missed_attestations=1,
         ), ValidatorDailyStats(
+            validator_index=validator_index,
             timestamp=1613692800,    # 2021/02/19
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
@@ -757,6 +789,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             end_amount=FVal('32.68'),
             missed_attestations=19,
         ), ValidatorDailyStats(
+            validator_index=validator_index,
             timestamp=1613779200,    # 2021/02/20
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
@@ -764,6 +797,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             start_amount=FVal('32.68'),
             end_amount=FVal('32.68'),
         ), ValidatorDailyStats(
+            validator_index=validator_index,
             timestamp=1613865600,    # 2021/02/21
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
@@ -773,6 +807,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             missed_attestations=3,
             proposed_blocks=1,
         ), ValidatorDailyStats(
+            validator_index=validator_index,
             timestamp=1613952000,    # 2021/02/22
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
@@ -781,6 +816,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             end_amount=FVal('32.7'),
             missed_attestations=1,
         ), ValidatorDailyStats(
+            validator_index=validator_index,
             timestamp=1614038400,    # 2021/02/23
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
