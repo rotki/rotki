@@ -64,7 +64,7 @@ export const convertKeys = (
     const updatedKey = skipKey ? key : getUpdatedKey(key, camelCase);
 
     converted[updatedKey] = isObject(datum)
-      ? convertKeys(datum, camelCase, false)
+      ? convertKeys(datum, camelCase, skipKey && key === 'result')
       : datum;
   });
 
