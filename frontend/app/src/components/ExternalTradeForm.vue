@@ -335,7 +335,8 @@ export default class ExternalTradeForm extends Vue {
     if (message) {
       this.errorMessages = convertKeys(
         deserializeApiErrorMessage(message) ?? {},
-        true
+        true,
+        false
       );
     }
 

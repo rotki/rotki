@@ -45,9 +45,13 @@ function getUpdatedKey(key: string, camelCase: boolean) {
   return key.replace(/([A-Z])/gu, (_, p1) => `_${p1.toLocaleLowerCase()}`);
 }
 
-export const convertKeys = (data: any, camelCase: boolean): any => {
+export const convertKeys = (
+  data: any,
+  camelCase: boolean,
+  skipKey: boolean
+): any => {
   if (Array.isArray(data)) {
-    return data.map(entry => convertKeys(entry, camelCase));
+    return data.map(entry => convertKeys(entry, camelCase, false));
   }
 
   if (!isObject(data)) {
@@ -57,10 +61,10 @@ export const convertKeys = (data: any, camelCase: boolean): any => {
   const converted: { [key: string]: any } = {};
   Object.keys(data).map(key => {
     const datum = data[key];
-    const updatedKey = getUpdatedKey(key, camelCase);
+    const updatedKey = skipKey ? key : getUpdatedKey(key, camelCase);
 
     converted[updatedKey] = isObject(datum)
-      ? convertKeys(datum, camelCase)
+      ? convertKeys(datum, camelCase, false)
       : datum;
   });
 
@@ -68,10 +72,15 @@ export const convertKeys = (data: any, camelCase: boolean): any => {
 };
 
 export const axiosSnakeCaseTransformer: AxiosTransformer = (data, _headers) =>
-  convertKeys(data, false);
+  convertKeys(data, false, false);
 
 export const axiosCamelCaseTransformer: AxiosTransformer = (data, _headers) =>
-  convertKeys(data, true);
+  convertKeys(data, true, false);
+
+export const axiosNoRootCamelCaseTransformer: AxiosTransformer = (
+  data,
+  _headers
+) => convertKeys(data, true, true);
 
 export const setupJsonTransformer: (
   numericKeys: string[] | null
@@ -89,6 +98,12 @@ export const setupJsonTransformer: (
   };
 };
 
-export function setupTransformer(numericKeys: string[] | null = null) {
-  return [setupJsonTransformer(numericKeys), axiosCamelCaseTransformer];
+export function setupTransformer(
+  numericKeys: string[] | null = null,
+  skipRoot: boolean = false
+) {
+  return [
+    setupJsonTransformer(numericKeys),
+    skipRoot ? axiosNoRootCamelCaseTransformer : axiosCamelCaseTransformer
+  ];
 }
