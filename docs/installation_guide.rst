@@ -272,7 +272,10 @@ The following recipe has been tested using `Anaconda <https://conda.io>`_. `Virt
 Install `Homebrew <https://brew.sh/>`_ first if not installed yet.
 Rotki uses an encrypted database called `SQLCipher <https://www.zetetic.net/sqlcipher/>`_. Before we can proceed, we need to install it. Homebrew makes it simple::
 
-    $ brew update && brew install sqlcipher
+    $ brew update
+    $ cd "$(brew --repo homebrew/core)"
+    $ git checkout 2731bfdc785e85de8242b164acbf4fcb627a91e2 Formula/sqlcipher.rb #This formula installs 4.4.0 of sqlcipher
+    $ brew install sqlcipher
 
 Also these are some dependencies that may or may not be properly installed in your system so make sure you have them. ::
 
