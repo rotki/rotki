@@ -68,6 +68,7 @@ API_KEYPAIR_COINBASE_VALIDATION_PATCH = patch(
 )
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_setup_exchange(rotkehlchen_api_server):
     """Test that setting up an exchange via the api works"""
     # Check that no exchanges are registered
@@ -145,6 +146,7 @@ def test_setup_exchange(rotkehlchen_api_server):
     assert json_data['result'] == ['kraken', 'coinbasepro']
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [('kraken',)])
 def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
     """Test that if Rotki gets a malformed response from Kraken it's handled properly
@@ -193,6 +195,7 @@ def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
     assert data['message'] == ""
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_setup_exchange_does_not_stay_in_mapping_after_500_error(rotkehlchen_api_server):
     """Test that if 500 error is returned during setup of an exchange and it's stuck
     in the exchange mapping Rotki doesn't still think the exchange is registered.
@@ -225,6 +228,7 @@ def test_setup_exchange_does_not_stay_in_mapping_after_500_error(rotkehlchen_api
     assert json_data['result'] == ['kraken']
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_setup_exchange_errors(rotkehlchen_api_server):
     """Test errors and edge cases of setup_exchange endpoint"""
 
@@ -313,6 +317,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     )
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_remove_exchange(rotkehlchen_api_server):
     """Test that removing a setup exchange via the api works"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -370,6 +375,7 @@ def test_remove_exchange(rotkehlchen_api_server):
     )
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_remove_exchange_errors(rotkehlchen_api_server):
     """Errors and edge cases when using the remove exchange endpoint"""
     # remove unsupported exchange
@@ -440,6 +446,7 @@ def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges):
     assert_poloniex_balances_result(result['poloniex'])
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchanges):
     """Test that using the exchange balances query endpoint can ignore cache"""
@@ -486,6 +493,7 @@ def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchan
         assert bn.call_count == 6, 'call count should have changed. Cache should have been ignored'
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_exchange_query_balances_errors(rotkehlchen_api_server_with_exchanges):
     """Test errors and edge cases of the exchange balances query endpoint"""
@@ -515,6 +523,7 @@ def test_exchange_query_balances_errors(rotkehlchen_api_server_with_exchanges):
     )
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges):
     """Test that using the exchange trades query endpoint works fine"""
@@ -583,6 +592,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges):
         assert_okay(response)
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [('kraken', 'poloniex')])
 def test_query_asset_movements(rotkehlchen_api_server_with_exchanges):
     """Test that using the asset movements query endpoint works fine"""
@@ -671,6 +681,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges):
         assert_okay(response)
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [('kraken', 'poloniex')])
 @pytest.mark.parametrize('start_with_valid_premium', [False, True])
 def test_query_asset_movements_over_limit(
