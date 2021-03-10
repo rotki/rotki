@@ -47,7 +47,7 @@ import { DEFI_MODULES } from '@/components/defi/wizard/consts';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import Fragment from '@/components/helper/Fragment';
 import { tradeLocations } from '@/components/history/consts';
-import { SUPPORTED_EXCHANGES } from '@/data/defaults';
+import { EXCHANGE_CRYPTOCOM, SUPPORTED_EXCHANGES } from '@/data/defaults';
 import { MODULES } from '@/services/session/consts';
 import { ActionStatus } from '@/store/types';
 
@@ -60,6 +60,7 @@ const purgable = [
   ALL_MODULES,
   ALL_TRANSACTIONS,
   ...SUPPORTED_EXCHANGES,
+  EXCHANGE_CRYPTOCOM,
   ...MODULES
 ];
 

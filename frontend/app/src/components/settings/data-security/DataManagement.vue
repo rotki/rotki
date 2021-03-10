@@ -36,6 +36,7 @@
 </template>
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import { mapActions } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import PurgeSelector, {
   ALL_TRANSACTIONS,
@@ -45,14 +46,17 @@ import PurgeSelector, {
   PurgeParams
 } from '@/components/settings/data-security/PurgeSelector.vue';
 import StatusButton from '@/components/settings/data-security/StatusButton.vue';
-import { SUPPORTED_EXCHANGES } from '@/data/defaults';
+import { EXCHANGE_CRYPTOCOM, SUPPORTED_EXCHANGES } from '@/data/defaults';
 import { SupportedExchange } from '@/services/balances/types';
 import { MODULES } from '@/services/session/consts';
 import { SupportedModules } from '@/services/session/types';
 import { ActionStatus } from '@/store/types';
 
 @Component({
-  components: { PurgeSelector, StatusButton, ConfirmDialog }
+  components: { PurgeSelector, StatusButton, ConfirmDialog },
+  methods: {
+    ...mapActions('history', ['removeExchangeTrades'])
+  }
 })
 export default class DataManagement extends Vue {
   source: Purgable = ALL_TRANSACTIONS;
@@ -60,6 +64,7 @@ export default class DataManagement extends Vue {
   confirm: boolean = false;
   pending: boolean = false;
   sourceLabel: string = '';
+  removeExchangeTrades!: (location: SupportedExchange) => Promise<void>;
 
   showConfirmation(source: PurgeParams) {
     this.sourceLabel = source.text;
@@ -98,10 +103,14 @@ export default class DataManagement extends Vue {
     } else if (source === ALL_EXCHANGES) {
       await this.$api.balances.deleteExchangeData();
     } else {
-      if (SUPPORTED_EXCHANGES.includes(source as any)) {
+      if (
+        SUPPORTED_EXCHANGES.includes(source as any) ||
+        source === EXCHANGE_CRYPTOCOM
+      ) {
         await this.$api.balances.deleteExchangeData(
           source as SupportedExchange
         );
+        await this.removeExchangeTrades(source as SupportedExchange);
       } else if (MODULES.includes(source as any)) {
         await this.$api.balances.deleteModuleData(source as SupportedModules);
       }
