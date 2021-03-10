@@ -122,6 +122,7 @@ ETH2_DETAILS_REQUERY_SECONDS = 600
 DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     # aTokens are already detected at token balance queries
     'Aave': True,  # True means all
+    'Aave V2': True,  # True means all
     # cTokens are already detected at token balance queries
     'Compound': True,  # True means all
     # Chitoken is in our all_assets.json
