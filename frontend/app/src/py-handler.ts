@@ -180,7 +180,9 @@ export default class PyHandler {
   }
 
   async exitPyProc(restart: boolean = false) {
-    this.logToFile('Exiting the application');
+    this.logToFile(
+      restart ? 'Restarting the backend' : 'Terminating the backend'
+    );
     if (this.rpcFailureNotifier) {
       clearInterval(this.rpcFailureNotifier);
     }
@@ -274,6 +276,7 @@ export default class PyHandler {
       this.logAndQuit(
         'ERROR: Running in development mode and not inside a python virtual environment'
       );
+      return;
     }
 
     const allArgs = defaultArgs.concat(args);
