@@ -30,7 +30,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import DeserializationError, EncodingError, UnknownAsset, XPUBError
 from rotkehlchen.exchanges.kraken import KrakenAccountType
-from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
@@ -539,6 +539,10 @@ class ExternalServiceNameField(fields.Field):
 
 class ExchangeNameField(fields.Field):
 
+    def __init__(self, *, allow_external: Optional[bool] = False, **kwargs: Any) -> None:  # noqa: E501
+        self.allow_external = allow_external
+        super().__init__(**kwargs)
+
     def _deserialize(
             self,
             value: str,
@@ -548,7 +552,8 @@ class ExchangeNameField(fields.Field):
     ) -> str:
         if not isinstance(value, str):
             raise ValidationError('Exchange name should be a string')
-        if value not in SUPPORTED_EXCHANGES:
+        valid_names = ALL_SUPPORTED_EXCHANGES if self.allow_external else SUPPORTED_EXCHANGES
+        if value not in valid_names:
             raise ValidationError(f'Exchange {value} is not supported')
 
         return value
@@ -1085,7 +1090,7 @@ class ExchangesResourceAddSchema(Schema):
 
 
 class ExchangesDataResourceSchema(Schema):
-    name = ExchangeNameField(missing=None)
+    name = ExchangeNameField(allow_external=True, missing=None)
 
 
 class ExchangesResourceRemoveSchema(Schema):

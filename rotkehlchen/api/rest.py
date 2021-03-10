@@ -70,7 +70,7 @@ from rotkehlchen.errors import (
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import Trade
-from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
@@ -2386,7 +2386,7 @@ class RestAPI():
         if name:
             self.rotkehlchen.data.db.purge_exchange_data(name)
         else:
-            for exchange_name in SUPPORTED_EXCHANGES:
+            for exchange_name in ALL_SUPPORTED_EXCHANGES:
                 self.rotkehlchen.data.db.purge_exchange_data(exchange_name)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
