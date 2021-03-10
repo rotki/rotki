@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+
+# Exchanges for which we have supported modules
 SUPPORTED_EXCHANGES = [
     'kraken',
     'poloniex',
@@ -31,6 +33,9 @@ SUPPORTED_EXCHANGES = [
     'iconomi',
     'kucoin',
 ]
+# Exchanges for which we allow import via CSV
+EXTERNAL_EXCHANGES = ['crypto.com']
+ALL_SUPPORTED_EXCHANGES = SUPPORTED_EXCHANGES + EXTERNAL_EXCHANGES
 
 
 class ExchangeManager():

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2507` Users can now delete imported trades and deposit/withdrawals from crypto.com via the purge data UI.
 * :bug:`2530` Poloniex should no longer display phantom LEND balances in rotki.
 
 * :feature:`-` Added support for the following tokens:
