@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2515` Users will now be able to navigate back from the assets page using a button.
 * :feature:`-` Added support for the following tokens:
 
   - `xAAVEa (xAAVEa) <https://www.coingecko.com/en/coins/xaavea>`__
