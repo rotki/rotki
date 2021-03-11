@@ -74,7 +74,7 @@ jobs:
       matrix:
         os: [ubuntu-18.04]
         python-version: [3.7]
-        node-version: [12.x]
+        node-version: [14.x]
     runs-on: ${{ matrix.os }}
     needs: create_draft
     steps:
@@ -88,7 +88,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v1
         with:
-          node-version: '12.x'
+          node-version: '14.x'
       - name: pip cache persistence
         uses: actions/cache@v2
         with:
@@ -109,7 +109,9 @@ jobs:
           sudo ldconfig
       - name: Package
         id: packaging
-        run: ./package.sh
+        run: |
+          npm install -g npm@7
+          ./package.sh
       - name: Upload AppImage sha512 checksum file
         uses: actions/upload-release-asset@v1
         env:
@@ -146,7 +148,7 @@ jobs:
       matrix:
         os: [macos-latest]
         python-version: [3.7]
-        node-version: [12.x]
+        node-version: [14.x]
     runs-on: ${{ matrix.os }}
     needs: create_draft
     steps:
@@ -158,7 +160,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v1
         with:
-          node-version: '12.x'
+          node-version: '14.x'
       - name: pip cache persistence
         uses: actions/cache@v2
         with:
@@ -182,6 +184,7 @@ jobs:
           pip3 install virtualenv
           python3 -m virtualenv ~/venv
           source ~/venv/bin/activate
+          npm install -g npm@7
           ./package.sh
         env:
           CERTIFICATE_OSX_APPLICATION: ${{ secrets.CERTIFICATE_OSX_APPLICATION }}
@@ -219,7 +222,7 @@ jobs:
       matrix:
         os: [ windows-latest ]
         python-version: [ 3.7 ]
-        node-version: [ 12.x ]
+        node-version: [ 14.x ]
     runs-on: ${{ matrix.os }}
     needs: create_draft
     steps:
@@ -233,7 +236,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v1
         with:
-          node-version: '12.x'
+          node-version: '14.x'
       - name: pip cache persistence
         uses: actions/cache@v2    
         with:
@@ -265,7 +268,9 @@ jobs:
             ${{ runner.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
       - name: Build rotki
         id: build
-        run: .\package.ps1
+        run: |
+          npm install -g npm@7
+          .\package.ps1
         shell: powershell
       - name: Upload exe sha512 checksum file
         uses: actions/upload-release-asset@v1

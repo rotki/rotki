@@ -234,6 +234,14 @@ Get `sqlcipher <https://www.zetetic.net/sqlcipher/>`_ version 4:
 
     sudo zypper install sqlcipher sqlcipher-devel
 
+rotki uses npm v7. To check if you have version 7 of npm you can run::
+
+    npm --version
+
+If you are on an older version of npm, you can install it by::
+
+    npm install -g npm@7
+
 Install electron and any other npm dependencies by::
 
     cd frontend/app
@@ -265,7 +273,7 @@ The tl;dr version is:
 - Install ``sqlcipher``
 - Use a virtual env with Python 3.7.x
 - Confirm ``pip``(pip3) install correctly and up to date
-- Get your node under control with ``nvm``. It has been tested with v12.18.0
+- Get your node under control with ``nvm``. It has been tested with v14.16.0
 
 The following recipe has been tested using `Anaconda <https://conda.io>`_. `VirtualEnv <https://virtualenv.pypa.io>`_ works as well, refer to the documentations of those projects to install and use them.
 
@@ -336,7 +344,16 @@ Rotki uses `Electron <https://electronjs.org>`, we need to install it. To do so 
 
     $ brew install node
 
-Almost there, we can now install all the Node.js dependencies of the frontend app. Using a recent Node.js version such as 12.18.3, it should be smooth. Also since ``npm`` uses ``gyp`` and that requires python 2.7 make sure to set it up appropriately before invoking ``npm``::
+rotki uses npm v7. To check if you have version 7 of npm you can run::
+
+    npm --version
+
+If you are on an older version of npm, you can install it by::
+
+    npm install -g npm@7
+
+
+Almost there, we can now install all the Node.js dependencies of the frontend app. Using a recent Node.js version such as 14.16.0, it should be smooth. Also since ``npm`` uses ``gyp`` and that requires python 2.7 make sure to set it up appropriately before invoking ``npm``::
 
     $ cd frontend/app
     $ npm ci

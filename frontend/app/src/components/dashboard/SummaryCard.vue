@@ -12,7 +12,7 @@
           {{ $t('summary_card.title', { name }) }}
         </span>
       </card-title>
-      <v-tooltip v-if="this.$slots.tooltip" bottom max-width="300px">
+      <v-tooltip v-if="$slots.tooltip" bottom max-width="300px">
         <template #activator="{ on }">
           <v-icon
             small

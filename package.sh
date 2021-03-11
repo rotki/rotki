@@ -8,12 +8,17 @@ if [[ -n "${CI-}" ]]; then
   echo "::group::Pip install"
 fi
 
+if [[ -z "${CI+x}" ]] && [[ -z "${VIRTUAL_ENV}" ]]; then
+  echo 'The script should not run outside a virtual environment if not on CI'
+  exit 1
+fi
+
 # Perform sanity checks before pip install
 pip install packaging  # required for the following script
 # We use npm ci. That needs npm >= 5.7.0
-npm --version | python -c "import sys;npm_version=sys.stdin.readlines()[0].rstrip('\n');from packaging import version;supported=version.parse(npm_version) >= version.parse('5.7.0');sys.exit(1) if not supported else sys.exit(0);"
+npm --version | python -c "import sys;npm_version=sys.stdin.readlines()[0].rstrip('\n');from packaging import version;supported=version.parse(npm_version) >= version.parse('7.6.2');sys.exit(1) if not supported else sys.exit(0);"
 if [[ $? -ne 0 ]]; then
-    echo "package.sh - ERROR: The system's npm version is not >= 5.7.0 which is required for npm ci"
+    echo "package.sh - ERROR: The system's npm version is not >= 7.6.2 which is required for npm ci"
     exit 1
 fi
 

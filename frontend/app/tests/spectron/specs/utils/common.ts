@@ -78,7 +78,7 @@ function takeScreenshot(app: Application, title: string): Promise<void> {
   const filename = getScreenshotFilename(title);
   return new Promise<void>((resolve, reject) => {
     app.browserWindow.capturePage().then(imageBuffer => {
-      fs.writeFile(filename, imageBuffer, (err: any) => {
+      fs.writeFile(filename, imageBuffer.getNativeHandle(), (err: any) => {
         if (err) {
           console.log(err);
           reject(err);
