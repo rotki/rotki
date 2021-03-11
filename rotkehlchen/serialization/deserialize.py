@@ -1,6 +1,6 @@
 from typing import Tuple, Union
 
-from eth_typing import HexAddress, HexStr
+from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures import ActionType, LedgerActionType
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -685,7 +685,12 @@ def deserialize_ethereum_address(symbol: str) -> ChecksumEthAddress:
     an ethereum address and is always checksummed. So also external input sanitization.
     https://github.com/rotki/rotki/issues/2334
     """
-    return ChecksumEthAddress(HexAddress(HexStr(symbol)))
+    try:
+        return to_checksum_address(symbol)
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {symbol}',
+        ) from e
 
 
 def deserialize_int_from_str(symbol: str, location: str) -> int:
