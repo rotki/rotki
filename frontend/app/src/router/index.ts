@@ -12,11 +12,11 @@ export default new Router({
   routes: [
     {
       path: '*',
-      redirect: '/'
+      redirect: Routes.ROOT
     },
     {
-      path: '/dashboard',
-      alias: '/',
+      path: Routes.DASHBOARD,
+      alias: Routes.ROOT,
       name: 'dashboard',
       component: () => import('../views/Dashboard.vue')
     },
@@ -224,6 +224,9 @@ export default new Router({
     {
       path: Routes.ASSETS,
       component: () => import('../views/Assets.vue'),
+      meta: {
+        canNavigateBack: true
+      },
       props: true
     },
     {

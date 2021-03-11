@@ -37,6 +37,7 @@
         />
         <node-status-indicator />
         <balance-saved-indicator />
+        <back-button :can-navigate-back="canNavigateBack" />
         <v-spacer />
         <update-indicator />
         <notification-indicator
@@ -86,6 +87,7 @@ import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
+import BackButton from '@/components/helper/BackButton.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
@@ -103,6 +105,7 @@ import { Message } from '@/store/types';
 
 @Component({
   components: {
+    BackButton,
     UpdatePopup,
     StartupErrorScreen,
     DevApp,
@@ -138,6 +141,11 @@ export default class App extends Vue {
   completeLogin!: (complete: boolean) => void;
 
   notifications: boolean = false;
+
+  get canNavigateBack(): boolean {
+    const canNavigateBack = this.$route.meta?.canNavigateBack ?? false;
+    return canNavigateBack && window.history.length > 1;
+  }
 
   get loginIn(): boolean {
     return this.logged && this.loginComplete;
