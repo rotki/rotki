@@ -8,10 +8,10 @@ import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.modules.adex.typing import Bond, ChannelWithdraw, Unbond
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_ADX
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -22,7 +22,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
-ADEX_TEST_ADDR = deserialize_ethereum_address('0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d')
+ADEX_TEST_ADDR = string_to_ethereum_address('0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d')
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADEX_TEST_ADDR]])

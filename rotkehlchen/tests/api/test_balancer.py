@@ -16,9 +16,9 @@ from rotkehlchen.chain.ethereum.modules.balancer.typing import (
     BalancerPoolEventsBalance,
 )
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -30,12 +30,12 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
 
 # Top holder of WBTC-WETH pool (0x1eff8af5d577060ba4ac8a29a13525bb0ee2a3d5)
-BALANCER_TEST_ADDR1 = deserialize_ethereum_address('0x49a2DcC237a65Cc1F412ed47E0594602f6141936')
-BALANCER_TEST_ADDR2 = deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b')
-BALANCER_TEST_ADDR3 = deserialize_ethereum_address('0x7716a99194d758c8537F056825b75Dd0C8FDD89f')
-BALANCER_TEST_ADDR3_POOL1 = deserialize_ethereum_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4')  # noqa: E501
-BALANCER_TEST_ADDR3_POOL2 = deserialize_ethereum_address('0x574FdB861a0247401B317a3E68a83aDEAF758cf6')  # noqa: E501
-BALANCER_TEST_ADDR3_POOL3 = deserialize_ethereum_address('0x01d5314Ca775a0Ec2Ed11b19Ff745a08d9D3C7F9')  # noqa: E501
+BALANCER_TEST_ADDR1 = string_to_ethereum_address('0x49a2DcC237a65Cc1F412ed47E0594602f6141936')
+BALANCER_TEST_ADDR2 = string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b')
+BALANCER_TEST_ADDR3 = string_to_ethereum_address('0x7716a99194d758c8537F056825b75Dd0C8FDD89f')
+BALANCER_TEST_ADDR3_POOL1 = string_to_ethereum_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4')  # noqa: E501
+BALANCER_TEST_ADDR3_POOL2 = string_to_ethereum_address('0x574FdB861a0247401B317a3E68a83aDEAF758cf6')  # noqa: E501
+BALANCER_TEST_ADDR3_POOL3 = string_to_ethereum_address('0x01d5314Ca775a0Ec2Ed11b19Ff745a08d9D3C7F9')  # noqa: E501
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR1]])
@@ -127,9 +127,9 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
             AMMSwap(
                 tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
                 log_index=24,
-                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=deserialize_ethereum_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
+                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                to_address=string_to_ethereum_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
                 timestamp=Timestamp(1607008178),
                 location=Location.BALANCER,
                 token0=EthereumToken('AAVE'),
@@ -152,9 +152,9 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
             AMMSwap(
                 tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
                 log_index=18,
-                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=deserialize_ethereum_address('0x70985E557aE0CD6dC88189a532e54FbC61927BAd'),  # noqa: E501
+                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                to_address=string_to_ethereum_address('0x70985E557aE0CD6dC88189a532e54FbC61927BAd'),  # noqa: E501
                 timestamp=Timestamp(1607008178),
                 location=Location.BALANCER,
                 token0=EthereumToken('WETH'),
@@ -177,9 +177,9 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
             AMMSwap(
                 tx_hash='0x5e235216cb03e4eb234014f5ccf3efbfddd40c4576424e2a8204f1d12b96ed35',  # noqa: E501
                 log_index=143,
-                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=deserialize_ethereum_address('0x8982E9bBf7AC6A49c434aD81D2fF8e16895318e5'),  # noqa: E501
+                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                to_address=string_to_ethereum_address('0x8982E9bBf7AC6A49c434aD81D2fF8e16895318e5'),  # noqa: E501
                 timestamp=Timestamp(1607008218),
                 location=Location.BALANCER,
                 token0=EthereumToken('SYN'),
@@ -195,7 +195,7 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
         trade_type=TradeType.BUY,
         base_asset=EthereumToken('WETH'),
         quote_asset=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0xa0afAA285Ce85974c3C881256cB7F225e3A1178a'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0xa0afAA285Ce85974c3C881256cB7F225e3A1178a'),  # noqa: E501
             symbol='wCRES',
             name='Wrapped CRES',
             decimals=18,
@@ -207,13 +207,13 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
             AMMSwap(
                 tx_hash='0xf54be824b4619777f1db0e3da91b0cd52f6dba730c95a75644e2b085e6ab9824',  # noqa: E501
                 log_index=300,
-                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=deserialize_ethereum_address('0x10996eC4f3E7A1b314EbD966Fa8b1ad0fE0f8307'),  # noqa: E501
+                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                to_address=string_to_ethereum_address('0x10996eC4f3E7A1b314EbD966Fa8b1ad0fE0f8307'),  # noqa: E501
                 timestamp=Timestamp(1607009877),
                 location=Location.BALANCER,
                 token0=UnknownEthereumToken(
-                    ethereum_address=deserialize_ethereum_address('0xa0afAA285Ce85974c3C881256cB7F225e3A1178a'),  # noqa: E501
+                    ethereum_address=string_to_ethereum_address('0xa0afAA285Ce85974c3C881256cB7F225e3A1178a'),  # noqa: E501
                     symbol='wCRES',
                     name='Wrapped CRES',
                     decimals=18,
@@ -237,9 +237,9 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
             AMMSwap(
                 tx_hash='0xfed4e15051e3ce4dc0d2816f719701e5920e40bf41614b5feaa3c5a6a0186c03',  # noqa: E501
                 log_index=22,
-                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=deserialize_ethereum_address('0x997c0fc9578a8194EFDdE2E0cD7aa6A69cFCD7c1'),  # noqa: E501
+                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                to_address=string_to_ethereum_address('0x997c0fc9578a8194EFDdE2E0cD7aa6A69cFCD7c1'),  # noqa: E501
                 timestamp=Timestamp(1607010888),
                 location=Location.BALANCER,
                 token0=EthereumToken('WETH'),
@@ -262,9 +262,9 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
             AMMSwap(
                 tx_hash='0xf0147c4b81098676c08ae20ae5bf8f8b60d0ad79eec484f3f93ac6ab49a3c51c',  # noqa: E501
                 log_index=97,
-                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=deserialize_ethereum_address('0x2Eb6CfbFFC8785Cd0D9f2d233d0a617bF4269eeF'),  # noqa: E501
+                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                to_address=string_to_ethereum_address('0x2Eb6CfbFFC8785Cd0D9f2d233d0a617bF4269eeF'),  # noqa: E501
                 timestamp=Timestamp(1607015059),
                 location=Location.BALANCER,
                 token0=EthereumToken('MFT'),
@@ -287,9 +287,9 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
             AMMSwap(
                 tx_hash='0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',  # noqa: E501
                 log_index=37,
-                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=deserialize_ethereum_address('0x0E552307659E70bF61f918f96AA880Cdec40d7E2'),  # noqa: E501
+                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                to_address=string_to_ethereum_address('0x0E552307659E70bF61f918f96AA880Cdec40d7E2'),  # noqa: E501
                 timestamp=Timestamp(1607015339),
                 location=Location.BALANCER,
                 token0=EthereumToken('AAVE'),
@@ -312,9 +312,9 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
             AMMSwap(
                 tx_hash='0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',  # noqa: E501
                 log_index=31,
-                address=deserialize_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=deserialize_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=deserialize_ethereum_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
+                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                to_address=string_to_ethereum_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
                 timestamp=Timestamp(1607015339),
                 location=Location.BALANCER,
                 token0=EthereumToken('WETH'),
