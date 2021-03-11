@@ -44,7 +44,7 @@
         <tbody>
           <tr v-for="token in value" :key="token.address">
             <td class="grow">{{ token.address }}</td>
-            <td class="shrink">
+            <td class="shrink text-no-wrap">
               {{
                 $t('underlying_token_manager.tokens.weight_percentage', {
                   weight: token.weight
@@ -159,14 +159,26 @@ export default class UnderlyingTokenManager extends Vue {
 @import '~@/scss/scroll';
 
 .underlying-tokens {
-  height: 200px;
+  ::v-deep {
+    tbody {
+      height: 200px;
+      overflow-y: scroll;
+      overflow-x: hidden;
 
-  td {
+      @extend .themed-scrollbar;
+    }
+
+    thead,
+    tbody {
+      display: block;
+    }
+  }
+
+  td,
+  th {
     &:first-child {
       width: 100%;
     }
   }
-
-  @extend .themed-scrollbar;
 }
 </style>
