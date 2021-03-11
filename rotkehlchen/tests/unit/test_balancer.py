@@ -2,9 +2,9 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.modules.balancer import Balancer
 from rotkehlchen.chain.ethereum.modules.balancer.utils import get_trades_from_tx_swaps
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.api.test_balancer import BALANCER_TEST_ADDR2_EXPECTED_TRADES
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
 
@@ -12,9 +12,9 @@ TEST_SWAPS_TX_1 = [
     AMMSwap(
         tx_hash='0x1b0d3525964d8e5fbcc0dcdeebcced4bec9017f648e97c3c9761fda1ca6e7b22',
         log_index=254,
-        address=deserialize_ethereum_address('0x8e670b4d6651C4051e65B21AA4a575F3f99b8B83'),
-        from_address=deserialize_ethereum_address('0x65003947dC16956AfC4400008606001500940000'),
-        to_address=deserialize_ethereum_address('0x7860E28ebFB8Ae052Bfe279c07aC5d94c9cD2937'),
+        address=string_to_ethereum_address('0x8e670b4d6651C4051e65B21AA4a575F3f99b8B83'),
+        from_address=string_to_ethereum_address('0x65003947dC16956AfC4400008606001500940000'),
+        to_address=string_to_ethereum_address('0x7860E28ebFB8Ae052Bfe279c07aC5d94c9cD2937'),
         timestamp=Timestamp(1614094145),
         location=Location.BALANCER,
         token0=EthereumToken('USDC'),
@@ -29,9 +29,9 @@ TEST_SWAPS_TX_2 = [
     AMMSwap(
         tx_hash='0x1b0d3525964d8e5fbcc0dcdeebcced4bec9017f648e97c3c9761fda1ca6e7b22',
         log_index=254,
-        address=deserialize_ethereum_address('0x8e670b4d6651C4051e65B21AA4a575F3f99b8B83'),
-        from_address=deserialize_ethereum_address('0x65003947dC16956AfC4400008606001500940000'),
-        to_address=deserialize_ethereum_address('0x7860E28ebFB8Ae052Bfe279c07aC5d94c9cD2937'),
+        address=string_to_ethereum_address('0x8e670b4d6651C4051e65B21AA4a575F3f99b8B83'),
+        from_address=string_to_ethereum_address('0x65003947dC16956AfC4400008606001500940000'),
+        to_address=string_to_ethereum_address('0x7860E28ebFB8Ae052Bfe279c07aC5d94c9cD2937'),
         timestamp=Timestamp(1614094145),
         location=Location.BALANCER,
         token0=EthereumToken('USDC'),
@@ -44,9 +44,9 @@ TEST_SWAPS_TX_2 = [
     AMMSwap(
         tx_hash='0x1b0d3525964d8e5fbcc0dcdeebcced4bec9017f648e97c3c9761fda1ca6e7b22',
         log_index=258,
-        address=deserialize_ethereum_address('0x8e670b4d6651C4051e65B21AA4a575F3f99b8B83'),
-        from_address=deserialize_ethereum_address('0x65003947dC16956AfC4400008606001500940000'),
-        to_address=deserialize_ethereum_address('0xa751A143f8fe0a108800Bfb915585E4255C2FE80'),
+        address=string_to_ethereum_address('0x8e670b4d6651C4051e65B21AA4a575F3f99b8B83'),
+        from_address=string_to_ethereum_address('0x65003947dC16956AfC4400008606001500940000'),
+        to_address=string_to_ethereum_address('0xa751A143f8fe0a108800Bfb915585E4255C2FE80'),
         timestamp=Timestamp(1614094145),
         location=Location.BALANCER,
         token0=EthereumToken('AMPL'),
@@ -61,9 +61,9 @@ TEST_SWAPS_TX_3 = [
     AMMSwap(
         tx_hash='0x70b50d011f23f8437aa32b4155972098b34b5fb19b02198f3bc7f2456c4c3ffc',
         log_index=2,
-        address=deserialize_ethereum_address('0x029f388ac4d5c8bff490550ce0853221030e822b'),
-        from_address=deserialize_ethereum_address('0x0000000000007f150bd6f54c40a34d7c3d5e9f56'),
-        to_address=deserialize_ethereum_address('0x5a21e141ca90e46a2ee54f93b54a1bec608c307b'),
+        address=string_to_ethereum_address('0x029f388ac4d5c8bff490550ce0853221030e822b'),
+        from_address=string_to_ethereum_address('0x0000000000007f150bd6f54c40a34d7c3d5e9f56'),
+        to_address=string_to_ethereum_address('0x5a21e141ca90e46a2ee54f93b54a1bec608c307b'),
         timestamp=Timestamp(1614150923),
         location=Location.BALANCER,
         token0=EthereumToken('WETH'),
@@ -76,9 +76,9 @@ TEST_SWAPS_TX_3 = [
     AMMSwap(
         tx_hash='0x70b50d011f23f8437aa32b4155972098b34b5fb19b02198f3bc7f2456c4c3ffc',
         log_index=6,
-        address=deserialize_ethereum_address('0x029f388ac4d5c8bff490550ce0853221030e822b'),
-        from_address=deserialize_ethereum_address('0x0000000000007f150bd6f54c40a34d7c3d5e9f56'),
-        to_address=deserialize_ethereum_address('0x80cba5ba9259c08851d94d6bf45e248541fb3e86'),
+        address=string_to_ethereum_address('0x029f388ac4d5c8bff490550ce0853221030e822b'),
+        from_address=string_to_ethereum_address('0x0000000000007f150bd6f54c40a34d7c3d5e9f56'),
+        to_address=string_to_ethereum_address('0x80cba5ba9259c08851d94d6bf45e248541fb3e86'),
         timestamp=Timestamp(1614150923),
         location=Location.BALANCER,
         token0=EthereumToken('REN'),
@@ -91,9 +91,9 @@ TEST_SWAPS_TX_3 = [
     AMMSwap(
         tx_hash='0x70b50d011f23f8437aa32b4155972098b34b5fb19b02198f3bc7f2456c4c3ffc',
         log_index=10,
-        address=deserialize_ethereum_address('0x029f388ac4d5c8bff490550ce0853221030e822b'),
-        from_address=deserialize_ethereum_address('0x0000000000007f150bd6f54c40a34d7c3d5e9f56'),
-        to_address=deserialize_ethereum_address('0xe3f9cf7d44488715361581dd8b3a15379953eb4c'),
+        address=string_to_ethereum_address('0x029f388ac4d5c8bff490550ce0853221030e822b'),
+        from_address=string_to_ethereum_address('0x0000000000007f150bd6f54c40a34d7c3d5e9f56'),
+        to_address=string_to_ethereum_address('0xe3f9cf7d44488715361581dd8b3a15379953eb4c'),
         timestamp=Timestamp(1614150923),
         location=Location.BALANCER,
         token0=EthereumToken('SNX'),
