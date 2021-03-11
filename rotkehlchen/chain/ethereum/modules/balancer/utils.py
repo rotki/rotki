@@ -135,26 +135,9 @@ def deserialize_invest_event(
     except KeyError as e:
         raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-    try:
-        user_address = to_checksum_address(raw_user_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {raw_user_address} in userAddress.',
-        ) from e
-
-    try:
-        pool_address = to_checksum_address(raw_pool_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {raw_pool_address} in poolAddress.',
-        ) from e
-
-    try:
-        token_address = to_checksum_address(raw_token_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {raw_token_address} in tokenIn.',
-        ) from e
+    user_address = deserialize_ethereum_address(raw_user_address)
+    pool_address = deserialize_ethereum_address(raw_pool_address)
+    token_address = deserialize_ethereum_address(raw_token_address)
 
     invest_event = BalancerInvestEvent(
         tx_hash=tx_hash,
@@ -187,19 +170,8 @@ def deserialize_pool_share(
     if total_weight == ZERO:
         raise DeserializationError('Pool weight is zero.')
 
-    try:
-        user_address = to_checksum_address(raw_user_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {raw_user_address} in userAddress.id.',
-        ) from e
-
-    try:
-        address = to_checksum_address(raw_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {raw_address} in poolId.id.',
-        ) from e
+    user_address = deserialize_ethereum_address(raw_user_address)
+    address = deserialize_ethereum_address(raw_address)
 
     pool_tokens = []
     for raw_token in raw_tokens:
@@ -281,40 +253,11 @@ def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
         raise DeserializationError('TokenAmountIn balance is zero.')
 
     # Checksum addresses
-    try:
-        user_address = to_checksum_address(raw_user_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {raw_user_address} in userAddress.id.',
-        ) from e
-
-    try:
-        caller_address = to_checksum_address(raw_caller_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {raw_caller_address} in caller.',
-        ) from e
-
-    try:
-        pool_address = to_checksum_address(raw_pool_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {raw_pool_address} in poolAddress.id.',
-        ) from e
-
-    try:
-        token_in_address = to_checksum_address(raw_token_in_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {raw_token_in_address} in tokenIn.',
-        ) from e
-
-    try:
-        token_out_address = to_checksum_address(raw_token_out_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {raw_token_out_address} in tokenOut.',
-        ) from e
+    user_address = deserialize_ethereum_address(raw_user_address)
+    caller_address = deserialize_ethereum_address(raw_caller_address)
+    pool_address = deserialize_ethereum_address(raw_pool_address)
+    token_in_address = deserialize_ethereum_address(raw_token_in_address)
+    token_out_address = deserialize_ethereum_address(raw_token_out_address)
 
     # Get token0 and token1
     # When the controller removes all the tokens from a pool, `raw_tokens` will
@@ -378,12 +321,7 @@ def deserialize_token_price(
     except KeyError as e:
         raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-    try:
-        token_address = to_checksum_address(token_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {token_address} in token price.',
-        ) from e
+    token_address = deserialize_ethereum_address(token_address)
 
     return token_address, usd_price
 
@@ -398,12 +336,7 @@ def deserialize_token_day_data(
     except KeyError as e:
         raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-    try:
-        token_address = to_checksum_address(token_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {token_address} in token day data.',
-        ) from e
+    token_address = deserialize_ethereum_address(token_address)
 
     return token_address, usd_price
 
