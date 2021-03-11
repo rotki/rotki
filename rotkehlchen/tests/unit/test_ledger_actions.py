@@ -26,8 +26,12 @@ def test_serialize_deserialize_for_db():
 
 def test_all_action_types_writtable_in_db(database, function_scope_messages_aggregator):
     db = DBLedgerActions(database, function_scope_messages_aggregator)
+
+    query = 'SELECT COUNT(*) FROM ledger_actions WHERE identifier=?'
+    cursor = database.conn.cursor()
+
     for entry in LedgerActionType:
-        db.add_ledger_action(
+        identifier = db.add_ledger_action(
             timestamp=1,
             action_type=entry,
             location=Location.EXTERNAL,
@@ -36,7 +40,74 @@ def test_all_action_types_writtable_in_db(database, function_scope_messages_aggr
             link='',
             notes='',
         )
+        # Check that changes have been committed to db
+        cursor.execute(query, (identifier,))
+        assert cursor.fetchone() == (1,)
     assert len(db.get_ledger_actions(None, None, None)) == len(LedgerActionType)
+
+
+def test_ledger_action_can_be_removed(database, function_scope_messages_aggregator):
+    db = DBLedgerActions(database, function_scope_messages_aggregator)
+
+    query = 'SELECT COUNT(*) FROM ledger_actions WHERE identifier=?'
+    cursor = database.conn.cursor()
+
+    # Add the entry that we want to delete
+    identifier = db.add_ledger_action(
+        timestamp=1,
+        action_type=LedgerActionType.INCOME,
+        location=Location.EXTERNAL,
+        amount=FVal(1),
+        asset=A_ETH,
+        link='',
+        notes='',
+    )
+
+    # Delete ledger action
+    assert db.remove_ledger_action(identifier) is None
+
+    # Check that the change has been committed
+    cursor.execute(query, (identifier,))
+    assert cursor.fetchone() == (0,)
+
+
+def test_ledger_action_can_be_edited(database, function_scope_messages_aggregator):
+    db = DBLedgerActions(database, function_scope_messages_aggregator)
+
+    query = 'SELECT * FROM ledger_actions WHERE identifier=?'
+    cursor = database.conn.cursor()
+
+    # Add the entry that we want to edit
+    identifier = db.add_ledger_action(
+        timestamp=1,
+        action_type=LedgerActionType.INCOME,
+        location=Location.EXTERNAL,
+        amount=FVal(1),
+        asset=A_ETH,
+        link='',
+        notes='',
+    )
+
+    # Data for the new entry
+    new_entry = LedgerAction(
+        identifier=identifier,
+        timestamp=2,
+        action_type=LedgerActionType.GIFT,
+        location=Location.EXTERNAL,
+        amount=FVal(3),
+        asset=A_ETH,
+        link='',
+        notes='updated',
+    )
+
+    assert db.edit_ledger_action(new_entry) is None
+
+    # Check that changes have been committed
+    cursor.execute(query, (identifier,))
+    updated_entry = LedgerAction(*cursor.fetchone())
+    assert updated_entry.timestamp == new_entry.timestamp
+    assert str(updated_entry.amount) == str(new_entry.amount)
+    assert updated_entry.action_type == new_entry.action_type.serialize_for_db()
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
