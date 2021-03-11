@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`2507` Users can now delete imported trades and deposit/withdrawals from crypto.com via the purge data UI.
 * :bug:`2530` Poloniex should no longer display phantom LEND balances in rotki.
+* :bug:`2534` Aave v2 tokens not in Aave v1 should no longer have their balance double counted.
 
 * :feature:`-` Added support for the following tokens:
 
