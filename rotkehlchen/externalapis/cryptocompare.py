@@ -41,7 +41,7 @@ from rotkehlchen.utils.misc import (
     timestamp_to_date,
     ts_now,
 )
-from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsondumps, jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -359,7 +359,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 raise RemoteError(f'Cryptocompare API request failed due to {str(e)}') from e
 
             try:
-                json_ret = rlk_jsonloads_dict(response.text)
+                json_ret = jsonloads_dict(response.text)
             except JSONDecodeError as e:
                 raise RemoteError(
                     f'Cryptocompare returned invalid JSON response: {response.text}',
@@ -614,7 +614,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         if cache_key not in self.price_history:
             try:
                 with open(self.price_history_file[cache_key], 'r') as f:
-                    data = rlk_jsonloads_dict(f.read())
+                    data = jsonloads_dict(f.read())
                     self.price_history[cache_key] = _dict_history_to_data(data)
             except (OSError, JSONDecodeError):
                 return None
@@ -1157,7 +1157,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             log.info('Found cryptocompare coinlist cache', path=coinlist_cache_path)
             with open(coinlist_cache_path, 'r') as f:
                 try:
-                    data = rlk_jsonloads_dict(f.read())
+                    data = jsonloads_dict(f.read())
                     now = ts_now()
                     invalidate_cache = False
 

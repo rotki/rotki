@@ -7,7 +7,7 @@ import requests
 
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.typing import EthAddress
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
+from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 KNOWN_TO_MISS_FROM_PAPRIKA = (
     'ADADOWN',
@@ -622,8 +622,8 @@ class CoinPaprika():
 
     def get_coins_list(self) -> List[Dict[str, Any]]:
         response_data = self._query('coins')
-        return rlk_jsonloads_list(response_data)
+        return jsonloads_list(response_data)
 
     def get_coin_by_id(self, coinpaprika_id: str) -> Dict[str, Any]:
         response_data = self._query(f'coins/{coinpaprika_id}')
-        return rlk_jsonloads_dict(response_data)
+        return jsonloads_dict(response_data)

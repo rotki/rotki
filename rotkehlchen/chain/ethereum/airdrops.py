@@ -19,7 +19,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.typing import ChecksumEthAddress
-from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsondumps, jsonloads_dict
 
 AIRDROPS = {
     'uniswap': (
@@ -204,7 +204,7 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> Dict[str, Any]:
             raise RemoteError(f'POAP airdrops Gist request failed due to {str(e)}') from e
 
         try:
-            json_data = rlk_jsonloads_dict(request.content.decode('utf-8'))
+            json_data = jsonloads_dict(request.content.decode('utf-8'))
         except JSONDecodeError as e:
             raise RemoteError(f'POAP airdrops Gist contains an invalid JSON {str(e)}') from e
 
@@ -212,7 +212,7 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> Dict[str, Any]:
             outfile.write(rlk_jsondumps(json_data))
 
     infile = open(filename, 'r')
-    data_dict = rlk_jsonloads_dict(infile.read())
+    data_dict = jsonloads_dict(infile.read())
     return data_dict
 
 

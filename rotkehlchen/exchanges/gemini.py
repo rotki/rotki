@@ -40,7 +40,7 @@ from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, Trad
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
+from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -210,7 +210,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
 
         try:
-            json_ret = rlk_jsonloads_list(response.text)
+            json_ret = jsonloads_list(response.text)
         except JSONDecodeError as e:
             raise RemoteError(
                 f'Gemini  query at {response.url} '
@@ -266,7 +266,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
 
         deserialization_fn: Union[Callable[[str], Dict[str, Any]], Callable[[str], List[Any]]]
-        deserialization_fn = rlk_jsonloads_dict if endpoint == 'roles' else rlk_jsonloads_list
+        deserialization_fn = jsonloads_dict if endpoint == 'roles' else jsonloads_list
 
         try:
             json_ret = deserialization_fn(response.text)

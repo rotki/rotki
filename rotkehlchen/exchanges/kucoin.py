@@ -62,7 +62,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -366,7 +366,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
 
             try:
-                response_dict = rlk_jsonloads_dict(response.text)
+                response_dict = jsonloads_dict(response.text)
             except JSONDecodeError as e:
                 msg = f'Kucoin {case} returned an invalid JSON response: {response.text}.'
                 log.error(msg)
@@ -665,7 +665,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         May raise RemoteError
         """
         try:
-            response_dict = rlk_jsonloads_dict(response.text)
+            response_dict = jsonloads_dict(response.text)
         except JSONDecodeError as e:
             msg = f'Kucoin {case} returned an invalid JSON response: {response.text}.'
             log.error(msg)
@@ -720,7 +720,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return result, msg
 
         try:
-            response_dict = rlk_jsonloads_dict(accounts_response.text)
+            response_dict = jsonloads_dict(accounts_response.text)
         except JSONDecodeError as e:
             msg = f'Kucoin balances returned an invalid JSON response: {accounts_response.text}.'
             log.error(msg)

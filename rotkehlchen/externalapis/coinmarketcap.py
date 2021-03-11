@@ -11,7 +11,7 @@ import requests
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsondumps, jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -923,7 +923,7 @@ class Coinmarketcap():
         limit = 5000
         result: List[Dict[str, Any]] = []
         while True:
-            response_data = rlk_jsonloads_dict(
+            response_data = jsonloads_dict(
                 self._query(f'v1/cryptocurrency/map?start={start}&limit={limit}'),
             )
             result.extend(response_data['data'])
@@ -942,7 +942,7 @@ class Coinmarketcap():
             log.info('Found coinmarketcap coinlist cache', path=coinlist_cache_path)
             with open(coinlist_cache_path, 'r') as f:
                 try:
-                    file_data = rlk_jsonloads_dict(f.read())
+                    file_data = jsonloads_dict(f.read())
                     now = ts_now()
                     invalidate_cache = False
 

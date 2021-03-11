@@ -40,7 +40,7 @@ from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import create_timestamp, ts_now
-from rotkehlchen.utils.serialization import rlk_jsonloads_list
+from rotkehlchen.utils.serialization import jsonloads_list
 
 from .graph import BONDS_QUERY, CHANNEL_WITHDRAWS_QUERY, UNBOND_REQUESTS_QUERY, UNBONDS_QUERY
 from .typing import (
@@ -698,7 +698,7 @@ class Adex(EthereumModule):
 
         fee_rewards: FeeRewards
         try:
-            fee_rewards = rlk_jsonloads_list(response.text)
+            fee_rewards = jsonloads_list(response.text)
         except JSONDecodeError as e:
             msg = f'AdEx fee rewards API returned invalid JSON response: {response.text}.'
             log.error(msg)

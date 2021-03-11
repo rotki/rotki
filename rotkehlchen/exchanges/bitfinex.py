@@ -67,7 +67,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_list
+from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -321,7 +321,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
 
             try:
-                response_list = rlk_jsonloads_list(response.text)
+                response_list = jsonloads_list(response.text)
             except JSONDecodeError:
                 msg = f'{self.name} {case} returned invalid JSON response: {response.text}.'
                 log.error(msg)
@@ -610,7 +610,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(f'{self.name} currencies list query failed. Check further logs')
         else:
             try:
-                response_list = rlk_jsonloads_list(response.text)
+                response_list = jsonloads_list(response.text)
             except JSONDecodeError:
                 was_successful = False
                 log.error(
@@ -649,7 +649,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(f'{self.name} currency map query failed. Check further logs')
         else:
             try:
-                response_list = rlk_jsonloads_list(response.text)
+                response_list = jsonloads_list(response.text)
             except JSONDecodeError:
                 was_successful = False
                 log.error(
@@ -683,7 +683,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(f'{self.name} exchange pairs list query failed. Check further logs')
         else:
             try:
-                response_list = rlk_jsonloads_list(response.text)
+                response_list = jsonloads_list(response.text)
             except JSONDecodeError:
                 was_successful = False
                 log.error(
@@ -748,7 +748,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         in `case`.
         """
         try:
-            response_list = rlk_jsonloads_list(response.text)
+            response_list = jsonloads_list(response.text)
         except JSONDecodeError as e:
             msg = f'{self.name} {case} returned an invalid JSON response: {response.text}.'
             log.error(msg)
@@ -868,7 +868,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             return result, msg
         try:
-            response_list = rlk_jsonloads_list(response.text)
+            response_list = jsonloads_list(response.text)
         except JSONDecodeError as e:
             msg = f'{self.name} returned invalid JSON response: {response.text}.'
             log.error(msg)

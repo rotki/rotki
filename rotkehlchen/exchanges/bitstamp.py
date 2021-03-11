@@ -53,7 +53,7 @@ from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
+from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -165,7 +165,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             return result, msg
         try:
-            response_dict = rlk_jsonloads_dict(response.text)
+            response_dict = jsonloads_dict(response.text)
         except JSONDecodeError as e:
             msg = f'Bitstamp returned invalid JSON response: {response.text}.'
             log.error(msg)
@@ -443,7 +443,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     case=response_case,
                 )
             try:
-                response_list = rlk_jsonloads_list(response.text)
+                response_list = jsonloads_list(response.text)
             except JSONDecodeError:
                 msg = f'Bitstamp returned invalid JSON response: {response.text}.'
                 log.error(msg)
@@ -686,7 +686,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         """
         case_pretty = case.replace('_', ' ')  # human readable case
         try:
-            response_dict = rlk_jsonloads_dict(response.text)
+            response_dict = jsonloads_dict(response.text)
         except JSONDecodeError as e:
             msg = f'Bitstamp returned invalid JSON response: {response.text}.'
             log.error(msg)

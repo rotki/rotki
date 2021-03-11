@@ -16,7 +16,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date
-from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsondumps, jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -451,7 +451,7 @@ class Coingecko():
 
         with open(filename, 'r') as f:
             try:
-                data: Dict[str, Price] = rlk_jsonloads_dict(f.read())
+                data: Dict[str, Price] = jsonloads_dict(f.read())
             except JSONDecodeError:
                 return None
 
@@ -476,7 +476,7 @@ class Coingecko():
         if filename.is_file():
             with open(filename, 'r') as f:
                 try:
-                    data = rlk_jsonloads_dict(f.read())
+                    data = jsonloads_dict(f.read())
                 except JSONDecodeError:
                     data = {}
 

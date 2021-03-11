@@ -56,7 +56,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_list
+from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -238,7 +238,7 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
 
         try:
-            result = rlk_jsonloads_list(response.text)
+            result = jsonloads_list(response.text)
         except JSONDecodeError as e:
             raise RemoteError(f'Bittrex returned invalid JSON response: {response.text}') from e
 

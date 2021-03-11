@@ -53,7 +53,7 @@ from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -241,7 +241,7 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]
             ))
 
     try:
-        decoded_json = rlk_jsonloads_dict(response.text)
+        decoded_json = jsonloads_dict(response.text)
     except json.decoder.JSONDecodeError as e:
         raise RemoteError(f'Invalid JSON in Kraken response. {e}') from e
 

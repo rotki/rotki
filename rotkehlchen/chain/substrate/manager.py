@@ -20,7 +20,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 from .typing import (
     BlockNumber,
@@ -460,7 +460,7 @@ class SubstrateManager():
             log.error(message)
             raise RemoteError(message)
         try:
-            result = rlk_jsonloads_dict(response.text)
+            result = jsonloads_dict(response.text)
         except JSONDecodeError as e:
             message = (
                 f'{self.chain} chain metadata request returned invalid JSON '

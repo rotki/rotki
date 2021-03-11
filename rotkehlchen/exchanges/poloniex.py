@@ -60,7 +60,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import create_timestamp, ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
+from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -347,13 +347,13 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         result: Union[Dict, List]
         try:
             if command == 'returnLendingHistory':
-                result = rlk_jsonloads_list(response.text)
+                result = jsonloads_list(response.text)
             else:
                 # For some reason poloniex can also return [] for an empty trades result
                 if response.text == '[]':
                     result = {}
                 else:
-                    result = rlk_jsonloads_dict(response.text)
+                    result = jsonloads_dict(response.text)
                     result = _post_process(result)
         except JSONDecodeError as e:
             raise RemoteError(f'Poloniex returned invalid JSON response: {response.text}') from e

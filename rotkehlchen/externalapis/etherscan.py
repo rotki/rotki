@@ -15,7 +15,7 @@ from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import convert_to_int, hex_or_bytes_to_int, hexstring_to_bytes
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 ETHERSCAN_TX_QUERY_LIMIT = 10000
 
@@ -198,7 +198,7 @@ class Etherscan(ExternalServiceWithApiKey):
                 )
 
             try:
-                json_ret = rlk_jsonloads_dict(response.text)
+                json_ret = jsonloads_dict(response.text)
             except JSONDecodeError as e:
                 raise RemoteError(
                     f'Etherscan API request {response.url} returned invalid '

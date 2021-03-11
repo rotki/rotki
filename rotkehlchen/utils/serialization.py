@@ -34,13 +34,13 @@ class RKLEncoder(json.JSONEncoder):
         return super().encode(self._encode(obj))
 
 
-def rlk_jsonloads_dict(data: str) -> Dict[str, Any]:
+def jsonloads_dict(data: str) -> Dict[str, Any]:
     value = json.loads(data)
     assert isinstance(value, dict)
     return value
 
 
-def rlk_jsonloads_list(data: str) -> List:
+def jsonloads_list(data: str) -> List:
     value = json.loads(data)
     assert isinstance(value, list)
     return value
