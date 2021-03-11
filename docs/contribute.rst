@@ -57,6 +57,18 @@ For an exhaustive guide read `this <http://chris.beams.io/posts/git-commit/>`_ g
 
 When pushing on a PR the tags ``[skip ci]`` or ``[ci skip]`` can be used a part of the commit message to skip the run of all the CI jobs (lint, test etc).
 
+Where to make changes
+============================
+
+- If you want to contribute fixing a bug use the `bugfixes <https://github.com/rotki/rotki/tree/bugfixes>`_ branch.
+- To add new assets also use the `bugfixes <https://github.com/rotki/rotki/tree/bugfixes>`_ branch.
+- Any other change can be made against the `develop <https://github.com/rotki/rotki/tree/develop>`_ branch.
+
+Our releases work like this:
+
+- We release patches merging the `bugfixes` branch to master and adding a new tag.
+- Normal releases are created by merging the `develop` branch to master and adding a new tag.
+
 Adding new assets to Rotki
 ============================
 
