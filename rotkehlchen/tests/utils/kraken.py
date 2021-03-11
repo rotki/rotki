@@ -15,7 +15,7 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = """{
     "trades": {
@@ -283,7 +283,7 @@ def generate_random_kraken_ledger_data(start: Timestamp, end: Timestamp, ledger_
         ledgers[ledger['refid']] = ledger
 
     response_str = json.dumps({'ledger': ledgers, 'count': ledgers_num})
-    return rlk_jsonloads(response_str)
+    return json.loads(response_str)
 
 
 def generate_random_kraken_trades_data(
@@ -304,7 +304,7 @@ def generate_random_kraken_trades_data(
         trades[trade['ordertxid']] = trade
 
     response_str = json.dumps({'trades': trades, 'count': trades_num})
-    return rlk_jsonloads(response_str)
+    return json.loads(response_str)
 
 
 class MockKraken(Kraken):

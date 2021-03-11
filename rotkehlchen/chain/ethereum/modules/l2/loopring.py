@@ -1,4 +1,5 @@
 import logging
+import json
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, overload
@@ -31,7 +32,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule, LockableQueryObject, protect_with_lock
-from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -241,7 +241,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryObject):
             raise RemoteError(f'Loopring api query {querystr} failed due to {str(e)}') from e
         if response.status_code == HTTPStatus.BAD_REQUEST:
             try:
-                json_ret = rlk_jsonloads(response.text)
+                json_ret = json.loads(response.text)
             except JSONDecodeError as e:
                 raise RemoteError(
                     f'Loopring API {response.url} returned invalid '
@@ -264,7 +264,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryObject):
             )
 
         try:
-            json_ret = rlk_jsonloads(response.text)
+            json_ret = json.loads(response.text)
         except JSONDecodeError as e:
             raise RemoteError(
                 f'Loopring API {response.url} returned invalid '

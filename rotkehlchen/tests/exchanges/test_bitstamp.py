@@ -12,10 +12,10 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.errors import RemoteError, UnknownAsset
 from rotkehlchen.exchanges.bitstamp import (
-    API_KEY_ERROR_CODE_ACTION,
-    API_MAX_LIMIT,
     API_ERR_AUTH_NONCE_CODE,
     API_ERR_AUTH_NONCE_MESSAGE,
+    API_KEY_ERROR_CODE_ACTION,
+    API_MAX_LIMIT,
     USER_TRANSACTION_MIN_SINCE_ID,
     USER_TRANSACTION_SORTING_MODE,
     Bitstamp,

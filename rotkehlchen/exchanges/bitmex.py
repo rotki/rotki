@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import logging
 import time
+import json
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
@@ -33,7 +34,6 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc
-from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -187,7 +187,7 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
 
         try:
-            json_ret = rlk_jsonloads(response.text)
+            json_ret = json.loads(response.text)
         except JSONDecodeError as e:
             raise RemoteError('Bitmex returned invalid JSON response') from e
 

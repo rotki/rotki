@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import logging
+import json
 from collections import defaultdict
 from json.decoder import JSONDecodeError
 from typing import (
@@ -51,7 +52,6 @@ from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Lo
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -361,7 +361,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 code = 'no code found'
                 msg = 'no message found'
                 try:
-                    result = rlk_jsonloads(response.text)
+                    result = json.loads(response.text)
                     if isinstance(result, dict):
                         code = result.get('code', code)
                         msg = result.get('msg', msg)
@@ -416,7 +416,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             break
 
         try:
-            json_ret = rlk_jsonloads(response.text)
+            json_ret = json.loads(response.text)
         except JSONDecodeError as e:
             raise RemoteError(
                 f'{self.name} returned invalid JSON response: {response.text}',

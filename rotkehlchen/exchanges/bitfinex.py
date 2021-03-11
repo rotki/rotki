@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import logging
+import json
 from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
@@ -66,7 +67,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_list
+from rotkehlchen.utils.serialization import rlk_jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -274,7 +275,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             if response.status_code != HTTPStatus.OK:
                 try:
-                    error_response = rlk_jsonloads(response.text)
+                    error_response = json.loads(response.text)
                 except JSONDecodeError:
                     msg = f'{self.name} {case} returned an invalid JSON response: {response.text}.'
                     log.error(msg, options=call_options)

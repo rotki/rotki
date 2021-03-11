@@ -16,7 +16,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date
-from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads, rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -312,7 +312,7 @@ class Coingecko():
             raise RemoteError(msg)
 
         try:
-            decoded_json = rlk_jsonloads(response.text)
+            decoded_json = json.loads(response.text)
         except json.decoder.JSONDecodeError as e:
             msg = f'Invalid JSON in Coingecko response. {e}'
             raise RemoteError(msg) from e

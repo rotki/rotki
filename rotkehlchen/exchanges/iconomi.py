@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import logging
+import json
 import time
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
@@ -28,7 +29,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ApiKey, ApiSecret, FVal, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -169,7 +169,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise RemoteError(f'ICONOMI API request failed due to {str(e)}') from e
 
         try:
-            json_ret = rlk_jsonloads(response.text)
+            json_ret = json.loads(response.text)
         except JSONDecodeError as exc:
             raise RemoteError('ICONOMI returned invalid JSON response') from exc
 

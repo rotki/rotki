@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import logging
 import time
+import json
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
@@ -31,7 +32,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, FVal, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp
-from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -185,7 +185,7 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise RemoteError(f'Bitcoin.de API request failed due to {str(e)}') from e
 
         try:
-            json_ret = rlk_jsonloads(response.text)
+            json_ret = json.loads(response.text)
         except JSONDecodeError as exc:
             raise RemoteError('Bitcoin.de returned invalid JSON response') from exc
 
