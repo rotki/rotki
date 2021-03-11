@@ -688,6 +688,20 @@ def deserialize_ethereum_address(symbol: str) -> ChecksumEthAddress:
     return ChecksumEthAddress(HexAddress(HexStr(symbol)))
 
 
+def deserialize_int_from_str(symbol: str, location: str) -> int:
+    if not isinstance(symbol, str):
+        raise DeserializationError(f'Expected a string but got {type(symbol)} at {location}')
+
+    try:
+        result = int(symbol)
+    except ValueError as e:
+        raise DeserializationError(
+            f'Could not turn string "{symbol}" into an integer at {location}',
+        ) from e
+
+    return result
+
+
 def deserialize_int_from_hex(symbol: str, location: str) -> int:
     """Takes a hex string and turns it into an integer. Some apis returns 0x as
     a hex int and this may be an error. So we handle this as return 0 here.

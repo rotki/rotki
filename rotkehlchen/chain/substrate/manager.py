@@ -15,12 +15,13 @@ from websocket import WebSocketException
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import RemoteError, UnknownAsset
+from rotkehlchen.errors import RemoteError, UnknownAsset, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 
 from .typing import (
     BlockNumber,
@@ -202,8 +203,13 @@ class SubstrateManager():
 
         # Check node synchronization
         try:
-            metadata_last_block = BlockNumber(chain_metadata['data']['blockNum'])
-        except KeyError as e:
+            metadata_last_block = BlockNumber(
+                deserialize_int_from_str(
+                    symbol=chain_metadata['data']['blockNum'],
+                    location='subscan api',
+                ),
+            )
+        except (KeyError, DeserializationError) as e:
             message = f'{self.chain} failed to deserialize the chain metadata response: {str(e)}.'
             log.error(message, chain_metadata=chain_metadata)
             raise RemoteError(message) from e
