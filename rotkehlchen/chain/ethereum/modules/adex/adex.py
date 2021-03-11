@@ -144,12 +144,6 @@ class Adex(EthereumModule):
                 token_ethereum_address = deserialize_ethereum_address(
                     entry['channelArgs']['tokenAddr'],
                 )
-                try:
-                    token_ethereum_address = to_checksum_address(token_ethereum_address)
-                except ValueError as e:
-                    raise DeserializationError(
-                        f"Invalid ethereum address: {token_ethereum_address} in channel: {channel_id}.",  # noqa: E501
-                    ) from e
 
                 if token_ethereum_address == A_ADX.ethereum_address:
                     channel_adx_reward_amount = FVal(

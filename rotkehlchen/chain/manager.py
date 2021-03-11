@@ -66,6 +66,7 @@ from rotkehlchen.errors import (
     ModuleInitializationFailure,
     RemoteError,
     UnknownAsset,
+    DeserializationError,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
@@ -812,7 +813,16 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self.flush_cache('query_balances', arguments_matter=True)
             self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
             for account in accounts:
-                address = deserialize_ethereum_address(account)
+                try:
+                    address = deserialize_ethereum_address(account)
+                except DeserializationError as e:
+                    log.error(f"Error deserializing eth address {account}")
+                    # As suggested by @vnavascues `DeserializationError` is not in the errors
+                    # that callers to this function may expect. Since this would incur in an error
+                    # fetching different ETH services it might be a good idea to return RemoteError
+                    raise RemoteError(
+                        f'Tried to deserialize eth address {account} and failed to do it.',
+                    ) from e
                 try:
                     self.modify_eth_account(
                         account=address,
