@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-18.04 ]
-        node-version: [ 12.x ]
+        node-version: [ 14.x ]
     runs-on: ${{ matrix.os }}
     outputs:
       backend_tasks: ${{ steps.checker.outputs.backend_tasks }}
@@ -41,14 +41,14 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04]
-        node-version: [12.x]
+        node-version: [14.x]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup
         uses: actions/setup-node@v1
         with:
-          node-version: '12.x'
+          node-version: '14.x'
       - name: Store npm cache
         uses: actions/cache@v2
         with:
@@ -59,6 +59,7 @@ jobs:
       - name: Install dependencies
         working-directory: ./frontend/app
         run: |
+          npm install -g npm@7
           if ! npm ci --exit-code; then
             npm ci
           fi
@@ -179,7 +180,7 @@ jobs:
       matrix:
         os: [ubuntu-18.04]
         python-version: [3.7]
-        node-version: [12.x]
+        node-version: [14.x]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -187,6 +188,10 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: '3.7'
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.x'
       - name: Store python cache
         uses: actions/cache@v2
         with:
@@ -224,6 +229,7 @@ jobs:
       - name: Restore dependencies
         working-directory: ./frontend/app
         run: |
+          npm install -g npm@7
           if ! npm ci --exit-code; then
             npm ci
           fi

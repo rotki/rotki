@@ -2,8 +2,8 @@
 FROM node:lts-alpine as frontend-build-stage
 
 WORKDIR /app
-COPY frontend/app/package*.json ./
-RUN if ! npm ci --exit-code; then npm ci; fi
+COPY frontend/app/package*.json frontend/app/check-versions.js ./
+RUN npm install -g npm@7 && if ! npm ci --exit-code; then npm ci; fi
 COPY frontend/app/ .
 RUN npm run build -- --mode docker
 

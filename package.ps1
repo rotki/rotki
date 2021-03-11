@@ -3,7 +3,7 @@ $PYSQLCIPHER3_VERSION = if ($env:PYSQLCIPHER3_VERSION) { $env:PYSQLCIPHER3_VERSI
 $BUILD_DEPENDENCIES = if ($env:BUILD_DEPENDENCIES) { $env:BUILD_DEPENDENCIES } else { 'rotki-build-dependencies' }
 
 # Setup constants
-$MINIMUM_NPM_VERSION = "5.7.0"
+$MINIMUM_NPM_VERSION = "7.6.2"
 $TCLTK='tcltk85-8.5.19-17.tcl85.Win10.x86_64'
 
 echo "Starting rotki build process with SQLCipher $SQLCIPHER_VERSION and pysqlcipher3 $PYSQLCIPHER3_VERSION"
@@ -190,7 +190,7 @@ cd $PROJECT_DIR
 $NPM_VERSION = (npm --version) | Out-String
 
 if ([version]$NPM_VERSION -lt [version]$MINIMUM_NPM_VERSION) {
-    echo "Please make sure you have npm version 5.7.0 or newer installed"
+    echo "Please make sure you have npm version $MINIMUM_NPM_VERSION or newer installed"
     exit 1;
 }
 
