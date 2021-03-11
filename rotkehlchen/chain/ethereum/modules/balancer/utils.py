@@ -12,6 +12,7 @@ from rotkehlchen.errors import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_ethereum_address,
     deserialize_price,
     deserialize_timestamp,
 )
@@ -63,19 +64,8 @@ def deserialize_bpt_event(
     if total_weight == ZERO:
         raise DeserializationError('Pool weight is zero.')
 
-    try:
-        user_address = to_checksum_address(raw_user_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {raw_user_address} in user.id.',
-        ) from e
-
-    try:
-        pool_address = to_checksum_address(raw_pool_address)
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {raw_pool_address} in pool.id.',
-        ) from e
+    user_address = deserialize_ethereum_address(raw_user_address)
+    pool_address = deserialize_ethereum_address(raw_pool_address)
 
     pool_tokens = []
     for raw_token in raw_pool_tokens:

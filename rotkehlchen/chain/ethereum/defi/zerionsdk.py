@@ -12,7 +12,7 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
-from rotkehlchen.chain.ethereum.typing import NodeName
+from rotkehlchen.chain.ethereum.typing import NodeName, string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ZERION_ABI
@@ -20,7 +20,6 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
@@ -159,7 +158,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
 
 
 # supported zerion adapter address
-ZERION_ADAPTER_ADDRESS = deserialize_ethereum_address('0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672')
+ZERION_ADAPTER_ADDRESS = string_to_ethereum_address('0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672')
 
 
 class ZerionSDK():
