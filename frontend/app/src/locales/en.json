@@ -1003,6 +1003,7 @@
   "update_popup": {
     "action": {
       "cancel": "Cancel",
+      "dismiss": "Dismiss",
       "update": "Download",
       "install": "Install"
     },
@@ -1010,12 +1011,10 @@
     "downloaded": "The updated version will be installed on the next restart. Would you like to restart the application now to apply the update?",
     "messages": "A new version of rotki is available. Would you like to download it?",
     "download_failed": {
-      "message": "An error occurred while downloading the application update. For more information check the application log file (rotki_electron.log).",
-      "title": "Update download failed"
+      "message": "An error occurred while downloading the application update. For more information check the application log file (rotki_electron.log)."
     },
     "install_failed": {
-      "message": "An error occurred while installing the application update: {message}",
-      "title": "Update install failed"
+      "message": "An error occurred while installing the application update: {message}"
     },
     "progress": "{percentage} %"
   },

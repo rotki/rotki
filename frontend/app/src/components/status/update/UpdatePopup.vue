@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <v-snackbar
     v-if="$interop.isPackaged"
     v-model="popup"
@@ -15,13 +15,19 @@
   >
     <v-row align="center">
       <v-col cols="auto">
-        <v-icon v-if="!downloadReady" large color="primary">
+        <v-icon v-if="error" large color="error">
+          mdi-alert-circle-outline
+        </v-icon>
+        <v-icon v-else-if="!downloadReady" large color="primary">
           mdi-arrow-up-bold-circle
         </v-icon>
         <v-icon v-else large color="primary">mdi-arrow-down-circle</v-icon>
       </v-col>
       <v-col class="text-body-1">
-        <span v-if="downloading">
+        <span v-if="error" class="error--text">
+          {{ error }}
+        </span>
+        <span v-else-if="downloading">
           {{ $t('update_popup.download_progress') }}
         </span>
         <span v-else-if="!downloadReady">
@@ -45,7 +51,12 @@
       </template>
     </v-progress-linear>
 
-    <template v-if="!downloading" #action="{ attrs }">
+    <template v-if="error" #action="{ attrs }">
+      <v-btn text v-bind="attrs" @click="dismiss">
+        {{ $t('update_popup.action.dismiss') }}
+      </v-btn>
+    </template>
+    <template v-else-if="!downloading" #action="{ attrs }">
       <v-btn text v-bind="attrs" @click="popup = false">
         {{ $t('update_popup.action.cancel') }}
       </v-btn>
@@ -68,8 +79,6 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { Interop } from '@/electron-main/ipc';
-import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
 import { assert } from '@/utils/assertions';
 
 @Component({})
@@ -78,6 +87,17 @@ export default class UpdatePopup extends Vue {
   downloadReady: boolean = false;
   downloading: boolean = false;
   percentage: number = 0;
+  error: string = '';
+
+  dismiss() {
+    this.popup = false;
+    setTimeout(() => {
+      this.error = '';
+      this.downloading = false;
+      this.downloadReady = false;
+      this.percentage = 0;
+    }, 400);
+  }
 
   async update() {
     this.downloading = true;
@@ -89,12 +109,7 @@ export default class UpdatePopup extends Vue {
       this.downloadReady = true;
       this.popup = true;
     } else {
-      notify(
-        this.$t('update_popup.download_failed.message').toString(),
-        this.$t('update_popup.download_failed.title').toString(),
-        Severity.ERROR,
-        true
-      );
+      this.error = this.$t('update_popup.download_failed.message').toString();
     }
   }
 
@@ -103,14 +118,9 @@ export default class UpdatePopup extends Vue {
     this.popup = false;
     const result = await this.interop.installUpdate();
     if (typeof result !== 'boolean') {
-      notify(
-        this.$t('update_popup.install_failed.message', {
-          message: result
-        }).toString(),
-        this.$t('update_popup.install_failed.title').toString(),
-        Severity.ERROR,
-        true
-      );
+      this.error = this.$t('update_popup.install_failed.message', {
+        message: result
+      }).toString();
     }
   }
 
