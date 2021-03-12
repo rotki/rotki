@@ -67,7 +67,10 @@ export default class PyHandler {
     this._serverUrl = '';
   }
 
-  private logToFile(msg: string | Error) {
+  logToFile(msg: string | Error) {
+    if (!msg) {
+      return;
+    }
     const message = `${new Date(Date.now()).toISOString()}: ${msg}`;
     console.log(message);
     fs.appendFileSync(this.ELECTRON_LOG_PATH, `${message}\n`);

@@ -46,7 +46,17 @@ async function select(
 
 function setupUpdaterInterop() {
   autoUpdater.autoDownload = false;
+  autoUpdater.logger = {
+    error: (message?: any) => pyHandler.logToFile(`(error): ${message}`),
+    info: (message?: any) => pyHandler.logToFile(`(info): ${message}`),
+    debug: (message: string) => pyHandler.logToFile(`(debug): ${message}`),
+    warn: (message?: any) => pyHandler.logToFile(`(warn): ${message}`)
+  };
   ipcMain.on(IPC_CHECK_FOR_UPDATES, async event => {
+    if (isDevelopment) {
+      console.log('Running in development skipping auto-updater check');
+      return;
+    }
     autoUpdater.once('update-available', () => {
       event.sender.send(IPC_CHECK_FOR_UPDATES, true);
     });
@@ -57,6 +67,7 @@ function setupUpdaterInterop() {
       await autoUpdater.checkForUpdates();
     } catch (e) {
       console.error(e);
+      pyHandler.logToFile(e);
       event.sender.send(IPC_CHECK_FOR_UPDATES, false);
     }
   });
