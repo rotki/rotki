@@ -5,6 +5,7 @@ from eth_utils import to_checksum_address
 from rotkehlchen.accounting.structures import ActionType, LedgerActionType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     ConversionError,
@@ -778,7 +779,7 @@ def deserialize_unknown_ethereum_token_from_db(
     """
     try:
         unknown_ethereum_token = UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address(ethereum_address),
+            ethereum_address=string_to_ethereum_address(ethereum_address),
             symbol=symbol,
             name=name,
             decimals=decimals,

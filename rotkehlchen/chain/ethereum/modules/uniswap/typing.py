@@ -8,12 +8,12 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import serialize_ethereum_token
 from rotkehlchen.chain.ethereum.trades import AMMTrade
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_ethereum_address,
     deserialize_ethereum_token_from_db,
     deserialize_price,
     deserialize_timestamp,
@@ -208,10 +208,10 @@ class LiquidityPoolEvent(NamedTuple):
         return cls(
             tx_hash=event_tuple[0],
             log_index=event_tuple[1],
-            address=deserialize_ethereum_address(event_tuple[2]),
+            address=string_to_ethereum_address(event_tuple[2]),
             timestamp=deserialize_timestamp(event_tuple[3]),
             event_type=event_type,
-            pool_address=deserialize_ethereum_address(event_tuple[5]),
+            pool_address=string_to_ethereum_address(event_tuple[5]),
             token0=token0,
             token1=token1,
             amount0=deserialize_asset_amount(event_tuple[16]),
