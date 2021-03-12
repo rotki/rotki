@@ -151,7 +151,7 @@
       :display="openDialog"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
-      :action-disabled="!validForm"
+      :action-disabled="!validForm || saving"
       :primary-action="$t('ledger_actions.dialog.save')"
       @confirm="save()"
       @cancel="closeDialog()"
@@ -299,6 +299,7 @@ export default class LedgerActions extends Mixins(StatusMixin) {
 
   openDialog: boolean = false;
   validForm: boolean = false;
+  saving: boolean = false;
   deleteIdentifier: number = 0;
   action: LedgerActionEntry | UnsavedAction = emptyAction();
   errors: { [key in Properties<UnsavedAction, any>]?: string } = {};
@@ -399,6 +400,7 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   }
 
   async save() {
+    this.saving = true;
     let success: boolean;
     let message: string | undefined;
     if ('identifier' in this.action) {
@@ -420,6 +422,7 @@ export default class LedgerActions extends Mixins(StatusMixin) {
         this.errors = {};
       }
     }
+    this.saving = false;
   }
 
   get dialogTitle(): string {

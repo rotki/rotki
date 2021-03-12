@@ -12,6 +12,7 @@
               persistent-hint
               :hint="$t('external_trade_form.date.hint')"
               :error-messages="errorMessages['timestamp']"
+              @focus="delete errorMessages['timestamp']"
             />
             <div data-cy="type">
               <v-radio-group
@@ -43,6 +44,7 @@
                   :hint="$t('external_trade_form.base_asset.hint')"
                   :label="$t('external_trade_form.base_asset.label')"
                   :error-messages="errorMessages['pair']"
+                  @focus="delete errorMessages['pair']"
                 />
               </v-col>
               <v-col cols="12" md="6" class="d-flex flex-row align-center">
@@ -57,6 +59,7 @@
                   :hint="$t('external_trade_form.quote_asset.hint')"
                   :label="$t('external_trade_form.quote_asset.label')"
                   :error-messages="errorMessages['pair']"
+                  @focus="delete errorMessages['pair']"
                 />
               </v-col>
             </v-row>
@@ -67,6 +70,7 @@
               persistent-hint
               :hint="$t('external_trade_form.amount.hint')"
               :error-messages="errorMessages['amount']"
+              @focus="delete errorMessages['amount']"
             />
             <v-text-field
               v-model="rate"
@@ -76,6 +80,7 @@
               persistent-hint
               :hint="$t('external_trade_form.rate.hint')"
               :error-messages="errorMessages['rate']"
+              @focus="delete errorMessages['rate']"
             />
             <v-text-field
               v-model="fee"
@@ -84,6 +89,7 @@
               persistent-hint
               :hint="$t('external_trade_form.fee.hint')"
               :error-messages="errorMessages['fee']"
+              @focus="delete errorMessages['fee']"
             />
             <asset-select
               v-model="feeCurrency"
@@ -91,6 +97,7 @@
               data-cy="fee-currency"
               :rules="assetRules"
               :error-messages="errorMessages['feeCurrency']"
+              @focus="delete errorMessages['feeCurrency']"
             />
           </v-col>
         </v-row>
@@ -102,6 +109,7 @@
           persistent-hint
           :hint="$t('external_trade_form.link.hint')"
           :error-messages="errorMessages['link']"
+          @focus="delete errorMessages['link']"
         />
         <v-textarea
           v-model="notes"
@@ -112,6 +120,7 @@
           persistent-hint
           :hint="$t('external_trade_form.notes.hint')"
           :error-messages="errorMessages['notes']"
+          @focus="delete errorMessages['notes']"
         />
       </v-col>
     </v-row>

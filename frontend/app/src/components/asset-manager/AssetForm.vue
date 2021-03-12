@@ -168,7 +168,6 @@
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import RowActions from '@/components/helper/RowActions.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
@@ -182,8 +181,7 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
     Fragment,
     UnderlyingTokenManager,
     RowActions,
-    FileUpload,
-    BigDialog
+    FileUpload
   },
   methods: { ...mapActions('balances', ['fetchSupportedAssets']) }
 })

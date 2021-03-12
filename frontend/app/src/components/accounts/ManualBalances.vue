@@ -26,7 +26,7 @@
           :display="openDialog"
           :title="dialogTitle"
           :subtitle="dialogSubtitle"
-          :action-disabled="dialogDisabled || !valid"
+          :action-disabled="dialogDisabled || !valid || dialogLoading"
           :loading="dialogLoading"
           primary-action="Save"
           @confirm="save()"

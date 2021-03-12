@@ -172,10 +172,12 @@
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
       :primary-action="$t('closed_trades.dialog.save')"
+      :action-disabled="loading || !valid"
+      :loading="loading"
       @confirm="save()"
       @cancel="clearDialog()"
     >
-      <external-trade-form ref="form" :edit="editableItem" />
+      <external-trade-form ref="form" v-model="valid" :edit="editableItem" />
     </big-dialog>
     <confirm-dialog
       :display="tradeToDelete !== null"
@@ -288,6 +290,7 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   tradesTotal!: number;
   expanded = [];
   page: number = 1;
+  valid: boolean = false;
 
   deleteExternalTrade!: (tradeId: string) => Promise<boolean>;
   ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
