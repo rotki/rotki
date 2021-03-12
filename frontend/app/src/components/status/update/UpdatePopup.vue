@@ -21,14 +21,31 @@
         <v-icon v-else large color="primary">mdi-arrow-down-circle</v-icon>
       </v-col>
       <v-col class="text-body-1">
-        <span v-if="!downloadReady">
+        <span v-if="downloading">
+          {{ $t('update_popup.download_progress') }}
+        </span>
+        <span v-else-if="!downloadReady">
           {{ $t('update_popup.messages') }}
         </span>
         <span v-else>{{ $t('update_popup.downloaded') }}</span>
       </v-col>
     </v-row>
 
-    <template #action="{ attrs }">
+    <v-progress-linear
+      v-if="downloading"
+      :value="percentage"
+      class="mt-2"
+      color="primary"
+      height="25"
+    >
+      <template #default="{ value }">
+        <strong class="white--text">
+          {{ $t('update_popup.progress', { percentage: Math.ceil(value) }) }}
+        </strong>
+      </template>
+    </v-progress-linear>
+
+    <template v-if="!downloading" #action="{ attrs }">
       <v-btn text v-bind="attrs" @click="popup = false">
         {{ $t('update_popup.action.cancel') }}
       </v-btn>
@@ -59,10 +76,15 @@ import { assert } from '@/utils/assertions';
 export default class UpdatePopup extends Vue {
   popup: boolean = false;
   downloadReady: boolean = false;
+  downloading: boolean = false;
+  percentage: number = 0;
 
   async update() {
-    this.popup = false;
-    const downloaded = await this.interop.downloadUpdate();
+    this.downloading = true;
+    const downloaded = await this.interop.downloadUpdate(percentage => {
+      this.percentage = percentage;
+    });
+    this.downloading = false;
     if (downloaded) {
       this.downloadReady = true;
       this.popup = true;

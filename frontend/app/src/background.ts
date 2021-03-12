@@ -10,6 +10,7 @@ import {
   protocol,
   shell
 } from 'electron';
+import { ProgressInfo } from 'electron-builder';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { autoUpdater } from 'electron-updater';
 import windowStateKeeper from 'electron-window-state';
@@ -17,6 +18,7 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import { startHttp, stopHttp } from '@/electron-main/http';
 import {
   IPC_CHECK_FOR_UPDATES,
+  IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_INSTALL_UPDATE,
   IPC_RESTART_BACKEND
@@ -73,12 +75,19 @@ function setupUpdaterInterop() {
   });
 
   ipcMain.on(IPC_DOWNLOAD_UPDATE, async event => {
+    const progress = (progress: ProgressInfo) => {
+      event.sender.send(IPC_DOWNLOAD_PROGRESS, progress.percent);
+      win?.setProgressBar(progress.percent);
+    };
+    autoUpdater.on('download-progress', progress);
     try {
       await autoUpdater.downloadUpdate();
       event.sender.send(IPC_DOWNLOAD_UPDATE, true);
     } catch (e) {
       pyHandler.logToFile(e);
       event.sender.send(IPC_DOWNLOAD_UPDATE, false);
+    } finally {
+      autoUpdater.off('download-progress', progress);
     }
   });
 
