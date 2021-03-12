@@ -50,6 +50,7 @@ Some endpoint queries can accept the argument ``"async_query": true``. When that
   }
 
 The consumer of the API can later query the `ongoing backend task endpoint <#query-the-result-of-an-ongoing-backend-task>`_ with that id and obtain the outcome of the task when it's ready.
+Please remember that if you send the ``"async_query": true`` parameter as the body of a ``GET`` request you also have to set the content type header to ``Content-Type: application/json;charset=UTF-8``.
 
 Endpoints
 ***********
@@ -98,6 +99,7 @@ Handling user creation, sign-in, log-out and querying
       PUT /api/1/users HTTP/1.1
       Host: localhost:5042
       Accept: application/json, text/javascript
+      Content-Type: application/json;charset=UTF-8
 
       {
             "name": "john",
@@ -169,6 +171,7 @@ Handling user creation, sign-in, log-out and querying
 
       PATCH /api/1/users/john HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "action": "login"
@@ -236,6 +239,7 @@ Handling user creation, sign-in, log-out and querying
 
       PATCH /api/1/users/john HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "action": "logout"
@@ -272,6 +276,7 @@ Handling user creation, sign-in, log-out and querying
 
       PATCH /api/1/users/john HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "premium_api_key": "dadsfasdsd",
@@ -342,6 +347,7 @@ Handling user creation, sign-in, log-out and querying
 
       DELETE /api/1/premium/sync HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "action": "download"
@@ -381,6 +387,7 @@ Modify user password
 
       PATCH /api/1/users/john/password HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "current_password": "supersecret"
@@ -822,6 +829,7 @@ Query the current price of assets
 
       GET /api/1/assets/prices/current HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "assets": ["BTC", "ETH", "LINK", "USD", "EUR"],
@@ -880,6 +888,7 @@ Query the current exchange rate for select assets
 
       GET /api/1/exchange_rates HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"currencies": ["EUR", "CNY", "GBP", "BTC"]}
 
@@ -920,6 +929,7 @@ Query the historical price of assets
 
       POST /api/1/assets/prices/historical HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
        {
           "assets_timestamp": [["BTC", 1579543935], ["BTC", 1611166335], ["GBP", 1579543935], ["EUR", 1548007935]],
@@ -1007,6 +1017,7 @@ Setup or remove an exchange
 
       PUT /api/1/exchanges HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"name": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret"}
 
@@ -1043,6 +1054,7 @@ Setup or remove an exchange
 
       DELETE /api/1/exchanges HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"name": "kraken"}
 
@@ -1172,6 +1184,7 @@ Purging locally saved data for exchanges
 
       DELETE /api/1/exchanges/delete/binance HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {}
 
@@ -1203,6 +1216,7 @@ Purging locally saved ethereum transactions
 
       DELETE /api/1/blockchains/ETH/transactions HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {}
 
@@ -1235,6 +1249,7 @@ Purging locally saved data for ethereum modules
 
       DELETE /api/1/blockchains/ETH/modules/uniswap/data HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {}
 
@@ -1272,6 +1287,7 @@ Request creation of oracle price cache
 
       POST /api/1/oracles/cryptocompare/cache HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"from_asset": "ETH", "to_asset": "EUR", "purge_old": false, "async_query": true}
 
@@ -1309,6 +1325,7 @@ Delete an oracle price cache
 
       DELETE /api/1/oracles/cryptocompare/cache HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"from_asset": "ETH", "to_asset": "EUR"}
 
@@ -1347,6 +1364,7 @@ Get oracle price cache data
 
       GET /api/1/oracles/cryptocompare/cache HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"async_query": True}
 
@@ -1400,6 +1418,7 @@ Get supported oracles
 
       GET /api/1/oracles/ HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {}
 
@@ -1449,6 +1468,7 @@ Query supported ethereum modules
 
       DELETE /api/1/blockchains/ETH/modules HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {}
 
@@ -1497,6 +1517,7 @@ Querying ethereum transactions
 
       GET /api/1/blockchains/ETH/transactions/0xdAC17F958D2ee523a2206206994597C13D831ec7/ HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"from_timestamp": 1514764800, "to_timestamp": 1572080165, "only_cache": false}
 
@@ -1621,6 +1642,7 @@ Adding new tags
       PUT /api/1/tags/ HTTP/1.1
       Host: localhost:5042
       Accept: application/json, text/javascript
+      Content-Type: application/json;charset=UTF-8
 
       {
             "name": "not public",
@@ -1687,6 +1709,7 @@ Editing a tag
       PATCH /api/1/tags/ HTTP/1.1
       Host: localhost:5042
       Accept: application/json, text/javascript
+      Content-Type: application/json;charset=UTF-8
 
       {
             "name": "not public",
@@ -1753,6 +1776,7 @@ Deleting a tag
       DELETE /api/1/tags/ HTTP/1.1
       Host: localhost:5042
       Accept: application/json, text/javascript
+      Content-Type: application/json;charset=UTF-8
 
       {
             "name": "not public",
@@ -1914,6 +1938,7 @@ Querying all balances
 
       GET /api/1/balances/ HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"async_query": true}
 
@@ -2121,6 +2146,7 @@ Getting custom ethereum tokens
 
       GET /api/1/assets/ethereum HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807"}
 
@@ -2189,6 +2215,7 @@ Adding custom ethereum tokens
 
       PUT /api/1/assets/ethereum HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"token": {
           "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
@@ -2241,6 +2268,7 @@ Editing custom ethereum tokens
 
       PUT /api/1/assets/ethereum HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"token": {
           "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
@@ -2289,6 +2317,7 @@ Deleting custom ethereum tokens
 
       PUT /api/1/assets/ethereum HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807"}
 
@@ -2361,6 +2390,7 @@ Uploading custom asset icons
 
       PUT /api/1/assets/ACUSTOMICON/icon/large HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"file": "/path/to/file"}
 
@@ -2440,6 +2470,7 @@ Statistics for asset balance over time
 
       GET /api/1/statistics/balance/BTC HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"from_timestamp": 1514764800, "to_timestamp": 1572080165}
 
@@ -2498,6 +2529,7 @@ Statistics for value distribution
 
       GET /api/1/statistics/value_distribution/ HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"distribution_by": "location"}
 
@@ -2548,6 +2580,7 @@ Statistics for value distribution
 
       GET /api/1/statistics/value_distribution/ HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"distribution_by": "asset"}
 
@@ -2643,6 +2676,7 @@ Dealing with trades
 
       GET /api/1/trades HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "external", "only_cache": false}
 
@@ -2716,6 +2750,7 @@ Dealing with trades
 
       PUT /api/1/trades HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "timestamp": 1491606401,
@@ -2781,6 +2816,7 @@ Dealing with trades
 
       PATCH /api/1/trades HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "trade_id" : "dsadfasdsad",
@@ -2847,6 +2883,7 @@ Dealing with trades
 
       DELETE /api/1/trades HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       { "trade_id" : "dsadfasdsad"}
 
@@ -2886,6 +2923,7 @@ Querying asset movements
 
       GET /api/1/asset_movements HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "kraken", "only_cache": false}
 
@@ -2965,6 +3003,7 @@ Dealing with ledger actions
 
       GET /api/1/ledgeractions HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "blockchain"}
 
@@ -3030,6 +3069,7 @@ Dealing with ledger actions
 
       PUT /api/1/ledgeraction HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "action": {
@@ -3072,6 +3112,7 @@ Dealing with ledger actions
 
       PATCH /api/1/ledgeractions HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "identifier": 55
@@ -3131,6 +3172,7 @@ Dealing with ledger actions
 
       DELETE /api/1/ledgeractions HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"identifier" : 55}
 
@@ -3227,6 +3269,7 @@ Querying complete action history
 
       GET /api/1/history/ HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"from_timestamp": 1514764800, "to_timestamp": 1572080165, "async_query": true}
 
@@ -3369,6 +3412,7 @@ Export action history to CSV
 
       GET /api/1/history/export HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"directory_path": "/home/username/path/to/csvdir"}
 
@@ -6142,6 +6186,7 @@ Add address to query per protocol
 
       PUT /api/1/queried_addresses HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "module": "aave",
@@ -6183,6 +6228,7 @@ Remove an address to query per protocol
 
       DELETE /api/1/queried_addresses HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "module": "aave",
@@ -6232,6 +6278,7 @@ Adding blockchain accounts
 
       PUT /api/1/blockchains/ETH/ HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "accounts": [{
@@ -6341,6 +6388,7 @@ Adding BTC xpubs
 
       PUT /api/1/blockchains/BTC/xpub HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
@@ -6440,6 +6488,7 @@ Editing BTC xpubs
 
       PATCH /api/1/blockchains/BTC/xpub HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
@@ -6533,6 +6582,7 @@ Deleting BTC xpubs
 
       DELETE /api/1/blockchains/BTC/xpub HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
@@ -6619,6 +6669,7 @@ Editing blockchain account data
 
       PATCH /api/1/blockchains/ETH/ HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "accounts": [{
@@ -6685,6 +6736,7 @@ Removing blockchain accounts
 
       DELETE /api/1/blockchains/ETH HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"accounts": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"]}
 
@@ -6819,6 +6871,7 @@ Adding manually tracked balances
 
       PUT /api/1/balances/manual/ HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "balances": [{
@@ -6898,6 +6951,7 @@ Editing manually tracked balances
 
       PATCH /api/1/balances/manual/ HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "balances": [{
@@ -6973,6 +7027,7 @@ Deleting manually tracked balances
 
       DELETE /api/1/balances/manual HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"labels": ["My monero wallet", "My favorite wallet"]}
 
@@ -7093,6 +7148,7 @@ Adding new watcher
 
       PUT /api/1/watchers/ HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "watchers": [{
@@ -7150,6 +7206,7 @@ Editing watchers
 
       PATCH /api/1/watchers/ HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {
           "watchers": [{
@@ -7209,6 +7266,7 @@ Deleting watchers
 
       DELETE /api/1/watchers HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"watchers": ["6h3m7vRrLLOipwNmzhAVdo6FaGlr0XKGYLyjHqWa2KQ", "92Jm7vRrLLOipwNXzhAVdo6XaGAr0XKGYLyjHqWa2KA"]}
 
@@ -7282,6 +7340,7 @@ Dealing with ignored assets
 
       PUT /api/1/assets/ignored HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"assets": ["GNO"]}
 
@@ -7316,6 +7375,7 @@ Dealing with ignored assets
 
       DELETE /api/1/assets/ignored HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"assets": ["DAO"]}
 
@@ -7354,6 +7414,7 @@ Dealing with ignored actions
 
       GET /api/1/actions/ignored HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"action_type": "trade"}
 
@@ -7391,6 +7452,7 @@ Dealing with ignored actions
 
       PUT /api/1/actions/ignored HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"action_type": "ledger action", ""action_ids": ["Z231-XH23K"]}
 
@@ -7426,6 +7488,7 @@ Dealing with ignored actions
 
       DELETE /api/1/actions/ignored HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"action_type": "asset movement", "action_ids": ["2325"]}
 
@@ -7535,6 +7598,7 @@ Data imports
 
       PUT /api/1/import HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
       {"source": "cointracking.info", "filepath": "/path/to/data/file"}
 
