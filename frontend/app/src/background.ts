@@ -10,6 +10,7 @@ import {
   protocol,
   shell
 } from 'electron';
+import { ProgressInfo } from 'electron-builder';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import { autoUpdater } from 'electron-updater';
 import windowStateKeeper from 'electron-window-state';
@@ -17,6 +18,7 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import { startHttp, stopHttp } from '@/electron-main/http';
 import {
   IPC_CHECK_FOR_UPDATES,
+  IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_INSTALL_UPDATE,
   IPC_RESTART_BACKEND
@@ -46,7 +48,17 @@ async function select(
 
 function setupUpdaterInterop() {
   autoUpdater.autoDownload = false;
+  autoUpdater.logger = {
+    error: (message?: any) => pyHandler.logToFile(`(error): ${message}`),
+    info: (message?: any) => pyHandler.logToFile(`(info): ${message}`),
+    debug: (message: string) => pyHandler.logToFile(`(debug): ${message}`),
+    warn: (message?: any) => pyHandler.logToFile(`(warn): ${message}`)
+  };
   ipcMain.on(IPC_CHECK_FOR_UPDATES, async event => {
+    if (isDevelopment) {
+      console.log('Running in development skipping auto-updater check');
+      return;
+    }
     autoUpdater.once('update-available', () => {
       event.sender.send(IPC_CHECK_FOR_UPDATES, true);
     });
@@ -57,21 +69,36 @@ function setupUpdaterInterop() {
       await autoUpdater.checkForUpdates();
     } catch (e) {
       console.error(e);
+      pyHandler.logToFile(e);
       event.sender.send(IPC_CHECK_FOR_UPDATES, false);
     }
   });
 
   ipcMain.on(IPC_DOWNLOAD_UPDATE, async event => {
+    const progress = (progress: ProgressInfo) => {
+      event.sender.send(IPC_DOWNLOAD_PROGRESS, progress.percent);
+      win?.setProgressBar(progress.percent);
+    };
+    autoUpdater.on('download-progress', progress);
     try {
       await autoUpdater.downloadUpdate();
       event.sender.send(IPC_DOWNLOAD_UPDATE, true);
     } catch (e) {
+      pyHandler.logToFile(e);
       event.sender.send(IPC_DOWNLOAD_UPDATE, false);
+    } finally {
+      autoUpdater.off('download-progress', progress);
     }
   });
 
   ipcMain.on(IPC_INSTALL_UPDATE, async () => {
-    await autoUpdater.quitAndInstall();
+    try {
+      autoUpdater.quitAndInstall();
+      return true;
+    } catch (e) {
+      pyHandler.logToFile(e);
+      return e;
+    }
   });
 }
 

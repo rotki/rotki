@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <v-snackbar
     v-if="$interop.isPackaged"
     v-model="popup"
@@ -15,20 +15,52 @@
   >
     <v-row align="center">
       <v-col cols="auto">
-        <v-icon v-if="!downloadReady" large color="primary">
+        <v-icon v-if="error" large color="error">
+          mdi-alert-circle-outline
+        </v-icon>
+        <v-icon
+          v-else-if="!downloadReady && !downloading"
+          large
+          color="primary"
+        >
           mdi-arrow-up-bold-circle
         </v-icon>
-        <v-icon v-else large color="primary">mdi-arrow-down-circle</v-icon>
+        <v-icon v-else large color="primary">mdi-arrow-down-bold-circle</v-icon>
       </v-col>
       <v-col class="text-body-1">
-        <span v-if="!downloadReady">
+        <span v-if="error" class="error--text">
+          {{ error }}
+        </span>
+        <span v-else-if="downloading">
+          {{ $t('update_popup.download_progress') }}
+        </span>
+        <span v-else-if="!downloadReady">
           {{ $t('update_popup.messages') }}
         </span>
         <span v-else>{{ $t('update_popup.downloaded') }}</span>
       </v-col>
     </v-row>
 
-    <template #action="{ attrs }">
+    <v-progress-linear
+      v-if="downloading"
+      :value="percentage"
+      class="mt-2"
+      color="primary"
+      height="25"
+    >
+      <template #default="{ value }">
+        <strong class="white--text">
+          {{ $t('update_popup.progress', { percentage: Math.ceil(value) }) }}
+        </strong>
+      </template>
+    </v-progress-linear>
+
+    <template v-if="error" #action="{ attrs }">
+      <v-btn text v-bind="attrs" @click="dismiss">
+        {{ $t('update_popup.action.dismiss') }}
+      </v-btn>
+    </template>
+    <template v-else-if="!downloading" #action="{ attrs }">
       <v-btn text v-bind="attrs" @click="popup = false">
         {{ $t('update_popup.action.cancel') }}
       </v-btn>
@@ -57,20 +89,43 @@ import { assert } from '@/utils/assertions';
 export default class UpdatePopup extends Vue {
   popup: boolean = false;
   downloadReady: boolean = false;
+  downloading: boolean = false;
+  percentage: number = 0;
+  error: string = '';
+
+  dismiss() {
+    this.popup = false;
+    setTimeout(() => {
+      this.error = '';
+      this.downloading = false;
+      this.downloadReady = false;
+      this.percentage = 0;
+    }, 400);
+  }
 
   async update() {
-    this.popup = false;
-    const downloaded = await this.interop.downloadUpdate();
+    this.downloading = true;
+    const downloaded = await this.interop.downloadUpdate(percentage => {
+      this.percentage = percentage;
+    });
+    this.downloading = false;
     if (downloaded) {
       this.downloadReady = true;
       this.popup = true;
+    } else {
+      this.error = this.$t('update_popup.download_failed.message').toString();
     }
   }
 
   async install() {
     this.downloadReady = false;
     this.popup = false;
-    await this.interop.installUpdate();
+    const result = await this.interop.installUpdate();
+    if (typeof result !== 'boolean') {
+      this.error = this.$t('update_popup.install_failed.message', {
+        message: result
+      }).toString();
+    }
   }
 
   get interop(): Interop {

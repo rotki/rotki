@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import {
   Interop,
   IPC_CHECK_FOR_UPDATES,
+  IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_INSTALL_UPDATE,
   IPC_RESTART_BACKEND
@@ -50,6 +51,11 @@ contextBridge.exposeInMainWorld('interop', {
   metamaskImport: () => ipcAction('METAMASK_IMPORT'),
   restartBackend: level => ipcAction(IPC_RESTART_BACKEND, level),
   checkForUpdates: () => ipcAction(IPC_CHECK_FOR_UPDATES),
-  downloadUpdate: () => ipcAction(IPC_DOWNLOAD_UPDATE),
+  downloadUpdate: progress => {
+    ipcRenderer.on(IPC_DOWNLOAD_PROGRESS, (event, args) => {
+      progress(args);
+    });
+    return ipcAction(IPC_DOWNLOAD_UPDATE);
+  },
   installUpdate: () => ipcRenderer.send(IPC_INSTALL_UPDATE)
 } as Interop);
