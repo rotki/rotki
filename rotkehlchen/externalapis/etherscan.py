@@ -214,7 +214,7 @@ class Etherscan(ExternalServiceWithApiKey):
                     )
 
                 # sucessful proxy calls do not include a status
-                status = json_ret.get('status', 1)
+                status = int(json_ret.get('status', 1))
 
                 if status != 1:
                     if status == 0 and 'rate limit reached' in result:
