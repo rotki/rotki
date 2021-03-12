@@ -30,7 +30,6 @@ from rotkehlchen.exchanges.data_structures import (
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -107,7 +106,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     that some keys don't exist in a trade. The required fields are here:
     https://bittrex.github.io/api/v3#definition-Order
 
-    Throws:
+    May raise:
         - UnknownAsset/UnsupportedAsset due to bittrex_pair_to_world()
         - DeserializationError due to unexpected format of dict entries
         - KeyError due to dict entries missing an expected entry
@@ -121,7 +120,10 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     if 'limit' in bittrex_trade:
         rate = deserialize_price(bittrex_trade['limit'])
     else:
-        rate = Price(FVal(bittrex_trade['proceeds']) / FVal(bittrex_trade['fillQuantity']))
+        rate = Price(
+            deserialize_asset_amount(bittrex_trade['proceeds']) /
+            deserialize_asset_amount(bittrex_trade['fillQuantity']),
+        )
     order_type = deserialize_trade_type(bittrex_trade['direction'])
     fee = deserialize_fee(bittrex_trade['commission'])
     pair = bittrex_pair_to_world(bittrex_trade['marketSymbol'])
@@ -304,6 +306,7 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         for entry in resp:
             try:
                 asset = asset_from_bittrex(entry['currencySymbol'])
+                amount = deserialize_asset_amount(entry['total'])
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found unsupported bittrex asset {e.asset_name}. '
@@ -316,10 +319,16 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     f' Ignoring its balance query.',
                 )
                 continue
-            except DeserializationError:
-                self.msg_aggregator.add_error(
-                    f'Found bittrex asset with non-string type {type(entry["Currency"])}'
-                    f' Ignoring its balance query.',
+            except DeserializationError as e:
+                msg = (
+                    f'Failed to parse bittrex balance entry due to {str(e)}.'
+                    f' Ignoring its balance query. Check logs for more details'
+                )
+                self.msg_aggregator.add_error(msg)
+                log.error(
+                    'Error processing a bittrex balance entry',
+                    entry=entry,
+                    error=msg,
                 )
                 continue
 
@@ -336,7 +345,6 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-            amount = FVal(entry['total'])
             usd_value = amount * usd_price
             returned_balances[asset] = Balance(
                 amount=amount,

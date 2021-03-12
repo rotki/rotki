@@ -458,10 +458,12 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             try:
                 # force string https://github.com/rotki/rotki/issues/2342
                 asset_symbol = str(entry['asset'])
-                free = entry['free']
-                locked = entry['locked']
+                free = deserialize_asset_amount(entry['free'])
+                locked = deserialize_asset_amount(entry['locked'])
             except KeyError as e:
                 raise RemoteError(f'Binance spot balance asset entry did not contain key {str(e)}') from e  # noqa: E501
+            except DeserializationError as e:
+                raise RemoteError('Failed to deserialize an amount from binance spot balance asset entry') from e  # noqa: E501
 
             if len(asset_symbol) >= 5 and asset_symbol.startswith('LD'):
                 # Some lending coins also appear to start with the LD prefix. Ignore them
@@ -522,7 +524,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         for entry in positions:
             try:
-                amount = FVal(entry['amount'])
+                amount = deserialize_asset_amount(entry['amount'])
                 if amount == ZERO:
                     continue
 
@@ -573,7 +575,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         try:
             cross_collaterals = futures_response['crossCollaterals']
             for entry in cross_collaterals:
-                amount = FVal(entry['locked'])
+                amount = deserialize_asset_amount(entry['locked'])
                 if amount == ZERO:
                     continue
 
@@ -636,7 +638,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         try:
             for entry in response:
-                amount = FVal(entry['balance'])
+                amount = deserialize_asset_amount(entry['balance'])
                 if amount == ZERO:
                     continue
 

@@ -173,12 +173,14 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         assets_balance: Dict[Asset, Balance] = {}
         for entry, amount in response_dict.items():
-            amount = FVal(amount)
-            if not entry.endswith('_balance') or amount == ZERO:
+            if not entry.endswith('_balance'):
                 continue
 
             symbol = entry.split('_')[0]  # If no `_`, defaults to entry
             try:
+                amount = deserialize_asset_amount(amount)
+                if amount == ZERO:
+                    continue
                 asset = asset_from_bitstamp(symbol)
             except DeserializationError as e:
                 log.error(

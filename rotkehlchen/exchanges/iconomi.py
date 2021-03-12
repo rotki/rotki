@@ -1,8 +1,8 @@
 import base64
 import hashlib
 import hmac
-import logging
 import json
+import logging
 import time
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
@@ -14,7 +14,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import ICONOMI_TO_WORLD, UNSUPPORTED_ICONOMI_ASSETS
-from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Location,
@@ -27,7 +27,8 @@ from rotkehlchen.exchanges.data_structures import (
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiKey, ApiSecret, FVal, Timestamp
+from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_fee
+from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -56,26 +57,33 @@ def iconomi_pair_to_world(pair: str) -> Tuple[Asset, Asset]:
 
 
 def trade_from_iconomi(raw_trade: Dict) -> Trade:
+    """Turn an iconomi trade entry to our own trade format
+
+    May raise:
+    - UnknownAsset
+    - DeserializationError
+    - KeyError
+    """
 
     timestamp = raw_trade['timestamp']
 
     if raw_trade['type'] == 'buy_asset':
         trade_type = TradeType.BUY
         tx_asset = Asset(raw_trade['target_ticker'])
-        tx_amount = raw_trade['target_amount']
+        tx_amount = deserialize_asset_amount(raw_trade['target_amount'])
         native_asset = Asset(raw_trade['source_ticker'])
-        native_amount = raw_trade['source_amount']
+        native_amount = deserialize_asset_amount(raw_trade['source_amount'])
     elif raw_trade['type'] == 'sell_asset':
         trade_type = TradeType.SELL
         tx_asset = Asset(raw_trade['source_ticker'])
-        tx_amount = raw_trade['source_amount']
-        native_amount = raw_trade['target_amount']
+        tx_amount = deserialize_asset_amount(raw_trade['source_amount'])
+        native_amount = deserialize_asset_amount(raw_trade['target_amount'])
         native_asset = Asset(raw_trade['target_ticker'])
 
     pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')
     amount = tx_amount
     rate = Price(native_amount / tx_amount)
-    fee_amount = raw_trade['fee_amount']
+    fee_amount = deserialize_fee(raw_trade['fee_amount'])
     fee_asset = Asset(raw_trade['fee_ticker'])
 
     return Trade(
@@ -230,7 +238,14 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                amount = FVal(balance_info['balance'])
+                try:
+                    amount = deserialize_asset_amount(balance_info['balance'])
+                except DeserializationError as e:
+                    self.msg_aggregator.add_warning(
+                        f'Skipping iconomi balance entry {balance_info} due to {str(e)}',
+                    )
+                    continue
+
                 assets_balance[asset] = Balance(
                     amount=amount,
                     usd_value=amount * usd_price,
@@ -241,6 +256,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     f'Found {asset_tag} ICONOMI asset {ticker}. '
                     f' Ignoring its balance query.',
                 )
+                continue
 
         for balance_info in resp_info['daaList']:
             ticker = balance_info['ticker']
@@ -282,8 +298,23 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if tx['type'] in ('buy_asset', 'sell_asset'):
                 try:
                     trades.append(trade_from_iconomi(tx))
-                except UnknownAsset:
-                    log.warning(f'Ignoring transaction {tx} because of unsupported asset')
+                except UnknownAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Ignoring an iconomi transaction because of unsupported '
+                        f'asset {str(e)}')
+                except (DeserializationError, KeyError) as e:
+                    msg = str(e)
+                    if isinstance(e, KeyError):
+                        msg = f'Missing key entry for {msg}.'
+                    self.msg_aggregator.add_error(
+                        'Error processing an iconomi transaction. Check logs '
+                        'for details. Ignoring it.',
+                    )
+                    log.error(
+                        'Error processing an iconomi transaction',
+                        error=msg,
+                        trade=tx,
+                    )
 
         return trades
 

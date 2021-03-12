@@ -1,8 +1,8 @@
 import hashlib
 import hmac
+import json
 import logging
 import time
-import json
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
@@ -25,11 +25,12 @@ from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalan
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
+    deserialize_asset_amount,
     deserialize_fee,
     deserialize_timestamp_from_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, FVal, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp
 
@@ -75,6 +76,13 @@ def bitcoinde_pair_to_world(pair: str) -> Tuple[Asset, Asset]:
 
 
 def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
+    """Convert bitcoin.de raw data to a trade
+
+    May raise:
+    - DeserializationError
+    - UnknownAsset
+    - KeyError
+    """
 
     try:
         timestamp = deserialize_timestamp_from_date(
@@ -91,8 +99,8 @@ def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
         )
 
     trade_type = deserialize_trade_type(raw_trade['type'])
-    tx_amount = AssetAmount(FVal(raw_trade['amount_currency_to_trade']))
-    native_amount = FVal(raw_trade['volume_currency_to_pay'])
+    tx_amount = deserialize_asset_amount(raw_trade['amount_currency_to_trade'])
+    native_amount = deserialize_asset_amount(raw_trade['volume_currency_to_pay'])
     tx_asset, native_asset = bitcoinde_pair_to_world(raw_trade['trading_pair'])
     pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')
     amount = tx_amount
@@ -248,7 +256,15 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-            amount = FVal(balance['total_amount'])
+            try:
+                amount = deserialize_asset_amount(balance['total_amount'])
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Error processing Bitcoin.de {asset} balance entry due to inability to '
+                    f'deserialize the amount due to {str(e)}. Skipping balance entry',
+                )
+                continue
+
             assets_balance[asset] = Balance(
                 amount=amount,
                 usd_value=amount * usd_price,

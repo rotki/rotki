@@ -54,7 +54,7 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     https://developers.coinbase.com/api/v2?python#buys
     If the coinbase transaction is not a trade related transaction returns None
 
-    Throws:
+    Mary raise:
         - UnknownAsset due to Asset instantiation
         - DeserializationError due to unexpected format of dict entries
         - KeyError due to dict entires missing an expected entry

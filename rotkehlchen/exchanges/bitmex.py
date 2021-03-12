@@ -16,12 +16,12 @@ from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
     deserialize_fee,
+    deserialize_asset_amount,
 )
 from rotkehlchen.typing import (
     ApiKey,
@@ -57,9 +57,13 @@ def bitmex_to_world(symbol: str) -> Asset:
 def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
     """Turn a bitmex trade returned from bitmex trade history to our common trade
     history format. This only returns margin positions as bitmex only deals in
-    margin trading"""
+    margin trading. May raise:
+
+    - KeyError
+    - DeserializationError
+    """
     close_time = iso8601ts_to_timestamp(bitmex_trade['transactTime'])
-    profit_loss = AssetAmount(satoshis_to_btc(FVal(bitmex_trade['amount'])))
+    profit_loss = AssetAmount(satoshis_to_btc(deserialize_asset_amount(bitmex_trade['amount'])))
     currency = bitmex_to_world(bitmex_trade['currency'])
     fee = deserialize_fee(bitmex_trade['fee'])
     notes = bitmex_trade['address']
@@ -230,7 +234,13 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return None, msg
 
         # result is in satoshis
-        amount = satoshis_to_btc(FVal(resp['amount']))
+        try:
+            amount = satoshis_to_btc(deserialize_asset_amount(resp['amount']))
+        except DeserializationError as e:
+            msg = f'Bitmex API request failed. Failed to deserialized amount due to {str(e)}'
+            log.error(msg)
+            return None, msg
+
         usd_value = amount * usd_price
         returned_balances[A_BTC] = Balance(
             amount=amount,

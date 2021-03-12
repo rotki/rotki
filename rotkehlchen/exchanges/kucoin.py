@@ -40,7 +40,6 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -453,12 +452,12 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         assets_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
         for raw_result in accounts_data:
             try:
-                amount = FVal(raw_result['balance'])
+                amount = deserialize_asset_amount(raw_result['balance'])
                 if amount == ZERO:
                     continue
 
                 asset_symbol = raw_result['currency']
-            except (KeyError, ValueError) as e:
+            except (KeyError, DeserializationError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key in account: {msg}.'
