@@ -63,6 +63,9 @@
     "price": "Price",
     "value": "Value"
   },
+  "back_button": {
+    "tooltip": "Navigate back to the previous page."
+  },
   "balancer": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "premium": "Balancer feature "

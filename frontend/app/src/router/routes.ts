@@ -15,5 +15,7 @@ export const Routes = {
   ASSETS: '/assets/:identifier',
   DEFI_DEPOSITS_LIQUIDITY_UNISWAP: '/defi/deposits/liquidity/uniswap',
   DEFI_DEPOSITS_LIQUIDITY_BALANCER: '/defi/deposits/liquidity/balancer',
-  ASSET_MANAGER: '/asset-manager'
+  ASSET_MANAGER: '/asset-manager',
+  DASHBOARD: '/dashboard',
+  ROOT: '/'
 };
