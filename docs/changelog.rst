@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
 * :feature:`-` Added support for the following tokens:
 
