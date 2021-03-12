@@ -174,9 +174,9 @@ Handling user creation, sign-in, log-out and querying
       Content-Type: application/json;charset=UTF-8
 
       {
-          "action": "login"
+          "action": "login",
           "password": "supersecurepassword",
-          "sync_approval": "unknown",
+          "sync_approval": "unknown"
       }
 
    :reqjson string action: The action to perform. Can only be one of ``"login"`` or ``"logout"`` and for the login case has to be ``"login"``
@@ -390,8 +390,8 @@ Modify user password
       Content-Type: application/json;charset=UTF-8
 
       {
-          "current_password": "supersecret"
-          "new_password": "evenmoresecret",
+          "current_password": "supersecret",
+          "new_password": "evenmoresecret"
       }
 
    **Example Response**:
@@ -1366,7 +1366,7 @@ Get oracle price cache data
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": True}
+      {"async_query": true}
 
    :reqjson string name: The name of the oracle for which to create the cache. Valid values are ``"cryptocompare"`` and ``"coingecko"``.
 
@@ -1646,7 +1646,7 @@ Adding new tags
 
       {
             "name": "not public",
-            "description": "Accounts that are not publically associated with me",
+            "description": "Accounts that are not publicly associated with me",
             "background_color": "f8f8f8",
             "foreground_color": "f1f1f1"
       }
@@ -1715,7 +1715,7 @@ Editing a tag
             "name": "not public",
             "description": "Accounts that are private",
             "background_color": "f9f9f9",
-            "foreground_color": "f2f2f2",
+            "foreground_color": "f2f2f2"
       }
 
    :reqjson string name: The name of the already existing tag. The name lookup will be a case-insensitive check.
@@ -1779,7 +1779,7 @@ Deleting a tag
       Content-Type: application/json;charset=UTF-8
 
       {
-            "name": "not public",
+            "name": "not public"
       }
 
    :reqjson string name: The name of the existing tag to remove. The name lookup will be a case-insensitive check.
@@ -2003,7 +2003,7 @@ Querying all balances
       }
 
    :resjson object result: The result object has two main subkeys. Assets and liabilities. Both assets and liabilities value is another object with the following keys. ``"amount"`` is the amount owned in total for that asset or owed in total as a liablity. ``"percentage_of_net_value"`` is the percentage the user's net worth that this asset or liability represents. And finally ``"usd_value"`` is the total $ value this asset/liability is worth as of this query. There is also a ``"location"`` key in the result. In there are the same results as the rest but divided by location as can be seen by the example response above.
-   :statuscode 200: Balances succesfully queried.
+   :statuscode 200: Balances successfully queried.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
@@ -2179,7 +2179,7 @@ Getting custom ethereum tokens
           }, {
               "address": "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
               "decimals": 4
-          }]
+          }],
           "message": ""
       }
 
@@ -2226,11 +2226,11 @@ Adding custom ethereum tokens
           "swapped_for": "SCT",
           "coingecko": "foo-coin",
           "cryptocompare": "FOO",
-	  "protocol": "uniswap"
+          "protocol": "uniswap",
           "underlying_tokens": [
               {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "weight": "15.45"},
-	      {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "weight": "35.65"},
-	      {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "weight": "39"}
+	          {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "weight": "35.65"},
+	          {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "weight": "39"}
          ]
        }}
 
@@ -2270,18 +2270,19 @@ Editing custom ethereum tokens
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"token": {
-          "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
-          "decimals": 5,
-          "name": "foo",
-          "symbol": "FTK",
-          "started": 1614636432,
-          "swapped_for": "SCP,
-          "coingecko": "foo-coin",
-          "cryptocompare": "FOO",
-          "protocol": "aave",
-          "underlying_tokens": None
-       }}
+      {
+          "token": {
+              "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
+              "decimals": 5,
+              "name": "foo",
+              "symbol": "FTK",
+              "started": 1614636432,
+              "swapped_for": "SCP",
+              "coingecko": "foo-coin",
+              "cryptocompare": "FOO",
+              "protocol": "aave"
+         }
+      }
 
    :reqjson object token: Token to edit. Token is edited by address. The old token is completely replaced by all new entries passed by this endpoint. For details on the possible fields see `here <custom_ethereum_token_>`_.
 
@@ -2761,7 +2762,7 @@ Dealing with trades
           "rate": "8422.1",
           "fee": "0.55",
           "fee_currency": "USD",
-          "link": "Optional unique trade identifier"
+          "link": "Optional unique trade identifier",
           "notes": "Optional notes"
       }
 
@@ -2828,7 +2829,7 @@ Dealing with trades
           "rate": "8422.1",
           "fee": "0.55",
           "fee_currency": "USD",
-          "link": "Optional unique trade identifier"
+          "link": "Optional unique trade identifier",
           "notes": "Optional notes"
       }
 
@@ -3074,7 +3075,7 @@ Dealing with ledger actions
       {
           "action": {
               "timestamp": 1491606401,
-              "action_type": "income"
+              "action_type": "income",
               "location": "external",
               "amount": "1",
               "asset": "ETH",
@@ -3115,9 +3116,9 @@ Dealing with ledger actions
       Content-Type: application/json;charset=UTF-8
 
       {
-          "identifier": 55
+          "identifier": 55,
           "timestamp": 1491606401,
-          "action_type": "income"
+          "action_type": "income",
           "location": "external",
           "amount": "2",
           "asset": "ETH",
@@ -6190,7 +6191,7 @@ Add address to query per protocol
 
       {
           "module": "aave",
-          "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b
+          "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"
       }
 
    **Example Response**:
@@ -6232,7 +6233,7 @@ Remove an address to query per protocol
 
       {
           "module": "aave",
-          "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b
+          "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"
       }
 
    **Example Response**:
@@ -6286,7 +6287,7 @@ Adding blockchain accounts
                   "label": "my new metamask",
                   "tags": ["public", "metamask"]
               }, {
-                  "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b
+                  "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"
               }]
       }
 
@@ -6586,7 +6587,7 @@ Deleting BTC xpubs
 
       {
           "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
-          "derivation_path": "m/0/0",
+          "derivation_path": "m/0/0"
       }
 
    :reqjson string xpub: The extended public key to remove
@@ -6672,15 +6673,22 @@ Editing blockchain account data
       Content-Type: application/json;charset=UTF-8
 
       {
-          "accounts": [{
-              "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
-              "label": "my new metamask",
-              "tags": ["public", metamask"]
-              }, {
-              "address": "johndoe.eth",
-              "label": "my hardware wallet"
-              }]
+          "accounts": [
+              {
+                  "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+                  "label": "my new metamask",
+                  "tags": [
+                      "public",
+                      "metamask"
+                  ]
+              },
+              {
+                  "address": "johndoe.eth",
+                  "label": "my hardware wallet"
+              }
+          ]
       }
+
 
    :reqjson list[object] accounts: A list of account data to edit for the given blockchain
    :reqjsonarr string address: The address of the account to edit. Can either be a hexadecimal address or an ENS name.
@@ -6961,7 +6969,7 @@ Editing manually tracked balances
                   "location": "blockchain"
                   },{
                   "asset": "ETH",
-                  "label" "My favorite wallet",
+                  "label": "My favorite wallet",
                   "amount": "10",
                   "tags": [],
                   "location": "kraken"
@@ -7157,7 +7165,7 @@ Adding new watcher
             }, {
              "type": "makervault_collateralization_ratio",
              "args": {"ratio": "185.55", "op": "lt","vault_id": "456"}
-            }],
+            }]
       }
 
    :reqjson list[object] watchers: A list of watchers to add as defined in the `above section <watchers_schema_section>`__ but without an identifier. The identifier is created server-side and returned in the response.
@@ -7214,7 +7222,7 @@ Editing watchers
             "type": "makervault_collateralization_ratio",
             "args": {"ratio": "200.5", "op": "gt", "vault_id": "24"}
             }, {
-             "identifier: "7a4m7vRrLLOipwNmzhAVdo6FaGgr0XKGYLyjHqWa2KQ=",
+             "identifier": "7a4m7vRrLLOipwNmzhAVdo6FaGgr0XKGYLyjHqWa2KQ=",
              "type": "makervault_collateralization_ratio",
              "args": {"ratio": "185.55", "op": "lt","vault_id": "456"}
             }]
@@ -7454,7 +7462,7 @@ Dealing with ignored actions
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"action_type": "ledger action", ""action_ids": ["Z231-XH23K"]}
+      {"action_type": "ledger action", "action_ids": ["Z231-XH23K"]}
 
    :reqjson str action_type: A type of actions whose ignored ids to add. Defined above.
    :reqjson list action_ids: A list of action identifiers to add to the ignored actions for accounting
