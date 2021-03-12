@@ -676,14 +676,11 @@ def deserialize_hex_color_code(symbol: str) -> HexColorCode:
 
 
 def deserialize_ethereum_address(symbol: str) -> ChecksumEthAddress:
-    """This is identical to string_to_ethereum_address()
+    """Deserialize and address and check that the symbol is an ethereum
+    address.
 
-    TODO:
-    But it's wrong. We should differentiate between those two functions.
-    That one should only be used for typing purposes while this one here
-    should be used to properly deserialize and check that symbol is indeed
-    an ethereum address and is always checksummed. So also external input sanitization.
-    https://github.com/rotki/rotki/issues/2334
+    This function can raise DeserializationError if the address is not
+    valid
     """
     try:
         return to_checksum_address(symbol)
