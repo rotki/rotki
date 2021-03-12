@@ -18,10 +18,14 @@
         <v-icon v-if="error" large color="error">
           mdi-alert-circle-outline
         </v-icon>
-        <v-icon v-else-if="!downloadReady" large color="primary">
+        <v-icon
+          v-else-if="!downloadReady && !downloading"
+          large
+          color="primary"
+        >
           mdi-arrow-up-bold-circle
         </v-icon>
-        <v-icon v-else large color="primary">mdi-arrow-down-circle</v-icon>
+        <v-icon v-else large color="primary">mdi-arrow-down-bold-circle</v-icon>
       </v-col>
       <v-col class="text-body-1">
         <span v-if="error" class="error--text">
