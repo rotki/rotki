@@ -2,8 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set, Tuple
 
-from eth_utils.address import to_checksum_address
-
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.graph import Graph
@@ -22,6 +20,7 @@ from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -247,7 +246,7 @@ def _parse_atoken_balance_history(
             )
             continue
 
-        reserve_address = to_checksum_address('0x' + pairs[2])
+        reserve_address = deserialize_ethereum_address('0x' + pairs[2])
         tx_hash = '0x' + pairs[3]
         asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
         if asset is None:
@@ -273,7 +272,7 @@ def _get_reserve_asset_and_decimals(
         entry: Dict[str, Any],
         reserve_key: str,
 ) -> Optional[Tuple[Asset, int]]:
-    reserve_address = to_checksum_address(entry[reserve_key]['id'])
+    reserve_address = deserialize_ethereum_address(entry[reserve_key]['id'])
     asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
     if asset is None:
         log.error(
@@ -341,7 +340,7 @@ class AaveGraphInquirer(AaveInquirer):
         for entry in query['userReserves']:
             reserve = entry['reserve']
             result.append(AaveUserReserve(
-                address=to_checksum_address(reserve['id']),
+                address=deserialize_ethereum_address(reserve['id']),
                 symbol=reserve['symbol'],
             ))
 
@@ -365,7 +364,7 @@ class AaveGraphInquirer(AaveInquirer):
                     f'Expected to find 2 hashes in graph\'s reserve history id '
                     f'but the encountered id does not match: {reserve["id"]}. Skipping entry...',
                 )
-            reserve_address = to_checksum_address('0x' + pairs[2])
+            reserve_address = deserialize_ethereum_address('0x' + pairs[2])
             atoken_history = _parse_atoken_balance_history(
                 history=reserve['aTokenBalanceHistory'],
                 from_ts=from_ts,

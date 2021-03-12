@@ -1,7 +1,6 @@
 import logging
 from typing import Any, Dict, List, Tuple
 
-from eth_utils import to_checksum_address
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
@@ -78,12 +77,7 @@ def deserialize_bpt_event(
         except KeyError as e:
             raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-        try:
-            token_address = to_checksum_address(raw_token_address)
-        except ValueError as e:
-            raise DeserializationError(
-                f'Invalid ethereum address: {raw_token_address} in {token_symbol} token.address.',  # noqa: E501
-            ) from e
+        token_address = deserialize_ethereum_address(raw_token_address)
 
         token = get_ethereum_token(
             symbol=token_symbol,
@@ -185,12 +179,7 @@ def deserialize_pool_share(
         except KeyError as e:
             raise DeserializationError(f'Missing key: {str(e)}.') from e
 
-        try:
-            token_address = to_checksum_address(raw_token_address)
-        except ValueError as e:
-            raise DeserializationError(
-                f'Invalid ethereum address: {raw_token_address} in {token_symbol} token.address.',  # noqa: E501
-            ) from e
+        token_address = deserialize_ethereum_address(raw_token_address)
 
         token = get_ethereum_token(
             symbol=token_symbol,

@@ -4,8 +4,6 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
-from eth_utils.address import to_checksum_address
-
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
@@ -19,6 +17,7 @@ from rotkehlchen.chain.ethereum.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.ethereum.utils import multicall_specific
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.greenlets import GreenletManager
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks, ts_now
@@ -65,7 +64,7 @@ def pairs_from_ethereum(ethereum: EthereumManager) -> Dict[str, Any]:
     for idx, chunk in enumerate(chunks):
         print(f'Querying univ2 pairs chunk {idx + 1} / {len(chunks)}')
         result = multicall_specific(ethereum, univ2factory, 'allPairs', chunk)
-        pairs.extend([to_checksum_address(x[0]) for x in result])
+        pairs.extend([deserialize_ethereum_address(x[0]) for x in result])
 
     return pairs
 
@@ -102,15 +101,15 @@ def pairs_and_token_details_from_graph() -> Dict[str, Any]:
         result = graph.query(querystr, param_types=param_types, param_values=param_values)
         for entry in result['pairs']:
             contracts.append({
-                'address': to_checksum_address(entry['id']),
+                'address': deserialize_ethereum_address(entry['id']),
                 'token0': {
-                    'address': to_checksum_address(entry['token0']['id']),
+                    'address': deserialize_ethereum_address(entry['token0']['id']),
                     'name': entry['token0']['name'],
                     'symbol': entry['token0']['symbol'],
                     'decimals': int(entry['token0']['decimals']),
                 },
                 'token1': {
-                    'address': to_checksum_address(entry['token1']['id']),
+                    'address': deserialize_ethereum_address(entry['token1']['id']),
                     'name': entry['token1']['name'],
                     'symbol': entry['token1']['symbol'],
                     'decimals': int(entry['token1']['decimals']),

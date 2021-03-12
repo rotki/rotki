@@ -3,7 +3,6 @@ from collections import defaultdict
 from enum import Enum
 from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Optional
 
-from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures import (
@@ -80,6 +79,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
@@ -650,7 +650,7 @@ class MakerdaoVaults(MakerdaoCommon):
 
         vaults = []
         for idx, identifier in enumerate(result[0]):
-            urn = to_checksum_address(result[1][idx])
+            urn = deserialize_ethereum_address(result[1][idx])
             vault = self._query_vault_data(
                 identifier=identifier,
                 owner=user_address,

@@ -4,14 +4,17 @@ from typing import Any, Dict, List, Optional, Union, overload
 
 import gevent
 import requests
-from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
 
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import ConversionError, DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_timestamp, deserialize_int_from_str
+from rotkehlchen.serialization.deserialize import (
+    deserialize_ethereum_address,
+    deserialize_int_from_str,
+    deserialize_timestamp,
+)
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import convert_to_int, hex_or_bytes_to_int, hexstring_to_bytes
@@ -65,8 +68,8 @@ def deserialize_transaction_from_etherscan(
             timestamp=timestamp,
             block_number=block_number,
             tx_hash=tx_hash,
-            from_address=to_checksum_address(data['from']),
-            to_address=to_checksum_address(data['to']) if data['to'] != '' else None,
+            from_address=deserialize_ethereum_address(data['from']),
+            to_address=deserialize_ethereum_address(data['to']) if data['to'] != '' else None,
             value=read_integer(data, 'value'),
             gas=read_integer(data, 'gas'),
             gas_price=gas_price,

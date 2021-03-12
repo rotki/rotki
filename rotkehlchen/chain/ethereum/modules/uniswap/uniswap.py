@@ -3,7 +3,6 @@ from collections import defaultdict
 from datetime import datetime, time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
-from eth_utils import to_checksum_address
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures import Balance
@@ -16,6 +15,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import (
     AssetAmount,
@@ -232,10 +232,10 @@ class Uniswap(EthereumModule):
             result_data = result['liquidityPositions']
 
             for lp in result_data:
-                user_address = to_checksum_address(lp['user']['id'])
+                user_address = deserialize_ethereum_address(lp['user']['id'])
                 user_lp_balance = FVal(lp['liquidityTokenBalance'])
                 lp_pair = lp['pair']
-                lp_address = to_checksum_address(lp_pair['id'])
+                lp_address = deserialize_ethereum_address(lp_pair['id'])
                 lp_total_supply = FVal(lp_pair['totalSupply'])
 
                 # Insert LP tokens reserves within tokens dicts
@@ -250,7 +250,7 @@ class Uniswap(EthereumModule):
                     # Get the token <EthereumToken> or <UnknownEthereumToken>
                     asset = get_ethereum_token(
                         symbol=token['symbol'],
-                        ethereum_address=to_checksum_address(token['id']),
+                        ethereum_address=deserialize_ethereum_address(token['id']),
                         name=token['name'],
                         decimals=int(token['decimals']),
                     )
@@ -578,13 +578,13 @@ class Uniswap(EthereumModule):
                 token1_ = event['pair']['token1']
                 token0 = get_ethereum_token(
                     symbol=token0_['symbol'],
-                    ethereum_address=to_checksum_address(token0_['id']),
+                    ethereum_address=deserialize_ethereum_address(token0_['id']),
                     name=token0_['name'],
                     decimals=token0_['decimals'],
                 )
                 token1 = get_ethereum_token(
                     symbol=token1_['symbol'],
-                    ethereum_address=to_checksum_address(token1_['id']),
+                    ethereum_address=deserialize_ethereum_address(token1_['id']),
                     name=token1_['name'],
                     decimals=int(token1_['decimals']),
                 )
@@ -594,7 +594,7 @@ class Uniswap(EthereumModule):
                     address=address,
                     timestamp=Timestamp(int(event['timestamp'])),
                     event_type=event_type,
-                    pool_address=to_checksum_address(event['pair']['id']),
+                    pool_address=deserialize_ethereum_address(event['pair']['id']),
                     token0=token0,
                     token1=token1,
                     amount0=AssetAmount(FVal(event['amount0'])),
@@ -808,13 +808,13 @@ class Uniswap(EthereumModule):
                     swap_token1 = swap['pair']['token1']
                     token0 = get_ethereum_token(
                         symbol=swap_token0['symbol'],
-                        ethereum_address=to_checksum_address(swap_token0['id']),
+                        ethereum_address=deserialize_ethereum_address(swap_token0['id']),
                         name=swap_token0['name'],
                         decimals=swap_token0['decimals'],
                     )
                     token1 = get_ethereum_token(
                         symbol=swap_token1['symbol'],
-                        ethereum_address=to_checksum_address(swap_token1['id']),
+                        ethereum_address=deserialize_ethereum_address(swap_token1['id']),
                         name=swap_token1['name'],
                         decimals=int(swap_token1['decimals']),
                     )
@@ -826,8 +826,8 @@ class Uniswap(EthereumModule):
                         tx_hash=swap['id'].split('-')[0],
                         log_index=int(swap['logIndex']),
                         address=address,
-                        from_address=to_checksum_address(swap['sender']),
-                        to_address=to_checksum_address(swap['to']),
+                        from_address=deserialize_ethereum_address(swap['sender']),
+                        to_address=deserialize_ethereum_address(swap['to']),
                         timestamp=Timestamp(int(timestamp)),
                         location=Location.UNISWAP,
                         token0=token0,
@@ -899,7 +899,7 @@ class Uniswap(EthereumModule):
             result_data = result['tokenDayDatas']
 
             for tdd in result_data:
-                token_address = to_checksum_address(tdd['token']['id'])
+                token_address = deserialize_ethereum_address(tdd['token']['id'])
                 asset_price[token_address] = Price(FVal(tdd['priceUSD']))
 
             # Check whether an extra request is needed

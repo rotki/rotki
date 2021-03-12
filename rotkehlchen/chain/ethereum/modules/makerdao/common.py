@@ -1,9 +1,8 @@
 from typing import TYPE_CHECKING, Dict, Optional
 
-from eth_utils.address import to_checksum_address
-
 from rotkehlchen.constants.ethereum import MAKERDAO_PROXY_REGISTRY
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
@@ -52,10 +51,11 @@ class MakerdaoCommon(EthereumModule):
         reaching it or with the returned result.
         - BlockchainQueryError if an ethereum node is used and the contract call
         queries fail for some reason
+        - DeserializationError
         """
         result = MAKERDAO_PROXY_REGISTRY.call(self.ethereum, 'proxies', arguments=[address])
         if int(result, 16) != 0:
-            return to_checksum_address(result)
+            return deserialize_ethereum_address(result)
         return None
 
     def _get_accounts_having_maker_proxy(self) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:

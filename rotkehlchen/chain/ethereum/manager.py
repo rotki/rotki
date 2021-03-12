@@ -10,7 +10,6 @@ from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import BlockNumber, HexStr
-from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
 from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types
@@ -35,7 +34,10 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_int_from_hex
+from rotkehlchen.serialization.deserialize import (
+    deserialize_int_from_hex,
+    deserialize_ethereum_address,
+)
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.typing import ChecksumEthAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -620,7 +622,7 @@ class EthereumManager():
 
         address = self._call_contract(
             web3=web3,
-            contract_address=to_checksum_address(resolver_addr),
+            contract_address=deserialize_ethereum_address(resolver_addr),
             abi=ens_resolver_abi,
             method_name='addr',
             arguments=arguments,
@@ -631,7 +633,7 @@ class EthereumManager():
         if blockchain != SupportedBlockchain.ETHEREUM:
             return HexStr(address.hex())
 
-        return to_checksum_address(address)
+        return deserialize_ethereum_address(address)
 
     def _call_contract_etherscan(
             self,
@@ -864,7 +866,9 @@ class EthereumManager():
                             if same_event:
                                 events.pop()
 
-                        new_events[e_idx]['address'] = to_checksum_address(event['address'])
+                        new_events[e_idx]['address'] = deserialize_ethereum_address(
+                            event['address'],
+                        )
                         new_events[e_idx]['blockNumber'] = block_number
                         new_events[e_idx]['timeStamp'] = deserialize_int_from_hex(
                             symbol=event['timeStamp'],

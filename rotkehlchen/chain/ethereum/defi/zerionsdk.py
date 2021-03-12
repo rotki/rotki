@@ -1,8 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from eth_utils.address import to_checksum_address
-
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
@@ -20,6 +18,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
@@ -134,7 +133,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
     if 'DAI' in token_name:
         dai_price = Inquirer.find_usd_price(A_DAI)
         return DefiBalance(
-            token_address=to_checksum_address('0x49d716DFe60b37379010A75329ae09428f17118d'),
+            token_address=string_to_ethereum_address('0x49d716DFe60b37379010A75329ae09428f17118d'),
             token_name='Pool Together DAI token',
             token_symbol='plDAI',
             balance=Balance(
@@ -145,7 +144,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
     if 'USDC' in token_name:
         usdc_price = Inquirer.find_usd_price(A_USDC)
         return DefiBalance(
-            token_address=to_checksum_address('0xBD87447F48ad729C5c4b8bcb503e1395F62e8B98'),
+            token_address=string_to_ethereum_address('0xBD87447F48ad729C5c4b8bcb503e1395F62e8B98'),
             token_name='Pool Together USDC token',
             token_symbol='plUSDC',
             balance=Balance(
@@ -285,7 +284,7 @@ class ZerionSDK():
         decimals = metadata[3]
         normalized_value = token_normalized_value_decimals(balance_value, decimals)
         token_symbol = metadata[2]
-        token_address = to_checksum_address(metadata[0])
+        token_address = deserialize_ethereum_address(metadata[0])
         token_name = metadata[1]
 
         special_handling = self.handle_protocols(
@@ -340,7 +339,7 @@ class ZerionSDK():
             return None
 
         return DefiBalance(
-            token_address=to_checksum_address(token_address),
+            token_address=deserialize_ethereum_address(token_address),
             token_name=token_name,
             token_symbol=token_symbol,
             balance=Balance(amount=normalized_balance, usd_value=normalized_balance * usd_price),
