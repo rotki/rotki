@@ -43,6 +43,6 @@ export interface Interop {
   metamaskImport(): Promise<MetamaskImport>;
   checkForUpdates(): Promise<boolean>;
   downloadUpdate(): Promise<boolean>;
-  installUpdate(): Promise<void>;
+  installUpdate(): Promise<boolean | Error>;
   restartBackend(logLevel: Level): Promise<boolean>;
 }

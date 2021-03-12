@@ -51,6 +51,8 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { Interop } from '@/electron-main/ipc';
+import { Severity } from '@/store/notifications/consts';
+import { notify } from '@/store/notifications/utils';
 import { assert } from '@/utils/assertions';
 
 @Component({})
@@ -64,13 +66,30 @@ export default class UpdatePopup extends Vue {
     if (downloaded) {
       this.downloadReady = true;
       this.popup = true;
+    } else {
+      notify(
+        this.$t('update_popup.download_failed.message').toString(),
+        this.$t('update_popup.download_failed.title').toString(),
+        Severity.ERROR,
+        true
+      );
     }
   }
 
   async install() {
     this.downloadReady = false;
     this.popup = false;
-    await this.interop.installUpdate();
+    const result = await this.interop.installUpdate();
+    if (typeof result !== 'boolean') {
+      notify(
+        this.$t('update_popup.install_failed.message', {
+          message: result
+        }).toString(),
+        this.$t('update_popup.install_failed.title').toString(),
+        Severity.ERROR,
+        true
+      );
+    }
   }
 
   get interop(): Interop {

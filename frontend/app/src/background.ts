@@ -77,12 +77,19 @@ function setupUpdaterInterop() {
       await autoUpdater.downloadUpdate();
       event.sender.send(IPC_DOWNLOAD_UPDATE, true);
     } catch (e) {
+      pyHandler.logToFile(e);
       event.sender.send(IPC_DOWNLOAD_UPDATE, false);
     }
   });
 
   ipcMain.on(IPC_INSTALL_UPDATE, async () => {
-    await autoUpdater.quitAndInstall();
+    try {
+      autoUpdater.quitAndInstall();
+      return true;
+    } catch (e) {
+      pyHandler.logToFile(e);
+      return e;
+    }
   });
 }
 
