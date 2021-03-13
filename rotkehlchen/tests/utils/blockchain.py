@@ -8,6 +8,7 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_SCAN, VOTE_ESCROWED_CRV, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
@@ -16,7 +17,6 @@ from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
@@ -343,7 +343,7 @@ def mock_etherscan_query(
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
                 args = []
                 for account_address in decoded_input[0]:  # pylint: disable=unsubscriptable-object  # noqa: E501
-                    account_address = deserialize_ethereum_address(account_address)
+                    account_address = string_to_ethereum_address(account_address)
                     args.append(int(eth_map[account_address]['ETH']))
                 result = '0x' + web3.codec.encode_abi(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
@@ -362,10 +362,10 @@ def mock_etherscan_query(
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
                 args = []
                 for account_address in decoded_input[0]:  # pylint: disable=unsubscriptable-object  # noqa: E501
-                    account_address = deserialize_ethereum_address(account_address)
+                    account_address = string_to_ethereum_address(account_address)
                     x = []
                     for token_address in decoded_input[1]:  # pylint: disable=unsubscriptable-object  # noqa: E501
-                        token_address = deserialize_ethereum_address(token_address)
+                        token_address = string_to_ethereum_address(token_address)
                         value_to_add = 0
                         for given_asset, value in eth_map[account_address].items():
                             given_asset = _get_token(given_asset)
@@ -396,10 +396,10 @@ def mock_etherscan_query(
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
                 args = []
-                account_address = deserialize_ethereum_address(decoded_input[0])  # pylint: disable=unsubscriptable-object  # noqa: E501
+                account_address = string_to_ethereum_address(decoded_input[0])  # pylint: disable=unsubscriptable-object  # noqa: E501
                 x = []
                 for token_address in decoded_input[1]:  # pylint: disable=unsubscriptable-object  # noqa: E501
-                    token_address = deserialize_ethereum_address(token_address)
+                    token_address = string_to_ethereum_address(token_address)
                     value_to_add = 0
                     for given_asset, value in eth_map[account_address].items():
                         given_asset = _get_token(given_asset)
