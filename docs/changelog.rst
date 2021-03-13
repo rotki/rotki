@@ -4,6 +4,12 @@ Changelog
 
 * :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
+* :bug:`2532` Users will now see the percentage sign display in the same line when editing underlying tokens.
+* :feature:`2507` Users can now delete imported trades and deposit/withdrawals from crypto.com via the purge data UI.
+* :bug:`2530` Poloniex should no longer display phantom LEND balances in rotki.
+* :bug:`2534` Aave v2 tokens not in Aave v1 should no longer have their balance double counted.
+* :bug:`2539` The effects of adding/editing/removing a ledger actions will no longer be lost if rotki restarts right after the operation.
+
 * :feature:`-` Added support for the following tokens:
 
   - `xAAVEa (xAAVEa) <https://www.coingecko.com/en/coins/xaavea>`__

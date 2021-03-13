@@ -4,6 +4,7 @@ import { EXCHANGE_CRYPTOCOM, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
+import { SupportedExchange } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import {
   movementNumericKeys,
@@ -784,5 +785,17 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       } as LedgerActions);
     }
     return { success: true };
+  },
+
+  async removeExchangeTrades({ commit, state }, location: SupportedExchange) {
+    const data = state.trades.data;
+    const withoutLocation = data.filter(entry => entry.location !== location);
+    const trades: HistoricData<TradeEntry> = {
+      data: withoutLocation,
+      found: state.trades.found - withoutLocation.length,
+      limit: state.trades.limit
+    };
+
+    commit('setTrades', trades);
   }
 };

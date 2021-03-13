@@ -131,6 +131,7 @@ class DBLedgerActions():
             ),
         )
         identifier = cursor.lastrowid
+        self.db.conn.commit()
         return identifier
 
     def remove_ledger_action(self, identifier: int) -> Optional[str]:
@@ -148,6 +149,7 @@ class DBLedgerActions():
                 f'Tried to delete ledger action with identifier {identifier} but '
                 f'it was not found in the DB'
             )
+        self.db.conn.commit()
         return error_msg
 
     def edit_ledger_action(self, action: LedgerAction) -> Optional[str]:
@@ -175,4 +177,5 @@ class DBLedgerActions():
                 f'Tried to edit ledger action with identifier {action.identifier} '
                 f'but it was not found in the DB'
             )
+        self.db.conn.commit()
         return error_msg

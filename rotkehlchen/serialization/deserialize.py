@@ -696,7 +696,7 @@ def deserialize_int_from_hex(symbol: str, location: str) -> int:
     - DeserializationError if the given data are in an unexpected format.
     """
     if not isinstance(symbol, str):
-        raise DeserializationError('Expected hex string but got {type(symbol)} at {location}')
+        raise DeserializationError(f'Expected hex string but got {type(symbol)} at {location}')
 
     if symbol == '0x':
         return 0

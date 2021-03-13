@@ -487,6 +487,9 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
+                if asset == Asset('LEND'):  # poloniex mistakenly returns LEND balances
+                    continue  # https://github.com/rotki/rotki/issues/2530
+
                 try:
                     usd_price = Inquirer().find_usd_price(asset=asset)
                 except RemoteError as e:
