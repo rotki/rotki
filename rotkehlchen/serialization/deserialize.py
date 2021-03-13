@@ -677,8 +677,8 @@ def deserialize_hex_color_code(symbol: str) -> HexColorCode:
 
 
 def deserialize_ethereum_address(symbol: str) -> ChecksumEthAddress:
-    """Deserialize and address and check that the symbol is an ethereum
-    address.
+    """Deserialize a symbol, check that it's a valid ethereum address
+    and return it checksummed.
 
     This function can raise DeserializationError if the address is not
     valid

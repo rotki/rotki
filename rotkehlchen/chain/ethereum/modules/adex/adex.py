@@ -473,8 +473,9 @@ class Adex(EthereumModule):
             identity_address = inverse_identity_address_map[address]
             tx_address = deserialize_ethereum_address(tx_address)
             token_address = deserialize_ethereum_address(token_address)
-        except KeyError as e:
-            msg = f'Missing key in event: {str(e)}.'
+        except (KeyError, DeserializationError) as e:
+            if isinstance(e, KeyError):
+                msg = f'Missing key in event: {str(e)}.'
 
             log.error(
                 'Failed to deserialize an AdEx channel withdraw event',

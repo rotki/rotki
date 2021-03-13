@@ -1,6 +1,9 @@
+import logging
 from typing import TYPE_CHECKING, Dict, Optional
 
 from rotkehlchen.constants.ethereum import MAKERDAO_PROXY_REGISTRY
+from rotkehlchen.errors import DeserializationError, RemoteError
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress
@@ -11,6 +14,9 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 MAKERDAO_REQUERY_PERIOD = 7200  # Refresh queries every 2 hours
 
@@ -48,14 +54,19 @@ class MakerdaoCommon(EthereumModule):
 
         May raise:
         - RemoteError if etherscan is used and there is a problem with
-        reaching it or with the returned result.
+        reaching it or with the returned result. Also this error can be raised
+        if there is a problem deserializing the result address.
         - BlockchainQueryError if an ethereum node is used and the contract call
         queries fail for some reason
-        - DeserializationError
         """
         result = MAKERDAO_PROXY_REGISTRY.call(self.ethereum, 'proxies', arguments=[address])
         if int(result, 16) != 0:
-            return deserialize_ethereum_address(result)
+            try:
+                return deserialize_ethereum_address(result)
+            except DeserializationError as e:
+                msg = f'Failed to deserialize {result} DSR proxy for address {address}'
+                log.error(msg)
+                raise RemoteError(msg) from e
         return None
 
     def _get_accounts_having_maker_proxy(self) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:

@@ -12,7 +12,7 @@ from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
+from rotkehlchen.errors import ModuleInitializationFailure, RemoteError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
@@ -232,11 +232,15 @@ class Uniswap(EthereumModule):
             result_data = result['liquidityPositions']
 
             for lp in result_data:
-                user_address = deserialize_ethereum_address(lp['user']['id'])
-                user_lp_balance = FVal(lp['liquidityTokenBalance'])
                 lp_pair = lp['pair']
-                lp_address = deserialize_ethereum_address(lp_pair['id'])
                 lp_total_supply = FVal(lp_pair['totalSupply'])
+                user_lp_balance = FVal(lp['liquidityTokenBalance'])
+                try:
+                    user_address = deserialize_ethereum_address(lp['user']['id'])
+                    lp_address = deserialize_ethereum_address(lp_pair['id'])
+                except DeserializationError:
+                    log.error('Failed to Deserialize address')
+                    continue
 
                 # Insert LP tokens reserves within tokens dicts
                 token0 = lp_pair['token0']
@@ -248,12 +252,16 @@ class Uniswap(EthereumModule):
 
                 for token in token0, token1:
                     # Get the token <EthereumToken> or <UnknownEthereumToken>
-                    asset = get_ethereum_token(
-                        symbol=token['symbol'],
-                        ethereum_address=deserialize_ethereum_address(token['id']),
-                        name=token['name'],
-                        decimals=int(token['decimals']),
-                    )
+                    try:
+                        asset = get_ethereum_token(
+                            symbol=token['symbol'],
+                            ethereum_address=deserialize_ethereum_address(token['id']),
+                            name=token['name'],
+                            decimals=int(token['decimals']),
+                        )
+                    except DeserializationError:
+                        log.error(f'Failed to deserialize token address {token["id"]}')
+                        continue
 
                     # Classify the asset either as known or unknown
                     if isinstance(asset, EthereumToken):
@@ -576,15 +584,24 @@ class Uniswap(EthereumModule):
             for event in result_data:
                 token0_ = event['pair']['token0']
                 token1_ = event['pair']['token1']
+
+                try:
+                    token0_deserialized = deserialize_ethereum_address(token0_['id'])
+                    token1_deserialized = deserialize_ethereum_address(token1_['id'])
+                    pool_deserialized = deserialize_ethereum_address(event['pair']['id'])
+                except DeserializationError:
+                    log.error('Failed to deserialize address involved in liquidity pool event')
+                    continue
+
                 token0 = get_ethereum_token(
                     symbol=token0_['symbol'],
-                    ethereum_address=deserialize_ethereum_address(token0_['id']),
+                    ethereum_address=token0_deserialized,
                     name=token0_['name'],
                     decimals=token0_['decimals'],
                 )
                 token1 = get_ethereum_token(
                     symbol=token1_['symbol'],
-                    ethereum_address=deserialize_ethereum_address(token1_['id']),
+                    ethereum_address=token1_deserialized,
                     name=token1_['name'],
                     decimals=int(token1_['decimals']),
                 )
@@ -594,7 +611,7 @@ class Uniswap(EthereumModule):
                     address=address,
                     timestamp=Timestamp(int(event['timestamp'])),
                     event_type=event_type,
-                    pool_address=deserialize_ethereum_address(event['pair']['id']),
+                    pool_address=pool_deserialized,
                     token0=token0,
                     token1=token1,
                     amount0=AssetAmount(FVal(event['amount0'])),
@@ -806,15 +823,24 @@ class Uniswap(EthereumModule):
                     timestamp = swap['timestamp']
                     swap_token0 = swap['pair']['token0']
                     swap_token1 = swap['pair']['token1']
+
+                    try:
+                        token0_deserialized = deserialize_ethereum_address(swap_token0['id'])
+                        token1_deserialized = deserialize_ethereum_address(swap_token1['id'])
+                        from_address_deserialized = deserialize_ethereum_address(swap['sender'])
+                        to_address_deserialized = deserialize_ethereum_address(swap['to'])
+                    except DeserializationError:
+                        log.error('Failed to deserialize address in swap')
+
                     token0 = get_ethereum_token(
                         symbol=swap_token0['symbol'],
-                        ethereum_address=deserialize_ethereum_address(swap_token0['id']),
+                        ethereum_address=token0_deserialized,
                         name=swap_token0['name'],
                         decimals=swap_token0['decimals'],
                     )
                     token1 = get_ethereum_token(
                         symbol=swap_token1['symbol'],
-                        ethereum_address=deserialize_ethereum_address(swap_token1['id']),
+                        ethereum_address=token1_deserialized,
                         name=swap_token1['name'],
                         decimals=int(swap_token1['decimals']),
                     )
@@ -826,8 +852,8 @@ class Uniswap(EthereumModule):
                         tx_hash=swap['id'].split('-')[0],
                         log_index=int(swap['logIndex']),
                         address=address,
-                        from_address=deserialize_ethereum_address(swap['sender']),
-                        to_address=deserialize_ethereum_address(swap['to']),
+                        from_address=from_address_deserialized,
+                        to_address=to_address_deserialized,
                         timestamp=Timestamp(int(timestamp)),
                         location=Location.UNISWAP,
                         token0=token0,

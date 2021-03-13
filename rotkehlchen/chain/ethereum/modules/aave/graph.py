@@ -16,7 +16,7 @@ from rotkehlchen.chain.ethereum.structures import (
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.ethereum import ATOKEN_ABI
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
@@ -246,13 +246,19 @@ def _parse_atoken_balance_history(
             )
             continue
 
-        reserve_address = deserialize_ethereum_address('0x' + pairs[2])
-        tx_hash = '0x' + pairs[3]
-        asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
-        if asset is None:
+        try:
+            reserve_address = deserialize_ethereum_address('0x' + pairs[2])
+            tx_hash = '0x' + pairs[3]
+            asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
+            if asset is None:
+                log.error(
+                    f'Unknown aave reserve address returned by atoken balance history '
+                    f' graph query: {reserve_address}. Skipping entry ...',
+                )
+                continue
+        except DeserializationError:
             log.error(
-                f'Unknown aave reserve address returned by atoken balance history '
-                f' graph query: {reserve_address}. Skipping entry ...',
+                f'Error deserializing reseve address {"0x" + pairs[2]}',
             )
             continue
 
@@ -272,7 +278,12 @@ def _get_reserve_asset_and_decimals(
         entry: Dict[str, Any],
         reserve_key: str,
 ) -> Optional[Tuple[Asset, int]]:
-    reserve_address = deserialize_ethereum_address(entry[reserve_key]['id'])
+    try:
+        reserve_address = deserialize_ethereum_address(entry[reserve_key]['id'])
+    except DeserializationError:
+        log.error(f'Failed to Deserialize reserve address {entry[reserve_key]["id"]}')
+        return None
+
     asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
     if asset is None:
         log.error(
@@ -339,10 +350,14 @@ class AaveGraphInquirer(AaveInquirer):
         result = []
         for entry in query['userReserves']:
             reserve = entry['reserve']
-            result.append(AaveUserReserve(
-                address=deserialize_ethereum_address(reserve['id']),
-                symbol=reserve['symbol'],
-            ))
+            try:
+                result.append(AaveUserReserve(
+                    address=deserialize_ethereum_address(reserve['id']),
+                    symbol=reserve['symbol'],
+                ))
+            except DeserializationError:
+                log.error(f'Failed to deserialize reserve address {reserve["id"]}')
+                continue
 
         return result
 
@@ -364,7 +379,10 @@ class AaveGraphInquirer(AaveInquirer):
                     f'Expected to find 2 hashes in graph\'s reserve history id '
                     f'but the encountered id does not match: {reserve["id"]}. Skipping entry...',
                 )
-            reserve_address = deserialize_ethereum_address('0x' + pairs[2])
+            try:
+                reserve_address = deserialize_ethereum_address('0x' + pairs[2])
+            except DeserializationError:
+                log.error(f'Failed to deserialize reserve address {"0x" + pairs[2]}')
             atoken_history = _parse_atoken_balance_history(
                 history=reserve['aTokenBalanceHistory'],
                 from_ts=from_ts,

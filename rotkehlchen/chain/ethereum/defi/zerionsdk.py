@@ -15,7 +15,12 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import (
+    RemoteError,
+    UnknownAsset,
+    UnsupportedAsset,
+    DeserializationError,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
@@ -253,10 +258,27 @@ class ZerionSDK():
                 balance_type = adapter_balance[0][1]  # can be either 'Asset' or 'Debt'
                 for balances in adapter_balance[1]:
                     underlying_balances = []
-                    base_balance = self._get_single_balance(protocol.name, balances[0])
+                    try:
+                        base_balance = self._get_single_balance(protocol.name, balances[0])
+                    except DeserializationError:
+                        # From this error we can continue setting base_balance to ZERO
+                        # as this is handle later
+                        log.error('Deserialization error trying to get single balance',
+                                  f'in {protocol.name}. {balances[0]}',
+                                  )
+                        # base_balance = ZERO
+                        continue
+
                     for balance in balances[1]:
-                        defi_balance = self._get_single_balance(protocol.name, balance)
-                        underlying_balances.append(defi_balance)
+                        try:
+                            defi_balance = self._get_single_balance(protocol.name, balance)
+                            underlying_balances.append(defi_balance)
+                        except DeserializationError:
+                            log.error('Deserialization error trying to get single balance',
+                                      f'in {protocol.name}. {balances[0]}',
+                                      )
+                            # In this case we just skip the iteration in balances[1]
+                            continue
 
                     if base_balance.balance.usd_value == ZERO:
                         # This can happen. We can't find a price for some assets
@@ -279,6 +301,10 @@ class ZerionSDK():
             protocol_name: str,
             entry: Tuple[Tuple[str, str, str, int], int],
     ) -> DefiBalance:
+        """
+        This method can raise DeserializationError while deserializing the token address
+        or handling the specific protocol.
+        """
         metadata = entry[0]
         balance_value = entry[1]
         decimals = metadata[3]
@@ -327,6 +353,7 @@ class ZerionSDK():
     ) -> Optional[DefiBalance]:
         """Special handling for price for token/protocols which are easier to do onchain
         or need some kind of special treatment.
+        This method can raise DeserializationError
         """
         if protocol_name == 'PoolTogether':
             result = _handle_pooltogether(normalized_balance, token_name)

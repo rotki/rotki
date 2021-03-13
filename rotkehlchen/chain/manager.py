@@ -817,7 +817,6 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 # when the API adds or removes an address, the deserialize function at
                 # EthereumAddressField is called, so we expect from the addresses retrieved by
                 # this function to be already checksumed.
-
                 address = string_to_ethereum_address(account)
 
                 try:

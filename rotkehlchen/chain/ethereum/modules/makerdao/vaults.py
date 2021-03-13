@@ -75,6 +75,7 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_ZRX_A_JOIN,
 )
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
+from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
@@ -650,7 +651,12 @@ class MakerdaoVaults(MakerdaoCommon):
 
         vaults = []
         for idx, identifier in enumerate(result[0]):
-            urn = deserialize_ethereum_address(result[1][idx])
+            try:
+                urn = deserialize_ethereum_address(result[1][idx])
+            except DeserializationError as e:
+                raise RemoteError(
+                    f'Failed to deserialize address {result[1][idx]}',
+                ) from e
             vault = self._query_vault_data(
                 identifier=identifier,
                 owner=user_address,

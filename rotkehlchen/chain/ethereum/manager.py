@@ -620,20 +620,30 @@ class EthereumManager():
             ens_resolver_abi.extend(ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS)
             arguments.append(blockchain.ens_coin_type())
 
-        address = self._call_contract(
-            web3=web3,
-            contract_address=deserialize_ethereum_address(resolver_addr),
-            abi=ens_resolver_abi,
-            method_name='addr',
-            arguments=arguments,
-        )
+        try:
+            address = self._call_contract(
+                web3=web3,
+                contract_address=deserialize_ethereum_address(resolver_addr),
+                abi=ens_resolver_abi,
+                method_name='addr',
+                arguments=arguments,
+            )
+        except DeserializationError:
+            log.error(f'Error deserializing address {resolver_addr} while doing',
+                      'ens lookup',
+                      )
+            return None
+
         if is_none_or_zero_address(address):
             return None
 
         if blockchain != SupportedBlockchain.ETHEREUM:
             return HexStr(address.hex())
-
-        return deserialize_ethereum_address(address)
+        try:
+            return deserialize_ethereum_address(address)
+        except DeserializationError:
+            log.error(f'Error deserializing address {address}')
+            return None
 
     def _call_contract_etherscan(
             self,
