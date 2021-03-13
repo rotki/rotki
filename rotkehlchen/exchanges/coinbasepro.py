@@ -138,7 +138,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return True, ''
 
-    @overload  # noqa: F811
+    @overload
     def _api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['accounts', 'products'],
@@ -147,8 +147,8 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[Any]:
         ...
 
-    @overload  # noqa: F811
-    def _api_query(  # noqa: F811 pylint: disable=no-self-use
+    @overload
+    def _api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['reports'],
             request_method: Literal['GET', 'POST'] = 'GET',
@@ -156,8 +156,8 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Dict[str, Any]:
         ...
 
-    @overload  # noqa: F811
-    def _api_query(  # noqa: F811 pylint: disable=no-self-use
+    @overload
+    def _api_query(  # pylint: disable=no-self-use
             self,
             endpoint: str,
             request_method: Literal['GET', 'POST'] = 'GET',
@@ -165,7 +165,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Union[List[Any], Dict[str, Any]]:
         ...
 
-    def _api_query(  # noqa: F811
+    def _api_query(
             self,
             endpoint: str,
             request_method: Literal['GET', 'POST'] = 'GET',

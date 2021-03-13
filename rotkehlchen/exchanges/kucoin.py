@@ -279,7 +279,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return response
 
-    @overload  # noqa: F811
+    @overload
     def _api_query_paginated(  # pylint: disable=no-self-use
             self,
             options: Dict[str, Any],
@@ -289,7 +289,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[Trade]:
         ...
 
-    @overload  # noqa: F811
+    @overload
     def _api_query_paginated(  # pylint: disable=no-self-use
             self,
             options: Dict[str, Any],
@@ -612,7 +612,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         )
         return trade
 
-    @overload  # noqa: F811
+    @overload
     def _process_unsuccessful_response(  # pylint: disable=no-self-use
             self,
             response: Response,
@@ -620,7 +620,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Tuple[bool, str]:
         ...
 
-    @overload  # noqa: F811
+    @overload
     def _process_unsuccessful_response(  # pylint: disable=no-self-use
             self,
             response: Response,
@@ -628,7 +628,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> ExchangeQueryBalances:
         ...
 
-    @overload  # noqa: F811
+    @overload
     def _process_unsuccessful_response(  # pylint: disable=no-self-use
             self,
             response: Response,
@@ -636,7 +636,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[Trade]:
         ...
 
-    @overload  # noqa: F811
+    @overload
     def _process_unsuccessful_response(  # pylint: disable=no-self-use
             self,
             response: Response,

@@ -187,7 +187,7 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise
         return True, ''
 
-    def api_query(  # noqa: F811
+    def api_query(
             self,
             endpoint: str,
             method: Literal['get', 'put', 'delete'] = 'get',

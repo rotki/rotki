@@ -45,7 +45,7 @@ def get_ethereum_token(
     return ethereum_token
 
 
-@overload  # noqa: F811
+@overload
 def serialize_ethereum_token(
         ethereum_token: EthereumToken,
         unknown_ethereum_token_keys: SerializeAsDictKeys = UNKNOWN_TOKEN_KEYS,
@@ -53,7 +53,7 @@ def serialize_ethereum_token(
     ...
 
 
-@overload  # noqa: F811
+@overload
 def serialize_ethereum_token(
         ethereum_token: UnknownEthereumToken,
         unknown_ethereum_token_keys: SerializeAsDictKeys = UNKNOWN_TOKEN_KEYS,

@@ -238,7 +238,7 @@ class Coingecko():
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.data_directory = data_directory
 
-    @overload  # noqa: F811
+    @overload
     def _query(
             self,
             module: Literal['coins/list'],
@@ -247,7 +247,7 @@ class Coingecko():
     ) -> List[Dict[str, Any]]:
         ...
 
-    @overload  # noqa: F811
+    @overload
     def _query(
             self,
             module: Literal['coins', 'simple/price'],

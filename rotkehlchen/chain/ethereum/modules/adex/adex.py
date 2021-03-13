@@ -781,7 +781,7 @@ class Adex(EthereumModule):
         )
         return staking_events
 
-    @overload  # noqa: F811
+    @overload
     def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
             addresses: List[ChecksumEthAddress],
@@ -792,7 +792,7 @@ class Adex(EthereumModule):
     ) -> List[Bond]:
         ...
 
-    @overload  # noqa: F811
+    @overload
     def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
             addresses: List[ChecksumEthAddress],
@@ -803,7 +803,7 @@ class Adex(EthereumModule):
     ) -> List[Unbond]:
         ...
 
-    @overload  # noqa: F811
+    @overload
     def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
             addresses: List[ChecksumEthAddress],
@@ -814,7 +814,7 @@ class Adex(EthereumModule):
     ) -> List[UnbondRequest]:
         ...
 
-    @overload  # noqa: F811
+    @overload
     def _get_staking_events_graph(  # pylint: disable=no-self-use
             self,
             addresses: List[ChecksumEthAddress],
