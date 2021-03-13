@@ -11,7 +11,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import ConversionError, DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_timestamp
+from rotkehlchen.serialization.deserialize import deserialize_timestamp, deserialize_int_from_str
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import convert_to_int, hex_or_bytes_to_int, hexstring_to_bytes
@@ -433,10 +433,12 @@ class Etherscan(ExternalServiceWithApiKey):
             action='getblocknobytime',
             options=options,
         )
-        if not isinstance(result, int):
-            # At this point the blocknumber string returned by etherscan should be an int
+        try:
+            number = deserialize_int_from_str(result, 'etherscan getblocknobytime')
+        except DeserializationError as e:
             raise RemoteError(
-                f'Got unexpected etherscan response: {result} to getblocknobytime call',
-            )
+                f'Could not read blocknumber from etherscan getblocknobytime '
+                f'result {result}'
+            ) from e
 
-        return result
+        return number
