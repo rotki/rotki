@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
@@ -15,6 +16,7 @@ from rotkehlchen.inquirer import (
     CURRENT_PRICE_CACHE_SECS,
     DEFAULT_CURRENT_PRICE_ORACLES_ORDER,
     CurrentPriceOracle,
+    _query_currency_converterapi,
     _query_exchanges_rateapi,
 )
 from rotkehlchen.tests.utils.constants import A_CNY, A_EUR, A_GBP, A_JPY
@@ -23,15 +25,24 @@ from rotkehlchen.typing import Price
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='some of these APIs frequently become unavailable',
+)
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_query_realtime_price_apis(inquirer):
+    result = _query_currency_converterapi(A_USD, A_EUR)
+    assert result and isinstance(result, FVal)
     result = _query_exchanges_rateapi(A_USD, A_GBP)
     assert result and isinstance(result, FVal)
     result = inquirer.query_historical_fiat_exchange_rates(A_USD, A_CNY, 1411603200)
     assert result == FVal('6.1371932033')
 
 
-@pytest.mark.skip('The backup FIAT exchange rate API shut down. Unskip if new is found')
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='some of these APIs frequently become unavailable',
+)
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_switching_to_backup_api(inquirer):
