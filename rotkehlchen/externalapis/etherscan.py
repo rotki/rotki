@@ -88,7 +88,7 @@ class Etherscan(ExternalServiceWithApiKey):
         self.warning_given = False
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
-    @overload  # noqa: F811
+    @overload
     def _query(  # pylint: disable=no-self-use
             self,
             module: str,
@@ -103,7 +103,7 @@ class Etherscan(ExternalServiceWithApiKey):
     ) -> List[Dict[str, Any]]:
         ...
 
-    @overload  # noqa: F811
+    @overload
     def _query(  # pylint: disable=no-self-use
             self,
             module: str,
@@ -112,8 +112,8 @@ class Etherscan(ExternalServiceWithApiKey):
     ) -> Dict[str, Any]:
         ...
 
-    @overload  # noqa: F811
-    def _query(  # noqa: F811 pylint: disable=no-self-use
+    @overload
+    def _query(  # pylint: disable=no-self-use
             self,
             module: str,
             action: Literal[
@@ -127,8 +127,8 @@ class Etherscan(ExternalServiceWithApiKey):
     ) -> str:
         ...
 
-    @overload  # noqa: F811
-    def _query(  # noqa: F811 pylint: disable=no-self-use
+    @overload
+    def _query(  # pylint: disable=no-self-use
             self,
             module: str,
             action: Literal['getblocknobytime'],
@@ -136,7 +136,7 @@ class Etherscan(ExternalServiceWithApiKey):
     ) -> int:
         ...
 
-    def _query(  # noqa: F811
+    def _query(
             self,
             module: str,
             action: str,

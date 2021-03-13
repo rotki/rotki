@@ -219,7 +219,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return json_ret
 
-    @overload  # noqa: F811
+    @overload
     def _private_api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['roles'],
@@ -227,7 +227,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Dict[str, Any]:
         ...
 
-    @overload  # noqa: F811
+    @overload
     def _private_api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['balances', 'mytrades', 'transfers'],
@@ -235,7 +235,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[Any]:
         ...
 
-    def _private_api_query(  # noqa: F811
+    def _private_api_query(
             self,
             endpoint: str,
             options: Optional[Dict[str, Any]] = None,

@@ -209,23 +209,23 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryObject):
         self.session.headers.update({'X-API-KEY': api_key})
         return True
 
-    @overload  # noqa: F811
-    def _api_query(  # noqa: F811 pylint: disable=no-self-use
+    @overload
+    def _api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['user/balances'],
             options: Optional[Dict[str, Any]],
     ) -> List[Dict[str, Any]]:
         ...
 
-    @overload  # noqa: F811
-    def _api_query(  # noqa: F811 pylint: disable=no-self-use
+    @overload
+    def _api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['account'],
             options: Optional[Dict[str, Any]],
     ) -> Dict[str, Any]:
         ...
 
-    def _api_query(  # noqa: F811
+    def _api_query(
             self,
             endpoint: str,
             options: Optional[Dict[str, Any]],

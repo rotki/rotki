@@ -407,8 +407,8 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Dict:
         ...
 
-    @overload  # noqa: F811
-    def return_trade_history(   # noqa: F811  # pylint: disable=unused-argument, no-self-use
+    @overload
+    def return_trade_history(  # pylint: disable=unused-argument, no-self-use
             self,
             currency_pair: Union[TradePair, str],
             start: Timestamp,
@@ -416,10 +416,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Union[Dict, List]:
         ...
 
-    # TODO: As soon as a pyflakes release is made including
-    # https://github.com/PyCQA/pyflakes/pull/435 then remove the noqa from here,
-    # above and from other place in codebase where overload is used likethis
-    def return_trade_history(  # noqa: F811
+    def return_trade_history(
             self,
             currency_pair: Union[TradePair, str],
             start: Timestamp,

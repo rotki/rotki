@@ -152,14 +152,14 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         return balances
 
-    @overload  # noqa: F811
+    @overload
     def get_performance(
             self,
             indices_or_pubkeys: List[int],
     ) -> Dict[int, ValidatorPerformance]:
         ...
 
-    @overload  # noqa: F811
+    @overload
     def get_performance(
             self,
             indices_or_pubkeys: List[str],
