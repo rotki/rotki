@@ -12,10 +12,10 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.errors import RemoteError, UnknownAsset
 from rotkehlchen.exchanges.bitstamp import (
-    API_KEY_ERROR_CODE_ACTION,
-    API_MAX_LIMIT,
     API_ERR_AUTH_NONCE_CODE,
     API_ERR_AUTH_NONCE_MESSAGE,
+    API_KEY_ERROR_CODE_ACTION,
+    API_MAX_LIMIT,
     USER_TRANSACTION_MIN_SINCE_ID,
     USER_TRANSACTION_SORTING_MODE,
     Bitstamp,
@@ -29,7 +29,7 @@ from rotkehlchen.exchanges.data_structures import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Fee, Location, Timestamp, TradePair
-from rotkehlchen.utils.serialization import rlk_jsonloads_list
+from rotkehlchen.utils.serialization import jsonloads_list
 
 
 def test_name():
@@ -52,7 +52,7 @@ def test_bitstamp_exchange_assets_are_known(mock_bitstamp):
             f'and text: {response.text}',
         )
     try:
-        response_list = rlk_jsonloads_list(response.text)
+        response_list = jsonloads_list(response.text)
     except JSONDecodeError as e:
         raise RemoteError(f'Bitstamp returned invalid JSON response: {response.text}') from e
 

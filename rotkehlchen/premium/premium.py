@@ -21,7 +21,7 @@ from rotkehlchen.errors import (
     RemoteError,
 )
 from rotkehlchen.typing import B64EncodedBytes, Timestamp
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def _process_dict_response(response: requests.Response) -> Dict:
             'rotki server',
         )
 
-    result_dict = rlk_jsonloads_dict(response.text)
+    result_dict = jsonloads_dict(response.text)
     if 'error' in result_dict:
         raise RemoteError(result_dict['error'])
 

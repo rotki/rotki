@@ -4,7 +4,7 @@ from typing import Dict, Tuple
 import requests
 
 from rotkehlchen.errors import RemoteError
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 
 class Github():
@@ -30,7 +30,7 @@ class Github():
             )
 
         try:
-            json_ret = rlk_jsonloads_dict(response.text)
+            json_ret = jsonloads_dict(response.text)
         except JSONDecodeError as e:
             raise RemoteError(f'Github returned invalid JSON response: {response.text}') from e
         return json_ret

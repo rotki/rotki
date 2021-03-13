@@ -10,35 +10,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_trade_type,
 )
 from rotkehlchen.typing import Location, TradeType
-from rotkehlchen.utils.serialization import (
-    pretty_json_dumps,
-    rkl_decode_value,
-    rlk_jsondumps,
-    rlk_jsonloads,
-)
-
-
-def test_rkl_decode_value():
-    assert rkl_decode_value(5.4) == FVal('5.4')
-    assert rkl_decode_value('5.4') == FVal('5.4')
-    assert rkl_decode_value(b'5.4') == FVal('5.4')
-    assert rkl_decode_value(b'foo') == b'foo'
-    assert rkl_decode_value('foo') == 'foo'
-    assert rkl_decode_value(5) == 5
-
-
-def test_rlk_jsonloads():
-    data = '{"a": "5.4", "b": "foo", "c": 32.1, "d": 5, "e": [1, "a", "5.1"], "f": "37451082560000003241"}'  # noqa: E501
-    result = rlk_jsonloads(data)
-    assert result == {
-        'a': FVal('5.4'),
-        'b': 'foo',
-        'c': FVal('32.1'),
-        'd': 5,
-        'e': [1, 'a', FVal('5.1')],
-        'f': 37451082560000003241,
-    }
-
+from rotkehlchen.utils.serialization import pretty_json_dumps, rlk_jsondumps
 
 TEST_DATA = {
     'a': FVal('5.4'),

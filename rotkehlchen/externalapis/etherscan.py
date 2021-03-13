@@ -11,11 +11,11 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import ConversionError, DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_timestamp
+from rotkehlchen.serialization.deserialize import deserialize_timestamp, deserialize_int_from_str
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import convert_to_int, hex_or_bytes_to_int, hexstring_to_bytes
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 ETHERSCAN_TX_QUERY_LIMIT = 10000
 
@@ -122,18 +122,10 @@ class Etherscan(ExternalServiceWithApiKey):
                 'eth_blockNumber',
                 'eth_getCode',
                 'eth_call',
+                'getblocknobytime',
             ],
             options: Optional[Dict[str, Any]] = None,
     ) -> str:
-        ...
-
-    @overload
-    def _query(  # pylint: disable=no-self-use
-            self,
-            module: str,
-            action: Literal['getblocknobytime'],
-            options: Optional[Dict[str, Any]] = None,
-    ) -> int:
         ...
 
     def _query(
@@ -141,7 +133,7 @@ class Etherscan(ExternalServiceWithApiKey):
             module: str,
             action: str,
             options: Optional[Dict[str, Any]] = None,
-    ) -> Union[List[Dict[str, Any]], str, int, List[EthereumTransaction], Dict[str, Any]]:
+    ) -> Union[List[Dict[str, Any]], str, List[EthereumTransaction], Dict[str, Any]]:
         """Queries etherscan
 
         May raise:
@@ -198,7 +190,7 @@ class Etherscan(ExternalServiceWithApiKey):
                 )
 
             try:
-                json_ret = rlk_jsonloads_dict(response.text)
+                json_ret = jsonloads_dict(response.text)
             except JSONDecodeError as e:
                 raise RemoteError(
                     f'Etherscan API request {response.url} returned invalid '
@@ -214,7 +206,7 @@ class Etherscan(ExternalServiceWithApiKey):
                     )
 
                 # sucessful proxy calls do not include a status
-                status = json_ret.get('status', 1)
+                status = int(json_ret.get('status', 1))
 
                 if status != 1:
                     if status == 0 and 'rate limit reached' in result:
@@ -433,10 +425,12 @@ class Etherscan(ExternalServiceWithApiKey):
             action='getblocknobytime',
             options=options,
         )
-        if not isinstance(result, int):
-            # At this point the blocknumber string returned by etherscan should be an int
+        try:
+            number = deserialize_int_from_str(result, 'etherscan getblocknobytime')
+        except DeserializationError as e:
             raise RemoteError(
-                f'Got unexpected etherscan response: {result} to getblocknobytime call',
-            )
+                f'Could not read blocknumber from etherscan getblocknobytime '
+                f'result {result}',
+            ) from e
 
-        return result
+        return number

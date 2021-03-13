@@ -57,7 +57,7 @@ from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, Trad
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_now
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
+from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -234,7 +234,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         json_ret: Union[List[Any], Dict[str, Any]]
         if response.status_code == HTTPStatus.BAD_REQUEST:
-            json_ret = rlk_jsonloads_dict(response.text)
+            json_ret = jsonloads_dict(response.text)
             if json_ret['message'] == 'invalid signature':
                 raise CoinbaseProPermissionError(
                     f'While doing {request_method} at {endpoint} endpoint the API secret '
@@ -255,9 +255,9 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         loading_function: Union[Callable[[str], Dict[str, Any]], Callable[[str], List[Any]]]
         if any(x in endpoint for x in ('accounts', 'products')):
-            loading_function = rlk_jsonloads_list
+            loading_function = jsonloads_list
         else:
-            loading_function = rlk_jsonloads_dict
+            loading_function = jsonloads_dict
 
         try:
             json_ret = loading_function(response.text)

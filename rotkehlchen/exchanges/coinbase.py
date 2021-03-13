@@ -39,7 +39,7 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -54,7 +54,7 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     https://developers.coinbase.com/api/v2?python#buys
     If the coinbase transaction is not a trade related transaction returns None
 
-    Throws:
+    Mary raise:
         - UnknownAsset due to Asset instantiation
         - DeserializationError due to unexpected format of dict entries
         - KeyError due to dict entires missing an expected entry
@@ -289,7 +289,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
 
         try:
-            json_ret = rlk_jsonloads_dict(response.text)
+            json_ret = jsonloads_dict(response.text)
         except JSONDecodeError as e:
             raise RemoteError(f'Coinbase returned invalid JSON response: {response.text}') from e
 

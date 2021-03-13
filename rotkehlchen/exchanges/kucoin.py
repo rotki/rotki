@@ -40,7 +40,6 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -48,6 +47,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_price,
     deserialize_timestamp,
+    deserialize_int_from_str,
     pair_get_assets,
 )
 from rotkehlchen.typing import (
@@ -62,7 +62,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -366,7 +366,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
 
             try:
-                response_dict = rlk_jsonloads_dict(response.text)
+                response_dict = jsonloads_dict(response.text)
             except JSONDecodeError as e:
                 msg = f'Kucoin {case} returned an invalid JSON response: {response.text}.'
                 log.error(msg)
@@ -453,12 +453,12 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         assets_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
         for raw_result in accounts_data:
             try:
-                amount = FVal(raw_result['balance'])
+                amount = deserialize_asset_amount(raw_result['balance'])
                 if amount == ZERO:
                     continue
 
                 asset_symbol = raw_result['currency']
-            except (KeyError, ValueError) as e:
+            except (KeyError, DeserializationError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key in account: {msg}.'
@@ -665,7 +665,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         May raise RemoteError
         """
         try:
-            response_dict = rlk_jsonloads_dict(response.text)
+            response_dict = jsonloads_dict(response.text)
         except JSONDecodeError as e:
             msg = f'Kucoin {case} returned an invalid JSON response: {response.text}.'
             log.error(msg)
@@ -680,7 +680,13 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             raise AssertionError(f'Unexpected case: {case}') from e
 
-        error_code = response_dict.get('code', None)
+        try:
+            error_code = response_dict.get('code', None)
+            if error_code is not None:
+                error_code = deserialize_int_from_str(error_code, 'kucoin response parsing')
+        except DeserializationError as e:
+            raise RemoteError(f'Could not read Kucoin error code {error_code} as an int') from e
+
         if error_code in API_KEY_ERROR_CODE_ACTION.keys():
             msg = API_KEY_ERROR_CODE_ACTION[error_code]
         else:
@@ -720,7 +726,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return result, msg
 
         try:
-            response_dict = rlk_jsonloads_dict(accounts_response.text)
+            response_dict = jsonloads_dict(accounts_response.text)
         except JSONDecodeError as e:
             msg = f'Kucoin balances returned an invalid JSON response: {accounts_response.text}.'
             log.error(msg)

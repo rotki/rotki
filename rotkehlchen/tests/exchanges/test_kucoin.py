@@ -24,7 +24,7 @@ from rotkehlchen.typing import (
     Timestamp,
     TradePair,
 )
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 
 def test_name():
@@ -53,7 +53,7 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin):
             f'and text: {response.text}',
         )
     try:
-        response_dict = rlk_jsonloads_dict(response.text)
+        response_dict = jsonloads_dict(response.text)
     except JSONDecodeError as e:
         raise RemoteError(f'Kucoin returned invalid JSON response: {response.text}') from e
 

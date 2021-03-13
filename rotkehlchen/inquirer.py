@@ -34,7 +34,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date, ts_now
 from rotkehlchen.utils.network import request_get_dict, retry_calls
-from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsondumps, jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -221,7 +221,7 @@ class Inquirer():
         try:
             with open(filename, 'r') as f:
                 # we know price_history_forex contains a dict
-                data = rlk_jsonloads_dict(f.read())
+                data = jsonloads_dict(f.read())
                 Inquirer.__instance._cached_forex_data = data
         except (OSError, JSONDecodeError):
             Inquirer.__instance._cached_forex_data = {}
@@ -409,7 +409,7 @@ class Inquirer():
             return None
 
         try:
-            result = rlk_jsonloads_dict(resp.text)
+            result = jsonloads_dict(resp.text)
         except JSONDecodeError:
             return None
 

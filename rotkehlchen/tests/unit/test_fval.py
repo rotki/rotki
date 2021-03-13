@@ -2,7 +2,7 @@ import pytest
 
 from rotkehlchen.errors import ConversionError
 from rotkehlchen.fval import FVal
-from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads
+from rotkehlchen.utils.serialization import rlk_jsondumps
 
 
 def test_simple_arithmetic():
@@ -118,35 +118,6 @@ def test_encoding():
         '{"a": 3.14, "b": 5, "c": "foo", "d": "5.42323143", '
         '"e": {"u1": "3.221"}, "f": [2.1, "boo", 3, "4.2324"]}'
     )
-
-
-def test_decoding():
-    strdata = (
-        '{"a": 3.14, "b":5, "c": "foo", "d": "5.42323143", "e": { "u1": "3.221"}, '
-        '"f": [2.1, "boo", 3, "4.2324"]}'
-    )
-
-    data = rlk_jsonloads(strdata)
-    assert isinstance(data['a'], FVal)
-    assert data['a'] == FVal('3.14')
-    assert isinstance(data['b'], int)
-    assert data['b'] == 5
-    assert isinstance(data['c'], (str, bytes))
-    assert data['c'] == 'foo'
-    assert isinstance(data['d'], FVal)
-    assert data['d'] == FVal('5.42323143')
-
-    assert isinstance(data['e']['u1'], FVal)
-    assert data['e']['u1'] == FVal('3.221')
-
-    assert isinstance(data['f'][0], FVal)
-    assert data['f'][0] == FVal('2.1')
-    assert isinstance(data['f'][1], (str, bytes))
-    assert data['f'][1] == "boo"
-    assert isinstance(data['f'][2], int)
-    assert data['f'][2] == 3
-    assert isinstance(data['f'][3], FVal)
-    assert data['f'][3] == FVal('4.2324')
 
 
 def test_conversion():

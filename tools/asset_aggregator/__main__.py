@@ -22,8 +22,8 @@ from asset_aggregator.name_check import name_check
 from asset_aggregator.timerange_check import timerange_check
 from asset_aggregator.typeinfo_check import typeinfo_check
 
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.coinmarketcap import Coinmarketcap, find_cmc_coin_data
@@ -35,7 +35,6 @@ from rotkehlchen.externalapis.coinpaprika import (
 )
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.serialization import rlk_jsonloads
 
 
 def process_asset(
@@ -157,7 +156,7 @@ def main():
             sys.exit(1)
 
         with open(args.input_file, 'r') as f:
-            input_data = rlk_jsonloads(f.read())
+            input_data = json.loads(f.read())
 
         given_symbols = set(input_data.keys())
         current_symbols = set(our_data.keys())

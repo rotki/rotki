@@ -14,7 +14,7 @@ from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -88,7 +88,7 @@ class BeaconChain(ExternalServiceWithApiKey):
             )
 
         try:
-            json_ret = rlk_jsonloads_dict(response.text)
+            json_ret = jsonloads_dict(response.text)
         except JSONDecodeError as e:
             raise RemoteError(
                 f'Beaconchain API returned invalid JSON response: {response.text}',

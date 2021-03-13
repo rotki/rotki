@@ -8,7 +8,7 @@ from typing import Any, Dict, NamedTuple, Optional
 import requests
 
 from rotkehlchen.utils.misc import get_system_spec
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 # A "best" geolocation API list: https://rapidapi.com/blog/ip-geolocation-api/
 
@@ -39,7 +39,7 @@ def query_ipwhoisio() -> Optional[GeolocationData]:
         return None
 
     try:
-        json_ret = rlk_jsonloads_dict(response.text)
+        json_ret = jsonloads_dict(response.text)
     except JSONDecodeError:
         return None
 
@@ -66,7 +66,7 @@ def query_ipinfo() -> Optional[GeolocationData]:
         return None
 
     try:
-        json_ret = rlk_jsonloads_dict(response.text)
+        json_ret = jsonloads_dict(response.text)
     except JSONDecodeError:
         return None
 
@@ -93,7 +93,7 @@ def query_ipstack() -> Optional[GeolocationData]:
         return None
 
     try:
-        json_ret = rlk_jsonloads_dict(response.text)
+        json_ret = jsonloads_dict(response.text)
     except JSONDecodeError:
         return None
 

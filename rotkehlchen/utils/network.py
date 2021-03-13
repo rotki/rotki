@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
-from rotkehlchen.utils.serialization import rlk_jsonloads
 
 
 def request_get(
@@ -41,7 +40,7 @@ def request_get(
     )
 
     try:
-        result = rlk_jsonloads(response.text)
+        result = json.loads(response.text)
     except json.decoder.JSONDecodeError as e:
         raise UnableToDecryptRemoteData(f'{url} returned malformed json. Error: {str(e)}') from e
 

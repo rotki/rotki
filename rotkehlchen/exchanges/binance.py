@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import logging
+import json
 from collections import defaultdict
 from json.decoder import JSONDecodeError
 from typing import (
@@ -51,7 +52,6 @@ from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Lo
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -361,7 +361,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 code = 'no code found'
                 msg = 'no message found'
                 try:
-                    result = rlk_jsonloads(response.text)
+                    result = json.loads(response.text)
                     if isinstance(result, dict):
                         code = result.get('code', code)
                         msg = result.get('msg', msg)
@@ -416,7 +416,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             break
 
         try:
-            json_ret = rlk_jsonloads(response.text)
+            json_ret = json.loads(response.text)
         except JSONDecodeError as e:
             raise RemoteError(
                 f'{self.name} returned invalid JSON response: {response.text}',
@@ -458,10 +458,12 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             try:
                 # force string https://github.com/rotki/rotki/issues/2342
                 asset_symbol = str(entry['asset'])
-                free = entry['free']
-                locked = entry['locked']
+                free = deserialize_asset_amount(entry['free'])
+                locked = deserialize_asset_amount(entry['locked'])
             except KeyError as e:
                 raise RemoteError(f'Binance spot balance asset entry did not contain key {str(e)}') from e  # noqa: E501
+            except DeserializationError as e:
+                raise RemoteError('Failed to deserialize an amount from binance spot balance asset entry') from e  # noqa: E501
 
             if len(asset_symbol) >= 5 and asset_symbol.startswith('LD'):
                 # Some lending coins also appear to start with the LD prefix. Ignore them
@@ -522,7 +524,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         for entry in positions:
             try:
-                amount = FVal(entry['amount'])
+                amount = deserialize_asset_amount(entry['amount'])
                 if amount == ZERO:
                     continue
 
@@ -573,7 +575,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         try:
             cross_collaterals = futures_response['crossCollaterals']
             for entry in cross_collaterals:
-                amount = FVal(entry['locked'])
+                amount = deserialize_asset_amount(entry['locked'])
                 if amount == ZERO:
                     continue
 
@@ -636,7 +638,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         try:
             for entry in response:
-                amount = FVal(entry['balance'])
+                amount = deserialize_asset_amount(entry['balance'])
                 if amount == ZERO:
                     continue
 

@@ -123,7 +123,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsondumps, jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -319,7 +319,7 @@ class DBHandler:
 
         with open(filepath, 'r') as f:
             try:
-                dbinfo = rlk_jsonloads_dict(f.read())
+                dbinfo = jsonloads_dict(f.read())
             except JSONDecodeError:
                 log.warning('dbinfo.json file is corrupt. Does not contain expected keys')
                 return action

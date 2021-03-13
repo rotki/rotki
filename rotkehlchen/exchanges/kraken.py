@@ -36,7 +36,6 @@ from rotkehlchen.exchanges.data_structures import (
     trade_pair_from_assets,
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -53,7 +52,7 @@ from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -241,7 +240,7 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]
             ))
 
     try:
-        decoded_json = rlk_jsonloads_dict(response.text)
+        decoded_json = jsonloads_dict(response.text)
     except json.decoder.JSONDecodeError as e:
         raise RemoteError(f'Invalid JSON in Kraken response. {e}') from e
 
@@ -519,11 +518,11 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         assets_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
         for kraken_name, amount_ in kraken_balances.items():
-            amount = FVal(amount_)
-            if amount == ZERO:
-                continue
-
             try:
+                amount = deserialize_asset_amount(amount_)
+                if amount == ZERO:
+                    continue
+
                 our_asset = asset_from_kraken(kraken_name)
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
@@ -531,10 +530,17 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     f' Ignoring its balance query.',
                 )
                 continue
-            except DeserializationError:
+            except DeserializationError as e:
+                msg = str(e)
                 self.msg_aggregator.add_error(
-                    f'Found kraken asset with non-string type {type(kraken_name)}. '
-                    f' Ignoring its balance query.',
+                    'Error processing kraken balance for {kraken_name}. Check logs '
+                    'for details. Ignoring it.',
+                )
+                log.error(
+                    'Error processing kraken balance',
+                    kraken_name=kraken_name,
+                    amount=amount_,
+                    error=msg,
                 )
                 continue
 

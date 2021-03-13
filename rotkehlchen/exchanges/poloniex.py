@@ -35,7 +35,6 @@ from rotkehlchen.exchanges.data_structures import (
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.serialization.deserialize import (
@@ -60,7 +59,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import create_timestamp, ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
+from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -347,13 +346,13 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         result: Union[Dict, List]
         try:
             if command == 'returnLendingHistory':
-                result = rlk_jsonloads_list(response.text)
+                result = jsonloads_list(response.text)
             else:
                 # For some reason poloniex can also return [] for an empty trades result
                 if response.text == '[]':
                     result = {}
                 else:
-                    result = rlk_jsonloads_dict(response.text)
+                    result = jsonloads_dict(response.text)
                     result = _post_process(result)
         except JSONDecodeError as e:
             raise RemoteError(f'Poloniex returned invalid JSON response: {response.text}') from e
@@ -459,8 +458,16 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         assets_balance: Dict[Asset, Balance] = {}
         for poloniex_asset, v in resp.items():
-            available = FVal(v['available'])
-            on_orders = FVal(v['onOrders'])
+            try:
+                available = deserialize_asset_amount(v['available'])
+                on_orders = deserialize_asset_amount(v['onOrders'])
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Could not deserialize amount from poloniex due to '
+                    f'{str(e)}. Ignoring its balance query.',
+                )
+                continue
+
             if available != ZERO or on_orders != ZERO:
                 try:
                     asset = asset_from_poloniex(poloniex_asset)
@@ -598,15 +605,20 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 try:
                     lending_history.append({
                         'currency': asset_from_poloniex(row[0]),
-                        'earned': FVal(row[6]),
-                        'amount': FVal(row[2]),
-                        'fee': FVal(row[5]),
+                        'earned': deserialize_asset_amount(row[6]),
+                        'amount': deserialize_asset_amount(row[2]),
+                        'fee': deserialize_asset_amount(row[5]),
                         'open': row[7],
                         'close': row[8],
                     })
                 except UnsupportedAsset as e:
                     self.msg_aggregator.add_warning(
                         f'Found loan with asset {e.asset_name}. Ignoring it.',
+                    )
+                    continue
+                except DeserializationError as e:
+                    self.msg_aggregator.add_warning(
+                        f'Failed to deserialize amount from loan due to {str(e)}. Ignoring it.',
                     )
                     continue
 
