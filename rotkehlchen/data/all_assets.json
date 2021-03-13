@@ -9397,7 +9397,7 @@
         "started": 1606768910,
         "symbol": "PIPT",
         "type": "ethereum token"
-       },
+    },
     "PIRL": {
         "coingecko": "pirl",
         "name": "Pirl",
@@ -13447,7 +13447,7 @@
         "coingecko": "dfinance",
         "cryptocompare": "",
         "ethereum_address": "0xE4E822C0d5b329E8BB637972467d2E313824eFA0",
-        "ethereum_token_decimals": 18 ,
+        "ethereum_token_decimals": 18,
         "name": "dfinance",
         "started": 1599068086,
         "symbol": "XFI",
@@ -15506,6 +15506,11 @@
         "started": 1601302213,
         "symbol": "DEXE",
         "type": "ethereum token"
+    },
+    "TWD": {
+        "name": "New Taiwan Dollar",
+        "symbol": "TWD",
+        "type": "fiat"
     },
     "TWT": {
         "coingecko": "trust-wallet-token",
