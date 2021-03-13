@@ -122,18 +122,10 @@ class Etherscan(ExternalServiceWithApiKey):
                 'eth_blockNumber',
                 'eth_getCode',
                 'eth_call',
+                'getblocknobytime',
             ],
             options: Optional[Dict[str, Any]] = None,
     ) -> str:
-        ...
-
-    @overload
-    def _query(  # pylint: disable=no-self-use
-            self,
-            module: str,
-            action: Literal['getblocknobytime'],
-            options: Optional[Dict[str, Any]] = None,
-    ) -> int:
         ...
 
     def _query(
@@ -141,7 +133,7 @@ class Etherscan(ExternalServiceWithApiKey):
             module: str,
             action: str,
             options: Optional[Dict[str, Any]] = None,
-    ) -> Union[List[Dict[str, Any]], str, int, List[EthereumTransaction], Dict[str, Any]]:
+    ) -> Union[List[Dict[str, Any]], str, List[EthereumTransaction], Dict[str, Any]]:
         """Queries etherscan
 
         May raise:
@@ -438,7 +430,7 @@ class Etherscan(ExternalServiceWithApiKey):
         except DeserializationError as e:
             raise RemoteError(
                 f'Could not read blocknumber from etherscan getblocknobytime '
-                f'result {result}'
+                f'result {result}',
             ) from e
 
         return number

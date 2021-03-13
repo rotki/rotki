@@ -47,6 +47,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_price,
     deserialize_timestamp,
+    deserialize_int_from_str,
     pair_get_assets,
 )
 from rotkehlchen.typing import (
@@ -679,7 +680,13 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             raise AssertionError(f'Unexpected case: {case}') from e
 
-        error_code = response_dict.get('code', None)
+        try:
+            error_code = response_dict.get('code', None)
+            if error_code is not None:
+                error_code = deserialize_int_from_str(error_code, 'kucoin response parsing')
+        except DeserializationError as e:
+            raise RemoteError(f'Could not read Kucoin error code {error_code} as an int') from e
+
         if error_code in API_KEY_ERROR_CODE_ACTION.keys():
             msg = API_KEY_ERROR_CODE_ACTION[error_code]
         else:
