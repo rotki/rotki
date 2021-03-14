@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
@@ -25,10 +24,6 @@ from rotkehlchen.typing import Price
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 
-@pytest.mark.skipif(
-    'CI' in os.environ,
-    reason='some of these APIs frequently become unavailable',
-)
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_query_realtime_price_apis(inquirer):
     result = _query_currency_converterapi(A_USD, A_EUR)
@@ -39,10 +34,6 @@ def test_query_realtime_price_apis(inquirer):
     assert result == FVal('6.1371932033')
 
 
-@pytest.mark.skipif(
-    'CI' in os.environ,
-    reason='some of these APIs frequently become unavailable',
-)
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_switching_to_backup_api(inquirer):
