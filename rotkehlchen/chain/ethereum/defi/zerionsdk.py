@@ -261,12 +261,10 @@ class ZerionSDK():
                     try:
                         base_balance = self._get_single_balance(protocol.name, balances[0])
                     except DeserializationError:
-                        # From this error we can continue setting base_balance to ZERO
-                        # as this is handle later
-                        log.error('Deserialization error trying to get single balance',
-                                  f'in {protocol.name}. {balances[0]}',
-                                  )
-                        # base_balance = ZERO
+                        log.error(
+                            f'Deserialization error trying to get single balance '
+                            f'in {protocol.name}. {balances[0]}',
+                        )
                         continue
 
                     for balance in balances[1]:
@@ -274,9 +272,10 @@ class ZerionSDK():
                             defi_balance = self._get_single_balance(protocol.name, balance)
                             underlying_balances.append(defi_balance)
                         except DeserializationError:
-                            log.error('Deserialization error trying to get single balance',
-                                      f'in {protocol.name}. {balances[0]}',
-                                      )
+                            log.error(
+                                f'Deserialization error trying to get single balance '
+                                f'in {protocol.name}. {balances[0]}',
+                            )
                             # In this case we just skip the iteration in balances[1]
                             continue
 

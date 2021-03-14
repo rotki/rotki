@@ -885,6 +885,7 @@ class Uniswap(EthereumModule):
         """Get today's tokens prices via the Uniswap subgraph
 
         Uniswap provides a token price every day at 00:00:00 UTC
+        This function can raise RemoteError
         """
         asset_price: AssetPrice = {}
 
@@ -925,7 +926,12 @@ class Uniswap(EthereumModule):
             result_data = result['tokenDayDatas']
 
             for tdd in result_data:
-                token_address = deserialize_ethereum_address(tdd['token']['id'])
+                try:
+                    token_address = deserialize_ethereum_address(tdd['token']['id'])
+                except DeserializationError as e:
+                    msg = f'Error deserializing address {tdd["token"]["id"]}'
+                    log.error(msg)
+                    raise RemoteError(msg) from e
                 asset_price[token_address] = Price(FVal(tdd['priceUSD']))
 
             # Check whether an extra request is needed
