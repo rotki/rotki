@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="d-flex flex-row shrink align-center">
     <span v-if="!linkOnly">
       <span v-if="fullAddress" :class="privacyMode ? 'blur-content' : null">
@@ -34,10 +34,10 @@
       </template>
       <span>{{ $t('hash_link.copy') }}</span>
     </v-tooltip>
-    <v-tooltip v-if="!noLink" top open-delay="600">
+    <v-tooltip v-if="!noLink" top open-delay="600" max-width="400">
       <template #activator="{ on, attrs }">
         <v-btn
-          v-if="!!baseUrl"
+          v-if="!!base"
           x-small
           icon
           v-bind="attrs"
@@ -52,7 +52,7 @@
           <v-icon x-small> mdi-launch </v-icon>
         </v-btn>
       </template>
-      <span>{{ $t('hash_link.open_link') }}</span>
+      <span>{{ $t('hash_link.open_link', { url }) }}</span>
     </v-tooltip>
   </div>
 </template>
@@ -60,39 +60,57 @@
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
+import { explorerUrls } from '@/components/helper/asset-urls';
 import ScrambleMixin from '@/mixins/scramble-mixin';
+import { ExplorersSettings } from '@/store/settings/types';
+import { Blockchain, ETH } from '@/typing/types';
 import { randomHex } from '@/typing/utils';
 
 @Component({
   computed: {
-    ...mapState('session', ['privacyMode'])
+    ...mapState('session', ['privacyMode']),
+    ...mapState('settings', ['explorers'])
   }
 })
 export default class HashLink extends Mixins(ScrambleMixin) {
   @Prop({ required: true, type: String })
   text!: string;
-  @Prop({
-    required: false,
-    type: String,
-    default: 'https://etherscan.io/address/'
-  })
-  baseUrl!: string | null;
   @Prop({ required: false, type: Boolean, default: false })
   fullAddress!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   linkOnly!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   noLink!: boolean;
+  @Prop({ required: false, type: String, default: '' })
+  baseUrl!: string;
+  @Prop({ required: false, type: String, default: ETH })
+  chain!: Blockchain | 'ETC';
+  @Prop({ required: false, type: Boolean, default: false })
+  tx!: Boolean;
 
   get displayText(): string {
     if (!this.scrambleData) {
       return this.text;
     }
-    const length = this.baseUrl && this.baseUrl.includes('tx') ? 64 : 40;
+    const length = this.tx ? 64 : 40;
     return randomHex(length);
   }
 
   privacyMode!: boolean;
+  explorers!: ExplorersSettings;
+
+  get base(): string {
+    if (this.baseUrl) {
+      return this.baseUrl;
+    }
+    const explorersSetting = this.explorers[this.chain];
+    const defaultSetting = explorerUrls[this.chain];
+    const baseUrl = this.tx
+      ? explorersSetting?.transaction ?? defaultSetting.transaction
+      : explorersSetting?.address ?? defaultSetting.address;
+
+    return baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  }
 
   copyText(text: string) {
     if (!navigator.clipboard) {
@@ -112,12 +130,16 @@ export default class HashLink extends Mixins(ScrambleMixin) {
     }
   }
 
+  get url(): string {
+    return this.base + this.text;
+  }
+
   get href(): string | undefined {
     if (this.$interop.isPackaged) {
       return undefined;
     }
 
-    return this.baseUrl + this.text;
+    return this.url;
   }
 
   get target(): string | undefined {
@@ -128,8 +150,7 @@ export default class HashLink extends Mixins(ScrambleMixin) {
   }
 
   openLink() {
-    const href = this.baseUrl + this.text;
-    this.$interop.openUrl(href);
+    this.$interop.openUrl(this.url);
   }
 }
 </script>

@@ -1705,7 +1705,7 @@
   },
   "hash_link": {
     "copy": "Copy to clipboard",
-    "open_link": "Open in external block explorer"
+    "open_link": "Open in external block explorer: {url}"
   },
   "manual_balances": {
     "title": "Manually Tracked Balances"

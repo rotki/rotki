@@ -55,10 +55,7 @@
               <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
             </template>
             <template #item.txHash="{ item }">
-              <hash-link
-                :text="item.txHash"
-                base-url="https://etherscan.io/tx/"
-              />
+              <hash-link :text="item.txHash" tx />
               <v-chip
                 v-if="item.gasPrice.lt(0)"
                 small

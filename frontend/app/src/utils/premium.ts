@@ -36,7 +36,7 @@ export const setupPremium = () => {
   window.moment = moment;
   window.rotki = {
     useHostComponents: true,
-    version: 9,
+    version: 10,
     utils: {
       date: {
         epoch(): number {
