@@ -280,7 +280,7 @@ class Adex(EthereumModule):
                         amount=unclaimed_reward.dai_amount,
                         usd_value=unclaimed_reward.dai_amount * dai_usd_price,
                     ),
-                    contract_address=deserialize_ethereum_address(STAKING_ADDR),
+                    contract_address=STAKING_ADDR,
                 )
                 adex_balances[address].append(pool_balance)
 

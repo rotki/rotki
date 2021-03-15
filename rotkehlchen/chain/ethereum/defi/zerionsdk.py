@@ -262,8 +262,8 @@ class ZerionSDK():
                         base_balance = self._get_single_balance(protocol.name, balances[0])
                     except DeserializationError:
                         log.error(
-                            f'Deserialization error trying to get single balance '
-                            f'in {protocol.name}. {balances[0]}',
+                            f'Deserialization error trying to get base balance'
+                            f'in {protocol.name}. Skipping {balances[0]}',
                         )
                         continue
 
@@ -274,9 +274,10 @@ class ZerionSDK():
                         except DeserializationError:
                             log.error(
                                 f'Deserialization error trying to get single balance '
-                                f'in {protocol.name}. {balances[0]}',
+                                f'in {protocol.name}. {balances[0]}'
+                                f' Skipping underliying balance',
                             )
-                            # In this case we just skip the iteration in balances[1]
+                            # In this case we just skip the underliying balance
                             continue
 
                     if base_balance.balance.usd_value == ZERO:

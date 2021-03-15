@@ -621,18 +621,21 @@ class EthereumManager():
             arguments.append(blockchain.ens_coin_type())
 
         try:
-            address = self._call_contract(
-                web3=web3,
-                contract_address=deserialize_ethereum_address(resolver_addr),
-                abi=ens_resolver_abi,
-                method_name='addr',
-                arguments=arguments,
-            )
+            deserialized_resolver_addr = deserialize_ethereum_address(resolver_addr)
         except DeserializationError:
-            log.error(f'Error deserializing address {resolver_addr} while doing',
-                      'ens lookup',
-                      )
+            log.error(
+                f'Error deserializing address {resolver_addr} while doing'
+                f'ens lookup',
+            )
             return None
+
+        address = self._call_contract(
+            web3=web3,
+            contract_address=deserialized_resolver_addr,
+            abi=ens_resolver_abi,
+            method_name='addr',
+            arguments=arguments,
+        )
 
         if is_none_or_zero_address(address):
             return None

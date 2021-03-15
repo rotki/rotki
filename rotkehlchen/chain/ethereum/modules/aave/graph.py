@@ -247,18 +247,20 @@ def _parse_atoken_balance_history(
             continue
 
         try:
-            reserve_address = deserialize_ethereum_address('0x' + pairs[2])
-            tx_hash = '0x' + pairs[3]
-            asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
-            if asset is None:
-                log.error(
-                    f'Unknown aave reserve address returned by atoken balance history '
-                    f' graph query: {reserve_address}. Skipping entry ...',
-                )
-                continue
+            address_s = '0x' + pairs[2]
+            reserve_address = deserialize_ethereum_address(address_s)
         except DeserializationError:
             log.error(
-                f'Error deserializing reseve address {"0x" + pairs[2]}',
+                f'Error deserializing reserve address {address_s}',
+            )
+            continue
+
+        tx_hash = '0x' + pairs[3]
+        asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
+        if asset is None:
+            log.error(
+                f'Unknown aave reserve address returned by atoken balance history '
+                f' graph query: {reserve_address}. Skipping entry ...',
             )
             continue
 
@@ -356,7 +358,10 @@ class AaveGraphInquirer(AaveInquirer):
                     symbol=reserve['symbol'],
                 ))
             except DeserializationError:
-                log.error(f'Failed to deserialize reserve address {reserve["id"]}')
+                log.error(
+                    f'Failed to deserialize reserve address {reserve["id"]}'
+                    f'Skipping reserve address {reserve["id"]} for user address {address}',
+                )
                 continue
 
         return result
@@ -379,10 +384,18 @@ class AaveGraphInquirer(AaveInquirer):
                     f'Expected to find 2 hashes in graph\'s reserve history id '
                     f'but the encountered id does not match: {reserve["id"]}. Skipping entry...',
                 )
+                continue
+
             try:
-                reserve_address = deserialize_ethereum_address('0x' + pairs[2])
+                address_s = '0x' + pairs[2]
+                reserve_address = deserialize_ethereum_address(address_s)
             except DeserializationError:
-                log.error(f'Failed to deserialize reserve address {"0x" + pairs[2]}')
+                log.error(
+                    f'Failed to deserialize reserve address {address_s}'
+                    f'Skipping reserve address {address_s} for user address {user_address}',
+                )
+                continue
+
             atoken_history = _parse_atoken_balance_history(
                 history=reserve['aTokenBalanceHistory'],
                 from_ts=from_ts,
