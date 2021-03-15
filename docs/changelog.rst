@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Add support for New Taiwan Dollar (TWD) as a fiat currency
 * :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
 * :bug:`2532` Users will now see the percentage sign display in the same line when editing underlying tokens.

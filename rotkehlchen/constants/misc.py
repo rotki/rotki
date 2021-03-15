@@ -14,6 +14,8 @@ EV_MARGIN_CLOSE = EventType('margin_position_close')
 EV_DEFI = EventType('defi_event')
 EV_LEDGER_ACTION = EventType('ledger_action')
 
+CURRENCYCONVERTER_API_KEY = '7ad371210f296db27c19'
+
 ZERO = FVal(0)
 ONE = FVal(1)
 
