@@ -238,9 +238,13 @@ class Uniswap(EthereumModule):
                 try:
                     user_address = deserialize_ethereum_address(lp['user']['id'])
                     lp_address = deserialize_ethereum_address(lp_pair['id'])
-                except DeserializationError:
-                    log.error('Failed to Deserialize address')
-                    continue
+                except DeserializationError as e:
+                    msg = (
+                        f'Failed to Deserialize address. Skipping pool {lp_pair}'
+                        f'with user address {lp["user"]["id"]}'
+                    )
+                    log.error(msg)
+                    raise RemoteError(msg) from e
 
                 # Insert LP tokens reserves within tokens dicts
                 token0 = lp_pair['token0']
@@ -253,15 +257,21 @@ class Uniswap(EthereumModule):
                 for token in token0, token1:
                     # Get the token <EthereumToken> or <UnknownEthereumToken>
                     try:
-                        asset = get_ethereum_token(
-                            symbol=token['symbol'],
-                            ethereum_address=deserialize_ethereum_address(token['id']),
-                            name=token['name'],
-                            decimals=int(token['decimals']),
+                        deserialized_eth_address = deserialize_ethereum_address(token['id'])
+                    except DeserializationError as e:
+                        msg = (
+                            f'Failed to deserialize token address {token["id"]}'
+                            f'Bad token address in lp pair came from the graph.'
                         )
-                    except DeserializationError:
-                        log.error(f'Failed to deserialize token address {token["id"]}')
-                        continue
+                        log.error(msg)
+                        raise RemoteError(msg) from e
+
+                    asset = get_ethereum_token(
+                        symbol=token['symbol'],
+                        ethereum_address=deserialized_eth_address,
+                        name=token['name'],
+                        decimals=int(token['decimals']),
+                    )
 
                     # Classify the asset either as known or unknown
                     if isinstance(asset, EthereumToken):
@@ -589,9 +599,14 @@ class Uniswap(EthereumModule):
                     token0_deserialized = deserialize_ethereum_address(token0_['id'])
                     token1_deserialized = deserialize_ethereum_address(token1_['id'])
                     pool_deserialized = deserialize_ethereum_address(event['pair']['id'])
-                except DeserializationError:
-                    log.error('Failed to deserialize address involved in liquidity pool event')
-                    continue
+                except DeserializationError as e:
+                    msg = (
+                        f'Failed to deserialize address involved in liquidity pool event. '
+                        f'Token 0: {token0_["id"]}, token 1: {token0_["id"]},'
+                        f' pair: {event["pair"]["id"]}.'
+                    )
+                    log.error(msg)
+                    raise RemoteError(msg) from e
 
                 token0 = get_ethereum_token(
                     symbol=token0_['symbol'],
@@ -829,8 +844,14 @@ class Uniswap(EthereumModule):
                         token1_deserialized = deserialize_ethereum_address(swap_token1['id'])
                         from_address_deserialized = deserialize_ethereum_address(swap['sender'])
                         to_address_deserialized = deserialize_ethereum_address(swap['to'])
-                    except DeserializationError:
-                        log.error('Failed to deserialize address in swap')
+                    except DeserializationError as e:
+                        msg = (
+                            f'Failed to deserialize addresses in trade from uniswap graph with'
+                            f'token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '
+                            f'swap sender: {swap["sender"]}, swap receiver {swap["to"]}'
+                        )
+                        log.error(msg)
+                        raise RemoteError(msg) from e
 
                     token0 = get_ethereum_token(
                         symbol=swap_token0['symbol'],
@@ -929,7 +950,10 @@ class Uniswap(EthereumModule):
                 try:
                     token_address = deserialize_ethereum_address(tdd['token']['id'])
                 except DeserializationError as e:
-                    msg = f'Error deserializing address {tdd["token"]["id"]}'
+                    msg = (
+                        f'Error deserializing address {tdd["token"]["id"]}'
+                        f'during uniswap prices query from graph.'
+                    )
                     log.error(msg)
                     raise RemoteError(msg) from e
                 asset_price[token_address] = Price(FVal(tdd['priceUSD']))
