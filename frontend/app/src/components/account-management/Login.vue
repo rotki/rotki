@@ -295,7 +295,11 @@ export default class Login extends Vue {
     (v: string) =>
       !!v || this.$t('login.custom_backend.validation.non_empty').toString(),
     (v: string) =>
-      (v && /^(https?:\/\/.*):(\d*)\/?(.*)+$/.test(v)) ||
+      (v &&
+        v.length < 300 &&
+        /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/.test(
+          v
+        )) ||
       this.$t('login.custom_backend.validation.url')
   ];
 
