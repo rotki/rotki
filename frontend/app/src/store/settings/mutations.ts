@@ -7,7 +7,8 @@ import {
   THOUSAND_SEPARATOR,
   DECIMAL_SEPARATOR,
   CURRENCY_LOCATION,
-  REFRESH_PERIOD
+  REFRESH_PERIOD,
+  EXPLORERS
 } from '@/store/settings/consts';
 import { defaultState } from '@/store/settings/state';
 import {
@@ -15,7 +16,8 @@ import {
   ProfitLossTimeframe,
   TimeFramePeriod,
   TimeFrameSetting,
-  RefreshPeriod
+  RefreshPeriod,
+  ExplorersSettings
 } from '@/store/settings/types';
 import { Writeable } from '@/types';
 import { CurrencyLocation } from '@/typing/types';
@@ -30,6 +32,7 @@ type Mutations<S = SettingsState> = {
   [DECIMAL_SEPARATOR](state: S, separator: string): void;
   [CURRENCY_LOCATION](state: S, location: CurrencyLocation): void;
   [REFRESH_PERIOD](state: S, period: RefreshPeriod): void;
+  [EXPLORERS](state: S, explorers: ExplorersSettings): void;
   restore(state: S, persisted: S): void;
   reset(state: S): void;
 };
@@ -73,6 +76,9 @@ export const mutations: Mutations = {
   },
   [REFRESH_PERIOD](state: Writeable<SettingsState>, period: RefreshPeriod) {
     state.refreshPeriod = period;
+  },
+  [EXPLORERS](state: Writeable<SettingsState>, explorers: ExplorersSettings) {
+    state.explorers = explorers;
   },
   restore(state: SettingsState, persisted: SettingsState) {
     Object.assign(state, persisted);
