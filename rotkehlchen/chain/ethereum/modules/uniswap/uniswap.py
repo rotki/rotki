@@ -846,7 +846,7 @@ class Uniswap(EthereumModule):
                         to_address_deserialized = deserialize_ethereum_address(swap['to'])
                     except DeserializationError as e:
                         msg = (
-                            f'Failed to deserialize addresses in trade from uniswap graph with'
+                            f'Failed to deserialize addresses in trade from uniswap graph with '
                             f'token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '
                             f'swap sender: {swap["sender"]}, swap receiver {swap["to"]}'
                         )
@@ -951,7 +951,7 @@ class Uniswap(EthereumModule):
                     token_address = deserialize_ethereum_address(tdd['token']['id'])
                 except DeserializationError as e:
                     msg = (
-                        f'Error deserializing address {tdd["token"]["id"]}'
+                        f'Error deserializing address {tdd["token"]["id"]} '
                         f'during uniswap prices query from graph.'
                     )
                     log.error(msg)

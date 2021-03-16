@@ -277,7 +277,7 @@ class ZerionSDK():
                                 f'in {protocol.name}. {balances[0]}'
                                 f' Skipping underliying balance',
                             )
-                            # In this case we just skip the underliying balance
+                            # In this case we just skip the underlying balance
                             continue
 
                     if base_balance.balance.usd_value == ZERO:

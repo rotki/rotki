@@ -655,7 +655,7 @@ class MakerdaoVaults(MakerdaoCommon):
                 urn = deserialize_ethereum_address(result[1][idx])
             except DeserializationError as e:
                 raise RemoteError(
-                    f'Failed to deserialize address {result[1][idx]}'
+                    f'Failed to deserialize address {result[1][idx]} '
                     f'when processing vaults of {user_address}',
                 ) from e
             vault = self._query_vault_data(
