@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2452` Users will now be able to use a two-mode sorting functionality when sorting tables.
 * :feature:`2547` Users can now easily access the documentation on how to find the CryptoCompare/CoinGecko identifiers in asset manager.
 * :feature:`2156` Users can now customise the explorer pages used for each chain.
 * :feature:`522` Users can connect to different backends from the frontend.
