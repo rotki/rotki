@@ -1,6 +1,6 @@
 <template>
-  <div class="cost-basis-table">
-    <div class="text-h6 cost-basis-table__title">
+  <table-expand-container :visible="visible" :colspan="colspan">
+    <template #title>
       {{ $t('cost_basis_table.cost_basis') }}
       <span class="text-caption">
         {{
@@ -9,36 +9,34 @@
             : $t('cost_basis_table.incomplete')
         }}
       </span>
-    </div>
-    <v-sheet outlined rounded>
-      <data-table
-        class="cost-basis-table__table"
-        :items="costBasis.matchedAcquisitions"
-        :headers="headers"
-        item-key="id"
-        sort-by="time"
-      >
-        <template #item.location="{ item }">
-          <location-display :identifier="item.location" />
-        </template>
-        <template #item.usedAmount="{ item }">
-          <amount-display :value="item.usedAmount" />
-        </template>
-        <template #item.amount="{ item }">
-          <amount-display :value="item.amount" />
-        </template>
-        <template #item.fee="{ item }">
-          <amount-display :value="item.fee" />
-        </template>
-        <template #item.feeRate="{ item }">
-          <amount-display :value="item.feeRate" />
-        </template>
-        <template #item.time="{ item }">
-          <date-display :timestamp="item.time" />
-        </template>
-      </data-table>
-    </v-sheet>
-  </div>
+    </template>
+    <data-table
+      class="cost-basis-table__table"
+      :items="costBasis.matchedAcquisitions"
+      :headers="headers"
+      item-key="id"
+      sort-by="time"
+    >
+      <template #item.location="{ item }">
+        <location-display :identifier="item.location" />
+      </template>
+      <template #item.usedAmount="{ item }">
+        <amount-display :value="item.usedAmount" />
+      </template>
+      <template #item.amount="{ item }">
+        <amount-display :value="item.amount" />
+      </template>
+      <template #item.fee="{ item }">
+        <amount-display :value="item.fee" />
+      </template>
+      <template #item.feeRate="{ item }">
+        <amount-display :value="item.feeRate" />
+      </template>
+      <template #item.time="{ item }">
+        <date-display :timestamp="item.time" />
+      </template>
+    </data-table>
+  </table-expand-container>
 </template>
 
 <script lang="ts">
@@ -90,18 +88,14 @@ export default class CostBasisTable extends Vue {
   ];
   @Prop({ required: true, type: Object })
   costBasis!: CostBasis;
+  @Prop({ required: true, type: Boolean })
+  visible!: boolean;
+  @Prop({ required: true, type: Number })
+  colspan!: number;
 }
 </script>
 
 <style scoped lang="scss">
-.cost-basis-table {
-  padding: 18px 0;
-
-  &__title {
-    margin-bottom: 8px;
-  }
-}
-
 ::v-deep {
   th {
     &:first-child {

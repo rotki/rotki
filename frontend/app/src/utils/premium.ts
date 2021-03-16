@@ -23,6 +23,7 @@ import DataTable from '@/components/helper/DataTable.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
+import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
@@ -93,6 +94,7 @@ export const setupPremium = () => {
   Vue.component('TradeLocationSelector', TradeLocationSelector);
   // version 10
   Vue.component('DataTable', DataTable);
+  Vue.component('TableExpandContainer', TableExpandContainer);
 };
 
 function findComponents(): string[] {

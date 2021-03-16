@@ -68,15 +68,11 @@
             <v-icon v-if="item.isVirtual" color="success"> mdi-check</v-icon>
           </template>
           <template #expanded-item="{ headers, item }">
-            <td
+            <cost-basis-table
+              :visible="!!item.costBasis"
               :colspan="headers.length"
-              class="profit-loss-events__cost-basis"
-            >
-              <cost-basis-table
-                v-if="item.costBasis"
-                :cost-basis="item.costBasis"
-              />
-            </td>
+              :cost-basis="item.costBasis"
+            />
           </template>
           <template v-if="showUpgradeMessage" #body.append="{ headers }">
             <upgrade-row
@@ -108,6 +104,7 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
+import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
 import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
@@ -117,6 +114,7 @@ type IndexedProfitLossEvent = ProfitLossEvent & { index: number };
 
 @Component({
   components: {
+    TableExpandContainer,
     DataTable,
     ProfitLossEventType,
     UpgradeRow,
@@ -220,12 +218,6 @@ export default class ProfitLossEvents extends Vue {
 </script>
 
 <style lang="scss" scoped>
-.profit-loss-events {
-  &__cost-basis {
-    background-color: var(--v-rotki-light-grey-base);
-  }
-}
-
 ::v-deep {
   .profit-loss-events {
     &__table {

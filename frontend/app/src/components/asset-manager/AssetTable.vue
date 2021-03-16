@@ -58,38 +58,33 @@
         />
       </template>
       <template #expanded-item="{ item, headers }">
-        <td
-          :colspan="$vuetify.breakpoint.xsOnly ? 2 : headers.length"
-          class="asset-table__underlying-tokens"
-        >
-          <div class="text-h6 mb-4">
+        <table-expand-container visible :colspan="headers.length">
+          <template #title>
             {{ $t('asset_table.underlying_tokens') }}
-          </div>
-          <v-sheet outlined rounded>
-            <v-simple-table>
-              <thead>
-                <tr>
-                  <th>{{ $t('underlying_token_manager.tokens.address') }}</th>
-                  <th>{{ $t('underlying_token_manager.tokens.weight') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="token in item.underlyingTokens" :key="token.address">
-                  <td class="grow">
-                    <hash-link :text="token.address" full-address />
-                  </td>
-                  <td class="shrink">
-                    {{
-                      $t('underlying_token_manager.tokens.weight_percentage', {
-                        weight: token.weight
-                      })
-                    }}
-                  </td>
-                </tr>
-              </tbody>
-            </v-simple-table>
-          </v-sheet>
-        </td>
+          </template>
+          <v-simple-table>
+            <thead>
+              <tr>
+                <th>{{ $t('underlying_token_manager.tokens.address') }}</th>
+                <th>{{ $t('underlying_token_manager.tokens.weight') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="token in item.underlyingTokens" :key="token.address">
+                <td class="grow">
+                  <hash-link :text="token.address" full-address />
+                </td>
+                <td class="shrink">
+                  {{
+                    $t('underlying_token_manager.tokens.weight_percentage', {
+                      weight: token.weight
+                    })
+                  }}
+                </td>
+              </tr>
+            </tbody>
+          </v-simple-table>
+        </table-expand-container>
       </template>
       <template #item.expand="{ item }">
         <row-expander
@@ -110,11 +105,18 @@ import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
+import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { capitalize } from '@/filters';
 import { EthereumToken } from '@/services/assets/types';
 
 @Component({
-  components: { DataTable, RowActions, RowExpander, AssetDetailsBase }
+  components: {
+    DataTable,
+    TableExpandContainer,
+    RowActions,
+    RowExpander,
+    AssetDetailsBase
+  }
 })
 export default class AssetTable extends Vue {
   @Prop({ required: true, type: Array })
@@ -187,12 +189,4 @@ export default class AssetTable extends Vue {
 }
 </script>
 
-<style scoped lang="scss">
-.asset-table {
-  &__underlying-tokens {
-    padding-top: 16px !important;
-    padding-bottom: 16px !important;
-    background-color: var(--v-rotki-light-grey-base) !important;
-  }
-}
-</style>
+<style scoped lang="scss"></style>

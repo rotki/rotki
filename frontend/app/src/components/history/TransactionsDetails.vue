@@ -1,8 +1,8 @@
 <template>
-  <v-container>
-    <div class="mt-2 mb-4 text-h4">
+  <table-expand-container visible :colspan="colspan">
+    <template #title>
       {{ $t('transaction_details.title') }}
-    </div>
+    </template>
     <v-row class="pb-2">
       <v-col cols="2" class="font-weight-medium">
         {{ $t('transaction_details.gas') }}
@@ -50,19 +50,24 @@
         />
       </v-col>
     </v-row>
-  </v-container>
+  </table-expand-container>
 </template>
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
+import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { EthTransaction } from '@/services/history/types';
 import { toUnit, Unit } from '@/utils/calculation';
 
-@Component({})
+@Component({
+  components: { TableExpandContainer }
+})
 export default class TransactionDetails extends Vue {
   @Prop({ required: true })
   transaction!: EthTransaction;
+  @Prop({ required: true, type: Number })
+  colspan!: number;
 
   toGwei(value: BigNumber) {
     return toUnit(value, Unit.GWEI);

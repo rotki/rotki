@@ -1,44 +1,45 @@
 <template>
-  <div class="py-4">
-    <div class="text-h6 mb-4">{{ $t('poap_delivery_airdrops.title') }}</div>
-    <v-sheet outlined rounded>
-      <data-table :items="items" :headers="headers">
-        <template #item.name="{ item }">
-          <v-row align="center">
-            <v-col cols="auto">
-              <v-img
-                class="poap-delivery-airdrops__image"
-                width="36px"
-                height="36px"
-                contain
-                :src="getImage(item.event)"
-              />
-            </v-col>
-            <v-col> {{ item.name }}</v-col>
-          </v-row>
-        </template>
-        <template #item.link="{ item }">
-          <v-btn
-            icon
-            color="primary"
-            :target="$interop.isPackaged ? undefined : '_blank'"
-            :href="$interop.isPackaged ? undefined : item.link"
-            @click="
-              $interop.isPackaged ? $interop.navigate(item.link) : undefined
-            "
-          >
-            <v-icon>mdi-link</v-icon>
-          </v-btn>
-        </template>
-      </data-table>
-    </v-sheet>
-  </div>
+  <table-expand-container :visible="visible" :colspan="colspan">
+    <template #title>
+      {{ $t('poap_delivery_airdrops.title') }}
+    </template>
+    <data-table :items="items" :headers="headers">
+      <template #item.name="{ item }">
+        <v-row align="center">
+          <v-col cols="auto">
+            <v-img
+              class="poap-delivery-airdrops__image"
+              width="36px"
+              height="36px"
+              contain
+              :src="getImage(item.event)"
+            />
+          </v-col>
+          <v-col> {{ item.name }}</v-col>
+        </v-row>
+      </template>
+      <template #item.link="{ item }">
+        <v-btn
+          icon
+          color="primary"
+          :target="$interop.isPackaged ? undefined : '_blank'"
+          :href="$interop.isPackaged ? undefined : item.link"
+          @click="
+            $interop.isPackaged ? $interop.navigate(item.link) : undefined
+          "
+        >
+          <v-icon>mdi-link</v-icon>
+        </v-btn>
+      </template>
+    </data-table>
+  </table-expand-container>
 </template>
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
+import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { PoapDeliveryDetails } from '@/store/defi/types';
 import { default as images } from './poap.json';
 
@@ -64,9 +65,14 @@ const events = [
 export type EventType = typeof events[number];
 
 @Component({
-  components: { DataTable }
+  components: { DataTable, TableExpandContainer }
 })
 export default class PoapDeliveryAirdrops extends Vue {
+  @Prop({ required: true, type: Boolean })
+  visible!: boolean;
+  @Prop({ required: true, type: Number })
+  colspan!: number;
+
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('poap_delivery_airdrops.headers.name').toString(),
