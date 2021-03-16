@@ -29,6 +29,7 @@ from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule, LockableQueryObject, protect_with_lock
@@ -252,7 +253,10 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryObject):
                 result_info = json_ret.get('resultInfo', None)
                 if result_info:
                     code = result_info.get('code', None)
-                    if code and code == 104002:
+                    # This two codes can appear if there is an error with the
+                    # key as tested here
+                    # https://github.com/rotki/rotki/pull/2569#issuecomment-800151821
+                    if code and code in (100001, 101002):
                         raise LoopringAPIKeyMismatch()
             # else just let it hit the generic remote error below
 
@@ -322,7 +326,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryObject):
         for balance_entry in response:
             try:
                 token_id = balance_entry['tokenId']
-                total = balance_entry['total']
+                total = deserialize_int_from_str(balance_entry['total'], 'loopring_balances')
             except KeyError as e:
                 raise RemoteError(
                     f'Failed to query loopring balances because a balance entry '
