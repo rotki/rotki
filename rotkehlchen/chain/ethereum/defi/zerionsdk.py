@@ -187,7 +187,7 @@ def _handle_pooltogether_v3(normalized_balance: FVal, token_name: str) -> Option
         return DefiBalance(
             token_address=to_checksum_address('0xA92a861FC11b99b24296aF880011B47F9cAFb5ab'),
             token_name='PoolTogether UNI Ticket (Compound)',
-            token_symbol='plUNI',
+            token_symbol='PcUNI',
             balance=Balance(
                 amount=normalized_balance,
                 usd_value=normalized_balance * uni_price,
