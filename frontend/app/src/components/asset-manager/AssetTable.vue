@@ -30,6 +30,7 @@
       :expanded="expanded"
       item-key="address"
       sort-by="name"
+      must-sort
       :search.sync="search"
       :footer-props="footerProps"
     >

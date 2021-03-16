@@ -7,6 +7,7 @@
       :footer-props="footerProps"
       sort-desc
       sort-by="balance.usdValue"
+      must-sort
     >
       <template #item.asset="{ item }">
         <span class="d-flex flex-row align-center">

@@ -8,6 +8,7 @@
         class="account-asset-balances__table"
         sort-by="usdValue"
         sort-desc
+        must-sort
         :footer-props="footerProps"
       >
         <template #header.usdValue>

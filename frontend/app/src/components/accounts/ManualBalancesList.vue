@@ -12,6 +12,7 @@
         :items="visibleBalances"
         class="manual-balances-list"
         sort-by="usdValue"
+        must-sort
         :footer-props="footerProps"
         sort-desc
       >

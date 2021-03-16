@@ -7,6 +7,7 @@
       :loading-text="$t('asset_balances.loading')"
       sort-by="usdValue"
       sort-desc
+      must-sort
       :footer-props="footerProps"
     >
       <template #header.usdValue>

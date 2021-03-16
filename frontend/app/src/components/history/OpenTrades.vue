@@ -10,6 +10,7 @@
             :items="data"
             :headers="headersOpen"
             :footer-props="footerProps"
+            must-sort
           />
         </v-card-text>
       </v-card>

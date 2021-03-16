@@ -14,6 +14,7 @@
           item-key="index"
           sort-by="time"
           sort-desc
+          must-sort
           :footer-props="footerProps"
         >
           <template #item.type="{ item }">

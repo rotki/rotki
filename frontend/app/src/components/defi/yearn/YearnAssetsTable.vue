@@ -11,6 +11,7 @@
           :footer-props="footerProps"
           sort-by="roi"
           sort-desc
+          must-sort
           :loading="loading"
         >
           <template #item.underlyingValue.usdValue="{ item }">

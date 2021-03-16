@@ -10,6 +10,7 @@
       item-key="address"
       :expanded.sync="expanded"
       sort-by="balance.usdValue"
+      must-sort
       :footer-props="footerProps"
       :custom-group="groupBy"
       :group-by="isBtc ? ['xpub', 'derivationPath'] : undefined"

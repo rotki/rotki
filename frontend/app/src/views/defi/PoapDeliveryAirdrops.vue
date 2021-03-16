@@ -5,6 +5,7 @@
       <v-data-table
         :items="items"
         :headers="headers"
+        must-sort
         :footer-props="footerProps"
       >
         <template #item.name="{ item }">

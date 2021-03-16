@@ -36,6 +36,7 @@
             item-key="identifier"
             sort-by="timestamp"
             sort-desc
+            must-sort
             :page.sync="page"
             :footer-props="footerProps"
             :loading="refreshing"

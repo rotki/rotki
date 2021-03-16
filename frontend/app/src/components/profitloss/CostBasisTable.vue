@@ -18,6 +18,7 @@
         item-key="id"
         sort-by="time"
         sort-desc
+        must-sort
         :footer-props="footerProps"
       >
         <template #item.location="{ item }">

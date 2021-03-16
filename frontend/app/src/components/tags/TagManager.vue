@@ -38,6 +38,7 @@
         item-key="name"
         :headers="headers"
         :search="search"
+        must-sort
         :footer-props="footerProps"
       >
         <template #item.name="{ item }">
