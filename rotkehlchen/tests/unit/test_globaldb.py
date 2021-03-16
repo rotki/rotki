@@ -81,7 +81,7 @@ def test_check_asset_exists(globaldb):
             'name': 'Lolcoin',
             'symbol': 'LOLZ',
             'started': 0,
-        }
+        },
     )
     globaldb.add_asset(
         asset_id='2',
@@ -90,7 +90,7 @@ def test_check_asset_exists(globaldb):
             'name': 'Lolcoin',
             'symbol': 'LOLZ',
             'started': 0,
-        }
+        },
     )
     globaldb.add_asset(
         asset_id='3',
@@ -99,7 +99,7 @@ def test_check_asset_exists(globaldb):
             'name': 'Lolcoin',
             'symbol': 'LOLZ',
             'started': 0,
-        }
+        },
     )
 
     assert not globaldb.check_asset_exists(AssetType.TRON_TOKEN, name='foo', symbol='FOO')
@@ -115,6 +115,6 @@ def test_check_asset_exists(globaldb):
             'name': 'Euro',
             'symbol': 'EUR',
             'started': 0,
-        }
+        },
     )
     assert globaldb.check_asset_exists(AssetType.FIAT, name='Euro', symbol='EUR') == ['EUR', '4']  # noqa: E501
