@@ -34,6 +34,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date, ts_now
 from rotkehlchen.utils.network import request_get_dict, retry_calls
+from rotkehlchen.serialization.deserialize import deserialize_price
 from rotkehlchen.utils.serialization import rlk_jsondumps, jsonloads_dict
 
 if TYPE_CHECKING:
@@ -482,6 +483,7 @@ class Inquirer():
             to_currency: Asset,
     ) -> Optional[Price]:
         instance = Inquirer()
+        rate = None
         if date in instance._cached_forex_data:
             if from_currency in instance._cached_forex_data[date]:
                 rate = instance._cached_forex_data[date][from_currency].get(to_currency)
@@ -492,8 +494,12 @@ class Inquirer():
                         to_currency=to_currency.identifier,
                         rate=rate,
                     )
-                return rate
-        return None
+                    try:
+                        rate = deserialize_price(rate)
+                    except DeserializationError as e:
+                        log.error(f'Could not read cached forex entry due to {str(e)}')
+
+        return rate
 
     @staticmethod
     def save_historical_forex_data() -> None:
