@@ -756,7 +756,7 @@ class GlobalDBHandler():
         try:
             cursor.execute(
                 'UPDATE assets SET type=? WHERE identifier=?',
-                (data['type'].serialize_for_db(), identifier),
+                (data['asset_type'].serialize_for_db(), identifier),
             )
         except sqlite3.IntegrityError as e:
             connection.rollback()

@@ -356,9 +356,9 @@ class AllAssetsResource(BaseResource):
     def put(self, asset_type: AssetType, **kwargs: Any) -> Response:
         return self.rest_api.add_custom_asset(asset_type, **kwargs)
 
-    @use_kwargs(add_schema, location='json')  # type: ignore
+    @use_kwargs(edit_schema, location='json')  # type: ignore
     def patch(self, **kwargs: Any) -> Response:
-        return self.rest_api.edit_custom_asset(**kwargs)
+        return self.rest_api.edit_custom_asset(kwargs)
 
 
 class EthereumAssetsResource(BaseResource):
