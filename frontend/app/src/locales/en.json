@@ -184,11 +184,13 @@
     }
   },
   "asset_form": {
+    "help_coingecko": "Open the help on how to locate the CoinGecko identifier",
+    "help_cryptocompare": "Open the help on how to locate the CryptoCompare identifier",
     "labels": {
       "address": "Address",
       "asset_type": "Asset Type",
-      "coingecko": "Coingecko",
-      "coingecko_hint": "The identifier of the asset on Coingecko. If not set rotki will not be able to retrieve prices for the asset from Coingecko.",
+      "coingecko": "CoinGecko",
+      "coingecko_hint": "The identifier of the asset on CoinGecko. If not set rotki will not be able to retrieve prices for the asset from CoinGecko.",
       "cryptocompare": "CryptoCompare",
       "cryptocompare_hint": "The identifier of the asset on CryptoCompare. If not given, the symbol is assumed as default. If that does not work and if not otherwise set rotki will not be able to retrieve prices for the asset from CryptoCompare",
       "decimals": "Decimals",
