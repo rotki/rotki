@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
@@ -18,10 +19,11 @@ from rotkehlchen.inquirer import (
     _query_currency_converterapi,
     _query_exchanges_rateapi,
 )
+from rotkehlchen.tests.fixtures.accounting import create_inquirer
 from rotkehlchen.tests.utils.constants import A_CNY, A_EUR, A_GBP, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Price
-from rotkehlchen.utils.misc import timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date, ts_now
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -89,6 +91,32 @@ def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=
         # The cached response for EUR CNY is too old so we will fail here
         with pytest.raises(RemoteError):
             result = inquirer._query_fiat_pair(A_EUR, A_CNY)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_parsing_forex_cache_works(
+        inquirer,
+        data_dir,
+        mocked_current_prices,
+        current_price_oracles_order,
+):  # pylint: disable=unused-argument
+    filename = get_or_make_price_history_dir(data_dir) / 'price_history_forex.json'
+    date = timestamp_to_date(ts_now(), formatstr='%Y-%m-%d')
+    price = '124.123'
+    with open(filename, 'w') as f:
+        f.write(json.dumps({date: {'EUR': {'JPY': price}}}))
+
+    inquirer = create_inquirer(
+        data_directory=data_dir,
+        should_mock_current_price_queries=False,
+        mocked_prices=mocked_current_prices,
+        current_price_oracles_order=current_price_oracles_order,
+    )
+
+    # Now we need to reset the inquirer to pick the cache from the file
+    eurjpy_val = FVal(price)
+    assert inquirer._query_fiat_pair(A_EUR, A_JPY) == eurjpy_val
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
