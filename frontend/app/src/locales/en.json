@@ -153,6 +153,15 @@
     "hint": "Select as the main currency",
     "profit_currency": "Profit Currency"
   },
+  "explorers": {
+    "title": "Blockchain explorers",
+    "address_url": "Addresses will open at {addressUrl}",
+    "subtitle": "Set the external explorer urls for addresses and transaction",
+    "tx_url": "Transactions will open at {txUrl}",
+    "tx": "Transactions",
+    "address": "Addresses",
+    "chain_selector": "Blockchain"
+  },
   "underlying_token_manager": {
     "delete_tooltip": "Delete the underlying token",
     "edit_tooltip": "Edit an underlying token",
@@ -1696,7 +1705,7 @@
   },
   "hash_link": {
     "copy": "Copy to clipboard",
-    "open_link": "Open in external block explorer"
+    "open_link": "Open in external block explorer: {url}"
   },
   "manual_balances": {
     "title": "Manually Tracked Balances"

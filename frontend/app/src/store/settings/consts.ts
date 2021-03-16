@@ -7,6 +7,7 @@ export const THOUSAND_SEPARATOR = 'thousandSeparator' as 'thousandSeparator';
 export const DECIMAL_SEPARATOR = 'decimalSeparator' as 'decimalSeparator';
 export const CURRENCY_LOCATION = 'currencyLocation' as 'currencyLocation';
 export const REFRESH_PERIOD = 'refreshPeriod' as const;
+export const EXPLORERS = 'explorers' as const;
 
 export const TIMEFRAME_ALL = 'All';
 export const TIMEFRAME_YEAR = '1Y';

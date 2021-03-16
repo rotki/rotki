@@ -11,7 +11,8 @@ import {
   TIMEFRAME_ALL,
   TIMEFRAME_REMEMBER,
   TIMEFRAME_SETTING,
-  REFRESH_PERIOD
+  REFRESH_PERIOD,
+  EXPLORERS
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 
@@ -27,7 +28,8 @@ export const defaultState: () => SettingsState = () => ({
   [THOUSAND_SEPARATOR]: Defaults.DEFAULT_THOUSAND_SEPARATOR,
   [DECIMAL_SEPARATOR]: Defaults.DEFAULT_DECIMAL_SEPARATOR,
   [CURRENCY_LOCATION]: Defaults.DEFAULT_CURRENCY_LOCATION,
-  [REFRESH_PERIOD]: -1
+  [REFRESH_PERIOD]: -1,
+  [EXPLORERS]: {}
 });
 
 export const state: SettingsState = defaultState();

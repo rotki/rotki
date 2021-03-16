@@ -10,7 +10,8 @@ import {
   THOUSAND_SEPARATOR,
   DECIMAL_SEPARATOR,
   CURRENCY_LOCATION,
-  REFRESH_PERIOD
+  REFRESH_PERIOD,
+  EXPLORERS
 } from '@/store/settings/consts';
 import { CurrencyLocation } from '@/typing/types';
 
@@ -26,6 +27,18 @@ export type ProfitLossTimeframe = {
 
 export type RefreshPeriod = number;
 
+export type ExplorerEndpoints = {
+  readonly transaction?: string;
+  readonly address?: string;
+};
+
+export type ExplorersSettings = {
+  readonly ETC?: ExplorerEndpoints;
+  readonly ETH?: ExplorerEndpoints;
+  readonly BTC?: ExplorerEndpoints;
+  readonly KSM?: ExplorerEndpoints;
+};
+
 export interface SettingsState {
   readonly [DEFI_SETUP_DONE]: boolean;
   readonly [TIMEFRAME_SETTING]: TimeFrameSetting;
@@ -36,6 +49,7 @@ export interface SettingsState {
   readonly [DECIMAL_SEPARATOR]: string;
   readonly [CURRENCY_LOCATION]: CurrencyLocation;
   readonly [REFRESH_PERIOD]: RefreshPeriod;
+  readonly [EXPLORERS]: ExplorersSettings;
 }
 
 export type FrontendSettingsPayload = {

@@ -69,11 +69,14 @@
         />
       </v-col>
     </v-row>
+
+    <explorers />
   </setting-category>
 </template>
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
+import Explorers from '@/components/settings/explorers/Explorers.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import {
@@ -109,7 +112,7 @@ const SETTINGS = [
 type SettingsEntries = typeof SETTINGS[number];
 
 @Component({
-  components: { TimeFrameSettings, SettingCategory }
+  components: { Explorers, TimeFrameSettings, SettingCategory }
 })
 export default class FrontendSettings extends Mixins<
   SettingsMixin<SettingsEntries>

@@ -13,7 +13,8 @@ import {
   THOUSAND_SEPARATOR,
   DECIMAL_SEPARATOR,
   CURRENCY_LOCATION,
-  REFRESH_PERIOD
+  REFRESH_PERIOD,
+  EXPLORERS
 } from '@/store/settings/consts';
 import { FrontendSettingsPayload } from '@/store/settings/types';
 import store from '@/store/store';
@@ -45,7 +46,8 @@ describe('settings:actions', () => {
             [THOUSAND_SEPARATOR]: Defaults.DEFAULT_THOUSAND_SEPARATOR,
             [DECIMAL_SEPARATOR]: Defaults.DEFAULT_DECIMAL_SEPARATOR,
             [CURRENCY_LOCATION]: Defaults.DEFAULT_CURRENCY_LOCATION,
-            [REFRESH_PERIOD]: -1
+            [REFRESH_PERIOD]: -1,
+            [EXPLORERS]: {}
           })
         )
       })
