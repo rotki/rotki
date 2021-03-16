@@ -155,9 +155,9 @@
   },
   "explorers": {
     "title": "Blockchain explorers",
-    "address_url": "Addresses will will open at {addressUrl}",
+    "address_url": "Addresses will open at {addressUrl}",
     "subtitle": "Set the external explorer urls for addresses and transaction",
-    "tx_url": "Transactions will will open at {txUrl}",
+    "tx_url": "Transactions will open at {txUrl}",
     "tx": "Transactions",
     "address": "Addresses",
     "chain_selector": "Blockchain"
