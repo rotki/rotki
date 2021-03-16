@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`522` Users can connect to different backends from the frontend.
 * :feature:`-` Add support for New Taiwan Dollar (TWD) as a fiat currency
 * :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
