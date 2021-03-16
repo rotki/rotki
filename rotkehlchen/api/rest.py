@@ -1281,17 +1281,24 @@ class RestAPI():
     @staticmethod
     def edit_custom_asset(data: Dict[str, Any]) -> Response:
         try:
-            identifier = GlobalDBHandler().edit_custom_asset(data)
+            GlobalDBHandler().edit_custom_asset(data)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Also clear the in-memory cache of the asset resolver to requery DB
-        AssetResolver().assets_cache.pop(identifier, None)
+        AssetResolver().assets_cache.pop(data['identifier'], None)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-        return api_response(
-            result=_wrap_in_ok_result({'identifier': identifier}),
-            status_code=HTTPStatus.OK,
-        )
+    @staticmethod
+    def delete_custom_asset(identifier: str) -> Response:
+        try:
+            GlobalDBHandler().delete_custom_asset(identifier)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        # Also clear the in-memory cache of the asset resolver
+        AssetResolver().assets_cache.pop(identifier, None)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @staticmethod
     def get_custom_ethereum_tokens(address: Optional[ChecksumEthAddress]) -> Response:

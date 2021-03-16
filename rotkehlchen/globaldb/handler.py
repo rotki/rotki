@@ -706,9 +706,7 @@ class GlobalDBHandler():
         return rotki_id
 
     @staticmethod
-    def edit_custom_asset(
-            data: Dict[str, Any],
-    ) -> str:
+    def edit_custom_asset(data: Dict[str, Any]) -> None:
         """Edits an already existing custom asset in the DB
 
         The data should already be typed (as given in by marshmallow).
@@ -765,7 +763,6 @@ class GlobalDBHandler():
             ) from e
 
         connection.commit()
-        return identifier
 
     @staticmethod
     def add_common_asset_details(data: Dict[str, Any]) -> None:
@@ -807,3 +804,35 @@ class GlobalDBHandler():
             raise InputError(  # should not really happen
                 f'Adding common asset details for {asset_id} failed',
             ) from e
+
+    @staticmethod
+    def delete_custom_asset(identifier: str) -> None:
+        """Deletes an asset (non-ethereum token) from the global DB
+
+        May raise InputError if the assets does not exist in the DB or
+        some other constraint is hit. Such as for example trying to delete
+        an asset that is in another asset's forked or swapped attribute
+        """
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        try:
+            cursor.execute(
+                'DELETE FROM assets WHERE identifier=?;',
+                (identifier,),
+            )
+        except sqlite3.IntegrityError as e:
+            raise InputError(
+                f'Tried to delete asset with identifier {identifier} '
+                f'but its deletion would violate a constraint so deletion '
+                f'failed. Make sure that this asset is not already used by '
+                f'other assets as a swapped_for or forked asset',
+            ) from e
+
+        affected_rows = cursor.rowcount
+        if affected_rows != 1:
+            raise InputError(
+                f'Tried to delete asset with identifier {identifier} '
+                f'but it was not found in the DB',
+            )
+
+        connection.commit()

@@ -45,8 +45,8 @@ from rotkehlchen.api.v1.encoding import (
     IgnoredActionsGetSchema,
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
+    IntegerIdentifierSchema,
     LedgerActionEditSchema,
-    LedgerActionIdentifierSchema,
     LedgerActionSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
@@ -61,6 +61,7 @@ from rotkehlchen.api.v1.encoding import (
     RequiredEthereumAddressSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
+    StringIdentifierSchema,
     TagDeleteSchema,
     TagEditSchema,
     TagSchema,
@@ -348,6 +349,7 @@ class AllAssetsResource(BaseResource):
 
     add_schema = AssetSchema()
     edit_schema = AssetSchemaWithIdentifier()
+    delete_schema = StringIdentifierSchema()
 
     def get(self) -> Response:
         return self.rest_api.query_all_assets()
@@ -359,6 +361,10 @@ class AllAssetsResource(BaseResource):
     @use_kwargs(edit_schema, location='json')  # type: ignore
     def patch(self, **kwargs: Any) -> Response:
         return self.rest_api.edit_custom_asset(kwargs)
+
+    @use_kwargs(delete_schema, location='json')  # type: ignore
+    def delete(self, identifier: str) -> Response:
+        return self.rest_api.delete_custom_asset(identifier)
 
 
 class EthereumAssetsResource(BaseResource):
@@ -584,7 +590,7 @@ class LedgerActionsResource(BaseResource):
     get_schema = TimerangeLocationQuerySchema()
     put_schema = LedgerActionSchema()
     patch_schema = LedgerActionEditSchema()
-    delete_schema = LedgerActionIdentifierSchema()
+    delete_schema = IntegerIdentifierSchema()
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(

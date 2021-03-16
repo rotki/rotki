@@ -444,7 +444,7 @@ class AssetTypeField(fields.Field):
             attr: Optional[str],  # pylint: disable=unused-argument
             data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> TradeType:
+    ) -> AssetType:
         try:
             asset_type = AssetType.deserialize(value)
         except DeserializationError as e:
@@ -837,8 +837,12 @@ class LedgerActionEditSchema(Schema):
     action = fields.Nested(LedgerActionWithIdentifierSchema, required=True)
 
 
-class LedgerActionIdentifierSchema(Schema):
+class IntegerIdentifierSchema(Schema):
     identifier = fields.Integer(required=True)
+
+
+class StringIdentifierSchema(Schema):
+    identifier = fields.String(required=True)
 
 
 class ManuallyTrackedBalanceSchema(Schema):

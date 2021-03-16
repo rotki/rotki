@@ -287,7 +287,7 @@ class AssetType(Enum):
         May raise DeserializationError if the value does not match an asset type
         """
         upper_str = value.replace(' ', '_').upper()
-        asset_type = AssetType.__members__.get(upper_str, None)
+        asset_type = AssetType.__members__.get(upper_str, None)  # pylint: disable=no-member
         if asset_type is None:
             raise DeserializationError(f'Could not deserialize {value} as an asset type')
 
