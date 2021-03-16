@@ -17,6 +17,8 @@ from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AssetIconsSchema,
     AssetIconUploadSchema,
+    AssetSchema,
+    AssetSchemaWithIdentifier,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
@@ -86,6 +88,7 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    AssetType,
     BlockchainAccountData,
     ChecksumEthAddress,
     ExternalService,
@@ -343,8 +346,19 @@ class OwnedAssetsResource(BaseResource):
 
 class AllAssetsResource(BaseResource):
 
+    add_schema = AssetSchema()
+    edit_schema = AssetSchemaWithIdentifier()
+
     def get(self) -> Response:
         return self.rest_api.query_all_assets()
+
+    @use_kwargs(add_schema, location='json')  # type: ignore
+    def put(self, asset_type: AssetType, **kwargs: Any) -> Response:
+        return self.rest_api.add_custom_asset(asset_type, **kwargs)
+
+    @use_kwargs(add_schema, location='json')  # type: ignore
+    def patch(self, **kwargs: Any) -> Response:
+        return self.rest_api.edit_custom_asset(**kwargs)
 
 
 class EthereumAssetsResource(BaseResource):

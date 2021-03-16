@@ -19,6 +19,7 @@ from typing import (
     Union,
     overload,
 )
+from uuid import uuid4
 
 import gevent
 from flask import Response, make_response, send_file
@@ -1239,6 +1240,56 @@ class RestAPI():
         result = process_result_list(self.rotkehlchen.data.db.query_owned_assets())
         return api_response(
             _wrap_in_ok_result(result),
+            status_code=HTTPStatus.OK,
+        )
+
+    @staticmethod
+    def add_custom_asset(asset_type: AssetType, **kwargs: Any) -> Response:
+        globaldb = GlobalDBHandler()
+        # There is no good way to figure out if an asset already exists in the DB
+        # Best approximation we can do is this.
+        identifiers = globaldb.check_asset_exists(
+            asset_type=asset_type,
+            name=kwargs['name'],  # no key error possible. Checked by marshmallow
+            symbol=kwargs['symbol'],  # no key error possible. Checked by marshmallow
+        )
+        if identifiers is not None:
+            return api_response(
+                result=wrap_in_fail_result(
+                    f'Failed to add {str(asset_type)} {kwargs["name"]} '
+                    f'since it already exists. Existing ids: {",".join(identifiers)}'),
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        # asset id needs to be unique but no combination of asset data is guaranteed to be unique.
+        # And especially with the ability to edit assets we need an external uuid
+        asset_id = str(uuid4())
+        try:
+            GlobalDBHandler().add_asset(
+                asset_id=asset_id,
+                asset_type=asset_type,
+                data=kwargs,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(
+            _wrap_in_ok_result({'identifier': asset_id}),
+            status_code=HTTPStatus.OK,
+        )
+
+    @staticmethod
+    def edit_custom_asset(data: Dict[str, Any]) -> Response:
+        try:
+            identifier = GlobalDBHandler().edit_custom_asset(data)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        # Also clear the in-memory cache of the asset resolver to requery DB
+        AssetResolver().assets_cache.pop(identifier, None)
+
+        return api_response(
+            result=_wrap_in_ok_result({'identifier': identifier}),
             status_code=HTTPStatus.OK,
         )
 
