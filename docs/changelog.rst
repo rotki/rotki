@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`522` Users can connect to different backends from the frontend.
 * :feature:`-` Add support for New Taiwan Dollar (TWD) as a fiat currency
 * :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
@@ -333,7 +334,6 @@ Changelog
 * :feature:`1919` Rotki now supports Kusama blockchain. Users can import their Kusama addresses and see their KSM balances.
 * :feature:`1792` Users should now be able to see the accounting settings used when generating a tax report.
 * :bug:`1946` There should no longer be a non 0-100 percentage in the tax report during the progress report.
-* :feature:`522` Users can connect to different backends from the frontend.
 * :bug:`2040` Balance snapshotting should now work again for Bitfinex and Bitstamp users.
 * :feature:`2056` Users can now control whether a profit loss report in a certain time range is allowed to go further in the past to calculate the real cost basis of assets or not. By default this setting is on.
 * :feature:`2008` Users can now search for a currency in the currency selection UI.
