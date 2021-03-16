@@ -107,9 +107,6 @@ class GlobalDBHandler():
             GlobalDBHandler().add_ethereum_token(token)
             details_id = token.address
         else:
-            asset_data = cast(Dict[str, Any], data)
-            asset_data['identifier'] = asset_id
-            GlobalDBHandler().add_common_asset_details(asset_data)
             details_id = asset_id
 
         try:
@@ -123,6 +120,12 @@ class GlobalDBHandler():
             raise InputError(
                 f'Failed to add asset {asset_id} into the assets table for details id {details_id}',  # noqa: E501
             ) from e
+
+        # for common asset details we have to add them after the addition of the main asset table
+        if asset_type != AssetType.ETHEREUM_TOKEN:
+            asset_data = cast(Dict[str, Any], data)
+            asset_data['identifier'] = asset_id
+            GlobalDBHandler().add_common_asset_details(asset_data)
 
         connection.commit()  # success
 
@@ -459,6 +462,31 @@ class GlobalDBHandler():
         return result[0][0]
 
     @staticmethod
+    def check_asset_exists(
+            asset_type: AssetType,
+            name: str,
+            symbol: str,
+    ) -> Optional[List[str]]:
+        """Checks if an asset of a given type, symbol and name exists in the DB already
+
+        For non ethereum tokens with no unique identifier like an address this is the
+        only way to check if something already exists in the DB.
+
+        If it exists it returns a list of the identifiers of the assets.
+        """
+        cursor = GlobalDBHandler()._conn.cursor()
+        query = cursor.execute(
+            'SELECT A.identifier from assets AS A LEFT OUTER JOIN common_asset_details as B '
+            ' ON B.asset_id = A.identifier WHERE A.type=? AND B.name=? AND B.symbol=?;',
+            (asset_type.serialize_for_db(), name, symbol),
+        )
+        result = query.fetchall()
+        if len(result) == 0:
+            return None
+
+        return [x[0] for x in result]
+
+    @staticmethod
     def get_ethereum_token(address: ChecksumEthAddress) -> Optional[CustomEthereumTokenWithIdentifier]:  # noqa: E501
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
@@ -678,7 +706,7 @@ class GlobalDBHandler():
 
         May raise InputError if the token already exists
 
-        Returns the stringified rowid of the entry
+        Does not commit to the DB. Commit must be called from the caller.
         """
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()

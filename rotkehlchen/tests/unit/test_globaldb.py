@@ -70,3 +70,51 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
     )
     with pytest.raises(InputError):
         globaldb.edit_ethereum_token(bat_custom)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_check_asset_exists(globaldb):
+    globaldb.add_asset(
+        asset_id='1',
+        asset_type=AssetType.OWN_CHAIN,
+        data={
+            'name': 'Lolcoin',
+            'symbol': 'LOLZ',
+            'started': 0,
+        }
+    )
+    globaldb.add_asset(
+        asset_id='2',
+        asset_type=AssetType.FIAT,
+        data={
+            'name': 'Lolcoin',
+            'symbol': 'LOLZ',
+            'started': 0,
+        }
+    )
+    globaldb.add_asset(
+        asset_id='3',
+        asset_type=AssetType.OMNI_TOKEN,
+        data={
+            'name': 'Lolcoin',
+            'symbol': 'LOLZ',
+            'started': 0,
+        }
+    )
+
+    assert not globaldb.check_asset_exists(AssetType.TRON_TOKEN, name='foo', symbol='FOO')
+    assert not globaldb.check_asset_exists(AssetType.TRON_TOKEN, name='Lolcoin', symbol='LOLZ')
+    assert globaldb.check_asset_exists(AssetType.FIAT, name='Lolcoin', symbol='LOLZ') == ['2']
+    assert globaldb.check_asset_exists(AssetType.OMNI_TOKEN, name='Lolcoin', symbol='LOLZ') == ['3']  # noqa: E501
+
+    # now add another asset already existing, but with different ID. See both returned
+    globaldb.add_asset(
+        asset_id='4',
+        asset_type=AssetType.FIAT,
+        data={
+            'name': 'Euro',
+            'symbol': 'EUR',
+            'started': 0,
+        }
+    )
+    assert globaldb.check_asset_exists(AssetType.FIAT, name='Euro', symbol='EUR') == ['EUR', '4']  # noqa: E501
