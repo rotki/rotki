@@ -13,13 +13,13 @@ from rotkehlchen.chain.ethereum.modules.adex.typing import (
     ChannelWithdraw,
     Unbond,
 )
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_ADX, A_DAI
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import Timestamp
 
-TEST_ADDR = deserialize_ethereum_address('0x494B9728BECA6C03269c38Ed86179757F77Cc0dd')
-TEST_ADDR_USER_IDENTITY = deserialize_ethereum_address('0xaC29E71ACA2ff1C121673f0FC9d47e7616F692Ae')  # noqa: E501
+TEST_ADDR = string_to_ethereum_address('0x494B9728BECA6C03269c38Ed86179757F77Cc0dd')
+TEST_ADDR_USER_IDENTITY = string_to_ethereum_address('0xaC29E71ACA2ff1C121673f0FC9d47e7616F692Ae')  # noqa: E501
 
 
 def test_get_user_identity():
@@ -301,7 +301,7 @@ TEST_FIX_EXPECTED_ADX_STAKING_BALANCE = {
                 amount=FVal('0.686126927577621578'),
                 usd_value=FVal('0.686126927577621578'),
             ),
-            contract_address=deserialize_ethereum_address(
+            contract_address=string_to_ethereum_address(
                 '0x4846C6837ec670Bbd1f5b485471c8f64ECB9c534',
             ),
         ),

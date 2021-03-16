@@ -53,6 +53,7 @@ from rotkehlchen.chain.ethereum.modules import (
     YearnVaults,
 )
 from rotkehlchen.chain.ethereum.tokens import EthTokens
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.typing import KusamaAddress
 from rotkehlchen.chain.substrate.utils import KUSAMA_NODE_CONNECTION_TIMEOUT
@@ -72,7 +73,6 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
     BTCAddress,
     ChecksumEthAddress,
@@ -812,7 +812,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self.flush_cache('query_balances', arguments_matter=True)
             self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
             for account in accounts:
-                address = deserialize_ethereum_address(account)
+                # As mentioned by @LefterisJP in
+                # https://github.com/rotki/rotki/pull/2554#discussion_r592754163
+                # when the API adds or removes an address, the deserialize function at
+                # EthereumAddressField is called, so we expect from the addresses retrieved by
+                # this function to be already checksumed.
+                address = string_to_ethereum_address(account)
+
                 try:
                     self.modify_eth_account(
                         account=address,

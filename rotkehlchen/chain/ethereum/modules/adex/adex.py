@@ -17,7 +17,6 @@ from typing import (
 
 import requests
 from eth_typing import ChecksumAddress
-from eth_utils import to_checksum_address
 from typing_extensions import Literal
 from web3 import Web3
 
@@ -144,12 +143,6 @@ class Adex(EthereumModule):
                 token_ethereum_address = deserialize_ethereum_address(
                     entry['channelArgs']['tokenAddr'],
                 )
-                try:
-                    token_ethereum_address = to_checksum_address(token_ethereum_address)
-                except ValueError as e:
-                    raise DeserializationError(
-                        f"Invalid ethereum address: {token_ethereum_address} in channel: {channel_id}.",  # noqa: E501
-                    ) from e
 
                 if token_ethereum_address == A_ADX.ethereum_address:
                     channel_adx_reward_amount = FVal(
@@ -287,7 +280,7 @@ class Adex(EthereumModule):
                         amount=unclaimed_reward.dai_amount,
                         usd_value=unclaimed_reward.dai_amount * dai_usd_price,
                     ),
-                    contract_address=to_checksum_address(STAKING_ADDR),
+                    contract_address=STAKING_ADDR,
                 )
                 adex_balances[address].append(pool_balance)
 
@@ -476,14 +469,13 @@ class Adex(EthereumModule):
             ) from e
 
         try:
-            address = to_checksum_address(user_address)
+            address = deserialize_ethereum_address(user_address)
             identity_address = inverse_identity_address_map[address]
-            tx_address = to_checksum_address(tx_address)
-            token_address = to_checksum_address(token_address)
-        except (KeyError, ValueError) as e:
-            msg = str(e)
+            tx_address = deserialize_ethereum_address(tx_address)
+            token_address = deserialize_ethereum_address(token_address)
+        except (KeyError, DeserializationError) as e:
             if isinstance(e, KeyError):
-                msg = f'Missing key in event: {msg}.'
+                msg = f'Missing key in event: {str(e)}.'
 
             log.error(
                 'Failed to deserialize an AdEx channel withdraw event',
@@ -549,13 +541,7 @@ class Adex(EthereumModule):
         - KeyError
         - DeserializationError
         """
-        try:
-            identity_address = to_checksum_address(raw_event['owner'])
-        except ValueError as e:
-            raise DeserializationError(
-                f"Invalid ethereum address in {case} event owner: {raw_event['owner']}.",
-            ) from e
-
+        identity_address = deserialize_ethereum_address(raw_event['owner'])
         address = identity_address_map[identity_address]
         event_id = raw_event['id']
         if not isinstance(event_id, str):
@@ -573,12 +559,7 @@ class Adex(EthereumModule):
             raise DeserializationError(f'Unexpected format in {case} event id: {event_id}') from e
 
         if case in ('unbond', 'unbond_request'):
-            try:
-                tx_address = to_checksum_address(tx_address)
-            except ValueError as e:
-                raise DeserializationError(
-                    f'Invalid ethereum address in {case} event id: {tx_address}.',
-                ) from e
+            tx_address = deserialize_ethereum_address(tx_address)
 
             if address != tx_address:
                 raise DeserializationError(

@@ -12,10 +12,10 @@ from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.modules.uniswap import UniswapPoolEvent, UniswapPoolEventsBalance
 from rotkehlchen.chain.ethereum.modules.uniswap.typing import UNISWAP_EVENTS_PREFIX, EventType
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.aave import AAVE_TEST_ACC_1
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
@@ -33,10 +33,10 @@ from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeTyp
 # Addresses
 # DAI/WETH pool: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
 # From that pool find a holder and test
-LP_HOLDER_ADDRESS = deserialize_ethereum_address('0x631fdEF0781c00ADd20176f254F5ae5C26Da1c99')
+LP_HOLDER_ADDRESS = string_to_ethereum_address('0x631fdEF0781c00ADd20176f254F5ae5C26Da1c99')
 # Uniswap Factory contract
 TEST_ADDRESS_FACTORY_CONTRACT = (
-    deserialize_ethereum_address('0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f')
+    string_to_ethereum_address('0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f')
 )
 
 
@@ -157,9 +157,9 @@ EXPECTED_TRADES = [AMMTrade(
     swaps=[AMMSwap(
         tx_hash='0x13723c8b286ec56e95b00e091557e6a76f723d20a52503d2e08df5867d942b51',
         log_index=319,
-        address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
         timestamp=Timestamp(1603180607),
         location=Location.UNISWAP,
         token0=EthereumToken('WETH'),
@@ -179,9 +179,9 @@ EXPECTED_TRADES = [AMMTrade(
     swaps=[AMMSwap(
         tx_hash='0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900',
         log_index=90,
-        address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
         timestamp=Timestamp(1603056982),
         location=Location.UNISWAP,
         token0=EthereumToken('DAI'),
@@ -201,9 +201,9 @@ EXPECTED_TRADES = [AMMTrade(
     swaps=[AMMSwap(
         tx_hash='0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6',
         log_index=98,
-        address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
+        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
         timestamp=Timestamp(1602796833),
         location=Location.UNISWAP,
         token0=EthereumToken('ALEPH'),
@@ -215,9 +215,9 @@ EXPECTED_TRADES = [AMMTrade(
     ), AMMSwap(
         tx_hash='0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6',
         log_index=101,
-        address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
         timestamp=Timestamp(1602796833),
         location=Location.UNISWAP,
         token0=EthereumToken('DAI'),
@@ -237,9 +237,9 @@ EXPECTED_TRADES = [AMMTrade(
     swaps=[AMMSwap(
         tx_hash='0x96531b9f02bbb9b3f97e0a761eb49c8fd0752d8cc934dda4c5296e1e35d2b91e',
         log_index=32,
-        address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
         timestamp=Timestamp(1602796676),
         location=Location.UNISWAP,
         token0=EthereumToken('DAI'),
@@ -259,9 +259,9 @@ EXPECTED_TRADES = [AMMTrade(
     swaps=[AMMSwap(
         tx_hash='0x0b9b335b5a805dc58e330413ef6de52fc13369247978d90bb0436a9aadf98c86',
         log_index=198,
-        address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
         timestamp=Timestamp(1601858969),
         location=Location.UNISWAP,
         token0=EthereumToken('DAI'),
@@ -281,9 +281,9 @@ EXPECTED_TRADES = [AMMTrade(
     swaps=[AMMSwap(
         tx_hash='0xf3a3be42927fafb244e3968537491c8c5b1e789237e633ae972073726bf185f0',
         log_index=169,
-        address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
         timestamp=Timestamp(1601851402),
         location=Location.UNISWAP,
         token0=EthereumToken('yyDAI+yUSDC+yUSDT+yTUSD'),
@@ -303,9 +303,9 @@ EXPECTED_TRADES = [AMMTrade(
     swaps=[AMMSwap(
         tx_hash='0x99a50afa868558ed1a854a124cf3abb1cba3a0bb86a4e0ceef23246154387247',
         log_index=292,
-        address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
         timestamp=Timestamp(1601847584),
         location=Location.UNISWAP,
         token0=EthereumToken('YAM'),
@@ -318,7 +318,7 @@ EXPECTED_TRADES = [AMMTrade(
 ), AMMTrade(
     trade_type=TradeType.BUY,
     base_asset=UnknownEthereumToken(
-        ethereum_address=deserialize_ethereum_address('0xEfc1C73A3D8728Dc4Cf2A18ac5705FE93E5914AC'),  # noqa: E501
+        ethereum_address=string_to_ethereum_address('0xEfc1C73A3D8728Dc4Cf2A18ac5705FE93E5914AC'),  # noqa: E501
         symbol='METRIC',
         name='Metric.exchange',
     ),
@@ -329,14 +329,14 @@ EXPECTED_TRADES = [AMMTrade(
     swaps=[AMMSwap(
         tx_hash='0x648ddb305ae1c5b4185bdff50fa81e2f4757d2957c2a369269712529881d41c9',
         log_index=122,
-        address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
         timestamp=Timestamp(1601547546),
         location=Location.UNISWAP,
         token0=EthereumToken('WETH'),
         token1=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0xEfc1C73A3D8728Dc4Cf2A18ac5705FE93E5914AC'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0xEfc1C73A3D8728Dc4Cf2A18ac5705FE93E5914AC'),  # noqa: E501
             symbol='METRIC',
             name='Metric.exchange',
         ),
@@ -349,7 +349,7 @@ EXPECTED_TRADES = [AMMTrade(
     trade_type=TradeType.BUY,
     base_asset=EthereumToken('DAI'),
     quote_asset=UnknownEthereumToken(
-        ethereum_address=deserialize_ethereum_address('0xEfc1C73A3D8728Dc4Cf2A18ac5705FE93E5914AC'),  # noqa: E501
+        ethereum_address=string_to_ethereum_address('0xEfc1C73A3D8728Dc4Cf2A18ac5705FE93E5914AC'),  # noqa: E501
         symbol='METRIC',
         name='Metric.exchange',
     ),
@@ -359,14 +359,14 @@ EXPECTED_TRADES = [AMMTrade(
     swaps=[AMMSwap(
         tx_hash='0xa1cc9423122b91a688d030dbe640eadf778c3d35c65deb032abebcba853387f5',
         log_index=74,
-        address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
+        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
         timestamp=Timestamp(1601481706),
         location=Location.UNISWAP,
         token0=EthereumToken('WETH'),
         token1=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0xEfc1C73A3D8728Dc4Cf2A18ac5705FE93E5914AC'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0xEfc1C73A3D8728Dc4Cf2A18ac5705FE93E5914AC'),  # noqa: E501
             symbol='METRIC',
             name='Metric.exchange',
         ),
@@ -377,9 +377,9 @@ EXPECTED_TRADES = [AMMTrade(
     ), AMMSwap(
         tx_hash='0xa1cc9423122b91a688d030dbe640eadf778c3d35c65deb032abebcba853387f5',
         log_index=77,
-        address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
         timestamp=Timestamp(1601481706),
         location=Location.UNISWAP,
         token0=EthereumToken('DAI'),
@@ -446,7 +446,7 @@ def test_get_uniswap_trades_history(
     _query_and_assert_simple_uniswap_trades(setup, rotkehlchen_api_server, async_query)
 
 
-CRAZY_UNISWAP_ADDRESS = deserialize_ethereum_address('0xB1637bE0173330664adecB343faF112Ca837dA06')
+CRAZY_UNISWAP_ADDRESS = string_to_ethereum_address('0xB1637bE0173330664adecB343faF112Ca837dA06')
 EXPECTED_CRAZY_TRADES = [AMMTrade(
     trade_type=TradeType.BUY,
     base_asset=EthereumToken('WETH'),
@@ -458,8 +458,8 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
         tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
         log_index=140,
         address=CRAZY_UNISWAP_ADDRESS,
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0x21aD02e972E968D9c76a7081a483d782001d6558'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0x21aD02e972E968D9c76a7081a483d782001d6558'),
         timestamp=Timestamp(1605431265),
         location=Location.UNISWAP,
         token0=EthereumToken('SLP'),
@@ -472,12 +472,12 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
         tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
         log_index=143,
         address=CRAZY_UNISWAP_ADDRESS,
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         to_address=CRAZY_UNISWAP_ADDRESS,
         timestamp=Timestamp(1605431265),
         location=Location.UNISWAP,
         token0=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
             symbol='🐟',
             name='Penguin Party Fish',
         ),
@@ -490,12 +490,12 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
         tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
         log_index=146,
         address=CRAZY_UNISWAP_ADDRESS,
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0xB8db34F834E9dF42F2002CeB7B829DaD89d08E14'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0xB8db34F834E9dF42F2002CeB7B829DaD89d08E14'),
         timestamp=Timestamp(1605431265),
         location=Location.UNISWAP,
         token0=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
             symbol='🐟',
             name='Penguin Party Fish',
         ),
@@ -508,12 +508,12 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
 ), AMMTrade(
     trade_type=TradeType.BUY,
     base_asset=UnknownEthereumToken(
-        ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+        ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
         symbol='🐟',
         name='Penguin Party Fish',
     ),
     quote_asset=UnknownEthereumToken(
-        ethereum_address=deserialize_ethereum_address('0x86B0Aa51eB489585D88d2e671E5ee1b9e457Be60'),  # noqa: E501
+        ethereum_address=string_to_ethereum_address('0x86B0Aa51eB489585D88d2e671E5ee1b9e457Be60'),  # noqa: E501
         symbol='FMK',
         name='https://t.me/fomok',
     ),
@@ -524,12 +524,12 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
         tx_hash='0xde838fff85d4df6d1b4270477456bab1b644e7f4830f606fc2dc522608b6194f',
         log_index=20,
         address=CRAZY_UNISWAP_ADDRESS,
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         to_address=CRAZY_UNISWAP_ADDRESS,
         timestamp=Timestamp(1605420918),
         location=Location.UNISWAP,
         token0=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0x86B0Aa51eB489585D88d2e671E5ee1b9e457Be60'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0x86B0Aa51eB489585D88d2e671E5ee1b9e457Be60'),  # noqa: E501
             symbol='FMK',
             name='https://t.me/fomok',
         ),
@@ -542,12 +542,12 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
         tx_hash='0xde838fff85d4df6d1b4270477456bab1b644e7f4830f606fc2dc522608b6194f',
         log_index=23,
         address=CRAZY_UNISWAP_ADDRESS,
-        from_address=deserialize_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=deserialize_ethereum_address('0xc61288821b4722Ce29249F0BA03b633F0bE46a5A'),
+        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        to_address=string_to_ethereum_address('0xc61288821b4722Ce29249F0BA03b633F0bE46a5A'),
         timestamp=Timestamp(1605420918),
         location=Location.UNISWAP,
         token0=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
             symbol='🐟',
             name='Penguin Party Fish',
         ),
@@ -574,8 +574,8 @@ BOTH_IN_TRADES = [AMMTrade(
         tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
         log_index=166,
         address=CRAZY_UNISWAP_ADDRESS,
-        from_address=deserialize_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-        to_address=deserialize_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
+        from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+        to_address=string_to_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
         timestamp=Timestamp(1604657395),
         location=Location.UNISWAP,
         token0=EthereumToken('WETH'),
@@ -588,12 +588,12 @@ BOTH_IN_TRADES = [AMMTrade(
         tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
         log_index=169,
         address=CRAZY_UNISWAP_ADDRESS,
-        from_address=deserialize_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+        from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
         to_address=CRAZY_UNISWAP_ADDRESS,
         timestamp=Timestamp(1604657395),
         location=Location.UNISWAP,
         token0=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
             symbol='🐟',
             name='Penguin Party Fish',
         ),
@@ -606,12 +606,12 @@ BOTH_IN_TRADES = [AMMTrade(
         tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
         log_index=172,
         address=CRAZY_UNISWAP_ADDRESS,
-        from_address=deserialize_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-        to_address=deserialize_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+        from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+        to_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
         timestamp=Timestamp(1604657395),
         location=Location.UNISWAP,
         token0=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
             symbol='🐟',
             name='Penguin Party Fish',
         ),
@@ -632,8 +632,8 @@ BOTH_IN_TRADES = [AMMTrade(
         tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
         log_index=166,
         address=CRAZY_UNISWAP_ADDRESS,
-        from_address=deserialize_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-        to_address=deserialize_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
+        from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+        to_address=string_to_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
         timestamp=Timestamp(1604657395),
         location=Location.UNISWAP,
         token0=EthereumToken('WETH'),
@@ -646,12 +646,12 @@ BOTH_IN_TRADES = [AMMTrade(
         tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
         log_index=169,
         address=CRAZY_UNISWAP_ADDRESS,
-        from_address=deserialize_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+        from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
         to_address=CRAZY_UNISWAP_ADDRESS,
         timestamp=Timestamp(1604657395),
         location=Location.UNISWAP,
         token0=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
             symbol='🐟',
             name='Penguin Party Fish',
         ),
@@ -664,12 +664,12 @@ BOTH_IN_TRADES = [AMMTrade(
         tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
         log_index=172,
         address=CRAZY_UNISWAP_ADDRESS,
-        from_address=deserialize_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-        to_address=deserialize_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+        from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+        to_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
         timestamp=Timestamp(1604657395),
         location=Location.UNISWAP,
         token0=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
             symbol='🐟',
             name='Penguin Party Fish',
         ),
@@ -750,18 +750,18 @@ def test_get_uniswap_exotic_history(
 TEST_EVENTS_ADDRESS_1 = "0x6C0F75eb3D69B9Ea2fB88dbC37fc086a12bBC93F"
 EXPECTED_EVENTS_BALANCES_1 = [
     UniswapPoolEventsBalance(
-        address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
-        pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
+        address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
+        pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
         token0=EthereumToken('$BASED'),
         token1=EthereumToken('WETH'),
         events=[
             UniswapPoolEvent(
                 tx_hash='0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824',
                 log_index=263,
-                address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                 timestamp=Timestamp(1604273256),
                 event_type=EventType.MINT,
-                pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+                pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
                 token0=EthereumToken('$BASED'),
                 token1=EthereumToken('WETH'),
                 amount0=AssetAmount(FVal('605.773209925184996494')),
@@ -772,10 +772,10 @@ EXPECTED_EVENTS_BALANCES_1 = [
             UniswapPoolEvent(
                 tx_hash='0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa',
                 log_index=66,
-                address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                 timestamp=Timestamp(1604283808),
                 event_type=EventType.BURN,
-                pool_address=deserialize_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
+                pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
                 token0=EthereumToken('$BASED'),
                 token1=EthereumToken('WETH'),
                 amount0=AssetAmount(FVal('641.26289347330654345')),
@@ -792,11 +792,11 @@ EXPECTED_EVENTS_BALANCES_1 = [
 EXPECTED_EVENTS_BALANCES_2 = [
     # Response index 0
     UniswapPoolEventsBalance(
-        address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
-        pool_address=deserialize_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
+        address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
+        pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
         token0=EthereumToken('WETH'),
         token1=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
             symbol='DICE',
             name='DICE.FINANCE TOKEN',
         ),
@@ -804,13 +804,13 @@ EXPECTED_EVENTS_BALANCES_2 = [
             UniswapPoolEvent(
                 tx_hash='0x1e7fd116b316af49f6c52b3ca44f3c5d24c2a6f80a5b5e674b5f94155bd2cec4',
                 log_index=99,
-                address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                 timestamp=Timestamp(1598270334),
                 event_type=EventType.MINT,
-                pool_address=deserialize_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
+                pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
                 token0=EthereumToken('WETH'),
                 token1=UnknownEthereumToken(
-                    ethereum_address=deserialize_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
+                    ethereum_address=string_to_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
                     symbol='DICE',
                     name='DICE.FINANCE TOKEN',
                 ),
@@ -822,13 +822,13 @@ EXPECTED_EVENTS_BALANCES_2 = [
             UniswapPoolEvent(
                 tx_hash='0x140bdba831f9494cf0ead6d57009e1eae45ed629a78ee74ccbf49018afae0ffa',
                 log_index=208,
-                address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                 timestamp=Timestamp(1599000975),
                 event_type=EventType.BURN,
-                pool_address=deserialize_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
+                pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
                 token0=EthereumToken('WETH'),
                 token1=UnknownEthereumToken(
-                    ethereum_address=deserialize_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
+                    ethereum_address=string_to_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
                     symbol='DICE',
                     name='DICE.FINANCE TOKEN',
                 ),
@@ -844,10 +844,10 @@ EXPECTED_EVENTS_BALANCES_2 = [
     ),
     # Response index 3
     UniswapPoolEventsBalance(
-        address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
-        pool_address=deserialize_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
+        address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
+        pool_address=string_to_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
         token0=UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address('0x26E43759551333e57F073bb0772F50329A957b30'),  # noqa: E501
+            ethereum_address=string_to_ethereum_address('0x26E43759551333e57F073bb0772F50329A957b30'),  # noqa: E501
             symbol='DGVC',
             name='DegenVC',
         ),
@@ -856,12 +856,12 @@ EXPECTED_EVENTS_BALANCES_2 = [
             UniswapPoolEvent(
                 tx_hash='0xc612f05bf9f3d814ffbe3649feacbf5bda213297bf7af53a56956814652fe9cc',
                 log_index=171,
-                address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                 timestamp=Timestamp(1598391968),
                 event_type=EventType.MINT,
-                pool_address=deserialize_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
+                pool_address=string_to_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
                 token0=UnknownEthereumToken(
-                    ethereum_address=deserialize_ethereum_address('0x26E43759551333e57F073bb0772F50329A957b30'),  # noqa: E501
+                    ethereum_address=string_to_ethereum_address('0x26E43759551333e57F073bb0772F50329A957b30'),  # noqa: E501
                     symbol='DGVC',
                     name='DegenVC',
                 ),
@@ -874,12 +874,12 @@ EXPECTED_EVENTS_BALANCES_2 = [
             UniswapPoolEvent(
                 tx_hash='0x597f8790a3b9353114b364777c9d32373930e5ad6b8c8f97a58cd2dd58f12b89',
                 log_index=201,
-                address=deserialize_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                 timestamp=Timestamp(1598607431),
                 event_type=EventType.BURN,
-                pool_address=deserialize_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
+                pool_address=string_to_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
                 token0=UnknownEthereumToken(
-                    ethereum_address=deserialize_ethereum_address('0x26E43759551333e57F073bb0772F50329A957b30'),  # noqa: E501
+                    ethereum_address=string_to_ethereum_address('0x26E43759551333e57F073bb0772F50329A957b30'),  # noqa: E501
                     symbol='DGVC',
                     name='DegenVC',
                 ),

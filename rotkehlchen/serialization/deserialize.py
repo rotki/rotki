@@ -1,10 +1,11 @@
 from typing import Tuple, Union
 
-from eth_typing import HexAddress, HexStr
+from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures import ActionType, LedgerActionType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     ConversionError,
@@ -676,16 +677,18 @@ def deserialize_hex_color_code(symbol: str) -> HexColorCode:
 
 
 def deserialize_ethereum_address(symbol: str) -> ChecksumEthAddress:
-    """This is identical to string_to_ethereum_address()
+    """Deserialize a symbol, check that it's a valid ethereum address
+    and return it checksummed.
 
-    TODO:
-    But it's wrong. We should differentiate between those two functions.
-    That one should only be used for typing purposes while this one here
-    should be used to properly deserialize and check that symbol is indeed
-    an ethereum address and is always checksummed. So also external input sanitization.
-    https://github.com/rotki/rotki/issues/2334
+    This function can raise DeserializationError if the address is not
+    valid
     """
-    return ChecksumEthAddress(HexAddress(HexStr(symbol)))
+    try:
+        return to_checksum_address(symbol)
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {symbol}',
+        ) from e
 
 
 def deserialize_int_from_str(symbol: str, location: str) -> int:
@@ -776,7 +779,7 @@ def deserialize_unknown_ethereum_token_from_db(
     """
     try:
         unknown_ethereum_token = UnknownEthereumToken(
-            ethereum_address=deserialize_ethereum_address(ethereum_address),
+            ethereum_address=string_to_ethereum_address(ethereum_address),
             symbol=symbol,
             name=name,
             decimals=decimals,

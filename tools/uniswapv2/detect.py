@@ -3,8 +3,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Set
-
-from eth_utils.address import to_checksum_address
+import sys
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
@@ -19,6 +18,7 @@ from rotkehlchen.chain.ethereum.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.ethereum.utils import multicall_specific
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.greenlets import GreenletManager
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks, ts_now
@@ -65,7 +65,11 @@ def pairs_from_ethereum(ethereum: EthereumManager) -> Dict[str, Any]:
     for idx, chunk in enumerate(chunks):
         print(f'Querying univ2 pairs chunk {idx + 1} / {len(chunks)}')
         result = multicall_specific(ethereum, univ2factory, 'allPairs', chunk)
-        pairs.extend([to_checksum_address(x[0]) for x in result])
+        try:
+            pairs.extend([deserialize_ethereum_address(x[0]) for x in result])
+        except DeserializationError:
+            print('Error deserializing address while fetching uniswap v2 pool tokens')
+            sys.exit(1)
 
     return pairs
 
@@ -101,16 +105,24 @@ def pairs_and_token_details_from_graph() -> Dict[str, Any]:
         print(f'Querying graph pairs batch {param_values["skip"]} - {param_values["skip"] + step}')
         result = graph.query(querystr, param_types=param_types, param_values=param_values)
         for entry in result['pairs']:
+            try:
+                deserialized_entry = deserialize_ethereum_address(entry['id'])
+                deserialized_token_0 = deserialize_ethereum_address(entry['token0']['id'])
+                deserialized_token_1 = deserialize_ethereum_address(entry['token1']['id'])
+            except DeserializationError:
+                print('Error deserializing address while fetching uniswap v2 pool tokens')
+                sys.exit(1)
+
             contracts.append({
-                'address': to_checksum_address(entry['id']),
+                'address': deserialized_entry,
                 'token0': {
-                    'address': to_checksum_address(entry['token0']['id']),
+                    'address': deserialized_token_0,
                     'name': entry['token0']['name'],
                     'symbol': entry['token0']['symbol'],
                     'decimals': int(entry['token0']['decimals']),
                 },
                 'token1': {
-                    'address': to_checksum_address(entry['token1']['id']),
+                    'address': deserialized_token_1,
                     'name': entry['token1']['name'],
                     'symbol': entry['token1']['symbol'],
                     'decimals': int(entry['token1']['decimals']),

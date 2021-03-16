@@ -1,8 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from eth_utils.address import to_checksum_address
-
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
@@ -12,12 +10,17 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
-from rotkehlchen.chain.ethereum.typing import NodeName
+from rotkehlchen.chain.ethereum.typing import NodeName, string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import (
+    RemoteError,
+    UnknownAsset,
+    UnsupportedAsset,
+    DeserializationError,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
@@ -135,7 +138,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
     if 'DAI' in token_name:
         dai_price = Inquirer.find_usd_price(A_DAI)
         return DefiBalance(
-            token_address=to_checksum_address('0x49d716DFe60b37379010A75329ae09428f17118d'),
+            token_address=string_to_ethereum_address('0x49d716DFe60b37379010A75329ae09428f17118d'),
             token_name='Pool Together DAI token',
             token_symbol='plDAI',
             balance=Balance(
@@ -146,7 +149,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
     if 'USDC' in token_name:
         usdc_price = Inquirer.find_usd_price(A_USDC)
         return DefiBalance(
-            token_address=to_checksum_address('0xBD87447F48ad729C5c4b8bcb503e1395F62e8B98'),
+            token_address=string_to_ethereum_address('0xBD87447F48ad729C5c4b8bcb503e1395F62e8B98'),
             token_name='Pool Together USDC token',
             token_symbol='plUSDC',
             balance=Balance(
@@ -159,7 +162,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
 
 
 # supported zerion adapter address
-ZERION_ADAPTER_ADDRESS = deserialize_ethereum_address('0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672')
+ZERION_ADAPTER_ADDRESS = string_to_ethereum_address('0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672')
 
 
 class ZerionSDK():
@@ -255,10 +258,27 @@ class ZerionSDK():
                 balance_type = adapter_balance[0][1]  # can be either 'Asset' or 'Debt'
                 for balances in adapter_balance[1]:
                     underlying_balances = []
-                    base_balance = self._get_single_balance(protocol.name, balances[0])
+                    try:
+                        base_balance = self._get_single_balance(protocol.name, balances[0])
+                    except DeserializationError:
+                        log.error(
+                            f'Deserialization error trying to get base balance'
+                            f'in {protocol.name}. Skipping {balances[0]}',
+                        )
+                        continue
+
                     for balance in balances[1]:
-                        defi_balance = self._get_single_balance(protocol.name, balance)
-                        underlying_balances.append(defi_balance)
+                        try:
+                            defi_balance = self._get_single_balance(protocol.name, balance)
+                            underlying_balances.append(defi_balance)
+                        except DeserializationError:
+                            log.error(
+                                f'Deserialization error trying to get single balance '
+                                f'in {protocol.name}. {balances[0]}'
+                                f' Skipping underliying balance',
+                            )
+                            # In this case we just skip the underlying balance
+                            continue
 
                     if base_balance.balance.usd_value == ZERO:
                         # This can happen. We can't find a price for some assets
@@ -281,12 +301,16 @@ class ZerionSDK():
             protocol_name: str,
             entry: Tuple[Tuple[str, str, str, int], int],
     ) -> DefiBalance:
+        """
+        This method can raise DeserializationError while deserializing the token address
+        or handling the specific protocol.
+        """
         metadata = entry[0]
         balance_value = entry[1]
         decimals = metadata[3]
         normalized_value = token_normalized_value_decimals(balance_value, decimals)
         token_symbol = metadata[2]
-        token_address = to_checksum_address(metadata[0])
+        token_address = deserialize_ethereum_address(metadata[0])
         token_name = metadata[1]
 
         special_handling = self.handle_protocols(
@@ -329,6 +353,7 @@ class ZerionSDK():
     ) -> Optional[DefiBalance]:
         """Special handling for price for token/protocols which are easier to do onchain
         or need some kind of special treatment.
+        This method can raise DeserializationError
         """
         if protocol_name == 'PoolTogether':
             result = _handle_pooltogether(normalized_balance, token_name)
@@ -341,7 +366,7 @@ class ZerionSDK():
             return None
 
         return DefiBalance(
-            token_address=to_checksum_address(token_address),
+            token_address=deserialize_ethereum_address(token_address),
             token_name=token_name,
             token_symbol=token_symbol,
             balance=Balance(amount=normalized_balance, usd_value=normalized_balance * usd_price),
