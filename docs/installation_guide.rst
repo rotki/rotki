@@ -432,7 +432,7 @@ To build Docker image from source using ``Dockerfile``::
 
 
 Downloading source and installing python dependencies
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------------------
 
 This guide will assume that you want to use git to clone the project into a development directory; if you wish to just download the source from Github as a zip you can do that instead (the zip file has everything in a folder in the format of ``<project>-<branch>``, so if you download rotki/develop you will get a folder ``rotki-develop``; you can of course rename this). If you download the source as a zip you can skip to Step 4 below.
 
@@ -499,7 +499,7 @@ In the terminal execute the two following commands in succession::
 If all went well, pysqlcipher3 should have successfuly built and installed. If it didn't, try going back and ensuring that you have properly built sqlcipher and pointed to the right directories in the setup.py file, or consult the troubleshooting section.
 
 Installing Electron and Running Rotki
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------
 
 1. In your terminal, navigate to your rotki development directory and enter the following commands to install electron and its dependencies::
 
