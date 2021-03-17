@@ -376,3 +376,17 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.CONFLICT,
     )
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
+def test_query_asset_types(rotkehlchen_api_server):
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetstypesresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == [str(x) for x in AssetType]
+    assert all([isinstance(AssetType.deserialize(x), AssetType) for x in result])

@@ -367,6 +367,12 @@ class AllAssetsResource(BaseResource):
         return self.rest_api.delete_custom_asset(identifier)
 
 
+class AssetsTypesResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.get_asset_types()
+
+
 class EthereumAssetsResource(BaseResource):
 
     get_schema = OptionalEthereumAddressSchema()

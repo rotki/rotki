@@ -1244,6 +1244,11 @@ class RestAPI():
         )
 
     @staticmethod
+    def get_asset_types() -> Response:
+        types = [str(x) for x in AssetType]
+        return api_response(_wrap_in_ok_result(types), status_code=HTTPStatus.OK)
+
+    @staticmethod
     def add_custom_asset(asset_type: AssetType, **kwargs: Any) -> Response:
         globaldb = GlobalDBHandler()
         # There is no good way to figure out if an asset already exists in the DB
