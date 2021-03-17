@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2547` Users can now easily access the documentation on how to find the CryptoCompare/CoinGecko identifiers in asset manager.
 * :feature:`2156` Users can now customise the explorer pages used for each chain.
 * :feature:`522` Users can connect to different backends from the frontend.
 * :feature:`-` Add support for New Taiwan Dollar (TWD) as a fiat currency

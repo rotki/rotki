@@ -7,6 +7,7 @@ export class ElectronInterop {
   readonly baseDocsUrl = 'https://rotki.readthedocs.io';
   readonly premiumURL: string = `${this.baseUrl}products/`;
   readonly usageGuideURL: string = `${this.baseDocsUrl}/en/stable/usage_guide.html`;
+  readonly contributeUrl: string = `${this.baseDocsUrl}/en/stable/contribute.html`;
 
   get isPackaged(): boolean {
     return this.packagedApp;

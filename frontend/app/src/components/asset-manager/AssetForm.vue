@@ -68,7 +68,15 @@
             :error-messages="errors['coingecko']"
             :disabled="saving"
             @focus="delete errors['coingecko']"
-          />
+          >
+            <template #append>
+              <help-link
+                small
+                :url="`${$interop.contributeUrl}#get-coingecko-asset-identifier`"
+                :tooltip="$t('asset_form.help_coingecko')"
+              />
+            </template>
+          </v-text-field>
         </v-col>
         <v-col cols="12" md="6">
           <v-text-field
@@ -81,7 +89,15 @@
             :error-messages="errors['cryptocompare']"
             :disabled="saving"
             @focus="delete errors['cryptocompare']"
-          />
+          >
+            <template #append>
+              <help-link
+                small
+                :url="`${$interop.contributeUrl}#get-cryptocompare-asset-identifier`"
+                :tooltip="$t('asset_form.help_cryptocompare')"
+              />
+            </template>
+          </v-text-field>
         </v-col>
       </v-row>
     </v-form>
@@ -169,6 +185,7 @@ import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import Fragment from '@/components/helper/Fragment';
+import HelpLink from '@/components/helper/HelpLink.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { CustomEthereumToken, UnderlyingToken } from '@/services/assets/types';
@@ -178,6 +195,7 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 @Component({
   components: {
+    HelpLink,
     Fragment,
     UnderlyingTokenManager,
     RowActions,
