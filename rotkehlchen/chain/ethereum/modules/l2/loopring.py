@@ -256,7 +256,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryObject):
                     # This two codes can appear if there is an error with the
                     # key as tested here
                     # https://github.com/rotki/rotki/pull/2569#issuecomment-800151821
-                    if code and code in (100001, 101002):
+                    if code and code == 104002:
                         raise LoopringAPIKeyMismatch()
             # else just let it hit the generic remote error below
 
