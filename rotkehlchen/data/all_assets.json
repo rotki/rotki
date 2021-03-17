@@ -8646,6 +8646,11 @@
         "symbol": "NOBS",
         "type": "ethereum token"
     },
+    "NOK": {
+        "name": "Norwegian krone",
+        "symbol": "NOK",
+        "type": "fiat"
+    },
     "NOTE": {
         "coingecko": "dnotes",
         "name": "DNotes",

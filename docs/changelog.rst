@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Add support for Norwegian Krone (NOK) as a fiat currency
 * :feature:`-` Add support for New Taiwan Dollar (TWD) as a fiat currency
 * :bug:`2603` Adding multiple comma separated ethereum accounts which contain duplicate entries will not double count the duplicate entry account tokens.
 * :bug:`2467` Trades with a rate of zero will no longer be possible. This prevents the profit and loss report from hanging and shows a notification if an entry with rate equal to zero is already in the database.
