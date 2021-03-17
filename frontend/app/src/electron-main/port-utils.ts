@@ -7,7 +7,7 @@ function checkAvailability(port: number): Promise<number> {
     const server = net.createServer();
     server.unref();
     server.on('error', reject);
-    server.listen(port, () => {
+    server.listen(port, 'localhost', () => {
       const address = server.address();
       server.close();
       if (address && typeof address !== 'string') {
