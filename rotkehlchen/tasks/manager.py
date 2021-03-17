@@ -109,6 +109,9 @@ class TaskManager():
             if asset.cryptocompare == '' or main_currency.cryptocompare == '':
                 continue  # not supported in cryptocompare
 
+            if asset.cryptocompare is None and asset.symbol is None:
+                continue  # type: ignore  # asset.symbol may be None for auto generated underlying tokens # noqa: E501
+
             data = self.cryptocompare.get_cached_data_metadata(
                 from_asset=asset,
                 to_asset=main_currency,
