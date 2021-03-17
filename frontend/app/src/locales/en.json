@@ -184,8 +184,8 @@
     }
   },
   "asset_form": {
-    "help_coingecko": "Open the help on how to locate the CoinGecko identifier",
-    "help_cryptocompare": "Open the help on how to locate the CryptoCompare identifier",
+    "help_coingecko": "Click for help on how to locate the CoinGecko identifier",
+    "help_cryptocompare": "Click for help on how to locate the CryptoCompare identifier",
     "labels": {
       "address": "Address",
       "asset_type": "Asset Type",
