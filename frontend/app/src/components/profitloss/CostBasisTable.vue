@@ -11,15 +11,12 @@
       </span>
     </div>
     <v-sheet outlined rounded>
-      <v-data-table
+      <data-table
         class="cost-basis-table__table"
         :items="costBasis.matchedAcquisitions"
         :headers="headers"
         item-key="id"
         sort-by="time"
-        sort-desc
-        must-sort
-        :footer-props="footerProps"
       >
         <template #item.location="{ item }">
           <location-display :identifier="item.location" />
@@ -39,7 +36,7 @@
         <template #item.time="{ item }">
           <date-display :timestamp="item.time" />
         </template>
-      </v-data-table>
+      </data-table>
     </v-sheet>
   </div>
 </template>
@@ -47,15 +44,14 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
+import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
-import { footerProps } from '@/config/datatable.common';
 import { CostBasis } from '@/store/reports/types';
 
 @Component({
-  components: { Fragment }
+  components: { DataTable, Fragment }
 })
 export default class CostBasisTable extends Vue {
-  readonly footerProps = footerProps;
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('cost_basis_table.headers.location').toString(),

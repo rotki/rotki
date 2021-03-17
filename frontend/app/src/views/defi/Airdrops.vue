@@ -26,12 +26,10 @@
       <v-card class="mt-8">
         <v-card-text>
           <v-sheet outlined rounded>
-            <v-data-table
+            <data-table
               :items="entries"
-              :footer-props="footerProps"
               :headers="headers"
               single-expand
-              must-sort
               :expanded.sync="expanded"
               item-key="index"
             >
@@ -89,7 +87,7 @@
                   <poap-delivery-airdrops :items="item.details" />
                 </td>
               </template>
-            </v-data-table>
+            </data-table>
           </v-sheet>
         </v-card-text>
       </v-card>
@@ -101,9 +99,9 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters } from 'vuex';
+import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
-import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
 import {
@@ -131,7 +129,7 @@ type AirdropSources = {
 };
 
 @Component({
-  components: { PoapDeliveryAirdrops, RowExpander, ProgressScreen },
+  components: { DataTable, PoapDeliveryAirdrops, RowExpander, ProgressScreen },
   computed: {
     ...mapGetters('defi', ['airdrops', 'airdropAddresses'])
   },
@@ -142,7 +140,6 @@ type AirdropSources = {
 export default class Airdrops extends Mixins(StatusMixin) {
   readonly section = Section.DEFI_AIRDROPS;
   readonly ETH = ETH;
-  readonly footerProps = footerProps;
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('airdrops.headers.source').toString(),

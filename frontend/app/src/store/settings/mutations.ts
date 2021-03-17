@@ -8,7 +8,8 @@ import {
   DECIMAL_SEPARATOR,
   CURRENCY_LOCATION,
   REFRESH_PERIOD,
-  EXPLORERS
+  EXPLORERS,
+  ITEMS_PER_PAGE
 } from '@/store/settings/consts';
 import { defaultState } from '@/store/settings/state';
 import {
@@ -33,6 +34,7 @@ type Mutations<S = SettingsState> = {
   [CURRENCY_LOCATION](state: S, location: CurrencyLocation): void;
   [REFRESH_PERIOD](state: S, period: RefreshPeriod): void;
   [EXPLORERS](state: S, explorers: ExplorersSettings): void;
+  [ITEMS_PER_PAGE](state: S, itemsPerPage: number): void;
   restore(state: S, persisted: S): void;
   reset(state: S): void;
 };
@@ -79,6 +81,9 @@ export const mutations: Mutations = {
   },
   [EXPLORERS](state: Writeable<SettingsState>, explorers: ExplorersSettings) {
     state.explorers = explorers;
+  },
+  [ITEMS_PER_PAGE](state: Writeable<SettingsState>, itemsPerPage: number) {
+    state.itemsPerPage = itemsPerPage;
   },
   restore(state: SettingsState, persisted: SettingsState) {
     Object.assign(state, persisted);

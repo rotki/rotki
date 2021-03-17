@@ -1,14 +1,11 @@
 <template>
   <v-sheet class="asset-balances" :rounded="!flat" :outlined="!flat">
-    <v-data-table
+    <data-table
       :headers="headers"
       :items="balances"
       :loading="isLoading"
       :loading-text="$t('asset_balances.loading')"
       sort-by="usdValue"
-      sort-desc
-      must-sort
-      :footer-props="footerProps"
     >
       <template #header.usdValue>
         <div class="text-no-wrap">
@@ -80,7 +77,7 @@
           </td>
         </tr>
       </template>
-    </v-data-table>
+    </data-table>
   </v-sheet>
 </template>
 
@@ -89,14 +86,14 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { footerProps } from '@/config/datatable.common';
+import DataTable from '@/components/helper/DataTable.vue';
 import { CURRENCY_USD } from '@/data/currencies';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import { AssetBalance, AssetPrices } from '@/store/balances/types';
 
 @Component({
-  components: { AmountDisplay },
+  components: { DataTable, AmountDisplay },
   computed: {
     ...mapGetters('tasks', ['isTaskRunning']),
     ...mapGetters('session', ['floatingPrecision', 'currency']),
@@ -121,8 +118,6 @@ export default class AssetBalances extends Vue {
   get symbol(): string {
     return this.currency.ticker_symbol;
   }
-
-  readonly footerProps = footerProps;
 
   get isLoading(): boolean {
     return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);

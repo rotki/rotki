@@ -11,7 +11,8 @@ import {
   TIMEFRAME_TWO_WEEKS,
   TIMEFRAME_YEAR,
   REFRESH_PERIOD,
-  EXPLORERS
+  EXPLORERS,
+  ITEMS_PER_PAGE
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 import store from '@/store/store';
@@ -36,7 +37,8 @@ describe('settings:mutations', () => {
         ETH: {
           transaction: 'explore/tx'
         }
-      }
+      },
+      [ITEMS_PER_PAGE]: 25
     };
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
@@ -57,5 +59,6 @@ describe('settings:mutations', () => {
         transaction: 'explore/tx'
       }
     });
+    expect(settings[ITEMS_PER_PAGE]).toBe(25);
   });
 });

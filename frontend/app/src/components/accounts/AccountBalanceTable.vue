@@ -1,6 +1,6 @@
 <template>
   <v-sheet rounded outlined>
-    <v-data-table
+    <data-table
       v-bind="$attrs"
       :headers="headers"
       :items="visibleBalances"
@@ -10,11 +10,8 @@
       item-key="address"
       :expanded.sync="expanded"
       sort-by="balance.usdValue"
-      must-sort
-      :footer-props="footerProps"
       :custom-group="groupBy"
       :group-by="isBtc ? ['xpub', 'derivationPath'] : undefined"
-      sort-desc
       v-on="$listeners"
     >
       <template #header.accountSelection>
@@ -173,7 +170,7 @@
           @edit-clicked="editClick($event)"
         />
       </template>
-    </v-data-table>
+    </data-table>
   </v-sheet>
 </template>
 
@@ -186,11 +183,11 @@ import { mapGetters, mapState } from 'vuex';
 
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { footerProps } from '@/config/datatable.common';
 import { CURRENCY_USD } from '@/data/currencies';
 import { balanceSum } from '@/filters';
 import StatusMixin from '@/mixins/status-mixin';
@@ -208,6 +205,7 @@ import { Zero } from '@/utils/bignumbers';
 
 @Component({
   components: {
+    DataTable,
     LabeledAddressDisplay,
     TagIcon,
     RowActions,
@@ -346,8 +344,6 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
       items: record[name]
     }));
   }
-
-  readonly footerProps = footerProps;
 
   get headers(): DataTableHeader[] {
     const headers: DataTableHeader[] = [

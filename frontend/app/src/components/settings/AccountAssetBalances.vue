@@ -2,14 +2,11 @@
   <div class="py-4">
     <div class="text-h6 mb-4">{{ title }}</div>
     <v-sheet outlined rounded>
-      <v-data-table
+      <data-table
         :items="assets"
         :headers="headers"
         class="account-asset-balances__table"
         sort-by="usdValue"
-        sort-desc
-        must-sort
-        :footer-props="footerProps"
       >
         <template #header.usdValue>
           <div class="text-no-wrap">
@@ -51,7 +48,7 @@
             show-currency="symbol"
           />
         </template>
-      </v-data-table>
+      </data-table>
     </v-sheet>
   </div>
 </template>
@@ -60,13 +57,13 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
-import { footerProps } from '@/config/datatable.common';
 import { CURRENCY_USD } from '@/data/currencies';
 import { AssetBalances, AssetPrices } from '@/store/balances/types';
 
 @Component({
-  components: { Fragment, AmountDisplay },
+  components: { DataTable, Fragment, AmountDisplay },
   computed: {
     ...mapGetters('session', ['floatingPrecision', 'currencySymbol']),
     ...mapGetters('balances', ['exchangeRate']),
@@ -74,7 +71,6 @@ import { AssetBalances, AssetPrices } from '@/store/balances/types';
   }
 })
 export default class AccountAssetBalances extends Vue {
-  readonly footerProps = footerProps;
   readonly headers = [
     {
       text: this.$tc('account_asset_balance.headers.asset'),

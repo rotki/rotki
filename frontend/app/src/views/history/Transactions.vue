@@ -22,7 +22,7 @@
           @ignore="ignoreTransactions"
         />
         <v-sheet outlined rounded>
-          <v-data-table
+          <data-table
             :headers="headers"
             :items="visibleTransactions"
             show-expand
@@ -30,10 +30,7 @@
             :expanded="expanded"
             item-key="key"
             sort-by="timestamp"
-            sort-desc
-            must-sort
             :page.sync="page"
-            :footer-props="footerProps"
             :loading="refreshing"
           >
             <template #header.selection>
@@ -101,7 +98,7 @@
                 <transaction-details :transaction="item" />
               </td>
             </template>
-          </v-data-table>
+          </data-table>
         </v-sheet>
       </v-card-text>
     </v-card>
@@ -117,6 +114,7 @@ import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters, mapMutations } from 'vuex';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -124,7 +122,6 @@ import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import TransactionDetails from '@/components/history/TransactionsDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
 import {
@@ -144,6 +141,7 @@ import { toUnit, Unit } from '@/utils/calculation';
 
 @Component({
   components: {
+    DataTable,
     CardTitle,
     IgnoreButtons,
     BlockchainAccountSelector,
@@ -175,7 +173,6 @@ export default class Transactions extends Mixins(StatusMixin) {
   ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   unignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   setMessage!: (message: Message) => void;
-  readonly footerProps = footerProps;
   expanded = [];
   section = Section.TX;
   transactions!: EthTransactionWithFee[];

@@ -28,16 +28,13 @@
           @ignore="ignoreTrades"
         />
         <v-sheet outlined rounded>
-          <v-data-table
+          <data-table
             :items="data"
             :headers="headersClosed"
             :expanded.sync="expanded"
             single-expand
             show-expand
             sort-by="timestamp"
-            sort-desc
-            must-sort
-            :footer-props="footerProps"
             class="closed-trades"
             item-key="tradeId"
             :page.sync="page"
@@ -164,7 +161,7 @@
                 :label="$t('closed_trades.label')"
               />
             </template>
-          </v-data-table>
+          </data-table>
         </v-sheet>
       </v-card-text>
     </v-card>
@@ -201,13 +198,13 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import ExternalTradeForm from '@/components/ExternalTradeForm.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
 import { IGNORE_TRADES } from '@/store/history/consts';
@@ -216,6 +213,7 @@ import { ActionStatus, Message } from '@/store/types';
 
 @Component({
   components: {
+    DataTable,
     Fragment,
     CardTitle,
     IgnoreButtons,
@@ -279,7 +277,6 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
     },
     { text: '', value: 'data-table-expand' }
   ];
-  footerProps = footerProps;
 
   dialogTitle: string = '';
   dialogSubtitle: string = '';

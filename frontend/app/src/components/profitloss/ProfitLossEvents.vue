@@ -5,7 +5,7 @@
     </v-card-title>
     <v-card-text>
       <v-sheet outlined rounded>
-        <v-data-table
+        <data-table
           :headers="headers"
           :items="indexedEvents"
           single-expand
@@ -13,9 +13,6 @@
           :expanded.sync="expanded"
           item-key="index"
           sort-by="time"
-          sort-desc
-          must-sort
-          :footer-props="footerProps"
         >
           <template #item.type="{ item }">
             <profit-loss-event-type :type="item.type" />
@@ -97,7 +94,7 @@
               @click="expanded = expanded.includes(item) ? [] : [item]"
             />
           </template>
-        </v-data-table>
+        </data-table>
       </v-sheet>
     </v-card-text>
   </v-card>
@@ -109,17 +106,18 @@ import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
 import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
-import { footerProps } from '@/config/datatable.common';
 import { ProfitLossEvent } from '@/store/reports/types';
 
 type IndexedProfitLossEvent = ProfitLossEvent & { index: number };
 
 @Component({
   components: {
+    DataTable,
     ProfitLossEventType,
     UpgradeRow,
     CostBasisTable,
@@ -218,8 +216,6 @@ export default class ProfitLossEvents extends Vue {
       sortable: false
     }
   ];
-
-  readonly footerProps = footerProps;
 }
 </script>
 

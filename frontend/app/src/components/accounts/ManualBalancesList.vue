@@ -6,15 +6,12 @@
       </v-col>
     </v-row>
     <v-sheet outlined rounded>
-      <v-data-table
+      <data-table
         :loading="loading"
         :headers="headers"
         :items="visibleBalances"
         class="manual-balances-list"
         sort-by="usdValue"
-        must-sort
-        :footer-props="footerProps"
-        sort-desc
       >
         <template #item.label="{ item }">
           <v-row>
@@ -107,7 +104,7 @@
             </td>
           </tr>
         </template>
-      </v-data-table>
+      </data-table>
     </v-sheet>
     <confirm-dialog
       v-if="labelToDelete !== null"
@@ -127,10 +124,10 @@ import { mapGetters, mapState } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { footerProps } from '@/config/datatable.common';
 import { CURRENCY_USD } from '@/data/currencies';
 import { Currency } from '@/model/currency';
 import {
@@ -141,6 +138,7 @@ import { Tags } from '@/typing/types';
 
 @Component({
   components: {
+    DataTable,
     RefreshButton,
     AmountDisplay,
     AssetDetails,
@@ -208,8 +206,6 @@ export default class ManualBalancesList extends Vue {
 
   @Prop({ required: false, type: Boolean, default: false })
   loading: boolean = false;
-
-  footerProps = footerProps;
 
   get visibleBalances(): ManualBalance[] {
     if (this.onlyTags.length === 0) {
