@@ -48,6 +48,14 @@
         <progress-indicator class="app__app-bar__button" />
         <currency-drop-down class="red--text app__app-bar__button" />
         <user-dropdown class="app__app-bar__button" />
+        <div class="ms-6">
+          <help-link
+            bottom
+            small
+            :url="$interop.usageGuideURL"
+            :tooltip="$t('app.help')"
+          />
+        </div>
       </v-app-bar>
       <notification-sidebar
         :visible="notifications"
@@ -88,6 +96,7 @@ import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
 import BackButton from '@/components/helper/BackButton.vue';
+import HelpLink from '@/components/helper/HelpLink.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
@@ -105,6 +114,7 @@ import { Message } from '@/store/types';
 
 @Component({
   components: {
+    HelpLink,
     BackButton,
     UpdatePopup,
     StartupErrorScreen,

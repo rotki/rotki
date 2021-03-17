@@ -2215,6 +2215,7 @@
     "message": "rotki accounts are encrypted using your password and saved in your local filesystem."
   },
   "app": {
+    "help": "Click for help",
     "name": "rotki",
     "moto": "the opensource portfolio manager that respects your privacy"
   },

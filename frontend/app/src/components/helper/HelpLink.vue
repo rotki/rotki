@@ -1,5 +1,5 @@
 ﻿<template>
-  <v-tooltip open-delay="400" top>
+  <v-tooltip open-delay="400" :top="!bottom" :bottom="bottom">
     <template #activator="{ attrs, on }">
       <v-btn
         icon
@@ -28,6 +28,8 @@ export default class HelpLink extends Vue {
   tooltip!: string;
   @Prop({ required: false, default: false, type: Boolean })
   small!: boolean;
+  @Prop({ required: false, default: false, type: Boolean })
+  bottom!: boolean;
 
   openLink() {
     this.$interop.openUrl(this.url);
