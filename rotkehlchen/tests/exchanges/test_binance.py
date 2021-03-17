@@ -817,14 +817,10 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
         return next(get_response)
 
     get_response = get_mocked_response()
-
-    # force to break the loop after 2 requests by lowering the `self.backoff_limit`
-    backoff_patch = patch.object(binance, 'backoff_limit', new=7)
     offset_ms_patch = patch.object(binance, 'offset_ms', new=1000)
     binance_patch = patch.object(binance.session, 'get', side_effect=mock_response)
 
     with ExitStack() as stack:
-        stack.enter_context(backoff_patch)
         stack.enter_context(offset_ms_patch)
         binance_mock_get = stack.enter_context(binance_patch)
         with pytest.raises(RemoteError) as e:
