@@ -83,6 +83,7 @@
             :headers="headers"
             :loading="loading"
             :footer-props="footerProps"
+            must-sort
             :items="cacheData"
           >
             <template #item.fromAsset="{ item }">

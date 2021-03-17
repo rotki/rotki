@@ -10,6 +10,7 @@
           :items="assetLocations"
           sort-by="balance.amount"
           sort-desc
+          must-sort
           :loading="detailsLoading"
           :footer-props="footerProps"
         >

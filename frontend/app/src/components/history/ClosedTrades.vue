@@ -36,6 +36,7 @@
             show-expand
             sort-by="timestamp"
             sort-desc
+            must-sort
             :footer-props="footerProps"
             class="closed-trades"
             item-key="tradeId"

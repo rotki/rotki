@@ -39,6 +39,7 @@
             single-expand
             sort-desc
             sort-by="timestamp"
+            must-sort
             item-key="identifier"
             :items="ledgerActions.data"
             :headers="headers"

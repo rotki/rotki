@@ -31,6 +31,7 @@
               :footer-props="footerProps"
               :headers="headers"
               single-expand
+              must-sort
               :expanded.sync="expanded"
               item-key="index"
             >
