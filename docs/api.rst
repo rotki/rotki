@@ -2229,8 +2229,8 @@ Adding custom ethereum tokens
           "protocol": "uniswap",
           "underlying_tokens": [
               {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "weight": "15.45"},
-	          {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "weight": "35.65"},
-	          {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "weight": "39"}
+                  {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "weight": "35.65"},
+                  {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "weight": "39"}
          ]
        }}
 
@@ -2266,7 +2266,7 @@ Editing custom ethereum tokens
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/assets/ethereum HTTP/1.1
+      PATCH /api/1/assets/ethereum HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -2316,7 +2316,7 @@ Deleting custom ethereum tokens
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/assets/ethereum HTTP/1.1
+      DELETE /api/1/assets/ethereum HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -2341,6 +2341,144 @@ Deleting custom ethereum tokens
    :statuscode 200: Asset succesfully deleted.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: Some conflict at deleting. For example token address does not exist in the DB.
+   :statuscode 500: Internal Rotki error
+
+
+Adding custom asset
+======================
+
+.. http:put:: /api/(version)/assets/all
+
+   Doing a PUT on the all assets endpoint will allow you to add a new asset in the global rotki DB. Returns the identifier of the newly added asset.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/all HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "name": "foo",
+          "symbol": "FOO",
+          "started": 1614636432,
+          "forked": "SCT",
+          "swapped_for": "SCK",
+          "coingecko": "foo-coin",
+          "cryptocompare": "FOO"
+       }
+
+   .. _custom_asset:
+
+   :reqjson string name: The name of the asset. Required.
+   :reqjson string name: The symol of the asset. Required.
+   :reqjson integer started: The time the asset started existing. Optional
+   :reqjson string forked: The identifier of an asset from which this asset got forked. For example ETC would have ETH as forked. Optional.
+   :reqjson string swapped_for: The identifier of an asset for which this asset got swapped for. For example GNT got swapped for GLM. Optional.
+   :resjsonarr string coingecko: The coingecko identifier for the asset. can be missing if not known.
+   :resjsonarr string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"identifier": "4979582b-ee8c-4d45-b461-15c4220de666"},
+          "message": ""
+      }
+
+
+   :resjson string identifier: The identifier of the newly added token.
+   :statuscode 200: Asset succesfully addedd.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: Some conflict at addition. For example an asset with the same type, name and symbol already exists.
+   :statuscode 500: Internal Rotki error
+
+Editing custom assets
+======================
+
+.. http:patch:: /api/(version)/assets/all
+
+   Doing a PATCH on the custom assets endpoint will allow you to edit an existing asset in the global rotki DB.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/ethereum HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "identifier": "4979582b-ee8c-4d45-b461-15c4220de666",
+          "name": "foo",
+          "symbol": "FOO",
+          "started": 1614636432,
+          "forked": "SCT",
+          "swapped_for": "SCK",
+          "coingecko": "foo-coin",
+          "cryptocompare": "FOO"
+      }
+
+   :reqjson object asset: Asset to edit. For details on the possible fields see `here <custom_asset_>`_. The only extra field has to be the identifier of the asset to edit.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+
+   :statuscode 200: Asset succesfully edited.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: Some conflict at editing. For example identifier does not exist in the DB.
+   :statuscode 500: Internal Rotki error
+
+Deleting custom assets
+========================
+
+.. http:delete:: /api/(version)/assets/all
+
+   Doing a DELETE on the custom assets endpoint will allow you to delete an existing asset from the global rotki DB.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/assets/all HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"identifier": "4979582b-ee8c-4d45-b461-15c4220de666"}
+
+   :reqjson string identifier: Address of the asset to delete.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+
+   :statuscode 200: Asset succesfully deleted.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: Some conflict at deleting. For example identifier does not exist in the DB. Or deleting the asset would break a constraint since it's used by other assets.
    :statuscode 500: Internal Rotki error
 
 Querying asset icons
