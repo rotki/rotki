@@ -606,6 +606,17 @@ class Accountant():
         # When you buy, you buy with the cost_currency and receive the other one
         # When you sell, you sell the amount in non-cost_currency and receive
         # costs in cost_currency
+
+        if trade.rate == 0:
+            msg = (
+                f'Ignoring trade {trade} because has a rate value of 0. '
+                f'This entry should be updated in the database.'
+            )
+
+            log.info(msg)
+            self.msg_aggregator.add_warning(msg)
+            return True, prev_time
+
         if trade.trade_type == TradeType.BUY:
             self.events.add_buy_and_corresponding_sell(
                 location=trade.location,

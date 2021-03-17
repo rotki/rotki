@@ -776,6 +776,18 @@ class TradeSchema(Schema):
     link = fields.String(missing='')
     notes = fields.String(missing='')
 
+    @validates_schema  # type: ignore
+    def validate_settings_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['rate'] == 0:
+            raise ValidationError(
+                message='A rate with value 0 is not allowed.',
+                field_name='rate',
+            )
+
 
 class LedgerActionSchema(Schema):
     timestamp = TimestampField(required=True)
