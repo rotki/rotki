@@ -178,7 +178,7 @@ def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
         json=custom1_v2,
     )
     result = assert_proper_response_with_result(response)
-    assert result['identifier'] == custom1_id
+    assert result is True
 
     data = globaldb.get_asset_data(identifier=custom1_id)
     assert data.identifier == custom1_id
