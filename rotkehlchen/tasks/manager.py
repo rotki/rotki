@@ -110,7 +110,7 @@ class TaskManager():
                 continue  # not supported in cryptocompare
 
             if asset.cryptocompare is None and asset.symbol is None:
-                continue  # no cryptocompare identifier and no symbol
+                continue  # type: ignore  # asset.symbol may be None for auto generated underlying tokens # noqa: E501
 
             data = self.cryptocompare.get_cached_data_metadata(
                 from_asset=asset,

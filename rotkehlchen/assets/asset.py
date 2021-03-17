@@ -276,9 +276,9 @@ class Asset():
         May raise:
             - UnsupportedAsset() if the asset is not supported by cryptocompare
         """
-        cryptocompare_str = self.identifier if self.cryptocompare is None else self.cryptocompare
+        cryptocompare_str = self.symbol if self.cryptocompare is None else self.cryptocompare
         # There is an asset which should not be queried in cryptocompare
-        if cryptocompare_str == '':
+        if cryptocompare_str is None or cryptocompare_str == '':
             raise UnsupportedAsset(f'{self.identifier} is not supported by cryptocompare')
 
         # Seems cryptocompare capitalizes everything. So cDAI -> CDAI
