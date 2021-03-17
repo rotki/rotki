@@ -2344,6 +2344,40 @@ Deleting custom ethereum tokens
    :statuscode 500: Internal Rotki error
 
 
+Get asset types
+=================
+
+.. http:get:: /api/(version)/assets/types
+
+   Doing a GET on the assets types endpoint will return a list of all valid asset type
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/types HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": ["fiat", "own chain", "ethereum token", "omni token", "neo token", "counterparty token", "bitshares token", "ardor token", "nxt token", "ubiq token", "nubits token", "burst token", "waves token", "qtum token", "stellar token", "tron token", "ontology token", "vechain token", "binance token", "eos token", "fusion token", "luniverse token", "other"],
+          "message": ""
+      }
+
+
+   :resjson list result: A list of all the valid asset type values to input when adding a new asset
+   :statuscode 200: Asset types succesfully queries
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 500: Internal Rotki error
+
 Adding custom asset
 ======================
 

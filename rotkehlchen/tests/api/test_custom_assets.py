@@ -389,4 +389,4 @@ def test_query_asset_types(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert result == [str(x) for x in AssetType]
-    assert all([isinstance(AssetType.deserialize(x), AssetType) for x in result])
+    assert all(isinstance(AssetType.deserialize(x), AssetType) for x in result)
