@@ -97,7 +97,12 @@ class GlobalDBHandler():
             asset_type: AssetType,
             data: Union[CustomEthereumToken, Dict[str, Any]],
     ) -> None:
-        """May raise InputError in case of error, meaning asset exists or some constraint hit"""
+        """
+        Add an asset in the DB. Either an ethereum token or a custom asset.
+
+        If it's a custom asset the data should be typed. As given in by marshmallow.
+
+        May raise InputError in case of error, meaning asset exists or some constraint hit"""
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
 
@@ -107,9 +112,6 @@ class GlobalDBHandler():
             GlobalDBHandler().add_ethereum_token(token)
             details_id = token.address
         else:
-            asset_data = cast(Dict[str, Any], data)
-            asset_data['identifier'] = asset_id
-            GlobalDBHandler().add_common_asset_details(asset_data)
             details_id = asset_id
 
         try:
@@ -123,6 +125,12 @@ class GlobalDBHandler():
             raise InputError(
                 f'Failed to add asset {asset_id} into the assets table for details id {details_id}',  # noqa: E501
             ) from e
+
+        # for common asset details we have to add them after the addition of the main asset table
+        if asset_type != AssetType.ETHEREUM_TOKEN:
+            asset_data = cast(Dict[str, Any], data)
+            asset_data['identifier'] = asset_id
+            GlobalDBHandler().add_common_asset_details(asset_data)
 
         connection.commit()  # success
 
@@ -459,6 +467,31 @@ class GlobalDBHandler():
         return result[0][0]
 
     @staticmethod
+    def check_asset_exists(
+            asset_type: AssetType,
+            name: str,
+            symbol: str,
+    ) -> Optional[List[str]]:
+        """Checks if an asset of a given type, symbol and name exists in the DB already
+
+        For non ethereum tokens with no unique identifier like an address this is the
+        only way to check if something already exists in the DB.
+
+        If it exists it returns a list of the identifiers of the assets.
+        """
+        cursor = GlobalDBHandler()._conn.cursor()
+        query = cursor.execute(
+            'SELECT A.identifier from assets AS A LEFT OUTER JOIN common_asset_details as B '
+            ' ON B.asset_id = A.identifier WHERE A.type=? AND B.name=? AND B.symbol=?;',
+            (asset_type.serialize_for_db(), name, symbol),
+        )
+        result = query.fetchall()
+        if len(result) == 0:
+            return None
+
+        return [x[0] for x in result]
+
+    @staticmethod
     def get_ethereum_token(address: ChecksumEthAddress) -> Optional[CustomEthereumTokenWithIdentifier]:  # noqa: E501
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
@@ -673,24 +706,89 @@ class GlobalDBHandler():
         return rotki_id
 
     @staticmethod
+    def edit_custom_asset(data: Dict[str, Any]) -> None:
+        """Edits an already existing custom asset in the DB
+
+        The data should already be typed (as given in by marshmallow).
+
+        May raise InputError if the token already exists or other error
+
+        Returns the asset's identifier
+        """
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+
+        identifier = data['identifier']
+        forked_asset = data.get('forked', None)
+        forked = forked_asset.identifier if forked_asset else None
+        swapped_for_asset = data.get('swapped_for', None)
+        swapped_for = swapped_for_asset.identifier if swapped_for_asset else None
+        entry_tuple = (
+            data['name'],
+            data['symbol'],
+            data.get('started', None),
+            forked,
+            swapped_for,
+            data.get('coingecko', None),
+            data.get('cryptocompare', None),
+            identifier,
+        )
+        try:
+            cursor.execute(
+                'UPDATE common_asset_details SET name=?, symbol=?, started=?, forked=?, '
+                'swapped_for=?, coingecko=?, cryptocompare=? WHERE asset_id = ?',
+                entry_tuple,
+            )
+        except sqlite3.IntegrityError as e:
+            raise InputError(
+                f'Failed to update DB entry for asset with identifier {identifier} '
+                f'due to a consraint being hit. Make sure the new values are valid ',
+            ) from e
+
+        if cursor.rowcount != 1:
+            raise InputError(
+                f'Tried to edit non existing asset with identifier {identifier}',
+            )
+
+        # Finally edit the main asset table's type
+        try:
+            cursor.execute(
+                'UPDATE assets SET type=? WHERE identifier=?',
+                (data['asset_type'].serialize_for_db(), identifier),
+            )
+        except sqlite3.IntegrityError as e:
+            connection.rollback()
+            raise InputError(
+                f'Failure at editing custom asset {identifier} type',
+            ) from e
+
+        connection.commit()
+
+    @staticmethod
     def add_common_asset_details(data: Dict[str, Any]) -> None:
         """Adds a new row in common asset details
 
+        The data should already be typed (as given in by marshmallow).
+
         May raise InputError if the token already exists
 
-        Returns the stringified rowid of the entry
+        Does not commit to the DB. Commit must be called from the caller.
         """
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
         # assuming they are already serialized
         asset_id = data['identifier']
+        forked_asset = data.get('forked', None)
+        forked = forked_asset.identifier if forked_asset else None
+        swapped_for_asset = data.get('swapped_for', None)
+        swapped_for = swapped_for_asset.identifier if swapped_for_asset else None
         entry_tuple = (
             asset_id,
             data['name'],
             data['symbol'],
             data.get('started', None),
-            data.get('forked', None),
-            data.get('swapped_for', None),
+            forked,
+            swapped_for,
             data.get('coingecko', None),
             data.get('cryptocompare', None),
         )
@@ -706,3 +804,35 @@ class GlobalDBHandler():
             raise InputError(  # should not really happen
                 f'Adding common asset details for {asset_id} failed',
             ) from e
+
+    @staticmethod
+    def delete_custom_asset(identifier: str) -> None:
+        """Deletes an asset (non-ethereum token) from the global DB
+
+        May raise InputError if the assets does not exist in the DB or
+        some other constraint is hit. Such as for example trying to delete
+        an asset that is in another asset's forked or swapped attribute
+        """
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        try:
+            cursor.execute(
+                'DELETE FROM assets WHERE identifier=?;',
+                (identifier,),
+            )
+        except sqlite3.IntegrityError as e:
+            raise InputError(
+                f'Tried to delete asset with identifier {identifier} '
+                f'but its deletion would violate a constraint so deletion '
+                f'failed. Make sure that this asset is not already used by '
+                f'other assets as a swapped_for or forked asset',
+            ) from e
+
+        affected_rows = cursor.rowcount
+        if affected_rows != 1:
+            raise InputError(
+                f'Tried to delete asset with identifier {identifier} '
+                f'but it was not found in the DB',
+            )
+
+        connection.commit()

@@ -17,6 +17,8 @@ from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AssetIconsSchema,
     AssetIconUploadSchema,
+    AssetSchema,
+    AssetSchemaWithIdentifier,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
@@ -43,8 +45,8 @@ from rotkehlchen.api.v1.encoding import (
     IgnoredActionsGetSchema,
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
+    IntegerIdentifierSchema,
     LedgerActionEditSchema,
-    LedgerActionIdentifierSchema,
     LedgerActionSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
@@ -59,6 +61,7 @@ from rotkehlchen.api.v1.encoding import (
     RequiredEthereumAddressSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
+    StringIdentifierSchema,
     TagDeleteSchema,
     TagEditSchema,
     TagSchema,
@@ -86,6 +89,7 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    AssetType,
     BlockchainAccountData,
     ChecksumEthAddress,
     ExternalService,
@@ -343,8 +347,30 @@ class OwnedAssetsResource(BaseResource):
 
 class AllAssetsResource(BaseResource):
 
+    add_schema = AssetSchema()
+    edit_schema = AssetSchemaWithIdentifier()
+    delete_schema = StringIdentifierSchema()
+
     def get(self) -> Response:
         return self.rest_api.query_all_assets()
+
+    @use_kwargs(add_schema, location='json')  # type: ignore
+    def put(self, asset_type: AssetType, **kwargs: Any) -> Response:
+        return self.rest_api.add_custom_asset(asset_type, **kwargs)
+
+    @use_kwargs(edit_schema, location='json')  # type: ignore
+    def patch(self, **kwargs: Any) -> Response:
+        return self.rest_api.edit_custom_asset(kwargs)
+
+    @use_kwargs(delete_schema, location='json')  # type: ignore
+    def delete(self, identifier: str) -> Response:
+        return self.rest_api.delete_custom_asset(identifier)
+
+
+class AssetsTypesResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.get_asset_types()
 
 
 class EthereumAssetsResource(BaseResource):
@@ -570,7 +596,7 @@ class LedgerActionsResource(BaseResource):
     get_schema = TimerangeLocationQuerySchema()
     put_schema = LedgerActionSchema()
     patch_schema = LedgerActionEditSchema()
-    delete_schema = LedgerActionIdentifierSchema()
+    delete_schema = IntegerIdentifierSchema()
 
     @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(

@@ -52,6 +52,7 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    AssetType,
     BTCAddress,
     ChecksumEthAddress,
     ExternalService,
@@ -420,6 +421,39 @@ class TradeTypeField(fields.Field):
             raise ValidationError(str(e)) from e
 
         return trade_type
+
+
+class AssetTypeField(fields.Field):
+
+    def __init__(self, *, exclude_types: Optional[Sequence[AssetType]] = None, **kwargs: Any) -> None:  # noqa: E501
+        self.exclude_types = exclude_types
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _serialize(
+            value: AssetType,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> AssetType:
+        try:
+            asset_type = AssetType.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        if self.exclude_types and asset_type in self.exclude_types:
+            raise ValidationError(f'Asset type {str(asset_type)} is not allowed in this endpoint')
+
+        return asset_type
 
 
 class TradePairField(fields.Field):
@@ -803,8 +837,12 @@ class LedgerActionEditSchema(Schema):
     action = fields.Nested(LedgerActionWithIdentifierSchema, required=True)
 
 
-class LedgerActionIdentifierSchema(Schema):
+class IntegerIdentifierSchema(Schema):
     identifier = fields.Integer(required=True)
+
+
+class StringIdentifierSchema(Schema):
+    identifier = fields.String(required=True)
 
 
 class ManuallyTrackedBalanceSchema(Schema):
@@ -1465,6 +1503,21 @@ class UnderlyingTokenInfoSchema(Schema):
     weight = FloatingPercentageField(required=True)
 
 
+class AssetSchema(Schema):
+    asset_type = AssetTypeField(required=True, exclude_types=(AssetType.ETHEREUM_TOKEN,))
+    name = fields.String(required=True)
+    symbol = fields.String(required=True)
+    started = TimestampField(missing=None)
+    forked = AssetField(missing=None)
+    swapped_for = AssetField(missing=None)
+    coingecko = fields.String(missing=None)
+    cryptocompare = fields.String(missing=None)
+
+
+class AssetSchemaWithIdentifier(AssetSchema):
+    identifier = fields.String(required=True)
+
+
 class EthereumTokenSchema(Schema):
     address = EthereumAddressField(required=True)
     decimals = fields.Integer(
@@ -1531,6 +1584,10 @@ class EthereumTokenSchema(Schema):
 
 class ModifyEthereumTokenSchema(Schema):
     token = fields.Nested(EthereumTokenSchema, required=True)
+
+
+class ModifyAssetSchema(Schema):
+    token = fields.Nested(AssetSchema, required=True)
 
 
 class QueriedAddressesSchema(Schema):

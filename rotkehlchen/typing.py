@@ -280,6 +280,19 @@ class AssetType(Enum):
             raise DeserializationError(f'Failed to deserialize AssetType DB value {value}')
         return AssetType(number - 64)
 
+    @staticmethod
+    def deserialize(value: str) -> 'AssetType':
+        """Deserializes an asset type from a string. Probably sent via the API
+
+        May raise DeserializationError if the value does not match an asset type
+        """
+        upper_str = value.replace(' ', '_').upper()
+        asset_type = AssetType.__members__.get(upper_str, None)  # pylint: disable=no-member
+        if asset_type is None:
+            raise DeserializationError(f'Could not deserialize {value} as an asset type')
+
+        return asset_type
+
 
 class AssetData(NamedTuple):
     """Data of an asset. Keep in sync with assets/asset.py"""
