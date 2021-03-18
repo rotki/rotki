@@ -7802,3 +7802,51 @@ Data imports
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
+
+ERC20 token info
+=============
+
+.. http:get:: /api/(version)/erc20details
+
+   Doing a GET to this point will return basic information about a token by calling the ``decimals/name/symbol`` methods.
+   ``decimals`` is assumed to be 18 and is always in the response. The ``name`` and ``symbol`` entries might not be in the
+   response
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/erc20details HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"address": "0x6B175474E89094C44Da98b954EedeAC495271d0F"}
+
+   :reqjson str address: The checksumed address of a contract
+   :reqjson bool async_query: A boolean denoting whether the query should be made asynchronously or not. Missing defaults to false.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+             "decimals": 18,
+             "symbol": "DAI",
+             "name": "Dai Stablecoin"
+           },
+          "message": ""
+      }
+
+   :resjson bool result: The result field in this response is a object with a minimum of one attribute.
+   :statuscode 200: No critical error found.
+   :statuscode 400: The address is not available.
+   :statuscode 500: Internal Rotki error.
