@@ -283,7 +283,7 @@ def test_add_trades(rotkehlchen_api_server):
 
     assert_error_response(
         response=response,
-        contained_in_msg=f'A zero rate is not allowed',
+        contained_in_msg='A zero rate is not allowed',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

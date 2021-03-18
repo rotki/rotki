@@ -158,12 +158,13 @@ class Trade(NamedTuple):
             'notes': self.notes,
         }
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
-            f'trade at {str(self.location)} location and date {datetime.fromtimestamp(self.timestamp)} '
+            f'trade at {str(self.location)} location and date '
+            f'{datetime.fromtimestamp(self.timestamp)} '
             f'of type {str(self.trade_type)} on the pair {str(self.pair)}'
         )
-        
+
 
 class MarginPosition(NamedTuple):
     """We only support margin positions on poloniex and bitmex at the moment"""
