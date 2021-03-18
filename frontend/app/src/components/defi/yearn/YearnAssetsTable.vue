@@ -5,13 +5,10 @@
     </v-card-title>
     <v-card-text>
       <v-sheet outlined rounded>
-        <v-data-table
+        <data-table
           :headers="headers"
           :items="yearnVaultsAssets(selectedAddresses)"
-          :footer-props="footerProps"
           sort-by="roi"
-          sort-desc
-          must-sort
           :loading="loading"
         >
           <template #item.underlyingValue.usdValue="{ item }">
@@ -29,7 +26,7 @@
           <template #item.roi="{ item }">
             <percentage-display :value="item.roi" />
           </template>
-        </v-data-table>
+        </data-table>
       </v-sheet>
     </v-card-text>
   </v-card>
@@ -40,11 +37,11 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import { footerProps } from '@/config/datatable.common';
+import DataTable from '@/components/helper/DataTable.vue';
 import { YearnVaultBalance } from '@/services/defi/types/yearn';
 
 @Component({
-  components: { PercentageDisplay },
+  components: { DataTable, PercentageDisplay },
   computed: {
     ...mapGetters('defi', ['yearnVaultsAssets'])
   }
@@ -57,7 +54,6 @@ export default class YearnAssetsTable extends Vue {
   @Prop({ required: true, type: Array })
   selectedAddresses!: string[];
 
-  readonly footerProps = footerProps;
   readonly headers: DataTableHeader[] = [
     { text: this.$tc('yearn_asset_table.headers.vault'), value: 'vault' },
     {

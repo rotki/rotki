@@ -22,7 +22,7 @@
     <v-btn absolute fab top right dark color="primary" @click="add">
       <v-icon> mdi-plus </v-icon>
     </v-btn>
-    <v-data-table
+    <data-table
       :items="tokens"
       :loading="loading"
       :headers="headers"
@@ -30,9 +30,7 @@
       :expanded="expanded"
       item-key="address"
       sort-by="name"
-      must-sort
       :search.sync="search"
-      :footer-props="footerProps"
     >
       <template #item.name="{ item }">
         <asset-details-base
@@ -97,7 +95,7 @@
           @click="expanded = expanded.includes(item) ? [] : [item]"
         />
       </template>
-    </v-data-table>
+    </data-table>
   </card>
 </template>
 
@@ -105,13 +103,13 @@
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
-import { footerProps } from '@/config/datatable.common';
 import { CustomEthereumToken } from '@/services/assets/types';
 
 @Component({
-  components: { RowActions, RowExpander, AssetDetailsBase }
+  components: { DataTable, RowActions, RowExpander, AssetDetailsBase }
 })
 export default class AssetTable extends Vue {
   @Prop({ required: true, type: Array })
@@ -130,7 +128,6 @@ export default class AssetTable extends Vue {
 
   expanded = [];
   search: string = '';
-  readonly footerProps = footerProps;
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('asset_table.headers.asset').toString(),

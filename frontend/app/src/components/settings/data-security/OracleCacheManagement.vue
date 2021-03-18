@@ -78,12 +78,10 @@
           </v-col>
         </v-row>
         <v-sheet outlined rounded>
-          <v-data-table
+          <data-table
             :search.sync="search"
             :headers="headers"
             :loading="loading"
-            :footer-props="footerProps"
-            must-sort
             :items="cacheData"
           >
             <template #item.fromAsset="{ item }">
@@ -114,7 +112,7 @@
                 <span>{{ $t('oracle_cache_management.delete_tooltip') }}</span>
               </v-tooltip>
             </template>
-          </v-data-table>
+          </data-table>
         </v-sheet>
       </v-card-text>
     </v-card>
@@ -140,9 +138,9 @@ import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import OracleEntry from '@/components/settings/OracleEntry.vue';
-import { footerProps } from '@/config/datatable.common';
 import { PriceOracles } from '@/model/action-result';
 import { TaskType } from '@/model/task-type';
 import { OracleCacheMeta } from '@/services/balances/types';
@@ -153,7 +151,13 @@ import { ActionStatus } from '@/store/types';
 import { assert } from '@/utils/assertions';
 
 @Component({
-  components: { ActionStatusIndicator, ConfirmDialog, Fragment, OracleEntry },
+  components: {
+    DataTable,
+    ActionStatusIndicator,
+    ConfirmDialog,
+    Fragment,
+    OracleEntry
+  },
   computed: {
     ...mapGetters('tasks', ['isTaskRunning'])
   },
@@ -162,7 +166,6 @@ import { assert } from '@/utils/assertions';
   }
 })
 export default class OracleCacheManagement extends Vue {
-  readonly footerProps = footerProps;
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('oracle_cache_management.headers.from').toString(),

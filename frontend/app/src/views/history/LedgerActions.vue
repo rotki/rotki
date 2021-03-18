@@ -34,16 +34,13 @@
           @ignore="ignoreLedgerActions"
         />
         <v-sheet outlined rounded>
-          <v-data-table
+          <data-table
             show-expand
             single-expand
-            sort-desc
             sort-by="timestamp"
-            must-sort
             item-key="identifier"
             :items="ledgerActions.data"
             :headers="headers"
-            :footer-props="footerProps"
           >
             <template #header.selection>
               <v-simple-checkbox
@@ -144,7 +141,7 @@
                 </v-col>
               </td>
             </template>
-          </v-data-table>
+          </data-table>
         </v-sheet>
       </v-card-text>
     </v-card>
@@ -183,6 +180,7 @@ import { DataTableHeader } from 'vuetify';
 import { mapActions, mapMutations, mapState } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
@@ -190,7 +188,6 @@ import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { footerProps } from '@/config/datatable.common';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import StatusMixin from '@/mixins/status-mixin';
 import { deserializeApiErrorMessage } from '@/services/converters';
@@ -226,6 +223,7 @@ const emptyAction: () => UnsavedAction = () => ({
 
 @Component({
   components: {
+    DataTable,
     CardTitle,
     IgnoreButtons,
     ConfirmDialog,
@@ -253,7 +251,6 @@ const emptyAction: () => UnsavedAction = () => ({
 })
 export default class LedgerActions extends Mixins(StatusMixin) {
   readonly section = Section.LEDGER_ACTIONS;
-  readonly footerProps = footerProps;
   readonly headers: DataTableHeader[] = [
     { text: '', value: 'selection', width: '34px', sortable: false },
     {

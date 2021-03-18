@@ -19,6 +19,7 @@ import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue'
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import Card from '@/components/helper/Card.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
@@ -90,6 +91,8 @@ export const setupPremium = () => {
   Vue.component('LiquidityPoolSelector', LiquidityPoolSelector);
   Vue.component('BalancerPoolAsset', BalancerPoolAsset);
   Vue.component('TradeLocationSelector', TradeLocationSelector);
+  // version 10
+  Vue.component('DataTable', DataTable);
 };
 
 function findComponents(): string[] {

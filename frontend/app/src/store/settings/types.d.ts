@@ -11,7 +11,8 @@ import {
   DECIMAL_SEPARATOR,
   CURRENCY_LOCATION,
   REFRESH_PERIOD,
-  EXPLORERS
+  EXPLORERS,
+  ITEMS_PER_PAGE
 } from '@/store/settings/consts';
 import { CurrencyLocation } from '@/typing/types';
 
@@ -50,6 +51,7 @@ export interface SettingsState {
   readonly [CURRENCY_LOCATION]: CurrencyLocation;
   readonly [REFRESH_PERIOD]: RefreshPeriod;
   readonly [EXPLORERS]: ExplorersSettings;
+  readonly [ITEMS_PER_PAGE]: number;
 }
 
 export type FrontendSettingsPayload = {

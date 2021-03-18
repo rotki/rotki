@@ -1,13 +1,10 @@
 <template>
   <v-sheet outlined rounded>
-    <v-data-table
+    <data-table
       :items="assets"
       :headers="headers"
       :loading="loading"
-      :footer-props="footerProps"
-      sort-desc
       sort-by="balance.usdValue"
-      must-sort
     >
       <template #item.asset="{ item }">
         <span class="d-flex flex-row align-center">
@@ -35,7 +32,7 @@
           })
         }}
       </template>
-    </v-data-table>
+    </data-table>
   </v-sheet>
 </template>
 
@@ -46,12 +43,12 @@ import { mapGetters } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import { footerProps } from '@/config/datatable.common';
+import DataTable from '@/components/helper/DataTable.vue';
 import { Currency } from '@/model/currency';
 import { DefiBalance } from '@/store/defi/types';
 
 @Component({
-  components: { PercentageDisplay, AmountDisplay, CryptoIcon },
+  components: { DataTable, PercentageDisplay, AmountDisplay, CryptoIcon },
   computed: {
     ...mapGetters('session', ['currency'])
   }
@@ -62,8 +59,6 @@ export default class LendingAssetTable extends Vue {
   @Prop({ required: false, type: Boolean })
   loading!: boolean;
   currency!: Currency;
-
-  readonly footerProps = footerProps;
 
   readonly headers: DataTableHeader[] = [
     { text: this.$tc('lending_asset_table.headers.asset'), value: 'asset' },

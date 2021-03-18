@@ -5,14 +5,11 @@
     </v-card-title>
     <v-card-text>
       <v-sheet outlined rounded>
-        <v-data-table
+        <data-table
           :headers="headers"
           :items="assetLocations"
           sort-by="balance.amount"
-          sort-desc
-          must-sort
           :loading="detailsLoading"
-          :footer-props="footerProps"
         >
           <template #item.location="{ item }">
             <location-display :identifier="item.location" />
@@ -34,7 +31,7 @@
               show-currency="symbol"
             />
           </template>
-        </v-data-table>
+        </data-table>
       </v-sheet>
     </v-card-text>
   </v-card>
@@ -45,14 +42,14 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { footerProps } from '@/config/datatable.common';
 import { CURRENCY_USD } from '@/data/currencies';
 import { AssetBreakdown } from '@/store/balances/types';
 import { GeneralAccount } from '@/typing/types';
 
 @Component({
-  components: { LabeledAddressDisplay, CardTitle },
+  components: { DataTable, LabeledAddressDisplay, CardTitle },
   computed: {
     ...mapGetters('balances', ['breakdown', 'account']),
     ...mapGetters('session', ['currencySymbol']),
@@ -60,7 +57,6 @@ import { GeneralAccount } from '@/typing/types';
   }
 })
 export default class AssetLocations extends Vue {
-  readonly footerProps = footerProps;
   get headers(): DataTableHeader[] {
     return [
       {

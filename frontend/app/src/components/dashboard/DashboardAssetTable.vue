@@ -16,16 +16,13 @@
     </v-card-title>
     <v-card-text>
       <v-sheet outlined rounded>
-        <v-data-table
+        <data-table
           class="dashboard-asset-table__balances"
           :headers="headers"
           :items="balances"
           :search="search"
           :loading="loading"
           sort-by="usdValue"
-          sort-desc
-          must-sort
-          :footer-props="footerProps"
         >
           <template #header.usdValue>
             <div class="text-no-wrap">
@@ -129,7 +126,7 @@
               </td>
             </tr>
           </template>
-        </v-data-table>
+        </data-table>
       </v-sheet>
     </v-card-text>
   </v-card>
@@ -140,11 +137,12 @@ import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
-import { footerProps } from '@/config/datatable.common';
+import DataTable from '@/components/helper/DataTable.vue';
 import { CURRENCY_USD } from '@/data/currencies';
 import { AssetBalance, AssetPrices } from '@/store/balances/types';
 
 @Component({
+  components: { DataTable },
   computed: {
     ...mapGetters('session', ['floatingPrecision', 'currencySymbol']),
     ...mapGetters('balances', ['exchangeRate']),
@@ -168,7 +166,6 @@ export default class DashboardAssetTable extends Vue {
 
   search: string = '';
 
-  readonly footerProps = footerProps;
   get headers(): DataTableHeader[] {
     return [
       {

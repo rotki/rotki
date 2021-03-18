@@ -6,12 +6,7 @@
           {{ $t('open_trades.title') }}
         </v-card-title>
         <v-card-text>
-          <v-data-table
-            :items="data"
-            :headers="headersOpen"
-            :footer-props="footerProps"
-            must-sort
-          />
+          <data-table :items="data" :headers="headersOpen" />
         </v-card-text>
       </v-card>
     </v-col>
@@ -20,10 +15,12 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { footerProps } from '@/config/datatable.common';
+import DataTable from '@/components/helper/DataTable.vue';
 import { Trade } from '@/services/history/types';
 
-@Component({})
+@Component({
+  components: { DataTable }
+})
 export default class OpenTrades extends Vue {
   @Prop({})
   data!: Trade[];
@@ -63,7 +60,5 @@ export default class OpenTrades extends Vue {
       align: 'end'
     }
   ];
-
-  footerProps = footerProps;
 }
 </script>

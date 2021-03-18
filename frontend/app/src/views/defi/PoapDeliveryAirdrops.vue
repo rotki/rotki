@@ -2,12 +2,7 @@
   <div class="py-4">
     <div class="text-h6 mb-4">{{ $t('poap_delivery_airdrops.title') }}</div>
     <v-sheet outlined rounded>
-      <v-data-table
-        :items="items"
-        :headers="headers"
-        must-sort
-        :footer-props="footerProps"
-      >
+      <data-table :items="items" :headers="headers">
         <template #item.name="{ item }">
           <v-row align="center">
             <v-col cols="auto">
@@ -35,7 +30,7 @@
             <v-icon>mdi-link</v-icon>
           </v-btn>
         </template>
-      </v-data-table>
+      </data-table>
     </v-sheet>
   </div>
 </template>
@@ -43,7 +38,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { footerProps } from '@/config/datatable.common';
+import DataTable from '@/components/helper/DataTable.vue';
 import { PoapDeliveryDetails } from '@/store/defi/types';
 import { default as images } from './poap.json';
 
@@ -68,9 +63,10 @@ const events = [
 
 export type EventType = typeof events[number];
 
-@Component({})
+@Component({
+  components: { DataTable }
+})
 export default class PoapDeliveryAirdrops extends Vue {
-  readonly footerProps = footerProps;
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('poap_delivery_airdrops.headers.name').toString(),

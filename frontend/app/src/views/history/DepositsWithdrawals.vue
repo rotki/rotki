@@ -27,7 +27,7 @@
           @ignore="ignoreMovements"
         />
         <v-sheet outlined rounded>
-          <v-data-table
+          <data-table
             :headers="headers"
             :items="movements"
             show-expand
@@ -35,10 +35,7 @@
             :expanded="expanded"
             item-key="identifier"
             sort-by="timestamp"
-            sort-desc
-            must-sort
             :page.sync="page"
-            :footer-props="footerProps"
             :loading="refreshing"
           >
             <template #header.selection>
@@ -117,7 +114,7 @@
                 </v-card>
               </td>
             </template>
-          </v-data-table>
+          </data-table>
         </v-sheet>
       </v-card-text>
     </v-card>
@@ -132,6 +129,7 @@ import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters, mapMutations } from 'vuex';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
@@ -140,7 +138,6 @@ import MovementLinks from '@/components/history/MovementLinks.vue';
 import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { footerProps } from '@/config/datatable.common';
 import StatusMixin from '@/mixins/status-mixin';
 import { SupportedExchange } from '@/services/balances/types';
 import { TradeLocation } from '@/services/history/types';
@@ -160,6 +157,7 @@ import { ActionStatus, Message } from '@/store/types';
 
 @Component({
   components: {
+    DataTable,
     CardTitle,
     IgnoreButtons,
     TradeLocationSelector,
@@ -336,7 +334,6 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
       : this.assetMovements;
   }
 
-  footerProps = footerProps;
   section = Section.ASSET_MOVEMENT;
   expanded = [];
 

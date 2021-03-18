@@ -33,13 +33,11 @@
           />
         </v-col>
       </v-row>
-      <v-data-table
+      <data-table
         :items="tags"
         item-key="name"
         :headers="headers"
         :search="search"
-        must-sort
-        :footer-props="footerProps"
       >
         <template #item.name="{ item }">
           <tag-icon :tag="item" />
@@ -52,7 +50,7 @@
             mdi-delete
           </v-icon>
         </template>
-      </v-data-table>
+      </data-table>
       <confirm-dialog
         :title="$t('tag_manager.confirmation.title')"
         :message="$t('tag_manager.confirmation.message', { tagToDelete })"
@@ -69,14 +67,14 @@ import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import DataTable from '@/components/helper/DataTable.vue';
 import TagCreator from '@/components/tags/TagCreator.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { defaultTag } from '@/components/tags/types';
-import { footerProps } from '@/config/datatable.common';
 import { Tag } from '@/typing/types';
 
 @Component({
-  components: { TagIcon, ConfirmDialog, TagCreator },
+  components: { DataTable, TagIcon, ConfirmDialog, TagCreator },
   computed: {
     ...mapGetters('session', ['tags'])
   }
@@ -88,8 +86,6 @@ export default class TagManager extends Vue {
   tagToDelete: string = '';
 
   search: string = '';
-
-  footerProps = footerProps;
 
   @Prop({ required: false, default: false, type: Boolean })
   dialog!: boolean;
