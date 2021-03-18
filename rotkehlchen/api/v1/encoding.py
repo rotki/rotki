@@ -1558,6 +1558,7 @@ class AssetIconUploadSchema(Schema):
 
 
 class ExchangeRatesSchema(Schema):
+    async_query = fields.Boolean(missing=False)
     currencies = DelimitedOrNormalList(AssetField(), required=True)
 
 

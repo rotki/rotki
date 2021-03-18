@@ -363,10 +363,14 @@ class Inquirer():
     def get_fiat_usd_exchange_rates(currencies: Iterable[Asset]) -> Dict[Asset, Price]:
         """Gets the USD exchange rate of any of the given assets
 
-        May raise RemoteError due to _query_fiat_pair"""
+        In case of failure to query a rate it's returned as zero"""
         rates = {A_USD: Price(FVal(1))}
         for currency in currencies:
-            rates[currency] = Inquirer()._query_fiat_pair(A_USD, currency)
+            try:
+                rates[currency] = Inquirer()._query_fiat_pair(A_USD, currency)
+            except RemoteError:
+                rates[currency] = Price(ZERO)
+
         return rates
 
     @staticmethod
