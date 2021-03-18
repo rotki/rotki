@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
@@ -157,6 +158,12 @@ class Trade(NamedTuple):
             'notes': self.notes,
         }
 
+    def __str__(self):
+        return (
+            f'trade at {str(self.location)} location and date {datetime.fromtimestamp(self.timestamp)} '
+            f'of type {str(self.trade_type)} on the pair {str(self.pair)}'
+        )
+        
 
 class MarginPosition(NamedTuple):
     """We only support margin positions on poloniex and bitmex at the moment"""

@@ -258,6 +258,9 @@ class PriceField(fields.Field):
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
+        if price == ZERO:
+            raise ValidationError('A zero rate is not allowed')
+
         return price
 
 
@@ -775,18 +778,6 @@ class TradeSchema(Schema):
     fee_currency = AssetField(required=True)
     link = fields.String(missing='')
     notes = fields.String(missing='')
-
-    @validates_schema  # type: ignore
-    def validate_settings_schema(  # pylint: disable=no-self-use
-            self,
-            data: Dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        if data['rate'] == 0:
-            raise ValidationError(
-                message='A rate with value 0 is not allowed.',
-                field_name='rate',
-            )
 
 
 class LedgerActionSchema(Schema):

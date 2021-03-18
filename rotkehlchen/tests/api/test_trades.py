@@ -259,6 +259,34 @@ def test_add_trades(rotkehlchen_api_server):
     assert data['message'] == ''
     assert data['result']['entries'] == [{'entry': new_trade, 'ignored_in_accounting': False}]
 
+    # Test trade with rate 0. Should fail
+
+    zero_rate_trade = {
+        'timestamp': 1575640208,
+        'location': 'external',
+        'pair': 'ETH_WETH',
+        'trade_type': 'buy',
+        'amount': '0.5541',
+        'rate': '0',
+        'fee': '0.01',
+        'fee_currency': 'USD',
+        'link': 'optional trader identifier',
+        'notes': 'optional notes',
+    }
+
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ), json=zero_rate_trade,
+    )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'A zero rate is not allowed',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
 
 def assert_all_missing_fields_are_handled(correct_trade, server):
     fields = correct_trade.keys()
