@@ -4,9 +4,9 @@ import { SupportedAsset } from '@/services/types-model';
 export function convertSupportedAssets(
   supportedAssets: SupportedAssets
 ): SupportedAsset[] {
-  return Object.keys(supportedAssets).map(key => ({
-    key,
-    ...supportedAssets[key]
+  return Object.keys(supportedAssets).map(identifier => ({
+    identifier,
+    ...supportedAssets[identifier]
   }));
 }
 

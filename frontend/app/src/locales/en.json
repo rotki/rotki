@@ -195,6 +195,7 @@
       "cryptocompare": "CryptoCompare",
       "cryptocompare_hint": "The identifier of the asset on CryptoCompare. If not given, the symbol is assumed as default. If that does not work and if not otherwise set rotki will not be able to retrieve prices for the asset from CryptoCompare",
       "decimals": "Decimals",
+      "forked": "Forked",
       "name": "Name",
       "protocol": "Protocol",
       "started": "Started",
@@ -206,6 +207,9 @@
     "icon_upload": {
       "title": "Icon upload",
       "description": "The icon upload failed: {message}"
+    },
+    "types": {
+      "error": "We could not load the asset types: {message}"
     },
     "underlying_tokens": "Underlying tokens"
   },

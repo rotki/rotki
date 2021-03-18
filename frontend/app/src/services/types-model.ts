@@ -1,10 +1,15 @@
 export interface SupportedAsset {
-  readonly key: string;
+  readonly identifier: string;
+  readonly coingecko?: string;
+  readonly cryptocompare?: string;
   readonly active?: boolean;
-  readonly ended?: number;
+  readonly ended?: number | null;
+  readonly decimals?: number | null;
   readonly name: string;
-  readonly started?: number;
+  readonly started?: number | null;
   readonly symbol: string;
-  readonly type: string;
-  readonly ethereumAddress?: string;
+  readonly assetType: string;
+  readonly swappedFor?: string | null;
+  readonly forked?: string | null;
+  readonly ethereumAddress?: string | null;
 }

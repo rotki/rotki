@@ -29,7 +29,6 @@ import {
   PendingTask,
   PeriodicClientQueryResult,
   SingleAssetBalance,
-  SupportedAssets,
   SyncAction,
   TaskNotFoundError,
   TaskStatus,
@@ -193,14 +192,6 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  ignoredAssets(): Promise<string[]> {
-    return this.axios
-      .get<ActionResult<string[]>>('/assets/ignored', {
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
-  }
-
   async ping(): Promise<AsyncQuery> {
     return this.axios
       .get<ActionResult<AsyncQuery>>('/ping') // no validate status here since defaults work
@@ -300,14 +291,6 @@ export class RotkehlchenApi {
   queryNetvalueData(): Promise<NetValue> {
     return this.axios
       .get<ActionResult<NetValue>>('/statistics/netvalue', {
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
-  }
-
-  queryOwnedAssets(): Promise<string[]> {
-    return this.axios
-      .get<ActionResult<string[]>>('/assets', {
         validateStatus: validStatus
       })
       .then(handleResponse);
@@ -670,38 +653,6 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  modifyAsset(add: boolean, asset: string): Promise<string[]> {
-    if (add) {
-      return this.addIgnoredAsset(asset);
-    }
-    return this.removeIgnoredAsset(asset);
-  }
-
-  addIgnoredAsset(asset: string): Promise<string[]> {
-    return this.axios
-      .put<ActionResult<string[]>>(
-        '/assets/ignored',
-        {
-          assets: [asset]
-        },
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
-  }
-
-  removeIgnoredAsset(asset: string): Promise<string[]> {
-    return this.axios
-      .delete<ActionResult<string[]>>('/assets/ignored', {
-        data: {
-          assets: [asset]
-        },
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
-  }
-
   consumeMessages(): Promise<Messages> {
     return this.axios
       .get<ActionResult<Messages>>('/messages/')
@@ -820,15 +771,6 @@ export class RotkehlchenApi {
       .get<ActionResult<BtcAccountData>>('/blockchains/BTC', {
         validateStatus: validWithSessionStatus,
         transformResponse: basicAxiosTransformer
-      })
-      .then(handleResponse);
-  }
-
-  async supportedAssets(): Promise<SupportedAssets> {
-    return this.axios
-      .get<ActionResult<SupportedAssets>>('assets/all', {
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: setupTransformer([], true)
       })
       .then(handleResponse);
   }

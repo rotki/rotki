@@ -448,7 +448,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
 
   async fetchIgnoredAssets({ commit }): Promise<void> {
     try {
-      const ignoredAssets = await api.ignoredAssets();
+      const ignoredAssets = await api.assets.ignoredAssets();
       commit('ignoreAssets', ignoredAssets);
     } catch (e) {
       const title = i18n.tc('actions.session.ignored_assets.error.title');
@@ -464,7 +464,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   },
   async ignoreAsset({ commit }, asset: string): Promise<ActionStatus> {
     try {
-      const ignoredAssets = await api.modifyAsset(true, asset);
+      const ignoredAssets = await api.assets.modifyAsset(true, asset);
       commit('ignoreAssets', ignoredAssets);
       return { success: true };
     } catch (e) {
@@ -478,7 +478,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   },
   async unignoreAsset({ commit }, asset: string): Promise<ActionStatus> {
     try {
-      const ignoredAssets = await api.modifyAsset(false, asset);
+      const ignoredAssets = await api.assets.modifyAsset(false, asset);
       commit('ignoreAssets', ignoredAssets);
       return { success: true };
     } catch (e) {

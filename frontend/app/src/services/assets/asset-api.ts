@@ -1,14 +1,18 @@
 import { AxiosInstance, AxiosTransformer } from 'axios';
-import {
-  CustomTokenResponse,
-  CustomEthereumToken
-} from '@/services/assets/types';
+import { AssetIdResponse, EthereumToken } from '@/services/assets/types';
 import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import { ActionResult } from '@/services/types-api';
-import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
+import { ActionResult, SupportedAssets } from '@/services/types-api';
+import { SupportedAsset } from '@/services/types-model';
+import {
+  handleResponse,
+  validStatus,
+  validTaskStatus,
+  validWithoutSessionStatus,
+  validWithSessionAndExternalService
+} from '@/services/utils';
 
 export class AssetApi {
   private readonly axios: AxiosInstance;
@@ -19,18 +23,18 @@ export class AssetApi {
     this.baseTransformer = setupTransformer([]);
   }
 
-  customTokens(): Promise<CustomEthereumToken[]> {
+  ethereumTokens(): Promise<EthereumToken[]> {
     return this.axios
-      .get<ActionResult<CustomEthereumToken[]>>('/assets/ethereum', {
+      .get<ActionResult<EthereumToken[]>>('/assets/ethereum', {
         validateStatus: validTaskStatus,
         transformResponse: this.baseTransformer
       })
       .then(handleResponse);
   }
 
-  addCustomToken(token: CustomEthereumToken): Promise<CustomTokenResponse> {
+  addEthereumToken(token: EthereumToken): Promise<AssetIdResponse> {
     return this.axios
-      .put<ActionResult<CustomTokenResponse>>(
+      .put<ActionResult<AssetIdResponse>>(
         '/assets/ethereum',
         axiosSnakeCaseTransformer({ token }),
         {
@@ -41,9 +45,9 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  editCustomToken(token: CustomEthereumToken): Promise<CustomTokenResponse> {
+  editEthereumToken(token: EthereumToken): Promise<AssetIdResponse> {
     return this.axios
-      .patch<ActionResult<CustomTokenResponse>>(
+      .patch<ActionResult<AssetIdResponse>>(
         '/assets/ethereum',
         axiosSnakeCaseTransformer({ token }),
         {
@@ -54,7 +58,7 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  deleteCustomToken(address: string): Promise<boolean> {
+  deleteEthereumToken(address: string): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>('/assets/ethereum', {
         data: axiosSnakeCaseTransformer({ address }),
@@ -79,6 +83,108 @@ export class AssetApi {
     return this.axios
       .put<ActionResult<boolean>>(`/assets/${identifier}/icon`, {
         file
+      })
+      .then(handleResponse);
+  }
+
+  assetTypes(): Promise<string[]> {
+    return this.axios
+      .get<ActionResult<string[]>>('/assets/types', {
+        validateStatus: validWithoutSessionStatus
+      })
+      .then(handleResponse);
+  }
+
+  ignoredAssets(): Promise<string[]> {
+    return this.axios
+      .get<ActionResult<string[]>>('/assets/ignored', {
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
+  }
+
+  modifyAsset(add: boolean, asset: string): Promise<string[]> {
+    if (add) {
+      return this.addIgnoredAsset(asset);
+    }
+    return this.removeIgnoredAsset(asset);
+  }
+
+  addIgnoredAsset(asset: string): Promise<string[]> {
+    return this.axios
+      .put<ActionResult<string[]>>(
+        '/assets/ignored',
+        {
+          assets: [asset]
+        },
+        {
+          validateStatus: validStatus
+        }
+      )
+      .then(handleResponse);
+  }
+
+  removeIgnoredAsset(asset: string): Promise<string[]> {
+    return this.axios
+      .delete<ActionResult<string[]>>('/assets/ignored', {
+        data: {
+          assets: [asset]
+        },
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
+  }
+
+  async allAssets(): Promise<SupportedAssets> {
+    return this.axios
+      .get<ActionResult<SupportedAssets>>('assets/all', {
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: setupTransformer([], true)
+      })
+      .then(handleResponse);
+  }
+
+  queryOwnedAssets(): Promise<string[]> {
+    return this.axios
+      .get<ActionResult<string[]>>('/assets', {
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
+  }
+
+  addAsset(
+    asset: Omit<SupportedAsset, 'identifier'>
+  ): Promise<AssetIdResponse> {
+    return this.axios
+      .put<ActionResult<AssetIdResponse>>(
+        '/assets/all',
+        axiosSnakeCaseTransformer(asset),
+        {
+          validateStatus: validStatus,
+          transformResponse: this.baseTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
+  editAsset(asset: SupportedAsset): Promise<boolean> {
+    return this.axios
+      .patch<ActionResult<boolean>>(
+        '/assets/all',
+        axiosSnakeCaseTransformer(asset),
+        {
+          validateStatus: validStatus,
+          transformResponse: this.baseTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
+  deleteAsset(identifier: string): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>('/assets/all', {
+        data: axiosSnakeCaseTransformer({ identifier }),
+        validateStatus: validStatus
       })
       .then(handleResponse);
   }

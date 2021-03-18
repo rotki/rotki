@@ -14,6 +14,7 @@
       @add="add()"
       @edit="edit($event)"
       @delete-token="deleteToken($event)"
+      @delete-asset="deleteAsset($event)"
     />
     <big-dialog
       :display="showForm"
@@ -37,22 +38,29 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import { mapState } from 'vuex';
 import AssetForm from '@/components/asset-manager/AssetForm.vue';
 import AssetTable from '@/components/asset-manager/AssetTable.vue';
+import { ManagedAsset } from '@/components/asset-manager/types';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import { CustomEthereumToken } from '@/services/assets/types';
+import { EthereumToken } from '@/services/assets/types';
+import { SupportedAsset } from '@/services/types-model';
 import { showError } from '@/store/utils';
 
 @Component({
-  components: { AssetForm, BigDialog, AssetTable }
+  components: { AssetForm, BigDialog, AssetTable },
+  computed: {
+    ...mapState('balances', ['supportedAssets'])
+  }
 })
 export default class AssetManagement extends Vue {
   loading: boolean = false;
-  tokens: CustomEthereumToken[] = [];
+  tokens: ManagedAsset[] = [];
   validForm: boolean = false;
   showForm: boolean = false;
   saving: boolean = false;
-  token: CustomEthereumToken | null = null;
+  token: ManagedAsset | null = null;
+  supportedAssets!: SupportedAsset[];
 
   get dialogTitle(): string {
     return this.token
@@ -70,7 +78,11 @@ export default class AssetManagement extends Vue {
 
   private async refresh() {
     this.loading = true;
-    this.tokens = await this.$api.assets.customTokens();
+    await this.$store.dispatch('balances/fetchSupportedAssets', true);
+    const assets = this.supportedAssets.filter(
+      ({ assetType }) => assetType !== 'ethereum token'
+    );
+    this.tokens = [...(await this.$api.assets.ethereumTokens()), ...assets];
     this.loading = false;
   }
 
@@ -79,7 +91,7 @@ export default class AssetManagement extends Vue {
     this.showForm = true;
   }
 
-  edit(token: CustomEthereumToken) {
+  edit(token: EthereumToken) {
     this.token = token;
     this.showForm = true;
   }
@@ -97,7 +109,7 @@ export default class AssetManagement extends Vue {
 
   async deleteToken(address: string) {
     try {
-      const success = await this.$api.assets.deleteCustomToken(address);
+      const success = await this.$api.assets.deleteEthereumToken(address);
       if (success) {
         await this.refresh();
       }
@@ -105,6 +117,22 @@ export default class AssetManagement extends Vue {
       showError(
         this.$t('asset_management.delete_error', {
           address,
+          message: e.message
+        }).toString()
+      );
+    }
+  }
+
+  async deleteAsset(identifier: string) {
+    try {
+      const success = await this.$api.assets.deleteAsset(identifier);
+      if (success) {
+        await this.refresh();
+      }
+    } catch (e) {
+      showError(
+        this.$t('asset_management.delete_error', {
+          address: identifier,
           message: e.message
         }).toString()
       );

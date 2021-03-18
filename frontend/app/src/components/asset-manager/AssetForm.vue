@@ -2,16 +2,17 @@
   <fragment>
     <v-form :value="value" class="pt-2" @input="input">
       <v-row>
-        <v-col cols="12" md="4" xl="2">
+        <v-col>
           <v-select
             v-model="assetType"
             outlined
             :label="$t('asset_form.labels.asset_type')"
-            disabled
+            :disabled="types.length === 1"
             :items="types"
           />
         </v-col>
-
+      </v-row>
+      <v-row v-if="isEthereumToken">
         <v-col>
           <v-text-field
             v-model="address"
@@ -23,16 +24,19 @@
           />
         </v-col>
       </v-row>
-      <v-text-field
-        v-model="name"
-        outlined
-        :error-messages="errors['name']"
-        :label="$t('asset_form.labels.name')"
-        :disabled="saving"
-        @focus="delete errors['name']"
-      />
+
       <v-row>
         <v-col cols="12" md="6">
+          <v-text-field
+            v-model="name"
+            outlined
+            :error-messages="errors['name']"
+            :label="$t('asset_form.labels.name')"
+            :disabled="saving"
+            @focus="delete errors['name']"
+          />
+        </v-col>
+        <v-col cols="12" :md="isEthereumToken ? 3 : 6">
           <v-text-field
             v-model="symbol"
             outlined
@@ -42,7 +46,7 @@
             @focus="delete errors['symbol']"
           />
         </v-col>
-        <v-col cols="12" md="6">
+        <v-col v-if="isEthereumToken" cols="12" md="3">
           <v-text-field
             v-model="decimals"
             type="number"
@@ -119,7 +123,7 @@
               @focus="delete errors['started']"
             />
             <v-row>
-              <v-col cols="12" md="6">
+              <v-col v-if="isEthereumToken" cols="12" md="6">
                 <v-text-field
                   v-model="protocol"
                   outlined
@@ -145,8 +149,24 @@
                   @focus="delete errors['swapped_for']"
                 />
               </v-col>
+              <v-col v-if="!isEthereumToken" cols="12" md="6">
+                <asset-select
+                  v-if="assetType"
+                  v-model="forked"
+                  outlined
+                  persistent-hint
+                  clearable
+                  :label="$t('asset_form.labels.forked')"
+                  :error-messages="errors['forked']"
+                  :disabled="saving"
+                  @focus="delete errors['forked']"
+                />
+              </v-col>
             </v-row>
-            <underlying-token-manager v-model="underlyingTokens" />
+            <underlying-token-manager
+              v-if="isEthereumToken"
+              v-model="underlyingTokens"
+            />
           </v-expansion-panel-content>
         </v-expansion-panel>
       </v-expansion-panels>
@@ -188,10 +208,21 @@ import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
-import { CustomEthereumToken, UnderlyingToken } from '@/services/assets/types';
+import { EthereumToken, UnderlyingToken } from '@/services/assets/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
+import { SupportedAsset } from '@/services/types-model';
 import { showError } from '@/store/utils';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+
+function value<T>(t: T): T | undefined {
+  return t ? t : undefined;
+}
+
+function time(t: string): number | undefined {
+  return t ? convertToTimestamp(t) : undefined;
+}
+
+const ETHEREUM_TOKEN = 'ethereum token';
 
 @Component({
   components: {
@@ -211,11 +242,12 @@ export default class AssetForm extends Vue {
   started: string = '';
   coingecko: string = '';
   cryptocompare: string = '';
-  assetType: string = 'Ethereum token';
-  types: string[] = ['Ethereum token'];
+  assetType: string = ETHEREUM_TOKEN;
+  types: string[] = [ETHEREUM_TOKEN];
   identifier: string = '';
   protocol: string = '';
   swappedFor: string = '';
+  forked: string = '';
   fetchSupportedAssets!: (refresh: boolean) => Promise<void>;
 
   underlyingTokens: UnderlyingToken[] = [];
@@ -228,12 +260,16 @@ export default class AssetForm extends Vue {
   value!: boolean;
 
   @Prop({ required: false, default: () => null })
-  edit!: CustomEthereumToken | null;
+  edit!: EthereumToken | SupportedAsset | null;
   @Prop({ required: false, type: Boolean, default: false })
   saving!: boolean;
 
   @Emit()
   input(_value: boolean) {}
+
+  get isEthereumToken() {
+    return this.assetType === ETHEREUM_TOKEN;
+  }
 
   get preview(): string | null {
     if (this.forceSymbol) {
@@ -242,20 +278,43 @@ export default class AssetForm extends Vue {
     return this.identifier ?? this.symbol ?? null;
   }
 
-  get token(): CustomEthereumToken {
+  get token(): EthereumToken {
     return {
       address: this.address,
       name: this.name,
       symbol: this.symbol,
       decimals: parseInt(this.decimals),
-      coingecko: this.coingecko ? this.coingecko : undefined,
-      cryptocompare: this.cryptocompare ? this.cryptocompare : undefined,
-      started: this.started ? convertToTimestamp(this.started) : undefined,
+      coingecko: value(this.coingecko),
+      cryptocompare: value(this.cryptocompare),
+      started: time(this.started),
       underlyingTokens:
         this.underlyingTokens.length > 0 ? this.underlyingTokens : undefined,
-      swappedFor: this.swappedFor ? this.swappedFor : undefined,
-      protocol: this.protocol ? this.protocol : undefined
+      swappedFor: value(this.swappedFor),
+      protocol: value(this.protocol)
     };
+  }
+
+  get asset(): Omit<SupportedAsset, 'identifier'> {
+    return {
+      name: this.name,
+      symbol: this.symbol,
+      assetType: this.assetType,
+      started: time(this.started),
+      forked: value(this.forked),
+      swappedFor: value(this.swappedFor),
+      coingecko: value(this.coingecko),
+      cryptocompare: value(this.cryptocompare)
+    };
+  }
+
+  async created() {
+    try {
+      this.types = await this.$api.assets.assetTypes();
+    } catch (e) {
+      showError(
+        this.$t('asset_form.types.error', { message: e.message }).toString()
+      );
+    }
   }
 
   mounted() {
@@ -263,19 +322,27 @@ export default class AssetForm extends Vue {
     if (!token) {
       return;
     }
-    this.address = token.address;
+
     this.name = token.name;
     this.symbol = token.symbol;
-    this.decimals = token.decimals ? token.decimals.toString() : '';
+    this.identifier = token.identifier ?? '';
+    this.swappedFor = token.swappedFor ?? '';
     this.started = token.started
       ? convertFromTimestamp(token.started, true)
       : '';
     this.coingecko = token.coingecko ?? '';
     this.cryptocompare = token.cryptocompare ?? '';
-    this.underlyingTokens = token.underlyingTokens ?? [];
-    this.identifier = token.identifier ?? '';
-    this.swappedFor = token.swappedFor ?? '';
-    this.protocol = token.protocol ?? '';
+
+    if ('assetType' in token) {
+      this.forked = token.forked ?? '';
+      this.assetType = token.assetType;
+    } else {
+      this.address = token.address;
+      this.decimals = token.decimals ? token.decimals.toString() : '';
+      this.protocol = token.protocol ?? '';
+      this.underlyingTokens = token.underlyingTokens ?? [];
+      this.assetType = ETHEREUM_TOKEN;
+    }
   }
 
   async saveIcon(identifier: string) {
@@ -308,13 +375,9 @@ export default class AssetForm extends Vue {
 
   async save(): Promise<boolean> {
     try {
-      const token = this.token!;
-      let identifier: string;
-      if (this.edit) {
-        ({ identifier } = await this.$api.assets.editCustomToken(token));
-      } else {
-        ({ identifier } = await this.$api.assets.addCustomToken(token));
-      }
+      const identifier = this.isEthereumToken
+        ? await this.saveEthereumToken()
+        : await this.saveAsset();
       this.identifier = identifier;
       await this.saveIcon(identifier);
       await this.fetchSupportedAssets(true);
@@ -327,35 +390,71 @@ export default class AssetForm extends Vue {
           this.$t('asset_form.underlying_tokens').toString()
         );
       } else {
-        const token = message.token;
-        this.errors = token;
-        const underlyingTokens = token.underlying_tokens;
-        if (underlyingTokens) {
-          const messages: string[] = [];
-          for (const underlyingToken of Object.values(underlyingTokens)) {
-            const ut = underlyingToken as any;
-            if (ut.address) {
-              messages.push(...(ut.address as string[]));
-            }
-            if (underlyingTokens.weight) {
-              messages.push(...(ut.weight as string[]));
-            }
-          }
-
-          showError(
-            messages.join(','),
-            this.$t('asset_form.underlying_tokens').toString()
-          );
-        } else if (token._schema) {
-          showError(
-            token._schema[0],
-            this.$t('asset_form.underlying_tokens').toString()
-          );
-        }
+        this.handleError(message);
       }
 
       return false;
     }
+  }
+
+  private handleError(message: any) {
+    if (message.token) {
+      const token = message.token;
+      this.errors = token;
+      const underlyingTokens = token.underlying_tokens;
+      if (underlyingTokens) {
+        const messages = this.getUnderlyingTokenErrors(underlyingTokens);
+
+        showError(
+          messages.join(','),
+          this.$t('asset_form.underlying_tokens').toString()
+        );
+      } else if (token._schema) {
+        showError(
+          token._schema[0],
+          this.$t('asset_form.underlying_tokens').toString()
+        );
+      }
+    } else {
+      this.errors = message;
+    }
+  }
+
+  private getUnderlyingTokenErrors(underlyingTokens: any) {
+    const messages: string[] = [];
+    for (const underlyingToken of Object.values(underlyingTokens)) {
+      const ut = underlyingToken as any;
+      if (ut.address) {
+        messages.push(...(ut.address as string[]));
+      }
+      if (underlyingTokens.weight) {
+        messages.push(...(ut.weight as string[]));
+      }
+    }
+    return messages;
+  }
+
+  private async saveEthereumToken() {
+    let identifier: string;
+    const token = this.token!;
+    if (this.edit) {
+      ({ identifier } = await this.$api.assets.editEthereumToken(token));
+    } else {
+      ({ identifier } = await this.$api.assets.addEthereumToken(token));
+    }
+    return identifier;
+  }
+
+  private async saveAsset() {
+    let identifier: string;
+    const asset = this.asset;
+    if (this.edit) {
+      identifier = this.identifier;
+      await this.$api.assets.editAsset({ ...asset, identifier });
+    } else {
+      ({ identifier } = await this.$api.assets.addAsset(asset));
+    }
+    return identifier;
   }
 }
 </script>

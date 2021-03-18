@@ -87,7 +87,7 @@ export default class AssetSelect extends Vue {
   get assets(): SupportedAsset[] {
     if (this.items) {
       return this.supportedAssets.filter(asset =>
-        this.items!.includes(asset.key)
+        this.items!.includes(asset.identifier)
       );
     }
 
