@@ -177,7 +177,11 @@ TOKENID_TO_ASSET = {
 }
 
 
-class LoopringAPIKeyMismatch(Exception):
+class LoopringInvalidApiKey(Exception):
+    pass
+
+
+class LoopringUserNotFound(Exception):
     pass
 
 
@@ -253,12 +257,16 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryObject):
                 result_info = json_ret.get('resultInfo', None)
                 if result_info:
                     code = result_info.get('code', None)
-                    # This two codes can appear if there is an error with the
-                    # key as tested here
-                    # https://github.com/rotki/rotki/pull/2569#issuecomment-800151821
-                    if code and code in (100001, 101002):
-                        raise LoopringAPIKeyMismatch()
-            # else just let it hit the generic remote error below
+                    if code is not None:
+                        # From the documentation the code returned when the ApiKey
+                        # is not valid is 104002 https://docs3.loopring.io/en/?q=104002
+                        if code == 104002:
+                            raise LoopringInvalidApiKey()
+                        # This code is returned when an user is not found at loopring
+                        # https://docs3.loopring.io/en/?q=101002
+                        if code == 101002:
+                            raise LoopringUserNotFound()
+                # else just let it hit the generic remote error below
 
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
@@ -384,16 +392,32 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryObject):
         for address in addresses:
             try:
                 account_id = self.ethereum_account_to_loopring_id(l1_address=address)
+            except LoopringUserNotFound:
+                logger.debug(
+                    f'Skipping loopring query of address {address} '
+                    f'because is not registered at loopring',
+                )
+                continue
+            except LoopringInvalidApiKey:
+                self.msg_aggregator.add_warning('The Loopring API key is not a valid key.')
+                continue
             except RemoteError as e:
                 logger.debug(f'Skipping loopring query of address {address} due to {str(e)}')
                 continue
 
             try:
                 balances = self.get_account_balances(account_id=account_id)
-            except LoopringAPIKeyMismatch:
-                self.msg_aggregator.add_warning(
-                    f'The given loopring API key does not match '
-                    f'address {address}. Skipping its query.',
+            except LoopringInvalidApiKey:
+                self.msg_aggregator.add_warning('The Loopring API key is not a valid key.')
+                continue
+            except LoopringUserNotFound:
+                # Since the mapping of addresses is stored in database if the account was
+                # previously queried this error can be raised if someone edits a valid key
+                # and the new key is not valid. In this case the API return a code 101002
+                # when the issue is with the key
+                self.msg_aggregator.add_error(
+                    f'Error querying loopring address {address}. '
+                    f'Verify that the api key for loopring is correct.',
                 )
                 continue
 
