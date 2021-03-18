@@ -58,7 +58,11 @@
         />
       </template>
       <template #expanded-item="{ item, headers }">
-        <table-expand-container visible :colspan="headers.length">
+        <table-expand-container
+          visible
+          :colspan="headers.length"
+          :padded="false"
+        >
           <template #title>
             {{ $t('asset_table.underlying_tokens') }}
           </template>

@@ -1,5 +1,5 @@
 <template>
-  <table-expand-container :visible="visible" :colspan="colspan">
+  <table-expand-container :visible="visible" :colspan="colspan" :padded="false">
     <template #title>
       {{ $t('cost_basis_table.cost_basis') }}
       <span class="text-caption">

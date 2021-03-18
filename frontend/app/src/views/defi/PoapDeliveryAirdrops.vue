@@ -1,5 +1,5 @@
 <template>
-  <table-expand-container :visible="visible" :colspan="colspan">
+  <table-expand-container :visible="visible" :colspan="colspan" :padded="false">
     <template #title>
       {{ $t('poap_delivery_airdrops.title') }}
     </template>

@@ -8,7 +8,7 @@
       <div class="text-h6 mb-4">
         <slot name="title" />
       </div>
-      <v-sheet outlined rounded class="pa-4">
+      <v-sheet outlined rounded :class="padded ? 'pa-4' : null">
         <slot />
       </v-sheet>
     </div>
@@ -24,6 +24,8 @@ export default class TableExpandContainer extends Vue {
   visible!: boolean;
   @Prop({ required: true, type: Number })
   colspan!: number;
+  @Prop({ required: false, default: true, type: Boolean })
+  padded!: boolean;
 }
 </script>
 
