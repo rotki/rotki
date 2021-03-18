@@ -360,14 +360,7 @@ class RestAPI():
         }
         return api_response(result=result_dict, status_code=HTTPStatus.NOT_FOUND)
 
-    @staticmethod
-    def get_exchange_rates(given_currencies: List[Asset]) -> Response:
-        if len(given_currencies) == 0:
-            return api_response(
-                wrap_in_fail_result('Empty list of currencies provided'),
-                status_code=HTTPStatus.BAD_REQUEST,
-            )
-
+    def _get_exchange_rates(self, given_currencies: List[Asset]) -> Dict[str, Any]:
         currencies = given_currencies
         fiat_currencies = []
         asset_rates = {}
@@ -378,24 +371,40 @@ class RestAPI():
 
             usd_price = Inquirer().find_usd_price(asset)
             if usd_price == Price(ZERO):
-                return api_response(
-                    wrap_in_fail_result(f'Failed to query usd price of {asset.identifier}'),
-                    status_code=HTTPStatus.BAD_GATEWAY,
+                asset_rates[asset] = Price(ZERO)
+                self.rotkehlchen.msg_aggregator.add_warning(
+                    f'Failed to query usd price of {asset.identifier}. This asset '
+                    f'will not be selectable as a native currency in the app',
                 )
-            asset_rates[asset] = Price(FVal(1) / usd_price)
+            else:
+                asset_rates[asset] = Price(FVal(1) / usd_price)
 
-        try:
-            fiat_rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
-        except RemoteError as e:
+        fiat_rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
+        for fiat, rate in fiat_rates.items():
+            if rate == ZERO:
+                self.rotkehlchen.msg_aggregator.add_warning(
+                    f'Failed to query usd price of {fiat.identifier}. This asset '
+                    f'will not be selectable as a native currency in the app',
+                )
+            asset_rates[fiat] = rate
+
+        return _wrap_in_ok_result(process_result(asset_rates))
+
+    def get_exchange_rates(self, given_currencies: List[Asset], async_query: bool) -> Response:
+        if len(given_currencies) == 0:
             return api_response(
-                wrap_in_fail_result(
-                    f'Failed to query usd price of fiat currencies due to {str(e)}',
-                ),
-                status_code=HTTPStatus.BAD_GATEWAY,
+                wrap_in_fail_result('Empty list of currencies provided'),
+                status_code=HTTPStatus.BAD_REQUEST,
             )
-        asset_rates.update(fiat_rates)
-        res = process_result(asset_rates)
-        return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
+
+        if async_query:
+            return self._query_async(
+                command='_get_exchange_rates',
+                given_currencies=given_currencies,
+            )
+
+        response_result = self._get_exchange_rates(given_currencies)
+        return api_response(result=response_result, status_code=HTTPStatus.OK)
 
     def _query_all_balances(self, save_data: bool, ignore_cache: bool) -> Dict[str, Any]:
         result = self.rotkehlchen.query_balances(
