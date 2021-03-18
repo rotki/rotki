@@ -257,15 +257,16 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryObject):
                 result_info = json_ret.get('resultInfo', None)
                 if result_info:
                     code = result_info.get('code', None)
-                    # From the documentation the code returned when the ApiKey
-                    # is not valid is 104002 https://docs3.loopring.io/en/?q=104002
-                    if code and code == 104002:
-                        raise LoopringInvalidApiKey()
-                    # This code is returned when an user is not found at loopring
-                    # https://docs3.loopring.io/en/?q=101002
-                    if code and code == 101002:
-                        raise LoopringUserNotFound()
-            # else just let it hit the generic remote error below
+                    if code is not None:
+                        # From the documentation the code returned when the ApiKey
+                        # is not valid is 104002 https://docs3.loopring.io/en/?q=104002
+                        if code == 104002:
+                            raise LoopringInvalidApiKey()
+                        # This code is returned when an user is not found at loopring
+                        # https://docs3.loopring.io/en/?q=101002
+                        if code == 101002:
+                            raise LoopringUserNotFound()
+                # else just let it hit the generic remote error below
 
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
