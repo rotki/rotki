@@ -37,6 +37,7 @@ from rotkehlchen.api.v1.resources import (
     CurrentAssetsPriceResource,
     DataImportResource,
     DefiBalancesResource,
+    ERC20TokenInfo,
     Eth2StakeDepositsResource,
     Eth2StakeDetailsResource,
     EthereumAirdropsResource,
@@ -199,6 +200,7 @@ URLS_V1: URLS = [
     ('/version', VersionResource),
     ('/ping', PingResource),
     ('/import', DataImportResource),
+    ('/erc20details/', ERC20TokenInfo),
 ]
 
 logger = logging.getLogger(__name__)

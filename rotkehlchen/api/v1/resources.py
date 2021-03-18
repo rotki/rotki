@@ -31,6 +31,7 @@ from rotkehlchen.api.v1.encoding import (
     CurrentAssetsPriceSchema,
     DataImportSchema,
     EditSettingsSchema,
+    ERC20InfoSchema,
     EthereumTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
     ExchangeRatesSchema,
@@ -1488,3 +1489,12 @@ class OraclesResource(BaseResource):
 
     def get(self) -> Response:
         return self.rest_api.get_supported_oracles()
+
+
+class ERC20TokenInfo(BaseResource):
+
+    get_schema = ERC20InfoSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, address: ChecksumEthAddress, async_query: bool) -> Response:
+        return self.rest_api.get_token_information(address, async_query)

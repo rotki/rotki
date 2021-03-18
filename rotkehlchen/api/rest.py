@@ -26,6 +26,7 @@ from flask import Response, make_response, send_file
 from gevent.event import Event
 from gevent.lock import Semaphore
 from typing_extensions import Literal
+from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures import (
     ActionType,
@@ -2808,3 +2809,29 @@ class RestAPI():
         }
         result_dict = _wrap_in_ok_result(data)
         return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    def _get_token_info(self, address: ChecksumEthAddress) -> Dict[str, Any]:
+        eth_manager = self.rotkehlchen.chain_manager.ethereum
+        log.debug(address)
+        try:
+            info = eth_manager.get_basic_contract_info(address=address)
+        except BadFunctionCallOutput:
+            return wrap_in_fail_result(f'Address {address} seems to not be a deployed contract')
+        return _wrap_in_ok_result(info)
+
+    @require_loggedin_user()
+    def get_token_information(
+        self,
+        token_address: ChecksumEthAddress,
+        async_query: bool,
+    ) -> Response:
+
+        if async_query:
+            return self._query_async(command='_get_token_info', address=token_address)
+
+        try:
+            info = self._get_token_info(token_address)
+        except BadFunctionCallOutput:
+            msg = f'Address {token_address} seems to not be a deployed contract'
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.BAD_REQUEST)
+        return api_response(info, status_code=HTTPStatus.OK)

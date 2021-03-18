@@ -22,7 +22,7 @@ from web3.types import FilterParams
 from rotkehlchen.chain.ethereum.eth2 import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.constants.ethereum import ETH_SCAN
+from rotkehlchen.constants.ethereum import ETH_SCAN, ERC20TOKEN_ABI
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     BlockchainQueryError,
@@ -974,3 +974,34 @@ class EthereumManager():
             except RemoteError:
                 pass
         return self._get_blocknumber_by_time_from_subgraph(ts)
+
+    def get_basic_contract_info(self, address: ChecksumEthAddress) -> Dict[str, Any]:
+        """
+        Query a contract address and return basic information as:
+        - Decimals
+        - name
+        - symbol
+        if it is provided in the contract. This method may raise:
+        - BadFunctionCallOutput: If there is an error calling a bad address
+        """
+        # The only information we assume is decimals to be 18
+        info: Dict[str, Any] = {'decimals': 18}
+        request = ('decimals', 'symbol', 'name')
+
+        def query_info(method: str) -> Union[str, int, None]:
+            try:
+                return self.call_contract(
+                    contract_address=address,
+                    abi=ERC20TOKEN_ABI,
+                    method_name=method,
+                )
+            except (BlockchainQueryError, RemoteError):
+                return None
+
+        for prop in request:
+            # In python3.8 we can use walrus operator
+            value = query_info(prop)
+            if value is not None:
+                info[prop] = value
+
+        return info
