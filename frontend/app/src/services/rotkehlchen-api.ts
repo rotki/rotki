@@ -59,7 +59,6 @@ import {
   BTC,
   ExternalServiceKey,
   ExternalServiceName,
-  FiatExchangeRates,
   SettingsUpdate,
   SyncApproval,
   SyncConflictError,
@@ -370,15 +369,15 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  getFiatExchangeRates(
-    currencies: SupportedCurrency[]
-  ): Promise<FiatExchangeRates> {
+  getFiatExchangeRates(currencies: SupportedCurrency[]): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<FiatExchangeRates>>('/exchange_rates', {
+      .get<ActionResult<PendingTask>>('/exchange_rates', {
         params: {
+          async_query: true,
           currencies: currencies.join(',')
         },
-        validateStatus: validWithoutSessionStatus
+        validateStatus: validWithoutSessionStatus,
+        transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
   }

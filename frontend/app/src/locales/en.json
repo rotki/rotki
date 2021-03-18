@@ -1336,6 +1336,9 @@
         "error": {
           "message": "Failed fetching exchange rates: {message}",
           "title": "Exchange Rates"
+        },
+        "task": {
+          "title": "Exchange Rates"
         }
       },
       "exchange_setup": {

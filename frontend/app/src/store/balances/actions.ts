@@ -58,6 +58,7 @@ import {
   BTC,
   ETH,
   ExchangeRates,
+  FiatExchangeRates,
   KSM,
   SupportedBlockchains
 } from '@/typing/types';
@@ -233,17 +234,28 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
   async fetchExchangeRates({ commit }): Promise<void> {
     try {
-      const rates = await api.getFiatExchangeRates(
+      const { taskId } = await api.getFiatExchangeRates(
         currencies.map(value => value.ticker_symbol)
       );
+
+      const meta: TaskMeta = {
+        title: i18n.t('actions.balances.exchange_rates.task.title').toString(),
+        ignoreResult: false
+      };
+
+      const type = TaskType.EXCHANGE_RATES;
+      const task = createTask(taskId, type, meta);
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<FiatExchangeRates, ExchangeMeta>(
+        type
+      );
+
       const exchangeRates: ExchangeRates = {};
 
-      for (const asset in rates) {
-        if (!Object.prototype.hasOwnProperty.call(rates, asset)) {
-          continue;
-        }
-
-        exchangeRates[asset] = parseFloat(rates[asset]);
+      for (const asset in result) {
+        exchangeRates[asset] = parseFloat(result[asset]);
       }
       commit('usdToFiatExchangeRates', exchangeRates);
     } catch (e) {
