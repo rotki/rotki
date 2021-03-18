@@ -258,6 +258,9 @@ class PriceField(fields.Field):
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
+        if price == ZERO:
+            raise ValidationError('A zero rate is not allowed')
+
         return price
 
 

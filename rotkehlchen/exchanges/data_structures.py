@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
@@ -156,6 +157,13 @@ class Trade(NamedTuple):
             'link': self.link,
             'notes': self.notes,
         }
+
+    def __str__(self) -> str:
+        return (
+            f'trade at {str(self.location)} location and date '
+            f'{datetime.fromtimestamp(self.timestamp)} '
+            f'of type {str(self.trade_type)} on the pair {str(self.pair)}'
+        )
 
 
 class MarginPosition(NamedTuple):
