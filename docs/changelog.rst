@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2467` Trades with a rate of zero will no longer be possible. This prevents the profit and loss report from hanging and shows a notification if an entry with rate equal to zero is already in the database.
 * :bug:`2532` Users will now see the percentage sign display in the same line when editing underlying tokens.
 * :feature:`2507` Users can now delete imported trades and deposit/withdrawals from crypto.com via the purge data UI.
 * :bug:`2530` Poloniex should no longer display phantom LEND balances in rotki.
