@@ -7,7 +7,7 @@ Changelog
 * :bug:`2530` Poloniex should no longer display phantom LEND balances in rotki.
 * :bug:`2534` Aave v2 tokens not in Aave v1 should no longer have their balance double counted.
 * :bug:`2539` The effects of adding/editing/removing a ledger actions will no longer be lost if rotki restarts right after the operation.
-* :bug:`2541` Now cost basis will be correctly shown in the profit and loss report if the cost basis were calculated using actions outside the report period.
+* :bug:`2541` Now cost basis will be correctly shown in the profit and loss report if the cost basis were calculated using ledger actions outside the report period.
 
 * :feature:`-` Added support for the following tokens:
 
