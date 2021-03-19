@@ -109,6 +109,9 @@ class TaskManager():
             if asset.cryptocompare == '' or main_currency.cryptocompare == '':
                 continue  # not supported in cryptocompare
 
+            if asset.cryptocompare is None and asset.symbol is None:
+                continue  # type: ignore  # asset.symbol may be None for auto generated underlying tokens # noqa: E501
+
             data = self.cryptocompare.get_cached_data_metadata(
                 from_asset=asset,
                 to_asset=main_currency,
@@ -215,6 +218,8 @@ class TaskManager():
         now = ts_now()
         queriable_exchanges = []
         for name, exchange in self.exchange_manager.connected_exchanges.items():
+            if name in ('binance', 'binance_us'):
+                continue  # skip binance due to the way their history is queried and rate limiting
             queried_range = self.database.get_used_query_range(f'{name}_trades')
             end_ts = queried_range[1] if queried_range else 0
             if now - max(self.last_exchange_query_ts[name], end_ts) > EXCHANGE_QUERY_FREQUENCY:

@@ -238,13 +238,13 @@ def _check_hourly_data_sanity(
 
 
 def _get_cache_key(from_asset: Asset, to_asset: Asset) -> Optional[PairCacheKey]:
-    try:
-        from_cc_asset = from_asset.to_cryptocompare()
-        to_cc_asset = to_asset.to_cryptocompare()
+    try:  # first see if they both support cryptocompare
+        from_asset.to_cryptocompare()
+        to_asset.to_cryptocompare()
     except UnsupportedAsset:
         return None
 
-    return PairCacheKey(from_cc_asset + '_' + to_cc_asset)
+    return PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
 
 
 def _write_history_data_in_file(

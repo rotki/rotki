@@ -8,15 +8,21 @@ Changelog
 * :feature:`2156` Users can now customise the explorer pages used for each chain.
 * :feature:`522` Users can connect to different backends from the frontend.
 * :feature:`2513` Users can now add/edit/delete all types of assets, not only ethereum tokens.
-* :feature:`-` Add support for Norwegian Krone (NOK) as a fiat currency
-* :feature:`-` Add support for New Taiwan Dollar (TWD) as a fiat currency
 * :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
+
+* :release:`1.15.1 <2021-03-19>`
+* :feature:`-` Add support for Norwegian Krone (NOK) as a fiat currency
+* :feature:`-` Add support for New Taiwan Dollar (TWD) as a fiat currency
+* :bug:`2603` Adding multiple comma separated ethereum accounts which contain duplicate entries will not double count the duplicate entry account tokens.
+* :bug:`2577` Users will now be unable to accidentally open a second instance of the application.
+* :bug:`2467` Trades with a rate of zero will no longer be possible. This prevents the profit and loss report from hanging and shows a notification if an entry with rate equal to zero is already in the database.
 * :bug:`2532` Users will now see the percentage sign display in the same line when editing underlying tokens.
 * :feature:`2507` Users can now delete imported trades and deposit/withdrawals from crypto.com via the purge data UI.
 * :bug:`2530` Poloniex should no longer display phantom LEND balances in rotki.
 * :bug:`2534` Aave v2 tokens not in Aave v1 should no longer have their balance double counted.
 * :bug:`2539` The effects of adding/editing/removing a ledger actions will no longer be lost if rotki restarts right after the operation.
+* :bug:`2541` Now cost basis will be correctly shown in the profit and loss report if the cost basis were calculated using ledger actions outside the report period.
 
 * :feature:`-` Added support for the following tokens:
 

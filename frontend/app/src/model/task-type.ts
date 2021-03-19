@@ -36,5 +36,6 @@ export enum TaskType {
   L2_LOOPRING = 'l2_loopring',
   BALANCER_BALANCES = 'balancer_balances',
   BALANCER_TRADES = 'balancer_trades',
-  BALANCER_EVENT = 'BALANCER_EVENT'
+  BALANCER_EVENT = 'BALANCER_EVENT',
+  EXCHANGE_RATES = 'exchange_rates'
 }

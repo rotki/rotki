@@ -882,6 +882,9 @@ Query the current exchange rate for select assets
    .. note::
       This endpoint also accepts parameters as query arguments. List as a query argument here would be given as: ``?currencies=EUR,CNY,GBP``
 
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
@@ -890,7 +893,7 @@ Query the current exchange rate for select assets
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"currencies": ["EUR", "CNY", "GBP", "BTC"]}
+      {"async_query": true, "currencies": ["EUR", "CNY", "GBP", "BTC"]}
 
    :query strings-list currencies: A comma separated list of currencies to query. e.g.: /api/1/fiat_exchange_rates?currencies=EUR,CNY,GBP
    :reqjson list currencies: A list of assets to query
@@ -907,11 +910,10 @@ Query the current exchange rate for select assets
           "message": ""
       }
 
-   :resjson object result: A JSON object with each element being an asset symbol and each value its USD exchange rate.
+   :resjson object result: A JSON object with each element being an asset symbol and each value its USD exchange rate. If a particular asset could not have its price queried, it will return a zero price.
    :statuscode 200: The exchange rates have been sucesfully returned
    :statuscode 400: Provided JSON is in some way malformed. Empty currencies list given
    :statuscode 500: Internal Rotki error
-   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
 Query the historical price of assets
 ======================================
