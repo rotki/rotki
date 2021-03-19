@@ -6,6 +6,7 @@ Changelog
 * :feature:`-` Add support for Norwegian Krone (NOK) as a fiat currency
 * :feature:`-` Add support for New Taiwan Dollar (TWD) as a fiat currency
 * :bug:`2603` Adding multiple comma separated ethereum accounts which contain duplicate entries will not double count the duplicate entry account tokens.
+* :bug:`2577` Users will now be unable to accidentally open a second instance of the application.
 * :bug:`2467` Trades with a rate of zero will no longer be possible. This prevents the profit and loss report from hanging and shows a notification if an entry with rate equal to zero is already in the database.
 * :bug:`2532` Users will now see the percentage sign display in the same line when editing underlying tokens.
 * :feature:`2507` Users can now delete imported trades and deposit/withdrawals from crypto.com via the purge data UI.
