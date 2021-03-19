@@ -107,7 +107,7 @@
             <div
               class="text-caption"
               v-text="
-                $t('account_form.labels.addresses_entries', {
+                $tc('account_form.labels.addresses_entries', entries.length, {
                   count: entries.length
                 })
               "
@@ -264,10 +264,20 @@ export default class AccountForm extends Vue {
   readonly FIELD_DERIVATION_PATH = FIELD_DERIVATION_PATH;
 
   get entries(): string[] {
-    return this.addresses
+    const addresses = this.addresses
       .split(',')
       .map(value => value.trim())
       .filter(entry => entry.length > 0);
+
+    const entries: { [address: string]: string } = {};
+    for (const address of addresses) {
+      const lowerCase = address.toLocaleLowerCase();
+      if (entries[lowerCase]) {
+        continue;
+      }
+      entries[lowerCase] = address;
+    }
+    return Object.values(entries);
   }
 
   get isBtc(): boolean {
