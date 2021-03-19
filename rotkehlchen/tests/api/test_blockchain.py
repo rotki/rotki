@@ -502,7 +502,7 @@ def test_add_blockchain_accounts(
         assert_error_response(
             response=response,
             status_code=HTTPStatus.BAD_REQUEST,
-            contained_in_msg=f"Blockchain account/s ['{ethereum_accounts[0]}'] already exist",
+            contained_in_msg=f'Blockchain account/s {ethereum_accounts[0]} already exist',
         )
 
 
