@@ -29,6 +29,148 @@ import Timeout = NodeJS.Timeout;
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const isMac = process.platform === 'darwin';
 
+const onActivate = async () => {
+  // On macOS it's common to re-create a window in the app when the
+  // dock icon is clicked and there are no other windows open.
+  if (win === null) {
+    await createWindow();
+  }
+};
+
+// This method will be called when Electron has finished
+// initialization and is ready to create browser windows.
+// Some APIs can only be used after this event occurs.
+const onReady = async () => {
+  if (isDevelopment && !process.env.IS_TEST) {
+    // Install Vue Devtools
+    try {
+      await installExtension(VUEJS_DEVTOOLS);
+    } catch (e) {
+      console.error('Vue Devtools failed to install:', e.toString());
+    }
+  }
+
+  ipcMain.on('GET_DEBUG', event => {
+    event.returnValue = debugSettings;
+  });
+
+  ipcMain.on('SERVER_URL', event => {
+    event.returnValue = pyHandler.serverUrl;
+  });
+
+  ipcMain.on('PREMIUM_USER_LOGGED_IN', (event, args) => {
+    const getRotkiPremiumButton = {
+      label: '&Get Rotki Premium',
+      ...(isMac
+        ? {
+            // submenu is mandatory to be displayed on macOS
+            submenu: [
+              {
+                label: 'Get Rotki Premium',
+                id: 'premium-button',
+                click: () => {
+                  shell.openExternal('https://rotki.com/products/');
+                }
+              }
+            ]
+          }
+        : {
+            id: 'premium-button',
+            click: () => {
+              shell.openExternal('https://rotki.com/products/');
+            }
+          })
+    };
+
+    // Re-render the menu with the 'Get Rotki Premium' button if the user who just logged in
+    // is not a premium user, otherwise render the menu without the button. Since we are unable to just toggle
+    // visibility on a top-level menu item, we instead have to add/remove it from the menu upon every login
+    // (see https://github.com/electron/electron/issues/8703). TODO: if we move the menu to the render
+    // process we can make this a lot cleaner.
+
+    const menuTemplate =
+      args === false
+        ? defaultMenuTemplate.concat(getRotkiPremiumButton)
+        : defaultMenuTemplate;
+
+    Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
+  });
+  ipcMain.on('CLOSE_APP', async () => await closeApp());
+  ipcMain.on('OPEN_URL', (event, args) => {
+    if (!args.startsWith('https://')) {
+      console.error(`Error: Requested to open untrusted URL: ${args} `);
+      return;
+    }
+    shell.openExternal(args);
+  });
+  ipcMain.on('OPEN_DIRECTORY', async (event, args) => {
+    const directory = await select(args, 'openDirectory');
+    event.sender.send('OPEN_DIRECTORY', directory);
+  });
+  let importTimeout: Timeout;
+  ipcMain.on('METAMASK_IMPORT', async (event, _args) => {
+    try {
+      const port = startHttp(
+        addresses => event.sender.send('METAMASK_IMPORT', { addresses }),
+        await selectPort(40000)
+      );
+      await shell.openExternal(`http://localhost:${port}`);
+      if (importTimeout) {
+        clearTimeout(importTimeout);
+      }
+      importTimeout = setTimeout(() => {
+        stopHttp();
+        event.sender.send('METAMASK_IMPORT', { error: 'waiting timeout' });
+      }, 120000);
+    } catch (e) {
+      event.sender.send('METAMASK_IMPORT', { error: e.message });
+    }
+  });
+
+  ipcMain.on(IPC_RESTART_BACKEND, async (event, args) => {
+    let success = false;
+    try {
+      assert(win);
+      await pyHandler.exitPyProc(true);
+      await pyHandler.createPyProc(win, args);
+      success = true;
+    } catch (e) {
+      console.error(e);
+    }
+
+    event.sender.send(IPC_RESTART_BACKEND, success);
+  });
+
+  setupUpdaterInterop();
+  await createWindow();
+};
+
+const lock = app.requestSingleInstanceLock();
+
+if (!lock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (!win) {
+      return;
+    }
+
+    if (win.isMinimized()) {
+      win.restore();
+    }
+    win.focus();
+  });
+
+  // Quit when all windows are closed.
+  app.on('window-all-closed', () => app.quit());
+  app.on('activate', onActivate);
+  app.on('ready', onReady);
+  app.on('will-quit', async e => {
+    e.preventDefault();
+    await closeApp();
+  });
+}
+
 async function select(
   title: string,
   prop: 'openFile' | 'openDirectory'
@@ -274,124 +416,6 @@ async function createWindow() {
     win = null;
   });
 }
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
-  app.quit();
-});
-app.on('activate', () => {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (win === null) {
-    createWindow();
-  }
-});
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', async () => {
-  if (isDevelopment && !process.env.IS_TEST) {
-    // Install Vue Devtools
-    try {
-      await installExtension(VUEJS_DEVTOOLS);
-    } catch (e) {
-      console.error('Vue Devtools failed to install:', e.toString());
-    }
-  }
-
-  ipcMain.on('GET_DEBUG', event => {
-    event.returnValue = debugSettings;
-  });
-
-  ipcMain.on('SERVER_URL', event => {
-    event.returnValue = pyHandler.serverUrl;
-  });
-
-  ipcMain.on('PREMIUM_USER_LOGGED_IN', (event, args) => {
-    const getRotkiPremiumButton = {
-      label: '&Get Rotki Premium',
-      ...(isMac
-        ? {
-            // submenu is mandatory to be displayed on macOS
-            submenu: [
-              {
-                label: 'Get Rotki Premium',
-                id: 'premium-button',
-                click: () => {
-                  shell.openExternal('https://rotki.com/products/');
-                }
-              }
-            ]
-          }
-        : {
-            id: 'premium-button',
-            click: () => {
-              shell.openExternal('https://rotki.com/products/');
-            }
-          })
-    };
-
-    // Re-render the menu with the 'Get Rotki Premium' button if the user who just logged in
-    // is not a premium user, otherwise render the menu without the button. Since we are unable to just toggle
-    // visibility on a top-level menu item, we instead have to add/remove it from the menu upon every login
-    // (see https://github.com/electron/electron/issues/8703). TODO: if we move the menu to the render
-    // process we can make this a lot cleaner.
-
-    const menuTemplate =
-      args === false
-        ? defaultMenuTemplate.concat(getRotkiPremiumButton)
-        : defaultMenuTemplate;
-
-    Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
-  });
-  ipcMain.on('CLOSE_APP', async () => await closeApp());
-  ipcMain.on('OPEN_URL', (event, args) => {
-    if (!args.startsWith('https://')) {
-      console.error(`Error: Requested to open untrusted URL: ${args} `);
-      return;
-    }
-    shell.openExternal(args);
-  });
-  ipcMain.on('OPEN_DIRECTORY', async (event, args) => {
-    const directory = await select(args, 'openDirectory');
-    event.sender.send('OPEN_DIRECTORY', directory);
-  });
-  let importTimeout: Timeout;
-  ipcMain.on('METAMASK_IMPORT', async (event, _args) => {
-    try {
-      const port = startHttp(
-        addresses => event.sender.send('METAMASK_IMPORT', { addresses }),
-        await selectPort(40000)
-      );
-      await shell.openExternal(`http://localhost:${port}`);
-      if (importTimeout) {
-        clearTimeout(importTimeout);
-      }
-      importTimeout = setTimeout(() => {
-        stopHttp();
-        event.sender.send('METAMASK_IMPORT', { error: 'waiting timeout' });
-      }, 120000);
-    } catch (e) {
-      event.sender.send('METAMASK_IMPORT', { error: e.message });
-    }
-  });
-
-  ipcMain.on(IPC_RESTART_BACKEND, async (event, args) => {
-    let success = false;
-    try {
-      assert(win);
-      await pyHandler.exitPyProc(true);
-      await pyHandler.createPyProc(win, args);
-      success = true;
-    } catch (e) {
-      console.error(e);
-    }
-
-    event.sender.send(IPC_RESTART_BACKEND, success);
-  });
-
-  setupUpdaterInterop();
-  createWindow();
-});
 
 async function closeApp() {
   await pyHandler.exitPyProc();
@@ -399,11 +423,6 @@ async function closeApp() {
     app.exit();
   }
 }
-
-app.on('will-quit', async e => {
-  e.preventDefault();
-  await closeApp();
-});
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
