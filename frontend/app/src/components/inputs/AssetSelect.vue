@@ -11,7 +11,7 @@
     :clearable="clearable"
     :success-messages="successMessages"
     :error-messages="errorMessages"
-    item-value="key"
+    item-value="identifier"
     :item-text="assetText"
     :menu-props="{ closeOnContentClick: true }"
     :outlined="outlined"
@@ -19,13 +19,13 @@
     @input="input"
   >
     <template #selection="{ item }">
-      <asset-details class="asset-select__details" :asset="item.key" />
+      <asset-details class="asset-select__details" :asset="item.identifier" />
     </template>
     <template #item="{ item }">
       <v-list-item-avatar>
-        <crypto-icon size="50px" :symbol="item.symbol" />
+        <crypto-icon size="50px" :symbol="item.identifier" />
       </v-list-item-avatar>
-      <v-list-item-content :id="`asset-${item.key.toLocaleLowerCase()}`">
+      <v-list-item-content :id="`asset-${item.identifier.toLocaleLowerCase()}`">
         <v-list-item-title>{{ item.symbol }}</v-list-item-title>
         <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
       </v-list-item-content>
