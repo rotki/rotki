@@ -19,6 +19,8 @@ const CURRENCY_ETH = 'ETH';
 const CURRENCY_CHF = 'CHF';
 const CURRENCY_SGD = 'SGD';
 const CURRENCY_SEK = 'SEK';
+const CURRENCY_TWD = 'TWD';
+const CURRENCY_NOK = 'NOK';
 
 const SUPPORTED_CURRENCIES = [
   CURRENCY_USD,
@@ -37,6 +39,8 @@ const SUPPORTED_CURRENCIES = [
   CURRENCY_CHF,
   CURRENCY_SGD,
   CURRENCY_SEK,
+  CURRENCY_TWD,
+  CURRENCY_NOK,
   CURRENCY_BTC,
   CURRENCY_ETH
 ] as const;
@@ -60,6 +64,8 @@ export const currencies: Currency[] = [
   new Currency(i18n.t('currencies.chf').toString(), CURRENCY_CHF, 'Fr.'),
   new Currency(i18n.t('currencies.sgd').toString(), CURRENCY_SGD, 'S$'),
   new Currency(i18n.t('currencies.sek').toString(), CURRENCY_SEK, 'kr'),
+  new Currency(i18n.t('currencies.twd').toString(), CURRENCY_TWD, 'NT$'),
+  new Currency(i18n.t('currencies.nok').toString(), CURRENCY_NOK, 'kr'),
   new Currency('Bitcoin', CURRENCY_BTC, '₿'),
   new Currency('Ether', CURRENCY_ETH, 'Ξ')
 ];

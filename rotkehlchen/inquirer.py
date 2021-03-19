@@ -10,7 +10,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
 from rotkehlchen.constants.assets import (
     A_ALINK,
     A_BTC,
@@ -174,6 +174,31 @@ def _query_exchanges_rateapi(base: Asset, quote: Asset) -> Optional[Price]:
     ):
         log.error(
             'Querying api.exchangeratesapi.io for fiat pair failed',
+            base_currency=base.identifier,
+            quote_currency=quote.identifier,
+        )
+        return None
+
+
+def _query_currency_converterapi(base: Asset, quote: Asset) -> Optional[Price]:
+    assert base.is_fiat(), 'fiat currency should have been provided'
+    assert quote.is_fiat(), 'fiat currency should have been provided'
+    log.debug(
+        'Query free.currencyconverterapi.com fiat pair',
+        base_currency=base.identifier,
+        quote_currency=quote.identifier,
+    )
+    pair = f'{base.identifier}_{quote.identifier}'
+    querystr = (
+        f'https://free.currconv.com/api/v7/convert?'
+        f'q={pair}&compact=ultra&apiKey={CURRENCYCONVERTER_API_KEY}'
+    )
+    try:
+        resp = request_get_dict(querystr)
+        return Price(FVal(resp[pair]))
+    except (ValueError, RemoteError, KeyError, UnableToDecryptRemoteData):
+        log.error(
+            'Querying free.currencyconverterapi.com fiat pair failed',
             base_currency=base.identifier,
             quote_currency=quote.identifier,
         )
@@ -503,7 +528,8 @@ class Inquirer():
             return price
 
         price = _query_exchanges_rateapi(base, quote)
-        # TODO: Find another backup API for fiat exchange rates
+        if price is None:
+            price = _query_currency_converterapi(base, quote)
 
         if price is None:
             # Search the cache for any price in the last month
