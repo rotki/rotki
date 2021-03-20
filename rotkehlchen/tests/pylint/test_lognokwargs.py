@@ -19,8 +19,7 @@ def test_simple_logger_with_kwargs(pylint_test_linter):
 
         checker.visit_call(node)
         messages = checker.linter.release_messages()
-        # from pylint 2.7 it finds it 2 times. One for Logger and one for RootLogger
-        assert len(messages) == 2
+        assert len(messages) == 1
         for m in messages:
             assert m.msg_id == LOGNOKWARGS_SYMBOL
             assert m.node == node
