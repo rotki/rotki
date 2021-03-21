@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.15.2 <2021-03-21>`
 * :bug:`1996` Querying coinbasepro deposits and withdrawals should now be much faster thanks to using their new API endpoints.
 
 * :release:`1.15.1 <2021-03-19>`
