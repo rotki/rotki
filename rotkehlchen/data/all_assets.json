@@ -3593,7 +3593,7 @@
     },
     "DEGEN": {
         "coingecko": "degen-index",
-        "ethereum_address": "0x126c121f99e1e211df2e5f8de2d96fa36647c855",
+        "ethereum_address": "0x126c121f99e1E211dF2e5f8De2d96Fa36647c855",
         "ethereum_token_decimals": 18,
         "name": "DEGEN Index",
         "started": 1614587427,
