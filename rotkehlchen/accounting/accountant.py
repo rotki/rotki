@@ -9,6 +9,7 @@ from rotkehlchen.accounting.structures import ActionType, DefiEvent, LedgerActio
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import (
@@ -606,6 +607,16 @@ class Accountant():
         # When you buy, you buy with the cost_currency and receive the other one
         # When you sell, you sell the amount in non-cost_currency and receive
         # costs in cost_currency
+
+        if trade.rate == ZERO:
+            msg = (
+                f'Ignoring {str(trade)} because has a rate value of 0. '
+                f'This entry should be updated in the database.'
+            )
+
+            self.msg_aggregator.add_warning(msg)
+            return True, prev_time
+
         if trade.trade_type == TradeType.BUY:
             self.events.add_buy_and_corresponding_sell(
                 location=trade.location,

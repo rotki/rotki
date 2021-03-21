@@ -4,11 +4,13 @@ from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
 
+import gevent
 import pytest
 import requests
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.substrate.typing import KusamaAddress
+from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -26,7 +28,7 @@ from rotkehlchen.tests.utils.blockchain import (
     assert_eth_balances_result,
     compare_account_data,
 )
-from rotkehlchen.tests.utils.constants import A_RDN
+from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
 from rotkehlchen.tests.utils.ens import ENS_BRUNO, ENS_BRUNO_BTC_ADDR, ENS_BRUNO_KSM_ADDR
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
@@ -42,6 +44,7 @@ from rotkehlchen.tests.utils.substrate import (
     SUBSTRATE_ACC2_KSM_ADDR,
 )
 from rotkehlchen.typing import BlockchainAccountData, SupportedBlockchain
+from rotkehlchen.utils.misc import from_wei
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -499,8 +502,114 @@ def test_add_blockchain_accounts(
         assert_error_response(
             response=response,
             status_code=HTTPStatus.BAD_REQUEST,
-            contained_in_msg=f"Blockchain account/s ['{ethereum_accounts[0]}'] already exist",
+            contained_in_msg=f'Blockchain account/s {ethereum_accounts[0]} already exist',
         )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('btc_accounts', [[]])
+def test_add_blockchain_accounts_concurrent(
+        rotkehlchen_api_server,
+):
+    """
+    Test reproducing the erroneous behaviour in token totals seen here:
+    https://github.com/rotki/rotki/issues/2603
+    """
+    ethereum_accounts = [make_ethereum_address(), make_ethereum_address(), make_ethereum_address()]
+    account_to_idx = {ethereum_accounts[0]: 0, ethereum_accounts[1]: 1, ethereum_accounts[2]: 2}
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    eth_balances = ['1000000', '2000000', '3000000']
+    token_balances = {
+        A_RDN: ['0', '4000000', '0'],
+        A_GNO: ['555555', '0', '0'],
+        A_DAI: ['0', '0', '666666666'],
+    }
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        eth_balances=eth_balances,
+        token_balances=token_balances,
+        btc_balances=None,
+    )
+
+    task_ids = {}
+    query_accounts = ethereum_accounts.copy()
+    for _ in range(5):
+        query_accounts.extend(ethereum_accounts)
+    with ExitStack() as stack:
+        # Fire all requests almost concurrently. And don't wait for them
+        setup.enter_ethereum_patches(stack)
+        for idx, account in enumerate(query_accounts):
+            gevent.spawn_later(
+                0.01 * idx,
+                requests.put,
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'blockchainsaccountsresource',
+                    blockchain='ETH',
+                ),
+                json={'accounts': [{'address': account}], 'async_query': True},
+            )
+        # We are making an assumption of sequential ids here. This may not always
+        # be the case so for that later down the test we will skip the task check
+        # if this happens. Can't think of a better way to do this at the moment
+        task_ids = {idx: account for idx, account in enumerate(query_accounts)}
+
+        # for task_id, account in task_ids.items():
+        with gevent.Timeout(ASYNC_TASK_WAIT_TIMEOUT):
+            while len(task_ids) != 0:
+                task_id, account = random.choice(list(task_ids.items()))
+                response = requests.get(
+                    api_url_for(
+                        rotkehlchen_api_server,
+                        'specific_async_tasks_resource',
+                        task_id=task_id,
+                    ),
+                )
+                if response.status_code == HTTPStatus.NOT_FOUND:
+                    gevent.sleep(.1)  # not started yet
+                    continue
+
+                assert_proper_response(response)
+                result = response.json()['result']
+                status = result['status']
+                if status == 'pending':
+                    gevent.sleep(.1)
+                    continue
+                if status == 'completed':
+                    result = result['outcome']
+                else:
+                    raise AssertionError('Should not happen at this point')
+
+                task_ids.pop(task_id)
+                if result['result'] is None:
+                    assert 'already exist' in result['message']
+                    continue
+
+                result = result['result']
+                per_acc = result['per_account']['ETH'].get(account, None)
+                totals = result['totals']['assets']
+                idx = account_to_idx[account]
+                if per_acc is None:
+                    # As mentioned above this may happen only if our expectation of sequential
+                    # task indices breaks. In that case ignore this entry
+                    continue
+
+                assert FVal(per_acc['assets']['ETH']['amount']) == from_wei(FVal(eth_balances[idx]))  # noqa: E501
+
+                rdn = from_wei(FVal(token_balances[A_RDN][idx]))
+                if rdn != ZERO:
+                    assert FVal(per_acc['assets']['RDN']['amount']) == rdn
+                    assert FVal(totals['RDN']['amount']) == rdn
+                gno = from_wei(FVal(token_balances[A_GNO][idx]))
+                if gno != ZERO:
+                    assert FVal(per_acc['assets']['GNO']['amount']) == gno
+                    assert FVal(totals['GNO']['amount']) == gno
+                dai = from_wei(FVal(token_balances[A_DAI][idx]))
+                if dai != ZERO:
+                    assert FVal(per_acc['assets']['DAI']['amount']) == dai
+                    assert FVal(totals['DAI']['amount']) == dai
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])

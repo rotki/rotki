@@ -227,7 +227,7 @@ class EventsHistorian():
 
         # include the ledger actions
         self.processing_state_name = 'Querying ledger actions history'
-        ledger_actions, _ = self.query_ledger_actions(has_premium, from_ts=start_ts, to_ts=end_ts)
+        ledger_actions, _ = self.query_ledger_actions(has_premium, from_ts=None, to_ts=end_ts)
         step = self._increase_progress(step, total_steps)
 
         # include AMM trades: balancer, uniswap

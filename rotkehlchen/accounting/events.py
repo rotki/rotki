@@ -435,6 +435,7 @@ class TaxableEvents():
             f'Selling {selling_asset} for {receiving_asset} also introduces a virtual buy event',
         )
         # else then you are also buying some other asset through your sell
+        assert trade_rate != 0, 'Trade rate should not be zero at this point'
         self.add_buy(
             location=location,
             bought_asset=receiving_asset,

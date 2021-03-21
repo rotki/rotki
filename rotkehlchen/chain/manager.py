@@ -227,6 +227,20 @@ class BlockchainBalances:
         # else
         raise AssertionError('Invalid blockchain value')
 
+    def account_exists(
+            self,
+            blockchain: SupportedBlockchain,
+            account: Union[BTCAddress, ChecksumEthAddress, KusamaAddress],
+    ) -> bool:
+        if blockchain == SupportedBlockchain.ETHEREUM:
+            return account in self.eth
+        if blockchain == SupportedBlockchain.BITCOIN:
+            return account in self.btc
+        if blockchain == SupportedBlockchain.KUSAMA:
+            return account in self.ksm
+        # else
+        raise AssertionError('Invalid blockchain value')
+
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class BlockchainBalancesUpdate:
@@ -274,6 +288,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         self.defi_lock = Semaphore()
         self.eth2_lock = Semaphore()
+        self.btc_lock = Semaphore()
+        self.eth_lock = Semaphore()
+        self.ksm_lock = Semaphore()
 
         # Per account balances
         self.balances = BlockchainBalances(db=database)
@@ -419,6 +436,22 @@ class ChainManager(CacheableObject, LockableQueryObject):
             per_account=self.balances.copy(),
             totals=self.totals.copy(),
         )
+
+    def check_accounts_exist(
+            self,
+            blockchain: SupportedBlockchain,
+            accounts: ListOfBlockchainAddresses,
+    ) -> None:
+        """Checks if any of the accounts already exist and if they do raises an input error"""
+        existing_accounts = []
+        for account in accounts:
+            if self.balances.account_exists(blockchain, account):
+                existing_accounts.append(account)
+
+        if len(existing_accounts) != 0:
+            raise InputError(
+                f'Blockchain account/s {",".join(existing_accounts)} already exist',
+            )
 
     @protect_with_lock(arguments_matter=True)
     @cache_response_timewise()
@@ -699,7 +732,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         May Raise:
         - EthSyncError from modify_blockchain_accounts
-        - InputError if the given accounts list is empty, or if it contains invalid accounts
+        - InputError if the given accounts list is empty, or if it contains invalid accounts,
+          or if any account already exists.
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem
         """
@@ -792,77 +826,80 @@ class ChainManager(CacheableObject, LockableQueryObject):
           as etherscan or blockchain.info
         """
         if blockchain == SupportedBlockchain.BITCOIN:
-            # we are adding/removing accounts, make sure query cache is flushed
-            self.flush_cache('query_btc_balances', arguments_matter=True)
-            self.flush_cache('query_balances', arguments_matter=True)
-            self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.BITCOIN)  # noqa: E501
-            for idx, account in enumerate(accounts):
-                a_balance = already_queried_balances[idx] if already_queried_balances else None
-                self.modify_btc_account(
-                    BTCAddress(account),
-                    append_or_remove,
-                    add_or_sub,
-                    already_queried_balance=a_balance,
-                )
+            with self.btc_lock:
+                if append_or_remove == 'append':
+                    self.check_accounts_exist(blockchain, accounts)
+                # we are adding/removing accounts, make sure query cache is flushed
+                self.flush_cache('query_btc_balances', arguments_matter=True)
+                self.flush_cache('query_balances', arguments_matter=True)
+                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.BITCOIN)  # noqa: E501
+                for idx, account in enumerate(accounts):
+                    a_balance = already_queried_balances[idx] if already_queried_balances else None
+                    self.modify_btc_account(
+                        BTCAddress(account),
+                        append_or_remove,
+                        add_or_sub,
+                        already_queried_balance=a_balance,
+                    )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:
-            # we are adding/removing accounts, make sure query cache is flushed
-            self.flush_cache('query_ethereum_balances', arguments_matter=True, force_token_detection=False)  # noqa: E501
-            self.flush_cache('query_ethereum_balances', arguments_matter=True, force_token_detection=True)  # noqa: E501
-            self.flush_cache('query_balances', arguments_matter=True)
-            self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
-            for account in accounts:
-                # As mentioned by @LefterisJP in
-                # https://github.com/rotki/rotki/pull/2554#discussion_r592754163
-                # when the API adds or removes an address, the deserialize function at
-                # EthereumAddressField is called, so we expect from the addresses retrieved by
-                # this function to be already checksumed.
-                address = string_to_ethereum_address(account)
-
-                try:
-                    self.modify_eth_account(
-                        account=address,
-                        append_or_remove=append_or_remove,
-                    )
-                except BadFunctionCallOutput as e:
-                    log.error(
-                        'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                        'exception: {}'.format(str(e)),
-                    )
-                    raise EthSyncError(
-                        'Tried to use the ethereum chain of a local client to edit '
-                        'an eth account but the chain is not synced.',
-                    ) from e
-
-                # Also modify and take into account defi balances
+            with self.eth_lock:
                 if append_or_remove == 'append':
-                    balances = self.defichad.query_defi_balances([address])
-                    address_balances = balances.get(address, [])
-                    if len(address_balances) != 0:
-                        self.defi_balances[address] = address_balances
-                        self._add_account_defi_balances_to_token_and_totals(
+                    self.check_accounts_exist(blockchain, accounts)
+                # we are adding/removing accounts, make sure query cache is flushed
+                self.flush_cache('query_ethereum_balances', arguments_matter=True, force_token_detection=False)  # noqa: E501
+                self.flush_cache('query_ethereum_balances', arguments_matter=True, force_token_detection=True)  # noqa: E501
+                self.flush_cache('query_balances', arguments_matter=True)
+                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
+                for account in accounts:
+                    address = deserialize_ethereum_address(account)
+                    try:
+                        self.modify_eth_account(
                             account=address,
-                            balances=address_balances,
+                            append_or_remove=append_or_remove,
                         )
-                else:  # remove
-                    self.defi_balances.pop(address, None)
-                # For each module run the corresponding callback for the address
-                for _, module in self.iterate_modules():
+                    except BadFunctionCallOutput as e:
+                        log.error(
+                            'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
+                            'exception: {}'.format(str(e)),
+                        )
+                        raise EthSyncError(
+                            'Tried to use the ethereum chain of a local client to edit '
+                            'an eth account but the chain is not synced.',
+                        ) from e
+
+                    # Also modify and take into account defi balances
                     if append_or_remove == 'append':
-                        module.on_account_addition(address)
+                        balances = self.defichad.query_defi_balances([address])
+                        address_balances = balances.get(address, [])
+                        if len(address_balances) != 0:
+                            self.defi_balances[address] = address_balances
+                            self._add_account_defi_balances_to_token_and_totals(
+                                account=address,
+                                balances=address_balances,
+                            )
                     else:  # remove
-                        module.on_account_removal(address)
+                        self.defi_balances.pop(address, None)
+                    # For each module run the corresponding callback for the address
+                    for _, module in self.iterate_modules():
+                        if append_or_remove == 'append':
+                            module.on_account_addition(address)
+                        else:  # remove
+                            module.on_account_removal(address)
 
         elif blockchain == SupportedBlockchain.KUSAMA:
-            # we are adding/removing accounts, make sure query cache is flushed
-            self.flush_cache('query_kusama_balances', arguments_matter=True)
-            self.flush_cache('query_balances', arguments_matter=True)
-            self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.KUSAMA)  # noqa: E501
-            for account in accounts:
-                self.modify_kusama_account(
-                    account=KusamaAddress(account),
-                    append_or_remove=append_or_remove,
-                )
+            with self.ksm_lock:
+                if append_or_remove == 'append':
+                    self.check_accounts_exist(blockchain, accounts)
+                # we are adding/removing accounts, make sure query cache is flushed
+                self.flush_cache('query_kusama_balances', arguments_matter=True)
+                self.flush_cache('query_balances', arguments_matter=True)
+                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.KUSAMA)  # noqa: E501
+                for account in accounts:
+                    self.modify_kusama_account(
+                        account=KusamaAddress(account),
+                        append_or_remove=append_or_remove,
+                    )
         else:
             # That should not happen. Should be checked by marshmallow
             raise AssertionError(

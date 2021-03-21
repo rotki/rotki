@@ -1372,6 +1372,9 @@
         "error": {
           "message": "Failed fetching exchange rates: {message}",
           "title": "Exchange Rates"
+        },
+        "task": {
+          "title": "Exchange Rates"
         }
       },
       "exchange_setup": {
@@ -1834,7 +1837,7 @@
   "account_form": {
     "labels": {
       "addresses": "Addresses",
-      "addresses_entries": "{count} total entries",
+      "addresses_entries": "no entries | {count} unique entry | {count} unique entries",
       "addresses_hint": "Insert multiple comma separated addresses",
       "blockchain": "Choose blockchain",
       "account": "Account",

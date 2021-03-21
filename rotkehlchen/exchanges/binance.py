@@ -225,8 +225,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
-            initial_backoff: int = 4,
-            backoff_limit: int = 180,
             uri: str = BINANCE_BASE_URL,
     ):
         exchange_name = str(Location.BINANCE)
@@ -240,8 +238,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             'X-MBX-APIKEY': self.api_key,
         })
         self.msg_aggregator = msg_aggregator
-        self.initial_backoff = initial_backoff
-        self.backoff_limit = backoff_limit
         self.nonce_lock = Semaphore()
         self.offset_ms = 0
 
@@ -394,6 +390,9 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 # the ban is over.
                 # https://binance-docs.github.io/apidocs/spot/en/#limits
                 retry_after = int(response.headers.get('retry-after', '0'))
+                # Spoiler. They actually seem to always return 0 here. So we don't
+                # wait at all. Won't be much of an improvement but force 1 sec wait if 0 returns
+                retry_after = max(1, retry_after)  # wait at least 1 sec even if api says otherwise
                 log.debug(
                     f'Got status code {response.status_code} from {self.name}. Backing off',
                     seconds=retry_after,
@@ -401,11 +400,12 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 if retry_after > RETRY_AFTER_LIMIT:
                     raise RemoteError(
                         '{} API request {} for {} failed with HTTP status '
-                        'code: {} due to a too long retry after value (> {})'.format(
+                        'code: {} due to a too long retry after value ({} > {})'.format(
                             self.name,
                             response.url,
                             method,
                             response.status_code,
+                            retry_after,
                             RETRY_AFTER_LIMIT,
                         ))
 
