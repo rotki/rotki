@@ -19,9 +19,11 @@ from web3.datastructures import MutableAttributeDict
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 from web3.types import FilterParams
 
+from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.eth2 import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants.ethereum import ETH_SCAN, ERC20TOKEN_ABI
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
@@ -984,24 +986,29 @@ class EthereumManager():
         if it is provided in the contract. This method may raise:
         - BadFunctionCallOutput: If there is an error calling a bad address
         """
-        # The only information we assume is decimals to be 18
-        info: Dict[str, Any] = {'decimals': 18}
-        request = ('decimals', 'symbol', 'name')
+        properties = ('decimals', 'symbol', 'name')
+        info: Dict[str, Any] = {}
 
-        def query_info(method: str) -> Union[str, int, None]:
-            try:
-                return self.call_contract(
-                    contract_address=address,
-                    abi=ERC20TOKEN_ABI,
-                    method_name=method,
-                )
-            except (BlockchainQueryError, RemoteError):
-                return None
+        contract = EthereumContract(address=address, abi=ERC20TOKEN_ABI, deployed_block=0)
+        try:
+            # Output contains call status and result
+            output = multicall_2(
+                ethereum=self,
+                require_success=False,
+                calls=[(address, contract.encode(method_name=prop)) for prop in properties],
+            )
+        except RemoteError:
+            # If something happens in the connection the output should have
+            # the same length as the tuple of properties
+            output = [(False, b'')] * len(properties)
 
-        for prop in request:
-            # In python3.8 we can use walrus operator
-            value = query_info(prop)
-            if value is not None:
-                info[prop] = value
+        decoded = [
+            contract.decode(x[1], method_name)[0]  # pylint: disable=E1136
+            if x[0] and len(x[1]) else None
+            for (x, method_name) in zip(output, properties)
+        ]
+
+        for prop, value in zip(properties, decoded):
+            info[prop] = value
 
         return info

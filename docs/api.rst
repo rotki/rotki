@@ -7806,11 +7806,9 @@ Data imports
 ERC20 token info
 =============
 
-.. http:get:: /api/(version)/erc20details
+.. http:get:: /api/(version)/blockchains/ETH/erc20details/
 
-   Doing a GET to this point will return basic information about a token by calling the ``decimals/name/symbol`` methods.
-   ``decimals`` is assumed to be 18 and is always in the response. The ``name`` and ``symbol`` entries might not be in the
-   response
+   Doing a GET to this endpoint will return basic information about a token by calling the ``decimals/name/symbol`` methods.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
@@ -7820,7 +7818,7 @@ ERC20 token info
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/erc20details HTTP/1.1
+      GET /api/1/blockchains/ETH/erc20details/ HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -7846,7 +7844,11 @@ ERC20 token info
           "message": ""
       }
 
-   :resjson bool result: The result field in this response is a object with a minimum of one attribute.
+   :resjson object result: The result field in this response is a object with a minimum of one attribute.
+   :resjson int decimals: Number of decimals for the requested contract. ``null`` if this information is not available on chain.
+   :resjson str symbol: Symbol for the requested contract. ``null`` if this information is not available on chain.
+   :resjson str name: Name for the requested contract. ``null`` if this information is not available on chain.
+   :resjson str message: Empty string if there is no isues with the contract, for example, it not existing on the chain.
    :statuscode 200: No critical error found.
-   :statuscode 400: The address is not available.
+   :statuscode 409: There is an error with the address.
    :statuscode 500: Internal Rotki error.

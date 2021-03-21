@@ -165,6 +165,7 @@ URLS_V1: URLS = [
     ('/blockchains/ETH2/stake/details', Eth2StakeDetailsResource),
     ('/blockchains/ETH/defi', DefiBalancesResource),
     ('/blockchains/ETH/airdrops', EthereumAirdropsResource),
+    ('/blockchains/ETH/erc20details/', ERC20TokenInfo),
     ('/blockchains/ETH/modules/<string:module_name>/data', NamedEthereumModuleDataResource),
     ('/blockchains/ETH/modules/data', EthereumModuleDataResource),
     ('/blockchains/ETH/modules/', EthereumModuleResource),
@@ -200,7 +201,6 @@ URLS_V1: URLS = [
     ('/version', VersionResource),
     ('/ping', PingResource),
     ('/import', DataImportResource),
-    ('/erc20details/', ERC20TokenInfo),
 ]
 
 logger = logging.getLogger(__name__)

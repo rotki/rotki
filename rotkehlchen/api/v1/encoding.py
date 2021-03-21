@@ -1708,5 +1708,5 @@ class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
 
 
 class ERC20InfoSchema(Schema):
-    address = fields.String(required=True)
+    address = EthereumAddressField(required=True)
     async_query = fields.Boolean(missing=False)
