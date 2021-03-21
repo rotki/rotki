@@ -2,6 +2,10 @@
 Changelog
 =========
 
+* :feature:`-` Added support for the following token:
+
+  - `Indexed Finance - DEGEN <https://www.coingecko.com/en/coins/degen-index>`__
+   
 * :feature:`2427` The visible row selection will now persist after a re-login. Changing the visible rows will now affect all the tables.
 * :feature:`2452` Users will now be able to use a two-mode sorting functionality when sorting tables.
 * :feature:`2547` Users can now easily access the documentation on how to find the CryptoCompare/CoinGecko identifiers in asset manager.
