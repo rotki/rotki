@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`1996` Querying coinbasepro deposits and withdrawals should now be much faster thanks to using their new API endpoints.
+
 * :release:`1.15.1 <2021-03-19>`
 * :feature:`-` Add support for Norwegian Krone (NOK) as a fiat currency
 * :feature:`-` Add support for New Taiwan Dollar (TWD) as a fiat currency
