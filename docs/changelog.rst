@@ -11,6 +11,9 @@ Changelog
 * :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
 
+* :release:`1.15.2 <2021-03-21>`
+* :bug:`1996` Querying coinbasepro deposits and withdrawals should now be much faster thanks to using their new API endpoints.
+
 * :release:`1.15.1 <2021-03-19>`
 * :feature:`-` Add support for Norwegian Krone (NOK) as a fiat currency
 * :feature:`-` Add support for New Taiwan Dollar (TWD) as a fiat currency

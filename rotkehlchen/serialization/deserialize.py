@@ -613,7 +613,7 @@ def deserialize_asset_movement_category(symbol: str) -> AssetMovementCategory:
 
     if symbol.lower() == 'deposit':
         return AssetMovementCategory.DEPOSIT
-    if symbol.lower() == 'withdrawal':
+    if symbol.lower() in ('withdraw', 'withdrawal'):
         return AssetMovementCategory.WITHDRAWAL
 
     # else
