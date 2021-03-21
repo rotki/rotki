@@ -1,5 +1,4 @@
 import binascii
-import csv
 import hashlib
 import hmac
 import json
@@ -9,8 +8,7 @@ from base64 import b64decode, b64encode
 from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union, Iterator
 from urllib.parse import urlencode
 
 import gevent
@@ -42,6 +40,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp_from_date,
     deserialize_trade_type,
+    pair_get_assets,
 )
 from rotkehlchen.typing import (
     ApiKey,
@@ -65,8 +64,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 COINBASEPRO_PAGINATION_LIMIT = 100  # default + max limit
-SECS_TO_WAIT_FOR_REPORT = 300
-MINS_TO_WAIT_FOR_REPORT = SECS_TO_WAIT_FOR_REPORT / 60
 
 
 def coinbasepro_to_worldpair(product: str) -> TradePair:
@@ -87,6 +84,20 @@ def coinbasepro_to_worldpair(product: str) -> TradePair:
 
 class CoinbaseProPermissionError(Exception):
     pass
+
+
+def coinbasepro_deserialize_timestamp(entry: Dict[str, Any], key: str) -> Timestamp:
+    """Deserialize a timestamp from coinbasepro
+
+    In case of an error raises:
+    - KeyError
+    - DeserializationError
+    """
+    raw_time = entry[key]
+    if raw_time.endswith('+00'):  # proper iso8601 needs + 00:00 for timezone
+        raw_time = raw_time.replace('+00', '+00:00')
+    timestamp = deserialize_timestamp_from_date(raw_time, 'iso8601', 'coinbasepro')
+    return timestamp
 
 
 class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
@@ -337,82 +348,12 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return dict(assets_balance), ''
 
-    def _get_products_ids(self) -> List[str]:
-        """Gets a list of all product ids (markets) offered by coinbase PRO
-
-        - Raises the same exceptions as _api_query()
-        - Can raise KeyError if the API does not return the expected response format.
-        """
-        products, _ = self._api_query('products', request_method='GET')
-        return [product['id'] for product in products]
-
-    def _get_account_ids(self) -> List[str]:
-        """Gets a list of all account ids
-
-        - Raises the same exceptions as _api_query()
-        - Can raise KeyError if the API does not return the expected response format.
-        """
-        accounts, _ = self._api_query('accounts')
-        return [account['id'] for account in accounts]
-
-    def _read_trades(self, filepath: str) -> List[Trade]:
-        """Reads a csv fill type report and extracts the Trades"""
-        with open(filepath, newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            trades = []
-            for row in reader:
-                try:
-                    timestamp = deserialize_timestamp_from_date(
-                        row['created at'],
-                        'iso8601',
-                        'coinbasepro',
-                    )
-                    trades.append(Trade(
-                        timestamp=timestamp,
-                        location=Location.COINBASEPRO,
-                        pair=coinbasepro_to_worldpair(row['product']),
-                        trade_type=deserialize_trade_type(row['side']),
-                        amount=deserialize_asset_amount(row['size']),
-                        rate=deserialize_price(row['price']),
-                        fee=deserialize_fee(row['fee']),
-                        fee_currency=Asset(row['price/fee/total unit']),
-                        link=row['trade id'],
-                        notes='',
-                    ))
-                except UnprocessableTradePair as e:
-                    self.msg_aggregator.add_warning(
-                        f'Found unprocessable Coinbasepro pair {e.pair}. Ignoring the trade.',
-                    )
-                    continue
-                except UnknownAsset as e:
-                    self.msg_aggregator.add_warning(
-                        f'Found unknown Coinbasepro asset {e.asset_name}. '
-                        f'Ignoring the trade.',
-                    )
-                    continue
-                except (DeserializationError, KeyError) as e:
-                    msg = str(e)
-                    if isinstance(e, KeyError):
-                        msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_error(
-                        'Failed to deserialize a coinbasepro trade. '
-                        'Check logs for details. Ignoring it.',
-                    )
-                    log.error(
-                        'Error processing a coinbasepro trade.',
-                        raw_trade=row,
-                        error=msg,
-                    )
-                    continue
-
-        return trades
-
     def _paginated_query(
             self,
             endpoint: str,
             query_options: Dict[str, Any] = None,
             limit: int = COINBASEPRO_PAGINATION_LIMIT,
-    ):
+    ) -> Iterator[List[Dict[str, Any]]]:
         if query_options is None:
             query_options = {}
         query_options['limit'] = limit
@@ -447,10 +388,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         account_to_currency = self.create_or_return_account_to_currency_map()
         for entry in raw_movements:
             try:
-                raw_time = entry['completed_at']
-                if raw_time.endswith('+00'):  # proper iso8601 needs + 00:00 for timezone
-                    raw_time = raw_time.replace('+00', '+00:00')
-                timestamp = deserialize_timestamp_from_date(raw_time, 'iso8601', 'coinbasepro')
+                timestamp = coinbasepro_deserialize_timestamp(entry, 'completed_at')
                 if timestamp < start_ts or timestamp > end_ts:
                     continue
 
@@ -523,35 +461,64 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[Trade]:
-        """Queries coinbase pro for trades
-
-        1. Generates relevant reports and writes them to a temporary directory
-        2. Reads all files from that directory and extracts Trades
-        3. Temporary directory is removed
-        """
+        """Queries coinbase pro for trades"""
         log.debug('Query coinbasepro trade history', start_ts=start_ts, end_ts=end_ts)
-        trades = []
-        with TemporaryDirectory() as tempdir:
-            try:
-                filepaths = self._generate_reports(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    report_type='fills',
-                    tempdir=tempdir,
-                )
-            except CoinbaseProPermissionError as e:
-                self.msg_aggregator.add_error(
-                    f'Got permission error while querying Coinbasepro for trades: {str(e)}',
-                )
-                return []
-            except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f'Got remote error while querying Coinbasepro for trades: {str(e)}',
-                )
-                return []
 
-            for filepath in filepaths:
-                trades.extend(self._read_trades(filepath))
+        trades = []
+        raw_trades = []
+        for batch in self._paginated_query(
+            endpoint='orders',
+            query_options={'status': 'done'},
+        ):
+            raw_trades.extend(batch)
+
+        for entry in raw_trades:
+            timestamp = coinbasepro_deserialize_timestamp(entry, 'created_at')
+            if timestamp < start_ts or timestamp > end_ts:
+                continue
+
+            try:
+                pair = coinbasepro_to_worldpair(entry['product_id'])
+                # Fee currency seems to always be quote asset
+                # https://github.com/ccxt/ccxt/blob/ddf3a15cbff01541f0b37c35891aa143bb7f9d7b/python/ccxt/coinbasepro.py#L724  # noqa: E501
+                _, quote_asset = pair_get_assets(pair)
+                trades.append(Trade(
+                    timestamp=timestamp,
+                    location=Location.COINBASEPRO,
+                    pair=coinbasepro_to_worldpair(entry['product_id']),
+                    trade_type=deserialize_trade_type(entry['side']),
+                    amount=deserialize_asset_amount(entry['size']),
+                    rate=deserialize_price(entry['price']),
+                    fee=deserialize_fee(entry['fill_fees']),
+                    fee_currency=quote_asset,
+                    link=entry['id'],
+                    notes='',
+                ))
+            except UnprocessableTradePair as e:
+                self.msg_aggregator.add_warning(
+                    f'Found unprocessable Coinbasepro pair {e.pair}. Ignoring the trade.',
+                )
+                continue
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found unknown Coinbasepro asset {e.asset_name}. '
+                    f'Ignoring the trade.',
+                )
+                continue
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_error(
+                    'Failed to deserialize a coinbasepro trade. '
+                    'Check logs for details. Ignoring it.',
+                )
+                log.error(
+                    'Error processing a coinbasepro trade.',
+                    raw_trade=entry,
+                    error=msg,
+                )
+                continue
 
         return trades
 
