@@ -1,81 +1,25 @@
-import json
+"""After removal of reports, this test file does not test the new way of querying
+trades, deposits and withdrawals.
+
+
+Lefteris tested with his own coinbase pro account at 21/03/2021 and they do work though.
+
+TODO: Make some mock tests at some point
+"""
+
+
 import warnings as test_warnings
 from enum import Enum
-from typing import Callable, Optional
 from unittest.mock import patch
 
-import requests
 from typing_extensions import Literal
 
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro, coinbasepro_to_worldpair
-from rotkehlchen.exchanges.data_structures import AssetMovement, Location, Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_BAT
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Fee, Price, Timestamp, TradePair
-
-POST_REPORT_RESPONSE_TEMPLATE = """{{
-"id": "{}",
-"type": "fills",
-"status": "pending",
-"created_at": "2015-01-06T10:34:47.000Z",
-"completed_at": null,
-"expires_at": "2015-01-13T10:35:47.000Z",
-"file_url": null,
-"params": {{
-"start_date": "2014-11-01T00:00:00.000Z",
-"end_date": "2014-11-30T23:59:59.000Z"
-}}}}"""
-
-GET_REPORT_RESPONSE_TEMPLATE = """{{
-"id": "{}",
-"type": "fills",
-"status": "ready",
-"created_at": "2015-01-06T10:34:47.000Z",
-"completed_at": "2015-01-06T10:34:47.000Z",
-"expires_at": "2015-01-13T10:35:47.000Z",
-"file_url": "{}",
-"params": {{
-"start_date": "2014-11-01T00:00:00.000Z",
-"end_date": "2014-11-30T23:59:59.000Z"
-}}}}"""
-
-# Test fill report for the ETH-BAT product
-ETH_BAT_REPORT_ID = '0328b97b-bec1-129e-a94c-69232926778d'
-ETH_BAT_ROW = 'default,204623,BAT-ETH,SELL,2020-01-13T09:15:06.311Z,1.00000000,BAT,0.00131511,0.00000657555,0.00130853445,ETH'  # noqa: E501
-ETH_BAT_REPORT = f"""portfolio,trade id,product,side,created at,size,size unit,price,fee,total,price/fee/total unit
-{ETH_BAT_ROW}"""
-FILL_REPORT_UNKNOWN_ASSET = f"""portfolio,trade id,product,side,created at,size,size unit,price,fee,total,price/fee/total unit
-default,204623,UNKNOWN-ETH,SELL,2020-01-13T09:15:06.311Z,1.00000000,UNKNOWN,0.00131511,0.00000657555,0.00130853445,ETH
-{ETH_BAT_ROW}"""
-FILL_REPORT_KEY_ERROR = f"""portfolio,trade id,product,side,created at,size,size unit,price,fee,total,price/fee/total unit
-2020-01-13T09:15:06.311Z,1.00000000,0.00131511,0.00000657555,0.00130853445,ETH
-{ETH_BAT_ROW}"""
-
-# Test account reports
-ETH_ACCOUNT_REPORT_ID = '1328b97b-fec1-123e-b94c-69332926771d'
-ETH_ACCOUNT_ROWS = """default,match,2020-01-13T09:15:06.315Z,0.0013151100000000,0.0013151100000000,ETH,,204623,5abf20fe-2b79-2315-57d3-c143dd291654
-default,fee,2020-01-13T09:15:06.315Z,-0.0000065755500000,0.0013085344500000,ETH,,204623,5abf20fe-2b79-2315-57d3-c143dd291654
-default,withdrawal,2020-01-15T23:51:26.478Z,-0.0011085300000000,0.0002000044500000,ETH,fcc61b23-4b51-43f8-da1e-def2d5a217ad,,"""  # noqa: E501
-ETH_ACCOUNT_REPORT = f"""portfolio,type,time,amount,balance,amount/balance unit,transfer id,trade id,order id
-{ETH_ACCOUNT_ROWS}"""
-ETH_ACCOUNT_REPORT_UNKNOWN_ASSET = f"""portfolio,type,time,amount,balance,amount/balance unit,transfer id,trade id,order id
-default,withdrawal,2020-01-15T23:54:26.478Z,-0.0011085300000000,0.0002000044500000,UNKNOWN,fcc61b23-3b51-13f8-da1e-def2d5a217ad,,
-{ETH_ACCOUNT_ROWS}"""
-
-BAT_ACCOUNT_REPORT_ID = '9321b97c-fac2-224e-a94d-69332916772d'
-BAT_ACCOUNT_ROWS = """default,deposit,2020-01-12T23:26:44.073Z,14.2500000000000000,14.2500000000000000,BAT,dfdd574b-25ca-de01-asce-edc3c1f2e987,,
-default,deposit,2020-01-12T23:38:29.433Z,160.8000000000000000,175.0500000000000000,BAT,489f76g2-4dda-4ab8-3eac-6dffadaa57ba7,,
-default,deposit,2020-01-12T23:57:12.306Z,8.6500000000000000,183.7000000000000000,BAT,34c6d26c-d27d-4218-3d14-1493120543e9,,
-default,match,2020-01-13T09:15:06.315Z,-1.0000000000000000,182.7000000000000000,BAT,,204623,5abf20fe-2b79-2315-57d3-c143dd291654"""  # noqa: E501
-BAT_ACCOUNT_REPORT = f"""portfolio,type,time,amount,balance,amount/balance unit,transfer id,trade id,order id
-{BAT_ACCOUNT_ROWS}"""
-BAT_ACCOUNT_REPORT_WRONG_FORMAT = f"""portfolio,type,time,amount,balance,amount/balance unit,transfer id,trade id,order id
-default,deposit,2020-01-12T23:57:12.306Z,,foo,BAT,34c6d26c-d27d-4218-3d14-1493120543e9,,
-{BAT_ACCOUNT_ROWS}"""
 
 PRODUCTS_RESPONSE = """[{
 "id": "BAT-ETH",
@@ -143,44 +87,12 @@ class ErrorEmulation(Enum):
 def create_coinbasepro_query_mock(
         cb: Coinbasepro,
         emulate_errors: ErrorEmulation = ErrorEmulation.NONE,
-        original_get: Optional[Callable] = None,
 ):
 
-    def mock_get_request(url: str) -> MockResponse:
-        if 'download_report/' in url:
-            parts = url.split('download_report/')
-            assert len(parts) == 2
-            report_id = parts[1]
-            if report_id == ETH_ACCOUNT_REPORT_ID:
-                if emulate_errors == ErrorEmulation.UNKNOWN_ASSET:
-                    text = ETH_ACCOUNT_REPORT_UNKNOWN_ASSET
-                else:
-                    text = ETH_ACCOUNT_REPORT
-            elif report_id == BAT_ACCOUNT_REPORT_ID:
-                if emulate_errors == ErrorEmulation.ASSET_MOVEMENTS_WRONG_FORMAT:
-                    text = BAT_ACCOUNT_REPORT_WRONG_FORMAT
-                else:
-                    text = BAT_ACCOUNT_REPORT
-            elif report_id == ETH_BAT_REPORT_ID:
-                if emulate_errors == ErrorEmulation.UNKNOWN_ASSET:
-                    text = FILL_REPORT_UNKNOWN_ASSET
-                elif emulate_errors == ErrorEmulation.KEY_ERROR:
-                    text = FILL_REPORT_KEY_ERROR
-                else:
-                    text = ETH_BAT_REPORT
-            else:
-                raise AssertionError('Tried to download invalid coinbasepro report during tests')
-
-            return MockResponse(200, text)
-
-        # else
-        assert original_get, 'for mocked gets we need also the original function'
-        return original_get(url)
-
     def mock_coinbasepro_request(
-            request_method: Literal['get', 'post'],
+            request_method: Literal['get', 'post'],  # pylint: disable=unused-argument
             url: str,
-            data: str = '',
+            data: str = '',  # pylint: disable=unused-argument
             allow_redirects: bool = True,  # pylint: disable=unused-argument
     ) -> MockResponse:
         if 'products' in url:
@@ -195,58 +107,11 @@ def create_coinbasepro_query_mock(
                 text = KEYERROR_ACCOUNTS_RESPONSE
             else:
                 text = ACCOUNTS_RESPONSE
-        elif request_method == 'post' and 'reports' in url:
-            if emulate_errors == ErrorEmulation.INVALID_RESPONSE_POST_REPORT:
-                text = '{"foo": 5,,]'
-            else:
-                response_data = json.loads(data)
-                assert response_data['format'] == 'csv'
-                assert response_data['email'] == 'some@invalidemail.com'
-                if response_data['type'] == 'fills':
-                    assert 'account_id' not in response_data
-                    if response_data['product_id'] == 'BAT-ETH':
-                        text = POST_REPORT_RESPONSE_TEMPLATE.format(ETH_BAT_REPORT_ID)
-                    else:
-                        raise AssertionError(
-                            f'Unimplemented coinbasepro product_id '
-                            f'{response_data["product_id"]} in tests mock',
-                        )
-                elif response_data['type'] == 'account':
-                    assert 'product_id' not in response_data
-                    if response_data['account_id'] == ETH_ACCOUNT_ID:
-                        text = POST_REPORT_RESPONSE_TEMPLATE.format(ETH_ACCOUNT_REPORT_ID)
-                    elif response_data['account_id'] == BAT_ACCOUNT_ID:
-                        text = POST_REPORT_RESPONSE_TEMPLATE.format(BAT_ACCOUNT_REPORT_ID)
-                    else:
-                        raise AssertionError(
-                            f'Unimplemented coinbasepro account_id '
-                            f'{response_data["account_id"]} in tests mock',
-                        )
-                else:
-                    raise AssertionError(
-                        f'Unknown report type {response_data["type"]} '
-                        f'given to coinbasepro endpoint',
-                    )
-        elif request_method == 'get' and 'reports' in url:
-            if emulate_errors == ErrorEmulation.INVALID_RESPONSE_GET_REPORT:
-                text = '{"foo": 5,,]'
-            else:
-                parts = url.split('reports/')
-                assert len(parts) == 2
-                report_id = parts[1]
-                text = GET_REPORT_RESPONSE_TEMPLATE.format(
-                    report_id,
-                    f'http://download_report/{report_id}',
-                )
         else:
             raise AssertionError(f'Unknown url: {url} encountered during CoinbasePro mocking')
         return MockResponse(200, text)
 
     coinbasepro_mock = patch.object(cb.session, 'request', side_effect=mock_coinbasepro_request)
-    if original_get:
-        requests_get_mock = patch('requests.get', side_effect=mock_get_request)
-        return coinbasepro_mock, requests_get_mock
-
     return coinbasepro_mock
 
 
@@ -258,7 +123,7 @@ def test_name():
 def test_coverage_of_products():
     """Test that we can process all pairs and assets of the offered coinbasepro products"""
     exchange = Coinbasepro('a', b'a', object(), object(), '')
-    products = exchange._api_query('products', request_method='GET')
+    products, _ = exchange._api_query('products', request_method='GET')
     for product in products:
         try:
             # Make sure all products can be processed
@@ -346,220 +211,3 @@ def test_query_balances_keyerror_response(function_scope_coinbasepro):
     errors = cb.msg_aggregator.consume_errors()
     assert len(errors) == 1
     assert 'Error processing a coinbase pro account balance' in errors[0]
-
-
-EXPECTED_TRADE = Trade(
-    timestamp=Timestamp(1578906906),
-    location=Location.COINBASEPRO,
-    pair=TradePair('BAT_ETH'),
-    trade_type=TradeType.SELL,
-    amount=AssetAmount(FVal('1')),
-    rate=Price(FVal('0.00131511')),
-    fee=Fee(FVal('0.00000657555')),
-    fee_currency=A_ETH,
-    link='204623',
-)
-
-
-def test_query_trade_history(function_scope_coinbasepro):
-    """Test that querying trade data from coinbase pro works"""
-    cb = function_scope_coinbasepro
-    cb_query_mock, get_mock = create_coinbasepro_query_mock(
-        cb,
-        original_get=requests.get,
-    )
-    with cb_query_mock, get_mock:
-        trades = cb.query_trade_history(start_ts=0, end_ts=1579449769, only_cache=False)
-
-    assert len(trades) == 1
-    assert trades[0] == EXPECTED_TRADE
-    errors = cb.msg_aggregator.consume_errors()
-    assert len(errors) == 0
-
-
-def test_query_trade_history_unknown_assets(function_scope_coinbasepro):
-    """Test that unknown assets are handled when querying trade data from coinbase pro"""
-    cb = function_scope_coinbasepro
-    cb_query_mock, get_mock = create_coinbasepro_query_mock(
-        cb,
-        emulate_errors=ErrorEmulation.UNKNOWN_ASSET,
-        original_get=requests.get,
-    )
-    with cb_query_mock, get_mock:
-        trades = cb.query_trade_history(start_ts=0, end_ts=1579449769, only_cache=False)
-
-    assert len(trades) == 1
-    assert trades[0] == EXPECTED_TRADE
-
-    warnings = cb.msg_aggregator.consume_warnings()
-    assert len(warnings) == 1
-    assert 'Found unknown Coinbasepro asset UNKNOWN. Ignoring the trade' in warnings[0]
-    errors = cb.msg_aggregator.consume_errors()
-    assert len(errors) == 0
-
-
-def test_query_trade_history_wrong_format(function_scope_coinbasepro):
-    """Test that wrong data format are handled when querying trade data from coinbase pro"""
-    cb = function_scope_coinbasepro
-    cb_query_mock, get_mock = create_coinbasepro_query_mock(
-        cb,
-        emulate_errors=ErrorEmulation.KEY_ERROR,
-        original_get=requests.get,
-    )
-    with cb_query_mock, get_mock:
-        trades = cb.query_trade_history(start_ts=0, end_ts=1579449769, only_cache=False)
-
-    assert len(trades) == 1
-    assert trades[0] == EXPECTED_TRADE
-
-    warnings = cb.msg_aggregator.consume_warnings()
-    assert len(warnings) == 0
-
-    errors = cb.msg_aggregator.consume_errors()
-    assert len(errors) == 1
-    assert 'Failed to deserialize a coinbasepro trade. Check logs for details' in errors[0]
-
-
-def test_query_trade_history_invalid_response(function_scope_coinbasepro):
-    """Test that invalid response is handled when querying trade data from coinbase pro
-
-    We make the invalid response be in the POST report query in this test.
-"""
-    cb = function_scope_coinbasepro
-    cb_query_mock, get_mock = create_coinbasepro_query_mock(
-        cb,
-        emulate_errors=ErrorEmulation.INVALID_RESPONSE_POST_REPORT,
-        original_get=requests.get,
-    )
-    with cb_query_mock, get_mock:
-        trades = cb.query_trade_history(start_ts=0, end_ts=1579449769, only_cache=False)
-
-    assert len(trades) == 0
-
-    warnings = cb.msg_aggregator.consume_warnings()
-    assert len(warnings) == 0
-    errors = cb.msg_aggregator.consume_errors()
-    assert len(errors) == 1
-    assert 'returned invalid JSON response' in errors[0]
-
-
-EXPECTED_MOVEMENTS = [AssetMovement(
-    location=Location.COINBASEPRO,
-    category=AssetMovementCategory.DEPOSIT,
-    address=None,
-    transaction_id=None,
-    timestamp=Timestamp(1578871604),
-    asset=A_BAT,
-    amount=FVal('14.25'),
-    fee_asset=A_BAT,
-    fee=Fee(ZERO),
-    link='dfdd574b-25ca-de01-asce-edc3c1f2e987',
-), AssetMovement(
-    location=Location.COINBASEPRO,
-    category=AssetMovementCategory.DEPOSIT,
-    address=None,
-    transaction_id=None,
-    timestamp=Timestamp(1578872309),
-    asset=A_BAT,
-    amount=FVal('160.8'),
-    fee_asset=A_BAT,
-    fee=Fee(ZERO),
-    link='489f76g2-4dda-4ab8-3eac-6dffadaa57ba7',
-), AssetMovement(
-    location=Location.COINBASEPRO,
-    category=AssetMovementCategory.DEPOSIT,
-    address=None,
-    transaction_id=None,
-    timestamp=Timestamp(1578873432),
-    asset=A_BAT,
-    amount=FVal('8.65'),
-    fee_asset=A_BAT,
-    fee=Fee(ZERO),
-    link='34c6d26c-d27d-4218-3d14-1493120543e9',
-), AssetMovement(
-    location=Location.COINBASEPRO,
-    category=AssetMovementCategory.WITHDRAWAL,
-    address=None,
-    transaction_id=None,
-    timestamp=Timestamp(1579132286),
-    asset=A_ETH,
-    amount=FVal('0.0011085300000000'),
-    fee_asset=A_ETH,
-    fee=Fee(ZERO),
-    link='fcc61b23-4b51-43f8-da1e-def2d5a217ad',
-)]
-
-
-def test_query_asset_movements(function_scope_coinbasepro):
-    """Test that querying deposits/withdrawals from coinbase pro works"""
-    cb = function_scope_coinbasepro
-    cb_query_mock, get_mock = create_coinbasepro_query_mock(cb, original_get=requests.get)
-    with cb_query_mock, get_mock:
-        movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769, only_cache=False)
-
-    assert movements == EXPECTED_MOVEMENTS
-    warnings = cb.msg_aggregator.consume_warnings()
-    assert len(warnings) == 0
-    errors = cb.msg_aggregator.consume_errors()
-    assert len(errors) == 0
-
-
-def test_query_asset_movements_unknown_assets(function_scope_coinbasepro):
-    """Test that unknown assets are handled in querying deposits/withdrawals from coinbase pro"""
-    cb = function_scope_coinbasepro
-    cb_query_mock, get_mock = create_coinbasepro_query_mock(
-        cb,
-        emulate_errors=ErrorEmulation.UNKNOWN_ASSET,
-        original_get=requests.get,
-    )
-    with cb_query_mock, get_mock:
-        movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769, only_cache=False)
-
-    assert movements == EXPECTED_MOVEMENTS
-    warnings = cb.msg_aggregator.consume_warnings()
-    assert len(warnings) == 1
-    msg = 'Found unknown Coinbasepro asset UNKNOWN. Ignoring its deposit/withdrawal'
-    assert msg in warnings[0]
-    errors = cb.msg_aggregator.consume_errors()
-    assert len(errors) == 0
-
-
-def test_query_asset_movements_wrong_format(function_scope_coinbasepro):
-    """Test that invalid data are handled in querying deposits/withdrawals from coinbase pro"""
-    cb = function_scope_coinbasepro
-    cb_query_mock, get_mock = create_coinbasepro_query_mock(
-        cb,
-        emulate_errors=ErrorEmulation.ASSET_MOVEMENTS_WRONG_FORMAT,
-        original_get=requests.get,
-    )
-    with cb_query_mock, get_mock:
-        movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769, only_cache=False)
-
-    assert movements == EXPECTED_MOVEMENTS
-    warnings = cb.msg_aggregator.consume_warnings()
-    assert len(warnings) == 0
-    errors = cb.msg_aggregator.consume_errors()
-    assert len(errors) == 1
-    assert 'Failed to deserialize a Coinbasepro deposit/withdrawal' in errors[0]
-
-
-def test_query_asset_movements_invalid_response(function_scope_coinbasepro):
-    """Test that invalid response is handled when querying deposits/withdrals from coinbase pro
-
-    We make the invalid response be in the GET report query in this test.
-"""
-    cb = function_scope_coinbasepro
-    cb_query_mock, get_mock = create_coinbasepro_query_mock(
-        cb,
-        emulate_errors=ErrorEmulation.INVALID_RESPONSE_GET_REPORT,
-        original_get=requests.get,
-    )
-    with cb_query_mock, get_mock:
-        movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769, only_cache=False)
-
-    assert movements == []
-    warnings = cb.msg_aggregator.consume_warnings()
-    assert len(warnings) == 0
-    errors = cb.msg_aggregator.consume_errors()
-    assert len(errors) == 1
-    assert 'returned invalid JSON response' in errors[0]
