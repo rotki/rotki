@@ -489,7 +489,7 @@ export const getters: Getters<
 
   isEthereumToken: ({ supportedAssets }) => (asset: string) => {
     const match = supportedAssets.find(
-      supportedAsset => supportedAsset.symbol === asset
+      supportedAsset => supportedAsset.identifier === asset
     );
     if (match) {
       return match.assetType === 'ethereum token';
