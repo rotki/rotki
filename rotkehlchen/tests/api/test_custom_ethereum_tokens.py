@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 import pytest
 import requests
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.fval import FVal
@@ -26,6 +28,7 @@ from rotkehlchen.tests.utils.globaldb import (
     underlying_address3,
     underlying_address4,
 )
+from rotkehlchen.typing import Location
 
 
 def assert_token_entry_exists_in_result(
@@ -291,7 +294,7 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('start_with_logged_in_user', [False])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
 def test_deleting_custom_tokens(rotkehlchen_api_server):
     """Test that the endpoint for deleting a custom ethereum token works"""
@@ -431,3 +434,37 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
         (token0_id, token1_id),
     ).fetchone()[0]
     assert result == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+@pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
+def test_custom_tokens_delete_guard(rotkehlchen_api_server):
+    """Test that deleting an owned ethereum token is guarded against"""
+    user_db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    token0_id = ETHEREUM_DIRECTIVE + INITIAL_TOKENS[0].address
+    user_db.add_manually_tracked_balances([ManuallyTrackedBalance(
+        asset=Asset(token0_id),
+        label='manual1',
+        amount=FVal(1),
+        location=Location.EXTERNAL,
+        tags=None,
+    )])
+
+    # Try to delete the token and see it fails because a user owns it
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumassetsresource',
+        ),
+        json={'address': INITIAL_TOKENS[0].address},
+    )
+    expected_msg = (
+        f'Tried to delete ethereum token with address {INITIAL_TOKENS[0].address} '
+        f'but its deletion would violate a constraint so deletion failed.'
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=expected_msg,
+        status_code=HTTPStatus.CONFLICT,
+    )
