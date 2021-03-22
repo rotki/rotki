@@ -19,10 +19,12 @@ from web3.datastructures import MutableAttributeDict
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 from web3.types import FilterParams
 
+from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.eth2 import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.constants.ethereum import ETH_SCAN
+from rotkehlchen.chain.ethereum.utils import multicall_2
+from rotkehlchen.constants.ethereum import ETH_SCAN, ERC20TOKEN_ABI
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     BlockchainQueryError,
@@ -974,3 +976,39 @@ class EthereumManager():
             except RemoteError:
                 pass
         return self._get_blocknumber_by_time_from_subgraph(ts)
+
+    def get_basic_contract_info(self, address: ChecksumEthAddress) -> Dict[str, Any]:
+        """
+        Query a contract address and return basic information as:
+        - Decimals
+        - name
+        - symbol
+        if it is provided in the contract. This method may raise:
+        - BadFunctionCallOutput: If there is an error calling a bad address
+        """
+        properties = ('decimals', 'symbol', 'name')
+        info: Dict[str, Any] = {}
+
+        contract = EthereumContract(address=address, abi=ERC20TOKEN_ABI, deployed_block=0)
+        try:
+            # Output contains call status and result
+            output = multicall_2(
+                ethereum=self,
+                require_success=False,
+                calls=[(address, contract.encode(method_name=prop)) for prop in properties],
+            )
+        except RemoteError:
+            # If something happens in the connection the output should have
+            # the same length as the tuple of properties
+            output = [(False, b'')] * len(properties)
+
+        decoded = [
+            contract.decode(x[1], method_name)[0]  # pylint: disable=E1136
+            if x[0] and len(x[1]) else None
+            for (x, method_name) in zip(output, properties)
+        ]
+
+        for prop, value in zip(properties, decoded):
+            info[prop] = value
+
+        return info

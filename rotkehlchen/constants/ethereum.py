@@ -131,6 +131,7 @@ VOTE_ESCROWED_CRV = EthereumConstants().contract('VOTE_ESCROWED_CRV')
 
 ETH_SCAN = EthereumConstants().contract('ETH_SCAN')
 ETH_MULTICALL = EthereumConstants().contract('ETH_MULTICALL')
+ETH_MULTICALL_2 = EthereumConstants().contract('ETH_MULTICALL_2')
 
 
 AAVE_LENDING_POOL = EthereumConstants().contract('AAVE_LENDING_POOL')

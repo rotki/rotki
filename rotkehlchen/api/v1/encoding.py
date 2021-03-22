@@ -1709,3 +1709,8 @@ class NamedOracleCacheCreateSchema(NamedOracleCacheSchema):
 
 class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
     oracle = HistoricalPriceOracleField(required=True)
+
+
+class ERC20InfoSchema(Schema):
+    address = EthereumAddressField(required=True)
+    async_query = fields.Boolean(missing=False)

@@ -8,7 +8,7 @@ from web3._utils.events import get_event_abi_types_for_decoding
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.constants.ethereum import ETH_MULTICALL
+from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_MULTICALL_2
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress
@@ -88,6 +88,24 @@ def multicall(
     )
     _, output = multicall_result
     return output
+
+
+def multicall_2(
+        ethereum: 'EthereumManager',
+        calls: List[Tuple[ChecksumEthAddress, str]],
+        require_success: bool,
+        call_order: Optional[Sequence['NodeName']] = None,
+) -> List[Tuple[bool, bytes]]:
+    """
+    Use a MULTICALL_2 contract for an aggregated query. If require_success
+    is set to False any call in the list of calls is allowed to fail.
+    """
+    return ETH_MULTICALL_2.call(
+        ethereum=ethereum,
+        method_name='try_aggregate',
+        arguments=[require_success, calls],
+        call_order=call_order,
+    )
 
 
 def multicall_specific(
