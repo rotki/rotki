@@ -178,3 +178,9 @@ export interface AssetBreakdown {
   readonly balance: Balance;
   readonly address: string;
 }
+
+export interface ERC20Token {
+  readonly decimals?: number;
+  readonly name?: string;
+  readonly symbol?: string;
+}

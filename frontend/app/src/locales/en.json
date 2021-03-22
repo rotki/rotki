@@ -1110,6 +1110,17 @@
     }
   },
   "actions": {
+    "assets": {
+      "erc20": {
+        "error": {
+          "description": "There was an error while retrieving token details: {message}",
+          "title": "Retrieving token details for {address}"
+        },
+        "task": {
+          "title": "Retrieving token details for {address}"
+        }
+      }
+    },
     "ledger_actions": {
       "error": {
         "description": "Failed query for ledger actions: {error}",
