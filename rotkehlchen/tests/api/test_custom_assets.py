@@ -3,12 +3,15 @@ from http import HTTPStatus
 import pytest
 import requests
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response_with_result,
 )
-from rotkehlchen.typing import AssetType
+from rotkehlchen.typing import AssetType, Location
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -256,7 +259,7 @@ def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('start_with_logged_in_user', [False])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
     """Test that the endpoint for deleting a custom asset works"""
 
@@ -331,7 +334,7 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
         ),
         json={'identifier': custom1_id},
     )
-    expected_msg = f'Tried to delete asset with identifier {custom1_id} but its deletion would violate a constraint so deletion failed'  # noqa: E501
+    expected_msg = 'Tried to delete asset with name "foo token" and symbol "FOO" but its deletion would violate a constraint so deletion failed'  # noqa: E501
     assert_error_response(
         response=response,
         contained_in_msg=expected_msg,
@@ -371,6 +374,52 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
         json={'identifier': 'notexisting'},
     )
     expected_msg = 'Tried to delete asset with identifier notexisting but it was not found in the DB'  # noqa: E501
+    assert_error_response(
+        response=response,
+        contained_in_msg=expected_msg,
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_custom_asset_delete_guard(rotkehlchen_api_server):
+    """Test that deleting an owned asset is guarded against"""
+    user_db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    custom1 = {
+        'asset_type': 'own chain',
+        'name': 'foo token',
+        'symbol': 'FOO',
+        'started': 5,
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=custom1,
+    )
+    result = assert_proper_response_with_result(response)
+    custom1_id = result['identifier']
+    user_db.add_manually_tracked_balances([ManuallyTrackedBalance(
+        asset=Asset(custom1_id),
+        label='manual1',
+        amount=FVal(1),
+        location=Location.EXTERNAL,
+        tags=None,
+    )])
+    # Try to delete the asset and see it fails because a user owns it
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={'identifier': custom1_id},
+    )
+    expected_msg = (
+        'Tried to delete asset with name "foo token" and symbol "FOO" but its deletion '
+        'would violate a constraint'
+    )
     assert_error_response(
         response=response,
         contained_in_msg=expected_msg,

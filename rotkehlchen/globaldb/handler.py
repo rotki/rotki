@@ -1,7 +1,7 @@
 import logging
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast, overload
 
 from typing_extensions import Literal
 
@@ -20,6 +20,9 @@ from rotkehlchen.errors import (
 from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress
 
 from .schema import DB_SCRIPT_CREATE_TABLES
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
 
 log = logging.getLogger(__name__)
 
@@ -655,7 +658,8 @@ class GlobalDBHandler():
                 f'Tried to delete ethereum token with address {address} '
                 f'but its deletion would violate a constraint so deletion '
                 f'failed. Make sure that this token is not already used by '
-                f'other tokens as an underlying or swapped for token',
+                f'other tokens as an underlying or swapped for token or is '
+                f'not owned by any user in the same system rotki runs',
             ) from e
 
         affected_rows = cursor.rowcount
@@ -821,8 +825,16 @@ class GlobalDBHandler():
                 (identifier,),
             )
         except sqlite3.IntegrityError as e:
+            asset_data = GlobalDBHandler().get_asset_data(identifier, form_with_incomplete_data=False)  # noqa: E501
+            if asset_data is None:
+                details_str = f'asset with identifier {identifier}'
+            else:
+                details_str = (
+                    f'asset with name "{asset_data.name}" and '
+                    f'symbol "{asset_data.symbol}"'
+                )
             raise InputError(
-                f'Tried to delete asset with identifier {identifier} '
+                f'Tried to delete {details_str} '
                 f'but its deletion would violate a constraint so deletion '
                 f'failed. Make sure that this asset is not already used by '
                 f'other assets as a swapped_for or forked asset',
@@ -834,5 +846,29 @@ class GlobalDBHandler():
                 f'Tried to delete asset with identifier {identifier} '
                 f'but it was not found in the DB',
             )
+
+        connection.commit()
+
+    @staticmethod
+    def add_user_owned_assets(assets: List['Asset']) -> None:
+        """Make sure all assets in the list are included in the user owned assets
+
+        These assets are there so that when someone tries to delete assets from the global DB
+        they don't delete assets that are owned by any local user.
+        """
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        try:
+            cursor.executemany(
+                'INSERT OR IGNORE INTO user_owned_assets(asset_id) VALUES(?)',
+                [(x.identifier,) for x in assets],
+            )
+        except sqlite3.IntegrityError:
+            log.error(
+                f'One of the following asset ids caused a DB IntegrityError: '
+                f'{",".join([x.identifier for x in assets])}',
+            )  # should not ever happen but need to handle with informative log if it does
+            connection.rollback()
+            return
 
         connection.commit()
