@@ -10,6 +10,7 @@ Changelog
 * :feature:`2513` Users can now add/edit/delete all types of assets, not only ethereum tokens.
 * :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
+* :bug:`2524` Users will now not be able to delete assets from the Global DB if any account in the local system owns them.
 
 * :release:`1.15.2 <2021-03-21>`
 * :bug:`1996` Querying coinbasepro deposits and withdrawals should now be much faster thanks to using their new API endpoints.
