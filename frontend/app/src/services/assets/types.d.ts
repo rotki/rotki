@@ -3,7 +3,7 @@ export interface UnderlyingToken {
   readonly weight: string;
 }
 
-export interface CustomEthereumToken {
+export interface EthereumToken {
   readonly identifier?: string;
   readonly address: string;
   readonly decimals: number;
@@ -17,6 +17,6 @@ export interface CustomEthereumToken {
   readonly protocol?: string;
 }
 
-export interface CustomTokenResponse {
+export interface AssetIdResponse {
   readonly identifier: string;
 }

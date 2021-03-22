@@ -127,9 +127,34 @@ export default class AssetDetailsBase extends Vue {
     flex-direction: column;
     width: 100%;
 
+    &__symbol {
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+
+      @media (min-width: 700px) and (max-width: 1500px) {
+        width: 100px;
+      }
+    }
+
     &__subtitle {
       font-size: 0.8rem;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+
+      @media (min-width: 700px) and (max-width: 1500px) {
+        width: 100px;
+      }
     }
+
+    @media (min-width: 700px) and (max-width: 1500px) {
+      width: 100px;
+    }
+  }
+
+  @media (min-width: 700px) and (max-width: 1500px) {
+    width: 150px;
   }
 }
 </style>

@@ -27,14 +27,14 @@ export default class AssetDetails extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
   opensDetails!: boolean;
 
-  assetInfo!: (key: string) => SupportedAsset;
+  assetInfo!: (identifier: string) => SupportedAsset;
 
   get currentAsset() {
     const details = this.assetInfo(this.asset);
     return {
       symbol: details ? details.symbol : this.asset,
       name: details ? details.name : this.asset,
-      identifier: details ? details.key : this.asset
+      identifier: details ? details.identifier : this.asset
     };
   }
 }

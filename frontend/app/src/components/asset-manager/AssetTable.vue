@@ -40,18 +40,21 @@
         />
       </template>
       <template #item.address="{ item }">
-        <hash-link :text="item.address" />
+        <hash-link v-if="item.address" :text="item.address" />
       </template>
       <template #item.started="{ item }">
         <date-display v-if="item.started" :timestamp="item.started" />
         <span v-else>-</span>
+      </template>
+      <template #item.assetType="{ item }">
+        {{ capitalize(item.assetType) }}
       </template>
       <template #item.actions="{ item }">
         <row-actions
           :edit-tooltip="$t('asset_table.edit_tooltip')"
           :delete-tooltip="$t('asset_table.delete_tooltip')"
           @edit-click="edit(item)"
-          @delete-click="deleteToken(item.address)"
+          @delete-click="deleteClick(item)"
         />
       </template>
       <template #expanded-item="{ item, headers }">
@@ -102,18 +105,20 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
+import { ManagedAsset } from '@/components/asset-manager/types';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
-import { CustomEthereumToken } from '@/services/assets/types';
+import { capitalize } from '@/filters';
+import { EthereumToken } from '@/services/assets/types';
 
 @Component({
   components: { DataTable, RowActions, RowExpander, AssetDetailsBase }
 })
 export default class AssetTable extends Vue {
   @Prop({ required: true, type: Array })
-  tokens!: CustomEthereumToken[];
+  tokens!: ManagedAsset[];
   @Prop({ required: false, type: Boolean, default: false })
   loading!: string;
   @Prop({ required: true, type: Boolean })
@@ -122,9 +127,19 @@ export default class AssetTable extends Vue {
   @Emit()
   add() {}
   @Emit()
-  edit(_token: CustomEthereumToken) {}
+  edit(_token: ManagedAsset) {}
   @Emit()
   deleteToken(_address: string) {}
+  @Emit()
+  deleteAsset(_identifier: string) {}
+
+  deleteClick(item: ManagedAsset) {
+    if ('assetType' in item) {
+      this.deleteAsset(item.identifier);
+    } else {
+      this.deleteToken(item.address);
+    }
+  }
 
   expanded = [];
   search: string = '';
@@ -134,16 +149,12 @@ export default class AssetTable extends Vue {
       value: 'name'
     },
     {
+      text: this.$t('asset_table.headers.type').toString(),
+      value: 'assetType'
+    },
+    {
       text: this.$t('asset_table.headers.address').toString(),
       value: 'address'
-    },
-    {
-      text: this.$t('asset_table.headers.coingecko').toString(),
-      value: 'coingecko'
-    },
-    {
-      text: this.$t('asset_table.headers.cryptocompare').toString(),
-      value: 'cryptocompare'
     },
     {
       text: this.$t('asset_table.headers.started').toString(),
@@ -155,11 +166,16 @@ export default class AssetTable extends Vue {
     },
     {
       text: '',
+      width: '48px',
       value: 'expand'
     }
   ];
 
-  getAsset(item: CustomEthereumToken) {
+  capitalize(string?: string) {
+    return capitalize(string ?? 'ethereum token');
+  }
+
+  getAsset(item: EthereumToken) {
     const name =
       item.name ?? item.symbol ?? item.identifier?.replace('_ceth_', '');
     return {

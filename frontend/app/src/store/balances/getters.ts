@@ -462,8 +462,8 @@ export const getters: Getters<
     return manualBalances.map(value => value.label);
   },
 
-  assetInfo: ({ supportedAssets }: BalanceState) => (key: string) => {
-    return supportedAssets.find(asset => asset.key === key);
+  assetInfo: ({ supportedAssets }: BalanceState) => (identifier: string) => {
+    return supportedAssets.find(asset => asset.identifier === identifier);
   },
 
   accounts: (
@@ -492,7 +492,7 @@ export const getters: Getters<
       supportedAsset => supportedAsset.symbol === asset
     );
     if (match) {
-      return match.type === 'ethereum token';
+      return match.assetType === 'ethereum token';
     }
     return false;
   },

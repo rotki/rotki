@@ -712,7 +712,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       return;
     }
     try {
-      const supportedAssets = await api.supportedAssets();
+      const supportedAssets = await api.assets.allAssets();
       commit('supportedAssets', convertSupportedAssets(supportedAssets));
     } catch (e) {
       notify(

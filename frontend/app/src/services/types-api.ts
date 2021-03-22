@@ -1,5 +1,6 @@
 import { AxiosInstance, AxiosTransformer } from 'axios';
 import { BigNumber } from 'bignumber.js';
+import { SupportedAsset } from '@/services/types-model';
 import { IgnoreActionType } from '@/store/history/types';
 
 export const SYNC_UPLOAD = 'upload';
@@ -9,18 +10,8 @@ const SYNC_ACTIONS = [SYNC_DOWNLOAD, SYNC_UPLOAD] as const;
 
 export type SyncAction = typeof SYNC_ACTIONS[number];
 
-interface ApiSupportedAsset {
-  readonly active?: boolean;
-  readonly ended?: number;
-  readonly name: string;
-  readonly started?: number;
-  readonly symbol: string;
-  readonly type: string;
-  readonly ethereumAddress?: string;
-}
-
 export interface SupportedAssets {
-  readonly [key: string]: ApiSupportedAsset;
+  readonly [key: string]: Omit<SupportedAsset, 'identifier'>;
 }
 
 export interface EntryWithMeta<T> {

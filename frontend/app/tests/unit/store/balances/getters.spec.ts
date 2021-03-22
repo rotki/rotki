@@ -150,11 +150,13 @@ describe('balances:getters', () => {
 
   test('assetInfo', () => {
     const eth: SupportedAsset = {
-      key: 'ETH',
+      identifier: 'ETH',
       name: 'Ethereum',
       started: 1438214400,
       symbol: 'ETH',
-      type: 'own chain'
+      coingecko: '',
+      cryptocompare: '',
+      assetType: 'own chain'
     };
 
     // @ts-ignore
