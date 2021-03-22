@@ -113,10 +113,17 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 """
 
+DB_CREATE_USER_OWNED_ASSETS = """
+CREATE TABLE IF NOT EXISTS user_owned_assets (
+    asset_id VARCHAR[24] NOT NULL PRIMARY KEY,
+    FOREIGN KEY(asset_id) REFERENCES assets(identifier)
+);
+"""
+
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}
+{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -126,4 +133,5 @@ PRAGMA foreign_keys=on;
     DB_CREATE_ASSET_TYPES,
     DB_CREATE_ASSETS,
     DB_CREATE_COMMON_ASSET_DETAILS,
+    DB_CREATE_USER_OWNED_ASSETS,
 )

@@ -1304,8 +1304,10 @@ class RestAPI():
         AssetResolver().assets_cache.pop(data['identifier'], None)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @staticmethod
-    def delete_custom_asset(identifier: str) -> Response:
+    @require_loggedin_user()
+    def delete_custom_asset(self, identifier: str) -> Response:
+        # Before deleting, also make sure we have up to date global DB owned data
+        self.rotkehlchen.data.db.update_owned_assets_in_globaldb()
         try:
             GlobalDBHandler().delete_custom_asset(identifier)
         except InputError as e:
@@ -1369,8 +1371,10 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    @staticmethod
-    def delete_custom_ethereum_token(address: ChecksumEthAddress) -> Response:
+    @require_loggedin_user()
+    def delete_custom_ethereum_token(self, address: ChecksumEthAddress) -> Response:
+        # Before deleting, also make sure we have up to date global DB owned data
+        self.rotkehlchen.data.db.update_owned_assets_in_globaldb()
         try:
             identifier = GlobalDBHandler().delete_ethereum_token(address=address)
         except InputError as e:

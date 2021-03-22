@@ -88,6 +88,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
@@ -123,7 +124,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.serialization import rlk_jsondumps, jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -248,8 +249,10 @@ class DBHandler:
         self._run_actions_after_first_connection(password)
         if initial_settings is not None:
             self.set_settings(initial_settings)
+        self.update_owned_assets_in_globaldb()
 
     def __del__(self) -> None:
+        self.update_owned_assets_in_globaldb()
         self.disconnect()
         try:
             dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
@@ -3014,6 +3017,7 @@ class DBHandler:
         The assets are taken from:
         - Balance snapshots
         - Trades the user made
+        - Manual balances
         """
         # TODO: Perhaps also add amm swaps here
         # but think on the performance. This is a synchronous api call so if
@@ -3024,6 +3028,25 @@ class DBHandler:
         )
 
         results = set()
+        for result in query:
+            try:
+                results.add(Asset(result[0]))
+            except UnknownAsset:
+                self.msg_aggregator.add_warning(
+                    f'Unknown/unsupported asset {result[0]} found in the database. '
+                    f'If you believe this should be supported open an issue in github',
+                )
+                continue
+            except DeserializationError:
+                self.msg_aggregator.add_error(
+                    f'Asset with non-string type {type(result[0])} found in the '
+                    f'database. Skipping it.',
+                )
+                continue
+
+        query = cursor.execute(
+            'SELECT DISTINCT asset FROM manually_tracked_balances;',
+        )
         for result in query:
             try:
                 results.add(Asset(result[0]))
@@ -3056,6 +3079,11 @@ class DBHandler:
             results.add(asset2)
 
         return list(results)
+
+    def update_owned_assets_in_globaldb(self) -> None:
+        """Makes sure all owned assets of the user are in the Global DB"""
+        assets = self.query_owned_assets()
+        GlobalDBHandler().add_user_owned_assets(assets)
 
     def get_latest_location_value_distribution(self) -> List[LocationData]:
         """Gets the latest location data
