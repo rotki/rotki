@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from shutil import copyfile
 from sqlite3 import Cursor
-from unittest.mock import patch
+from unittest.mock import patch, _patch
 
 import pytest
 
@@ -36,6 +36,14 @@ creation_patch = patch(
     'rotkehlchen.db.dbhandler.DB_SCRIPT_CREATE_TABLES',
     new=OLD_DB_SCRIPT_CREATE_TABLES,
 )
+
+
+def mock_dbhandler_update_owned_assets() -> _patch:
+    """Just make sure update owned assets does nothing for older DB tests"""
+    return patch(
+        'rotkehlchen.db.dbhandler.DBHandler.update_owned_assets_in_globaldb',
+        lambda x: None,
+    )
 
 
 @contextmanager
@@ -219,15 +227,21 @@ def populate_db_and_check_for_asset_renaming(
     data.db.conn.commit()
 
     # now relogin and check that all tables have appropriate data
-    del data
-    data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch, target_patch(target_version=target_version):
-        data.unlock(username, '123', create_new=False)
+    with mock_dbhandler_update_owned_assets():
+        del data
+        data = DataHandler(data_dir, msg_aggregator)
+        with creation_patch, target_patch(target_version=target_version):
+            data.unlock(username, '123', create_new=False)
     # Check that owned and ignored assets reflect the new state
     ignored_assets = data.db.get_ignored_assets()
     assert A_RDN in ignored_assets
     assert renamed_asset in ignored_assets
-    owned_assets = data.db.query_owned_assets()
+    results = cursor.execute(
+        'SELECT DISTINCT currency FROM timed_balances ORDER BY time ASC;',
+    )
+    owned_assets = set()
+    for result in results:
+        owned_assets.add(Asset(result[0]))
     assert A_ETH in owned_assets
     assert renamed_asset in owned_assets
 
@@ -292,7 +306,7 @@ def test_upgrade_db_1_to_2(data_dir, username):
     ethereum accounts are now checksummed"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch, target_patch(1):
+    with creation_patch, target_patch(1), mock_dbhandler_update_owned_assets():
         data.unlock(username, '123', create_new=True)
     # Manually input a non checksummed account
     data.db.conn.commit()
@@ -304,10 +318,11 @@ def test_upgrade_db_1_to_2(data_dir, username):
     data.db.conn.commit()
 
     # now relogin and check that the account has been re-saved as checksummed
-    del data
-    data = DataHandler(data_dir, msg_aggregator)
-    with target_patch(target_version=2):
-        data.unlock(username, '123', create_new=False)
+    with mock_dbhandler_update_owned_assets():
+        del data
+        data = DataHandler(data_dir, msg_aggregator)
+        with target_patch(target_version=2):
+            data.unlock(username, '123', create_new=False)
     accounts = data.db.get_blockchain_accounts()
     assert accounts.eth[0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
     version = data.db.get_version()
@@ -319,7 +334,7 @@ def test_upgrade_db_2_to_3(data_dir, username):
     """Test upgrading the DB from version 2 to version 3, rename BCHSV to BSV"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch:
+    with creation_patch, mock_dbhandler_update_owned_assets():
         data.unlock(username, '123', create_new=True)
     # Manually set version (Both here and in 4 -> 5 it needs to be done like this and
     # target patch can't be used for some reason. Still have not debugged what fails
@@ -329,16 +344,17 @@ def test_upgrade_db_2_to_3(data_dir, username):
         ('version', str(2)),
     )
     data.db.conn.commit()
-    populate_db_and_check_for_asset_renaming(
-        cursor=cursor,
-        data=data,
-        data_dir=data_dir,
-        msg_aggregator=msg_aggregator,
-        username=username,
-        to_rename_asset='BCHSV',
-        renamed_asset=A_BSV,
-        target_version=3,
-    )
+    with mock_dbhandler_update_owned_assets():
+        populate_db_and_check_for_asset_renaming(
+            cursor=cursor,
+            data=data,
+            data_dir=data_dir,
+            msg_aggregator=msg_aggregator,
+            username=username,
+            to_rename_asset='BCHSV',
+            renamed_asset=A_BSV,
+            target_version=3,
+        )
     version = data.db.get_version()
     # Also make sure that we have updated to the target_version
     assert version == 3
@@ -349,7 +365,7 @@ def test_upgrade_db_3_to_4(data_dir, username):
     the eth_rpc_port setting is changed to eth_rpc_endpoint"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch, target_patch(3):
+    with creation_patch, target_patch(3), mock_dbhandler_update_owned_assets():
         data.unlock(username, '123', create_new=True)
     # Manually set version and input the old rpcport setting
     cursor = data.db.conn.cursor()
@@ -364,10 +380,11 @@ def test_upgrade_db_3_to_4(data_dir, username):
     data.db.conn.commit()
 
     # now relogin and check that the setting has been changed and the version bumped
-    del data
-    data = DataHandler(data_dir, msg_aggregator)
-    with target_patch(target_version=4):
-        data.unlock(username, '123', create_new=False)
+    with mock_dbhandler_update_owned_assets():
+        del data
+        data = DataHandler(data_dir, msg_aggregator)
+        with target_patch(target_version=4):
+            data.unlock(username, '123', create_new=False)
     cursor = data.db.conn.cursor()
     query = cursor.execute('SELECT value FROM settings where name="eth_rpc_endpoint";')
     query = query.fetchall()
@@ -384,7 +401,7 @@ def test_upgrade_db_4_to_5(data_dir, username):
     """Test upgrading the DB from version 4 to version 5, rename BCC to BCH"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch:
+    with creation_patch, mock_dbhandler_update_owned_assets():
         data.unlock(username, '123', create_new=True)
     # Manually set version (Both here and in 2 -> 3 it needs to be done like this and
     # target patch can't be used for some reason. Still have not debugged what fails
@@ -395,16 +412,17 @@ def test_upgrade_db_4_to_5(data_dir, username):
         ('version', str(4)),
     )
     data.db.conn.commit()
-    populate_db_and_check_for_asset_renaming(
-        cursor=cursor,
-        data=data,
-        data_dir=data_dir,
-        msg_aggregator=msg_aggregator,
-        username=username,
-        to_rename_asset='BCC',
-        renamed_asset=A_BCH,
-        target_version=5,
-    )
+    with mock_dbhandler_update_owned_assets():
+        populate_db_and_check_for_asset_renaming(
+            cursor=cursor,
+            data=data,
+            data_dir=data_dir,
+            msg_aggregator=msg_aggregator,
+            username=username,
+            to_rename_asset='BCC',
+            renamed_asset=A_BCH,
+            target_version=5,
+        )
     # Also make sure that we have updated to the target version
     assert data.db.get_version() == 5
 
