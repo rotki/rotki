@@ -46,6 +46,9 @@
         <date-display v-if="item.started" :timestamp="item.started" />
         <span v-else>-</span>
       </template>
+      <template #item.assetType="{ item }">
+        {{ capitalize(item.assetType) }}
+      </template>
       <template #item.actions="{ item }">
         <row-actions
           :edit-tooltip="$t('asset_table.edit_tooltip')"
@@ -107,6 +110,7 @@ import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
+import { capitalize } from '@/filters';
 import { EthereumToken } from '@/services/assets/types';
 
 @Component({
@@ -145,16 +149,12 @@ export default class AssetTable extends Vue {
       value: 'name'
     },
     {
+      text: this.$t('asset_table.headers.type').toString(),
+      value: 'assetType'
+    },
+    {
       text: this.$t('asset_table.headers.address').toString(),
       value: 'address'
-    },
-    {
-      text: this.$t('asset_table.headers.coingecko').toString(),
-      value: 'coingecko'
-    },
-    {
-      text: this.$t('asset_table.headers.cryptocompare').toString(),
-      value: 'cryptocompare'
     },
     {
       text: this.$t('asset_table.headers.started').toString(),
@@ -170,6 +170,10 @@ export default class AssetTable extends Vue {
       value: 'expand'
     }
   ];
+
+  capitalize(string?: string) {
+    return capitalize(string ?? 'ethereum token');
+  }
 
   getAsset(item: EthereumToken) {
     const name =

@@ -50,8 +50,7 @@
     "headers": {
       "address": "Address",
       "asset": "Asset",
-      "coingecko": "CoinGecko",
-      "cryptocompare": "CryptoCompare",
+      "type": "Type",
       "started": "Started"
     },
     "search": "Filter",
