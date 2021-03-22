@@ -233,13 +233,25 @@ function setupUpdaterInterop() {
     }
   });
 
-  ipcMain.on(IPC_INSTALL_UPDATE, async () => {
+  ipcMain.on(IPC_INSTALL_UPDATE, async event => {
+    const quit = new Promise<void>((resolve, reject) => {
+      const quitAndInstall = () => {
+        try {
+          autoUpdater.quitAndInstall();
+          resolve();
+        } catch (e) {
+          pyHandler.logToFile(e);
+          reject(e);
+        }
+      };
+      return setTimeout(quitAndInstall, 5000);
+    });
     try {
-      autoUpdater.quitAndInstall();
-      return true;
+      await quit;
+      event.sender.send(IPC_INSTALL_UPDATE, true);
     } catch (e) {
       pyHandler.logToFile(e);
-      return e;
+      event.sender.send(IPC_INSTALL_UPDATE, e);
     }
   });
 }
