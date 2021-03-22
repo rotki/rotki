@@ -255,6 +255,7 @@ export default class AssetForm extends Vue {
   fetchSupportedAssets!: (refresh: boolean) => Promise<void>;
   fetchTokenDetails!: (address: string) => Promise<ERC20Token>;
   fetching: boolean = false;
+  dontAutoFetch: boolean = false;
 
   underlyingTokens: UnderlyingToken[] = [];
   icon: File | null = null;
@@ -279,7 +280,12 @@ export default class AssetForm extends Vue {
 
   @Watch('address')
   async onAddressChange() {
-    if (!this.address.startsWith('0x') || this.address.length < 42) {
+    if (
+      this.dontAutoFetch ||
+      !this.address.startsWith('0x') ||
+      this.address.length < 42
+    ) {
+      this.dontAutoFetch = false;
       return;
     }
 
@@ -341,6 +347,7 @@ export default class AssetForm extends Vue {
 
   mounted() {
     const token = this.edit;
+    this.dontAutoFetch = !!this.edit;
     if (!token) {
       return;
     }
