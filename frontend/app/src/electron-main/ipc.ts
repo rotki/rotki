@@ -1,4 +1,5 @@
 import { TimeUnit } from '@/components/dashboard/types';
+import { SupportedAsset } from '@/services/types-model';
 import { Level } from '@/utils/log-level';
 
 export const IPC_RESTART_BACKEND = 'RESTART_BACKEND' as const;
@@ -18,8 +19,13 @@ interface DateUtilities {
   epochStartSubtract(amount: number, unit: TimeUnit): number;
 }
 
+interface DataUtilities {
+  assetInfo(identifier: string): SupportedAsset | undefined;
+}
+
 export type ExposedUtilities = {
   readonly date: DateUtilities;
+  readonly data: DataUtilities;
 };
 
 type MetamaskImportError = {
