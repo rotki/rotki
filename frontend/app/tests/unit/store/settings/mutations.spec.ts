@@ -1,3 +1,4 @@
+import { default as BigNumber } from 'bignumber.js';
 import {
   CURRENCY_LOCATION,
   DECIMAL_SEPARATOR,
@@ -12,7 +13,9 @@ import {
   TIMEFRAME_YEAR,
   REFRESH_PERIOD,
   EXPLORERS,
-  ITEMS_PER_PAGE
+  ITEMS_PER_PAGE,
+  VALUE_ROUNDING_MODE,
+  AMOUNT_ROUNDING_MODE
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 import store from '@/store/store';
@@ -38,7 +41,9 @@ describe('settings:mutations', () => {
           transaction: 'explore/tx'
         }
       },
-      [ITEMS_PER_PAGE]: 25
+      [ITEMS_PER_PAGE]: 25,
+      [VALUE_ROUNDING_MODE]: BigNumber.ROUND_DOWN,
+      [AMOUNT_ROUNDING_MODE]: BigNumber.ROUND_UP
     };
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
@@ -60,5 +65,7 @@ describe('settings:mutations', () => {
       }
     });
     expect(settings[ITEMS_PER_PAGE]).toBe(25);
+    expect(settings[VALUE_ROUNDING_MODE]).toBe(BigNumber.ROUND_DOWN);
+    expect(settings[AMOUNT_ROUNDING_MODE]).toBe(BigNumber.ROUND_UP);
   });
 });

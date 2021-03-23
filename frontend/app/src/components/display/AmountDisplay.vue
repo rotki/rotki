@@ -191,10 +191,10 @@ export default class AmountDisplay extends Vue {
     return value.toFormat(value.decimalPlaces());
   }
 
-  get rounding(): RoundingMode {
+  get rounding(): RoundingMode | undefined {
     const { ticker_symbol } = this.currency;
     const isValue = this.fiatCurrency === ticker_symbol;
-    let rounding: BigNumber.RoundingMode;
+    let rounding: BigNumber.RoundingMode | undefined = undefined;
     if (isValue) {
       rounding = this.valueRoundingMode;
     } else if (!this.convertFiat) {
