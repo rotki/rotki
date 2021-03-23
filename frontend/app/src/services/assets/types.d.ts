@@ -10,7 +10,7 @@ export interface EthereumToken {
   readonly name: string;
   readonly symbol: string;
   readonly started?: number;
-  readonly coingecko?: string;
+  readonly coingecko?: string | null;
   readonly cryptocompare?: string;
   readonly underlyingTokens?: UnderlyingToken[];
   readonly swappedFor?: string;

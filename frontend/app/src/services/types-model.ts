@@ -1,6 +1,6 @@
 export interface SupportedAsset {
   readonly identifier: string;
-  readonly coingecko?: string;
+  readonly coingecko?: string | null;
   readonly cryptocompare?: string;
   readonly active?: boolean;
   readonly ended?: number | null;

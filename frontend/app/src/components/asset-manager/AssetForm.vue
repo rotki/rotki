@@ -62,7 +62,7 @@
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="12" md="6">
+        <v-col cols="12" md="6" class="d-flex flex-row">
           <v-text-field
             v-model="coingecko"
             outlined
@@ -71,7 +71,7 @@
             :hint="$t('asset_form.labels.coingecko_hint')"
             :label="$t('asset_form.labels.coingecko')"
             :error-messages="errors['coingecko']"
-            :disabled="saving"
+            :disabled="saving || !coingeckoEnabled"
             @focus="delete errors['coingecko']"
           >
             <template #append>
@@ -82,8 +82,16 @@
               />
             </template>
           </v-text-field>
+          <v-tooltip open-delay="400" top max-width="320">
+            <template #activator="{ attrs, on }">
+              <span v-bind="attrs" v-on="on">
+                <v-checkbox v-model="coingeckoEnabled" class="ms-4 me-2" />
+              </span>
+            </template>
+            <span> {{ $t('asset_form.oracle_disable') }}</span>
+          </v-tooltip>
         </v-col>
-        <v-col cols="12" md="6">
+        <v-col cols="12" md="6" class="d-flex flex-row">
           <v-text-field
             v-model="cryptocompare"
             outlined
@@ -92,7 +100,7 @@
             :label="$t('asset_form.labels.cryptocompare')"
             :hint="$t('asset_form.labels.cryptocompare_hint')"
             :error-messages="errors['cryptocompare']"
-            :disabled="saving"
+            :disabled="saving || !cryptocompareEnabled"
             @focus="delete errors['cryptocompare']"
           >
             <template #append>
@@ -103,6 +111,14 @@
               />
             </template>
           </v-text-field>
+          <v-tooltip open-delay="400" top max-width="320">
+            <template #activator="{ attrs, on }">
+              <span v-bind="attrs" v-on="on">
+                <v-checkbox v-model="cryptocompareEnabled" class="ms-4 me-2" />
+              </span>
+            </template>
+            <span> {{ $t('asset_form.oracle_disable') }}</span>
+          </v-tooltip>
         </v-col>
       </v-row>
     </v-form>
@@ -252,6 +268,8 @@ export default class AssetForm extends Vue {
   protocol: string = '';
   swappedFor: string = '';
   forked: string = '';
+  coingeckoEnabled: boolean = false;
+  cryptocompareEnabled: boolean = false;
   fetchSupportedAssets!: (refresh: boolean) => Promise<void>;
   fetchTokenDetails!: (address: string) => Promise<ERC20Token>;
   fetching: boolean = false;
@@ -307,16 +325,16 @@ export default class AssetForm extends Vue {
   }
 
   get token(): EthereumToken {
+    const ut = this.underlyingTokens;
     return {
       address: this.address,
       name: this.name,
       symbol: this.symbol,
       decimals: parseInt(this.decimals),
-      coingecko: value(this.coingecko),
-      cryptocompare: value(this.cryptocompare),
+      coingecko: this.coingeckoEnabled ? value(this.coingecko) : null,
+      cryptocompare: this.cryptocompareEnabled ? value(this.cryptocompare) : '',
       started: time(this.started),
-      underlyingTokens:
-        this.underlyingTokens.length > 0 ? this.underlyingTokens : undefined,
+      underlyingTokens: ut.length > 0 ? ut : undefined,
       swappedFor: value(this.swappedFor),
       protocol: value(this.protocol)
     };
@@ -330,8 +348,8 @@ export default class AssetForm extends Vue {
       started: time(this.started),
       forked: value(this.forked),
       swappedFor: value(this.swappedFor),
-      coingecko: value(this.coingecko),
-      cryptocompare: value(this.cryptocompare)
+      coingecko: this.coingeckoEnabled ? value(this.coingecko) : null,
+      cryptocompare: this.cryptocompareEnabled ? value(this.cryptocompare) : ''
     };
   }
 
@@ -361,6 +379,9 @@ export default class AssetForm extends Vue {
       : '';
     this.coingecko = token.coingecko ?? '';
     this.cryptocompare = token.cryptocompare ?? '';
+
+    this.coingeckoEnabled = token.coingecko !== null;
+    this.cryptocompareEnabled = token.cryptocompare !== '';
 
     if ('assetType' in token) {
       this.forked = token.forked ?? '';
