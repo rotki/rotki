@@ -12,6 +12,7 @@ Changelog
 * :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
 * :bug:`2524` Users will now not be able to delete assets from the Global DB if any account in the local system owns them.
+* :bug:`2631` Balancer trades will now be displaying the correct trade rate, both in the trade history section but also in the exported CSV.
 
 * :release:`1.15.2 <2021-03-21>`
 * :bug:`1996` Querying coinbasepro deposits and withdrawals should now be much faster thanks to using their new API endpoints.
