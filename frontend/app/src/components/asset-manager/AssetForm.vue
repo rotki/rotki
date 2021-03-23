@@ -331,7 +331,7 @@ export default class AssetForm extends Vue {
       name: this.name,
       symbol: this.symbol,
       decimals: parseInt(this.decimals),
-      coingecko: this.coingeckoEnabled ? value(this.coingecko) : '',
+      coingecko: this.coingeckoEnabled ? value(this.coingecko) : null,
       cryptocompare: this.cryptocompareEnabled ? value(this.cryptocompare) : '',
       started: time(this.started),
       underlyingTokens: ut.length > 0 ? ut : undefined,
@@ -348,7 +348,7 @@ export default class AssetForm extends Vue {
       started: time(this.started),
       forked: value(this.forked),
       swappedFor: value(this.swappedFor),
-      coingecko: this.coingeckoEnabled ? value(this.coingecko) : '',
+      coingecko: this.coingeckoEnabled ? value(this.coingecko) : null,
       cryptocompare: this.cryptocompareEnabled ? value(this.cryptocompare) : ''
     };
   }
@@ -380,7 +380,7 @@ export default class AssetForm extends Vue {
     this.coingecko = token.coingecko ?? '';
     this.cryptocompare = token.cryptocompare ?? '';
 
-    this.coingeckoEnabled = token.coingecko !== '';
+    this.coingeckoEnabled = token.coingecko !== null;
     this.cryptocompareEnabled = token.cryptocompare !== '';
 
     if ('assetType' in token) {
