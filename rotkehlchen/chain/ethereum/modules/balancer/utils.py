@@ -365,7 +365,7 @@ def calculate_trade_from_swaps(
         base_asset=swaps[-1].token1,
         quote_asset=swaps[0].token0,
         amount=swaps[-1].amount1_out,
-        rate=Price(swaps[-1].amount1_out / swaps[0].amount0_in),
+        rate=Price(swaps[0].amount0_in / swaps[-1].amount1_out),
         swaps=swaps,
         trade_index=trade_index,
     )
