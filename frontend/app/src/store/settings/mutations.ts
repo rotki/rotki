@@ -1,3 +1,4 @@
+import { default as BigNumber } from 'bignumber.js';
 import {
   TIMEFRAME_SETTING,
   DEFI_SETUP_DONE,
@@ -9,7 +10,9 @@ import {
   CURRENCY_LOCATION,
   REFRESH_PERIOD,
   EXPLORERS,
-  ITEMS_PER_PAGE
+  ITEMS_PER_PAGE,
+  AMOUNT_ROUNDING_MODE,
+  VALUE_ROUNDING_MODE
 } from '@/store/settings/consts';
 import { defaultState } from '@/store/settings/state';
 import {
@@ -22,6 +25,7 @@ import {
 } from '@/store/settings/types';
 import { Writeable } from '@/types';
 import { CurrencyLocation } from '@/typing/types';
+import RoundingMode = BigNumber.RoundingMode;
 
 type Mutations<S = SettingsState> = {
   [DEFI_SETUP_DONE](state: S, done: boolean): void;
@@ -35,6 +39,8 @@ type Mutations<S = SettingsState> = {
   [REFRESH_PERIOD](state: S, period: RefreshPeriod): void;
   [EXPLORERS](state: S, explorers: ExplorersSettings): void;
   [ITEMS_PER_PAGE](state: S, itemsPerPage: number): void;
+  [AMOUNT_ROUNDING_MODE](state: S, mode: RoundingMode): void;
+  [VALUE_ROUNDING_MODE](state: S, mode: RoundingMode): void;
   restore(state: S, persisted: S): void;
   reset(state: S): void;
 };
@@ -84,6 +90,18 @@ export const mutations: Mutations = {
   },
   [ITEMS_PER_PAGE](state: Writeable<SettingsState>, itemsPerPage: number) {
     state.itemsPerPage = itemsPerPage;
+  },
+  [AMOUNT_ROUNDING_MODE](
+    state: Writeable<SettingsState>,
+    roundingMode: RoundingMode
+  ) {
+    state.amountRoundingMode = roundingMode;
+  },
+  [VALUE_ROUNDING_MODE](
+    state: Writeable<SettingsState>,
+    roundingMode: RoundingMode
+  ) {
+    state.valueRoundingMode = roundingMode;
   },
   restore(state: SettingsState, persisted: SettingsState) {
     Object.assign(state, persisted);

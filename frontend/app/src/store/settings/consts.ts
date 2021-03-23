@@ -9,6 +9,8 @@ export const CURRENCY_LOCATION = 'currencyLocation' as 'currencyLocation';
 export const REFRESH_PERIOD = 'refreshPeriod' as const;
 export const EXPLORERS = 'explorers' as const;
 export const ITEMS_PER_PAGE = 'itemsPerPage' as const;
+export const AMOUNT_ROUNDING_MODE = 'amountRoundingMode' as const;
+export const VALUE_ROUNDING_MODE = 'valueRoundingMode' as const;
 
 export const TIMEFRAME_ALL = 'All';
 export const TIMEFRAME_YEAR = '1Y';
