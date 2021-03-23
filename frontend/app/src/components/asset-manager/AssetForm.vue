@@ -293,7 +293,7 @@ export default class AssetForm extends Vue {
     const { decimals, name, symbol } = await this.fetchTokenDetails(
       this.address
     );
-    this.decimals = decimals?.toString() ?? '18';
+    this.decimals = decimals?.toString() ?? '';
     this.name = name ?? '';
     this.symbol = symbol ?? '';
     this.fetching = false;
