@@ -821,8 +821,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
     def get_all_cache_data(self) -> List[Dict[str, Any]]:
         """Returns all current cryptocompare cache data
 
-        Note: The return asset identifiers are the cryptocompare ones and not
-        the canonical ones
+        Each list entry contains from/to asset ids and from to timestamps
         """
         cache_data = []
         for cache_key in self.price_history_file:
