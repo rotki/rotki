@@ -121,7 +121,7 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
         base_asset=EthereumToken('WETH'),
         quote_asset=EthereumToken('AAVE'),
         amount=AssetAmount(FVal('1.616934038985744521')),
-        rate=Price(FVal('0.1435961933076020882129179755')),
+        rate=Price(FVal('6.963972908793392530935439799')),
         trade_index=1,
         swaps=[
             AMMSwap(
@@ -146,7 +146,7 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
         base_asset=EthereumToken('AAVE'),
         quote_asset=EthereumToken('WETH'),
         amount=AssetAmount(FVal('11.260286362820602094')),
-        rate=Price(FVal('7.061804774312194764662462992')),
+        rate=Price(FVal('0.1416068599966922676173010716')),
         trade_index=0,
         swaps=[
             AMMSwap(
@@ -171,7 +171,7 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
         base_asset=EthereumToken('WETH'),
         quote_asset=EthereumToken('SYN'),
         amount=AssetAmount(FVal('1.352902561458047718')),
-        rate=Price(FVal('0.001380394982972144001321983066')),
+        rate=Price(FVal('724.4303350385182691258363763')),
         trade_index=0,
         swaps=[
             AMMSwap(
@@ -201,7 +201,7 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
             decimals=18,
         ),
         amount=AssetAmount(FVal('0.205709519074945018')),
-        rate=Price(FVal('0.004296621671385733368065627638')),
+        rate=Price(FVal('232.7409943164679514496089589')),
         trade_index=0,
         swaps=[
             AMMSwap(
@@ -231,7 +231,7 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
         base_asset=EthereumToken('API3'),
         quote_asset=EthereumToken('WETH'),
         amount=AssetAmount(FVal('295.881648100500428692')),
-        rate=Price(FVal('298.7939728237741971462915003')),
+        rate=Price(FVal('0.003346787723157288562491614498')),
         trade_index=0,
         swaps=[
             AMMSwap(
@@ -256,7 +256,7 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
         base_asset=EthereumToken('WETH'),
         quote_asset=EthereumToken('MFT'),
         amount=AssetAmount(FVal('0.686544199299304057')),
-        rate=Price(FVal('0.000004102142824540561502137803041')),
+        rate=Price(FVal('243775.0324093115004367119900')),
         trade_index=0,
         swaps=[
             AMMSwap(
@@ -281,7 +281,7 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
         base_asset=EthereumToken('WETH'),
         quote_asset=EthereumToken('AAVE'),
         amount=AssetAmount(FVal('3.055412574642681758')),
-        rate=Price(FVal('0.1445898203393074319511006560')),
+        rate=Price(FVal('6.916116208273240607778771150')),
         trade_index=1,
         swaps=[
             AMMSwap(
@@ -306,7 +306,7 @@ BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
         base_asset=EthereumToken('AAVE'),
         quote_asset=EthereumToken('WETH'),
         amount=AssetAmount(FVal('21.131588567541018817')),
-        rate=Price(FVal('6.967603293995613380604376603')),
+        rate=Price(FVal('0.1435213742524287826717337545')),
         trade_index=0,
         swaps=[
             AMMSwap(
