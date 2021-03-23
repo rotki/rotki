@@ -40,6 +40,7 @@ import {
   BalanceState,
   BlockchainAccountPayload,
   BlockchainBalancePayload,
+  ERC20Token,
   ExchangeBalancePayload,
   ExchangePayload,
   HistoricPricePayload,
@@ -1182,5 +1183,36 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       );
     }
     setStatus(Status.LOADED, section, status, commit);
+  },
+
+  async fetchTokenDetails({ commit }, address: string): Promise<ERC20Token> {
+    try {
+      const taskType = TaskType.ERC20_DETAILS;
+      const { taskId } = await api.erc20details(address);
+      const task = createTask(taskId, taskType, {
+        title: i18n
+          .t('actions.assets.erc20.task.title', { address })
+          .toString(),
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<ERC20Token, TaskMeta>(taskType);
+      return result;
+    } catch (e) {
+      notify(
+        i18n
+          .t('actions.assets.erc20.error.description', {
+            message: e.message
+          })
+          .toString(),
+        i18n.t('actions.assets.erc20.error.title', { address }).toString(),
+        Severity.ERROR,
+        true
+      );
+      return {};
+    }
   }
 };

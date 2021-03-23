@@ -17,9 +17,10 @@
           <v-text-field
             v-model="address"
             outlined
+            :loading="fetching"
             :error-messages="errors['address']"
             :label="$t('asset_form.labels.address')"
-            :disabled="saving"
+            :disabled="saving || fetching"
             @focus="delete errors['address']"
           />
         </v-col>
@@ -32,7 +33,7 @@
             outlined
             :error-messages="errors['name']"
             :label="$t('asset_form.labels.name')"
-            :disabled="saving"
+            :disabled="saving || fetching"
             @focus="delete errors['name']"
           />
         </v-col>
@@ -42,7 +43,7 @@
             outlined
             :error-messages="errors['symbol']"
             :label="$t('asset_form.labels.symbol')"
-            :disabled="saving"
+            :disabled="saving || fetching"
             @focus="delete errors['symbol']"
           />
         </v-col>
@@ -55,7 +56,7 @@
             max="18"
             :label="$t('asset_form.labels.decimals')"
             :error-messages="errors['decimals']"
-            :disabled="saving"
+            :disabled="saving || fetching"
             @focus="delete errors['decimals']"
           />
         </v-col>
@@ -201,7 +202,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import Fragment from '@/components/helper/Fragment';
@@ -211,6 +212,7 @@ import FileUpload from '@/components/import/FileUpload.vue';
 import { EthereumToken, UnderlyingToken } from '@/services/assets/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { SupportedAsset } from '@/services/types-model';
+import { ERC20Token } from '@/store/balances/types';
 import { showError } from '@/store/utils';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
@@ -232,7 +234,9 @@ const ETHEREUM_TOKEN = 'ethereum token';
     RowActions,
     FileUpload
   },
-  methods: { ...mapActions('balances', ['fetchSupportedAssets']) }
+  methods: {
+    ...mapActions('balances', ['fetchSupportedAssets', 'fetchTokenDetails'])
+  }
 })
 export default class AssetForm extends Vue {
   address: string = '';
@@ -249,6 +253,9 @@ export default class AssetForm extends Vue {
   swappedFor: string = '';
   forked: string = '';
   fetchSupportedAssets!: (refresh: boolean) => Promise<void>;
+  fetchTokenDetails!: (address: string) => Promise<ERC20Token>;
+  fetching: boolean = false;
+  dontAutoFetch: boolean = false;
 
   underlyingTokens: UnderlyingToken[] = [];
   icon: File | null = null;
@@ -269,6 +276,27 @@ export default class AssetForm extends Vue {
 
   get isEthereumToken() {
     return this.assetType === ETHEREUM_TOKEN;
+  }
+
+  @Watch('address')
+  async onAddressChange() {
+    if (
+      this.dontAutoFetch ||
+      !this.address.startsWith('0x') ||
+      this.address.length < 42
+    ) {
+      this.dontAutoFetch = false;
+      return;
+    }
+
+    this.fetching = true;
+    const { decimals, name, symbol } = await this.fetchTokenDetails(
+      this.address
+    );
+    this.decimals = decimals?.toString() ?? '';
+    this.name = name ?? '';
+    this.symbol = symbol ?? '';
+    this.fetching = false;
   }
 
   get preview(): string | null {
@@ -319,6 +347,7 @@ export default class AssetForm extends Vue {
 
   mounted() {
     const token = this.edit;
+    this.dontAutoFetch = !!this.edit;
     if (!token) {
       return;
     }

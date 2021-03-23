@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2602` Users will now have the erc20 token details (name, symbol, decimals) automatically filled when possible when they add new ethereum token assets.
 * :feature:`2427` The visible row selection will now persist after a re-login. Changing the visible rows will now affect all the tables.
 * :feature:`2452` Users will now be able to use a two-mode sorting functionality when sorting tables.
 * :feature:`2547` Users can now easily access the documentation on how to find the CryptoCompare/CoinGecko identifiers in asset manager.

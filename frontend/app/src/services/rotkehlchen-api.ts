@@ -925,6 +925,19 @@ export class RotkehlchenApi {
       })
       .then(handleResponse);
   }
+
+  async erc20details(address: string): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>('/blockchains/ETH/erc20details', {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          address
+        }),
+        validateStatus: validWithoutSessionStatus,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
 }
 
 export const api = new RotkehlchenApi();
