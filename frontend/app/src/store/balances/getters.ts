@@ -12,6 +12,7 @@ import {
   BalanceState,
   BlockchainAccountWithBalance,
   BlockchainTotal,
+  ExchangeRateGetter,
   L2Totals,
   LocationBalance,
   ManualBalanceByLocation
@@ -31,7 +32,7 @@ import {
 } from '@/typing/types';
 import { uniqueStrings } from '@/utils/array';
 import { assert } from '@/utils/assertions';
-import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { Zero } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
 
 export interface BalanceGetters {
@@ -39,7 +40,7 @@ export interface BalanceGetters {
   btcAccounts: BlockchainAccountWithBalance[];
   kusamaBalances: BlockchainAccountWithBalance[];
   totals: AssetBalance[];
-  exchangeRate: (currency: string) => number | undefined;
+  exchangeRate: ExchangeRateGetter;
   exchanges: ExchangeInfo[];
   exchangeBalances: (exchange: string) => AssetBalance[];
   aggregatedBalances: AssetBalance[];
@@ -282,7 +283,7 @@ export const getters: Getters<
         convertedValue = perLocationBalance.amount;
       } else {
         convertedValue = perLocationBalance.usdValue.multipliedBy(
-          bigNumberify(currentExchangeRate)
+          currentExchangeRate
         );
       }
 

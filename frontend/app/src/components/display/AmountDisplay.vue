@@ -65,6 +65,7 @@ import { mapGetters, mapState } from 'vuex';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { Currency } from '@/model/currency';
+import { ExchangeRateGetter } from '@/store/balances/types';
 import { GeneralSettings } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -127,7 +128,7 @@ export default class AmountDisplay extends Vue {
   thousandSeparator!: string;
   decimalSeparator!: string;
   currencyLocation!: GeneralSettings['currencyLocation'];
-  exchangeRate!: (currency: string) => number;
+  exchangeRate!: ExchangeRateGetter;
 
   get shownCurrency(): ShownCurrency {
     return this.showCurrency === 'none' && !!this.fiatCurrency
@@ -184,8 +185,8 @@ export default class AmountDisplay extends Vue {
 
   private convertValue(value: BigNumber): BigNumber {
     const { ticker_symbol } = this.currency;
-    const rate = bigNumberify(this.exchangeRate(ticker_symbol));
-    return value.multipliedBy(rate);
+    const rate = this.exchangeRate(ticker_symbol);
+    return rate ? value.multipliedBy(rate) : value;
   }
 
   formatValue(value: BigNumber): string {

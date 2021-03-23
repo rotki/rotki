@@ -90,7 +90,11 @@ import DataTable from '@/components/helper/DataTable.vue';
 import { CURRENCY_USD } from '@/data/currencies';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
-import { AssetBalance, AssetPrices } from '@/store/balances/types';
+import {
+  AssetBalance,
+  AssetPrices,
+  ExchangeRateGetter
+} from '@/store/balances/types';
 
 @Component({
   components: { DataTable, AmountDisplay },
@@ -112,7 +116,7 @@ export default class AssetBalances extends Vue {
   currency!: Currency;
   floatingPrecision!: number;
   prices!: AssetPrices;
-  exchangeRate!: (currency: string) => number;
+  exchangeRate!: ExchangeRateGetter;
   isTaskRunning!: (type: TaskType) => boolean;
 
   get symbol(): string {

@@ -134,6 +134,7 @@ import {
   ManualBalance,
   ManualBalanceWithValue
 } from '@/services/balances/types';
+import { ExchangeRateGetter } from '@/store/balances/types';
 import { Tags } from '@/typing/types';
 
 @Component({
@@ -202,7 +203,7 @@ export default class ManualBalancesList extends Vue {
   tags!: Tags;
   currency!: Currency;
   floatingPrecision!: number;
-  exchangeRate!: (currency: string) => number;
+  exchangeRate!: ExchangeRateGetter;
 
   @Prop({ required: false, type: Boolean, default: false })
   loading: boolean = false;

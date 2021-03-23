@@ -1,3 +1,4 @@
+import { default as BigNumber } from 'bignumber.js';
 import { PriceOracles } from '@/model/action-result';
 import { Currency } from '@/model/currency';
 import { SupportedDefiProtocols } from '@/services/defi/types';
@@ -54,7 +55,7 @@ export interface Credentials {
   readonly submitUsageAnalytics?: boolean;
 }
 
-export type ExchangeRates = { [key: string]: number };
+export type ExchangeRates = { [key: string]: BigNumber };
 
 export interface ExchangeInfo {
   readonly name: string;
@@ -66,10 +67,6 @@ export type ExchangeData = { [exchange: string]: AssetBalances };
 export interface ProfitLossPeriod {
   readonly start: number;
   readonly end: number;
-}
-
-export interface FiatExchangeRates {
-  [currency: string]: string;
 }
 
 export interface AccountSession {
