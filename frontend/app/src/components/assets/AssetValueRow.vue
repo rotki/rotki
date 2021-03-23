@@ -36,7 +36,7 @@
           <amount-display
             class="pt-4"
             show-currency="symbol"
-            fiat-currency="USD"
+            :fiat-currency="identifier"
             :amount="info.amount"
             :value="info.usdValue"
           />

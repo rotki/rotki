@@ -10,6 +10,7 @@ import 'typeface-roboto-mono';
 import { Interop } from '@/plugins/interop';
 import vuetify from '@/plugins/vuetify';
 import { setupPremium } from '@/utils/premium';
+import { setupFormatter } from '@/utils/setup-formatter';
 import i18n from './i18n';
 import router from './router';
 import store from './store/store';
@@ -28,3 +29,5 @@ new Vue({
   i18n,
   render: h => h(App)
 }).$mount('#app');
+
+setupFormatter();
