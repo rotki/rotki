@@ -57,5 +57,5 @@ contextBridge.exposeInMainWorld('interop', {
     });
     return ipcAction(IPC_DOWNLOAD_UPDATE);
   },
-  installUpdate: () => ipcRenderer.send(IPC_INSTALL_UPDATE)
+  installUpdate: () => ipcAction(IPC_INSTALL_UPDATE)
 } as Interop);

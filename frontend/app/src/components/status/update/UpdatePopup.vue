@@ -13,7 +13,7 @@
     rounded
     width="400px"
   >
-    <v-row align="center">
+    <v-row v-if="!restarting" align="center">
       <v-col cols="auto">
         <v-icon v-if="error" large color="error">
           mdi-alert-circle-outline
@@ -40,6 +40,12 @@
         <span v-else>{{ $t('update_popup.downloaded') }}</span>
       </v-col>
     </v-row>
+    <v-row v-else align="center">
+      <v-col cols="auto">
+        <v-icon large color="primary"> mdi-spin mdi-loading </v-icon>
+      </v-col>
+      <v-col class="text-body-1">{{ $t('update_popup.restart') }}</v-col>
+    </v-row>
 
     <v-progress-linear
       v-if="downloading"
@@ -60,7 +66,7 @@
         {{ $t('update_popup.action.dismiss') }}
       </v-btn>
     </template>
-    <template v-else-if="!downloading" #action="{ attrs }">
+    <template v-else-if="!downloading && !restarting" #action="{ attrs }">
       <v-btn text v-bind="attrs" @click="popup = false">
         {{ $t('update_popup.action.cancel') }}
       </v-btn>
@@ -90,6 +96,7 @@ export default class UpdatePopup extends Vue {
   popup: boolean = false;
   downloadReady: boolean = false;
   downloading: boolean = false;
+  restarting: boolean = false;
   percentage: number = 0;
   error: string = '';
 
@@ -119,7 +126,7 @@ export default class UpdatePopup extends Vue {
 
   async install() {
     this.downloadReady = false;
-    this.popup = false;
+    this.restarting = true;
     const result = await this.interop.installUpdate();
     if (typeof result !== 'boolean') {
       this.error = this.$t('update_popup.install_failed.message', {
