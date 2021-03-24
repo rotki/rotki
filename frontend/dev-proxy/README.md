@@ -66,3 +66,33 @@ run the following.
 ```bash
 yarn build:bundle
 ```
+
+## Mocking async queries
+
+Look into the `async-mock.example.json` and create an `async-mock.json` file in the same 
+directory. Follow a similar structure as the example.
+
+```json 
+{
+  "/api/1/assets/updates": {
+    "GET": [
+      {
+        "local_version": 1,
+        "remote_version": 5
+      },
+      {
+        "local_version": 2,
+        "remote_version": 5
+      }
+    ]
+  }
+}
+```
+
+You can put the mocked url on the root of the json and under that you can add the request
+verb. The request verb can either be an object or an array.
+
+If an object is used, this object will be returned every time you query the same endpoint/verb combination.
+If an array is used instead for each request the next index available will be served. e.g. The first request
+will serve the item at index `0`, the second the item and index `1` etc. If the end of the available responses 
+is reached the last item will keep being returned for any consequent requests.
