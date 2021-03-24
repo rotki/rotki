@@ -30,6 +30,7 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { DebugSettings, ExposedUtilities } from '@/electron-main/ipc';
 import { api } from '@/services/rotkehlchen-api';
+import store from '@/store/store';
 
 export const setupPremium = () => {
   window.Vue = Vue;
@@ -58,6 +59,11 @@ export const setupPremium = () => {
         },
         epochStartSubtract(amount: number, unit: TimeUnit): number {
           return moment().subtract(amount, unit).startOf(TIME_UNIT_DAY).unix();
+        }
+      },
+      data: {
+        assetInfo: (identifier: string) => {
+          return store.getters['balances/assetInfo'](identifier);
         }
       }
     }
