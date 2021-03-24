@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Update TRB (Tellor Tributes) ERC20 token address due to recent migration.
 * :feature:`2620` Users will now be able to disable oracles per asset using the asset editor.
 * :feature:`2602` Users will now have the erc20 token details (name, symbol, decimals) automatically filled when possible when they add new ethereum token assets.
 * :feature:`2427` The visible row selection will now persist after a re-login. Changing the visible rows will now affect all the tables.
