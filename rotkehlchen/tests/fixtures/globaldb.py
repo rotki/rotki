@@ -2,6 +2,8 @@ from typing import List, Optional
 
 import pytest
 
+from pathlib import Path
+from shutil import copyfile
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.globaldb import GlobalDBHandler
 
@@ -25,5 +27,19 @@ def create_globaldb(
 
 
 @pytest.fixture(name='globaldb')
-def fixture_globaldb(data_dir):
-    return create_globaldb(data_directory=data_dir)
+def fixture_globaldb(data_dir, globaldb_version, tmpdir_factory):
+    if globaldb_version is None:  # no specific version -- normal test
+        return create_globaldb(data_directory=data_dir)
+
+    root_dir = Path(__file__).resolve().parent.parent.parent
+    source_db_path = root_dir / 'tests' / 'data' / f'v{globaldb_version}_global.db'
+    new_data_dir = Path(tmpdir_factory.mktemp('test_data_dir'))
+    new_global_dir = new_data_dir / 'global_data'
+    new_global_dir.mkdir(parents=True, exist_ok=True)
+    copyfile(source_db_path, new_global_dir / 'global.db')
+    return create_globaldb(new_data_dir)
+
+
+@pytest.fixture(name='globaldb_version')
+def fixture_globaldb_version() -> Optional[int]:
+    return None

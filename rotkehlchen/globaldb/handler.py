@@ -17,6 +17,7 @@ from rotkehlchen.errors import (
     ModuleInitializationFailure,
     UnknownAsset,
 )
+from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
 from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress
 
 from .schema import DB_SCRIPT_CREATE_TABLES
@@ -26,7 +27,19 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-GLOBAL_DB_VERSION = 1
+GLOBAL_DB_VERSION = 2
+
+
+def _get_setting_value(cursor: sqlite3.Cursor, name: str, default_value: int) -> int:
+    query = cursor.execute(
+        'SELECT value FROM settings WHERE name=?;', (name,),
+    )
+    result = query.fetchall()
+    # If setting is not set, it's the default
+    if len(result) == 0:
+        return default_value
+
+    return int(result[0][0])
 
 
 class GlobalDBHandler():
@@ -61,6 +74,9 @@ class GlobalDBHandler():
         connection = sqlite3.connect(dbname)
         connection.executescript(DB_SCRIPT_CREATE_TABLES)
         cursor = connection.cursor()
+        db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+        if db_version == 1:
+            upgrade_ethereum_asset_ids(connection)
         cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             ('version', str(GLOBAL_DB_VERSION)),
@@ -73,15 +89,7 @@ class GlobalDBHandler():
     def get_setting_value(name: str, default_value: int) -> int:
         """Get the value of a setting or default. Typing is always int for now"""
         cursor = GlobalDBHandler()._conn.cursor()
-        query = cursor.execute(
-            'SELECT value FROM settings WHERE name=?;', (name,),
-        )
-        result = query.fetchall()
-        # If setting is not set, it's the default
-        if len(result) == 0:
-            return default_value
-
-        return int(result[0][0])
+        return _get_setting_value(cursor, name, default_value)
 
     @staticmethod
     def add_setting_value(name: str, value: Any) -> None:
