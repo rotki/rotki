@@ -1044,7 +1044,8 @@
     "install_failed": {
       "message": "An error occurred while installing the application update: {message}"
     },
-    "progress": "{percentage} %"
+    "progress": "{percentage} %",
+    "restart": "rotki will restart in a moment to apply the update."
   },
   "upgrade_row": {
     "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
