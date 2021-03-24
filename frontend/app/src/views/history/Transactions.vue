@@ -94,9 +94,10 @@
               />
             </template>
             <template #expanded-item="{ headers, item }">
-              <td :colspan="headers.length" class="transactions__details">
-                <transaction-details :transaction="item" />
-              </td>
+              <transaction-details
+                :transaction="item"
+                :colspan="headers.length"
+              />
             </template>
           </data-table>
         </v-sheet>
@@ -364,12 +365,6 @@ export default class Transactions extends Mixins(StatusMixin) {
 </script>
 
 <style scoped lang="scss">
-.transactions {
-  &__details {
-    background-color: var(--v-rotki-light-grey-base);
-  }
-}
-
 ::v-deep {
   tbody {
     tr {

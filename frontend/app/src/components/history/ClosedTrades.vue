@@ -109,46 +109,39 @@
             </template>
 
             <template #expanded-item="{ headers, item }">
-              <td
-                :colspan="headers.length"
-                class="closed-trades__trade__details"
-              >
-                <v-col cols="12">
-                  <v-row class="pt-3 pb-3">
-                    <span class="text-h6">
-                      {{ $t('closed_trades.details.title') }}
-                    </span>
-                  </v-row>
-                  <v-row>
-                    <v-col>
-                      <v-card outlined>
-                        <v-card-title class="text-subtitle-2">
-                          {{ $t('closed_trades.details.notes') }}
-                        </v-card-title>
-                        <v-card-text>
-                          {{
-                            item.notes
-                              ? item.notes
-                              : $t('closed_trades.details.note_data')
-                          }}
-                        </v-card-text>
-                      </v-card>
-                    </v-col>
-                  </v-row>
-                  <v-row class="mt-2">
-                    <v-col cols="auto" class="font-weight-medium">
-                      {{ $t('closed_trades.details.link') }}
-                    </v-col>
-                    <v-col>
-                      {{
-                        item.link
-                          ? item.link
-                          : $t('closed_trades.details.link_data')
-                      }}
-                    </v-col>
-                  </v-row>
-                </v-col>
-              </td>
+              <table-expand-container visible :colspan="headers.length">
+                <template #title>
+                  {{ $t('closed_trades.details.title') }}
+                </template>
+                <v-row>
+                  <v-col>
+                    <v-card outlined>
+                      <v-card-title class="text-subtitle-2">
+                        {{ $t('closed_trades.details.notes') }}
+                      </v-card-title>
+                      <v-card-text>
+                        {{
+                          item.notes
+                            ? item.notes
+                            : $t('closed_trades.details.note_data')
+                        }}
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                </v-row>
+                <v-row class="mt-2">
+                  <v-col cols="auto" class="font-weight-medium">
+                    {{ $t('closed_trades.details.link') }}
+                  </v-col>
+                  <v-col>
+                    {{
+                      item.link
+                        ? item.link
+                        : $t('closed_trades.details.link_data')
+                    }}
+                  </v-col>
+                </v-row>
+              </table-expand-container>
             </template>
             <template
               v-if="tradesLimit <= tradesTotal && tradesLimit > 0"
@@ -201,6 +194,7 @@ import ExternalTradeForm from '@/components/ExternalTradeForm.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
@@ -214,6 +208,7 @@ import { ActionStatus, Message } from '@/store/types';
 @Component({
   components: {
     DataTable,
+    TableExpandContainer,
     Fragment,
     CardTitle,
     IgnoreButtons,
@@ -443,14 +438,6 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
 </script>
 
 <style scoped lang="scss">
-.closed-trades {
-  &__trade {
-    &__details {
-      background-color: var(--v-rotki-light-grey-base);
-    }
-  }
-}
-
 ::v-deep {
   th {
     &:nth-child(2) {

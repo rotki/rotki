@@ -94,25 +94,21 @@
               />
             </template>
             <template #expanded-item="{ headers, item }">
-              <td
-                :colspan="headers.length"
-                class="deposits-withdrawals__movement__details"
-              >
-                <v-card outlined>
-                  <v-card-title>
-                    {{ $t('deposits_withdrawals.details.title') }}
-                  </v-card-title>
-                  <v-card-text>
-                    <movement-links
-                      v-if="item.address || item.transactionId"
-                      :item="item"
-                    />
-                    <span v-else class="font-weight-medium">
-                      {{ $t('deposits_withdrawals.details.no_details') }}
-                    </span>
-                  </v-card-text>
-                </v-card>
-              </td>
+              <table-expand-container visible :colspan="headers.length">
+                <template #title>
+                  {{ $t('deposits_withdrawals.details.title') }}
+                </template>
+                <movement-links
+                  v-if="item.address || item.transactionId"
+                  :item="item"
+                />
+                <div
+                  v-else
+                  class="font-weight-medium pa-4 deposits-withdrawals__movement__details--empty"
+                >
+                  {{ $t('deposits_withdrawals.details.no_details') }}
+                </div>
+              </table-expand-container>
             </template>
           </data-table>
         </v-sheet>
@@ -132,6 +128,7 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import MovementLinks from '@/components/history/MovementLinks.vue';
@@ -157,6 +154,7 @@ import { ActionStatus, Message } from '@/store/types';
 
 @Component({
   components: {
+    TableExpandContainer,
     DataTable,
     CardTitle,
     IgnoreButtons,
@@ -352,8 +350,9 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
 .deposits-withdrawals {
   &__movement {
     &__details {
-      height: 150px !important;
-      background-color: var(--v-rotki-light-grey-base);
+      &--empty {
+        height: 100px;
+      }
     }
   }
 }

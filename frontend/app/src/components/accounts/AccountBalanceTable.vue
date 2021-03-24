@@ -130,10 +130,7 @@
         </tr>
       </template>
       <template #expanded-item="{ headers, item }">
-        <td
-          :colspan="$vuetify.breakpoint.xsOnly ? 2 : headers.length"
-          class="account-balance-table__expanded"
-        >
+        <table-expand-container visible :colspan="headers.length">
           <account-asset-balances
             :title="$t('account_balance_table.assets')"
             :assets="accountAssets(item.address)"
@@ -150,7 +147,7 @@
             :title="$t('account_balance_table.loopring')"
             :assets="loopringBalances(item.address)"
           />
-        </td>
+        </table-expand-container>
       </template>
       <template #item.expand="{ item }">
         <row-expander
@@ -186,6 +183,7 @@ import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vu
 import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
+import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { CURRENCY_USD } from '@/data/currencies';
@@ -206,6 +204,7 @@ import { Zero } from '@/utils/bignumbers';
 @Component({
   components: {
     DataTable,
+    TableExpandContainer,
     LabeledAddressDisplay,
     TagIcon,
     RowActions,
@@ -498,10 +497,6 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
 
   &__total {
     font-weight: 500;
-  }
-
-  &__expanded {
-    background-color: var(--v-rotki-light-grey-base) !important;
   }
 
   &__tag {

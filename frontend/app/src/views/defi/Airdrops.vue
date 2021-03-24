@@ -79,13 +79,11 @@
                 />
               </template>
               <template #expanded-item="{ headers, item }">
-                <td
-                  v-if="hasDetails(item.source)"
-                  class="airdrops__details"
-                  :colspan="$vuetify.breakpoint.xsOnly ? 2 : headers.length"
-                >
-                  <poap-delivery-airdrops :items="item.details" />
-                </td>
+                <poap-delivery-airdrops
+                  :items="item.details"
+                  :colspan="headers.length"
+                  :visible="hasDetails(item.source)"
+                />
               </template>
             </data-table>
           </v-sheet>
@@ -238,12 +236,6 @@ export default class Airdrops extends Mixins(StatusMixin) {
 </script>
 
 <style scoped lang="scss">
-.airdrops {
-  &__details {
-    background-color: var(--v-rotki-light-grey-base) !important;
-  }
-}
-
 ::v-deep {
   tbody {
     tr {
