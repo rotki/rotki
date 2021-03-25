@@ -1,3 +1,5 @@
+import { CONFLICT_RESOLUTION } from '@/services/assets/consts';
+
 export interface UnderlyingToken {
   readonly address: string;
   readonly weight: string;
@@ -19,4 +21,10 @@ export interface EthereumToken {
 
 export interface AssetIdResponse {
   readonly identifier: string;
+}
+
+export type ConflictResolutionStrategy = typeof CONFLICT_RESOLUTION[number];
+
+export interface ConflictResolution {
+  readonly [assetId: string]: ConflictResolutionStrategy;
 }

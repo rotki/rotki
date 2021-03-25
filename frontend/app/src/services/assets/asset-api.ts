@@ -1,10 +1,18 @@
 import { AxiosInstance, AxiosTransformer } from 'axios';
-import { AssetIdResponse, EthereumToken } from '@/services/assets/types';
+import {
+  AssetIdResponse,
+  ConflictResolution,
+  EthereumToken
+} from '@/services/assets/types';
 import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import { ActionResult, SupportedAssets } from '@/services/types-api';
+import {
+  ActionResult,
+  PendingTask,
+  SupportedAssets
+} from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
 import {
   handleResponse,
@@ -185,6 +193,34 @@ export class AssetApi {
       .delete<ActionResult<boolean>>('/assets/all', {
         data: axiosSnakeCaseTransformer({ identifier }),
         validateStatus: validStatus
+      })
+      .then(handleResponse);
+  }
+
+  checkForAssetUpdate(): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>('/assets/updates', {
+        params: axiosSnakeCaseTransformer({ asyncQuery: true }),
+        validateStatus: validWithoutSessionStatus,
+        transformResponse: this.baseTransformer
+      })
+      .then(handleResponse);
+  }
+
+  performUpdate(resolution?: ConflictResolution): Promise<PendingTask> {
+    const data = {
+      async_query: true,
+      ...(resolution
+        ? {
+            resolution
+          }
+        : {})
+    };
+
+    return this.axios
+      .post<ActionResult<PendingTask>>('/assets/updates', data, {
+        validateStatus: validWithoutSessionStatus,
+        transformResponse: this.baseTransformer
       })
       .then(handleResponse);
   }

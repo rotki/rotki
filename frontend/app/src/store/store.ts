@@ -2,6 +2,7 @@
 import Vuex, { StoreOptions } from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
 import { VersionCheck } from '@/services/types-api';
+import { assets } from '@/store/assets';
 import { balances } from '@/store/balances';
 import { defiSections, Section, Status } from '@/store/const';
 import { storePlugins } from '@/store/debug';
@@ -163,7 +164,8 @@ const store: StoreOptions<RotkehlchenState> = {
     reports,
     settings,
     statistics,
-    staking
+    staking,
+    assets
   },
   plugins: storePlugins()
 };

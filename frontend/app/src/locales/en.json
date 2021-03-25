@@ -1175,6 +1175,22 @@
         "task": {
           "title": "Retrieving token details for {address}"
         }
+      },
+      "update": {
+        "error": {
+          "description": "The asset database update failed: {message}"
+        },
+        "task": {
+          "title": "Updating assets database"
+        }
+      },
+      "versions": {
+        "error": {
+          "description": "The asset database update check failed: {message}"
+        },
+        "task": {
+          "title": "Checking for asset database updates"
+        }
       }
     },
     "ledger_actions": {
