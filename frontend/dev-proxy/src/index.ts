@@ -100,6 +100,11 @@ setInterval(() => {
   }
 }, 8000);
 
+const createResult = (result: unknown): Record<string, unknown> => ({
+  result,
+  message: '',
+});
+
 function handleTasksStatus(res: Response) {
   manipulateResponse(res, (data) => {
     const result = data.result;
@@ -128,18 +133,22 @@ function handleTaskRequest(url: string, tasks: string, res: Response) {
     }
     if (mockAsync.completed.includes(taskId)) {
       const outcome = mockAsync.taskResponses[taskId];
-      manipulateResponse(res, () => ({
-        outcome: outcome,
-        status: 'completed',
-      }));
+      manipulateResponse(res, () =>
+        createResult({
+          outcome: outcome,
+          status: 'completed',
+        })
+      );
       delete mockAsync.taskResponses[taskId];
       const index = mockAsync.completed.indexOf(taskId);
       mockAsync.completed.splice(index, 1);
     } else if (mockAsync.pending.includes(taskId)) {
-      manipulateResponse(res, () => ({
-        outcome: null,
-        status: 'pending',
-      }));
+      manipulateResponse(res, () =>
+        createResult({
+          outcome: null,
+          status: 'pending',
+        })
+      );
     }
   } catch (e) {
     console.error(e);
