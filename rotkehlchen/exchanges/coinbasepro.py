@@ -388,6 +388,14 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         account_to_currency = self.create_or_return_account_to_currency_map()
         for entry in raw_movements:
             try:
+                # Check if the transaction has not been completed. If so it should be skipped
+                if entry.get('completed_at', None) is None:
+                    log.warning(
+                        f'Skipping coinbase pro deposit/withdrawal '
+                        f'due not having been completed: {entry}',
+                    )
+                    continue
+
                 timestamp = coinbasepro_deserialize_timestamp(entry, 'completed_at')
                 if timestamp < start_ts or timestamp > end_ts:
                     continue
