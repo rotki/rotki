@@ -1,5 +1,6 @@
 import fs from 'fs';
 import * as http from 'http';
+import * as querystring from 'querystring';
 import { Request, Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { bodyParser, default as jsonServer } from 'json-server';
@@ -218,6 +219,31 @@ function isAsyncQuery(req: Request) {
   );
 }
 
+function onProxyReq(
+  proxyReq: http.ClientRequest,
+  req: Request,
+  _res: Response
+) {
+  if (!req.body || !Object.keys(req.body).length) {
+    return;
+  }
+
+  const contentType = proxyReq.getHeader('Content-Type') ?? '';
+  const writeBody = (bodyData: string) => {
+    proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+    proxyReq.write(bodyData);
+  };
+
+  const ct = contentType.toString().toLocaleLowerCase();
+  if (ct.startsWith('application/json')) {
+    writeBody(JSON.stringify(req.body));
+  }
+
+  if (ct.startsWith('application/x-www-form-urlencoded')) {
+    writeBody(querystring.stringify(req.body));
+  }
+}
+
 function onProxyRes(
   proxyRes: http.IncomingMessage,
   req: Request,
@@ -250,6 +276,7 @@ server.use(
   createProxyMiddleware({
     target: backend,
     onProxyRes,
+    onProxyReq,
   })
 );
 server.use(middlewares);
