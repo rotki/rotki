@@ -53,6 +53,8 @@ function manipulateResponse(res: Response, callback: (original: any) => any) {
     try {
       const payload = JSON.stringify(callback(JSON.parse(response)));
       res.header('content-length', payload.length.toString());
+      res.status(200);
+      res.statusMessage = 'OK';
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       _write.call(res, payload);
@@ -198,7 +200,10 @@ function handleAsyncQuery(url: string, req: Request, res: Response) {
   mockAsync.pending.push(taskId);
   mockAsync.taskResponses[taskId] = pendingResponse;
   manipulateResponse(res, () => ({
-    task_id: taskId,
+    result: {
+      task_id: taskId,
+    },
+    message: '',
   }));
 }
 
