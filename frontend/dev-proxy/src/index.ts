@@ -228,6 +228,13 @@ function isAsyncQuery(req: Request) {
   );
 }
 
+function isPreflight(req: Request) {
+  const mockedUrls = Object.keys(mockedAsyncCalls);
+  const baseUrl = req.url.split('?')[0];
+  const index = mockedUrls.findIndex((value) => value.indexOf(baseUrl) >= 0);
+  return req.method === 'OPTIONS' && index >= 0;
+}
+
 function onProxyReq(
   proxyReq: http.ClientRequest,
   req: Request,
@@ -253,6 +260,33 @@ function onProxyReq(
   }
 }
 
+function mockPreflight(res: Response) {
+  const _write = res.write;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  res.write = (chunk: any) => {
+    try {
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header(
+        'Access-Control-Allow-Headers',
+        'X-Requested-With,content-type'
+      );
+      res.header(
+        'Access-Control-Allow-Methods',
+        'GET, POST, OPTIONS, PUT, PATCH, DELETE'
+      );
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.status(200);
+      res.statusMessage = 'OK';
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      _write.call(res, chunk);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+}
+
 function onProxyRes(
   proxyRes: http.IncomingMessage,
   req: Request,
@@ -272,6 +306,9 @@ function onProxyRes(
     handled = true;
   } else if (isAsyncQuery(req)) {
     handleAsyncQuery(url, req, res);
+    handled = true;
+  } else if (isPreflight(req)) {
+    mockPreflight(res);
     handled = true;
   }
 
