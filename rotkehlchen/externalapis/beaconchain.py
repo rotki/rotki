@@ -58,7 +58,7 @@ class BeaconChain(ExternalServiceWithApiKey):
             query_str = f'{self.url}{module}/{encoded_args}/{endpoint}'
         api_key = self._get_api_key()
         if api_key is not None:
-            query_str += '?apikey={api_key}'
+            query_str += f'?apikey={api_key}'
         times = QUERY_RETRY_TIMES
         backoff_in_seconds = 10
 
