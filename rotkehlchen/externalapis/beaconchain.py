@@ -15,10 +15,13 @@ from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
+
+MAX_WAIT_SECS = 60
 
 logger = logging.getLogger(__name__)
 
@@ -55,27 +58,66 @@ class BeaconChain(ExternalServiceWithApiKey):
             query_str = f'{self.url}{module}/{encoded_args}/{endpoint}'
         api_key = self._get_api_key()
         if api_key is not None:
-            query_str += '?apikey={api_key}'
+            query_str += f'?apikey={api_key}'
         times = QUERY_RETRY_TIMES
         backoff_in_seconds = 10
 
         logger.debug(f'Querying beaconcha.in API for {query_str}')
         while True:
             try:
-                response = self.session.get(query_str)
+                response = self.session.get(query_str, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Querying {query_str} failed due to {str(e)}') from e
 
             if response.status_code == 429:
+                minute_rate_limit = response.headers.get('x-ratelimit-limit-minute', 'unknown')
+                user_minute_rate_limit = response.headers.get('x-ratelimit-remaining-minute', 'unknown')  # noqa: E501
+                daily_rate_limit = response.headers.get('x-ratelimit-limit-day', 'unknown')
+                user_daily_rate_limit = response.headers.get('x-ratelimit-remaining-day', 'unknown')  # noqa: E501
+                month_rate_limit = response.headers.get('x-ratelimit-limit-month', 'unknown')
+                user_month_rate_limit = response.headers.get('x-ratelimit-remaining-month', 'unknown')  # noqa: E501
                 if times == 0:
-                    raise RemoteError(
+                    msg = (
                         f'Beaconchain API request {response.url} failed '
                         f'with HTTP status code {response.status_code} and text '
-                        f'{response.text} after 5 retries',
+                        f'{response.text} after 5 retries'
                     )
+                    logger.debug(
+                        f'{msg} minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
+                        f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
+                        f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
+                    )
+                    raise RemoteError(msg)
 
-                # We got rate limited. Let's try incremental backoff
-                gevent.sleep(backoff_in_seconds * (QUERY_RETRY_TIMES - times + 1))
+                retry_after = response.headers.get('retry-after', None)
+                if retry_after:
+                    retry_after_secs = int(retry_after)
+                    if retry_after_secs > MAX_WAIT_SECS:
+                        msg = (
+                            f'Beaconchain API request {response.url} got rate limited. Would '
+                            f'need to wait for {retry_after} seconds which is more than the '
+                            f'wait limit of {MAX_WAIT_SECS} seconds. Bailing out.'
+                        )
+                        logger.debug(
+                            f'{msg} minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
+                            f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
+                            f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
+                        )
+                        raise RemoteError(msg)
+                    # else
+                    sleep_seconds = retry_after_secs
+                else:
+                    # Rate limited. Try incremental backoff since retry-after header is missing
+                    sleep_seconds = backoff_in_seconds * (QUERY_RETRY_TIMES - times + 1)
+                times -= 1
+                logger.debug(
+                    f'Beaconchain API request {response.url} got rate limited. Sleeping '
+                    f'for {sleep_seconds}. We have {times} tries left.'
+                    f'minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
+                    f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
+                    f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
+                )
+                gevent.sleep(sleep_seconds)
                 continue
             # else
             break
