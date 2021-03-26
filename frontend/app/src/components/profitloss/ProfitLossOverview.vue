@@ -121,6 +121,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Currency } from '@/model/currency';
+import { ExchangeRateGetter } from '@/store/balances/types';
 import { ProfitLossOverviewData } from '@/store/reports/types';
 
 @Component({
@@ -136,7 +137,7 @@ import { ProfitLossOverviewData } from '@/store/reports/types';
 export default class ProfitLossOverview extends Vue {
   overview!: ProfitLossOverviewData;
   currency!: Currency;
-  exchangeRate!: (currency: string) => number;
+  exchangeRate!: ExchangeRateGetter;
 
   get symbol(): string {
     return this.currency.ticker_symbol;

@@ -184,3 +184,5 @@ export interface ERC20Token {
   readonly name?: string;
   readonly symbol?: string;
 }
+
+export type ExchangeRateGetter = (currency: string) => BigNumber | undefined;

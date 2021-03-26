@@ -1,7 +1,7 @@
 import { default as BigNumber } from 'bignumber.js';
 import Vue from 'vue';
 import { displayDateFormatter } from '@/data/date_formatter';
-import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { Zero } from '@/utils/bignumbers';
 
 export function precision(value: number, precision: number): string {
   return value.toFixed(precision);
@@ -61,7 +61,7 @@ export function balanceSum(value: BigNumber[]): BigNumber {
 export function aggregateTotal(
   balances: any[],
   mainCurrency: string,
-  exchangeRate: number,
+  exchangeRate: BigNumber,
   precision: number
 ): BigNumber {
   return balances.reduce((previousValue, currentValue) => {
@@ -71,7 +71,7 @@ export function aggregateTotal(
         .dp(precision, BigNumber.ROUND_DOWN);
     }
     return previousValue
-      .plus(currentValue.usdValue.multipliedBy(bigNumberify(exchangeRate)))
+      .plus(currentValue.usdValue.multipliedBy(exchangeRate))
       .dp(precision, BigNumber.ROUND_DOWN);
   }, Zero);
 }

@@ -139,7 +139,11 @@ import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
 import DataTable from '@/components/helper/DataTable.vue';
 import { CURRENCY_USD } from '@/data/currencies';
-import { AssetBalance, AssetPrices } from '@/store/balances/types';
+import {
+  AssetBalance,
+  AssetPrices,
+  ExchangeRateGetter
+} from '@/store/balances/types';
 
 @Component({
   components: { DataTable },
@@ -162,7 +166,7 @@ export default class DashboardAssetTable extends Vue {
   floatingPrecision!: number;
   currencySymbol!: string;
   prices!: AssetPrices;
-  exchangeRate!: (currency: string) => number | undefined;
+  exchangeRate!: ExchangeRateGetter;
 
   search: string = '';
 

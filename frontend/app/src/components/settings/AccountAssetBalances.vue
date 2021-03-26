@@ -60,7 +60,11 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import { CURRENCY_USD } from '@/data/currencies';
-import { AssetBalances, AssetPrices } from '@/store/balances/types';
+import {
+  AssetBalances,
+  AssetPrices,
+  ExchangeRateGetter
+} from '@/store/balances/types';
 
 @Component({
   components: { DataTable, Fragment, AmountDisplay },
@@ -109,7 +113,7 @@ export default class AccountAssetBalances extends Vue {
   prices!: AssetPrices;
   currencySymbol!: string;
   floatingPrecision!: number;
-  exchangeRate!: (currency: string) => number;
+  exchangeRate!: ExchangeRateGetter;
 }
 </script>
 

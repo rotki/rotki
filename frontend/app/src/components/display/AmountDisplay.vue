@@ -65,8 +65,14 @@ import { mapGetters, mapState } from 'vuex';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { Currency } from '@/model/currency';
+import { ExchangeRateGetter } from '@/store/balances/types';
+import {
+  AMOUNT_ROUNDING_MODE,
+  VALUE_ROUNDING_MODE
+} from '@/store/settings/consts';
 import { GeneralSettings } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
+import RoundingMode = BigNumber.RoundingMode;
 
 type ShownCurrency = 'none' | 'ticker' | 'symbol' | 'name';
 
@@ -81,6 +87,7 @@ type ShownCurrency = 'none' | 'ticker' | 'symbol' | 'name';
       'decimalSeparator',
       'currencyLocation'
     ]),
+    ...mapState('settings', [AMOUNT_ROUNDING_MODE, VALUE_ROUNDING_MODE]),
     ...mapState('session', ['privacyMode', 'scrambleData']),
     ...mapGetters('balances', ['exchangeRate'])
   }
@@ -127,7 +134,9 @@ export default class AmountDisplay extends Vue {
   thousandSeparator!: string;
   decimalSeparator!: string;
   currencyLocation!: GeneralSettings['currencyLocation'];
-  exchangeRate!: (currency: string) => number;
+  exchangeRate!: ExchangeRateGetter;
+  amountRoundingMode!: RoundingMode;
+  valueRoundingMode!: RoundingMode;
 
   get shownCurrency(): ShownCurrency {
     return this.showCurrency === 'none' && !!this.fiatCurrency
@@ -182,35 +191,51 @@ export default class AmountDisplay extends Vue {
     return value.toFormat(value.decimalPlaces());
   }
 
+  get rounding(): RoundingMode | undefined {
+    const { ticker_symbol } = this.currency;
+    const isValue = this.fiatCurrency === ticker_symbol;
+    let rounding: BigNumber.RoundingMode | undefined = undefined;
+    if (isValue) {
+      rounding = this.valueRoundingMode;
+    } else if (!this.convertFiat) {
+      rounding = this.amountRoundingMode;
+    }
+    return rounding;
+  }
+
   private convertValue(value: BigNumber): BigNumber {
     const { ticker_symbol } = this.currency;
-    const rate = bigNumberify(this.exchangeRate(ticker_symbol));
-    return value.multipliedBy(rate);
+    const rate = this.exchangeRate(ticker_symbol);
+    return rate ? value.multipliedBy(rate) : value;
   }
 
   formatValue(value: BigNumber): string {
-    const { ticker_symbol } = this.currency;
-    const roundDown = this.fiatCurrency === ticker_symbol;
     const floatingPrecision = this.integer ? 0 : this.floatingPrecision;
-
-    let rounding: BigNumber.RoundingMode | undefined = undefined;
-    if (roundDown) {
-      rounding = BigNumber.ROUND_DOWN;
-    } else if (!this.convertFiat) {
-      rounding = BigNumber.ROUND_UP;
-    }
-
     const price = this.convertFiat ? this.convertValue(value) : value;
 
-    return price.isNaN()
-      ? '-'
-      : displayAmountFormatter.format(
-          price,
-          floatingPrecision,
-          this.thousandSeparator,
-          this.decimalSeparator,
-          rounding
-        );
+    if (price.isNaN()) {
+      return '-';
+    }
+
+    const formattedValue = displayAmountFormatter.format(
+      price,
+      floatingPrecision,
+      this.thousandSeparator,
+      this.decimalSeparator,
+      this.rounding
+    );
+
+    const hiddenDecimals = price.decimalPlaces() > floatingPrecision;
+    if (hiddenDecimals && this.rounding === BigNumber.ROUND_UP) {
+      return `< ${formattedValue}`;
+    } else if (
+      price.lt(1) &&
+      hiddenDecimals &&
+      this.rounding === BigNumber.ROUND_DOWN
+    ) {
+      return `> ${formattedValue}`;
+    }
+    return formattedValue;
   }
 }
 </script>

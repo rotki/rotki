@@ -108,6 +108,7 @@ import TableExpandContainer from '@/components/helper/table/TableExpandContainer
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
 import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
+import { ExchangeRateGetter } from '@/store/balances/types';
 import { ProfitLossEvent } from '@/store/reports/types';
 
 type IndexedProfitLossEvent = ProfitLossEvent & { index: number };
@@ -131,7 +132,7 @@ type IndexedProfitLossEvent = ProfitLossEvent & { index: number };
 export default class ProfitLossEvents extends Vue {
   events!: ProfitLossEvent[];
   currency!: string;
-  exchangeRate!: (currency: string) => number;
+  exchangeRate!: ExchangeRateGetter;
   limit!: number;
   processed!: number;
   expanded = [];

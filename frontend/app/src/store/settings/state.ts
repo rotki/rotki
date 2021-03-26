@@ -1,3 +1,4 @@
+import { default as BigNumber } from 'bignumber.js';
 import { Defaults } from '@/data/defaults';
 import {
   ALL,
@@ -13,7 +14,9 @@ import {
   TIMEFRAME_SETTING,
   REFRESH_PERIOD,
   EXPLORERS,
-  ITEMS_PER_PAGE
+  ITEMS_PER_PAGE,
+  AMOUNT_ROUNDING_MODE,
+  VALUE_ROUNDING_MODE
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 
@@ -31,7 +34,9 @@ export const defaultState: () => SettingsState = () => ({
   [CURRENCY_LOCATION]: Defaults.DEFAULT_CURRENCY_LOCATION,
   [REFRESH_PERIOD]: -1,
   [EXPLORERS]: {},
-  [ITEMS_PER_PAGE]: 10
+  [ITEMS_PER_PAGE]: 10,
+  [AMOUNT_ROUNDING_MODE]: BigNumber.ROUND_UP,
+  [VALUE_ROUNDING_MODE]: BigNumber.ROUND_DOWN
 });
 
 export const state: SettingsState = defaultState();

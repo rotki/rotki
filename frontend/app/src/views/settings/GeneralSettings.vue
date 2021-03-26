@@ -175,6 +175,8 @@
               {{ $t('general_settings.amount.label.resulting_format') }}
             </strong>
             <amount-display :value="amountExample" show-currency="symbol" />
+
+            <rounding-settings />
           </v-card-text>
         </v-card>
         <v-card class="mt-8">
@@ -226,6 +228,7 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import RoundingSettings from '@/components/settings/explorers/RoundingSettings.vue';
 import FrontendSettings from '@/components/settings/FrontendSettings.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
 import PriceOracleSettings from '@/components/settings/PriceOracleSettings.vue';
@@ -287,6 +290,7 @@ type SettingsEntries = typeof SETTINGS[number];
 
 @Component({
   components: {
+    RoundingSettings,
     FrontendSettings,
     PriceOracleSettings,
     SettingCategory,

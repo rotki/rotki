@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`929` Users can now select which rounding mode is used for displayed amounts via the frontend settings.
 * :feature:`2620` Users will now be able to disable oracles per asset using the asset editor.
 * :feature:`2602` Users will now have the erc20 token details (name, symbol, decimals) automatically filled when possible when they add new ethereum token assets.
 * :feature:`2427` The visible row selection will now persist after a re-login. Changing the visible rows will now affect all the tables.
@@ -12,6 +13,7 @@ Changelog
 * :feature:`2513` Users can now add/edit/delete all types of assets, not only ethereum tokens.
 * :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
+* :bug:`2479` Users will now see a < (less than) symbol in front of any amount with trailing decimals when rounding upwards is used.
 * :bug:`2610` Macos users will now be able to properly update every time using the auto-updater.
 * :bug:`2628` Users will now see the correct total asset value when visiting an asset's detail page for a second time.
 * :bug:`2524` Users will now not be able to delete assets from the Global DB if any account in the local system owns them.

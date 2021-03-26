@@ -112,7 +112,11 @@ const SETTINGS = [
 type SettingsEntries = typeof SETTINGS[number];
 
 @Component({
-  components: { Explorers, TimeFrameSettings, SettingCategory }
+  components: {
+    Explorers,
+    TimeFrameSettings,
+    SettingCategory
+  }
 })
 export default class FrontendSettings extends Mixins<
   SettingsMixin<SettingsEntries>

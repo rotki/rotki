@@ -1,3 +1,4 @@
+import { default as BigNumber } from 'bignumber.js';
 import {
   TIMEFRAME_SETTING,
   DEFI_SETUP_DONE,
@@ -12,9 +13,12 @@ import {
   CURRENCY_LOCATION,
   REFRESH_PERIOD,
   EXPLORERS,
-  ITEMS_PER_PAGE
+  ITEMS_PER_PAGE,
+  AMOUNT_ROUNDING_MODE,
+  VALUE_ROUNDING_MODE
 } from '@/store/settings/consts';
 import { CurrencyLocation } from '@/typing/types';
+import RoundingMode = BigNumber.RoundingMode;
 
 export type TimeFramePeriod = typeof TIMEFRAME_PERIOD[number];
 export type TimeFrameSetting = TimeFramePeriod | typeof TIMEFRAME_REMEMBER;
@@ -52,6 +56,8 @@ export interface SettingsState {
   readonly [REFRESH_PERIOD]: RefreshPeriod;
   readonly [EXPLORERS]: ExplorersSettings;
   readonly [ITEMS_PER_PAGE]: number;
+  readonly [AMOUNT_ROUNDING_MODE]: RoundingMode;
+  readonly [VALUE_ROUNDING_MODE]: RoundingMode;
 }
 
 export type FrontendSettingsPayload = {

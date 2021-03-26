@@ -162,6 +162,22 @@
     "address": "Addresses",
     "chain_selector": "Blockchain"
   },
+  "rounding_settings": {
+    "amount_rounding": "Amount Rounding",
+    "round": {
+      "down": "Round down",
+      "down_description": "Rounds towards zero",
+      "half_even": "Half even",
+      "half_even_description": "Rounds towards nearest neighbour. If equidistant, rounds towards even neighbour",
+      "up": "Round up",
+      "up_description": "Rounds away from zero"
+    },
+    "value_rounding": "Value Rounding",
+    "subtitle": "Set how the displayed amounts will be rounded in the frontend",
+    "title": "Amount rounding",
+    "value_rounding_hint": "Specify how the value (e.g the FIAT value of an owned asset) is rounded.",
+    "amount_rounding_hint": "Specify how the amount (e.g. the amount of an owned asset) is rounded."
+  },
   "underlying_token_manager": {
     "delete_tooltip": "Delete the underlying token",
     "edit_tooltip": "Edit an underlying token",
