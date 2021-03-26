@@ -11,6 +11,7 @@ import {
   EXCHANGE_COINBASE,
   EXCHANGE_COINBASEPRO,
   EXCHANGE_CRYPTOCOM,
+  EXCHANGE_FTX,
   EXCHANGE_GEMINI,
   EXCHANGE_ICONOMI,
   EXCHANGE_KRAKEN,
@@ -145,6 +146,13 @@ export const tradeLocations: TradeLocationData[] = [
     identifier: EXCHANGE_KUCOIN,
     name: 'KuCoin',
     icon: require('@/assets/images/exchanges/kucoin.svg'),
+    imageIcon: true,
+    exchange: true
+  },
+  {
+    identifier: EXCHANGE_FTX,
+    name: 'FTX',
+    icon: require('@/assets/images/exchanges/ftx.png'),
     imageIcon: true,
     exchange: true
   },
