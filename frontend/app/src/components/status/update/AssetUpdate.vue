@@ -1,0 +1,134 @@
+<template>
+  <fragment>
+    <v-dialog
+      v-if="showUpdateDialog"
+      v-model="showUpdateDialog"
+      max-width="500"
+      persistent
+    >
+      <card>
+        <template #title>{{ $t('asset_update.title') }}</template>
+        <i18n class="text-body-1" tag="span" path="asset_update.description">
+          <template #remote>
+            <span class="font-weight-medium">{{ remoteVersion }}</span>
+          </template>
+          <template #local>
+            <span class="font-weight-medium">{{ localVersion }}</span>
+          </template>
+        </i18n>
+        <template #options>
+          <v-checkbox
+            v-model="skipUpdate"
+            dense
+            :label="$t('asset_update.skip_notification')"
+          />
+        </template>
+        <template #buttons>
+          <v-row justify="end" no-gutters>
+            <v-col cols="auto">
+              <v-btn text @click="skip">
+                {{ $t('asset_update.buttons.skip') }}
+              </v-btn>
+            </v-col>
+            <v-col cols="auto">
+              <v-btn text color="primary" @click="updateAssets()">
+                {{ $t('asset_update.buttons.update') }}
+              </v-btn>
+            </v-col>
+          </v-row>
+        </template>
+      </card>
+    </v-dialog>
+    <conflict-dialog
+      v-if="showConflictDialog"
+      v-model="showConflictDialog"
+      :conflicts="conflicts"
+      @cancel="showConflictDialog = false"
+      @resolve="updateAssets($event)"
+    />
+  </fragment>
+</template>
+
+<script lang="ts">
+import { Component, Prop, Vue } from 'vue-property-decorator';
+import { mapActions } from 'vuex';
+import Fragment from '@/components/helper/Fragment';
+import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
+import { ConflictResolution } from '@/services/assets/types';
+import {
+  ApplyUpdateResult,
+  AssetUpdateCheckResult,
+  AssetUpdateConflictResult
+} from '@/store/assets/types';
+import { Severity } from '@/store/notifications/consts';
+import { notify } from '@/store/notifications/utils';
+
+const SKIP_ASSET_DB_VERSION = 'rotki_skip_asset_db_version';
+
+@Component({
+  components: { Fragment, ConflictDialog },
+  methods: {
+    ...mapActions('assets', ['checkForUpdate', 'applyUpdates'])
+  }
+})
+export default class AssetUpdate extends Vue {
+  @Prop({ required: false, default: false, type: Boolean })
+  auto!: Boolean;
+  showUpdateDialog: boolean = false;
+  showConflictDialog: boolean = false;
+  skipUpdate: boolean = false;
+  localVersion: number = 0;
+  remoteVersion: number = 0;
+  checkForUpdate!: () => Promise<AssetUpdateCheckResult>;
+  applyUpdates!: (conflicts?: ConflictResolution) => Promise<ApplyUpdateResult>;
+  conflicts: AssetUpdateConflictResult[] = [];
+
+  async mounted() {
+    if (this.auto) {
+      await this.check();
+    }
+  }
+
+  async check() {
+    const checkResult = await this.checkForUpdate();
+    const skipped = localStorage.getItem(SKIP_ASSET_DB_VERSION);
+    if (skipped && parseInt(skipped) === checkResult.versions?.remoteVersion) {
+      return;
+    }
+    this.showUpdateDialog = checkResult.updateAvailable;
+    if (checkResult.versions) {
+      this.localVersion = checkResult.versions.localVersion;
+      this.remoteVersion = checkResult.versions.remoteVersion;
+    }
+  }
+
+  skip() {
+    this.showUpdateDialog = false;
+    this.showConflictDialog = false;
+    if (this.skipUpdate) {
+      localStorage.setItem(
+        SKIP_ASSET_DB_VERSION,
+        this.remoteVersion.toString()
+      );
+    }
+  }
+
+  async updateAssets(resolution?: ConflictResolution) {
+    this.showUpdateDialog = false;
+    this.showConflictDialog = false;
+    const updateResult = await this.applyUpdates(resolution);
+    if (updateResult.done) {
+      const title = this.$t('asset_update.success.title').toString();
+      const description = this.$t(
+        'asset_update.success.description'
+      ).toString();
+      notify(description, title, Severity.INFO, true);
+    } else if (updateResult.conflicts) {
+      this.conflicts = updateResult.conflicts;
+      this.showConflictDialog = true;
+    }
+  }
+}
+</script>
+
+<style scoped lang="scss"></style>

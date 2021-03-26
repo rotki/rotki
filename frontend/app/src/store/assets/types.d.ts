@@ -12,7 +12,7 @@ export interface AssetUpdateCheckResult {
   readonly versions?: AssetDBVersion;
 }
 
-interface AssetUpdateConflictResult {
+export interface AssetUpdateConflictResult {
   readonly identifier: string;
   readonly local: SupportedAsset;
   readonly remote: SupportedAsset;
