@@ -16,6 +16,7 @@ Changelog
 * :bug:`2628` Users will now see the correct total asset value when visiting an asset's detail page for a second time.
 * :bug:`2524` Users will now not be able to delete assets from the Global DB if any account in the local system owns them.
 * :bug:`2631` Balancer trades will now be displaying the correct trade rate, both in the trade history section but also in the exported CSV.
+* :bug:`2633` User with incomplete deposits and withdrawals in Coinbase Pro will now be able to generate a profit/loss report.
 * :bug:`2644` Balance query should no longer hang if the user gets rate limited by beaconcha.in and the rate limiting should now be properly handled.
 * :bug:`2643` Beaconcha.in api key should now be properly used if given by the user
 
