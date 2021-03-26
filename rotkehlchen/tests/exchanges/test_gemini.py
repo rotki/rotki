@@ -325,10 +325,10 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
 
 def test_gemini_symbol_to_base_quote():
     """Test edge cases and not yet existing cases of gemini symbol to pair"""
-    assert gemini_symbol_to_base_quote('btclink') == A_BTC, A_LINK
-    assert gemini_symbol_to_base_quote('linkbtc') == A_LINK, A_BTC
-    assert gemini_symbol_to_base_quote('linkpaxg') == A_LINK, A_PAXG
-    assert gemini_symbol_to_base_quote('paxglink') == A_PAXG, A_LINK
+    assert gemini_symbol_to_base_quote('btclink') == (A_BTC, A_LINK)
+    assert gemini_symbol_to_base_quote('linkbtc') == (A_LINK, A_BTC)
+    assert gemini_symbol_to_base_quote('linkpaxg') == (A_LINK, A_PAXG)
+    assert gemini_symbol_to_base_quote('paxglink') == (A_PAXG, A_LINK)
 
     with pytest.raises(UnprocessableTradePair):
         gemini_symbol_to_base_quote('btclinkxyz')

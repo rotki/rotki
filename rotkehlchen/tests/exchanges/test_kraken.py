@@ -115,34 +115,34 @@ def test_kraken_to_world_pair(kraken):
     For example ETH can be ETH or XETH, BTC can be XXBT or XBT
     """
     # Some standard tests that should always pass
-    assert kraken_to_world_pair('QTUMXBT') == A_QTUM, A_BTC
-    assert kraken_to_world_pair('ADACAD') == A_ADA, A_CAD
-    assert kraken_to_world_pair('BCHUSD') == A_BCH, A_USD
-    assert kraken_to_world_pair('DASHUSD') == A_DASH, A_USD
-    assert kraken_to_world_pair('XTZETH') == A_XTZ, A_ETH
-    assert kraken_to_world_pair('ETHDAI') == A_ETH, A_DAI
-    assert kraken_to_world_pair('SCXBT') == A_SC, A_BTC
-    assert kraken_to_world_pair('SCEUR') == A_SC, A_EUR
-    assert kraken_to_world_pair('WAVESUSD') == A_WAVES, A_USD
-    assert kraken_to_world_pair('XXBTZGBP.d') == A_BTC, A_GBP
-    assert kraken_to_world_pair('ETHCHF') == A_ETH, A_CHF
-    assert kraken_to_world_pair('XBTCHF') == A_BTC, A_CHF
-    assert kraken_to_world_pair('EURCAD') == A_EUR, A_CAD
-    assert kraken_to_world_pair('USDCHF') == A_USD, A_CHF
-    assert kraken_to_world_pair('EURJPY') == A_EUR, A_JPY
-    assert kraken_to_world_pair('LTCETH') == A_LTC, A_ETH
-    assert kraken_to_world_pair('LTCUSDT') == A_LTC, A_USDT
-    assert kraken_to_world_pair('XRPGBP') == A_XRP, A_GBP
-    assert kraken_to_world_pair('XRPUSDT') == A_XRP, A_USDT
-    assert kraken_to_world_pair('AUDJPY') == A_AUD, A_JPY
-    assert kraken_to_world_pair('ETH2.SETH') == A_ETH2, A_ETH
-    assert kraken_to_world_pair('EWTEUR') == A_EWT, A_EUR
-    assert kraken_to_world_pair('EWTGBP') == A_EWT, A_GBP
-    assert kraken_to_world_pair('EWTXBT') == A_EWT, A_BTC
-    assert kraken_to_world_pair('OCEANEUR') == A_OCEAN, A_EUR
-    assert kraken_to_world_pair('OCEANGBP') == A_OCEAN, A_GBP
-    assert kraken_to_world_pair('OCEANUSD') == A_OCEAN, A_USD
-    assert kraken_to_world_pair('OCEANXBT') == A_OCEAN, A_BTC
+    assert kraken_to_world_pair('QTUMXBT') == (A_QTUM, A_BTC)
+    assert kraken_to_world_pair('ADACAD') == (A_ADA, A_CAD)
+    assert kraken_to_world_pair('BCHUSD') == (A_BCH, A_USD)
+    assert kraken_to_world_pair('DASHUSD') == (A_DASH, A_USD)
+    assert kraken_to_world_pair('XTZETH') == (A_XTZ, A_ETH)
+    assert kraken_to_world_pair('ETHDAI') == (A_ETH, A_DAI)
+    assert kraken_to_world_pair('SCXBT') == (A_SC, A_BTC)
+    assert kraken_to_world_pair('SCEUR') == (A_SC, A_EUR)
+    assert kraken_to_world_pair('WAVESUSD') == (A_WAVES, A_USD)
+    assert kraken_to_world_pair('XXBTZGBP.d') == (A_BTC, A_GBP)
+    assert kraken_to_world_pair('ETHCHF') == (A_ETH, A_CHF)
+    assert kraken_to_world_pair('XBTCHF') == (A_BTC, A_CHF)
+    assert kraken_to_world_pair('EURCAD') == (A_EUR, A_CAD)
+    assert kraken_to_world_pair('USDCHF') == (A_USD, A_CHF)
+    assert kraken_to_world_pair('EURJPY') == (A_EUR, A_JPY)
+    assert kraken_to_world_pair('LTCETH') == (A_LTC, A_ETH)
+    assert kraken_to_world_pair('LTCUSDT') == (A_LTC, A_USDT)
+    assert kraken_to_world_pair('XRPGBP') == (A_XRP, A_GBP)
+    assert kraken_to_world_pair('XRPUSDT') == (A_XRP, A_USDT)
+    assert kraken_to_world_pair('AUDJPY') == (A_AUD, A_JPY)
+    assert kraken_to_world_pair('ETH2.SETH') == (A_ETH2, A_ETH)
+    assert kraken_to_world_pair('EWTEUR') == (A_EWT, A_EUR)
+    assert kraken_to_world_pair('EWTGBP') == (A_EWT, A_GBP)
+    assert kraken_to_world_pair('EWTXBT') == (A_EWT, A_BTC)
+    assert kraken_to_world_pair('OCEANEUR') == (A_OCEAN, A_EUR)
+    assert kraken_to_world_pair('OCEANGBP') == (A_OCEAN, A_GBP)
+    assert kraken_to_world_pair('OCEANUSD') == (A_OCEAN, A_USD)
+    assert kraken_to_world_pair('OCEANXBT') == (A_OCEAN, A_BTC)
 
     # now try to test all pairs that kraken returns and if one does not work note
     # down a test warning so that it can be fixed by us later
@@ -346,7 +346,8 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
 
         if expected_warnings_num == 0 and expected_errors_num == 0:
             assert len(trades) == 1
-            assert trades[0].pair == 'BTC_EUR'
+            assert trades[0].base_asset == A_BTC
+            assert trades[0].quote_asset == A_EUR
         else:
             assert len(trades) == 0
         errors = kraken.msg_aggregator.consume_errors()

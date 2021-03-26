@@ -82,7 +82,6 @@ from rotkehlchen.errors import (
     SystemPermissionError,
     TagConstraintError,
     UnknownAsset,
-    UnprocessableTradePair,
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -102,7 +101,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp,
     deserialize_trade_type_from_db,
-    pair_get_assets,
 )
 from rotkehlchen.typing import (
     ApiCredentials,
@@ -3070,15 +3068,15 @@ class DBHandler:
                 continue
 
         query = cursor.execute(
-            'SELECT DISTINCT pair FROM trades ORDER BY time ASC;',
+            'SELECT DISTINCT base_asset, quote_asset FROM trades ORDER BY time ASC;',
         )
-        for result in query:
+        for entry in query:
             try:
-                asset1, asset2 = pair_get_assets(result[0])
-            except (UnprocessableTradePair, UnknownAsset) as e:
+                asset1, asset2 = [Asset(x) for x in entry]
+            except UnknownAsset as e:
                 logger.warning(
-                    f'At processing owned assets from pair could not deserialize '
-                    f'pair {result[0]} due to {str(e)}',
+                    f'At processing owned assets from base/quote could not deserialize '
+                    f'asset due to {str(e)}',
                 )
                 continue
             results.add(asset1)

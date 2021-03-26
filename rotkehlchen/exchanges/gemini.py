@@ -71,7 +71,7 @@ def gemini_symbol_to_base_quote(symbol: str) -> Tuple[Asset, Asset]:
             base_asset = Asset(symbol[:3].upper())
             quote_asset = Asset(symbol[3:].upper())
     elif len(symbol) == 8:
-        if 'storj' in symbol:
+        if 'storj' in symbol or '1inch' in symbol:
             base_asset = Asset(symbol[:5].upper())
             quote_asset = Asset(symbol[5:].upper())
         else:

@@ -3,6 +3,7 @@ import random
 from typing import Any, Dict, List, Optional
 
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD
+from rotkehlchen.assets.asset import WORLD_TO_KRAKEN
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import TradeType
@@ -206,9 +207,11 @@ def create_kraken_trade(
     trade['ordertxid'] = str(generate_random_kraken_id())
     trade['postxid'] = str(generate_random_kraken_id())
     if base_asset is None or quote_asset is None:
-        base_asset, quote_asset = random.sample(tradeable_pairs, 2)
-    trade['base_asset'] = base_asset
-    trade['quote_asset'] = quote_asset
+        pair = random.choice(tradeable_pairs)
+    else:
+        pair = WORLD_TO_KRAKEN[base_asset] + WORLD_TO_KRAKEN[quote_asset]
+
+    trade['pair'] = pair
     if time:
         trade['time'] = str(time) + '.0000'
     else:
