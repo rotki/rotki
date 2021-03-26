@@ -13,27 +13,20 @@ from rotkehlchen.assets.converters import (
     UNSUPPORTED_BITFINEX_ASSETS,
     asset_from_bitfinex,
 )
+from rotkehlchen.constants.assets import A_ETH, A_USD, A_USDT, A_WBTC
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.bitfinex import (
+    API_ERR_AUTH_NONCE_CODE,
+    API_ERR_AUTH_NONCE_MESSAGE,
     API_KEY_ERROR_CODE,
     API_KEY_ERROR_MESSAGE,
     API_RATE_LIMITS_ERROR_MESSAGE,
-    API_ERR_AUTH_NONCE_CODE,
-    API_ERR_AUTH_NONCE_MESSAGE,
     Bitfinex,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import (
-    AssetAmount,
-    AssetMovementCategory,
-    Fee,
-    Location,
-    Price,
-    Timestamp,
-    TradePair,
-)
+from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Fee, Location, Price, Timestamp
 
 
 def test_name():
@@ -344,7 +337,8 @@ def test_deserialize_trade_buy(mock_bitfinex):
     expected_trade = Trade(
         timestamp=Timestamp(1573485493),
         location=Location.BITFINEX,
-        pair=TradePair('WBTC_USDT'),
+        base_asset=A_WBTC,
+        quote_Asset=A_USDT,
         trade_type=TradeType.BUY,
         amount=AssetAmount(FVal('0.26334268')),
         rate=Price(FVal('187.37')),
@@ -376,7 +370,8 @@ def test_deserialize_trade_sell(mock_bitfinex):
     expected_trade = Trade(
         timestamp=Timestamp(1573485493),
         location=Location.BITFINEX,
-        pair=TradePair('ETH_USDT'),
+        base_asset=A_ETH,
+        quote_asset=A_USDT,
         trade_type=TradeType.SELL,
         amount=AssetAmount(FVal('0.26334268')),
         rate=Price(FVal('187.37')),
@@ -560,7 +555,8 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
             Trade(
                 timestamp=Timestamp(1606899600),
                 location=Location.BITFINEX,
-                pair=TradePair('ETH_USDT'),
+                base_asset=A_ETH,
+                quote_asset=A_USDT,
                 trade_type=TradeType.BUY,
                 amount=AssetAmount(FVal('0.26334268')),
                 rate=Price(FVal('187.37')),
@@ -572,7 +568,8 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
             Trade(
                 timestamp=Timestamp(1606901400),
                 location=Location.BITFINEX,
-                pair=TradePair('ETH_USDT'),
+                base_asset=A_ETH,
+                quote_asset=A_USDT,
                 trade_type=TradeType.SELL,
                 amount=AssetAmount(FVal('0.26334268')),
                 rate=Price(FVal('187.37')),
@@ -584,7 +581,8 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
             Trade(
                 timestamp=Timestamp(1606932000),
                 location=Location.BITFINEX,
-                pair=TradePair('WBTC_USD'),
+                base_asset=A_WBTC,
+                quote_Asset=A_USD,
                 trade_type=TradeType.BUY,
                 amount=AssetAmount(FVal('10000.0')),
                 rate=Price(FVal('0.00005')),
@@ -596,7 +594,8 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
             Trade(
                 timestamp=Timestamp(1606986000),
                 location=Location.BITFINEX,
-                pair=TradePair('WBTC_USD'),
+                base_asset=A_WBTC,
+                quote_Asset=A_USD,
                 trade_type=TradeType.SELL,
                 amount=AssetAmount(FVal('10000.0')),
                 rate=Price(FVal('0.00005')),
@@ -734,7 +733,8 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             Trade(
                 timestamp=Timestamp(1606899600),
                 location=Location.BITFINEX,
-                pair=TradePair('ETH_USDT'),
+                base_asset=A_ETH,
+                quote_asset=A_USDT,
                 trade_type=TradeType.BUY,
                 amount=AssetAmount(FVal('0.26334268')),
                 rate=Price(FVal('187.37')),
@@ -746,7 +746,8 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             Trade(
                 timestamp=Timestamp(1606901400),
                 location=Location.BITFINEX,
-                pair=TradePair('ETH_USDT'),
+                base_asset=A_ETH,
+                quote_asset=A_USDT,
                 trade_type=TradeType.SELL,
                 amount=AssetAmount(FVal('0.26334268')),
                 rate=Price(FVal('187.37')),
@@ -758,7 +759,8 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             Trade(
                 timestamp=Timestamp(1606932000),
                 location=Location.BITFINEX,
-                pair=TradePair('WBTC_USD'),
+                base_asset=A_WBTC,
+                quote_Asset=A_USD,
                 trade_type=TradeType.BUY,
                 amount=AssetAmount(FVal('10000.0')),
                 rate=Price(FVal('0.00005')),
@@ -770,7 +772,8 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
             Trade(
                 timestamp=Timestamp(1606986000),
                 location=Location.BITFINEX,
-                pair=TradePair('WBTC_USD'),
+                base_asset=A_WBTC,
+                quote_Asset=A_USD,
                 trade_type=TradeType.SELL,
                 amount=AssetAmount(FVal('10000.0')),
                 rate=Price(FVal('0.00005')),

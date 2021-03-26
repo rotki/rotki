@@ -1,7 +1,7 @@
 import hashlib
 import hmac
-import logging
 import json
+import logging
 from collections import defaultdict
 from json.decoder import JSONDecodeError
 from typing import (
@@ -29,13 +29,7 @@ from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL, BINANCE_US_BASE_URL
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
-    MarginPosition,
-    Trade,
-    TradeType,
-    trade_pair_from_assets,
-)
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade, TradeType
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
@@ -176,7 +170,8 @@ def trade_from_binance(
     return Trade(
         timestamp=timestamp,
         location=Location.BINANCE,
-        pair=trade_pair_from_assets(base_asset, quote_asset),
+        base_asset=base_asset,
+        quote_asset=quote_asset,
         trade_type=order_type,
         amount=amount,
         rate=rate,

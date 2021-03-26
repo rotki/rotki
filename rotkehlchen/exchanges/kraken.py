@@ -28,13 +28,7 @@ from rotkehlchen.errors import (
     UnknownAsset,
     UnprocessableTradePair,
 )
-from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
-    MarginPosition,
-    Trade,
-    get_pair_position_asset,
-    trade_pair_from_assets,
-)
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -46,9 +40,8 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp_from_kraken,
     deserialize_trade_type,
-    pair_get_assets,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now
@@ -68,8 +61,8 @@ KRAKEN_QUERY_TRIES = 8
 MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
 
 
-def kraken_to_world_pair(pair: str) -> TradePair:
-    """Turns a pair from kraken to our pair type
+def kraken_to_world_pair(pair: str) -> Tuple[Asset, Asset]:
+    """Turns a pair from kraken to our base/quote asset tuple
 
     Can throw:
         - UknownAsset if one of the assets of the pair are not known
@@ -86,9 +79,9 @@ def kraken_to_world_pair(pair: str) -> TradePair:
         base_asset_str = pair[0:3]
         quote_asset_str = pair[3:]
     elif pair == 'ETHDAI':
-        return trade_pair_from_assets(base=A_ETH, quote=A_DAI)
+        return A_ETH, A_DAI
     elif pair == 'ETH2.SETH':
-        return trade_pair_from_assets(base=A_ETH2, quote=A_ETH)
+        return A_ETH2, A_ETH
     elif pair[0:2] in KRAKEN_TO_WORLD:
         base_asset_str = pair[0:2]
         quote_asset_str = pair[2:]
@@ -110,47 +103,7 @@ def kraken_to_world_pair(pair: str) -> TradePair:
 
     base_asset = asset_from_kraken(base_asset_str)
     quote_asset = asset_from_kraken(quote_asset_str)
-
-    return trade_pair_from_assets(base_asset, quote_asset)
-
-
-def world_to_kraken_pair(tradeable_pairs: List[str], pair: TradePair) -> str:
-    base_asset, quote_asset = pair_get_assets(pair)
-
-    base_asset_str = base_asset.to_kraken()
-    quote_asset_str = quote_asset.to_kraken()
-
-    pair1 = base_asset_str + quote_asset_str
-    pair2 = quote_asset_str + base_asset_str
-
-    # In some pairs, XXBT is XBT and ZEUR is EUR ...
-    pair3 = None
-    if 'XXBT' in pair1:
-        pair3 = pair1.replace('XXBT', 'XBT')
-    pair4 = None
-    if 'XXBT' in pair2:
-        pair4 = pair2.replace('XXBT', 'XBT')
-    if 'ZEUR' in pair1:
-        pair3 = pair1.replace('ZEUR', 'EUR')
-    pair4 = None
-    if 'ZEUR' in pair2:
-        pair4 = pair2.replace('ZEUR', 'EUR')
-
-    if pair1 in tradeable_pairs:
-        new_pair = pair1
-    elif pair2 in tradeable_pairs:
-        new_pair = pair2
-    elif pair3 in tradeable_pairs:
-        new_pair = pair3
-    elif pair4 in tradeable_pairs:
-        new_pair = pair4
-    else:
-        raise ValueError(
-            f'Unknown pair "{pair}" provided. Couldnt find {base_asset_str + quote_asset_str}'
-            f' or {quote_asset_str + base_asset_str} in tradeable pairs',
-        )
-
-    return new_pair
+    return base_asset, quote_asset
 
 
 def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
@@ -162,8 +115,7 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     - Can raise DeserializationError due to dict entries not being as expected
     - Can raise KeyError due to dict entries missing an expected entry
     """
-    currency_pair = kraken_to_world_pair(kraken_trade['pair'])
-    quote_currency = get_pair_position_asset(currency_pair, 'second')
+    base_asset, quote_asset = kraken_to_world_pair(kraken_trade['pair'])
 
     timestamp = deserialize_timestamp_from_kraken(kraken_trade['time'])
     amount = deserialize_asset_amount(kraken_trade['vol'])
@@ -182,8 +134,8 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
         timestamp=timestamp,
         order_type=order_type,
         kraken_pair=kraken_trade['pair'],
-        pair=currency_pair,
-        quote_currency=quote_currency,
+        base_asset=base_asset,
+        quote_asset=quote_asset,
         amount=amount,
         cost=cost,
         fee=fee,
@@ -210,12 +162,13 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     return Trade(
         timestamp=timestamp,
         location=Location.KRAKEN,
-        pair=currency_pair,
+        base_asset=base_asset,
+        quote_asset=quote_asset,
         trade_type=order_type,
         amount=amount,
         rate=rate,
         fee=fee,
-        fee_currency=quote_currency,
+        fee_currency=quote_asset,
         link=exchange_uuid,
     )
 

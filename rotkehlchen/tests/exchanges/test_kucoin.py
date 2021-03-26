@@ -10,20 +10,14 @@ import requests
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_KUCOIN_ASSETS, asset_from_kucoin
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO, A_USDT
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import (
-    AssetAmount,
-    AssetMovementCategory,
-    Fee,
-    Location,
-    Price,
-    Timestamp,
-    TradePair,
-)
+from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Fee, Location, Price, Timestamp
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 
@@ -255,7 +249,8 @@ def test_deserialize_v2_trade_buy(mock_kucoin):
     expected_trade = Trade(
         timestamp=Timestamp(1612556794),
         location=Location.KUCOIN,
-        pair=TradePair('KCS_USDT'),
+        base_asset=A_KCS,
+        quote_asset=A_USDT,
         trade_type=TradeType.BUY,
         amount=AssetAmount(FVal('0.2')),
         rate=Price(FVal('1000')),
@@ -294,7 +289,8 @@ def test_deserialize_v2_trade_sell(mock_kucoin):
     expected_trade = Trade(
         timestamp=Timestamp(1612556794),
         location=Location.KUCOIN,
-        pair=TradePair('BSV_USDT'),
+        base_asset=A_BSV,
+        quote_asset=A_USDT,
         trade_type=TradeType.SELL,
         amount=AssetAmount(FVal('0.0013')),
         rate=Price(FVal('37624.4')),
@@ -324,7 +320,8 @@ def test_deserialize_v1_trade(mock_kucoin):
     expected_trade = Trade(
         timestamp=Timestamp(1520471876),
         location=Location.KUCOIN,
-        pair=TradePair('NANO_ETH'),
+        base_asset=A_NANO,
+        quote_asset=A_ETH,
         trade_type=TradeType.SELL,
         amount=AssetAmount(FVal('0.002186')),
         rate=Price(FVal('0.015743')),
@@ -451,7 +448,8 @@ def test_query_trades_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unu
         Trade(
             timestamp=Timestamp(1612556765),
             location=Location.KUCOIN,
-            pair=TradePair('ETH_BTC'),
+            base_asset=A_ETH,
+            quote_asset=A_BTC,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal('0.02934995')),
             rate=Price(FVal('0.046058')),
@@ -463,7 +461,8 @@ def test_query_trades_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unu
         Trade(
             timestamp=Timestamp(1612556765),
             location=Location.KUCOIN,
-            pair=TradePair('ETH_BTC'),
+            base_asset=A_ETH,
+            quote_asset=A_BTC,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal('0.02')),
             rate=Price(FVal('0.04561')),
@@ -475,7 +474,8 @@ def test_query_trades_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unu
         Trade(
             timestamp=Timestamp(1612556765),
             location=Location.KUCOIN,
-            pair=TradePair('ETH_BTC'),
+            base_asset=A_ETH,
+            quote_asset=A_BTC,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal('0.06')),
             rate=Price(FVal('0.0456')),
@@ -487,7 +487,8 @@ def test_query_trades_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unu
         Trade(
             timestamp=Timestamp(1612556693),
             location=Location.KUCOIN,
-            pair=TradePair('BTC_USDT'),
+            base_asset=A_BTC,
+            quote_asset=A_USDT,
             trade_type=TradeType.SELL,
             amount=AssetAmount(FVal('0.0013')),
             rate=Price(FVal('37624.4')),

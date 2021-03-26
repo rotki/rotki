@@ -6,7 +6,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.exchanges.iconomi import Iconomi, iconomi_asset
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_EUR
+from rotkehlchen.tests.utils.constants import A_EUR, A_REP
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Location, TradeType
@@ -42,8 +42,8 @@ def test_iconomi_query_balances_unknown_asset(function_scope_iconomi):
     assert len(balances) == 3
     assert balances[A_ETH].amount == FVal('32.0')
     assert balances[A_ETH].usd_value == FVal('48.0')
-    assert balances[Asset('REP')].amount == FVal('0.5314532451')
-    assert balances[Asset('REP')].usd_value == FVal('0.79717986765')
+    assert balances[A_REP].amount == FVal('0.5314532451')
+    assert balances[A_REP].usd_value == FVal('0.79717986765')
 
     warnings = iconomi.msg_aggregator.consume_warnings()
     assert len(warnings) == 2
@@ -70,7 +70,8 @@ def test_query_trade_history(function_scope_iconomi):
     assert len(trades) == 2
     assert trades[0].timestamp == 1539713117
     assert trades[0].location == Location.ICONOMI
-    assert trades[0].pair == 'REP_EUR'
+    assert trades[0].base_asset == A_REP
+    assert trades[0].quote_asset == A_EUR
     assert trades[0].trade_type == TradeType.SELL
     assert trades[0].amount == FVal('1000.23')
     assert trades[0].rate.is_close(FVal('1.50528378472'))
@@ -80,7 +81,8 @@ def test_query_trade_history(function_scope_iconomi):
 
     assert trades[1].timestamp == 1539713118
     assert trades[1].location == Location.ICONOMI
-    assert trades[1].pair == 'REP_EUR'
+    assert trades[1].base_asset == A_REP
+    assert trades[1].quote_asset == A_EUR
     assert trades[1].trade_type == TradeType.BUY
     assert trades[1].amount == FVal('1234')
     assert trades[1].rate.is_close(FVal('0.8102917341977309562398703404'))

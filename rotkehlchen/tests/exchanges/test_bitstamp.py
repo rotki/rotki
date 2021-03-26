@@ -10,6 +10,7 @@ import requests
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bitstamp
+from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.errors import RemoteError, UnknownAsset
 from rotkehlchen.exchanges.bitstamp import (
     API_ERR_AUTH_NONCE_CODE,
@@ -27,8 +28,9 @@ from rotkehlchen.exchanges.data_structures import (
     TradeType,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Fee, Location, Timestamp, TradePair
+from rotkehlchen.typing import Fee, Location, Timestamp
 from rotkehlchen.utils.serialization import jsonloads_list
 
 
@@ -274,7 +276,8 @@ def test_deserialize_trade_buy(mock_bitstamp):
     expected_trade = Trade(
         timestamp=1606901400,
         location=Location.BITSTAMP,
-        pair=TradePair('BTC_USD'),
+        base_asset=A_BTC,
+        quote_asset=A_USD,
         trade_type=TradeType.BUY,
         amount=FVal('0.50000000'),
         rate=FVal('0.00005000'),
@@ -300,7 +303,8 @@ def test_deserialize_trade_buy(mock_bitstamp):
     expected_trade = Trade(
         timestamp=1555402145,
         location=Location.BITSTAMP,
-        pair=TradePair('BTC_EUR'),
+        base_asset=A_BTC,
+        quote_asset=A_EUR,
         trade_type=TradeType.BUY,
         amount=FVal('0.0006'),
         rate=FVal('8364.0'),
@@ -326,7 +330,8 @@ def test_deserialize_trade_buy(mock_bitstamp):
     expected_trade = Trade(
         timestamp=1555345154,
         location=Location.BITSTAMP,
-        pair=TradePair('EUR_USD'),
+        base_asset=A_EUR,
+        quote_asset=A_USD,
         trade_type=TradeType.BUY,
         amount=FVal('6.8763'),
         rate=FVal('1.12124'),
@@ -353,7 +358,8 @@ def test_deserialize_trade_sell(mock_bitstamp):
     expected_trade = Trade(
         timestamp=1606995000,
         location=Location.BITSTAMP,
-        pair=TradePair('EUR_USD'),
+        base_asset=A_EUR,
+        quote_asset=A_USD,
         trade_type=TradeType.SELL,
         amount=FVal('1'),
         rate=FVal('0.81967213'),
@@ -379,7 +385,8 @@ def test_deserialize_trade_sell(mock_bitstamp):
     expected_trade = Trade(
         timestamp=1561498868,
         location=Location.BITSTAMP,
-        pair=TradePair('BTC_EUR'),
+        base_asset=A_BTC,
+        quote_asset=A_EUR,
         trade_type=TradeType.SELL,
         amount=FVal('1.81213214'),
         rate=FVal('10119.82'),
@@ -716,7 +723,8 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
         Trade(
             timestamp=1606901400,
             location=Location.BITSTAMP,
-            pair=TradePair('BTC_USD'),
+            base_asset=A_BTC,
+            quote_asset=A_USD,
             trade_type=TradeType.BUY,
             amount=FVal('0.50000000'),
             rate=FVal('0.00005000'),
@@ -728,7 +736,8 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
         Trade(
             timestamp=1606995000,
             location=Location.BITSTAMP,
-            pair=TradePair('EUR_USD'),
+            base_asset=A_EUR,
+            quote_asset=A_USD,
             trade_type=TradeType.SELL,
             amount=FVal('1'),
             rate=FVal('0.81967213'),
@@ -750,7 +759,8 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         Trade(
             timestamp=1606995000,
             location=Location.BITSTAMP,
-            pair=TradePair('EUR_USD'),
+            base_asset=A_EUR,
+            quote_asset=A_USD,
             trade_type=TradeType.SELL,
             amount=FVal('1.22000000'),
             rate=FVal('0.81967213'),
@@ -762,7 +772,8 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         Trade(
             timestamp=1606901400,
             location=Location.BITSTAMP,
-            pair=TradePair('BTC_USD'),
+            base_asset=A_BTC,
+            quote_asset=A_USD,
             trade_type=TradeType.BUY,
             amount=FVal('0.50000000'),
             rate=FVal('0.00005000'),

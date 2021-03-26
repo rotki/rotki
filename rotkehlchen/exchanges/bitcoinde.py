@@ -19,7 +19,6 @@ from rotkehlchen.exchanges.data_structures import (
     MarginPosition,
     Price,
     Trade,
-    TradePair,
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.inquirer import Inquirer
@@ -102,7 +101,6 @@ def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
     tx_amount = deserialize_asset_amount(raw_trade['amount_currency_to_trade'])
     native_amount = deserialize_asset_amount(raw_trade['volume_currency_to_pay'])
     tx_asset, native_asset = bitcoinde_pair_to_world(raw_trade['trading_pair'])
-    pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')
     amount = tx_amount
     rate = Price(native_amount / tx_amount)
     fee_amount = deserialize_fee(raw_trade['fee_currency_to_pay'])
@@ -111,7 +109,8 @@ def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
     return Trade(
         timestamp=timestamp,
         location=Location.BITCOINDE,
-        pair=pair,
+        base_asset=tx_asset,
+        quote_asset=native_asset,
         trade_type=trade_type,
         amount=amount,
         rate=rate,

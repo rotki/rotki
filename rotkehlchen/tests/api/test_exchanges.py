@@ -7,7 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
@@ -27,6 +27,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
     wait_for_async_task_with_result,
 )
+from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.tests.utils.exchanges import (
     assert_binance_balances_result,
     assert_poloniex_balances_result,
@@ -758,7 +759,8 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
     trades = [Trade(
         timestamp=0,
         location=x,
-        pair='ETH_EUR',
+        base_asset=A_ETH,
+        quote_asset=A_EUR,
         trade_type=TradeType.BUY,
         amount=FVal(1),
         rate=FVal(1),

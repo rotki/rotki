@@ -40,7 +40,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp_from_date,
     deserialize_trade_type,
-    pair_get_assets,
 )
 from rotkehlchen.typing import (
     ApiKey,
@@ -50,7 +49,6 @@ from rotkehlchen.typing import (
     Fee,
     Location,
     Timestamp,
-    TradePair,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
@@ -66,8 +64,8 @@ log = RotkehlchenLogsAdapter(logger)
 COINBASEPRO_PAGINATION_LIMIT = 100  # default + max limit
 
 
-def coinbasepro_to_worldpair(product: str) -> TradePair:
-    """Turns a coinbasepro product into our trade pair format
+def coinbasepro_to_worldpair(product: str) -> Tuple[Asset, Asset]:
+    """Turns a coinbasepro product into our base/quote assets
 
     - Can raise UnprocessableTradePair if product is in unexpected format
     - Case raise UnknownAsset if any of the pair assets are not known to Rotki
@@ -79,7 +77,7 @@ def coinbasepro_to_worldpair(product: str) -> TradePair:
     base_asset = Asset(parts[0])
     quote_asset = Asset(parts[1])
 
-    return TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
+    return base_asset, quote_asset
 
 
 class CoinbaseProPermissionError(Exception):
@@ -511,7 +509,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 fills.extend(batch)
 
             try:
-                pair = coinbasepro_to_worldpair(product_id)
+                base_asset, quote_asset = coinbasepro_to_worldpair(product_id)
             except UnprocessableTradePair as e:
                 self.msg_aggregator.add_warning(
                     f'Found unprocessable Coinbasepro pair {e.pair}. Ignoring the trade.',
@@ -532,11 +530,11 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                     # Fee currency seems to always be quote asset
                     # https://github.com/ccxt/ccxt/blob/ddf3a15cbff01541f0b37c35891aa143bb7f9d7b/python/ccxt/coinbasepro.py#L724  # noqa: E501
-                    _, quote_asset = pair_get_assets(pair)
                     trades.append(Trade(
                         timestamp=timestamp,
                         location=Location.COINBASEPRO,
-                        pair=pair,
+                        base_asset=base_asset,
+                        quote_asset=quote_asset,
                         trade_type=deserialize_trade_type(fill_entry['side']),
                         amount=deserialize_asset_amount(fill_entry['size']),
                         rate=deserialize_price(fill_entry['price']),

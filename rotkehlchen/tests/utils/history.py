@@ -12,6 +12,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.constants import (
+    A_EUR,
+    A_LTC,
+    A_RDN,
+    A_XMR,
     ETH_ADDRESS1,
     ETH_ADDRESS2,
     ETH_ADDRESS3,
@@ -684,41 +688,50 @@ def mock_history_processing(
         assert len(trade_history) == expected_trades_num
         assert isinstance(trade_history[0], Trade)
         assert trade_history[0].location == Location.KRAKEN
-        assert trade_history[0].pair == 'ETH_EUR'
+        assert trade_history[0].base_asset == A_ETH
+        assert trade_history[0].quote_asset == A_EUR
         assert trade_history[0].trade_type == TradeType.BUY
         assert isinstance(trade_history[1], Trade)
         assert trade_history[1].location == Location.KRAKEN
-        assert trade_history[1].pair == 'BTC_EUR'
+        assert trade_history[1].base_asset == A_BTC
+        assert trade_history[1].quote_asset == A_EUR
         assert trade_history[1].trade_type == TradeType.BUY
         assert isinstance(trade_history[2], Trade)
         assert trade_history[2].location == Location.BITTREX
-        assert trade_history[2].pair == 'LTC_BTC'
+        assert trade_history[2].base_asset == A_LTC
+        assert trade_history[2].quote_asset == A_BTC
         assert trade_history[2].trade_type == TradeType.BUY
         assert isinstance(trade_history[3], Trade)
         assert trade_history[3].location == Location.BITTREX
-        assert trade_history[3].pair == 'LTC_ETH'
+        assert trade_history[3].base_asset == A_LTC
+        assert trade_history[3].quote_asset == A_ETH
         assert trade_history[3].trade_type == TradeType.SELL
         assert isinstance(trade_history[4], MarginPosition)
         assert trade_history[4].profit_loss == FVal('0.05')
         assert isinstance(trade_history[5], Trade)
         assert trade_history[5].location == Location.BINANCE
-        assert trade_history[5].pair == 'ETH_BTC'
+        assert trade_history[5].base_asset == A_ETH
+        assert trade_history[5].quote_asset == A_BTC
         assert trade_history[5].trade_type == TradeType.BUY
         assert isinstance(trade_history[6], Trade)
         assert trade_history[6].location == Location.BINANCE
-        assert trade_history[6].pair == 'RDN_ETH'
+        assert trade_history[6].base_asset == A_RDN
+        assert trade_history[6].quote_asset == A_ETH
         assert trade_history[6].trade_type == TradeType.SELL
         assert isinstance(trade_history[7], Trade)
         assert trade_history[7].location == Location.POLONIEX
-        assert trade_history[7].pair == 'ETH_BTC'
+        assert trade_history[7].base_asset == A_ETH
+        assert trade_history[7].quote_asset == A_BTC
         assert trade_history[7].trade_type == TradeType.SELL
         assert isinstance(trade_history[8], Trade)
         assert trade_history[8].location == Location.POLONIEX
-        assert trade_history[8].pair == 'ETH_BTC'
+        assert trade_history[8].base_asset == A_ETH
+        assert trade_history[8].quote_asset == A_BTC
         assert trade_history[8].trade_type == TradeType.BUY
         assert isinstance(trade_history[9], Trade)
         assert trade_history[9].location == Location.POLONIEX
-        assert trade_history[9].pair == 'XMR_ETH'
+        assert trade_history[9].base_asset == A_XMR
+        assert trade_history[9].quote_asset == A_ETH
         assert trade_history[9].trade_type == TradeType.BUY
         if not limited_range_test:
             assert isinstance(trade_history[10], MarginPosition)
@@ -978,7 +991,8 @@ def assert_binance_trades_result(
         if idx == 0:
             assert trade['timestamp'] == 1512561942
             assert trade['location'] == 'binance'
-            assert trade['pair'] == 'RDN_ETH'
+            assert trade['base_asset'] == 'RDN'
+            assert trade['quote_asset'] == 'ETH'
             assert trade['trade_type'] == 'sell'
             assert trade['amount'] == '5.0'
             assert trade['rate'] == '0.0063213'
@@ -989,7 +1003,8 @@ def assert_binance_trades_result(
         elif idx == 1:
             assert trade['timestamp'] == 1512561941
             assert trade['location'] == 'binance'
-            assert trade['pair'] == 'ETH_BTC'
+            assert trade['base_asset'] == 'ETH'
+            assert trade['quote_asset'] == 'BTC'
             assert trade['trade_type'] == 'buy'
             assert trade['amount'] == '5.0'
             assert trade['rate'] == '0.0063213'
@@ -1030,7 +1045,8 @@ def assert_poloniex_trades_result(
         if idx == 0:
             assert trade['timestamp'] == 1539713238
             assert trade['location'] == 'poloniex'
-            assert trade['pair'] == 'XMR_ETH'
+            assert trade['base_asset'] == 'XMR'
+            assert trade['quote_asset'] == 'ETH'
             assert trade['trade_type'] == 'buy'
             assert FVal(trade['amount']) == FVal('1.40308443')
             assert FVal(trade['rate']) == FVal('0.06935244')
@@ -1041,7 +1057,8 @@ def assert_poloniex_trades_result(
         elif idx == 1:
             assert trade['timestamp'] == 1539713237
             assert trade['location'] == 'poloniex'
-            assert trade['pair'] == 'ETH_BTC'
+            assert trade['base_asset'] == 'ETH'
+            assert trade['quote_asset'] == 'BTC'
             assert trade['trade_type'] == 'buy'
             assert FVal(trade['amount']) == FVal('1.40308443')
             assert FVal(trade['rate']) == FVal('0.06935244')
@@ -1052,7 +1069,8 @@ def assert_poloniex_trades_result(
         elif idx == 2:
             assert trade['timestamp'] == 1539713117
             assert trade['location'] == 'poloniex'
-            assert trade['pair'] == 'ETH_BTC'
+            assert trade['base_asset'] == 'ETH'
+            assert trade['quote_asset'] == 'BTC'
             assert trade['trade_type'] == 'sell'
             assert trade['amount'] == '1.40308443'
             assert FVal(trade['rate']) == FVal('0.06935244')

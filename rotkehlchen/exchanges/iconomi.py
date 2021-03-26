@@ -21,7 +21,6 @@ from rotkehlchen.exchanges.data_structures import (
     MarginPosition,
     Price,
     Trade,
-    TradePair,
     TradeType,
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
@@ -80,16 +79,15 @@ def trade_from_iconomi(raw_trade: Dict) -> Trade:
         native_amount = deserialize_asset_amount(raw_trade['target_amount'])
         native_asset = Asset(raw_trade['target_ticker'])
 
-    pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')
     amount = tx_amount
     rate = Price(native_amount / tx_amount)
     fee_amount = deserialize_fee(raw_trade['fee_amount'])
     fee_asset = Asset(raw_trade['fee_ticker'])
-
     return Trade(
         timestamp=timestamp,
         location=Location.ICONOMI,
-        pair=pair,
+        base_asset=tx_asset,
+        quote_asset=native_asset,
         trade_type=trade_type,
         amount=amount,
         rate=rate,

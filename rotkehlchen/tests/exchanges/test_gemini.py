@@ -4,17 +4,17 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_USD
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LINK, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
-from rotkehlchen.exchanges.gemini import gemini_symbol_to_pair
+from rotkehlchen.exchanges.gemini import gemini_symbol_to_base_quote
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.fixtures.exchanges.gemini import (
     SANDBOX_GEMINI_WP_API_KEY,
     SANDBOX_GEMINI_WP_API_SECRET,
 )
-from rotkehlchen.tests.utils.constants import A_LTC, A_ZEC
+from rotkehlchen.tests.utils.constants import A_LTC, A_PAXG, A_ZEC
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -65,7 +65,7 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
     symbols = sandbox_gemini._public_api_query('symbols')
     for symbol in symbols:
         try:
-            pair = gemini_symbol_to_pair(symbol)
+            base, quote = gemini_symbol_to_base_quote(symbol)
         except UnprocessableTradePair as e:
             test_warnings.warn(UserWarning(
                 f'UnprocessableTradePair in Gemini. {e}',
@@ -75,7 +75,8 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
                 f'Unknown Gemini asset detected. {e}',
             ))
 
-        assert pair is not None
+        assert base is not None
+        assert quote is not None
 
 
 @pytest.mark.parametrize('gemini_sandbox_api_key', [SANDBOX_GEMINI_WP_API_KEY])
@@ -124,7 +125,8 @@ def test_gemini_query_trades(sandbox_gemini):
     assert trades[0] == Trade(
         timestamp=Timestamp(1584720549),
         location=Location.GEMINI,
-        pair='BTC_USD',
+        base_asset=A_BTC,
+        quote_asset=A_USD,
         trade_type=TradeType.BUY,
         amount=FVal('0.5'),
         rate=FVal('6622.63'),
@@ -136,7 +138,8 @@ def test_gemini_query_trades(sandbox_gemini):
     assert trades[1] == Trade(
         timestamp=Timestamp(1584721109),
         location=Location.GEMINI,
-        pair='ETH_USD',
+        base_asset=A_ETH,
+        quote_asset=A_USD,
         trade_type=TradeType.SELL,
         amount=FVal('1.0'),
         rate=FVal('20.0'),
@@ -320,24 +323,24 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     assert movements == expected_movements[::-1]
 
 
-def test_gemini_symbol_to_pair():
+def test_gemini_symbol_to_base_quote():
     """Test edge cases and not yet existing cases of gemini symbol to pair"""
-    assert gemini_symbol_to_pair('btclink') == 'BTC_LINK'
-    assert gemini_symbol_to_pair('linkbtc') == 'LINK_BTC'
-    assert gemini_symbol_to_pair('linkpaxg') == 'LINK_PAXG'
-    assert gemini_symbol_to_pair('paxglink') == 'PAXG_LINK'
+    assert gemini_symbol_to_base_quote('btclink') == A_BTC, A_LINK
+    assert gemini_symbol_to_base_quote('linkbtc') == A_LINK, A_BTC
+    assert gemini_symbol_to_base_quote('linkpaxg') == A_LINK, A_PAXG
+    assert gemini_symbol_to_base_quote('paxglink') == A_PAXG, A_LINK
 
     with pytest.raises(UnprocessableTradePair):
-        gemini_symbol_to_pair('btclinkxyz')
+        gemini_symbol_to_base_quote('btclinkxyz')
     with pytest.raises(UnprocessableTradePair):
-        gemini_symbol_to_pair('xyzbtclink')
+        gemini_symbol_to_base_quote('xyzbtclink')
     with pytest.raises(UnknownAsset):
-        gemini_symbol_to_pair('zzzbtc')
+        gemini_symbol_to_base_quote('zzzbtc')
     with pytest.raises(UnknownAsset):
-        gemini_symbol_to_pair('linkzzz')
+        gemini_symbol_to_base_quote('linkzzz')
     with pytest.raises(UnknownAsset):
-        gemini_symbol_to_pair('zzzlink')
+        gemini_symbol_to_base_quote('zzzlink')
     with pytest.raises(UnknownAsset):
-        gemini_symbol_to_pair('zzzzlink')
+        gemini_symbol_to_base_quote('zzzzlink')
     with pytest.raises(UnknownAsset):
-        gemini_symbol_to_pair('linkzzzz')
+        gemini_symbol_to_base_quote('linkzzzz')

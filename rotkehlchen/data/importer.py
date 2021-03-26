@@ -18,7 +18,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.typing import AssetAmount, Fee, Location, Price, TradePair, TradeType
+from rotkehlchen.typing import AssetAmount, Fee, Location, Price, TradeType
 
 
 def remap_header(fieldnames: List[str]) -> List[str]:
@@ -119,7 +119,6 @@ class DataImporter():
             if quote_asset is None:
                 # Really makes no difference as this is just a gift and the amount is zero
                 quote_asset = A_USD
-            pair = TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
             base_amount_bought = deserialize_asset_amount(csv_row['Buy'])
             if csv_row['Sell'] != '-':
                 quote_amount_sold = deserialize_asset_amount(csv_row['Sell'])
@@ -130,7 +129,8 @@ class DataImporter():
             trade = Trade(
                 timestamp=timestamp,
                 location=location,
-                pair=pair,
+                base_asset=base_asset,
+                quote_asset=quote_asset,
                 trade_type=TradeType.BUY,  # It's always a buy during cointracking import
                 amount=base_amount_bought,
                 rate=rate,
@@ -258,11 +258,11 @@ class DataImporter():
                 quote_amount_sold = deserialize_asset_amount(native_amount)
 
             rate = Price(abs(quote_amount_sold / base_amount_bought))
-            pair = TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
             trade = Trade(
                 timestamp=timestamp,
                 location=Location.CRYPTOCOM,
-                pair=pair,
+                base_asset=base_asset,
+                quote_asset=quote_asset,
                 trade_type=trade_type,
                 amount=base_amount_bought,
                 rate=rate,
@@ -394,7 +394,6 @@ class DataImporter():
 
                     base_asset = Asset(credited_row['Currency'])
                     quote_asset = Asset(debited_row['Currency'])
-                    pair = TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
                     part_of_total = (
                         FVal(1)
                         if len(debited_rows) == 1
@@ -413,7 +412,8 @@ class DataImporter():
                     trade = Trade(
                         timestamp=timestamp,
                         location=Location.CRYPTOCOM,
-                        pair=pair,
+                        base_asset=base_asset,
+                        quote_asset=quote_asset,
                         trade_type=TradeType.BUY,
                         amount=AssetAmount(base_amount_bought),
                         rate=rate,

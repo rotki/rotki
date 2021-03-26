@@ -2879,7 +2879,8 @@ Dealing with trades
                       "trade_id": "dsadfasdsad",
                       "timestamp": 1491606401,
                       "location": "external",
-                      "pair": "BTC_EUR",
+                      "base_asset": "BTC",
+                      "quote_asset": "EUR",
                       "trade_type": "buy",
                       "amount": "0.5541",
                       "rate": "8422.1",
@@ -2899,7 +2900,8 @@ Dealing with trades
    :resjsonarr string trade_id: The uniquely identifying identifier for this trade.
    :resjsonarr int timestamp: The timestamp at which the trade occured
    :resjsonarr string location: A valid location at which the trade happened
-   :resjsonarr string pair: The pair for the trade. e.g. ``"BTC_EUR"``
+   :resjsonarr string base_asset: The base_asset of the trade.
+   :resjsonarr string quote_asset: The quote_asset of the trade.
    :resjsonarr string trade_type: The type of the trade. e.g. ``"buy"`` or ``"sell"``
    :resjsonarr string amount: The amount that was bought or sold
    :resjsonarr string rate: The rate at which 1 unit of ``base_asset`` was exchanges for 1 unit of ``quote_asset``
@@ -2930,7 +2932,8 @@ Dealing with trades
       {
           "timestamp": 1491606401,
           "location": "external",
-          "pair": "BTC_EUR",
+          "base_asset": "BTC",
+          "quote_asset": "EUR",
           "trade_type": "buy",
           "amount": "0.5541",
           "rate": "8422.1",
@@ -2942,7 +2945,8 @@ Dealing with trades
 
    :reqjson int timestamp: The timestamp at which the trade occured
    :reqjson string location: A valid location at which the trade happened
-   :reqjson string pair: The pair for the trade. e.g. ``"BTC_EUR"``
+   :resjsonarr string base_asset: The base_asset of the trade.
+   :resjsonarr string quote_asset: The quote_asset of the trade.
    :reqjson string trade_type: The type of the trade. e.g. ``"buy"`` or ``"sell"``
    :reqjson string amount: The amount that was bought or sold
    :reqjson string rate: The rate at which 1 unit of ``base_asset`` was exchanges for 1 unit of ``quote_asset``
@@ -2963,7 +2967,8 @@ Dealing with trades
                   "trade_id": "dsadfasdsad",
                   "timestamp": 1491606401,
                   "location": "external",
-                  "pair": "BTC_EUR",
+                  "base_asset": "BTC",
+                  "quote_asset": "EUR",
                   "trade_type": "buy",
                   "amount": "0.5541",
                   "rate": "8422.1",
@@ -2997,7 +3002,8 @@ Dealing with trades
           "trade_id" : "dsadfasdsad",
           "timestamp": 1491606401,
           "location": "external",
-          "pair": "BTC_EUR",
+          "base_asset": "BTC",
+          "quote_asset": "EUR",
           "trade_type": "buy",
           "amount": "1.5541",
           "rate": "8422.1",
@@ -3010,7 +3016,8 @@ Dealing with trades
    :reqjson string trade_id: The ``trade_id`` of the trade to edit
    :reqjson int timestamp: The new timestamp
    :reqjson string location: The new location
-   :reqjson string pair: The new pair
+   :reqjson string base_asset: The new base_asset
+   :reqjson string quote_asset: The new quote_asset
    :reqjson string trade_type: The new trade type
    :reqjson string rate: The new trade rate
    :reqjson string fee: The new fee
@@ -3030,7 +3037,8 @@ Dealing with trades
               "trade_id": "sdfhdjskfha",
               "timestamp": 1491606401,
               "location": "external",
-              "pair": "BTC_EUR",
+              "base_asset": "BTC",
+              "quote_asset": "EUR",
               "trade_type": "buy",
               "amount": "1.5541",
               "rate": "8422.1",
@@ -5065,7 +5073,6 @@ Getting Balancer trades
                     "fee": "0",
                     "fee_currency": "QNT",
                     "location": "balancer",
-                    "pair": "WETH_QNT",
                     "quote_asset": "QNT",
                     "rate": "0.02194014031410883771422129499",
                     "swaps": [
@@ -5094,7 +5101,6 @@ Getting Balancer trades
                     "fee": "0",
                     "fee_currency": "WETH",
                     "location": "balancer",
-                    "pair": "MKR_WETH",
                     "quote_asset": "WETH",
                     "rate": "1.068431955314709719236410104",
                     "swaps": [
@@ -5130,7 +5136,6 @@ Getting Balancer trades
    :resjson string location: Always balancer.
    :resjson string fee: Always 0 for now.
    :resjson string fee_currency: Always quote_asset.
-   :resjson string pair: BASE_ASSET_QUOTE_ASSET
    :resjson int timestamp: The timestamp of the trade
    :resjson string trade_id: A combination of transaction hash plus a unique id (for custom trades that are virtually made by us)
    :resjson string trade_type: Always buy
@@ -5684,7 +5689,6 @@ Getting Uniswap trades
               "fee": "0",
               "fee_currency": "WETH",
               "location": "uniswap",
-              "pair": "DAI_WETH",
               "quote_asset": "WETH",
               "rate": "371.4351220275573898976315789",
               "swaps": [{
@@ -5708,7 +5712,6 @@ Getting Uniswap trades
               "fee": "0",
               "fee_currency": "ALEPH",
               "location": "uniswap",
-              "pair": "DAI_ALEPH",
               "quote_asset": {
                   "ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
                   "name": "aleph.im v2",
@@ -5754,7 +5757,6 @@ Getting Uniswap trades
    :resjson string location: Always uniswap.
    :resjson string fee: Always 0 for now.
    :resjson string fee_currency: Always quote_asset.
-   :resjson string pair: BASE_ASSET_QUOTE_ASSET
    :resjson int timestamp: The timestamp of the trade
    :resjson string trade_id: A combination of transaction hash plus a unique id (for custom trades that are virtually made by us)
    :resjson string trade_type: Always buy

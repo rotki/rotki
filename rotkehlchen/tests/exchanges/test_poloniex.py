@@ -5,12 +5,12 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_from_poloniex
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import Loan, Trade, TradeType
 from rotkehlchen.exchanges.poloniex import Poloniex, process_polo_loans, trade_from_poloniex
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_DASH
+from rotkehlchen.tests.utils.constants import A_AIR2, A_DASH
 from rotkehlchen.tests.utils.exchanges import (
     POLONIEX_BALANCES_RESPONSE,
     POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE,
@@ -80,9 +80,10 @@ def test_trade_from_poloniex():
     assert trade.trade_type == TradeType.SELL
     assert trade.rate == rate
     assert trade.amount == amount
-    assert trade.pair == 'ETH_BTC'
+    assert trade.base_asset == A_ETH
+    assert trade.quote_asset == A_BTC
     assert trade.fee == cost * perc_fee
-    assert trade.fee_currency == 'BTC'
+    assert trade.fee_currency == A_BTC
     assert trade.location == Location.POLONIEX
 
 
@@ -216,7 +217,8 @@ def test_poloniex_trade_with_asset_needing_conversion():
         'category': 'exchange',
     }
     trade = trade_from_poloniex(poloniex_trade, 'AIR_BTC')
-    assert trade.pair == 'BTC_AIR-2'
+    assert trade.base_asset == A_BTC
+    assert trade.quote_asset == A_AIR2
     assert trade.location == Location.POLONIEX
 
 
@@ -237,7 +239,8 @@ def test_query_trade_history(function_scope_poloniex):
     assert len(trades) == 2
     assert trades[0].timestamp == 1539713117
     assert trades[0].location == Location.POLONIEX
-    assert trades[0].pair == 'BCH_BTC'
+    assert trades[0].base_asset == A_BCH
+    assert trades[0].quote_asset == A_BTC
     assert trades[0].trade_type == TradeType.SELL
     assert trades[0].amount == FVal('1.40308443')
     assert trades[0].rate == FVal('0.06935244')
@@ -247,7 +250,8 @@ def test_query_trade_history(function_scope_poloniex):
 
     assert trades[1].timestamp == 1539709423
     assert trades[1].location == Location.POLONIEX
-    assert trades[1].pair == 'ETH_BTC'
+    assert trades[1].base_asset == A_ETH
+    assert trades[1].quote_asset == A_BTC
     assert trades[1].trade_type == TradeType.BUY
     assert trades[1].amount == FVal('3600.53748129')
     assert trades[1].rate == FVal('0.00003432')

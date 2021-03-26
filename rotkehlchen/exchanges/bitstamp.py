@@ -26,12 +26,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import (
-    DeserializationError,
-    RemoteError,
-    UnknownAsset,
-    UnsupportedAsset,
-)
+from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     AssetMovementCategory,
@@ -49,7 +44,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp_from_bitstamp_date,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair, AssetAmount
+from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
@@ -116,7 +111,6 @@ class TradePairData(NamedTuple):
     quote_asset_symbol: str
     base_asset: Asset
     quote_asset: Asset
-    trade_pair: TradePair
 
 
 class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
@@ -590,7 +584,8 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         trade = Trade(
             timestamp=timestamp,
             location=Location.BITSTAMP,
-            pair=trade_pair_data.trade_pair,
+            base_asset=trade_pair_data.base_asset,
+            quote_asset=trade_pair_data.quote_asset,
             trade_type=trade_type,
             amount=AssetAmount(abs(base_asset_amount)),
             rate=rate,
@@ -639,7 +634,6 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             quote_asset_symbol=quote_asset_symbol,
             base_asset=base_asset,
             quote_asset=quote_asset,
-            trade_pair=TradePair(f'{base_asset.identifier}_{quote_asset.identifier}'),
         )
 
     @overload

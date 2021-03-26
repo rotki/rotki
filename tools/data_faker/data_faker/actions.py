@@ -205,10 +205,12 @@ class ActionWriter():
         fee_in_quote_currency = FVal(random.uniform(0, MAX_FEE_USD_VALUE)) / quote_asset_usd_rate
 
         # create the trade
+        base, quote = pair.split('_')
         trade = Trade(
             timestamp=ts,
             location=deserialize_location(exchange_name),
-            pair=pair,
+            base_asset=base,
+            quote_asset=quote,
             trade_type=action_type,
             amount=amount,
             rate=rate,

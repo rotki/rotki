@@ -105,7 +105,8 @@ class FakeKraken():
     def append_trade(self, trade: Trade):
         kraken_trade = create_kraken_trade(
             tradeable_pairs=list(self.asset_pairs['result'].keys()),
-            pair=trade.pair,
+            base_asset=trade.base_asset.identifier,
+            quote_asset=trade.quote_asset.identifier,
             time=trade.timestamp,
             trade_type=trade.trade_type,
             rate=trade.rate,

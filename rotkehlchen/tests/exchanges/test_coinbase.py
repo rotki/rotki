@@ -448,7 +448,8 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
     expected_trades = [Trade(
         timestamp=1500853448,
         location=Location.COINBASE,
-        pair='BTC_USD',
+        base_asset=A_BTC,
+        quote_asset=A_USD,
         trade_type=TradeType.BUY,
         amount=FVal("486.34313725"),
         rate=FVal("9.997920454875299055122012005"),
@@ -458,7 +459,8 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
     ), Trade(
         timestamp=1427402520,
         location=Location.COINBASE,
-        pair='ETH_USD',
+        base_asset=A_ETH,
+        quote_asset=A_USD,
         trade_type=TradeType.SELL,
         amount=FVal("100.45"),
         rate=FVal("88.90014932802389248382279741"),

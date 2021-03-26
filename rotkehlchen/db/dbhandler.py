@@ -2656,7 +2656,8 @@ class DBHandler:
                 trade.identifier,
                 trade.timestamp,
                 trade.location.serialize_for_db(),
-                trade.pair,
+                trade.base_asset.identifier,
+                trade.quote_asset.identifier,
                 trade.trade_type.serialize_for_db(),
                 str(trade.amount),
                 str(trade.rate),
@@ -2671,7 +2672,8 @@ class DBHandler:
               id,
               time,
               location,
-              pair,
+              base_asset,
+              quote_asset,
               type,
               amount,
               rate,
@@ -2679,7 +2681,7 @@ class DBHandler:
               fee_currency,
               link,
               notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.write_tuples(tuple_type='trade', query=query, tuples=trade_tuples)
 
@@ -2694,7 +2696,8 @@ class DBHandler:
             '  id=?, '
             '  time=?,'
             '  location=?,'
-            '  pair=?,'
+            '  base_asset=?,'
+            '  quote_asset=?,'
             '  type=?,'
             '  amount=?,'
             '  rate=?,'
@@ -2707,7 +2710,8 @@ class DBHandler:
                 trade.identifier,
                 trade.timestamp,
                 trade.location.serialize_for_db(),
-                trade.pair,
+                trade.base_asset.identifier,
+                trade.quote_asset.identifier,
                 trade.trade_type.serialize_for_db(),
                 str(trade.amount),
                 str(trade.rate),
@@ -2739,7 +2743,8 @@ class DBHandler:
             'SELECT id,'
             '  time,'
             '  location,'
-            '  pair,'
+            '  base_asset,'
+            '  quote_asset,'
             '  type,'
             '  amount,'
             '  rate,'
@@ -2759,14 +2764,15 @@ class DBHandler:
                 trade = Trade(
                     timestamp=deserialize_timestamp(result[1]),
                     location=deserialize_location_from_db(result[2]),
-                    pair=result[3],
-                    trade_type=deserialize_trade_type_from_db(result[4]),
-                    amount=deserialize_asset_amount(result[5]),
-                    rate=deserialize_price(result[6]),
-                    fee=deserialize_fee(result[7]),
-                    fee_currency=Asset(result[8]),
-                    link=result[9],
-                    notes=result[10],
+                    base_asset=Asset(result[3]),
+                    quote_asset=Asset(result[4]),
+                    trade_type=deserialize_trade_type_from_db(result[5]),
+                    amount=deserialize_asset_amount(result[6]),
+                    rate=deserialize_price(result[7]),
+                    fee=deserialize_fee(result[8]),
+                    fee_currency=Asset(result[9]),
+                    link=result[10],
+                    notes=result[11],
                 )
             except DeserializationError as e:
                 self.msg_aggregator.add_error(

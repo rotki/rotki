@@ -22,12 +22,7 @@ from rotkehlchen.errors import (
     UnprocessableTradePair,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
-    MarginPosition,
-    Trade,
-    get_pair_position_asset,
-)
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.inquirer import Inquirer
@@ -67,9 +62,9 @@ log = RotkehlchenLogsAdapter(logger)
 BITTREX_V3_PUBLIC_ENDPOINTS = ('currencies',)
 
 
-def bittrex_pair_to_world(given_pair: str) -> TradePair:
+def bittrex_pair_to_world(given_pair: str) -> Tuple[Asset, Asset]:
     """
-    Turns a pair written in the bittrex way to Rotkehlchen way
+    Turns a pair written in bittrex to way to rotki base/quote asset
 
     Throws:
         - UnsupportedAsset due to asset_from_bittrex()
@@ -81,10 +76,9 @@ def bittrex_pair_to_world(given_pair: str) -> TradePair:
             f'but found {type(given_pair)}',
         )
     pair = TradePair(given_pair.replace('-', '_'))
-    # Check that there is no unsupported asset in the trade
-    _ = asset_from_bittrex(get_pair_position_str(pair, 'first'))
-    _ = asset_from_bittrex(get_pair_position_str(pair, 'second'))
-    return pair
+    base_asset = asset_from_bittrex(get_pair_position_str(pair, 'first'))
+    quote_asset = asset_from_bittrex(get_pair_position_str(pair, 'second'))
+    return base_asset, quote_asset
 
 
 def world_pair_to_bittrex(pair: TradePair) -> str:
@@ -126,9 +120,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
         )
     order_type = deserialize_trade_type(bittrex_trade['direction'])
     fee = deserialize_fee(bittrex_trade['commission'])
-    pair = bittrex_pair_to_world(bittrex_trade['marketSymbol'])
-    quote_currency = get_pair_position_asset(pair, 'second')
-
+    base_asset, quote_asset = bittrex_pair_to_world(bittrex_trade['marketSymbol'])
     log.debug(
         'Processing bittrex Trade',
         sensitive_log=True,
@@ -137,18 +129,20 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
         order_type=order_type,
         fee=fee,
         bittrex_pair=bittrex_trade['marketSymbol'],
-        pair=pair,
+        base_asset=base_asset,
+        quote_asset=quote_asset,
     )
 
     return Trade(
         timestamp=timestamp,
         location=Location.BITTREX,
-        pair=pair,
+        base_asset=base_asset,
+        quote_asset=quote_asset,
         trade_type=order_type,
         amount=amount,
         rate=rate,
         fee=fee,
-        fee_currency=quote_currency,
+        fee_currency=quote_asset,
         link=str(bittrex_trade['id']),
     )
 

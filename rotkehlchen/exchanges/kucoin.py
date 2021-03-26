@@ -45,10 +45,9 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
+    deserialize_int_from_str,
     deserialize_price,
     deserialize_timestamp,
-    deserialize_int_from_str,
-    pair_get_assets,
 )
 from rotkehlchen.typing import (
     ApiKey,
@@ -56,7 +55,6 @@ from rotkehlchen.typing import (
     AssetMovementCategory,
     Location,
     Timestamp,
-    TradePair,
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -135,7 +133,7 @@ def _deserialize_ts(case: KucoinCase, time: int) -> Timestamp:
 DeserializationMethod = Callable[..., Union[Trade, AssetMovement]]
 
 
-def deserialize_trade_pair(trade_pair_symbol: str) -> TradePair:
+def deserialize_trade_pair(trade_pair_symbol: str) -> Tuple[Asset, Asset]:
     """May raise:
     - UnprocessableTradePair
     - UnknownAsset
@@ -149,7 +147,7 @@ def deserialize_trade_pair(trade_pair_symbol: str) -> TradePair:
     base_asset = asset_from_kucoin(base_asset_symbol)
     quote_asset = asset_from_kucoin(quote_asset_symbol)
 
-    return TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
+    return base_asset, quote_asset
 
 
 class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
@@ -579,7 +577,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             # amount = deserialize_asset_amount(raw_result['size'])
             fee = deserialize_fee(raw_result['fee'])
             trade_pair_symbol = raw_result['symbol']
-            trade_pair = deserialize_trade_pair(trade_pair_symbol)
+            base_asset, quote_asset = deserialize_trade_pair(trade_pair_symbol)
             if case == KucoinCase.TRADES:
                 fee_currency_symbol = raw_result['feeCurrency']
                 fee_currency = asset_from_kucoin(fee_currency_symbol)
@@ -590,7 +588,6 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 trade_id = raw_result['tradeId']
             else:  # old v1 trades
                 amount = deserialize_asset_amount(raw_result['amount'])
-                base_asset, quote_asset = pair_get_assets(trade_pair)
                 fee_currency = quote_asset if trade_type == TradeType.SELL else base_asset
                 rate = deserialize_price(raw_result['dealPrice'])
                 trade_id = raw_result['id']
@@ -601,7 +598,8 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         trade = Trade(
             timestamp=timestamp,
             location=Location.KUCOIN,
-            pair=trade_pair,
+            base_asset=base_asset,
+            quote_asset=quote_asset,
             trade_type=trade_type,
             amount=amount,
             rate=rate,

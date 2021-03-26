@@ -30,8 +30,6 @@ from rotkehlchen.exchanges.data_structures import (
     MarginPosition,
     Trade,
     TradeType,
-    invert_pair,
-    trade_pair_from_assets,
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
@@ -112,7 +110,6 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
         sensitive_log=True,
         timestamp=timestamp,
         order_type=trade_type,
-        pair=pair,
         base_currency=base_currency,
         quote_currency=quote_currency,
         amount=amount,
@@ -120,16 +117,14 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
         rate=rate,
     )
 
-    # Use the converted assets in our pair
-    pair = trade_pair_from_assets(base_currency, quote_currency)
-    # Since in Poloniex the base currency is the cost currency, iow in poloniex
-    # for BTC_ETH we buy ETH with BTC and sell ETH for BTC, we need to turn it
-    # into the Rotkehlchen way which is following the base/quote approach.
-    pair = invert_pair(pair)
     return Trade(
         timestamp=timestamp,
         location=Location.POLONIEX,
-        pair=pair,
+        # Since in Poloniex the base currency is the cost currency, iow in poloniex
+        # for BTC_ETH we buy ETH with BTC and sell ETH for BTC, we need to turn it
+        # into the Rotkehlchen way which is following the base/quote approach.
+        base_asset=quote_currency,
+        quote_asset=base_currency,
         trade_type=trade_type,
         amount=amount,
         rate=rate,

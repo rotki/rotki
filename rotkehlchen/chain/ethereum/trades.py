@@ -21,7 +21,6 @@ from rotkehlchen.typing import (
     Location,
     Price,
     Timestamp,
-    TradePair,
     TradeType,
 )
 
@@ -253,10 +252,6 @@ class AMMTrade(NamedTuple):
         return f'{self.tx_hash}-{self.trade_index}'
 
     @property
-    def pair(self) -> TradePair:
-        return TradePair(f'{self.base_asset.symbol}_{self.quote_asset.symbol}')
-
-    @property
     def trade_id(self) -> str:
         return self.identifier
 
@@ -284,7 +279,6 @@ class AMMTrade(NamedTuple):
             'trade_id': self.trade_id,  # PK
             'timestamp': self.timestamp,
             'location': str(self.location),
-            'pair': self.pair,
             'trade_type': str(self.trade_type),
             'amount': str(self.amount),
             'rate': str(self.rate),

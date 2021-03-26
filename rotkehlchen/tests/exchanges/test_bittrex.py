@@ -10,6 +10,7 @@ from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_date
+from rotkehlchen.tests.utils.constants import A_LTC
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
@@ -132,7 +133,8 @@ def test_bittrex_query_trade_history(bittrex):
     expected_trades = [Trade(
         timestamp=1392249600,
         location=Location.BITTREX,
-        pair='LTC_BTC',
+        base_asset=A_LTC,
+        quote_asset=A_BTC,
         trade_type=TradeType.BUY,
         amount=FVal('667.03644955'),
         rate=FVal('0.0000295'),
@@ -142,7 +144,8 @@ def test_bittrex_query_trade_history(bittrex):
     ), Trade(
         timestamp=1392249600,
         location=Location.BITTREX,
-        pair='ETH_BTC',
+        base_asset=A_ETH,
+        quote_asset=A_BTC,
         trade_type=TradeType.SELL,
         amount=FVal('2'),
         rate=FVal('5'),

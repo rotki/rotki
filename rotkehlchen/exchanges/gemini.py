@@ -36,7 +36,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
@@ -54,8 +54,8 @@ class GeminiPermissionError(Exception):
     pass
 
 
-def gemini_symbol_to_pair(symbol: str) -> TradePair:
-    """Turns a gemini symbol product into our trade pair format
+def gemini_symbol_to_base_quote(symbol: str) -> Tuple[Asset, Asset]:
+    """Turns a gemini symbol product into a base/quote asset tuple
 
     - Can raise UnprocessableTradePair if symbol is in unexpected format
     - Case raise UnknownAsset if any of the pair assets are not known to Rotki
@@ -80,7 +80,7 @@ def gemini_symbol_to_pair(symbol: str) -> TradePair:
     else:
         raise UnprocessableTradePair(symbol)
 
-    return TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
+    return base_asset, quote_asset
 
 
 class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
@@ -434,10 +434,12 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     if timestamp > end_ts:
                         break
 
+                    base, quote = gemini_symbol_to_base_quote(symbol)
                     trades.append(Trade(
                         timestamp=timestamp,
                         location=Location.GEMINI,
-                        pair=gemini_symbol_to_pair(symbol),
+                        base_asset=base,
+                        quote_asset=quote,
                         trade_type=deserialize_trade_type(entry['type']),
                         amount=deserialize_asset_amount(entry['amount']),
                         rate=deserialize_price(entry['price']),
