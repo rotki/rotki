@@ -71,14 +71,12 @@
     </v-row>
 
     <explorers />
-    <rounding-settings />
   </setting-category>
 </template>
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
 import Explorers from '@/components/settings/explorers/Explorers.vue';
-import RoundingSettings from '@/components/settings/explorers/RoundingSettings.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import {
@@ -115,7 +113,6 @@ type SettingsEntries = typeof SETTINGS[number];
 
 @Component({
   components: {
-    RoundingSettings,
     Explorers,
     TimeFrameSettings,
     SettingCategory
