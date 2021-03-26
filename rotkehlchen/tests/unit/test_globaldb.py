@@ -7,7 +7,8 @@ from rotkehlchen.errors import InputError
 from rotkehlchen.tests.utils.constants import A_BAT
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import INITIAL_TOKENS
-from rotkehlchen.typing import AssetType
+from rotkehlchen.typing import AssetType, AssetData
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -118,3 +119,81 @@ def test_check_asset_exists(globaldb):
         },
     )
     assert globaldb.check_asset_exists(AssetType.FIAT, name='Euro', symbol='EUR') == ['EUR', '4']  # noqa: E501
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_get_asset_with_symbol(globaldb):
+    # both categories of assets
+    asset_data = globaldb.get_assets_with_symbol('KEY')
+    assert asset_data == [AssetData(
+        identifier='KEY',
+        name='Selfkey',
+        symbol='KEY',
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        started=1508803200,
+        forked=None,
+        swapped_for=None,
+        ethereum_address=string_to_ethereum_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7'),
+        decimals=18,
+        cryptocompare=None,
+        coingecko='selfkey',
+        protocol=None,
+    ), AssetData(
+        identifier='KEY-2',
+        name='Bihu KEY',
+        symbol='KEY',
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        started=1507822985,
+        forked=None,
+        swapped_for=None,
+        ethereum_address=string_to_ethereum_address('0x4Cd988AfBad37289BAAf53C13e98E2BD46aAEa8c'),
+        decimals=18,
+        cryptocompare='BIHU',
+        coingecko='key',
+        protocol=None,
+    ), AssetData(
+        identifier='KEY-3',
+        name='KeyCoin',
+        symbol='KEY',
+        asset_type=AssetType.OWN_CHAIN,
+        started=1405382400,
+        forked=None,
+        swapped_for=None,
+        ethereum_address=None,
+        decimals=None,
+        cryptocompare='KEYC',
+        coingecko='',
+        protocol=None,
+    )]
+    # only non-ethereum token
+    assert globaldb.get_assets_with_symbol('BIDR') == [AssetData(
+        identifier='BIDR',
+        name='Binance IDR Stable Coin',
+        symbol='BIDR',
+        asset_type=AssetType.BINANCE_TOKEN,
+        started=1593475200,
+        forked=None,
+        swapped_for=None,
+        ethereum_address=None,
+        decimals=None,
+        cryptocompare=None,
+        coingecko='binanceidr',
+        protocol=None,
+    )]
+    # only ethereum token
+    assert globaldb.get_assets_with_symbol('AAVE') == [AssetData(
+        identifier='AAVE',
+        name='Aave Token',
+        symbol='AAVE',
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        started=1600970788,
+        forked=None,
+        swapped_for=None,
+        ethereum_address=string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'),
+        decimals=18,
+        cryptocompare=None,
+        coingecko='aave',
+        protocol=None,
+    )]
+    # finally non existing asset
+    assert globaldb.get_assets_with_symbol('DASDSADSDSDSAD') == []

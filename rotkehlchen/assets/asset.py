@@ -234,10 +234,8 @@ class Asset():
         # https://docs.python.org/3/library/dataclasses.html#frozen-instances
         object.__setattr__(self, 'name', data.name)
         object.__setattr__(self, 'symbol', data.symbol)
-        object.__setattr__(self, 'active', data.active)
         object.__setattr__(self, 'asset_type', data.asset_type)
         object.__setattr__(self, 'started', data.started)
-        object.__setattr__(self, 'ended', data.ended)
         object.__setattr__(self, 'forked', data.forked)
         object.__setattr__(self, 'swapped_for', data.swapped_for)
         object.__setattr__(self, 'cryptocompare', data.cryptocompare)

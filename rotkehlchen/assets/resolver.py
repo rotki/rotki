@@ -200,16 +200,15 @@ def _attempt_initialization(
                 identifier=asset_id,
                 symbol=data['symbol'],
                 name=data['name'],
-                active=data.get('active', True),
                 asset_type=asset_type,
                 started=data.get('started', None),
-                ended=data.get('ended', None),
                 forked=data.get('forked', None),
                 swapped_for=data.get('swapped_for', None),
                 ethereum_address=data.get('ethereum_address', None),
                 decimals=data.get('ethereum_token_decimals', None),
                 cryptocompare=data.get('cryptocompare', None),
                 coingecko=data.get('coingecko', None),
+                protocol=data.get('protocol', None),
             )
         return False, all_assets_mapping
 

@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.typing import (
     CustomEthereumToken,
     CustomEthereumTokenWithIdentifier,
     UnderlyingToken,
+    string_to_ethereum_address,
 )
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.errors import (
@@ -357,16 +358,15 @@ class GlobalDBHandler():
                 identifier=identifier,
                 name=token.name,  # type: ignore # check from missing_basic_data()
                 symbol=token.symbol,  # type: ignore # check from missing_basic_data()
-                active=True,
                 asset_type=asset_type,
                 started=token.started,
-                ended=None,
                 forked=None,
                 swapped_for=token.swapped_for.identifier if token.swapped_for else None,
                 ethereum_address=token.address,
                 decimals=token.decimals,
                 cryptocompare=token.cryptocompare,
                 coingecko=token.coingecko,
+                protocol=token.protocol,
             )
 
         # else
@@ -389,16 +389,15 @@ class GlobalDBHandler():
             identifier=identifier,
             name=result[0],
             symbol=result[1],
-            active=True,
             asset_type=asset_type,
             started=result[2],
-            ended=None,
             forked=result[3],
             swapped_for=result[4],
             ethereum_address=None,
             decimals=None,
             coingecko=result[5],
             cryptocompare=result[6],
+            protocol=None,
         )
 
     @staticmethod
@@ -880,3 +879,41 @@ class GlobalDBHandler():
             return
 
         connection.commit()
+
+    @staticmethod
+    def get_assets_with_symbol(symbol: str) -> List[AssetData]:
+        """Find all asset entries that have the given symbol"""
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        query = cursor.execute(
+            'SELECT A.identifier, A.type, B.address, B.decimals, B.name, B.symbol, B.started, null, B.swapped_for, B.coingecko, B.cryptocompare, B.protocol from assets as A LEFT OUTER JOIN ethereum_tokens as B '  # noqa: E501
+            'ON B.address = A.details_reference WHERE B.symbol=?'
+            ' UNION ALL '
+            'SELECT A.identifier, A.type, null, null, B.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null from assets as A LEFT OUTER JOIN common_asset_details as B '  # noqa: E501
+            'ON B.asset_id = A.identifier WHERE B.symbol=?;',
+            (symbol, symbol),
+        )
+        assets = []
+        for entry in query:
+            asset_type = AssetType.deserialize_from_db(entry[1])
+            ethereum_address: Optional[ChecksumEthAddress]
+            if asset_type == AssetType.ETHEREUM_TOKEN:
+                ethereum_address = string_to_ethereum_address(entry[2])
+            else:
+                ethereum_address = None
+            assets.append(AssetData(
+                identifier=entry[0],
+                asset_type=asset_type,
+                ethereum_address=ethereum_address,
+                decimals=entry[3],
+                name=entry[4],
+                symbol=entry[5],
+                started=entry[6],
+                forked=entry[7],
+                swapped_for=entry[8],
+                coingecko=entry[9],
+                cryptocompare=entry[10],
+                protocol=entry[11],
+            ))
+
+        return assets
