@@ -145,9 +145,9 @@ export default class AssetUpdate extends Vue {
     if (updateResult.done) {
       this.skipped = undefined;
       const title = this.$t('asset_update.success.title').toString();
-      const description = this.$t(
-        'asset_update.success.description'
-      ).toString();
+      const description = this.$t('asset_update.success.description', {
+        remoteVersion: this.remoteVersion
+      }).toString();
       notify(description, title, Severity.INFO, true);
     } else if (updateResult.conflicts) {
       this.conflicts = updateResult.conflicts;

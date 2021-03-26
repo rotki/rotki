@@ -1,5 +1,5 @@
 ﻿<template>
-  <v-dialog fullscreen max-width="800" v-bind="$attrs" v-on="$listeners">
+  <v-bottom-sheet persistent v-bind="$attrs" width="98%" v-on="$listeners">
     <card outlined-body>
       <template #title>{{ $t('conflict_dialog.title') }}</template>
       <template #subtitle>{{ $t('conflict_dialog.subtitle') }}</template>
@@ -86,7 +86,7 @@
         </v-row>
       </template>
     </card>
-  </v-dialog>
+  </v-bottom-sheet>
 </template>
 
 <script lang="ts">
@@ -195,6 +195,13 @@ export default class ConflictDialog extends Vue {
 
   &__action-container {
     width: 200px;
+  }
+}
+
+::v-deep {
+  .v-card {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
   }
 }
 </style>

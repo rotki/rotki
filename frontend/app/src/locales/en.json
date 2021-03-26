@@ -118,7 +118,7 @@
       "cancel": "Cancel",
       "confirm": "Confirm"
     },
-    "subtitle": "Local changes have been detected to the following assets. Select if you would like to keep the local version or overwrite with the remote.",
+    "subtitle": "Local changes have been detected to the following assets. Select if you would like to keep the local version or overwrite it with the remote one.",
     "table": {
       "headers": {
         "local": "Local",

@@ -100,4 +100,11 @@ export default class BigDialog extends Vue {
     @extend .themed-scrollbar;
   }
 }
+
+::v-deep {
+  .v-card {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+}
 </style>
