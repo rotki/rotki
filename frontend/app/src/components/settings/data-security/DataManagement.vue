@@ -1,26 +1,27 @@
 <template>
   <v-row no-gutters>
     <v-col>
-      <v-card>
-        <v-card-title>
-          <card-title>{{ $t('data_management.title') }}</card-title>
-        </v-card-title>
-        <v-card-subtitle v-text="$t('data_management.subtitle')" />
+      <card>
+        <template #title>
+          {{ $t('data_management.title') }}
+        </template>
+        <template #subtitle>
+          {{ $t('data_management.subtitle') }}
+        </template>
+
         <v-form ref="form">
-          <v-card-text>
-            <v-row>
-              <v-col>
-                <purge-selector
-                  v-model="source"
-                  :status="status"
-                  :pending="pending"
-                  @purge="showConfirmation($event)"
-                />
-              </v-col>
-            </v-row>
-          </v-card-text>
+          <v-row>
+            <v-col>
+              <purge-selector
+                v-model="source"
+                :status="status"
+                :pending="pending"
+                @purge="showConfirmation($event)"
+              />
+            </v-col>
+          </v-row>
         </v-form>
-      </v-card>
+      </card>
       <confirm-dialog
         v-if="confirm"
         display

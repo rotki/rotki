@@ -63,6 +63,12 @@
       "update":"Update"
     },
     "description": "Version {remote} of the asset database is available. Would you like to update from version {local}?",
+    "manual": {
+      "check": "Check For Update",
+      "skipped": "Update notifications are disabled for version {skipped}",
+      "subtitle": "Perform a check for an updated version of the asset database",
+      "title": "Check for asset db updates"
+    },
     "skip_notification": "Don't notify me until the next update",
     "success": {
       "description": "The asset database has been successfully updated to version {remoteVersion}",

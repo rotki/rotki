@@ -1,5 +1,15 @@
 <template>
   <fragment>
+    <card v-if="!auto" class="mt-8">
+      <template #title>{{ $t('asset_update.manual.title') }}</template>
+      <template #subtitle>{{ $t('asset_update.manual.subtitle') }}</template>
+      <div v-if="skipped" class="text-body-1">
+        {{ $t('asset_update.manual.skipped', { skipped }) }}
+      </div>
+      <v-btn depressed color="primary" class="mt-2" @click="check">
+        {{ $t('asset_update.manual.check') }}
+      </v-btn>
+    </card>
     <v-dialog
       v-if="showUpdateDialog"
       v-model="showUpdateDialog"
@@ -18,6 +28,7 @@
         </i18n>
         <template #options>
           <v-checkbox
+            v-if="auto"
             v-model="skipUpdate"
             dense
             :label="$t('asset_update.skip_notification')"
@@ -83,6 +94,19 @@ export default class AssetUpdate extends Vue {
   applyUpdates!: (conflicts?: ConflictResolution) => Promise<ApplyUpdateResult>;
   conflicts: AssetUpdateConflictResult[] = [];
 
+  get skipped(): number | undefined {
+    const skipped = localStorage.getItem(SKIP_ASSET_DB_VERSION);
+    return skipped ? parseInt(skipped) : undefined;
+  }
+
+  set skipped(version: number | undefined) {
+    if (version === undefined) {
+      localStorage.removeItem(SKIP_ASSET_DB_VERSION);
+    } else {
+      localStorage.setItem(SKIP_ASSET_DB_VERSION, version.toString());
+    }
+  }
+
   async mounted() {
     if (this.auto) {
       await this.check();
@@ -91,8 +115,12 @@ export default class AssetUpdate extends Vue {
 
   async check() {
     const checkResult = await this.checkForUpdate();
-    const skipped = localStorage.getItem(SKIP_ASSET_DB_VERSION);
-    if (skipped && parseInt(skipped) === checkResult.versions?.remoteVersion) {
+    const skipped = this.skipped;
+    if (
+      this.auto &&
+      skipped &&
+      skipped === checkResult.versions?.remoteVersion
+    ) {
       return;
     }
     this.showUpdateDialog = checkResult.updateAvailable;
@@ -106,10 +134,7 @@ export default class AssetUpdate extends Vue {
     this.showUpdateDialog = false;
     this.showConflictDialog = false;
     if (this.skipUpdate) {
-      localStorage.setItem(
-        SKIP_ASSET_DB_VERSION,
-        this.remoteVersion.toString()
-      );
+      this.skipped = this.remoteVersion;
     }
   }
 
@@ -118,6 +143,7 @@ export default class AssetUpdate extends Vue {
     this.showConflictDialog = false;
     const updateResult = await this.applyUpdates(resolution);
     if (updateResult.done) {
+      this.skipped = undefined;
       const title = this.$t('asset_update.success.title').toString();
       const description = this.$t(
         'asset_update.success.description'
