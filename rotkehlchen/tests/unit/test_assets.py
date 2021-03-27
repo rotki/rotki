@@ -6,7 +6,7 @@ import pytest
 from eth_utils import is_checksum_address
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.constants.assets import A_DAI
@@ -157,42 +157,6 @@ def test_case_does_not_matter_for_asset_constructor():
     assert a1 == a2
     assert a1.identifier == 'USDT'
     assert a2.identifier == 'USDT'
-
-
-def test_all_assets_json_assets_have_common_keys():
-    """Test that checks that the keys and types of tokens in all_assets.json are correct"""
-    root_dir = Path(__file__).resolve().parent.parent.parent
-    with open(root_dir / 'data' / 'all_assets.json', 'r') as f:
-        assets = json.loads(f.read())
-    # Create a list of pairs with fields with their types. We'll add more fields to check
-    # if we are dealing with a token
-    verify = (("symbol", str), ("name", str), ("type", str), ("started", int))
-    verify_fiat = (("symbol", str), ("name", str), ("type", str))
-    verify_token = (("symbol", str), ("name", str), ("type", str), ("started", int),
-                    ("ethereum_address", str), ("ethereum_token_decimals", int))
-    optional = (("active", bool), ("ended", int), ("forked", str), ("swapped_for", str),
-                ("cryptocompare", str), ("coingecko", str))
-
-    for asset_id, asset_data in assets.items():
-        verify_against = verify
-
-        # Check if the asset is a token and update the keys to verify
-        asset_type = asset_type_mapping[asset_data['type']]
-        if asset_type == AssetType.ETHEREUM_TOKEN:
-            verify_against = verify_token
-        elif asset_type == AssetType.FIAT:
-            verify_against = verify_fiat
-
-        # make the basic checks
-        msg = f'Key verification in asset {asset_id} failed'
-        assert all((key in asset_data.keys() and isinstance(asset_data[key], key_type)
-                    for (key, key_type) in verify_against
-                    )), msg
-
-        # check the optional fields
-        for key, key_type in optional:
-            if asset_data.get(key) is not None:
-                assert isinstance(asset_data.get(key), key_type), msg
 
 
 def test_coingecko_identifiers_are_reachable(data_dir):

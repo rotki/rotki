@@ -1,6 +1,8 @@
 import logging
+import shutil
 import sqlite3
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast, overload
 
 from typing_extensions import Literal
@@ -12,12 +14,7 @@ from rotkehlchen.chain.ethereum.typing import (
     string_to_ethereum_address,
 )
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
-from rotkehlchen.errors import (
-    DeserializationError,
-    InputError,
-    ModuleInitializationFailure,
-    UnknownAsset,
-)
+from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
 from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress
 
@@ -43,47 +40,77 @@ def _get_setting_value(cursor: sqlite3.Cursor, name: str, default_value: int) ->
     return int(result[0][0])
 
 
+def _initialize_temp_db_directory() -> TemporaryDirectory:
+    root_dir = Path(__file__).resolve().parent.parent
+    builtin_data_dir = root_dir / 'data'
+    tempdir = TemporaryDirectory()
+    shutil.copyfile(builtin_data_dir / 'global.db', Path(tempdir.name) / 'global.db')
+    return tempdir
+
+
+def _initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
+    connection = sqlite3.connect(dbpath)
+    connection.executescript(DB_SCRIPT_CREATE_TABLES)
+    cursor = connection.cursor()
+    db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+    if db_version == 1:
+        upgrade_ethereum_asset_ids(connection)
+    cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        ('version', str(GLOBAL_DB_VERSION)),
+    )
+    connection.commit()
+    return connection
+
+
 class GlobalDBHandler():
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
-    _data_directory: Path
+    _data_directory: Optional[Path] = None
+    _temp_db_directory: Optional[TemporaryDirectory] = None
     _conn: sqlite3.Connection
 
     def __new__(
             cls,
             data_dir: Path = None,
     ) -> 'GlobalDBHandler':
+        """
+        Lazily initializes the GlobalDB.
+
+        If the data dir is not given it uses a copy of the built-in global DB copied
+        in a temporary directory.
+
+        If the data dir is given it used the already existing global DB in that directory,
+        of if there is none copies the built-in one there.
+        """
         if GlobalDBHandler.__instance is not None:
+            if GlobalDBHandler.__instance._data_directory is None and data_dir is not None:
+                assert GlobalDBHandler.__instance._temp_db_directory is not None
+                # we now know datadir. Cleanup temporary DB
+                GlobalDBHandler.__instance._conn.close()
+                GlobalDBHandler.__instance._temp_db_directory.cleanup()
+                GlobalDBHandler.__instance._temp_db_directory = None
+                GlobalDBHandler.__instance._data_directory = data_dir
+                # and initialize it in the proper place
+                global_dir = data_dir / 'global_data'
+                global_dir.mkdir(parents=True, exist_ok=True)
+                dbname = global_dir / 'global.db'
+                if not dbname.is_file():
+                    # if no global db exists, copy the built-in file
+                    root_dir = Path(__file__).resolve().parent.parent
+                    builtin_data_dir = root_dir / 'data'
+                    shutil.copyfile(builtin_data_dir / 'global.db', global_dir / 'global.db')
+                GlobalDBHandler.__instance._conn = _initialize_globaldb(dbname)
+
             return GlobalDBHandler.__instance
 
-        if data_dir is None:
-            # Can happen in tests. And perhaps in an edge case when the resolver
-            # tries to use the db handler before it's initialized with a data directory
-            raise ModuleInitializationFailure(
-                'GlobalDBHandler invoked before being primed with the data directory',
-            )
-
+        # rotki not fully initialized yet. We don't know the data directory. Use temporary DB
+        assert data_dir is None, 'first call wont ever be with a data directory'
         GlobalDBHandler.__instance = object.__new__(cls)
-
-        GlobalDBHandler.__instance._data_directory = data_dir
-
-        # Create global data directory if not existing
-        global_dir = data_dir / 'global_data'
-        global_dir.mkdir(parents=True, exist_ok=True)
-        dbname = global_dir / 'global.db'
-        # Initialize the DB
-        connection = sqlite3.connect(dbname)
-        connection.executescript(DB_SCRIPT_CREATE_TABLES)
-        cursor = connection.cursor()
-        db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
-        if db_version == 1:
-            upgrade_ethereum_asset_ids(connection)
-        cursor.execute(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            ('version', str(GLOBAL_DB_VERSION)),
-        )
-        connection.commit()
-        GlobalDBHandler.__instance._conn = connection
+        tempdir = _initialize_temp_db_directory()
+        GlobalDBHandler.__instance._temp_db_directory = tempdir
+        dbname = Path(tempdir.name) / 'global.db'
+        GlobalDBHandler.__instance._conn = _initialize_globaldb(dbname)
         return GlobalDBHandler.__instance
 
     @staticmethod

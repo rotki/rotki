@@ -23,7 +23,6 @@ from asset_aggregator.timerange_check import timerange_check
 from asset_aggregator.typeinfo_check import typeinfo_check
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.coinmarketcap import Coinmarketcap, find_cmc_coin_data
@@ -34,6 +33,7 @@ from rotkehlchen.externalapis.coinpaprika import (
     get_paprika_data_eth_token_address,
 )
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -134,7 +134,7 @@ def main():
         msg_aggregator=msg_aggregator,
         initial_settings=None,
     )
-    our_data = AssetResolver(data_directory).assets
+    our_data = GlobalDBHandler(data_directory).get_all_asset_data(mapping=True)
     paprika = CoinPaprika()
     cmc = None
     cmc_list = None
