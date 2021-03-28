@@ -1279,6 +1279,110 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
+    def add_yearn_v2_vault_basic_info(
+        self,
+        address,
+        name,
+        block_number,
+        decimals,
+    ) -> None:
+        cursor = self.conn.cursor()
+        vault_tuple = (
+            address,
+            name,
+            block_number,
+            decimals,
+        )
+
+        try:
+            cursor.execute(
+                'INSERT INTO yearn_v2_vaults_basic_info( '
+                'address, '
+                'name, '
+                'block_number, '
+                'decimals)'
+                'VALUES (?, ?, ?, ?)',
+                vault_tuple,
+            )
+        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            self.msg_aggregator.add_warning(
+                f'Tried to add a yearn vault basic info that already exists in the DB. '
+                f'Vault data: {vault_tuple}. Skipping...',
+            )
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_yearn_v2_basic_info(self, address):
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT '
+            'address, '
+            'name, '
+            'block_number, '
+            'decimals, '
+            'from yearn_v2_vaults_basic_info WHERE address=?;',
+            (address,),
+        )
+
+        return query.fetchone()[0]
+
+    def add_yearn_v2_vaults_events(
+            self,
+            address: ChecksumEthAddress,
+            events: List[YearnVaultEvent],
+    ) -> None:
+        cursor = self.conn.cursor()
+        for e in events:
+            pnl_amount = None
+            pnl_usd_value = None
+            if e.realized_pnl:
+                pnl_amount = str(e.realized_pnl.amount)
+                pnl_usd_value = str(e.realized_pnl.usd_value)
+            event_tuple = (
+                address,
+                e.event_type,
+                e.from_asset.identifier,
+                str(e.from_value.amount),
+                str(e.from_value.usd_value),
+                e.to_asset.identifier,
+                str(e.to_value.amount),
+                str(e.to_value.usd_value),
+                pnl_amount,
+                pnl_usd_value,
+                str(e.block_number),
+                str(e.timestamp),
+                e.tx_hash,
+                e.log_index,
+            )
+            try:
+                cursor.execute(
+                    'INSERT INTO yearn_v2_vaults_events( '
+                    'address, '
+                    'event_type, '
+                    'from_asset, '
+                    'from_amount, '
+                    'from_usd_value, '
+                    'to_asset, '
+                    'to_amount, '
+                    'to_usd_value, '
+                    'pnl_amount, '
+                    'pnl_usd_value, '
+                    'block_number, '
+                    'timestamp, '
+                    'tx_hash, '
+                    'log_index)'
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    event_tuple,
+                )
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                self.msg_aggregator.add_warning(
+                    f'Tried to add a yearn vault event that already exists in the DB. '
+                    f'Event data: {event_tuple}. Skipping...',
+                )
+
+        self.conn.commit()
+        self.update_last_write()
+
     def get_yearn_vaults_events(
             self,
             address: ChecksumEthAddress,
@@ -1302,6 +1406,45 @@ class DBHandler:
             'log_index '
             'from yearn_vaults_events WHERE address=? AND (from_asset=? OR from_asset=?);',
             (address, vault.underlying_token.identifier, vault.token.identifier),
+        )
+        events = []
+        for result in query:
+            realized_pnl = None
+            if result[7] is not None:
+                realized_pnl = Balance(amount=FVal(result[7]), usd_value=FVal(result[8]))
+            events.append(YearnVaultEvent(
+                event_type=result[0],
+                from_asset=Asset(result[1]),
+                from_value=Balance(amount=FVal(result[2]), usd_value=FVal(result[3])),
+                to_asset=Asset(result[4]),
+                to_value=Balance(amount=FVal(result[5]), usd_value=FVal(result[6])),
+                realized_pnl=realized_pnl,
+                block_number=int(result[9]),
+                timestamp=Timestamp(int(result[10])),
+                tx_hash=result[11],
+                log_index=result[12],
+            ))
+        return events
+
+    def get_all_yearn_v2_vaults_events(self, address: ChecksumEthAddress):
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT '
+            'event_type, '
+            'from_asset, '
+            'from_amount, '
+            'from_usd_value, '
+            'to_asset, '
+            'to_amount, '
+            'to_usd_value, '
+            'pnl_amount, '
+            'pnl_usd_value, '
+            'block_number, '
+            'timestamp, '
+            'tx_hash, '
+            'log_index '
+            'from yearn_v2_vaults_events WHERE address=?;',
+            (address,),
         )
         events = []
         for result in query:
@@ -1346,6 +1489,7 @@ class DBHandler:
         - {exchange_name}_asset_movements
         - aave_events_{address}
         - yearn_vaults_events_{address}
+        - yearn_v2_vaults_events_{address}
         """
         cursor = self.conn.cursor()
         query = cursor.execute(

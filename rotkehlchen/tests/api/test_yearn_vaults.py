@@ -42,6 +42,8 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import Timestamp
 
 TEST_ACC1 = '0x7780E86699e941254c8f4D9b7eB08FF7e96BBE10'
+TEST_V2_ACC1 = '0xc3d6880fd95e06c816cb030fac45b3ffe3651cb0'
+TEST_V2_ACC2 = '0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
@@ -491,3 +493,18 @@ def test_query_yearn_vault_history_non_premium(rotkehlchen_api_server, ethereum_
         contained_in_msg='Currently logged in user testuser does not have a premium subscription',
         status_code=HTTPStatus.CONFLICT,
     )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_V2_ACC2]])
+@pytest.mark.parametrize('ethereum_modules', [['yearn_v2_vaults']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [False])
+def test_query_yearn_v2_vault_history(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "yearnvaultsv2historyresource",
+    ))
+
+    result = assert_proper_response_with_result(response)
+    print(result)
+    raise AssertionError()

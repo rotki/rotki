@@ -33,6 +33,7 @@ from rotkehlchen.constants.assets import (
     A_FARM_WBTC,
     A_FARM_WETH,
     A_GUSD,
+    A_LINK,
     A_TUSD,
     A_USD,
     A_USDC,
@@ -158,6 +159,10 @@ def get_underlying_asset_price(token: EthereumToken) -> Optional[Price]:
         price = Inquirer().find_usd_price(A_TUSD)
     elif token in ASSETS_UNDERLYING_BTC:
         price = Inquirer().find_usd_price(A_BTC)
+    elif token_symbol == 'yv1INCH':
+        price = Inquirer().find_usd_price(A_1INCH)
+    elif token_symbol == 'yvLINK':
+        price = Inquirer().find_usd_price(A_LINK)
 
     custom_token = GlobalDBHandler().get_ethereum_token(token.ethereum_address)
     if custom_token and custom_token.underlying_tokens is not None:

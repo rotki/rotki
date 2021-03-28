@@ -143,3 +143,4 @@ FARM_ASSET_ABI = EthereumConstants.abi('FARM_ASSET')
 UNISWAP_V2_LP_ABI = EthereumConstants.abi('UNISWAP_V2_LP')
 
 YEARN_VAULTS_PREFIX = 'yearn_vaults_events'
+YEARN_V2_VAULTS_PREFIX = 'yearn_v2_vaults_events'

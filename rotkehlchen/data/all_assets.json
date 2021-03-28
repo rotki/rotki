@@ -14858,6 +14858,66 @@
         "symbol": "yWETH",
         "type": "ethereum token"
     },
+    "yvDAI": {
+        "coingecko": "dai",
+        "cryptocompare": "",
+        "ethereum_address": "0x19d3364a399d251e894ac732651be8b0e4e85001",
+        "ethereum_token_decimals": 18,
+        "name": "DAI yVault",
+        "started": 1610900779,
+        "symbol": "yvDAI",
+        "type": "ethereum token"
+    },
+    "yvLINK": {
+        "coingecko": "chainlink",
+        "cryptocompare": "",
+        "ethereum_address": "0x03c31f3444357087d5f568d24AE17f9177c8AA84",
+        "ethereum_token_decimals": 18,
+        "name": "LINK yVault",
+        "started": 1615383226,
+        "symbol": "yvLINK",
+        "type": "ethereum token"
+    },
+    "yExptWBTC": {
+        "coingecko": "wrapped-bitcoin",
+        "cryptocompare": "",
+        "ethereum_address": "0x0e8A7717A4FD7694682E7005957dD5d7598bF14A",
+        "ethereum_token_decimals": 8,
+        "name": "WBTC yVault",
+        "started": 1611805323,
+        "symbol": "yExptWBTC",
+        "type": "ethereum token"
+    },
+    "yv1INCH": {
+        "coingecko": "1inch",
+        "cryptocompare": "",
+        "ethereum_address": "0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67",
+        "ethereum_token_decimals": 18,
+        "name": "1INCH yVault",
+        "started": 1613761651,
+        "symbol": "yv1INCH",
+        "type": "ethereum token"
+    },
+    "yvsteCRV": {
+        "coingecko": "",
+        "cryptocompare": "",
+        "ethereum_address": "0xdCD90C7f6324cfa40d7169ef80b12031770B4325",
+        "ethereum_token_decimals": 18,
+        "name": "steCRV yVault",
+        "started": 1610649529,
+        "symbol": "yvsteCRV",
+        "type": "ethereum token"
+    },
+    "steCRV": {
+        "coingecko": "",
+        "cryptocompare": "",
+        "ethereum_address": "0x06325440D014e39736583c165C2963BA99fAf14E",
+        "ethereum_token_decimals": 18,
+        "name": "Curve.fi ETH/stETH",
+        "started": 1610649529,
+        "symbol": "steCRV",
+        "type": "ethereum token"
+    },
     "3Crv": {
         "coingecko": "curve-dao-token",
         "cryptocompare": "",

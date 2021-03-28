@@ -244,6 +244,36 @@ CREATE TABLE IF NOT EXISTS yearn_vaults_events (
 );
 """
 
+DB_CREATE_YEARN_V2_VAULT_EVENTS = """
+CREATE TABLE IF NOT EXISTS yearn_v2_vaults_events (
+    address VARCHAR[42] NOT NULL,
+    event_type VARCHAR[10] NOT NULL,
+    from_asset VARCHAR[44] NOT NULL,
+    from_amount TEXT NOT NULL,
+    from_usd_value TEXT NOT NULL,
+    to_asset VARCHAR[44] NOT NULL,
+    to_amount TEXT NOT NULL,
+    to_usd_value TEXT NOT NULL,
+    pnl_amount TEXT,
+    pnl_usd_value TEXT,
+    block_number INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
+    tx_hash VARCHAR[66] NOT NULL,
+    log_index INTEGER NOT NULL,
+    PRIMARY KEY (event_type, tx_hash, log_index)
+);
+"""
+
+DB_CREATE_YEARN_V2_VAULTS_BASIC_INFO = """
+CREATE TABLE IF NOT EXISTS yearn_v2_vaults_basic_info (
+    address VARCHAR[42] NOT NULL,
+    name VARCHAR[80] NOT NULL,
+    block_number INTEGER NOT NULL,
+    decimals INTEGER NOT NULL,
+    PRIMARY KEY (address)
+);
+"""
+
 DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS = """
 CREATE TABLE IF NOT EXISTS external_service_credentials (
     name VARCHAR[30] NOT NULL PRIMARY KEY,
@@ -559,7 +589,7 @@ CREATE TABLE IF NOT EXISTS balancer_events (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -573,6 +603,7 @@ PRAGMA foreign_keys=on;
     DB_CREATE_USER_CREDENTIALS,
     DB_CREATE_USER_CREDENTIALS_MAPPINGS,
     DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS,
+    DB_CREATE_YEARN_V2_VAULTS_BASIC_INFO,
     DB_CREATE_BLOCKCHAIN_ACCOUNTS,
     DB_CREATE_ETHEREUM_ACCOUNTS_DETAILS,
     DB_CREATE_MULTISETTINGS,
@@ -587,6 +618,7 @@ PRAGMA foreign_keys=on;
     DB_CREATE_TAG_MAPPINGS,
     DB_CREATE_AAVE_EVENTS,
     DB_CREATE_YEARN_VAULT_EVENTS,
+    DB_CREATE_YEARN_V2_VAULT_EVENTS,
     DB_CREATE_XPUBS,
     DB_CREATE_XPUB_MAPPINGS,
     DB_CREATE_AMM_SWAPS,
