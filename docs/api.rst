@@ -6257,6 +6257,243 @@ Getting yearn finance vaults historical data
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+Getting yearnv2 finance vaults balances
+==========================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/yearnv2/vaults/balances
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on the yearn finance vaults balances resource will return all yearn vault balances.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/yearnv2/vaults/balances HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+                  "YCRV Vault": {
+                      "underlying_token": "yDAI+yUSDC+yUSDT+yTUSD",
+                      "vault_token": "yyDAI+yUSDC+yUSDT+yTUSD",
+                      "underlying_value": {
+                          "amount": "25", "usd_value": "150"
+                      },
+                      "vault_value": {
+                          "amount": "19", "usd_value": "150"
+                      },
+                      "roi": "25.55%",
+                  },
+                  "YYFI Vault": {
+                      "underlying_token": "YFI",
+                      "vault_token": "yYFI",
+                      "underlying_value": {
+                          "amount": "25", "usd_value": "150"
+                      },
+                      "vault_value": {
+                          "amount": "19", "usd_value": "150"
+                      },
+                      "roi": "5.35%",
+                  }
+              },
+          "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
+              "YALINK Vault": {
+                      "underlying_token": "aLINK",
+                      "vault_token": "yaLINK",
+                      "underlying_value": {
+                          "amount": "25", "usd_value": "150"
+                      },
+                      "vault_value": {
+                          "amount": "19", "usd_value": "150"
+                      },
+                      "roi": "35.15%",
+              }
+          }
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of addresses to a mapping of vault names to vault balances
+   :resjsonarr string underlying_token: The symbol of the token that is deposited to the vault
+   :resjsonarr string vault_token: The symbol of the token that is minted when you deposit underlying token to the vault
+   :resjsonarr object underlying_value: The value of the underlying token for the vault.
+   :resjsonarr object vault_value: The value of the vault token for the vault.
+   :resjsonarr str roi: The Return of Investment for the vault since its creation
+
+
+   :statuscode 200: Yearn vault balances succesfully queried.
+   :statuscode 409: User is not logged in. Or yearn module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+
+Getting yearnv2 finance vaults historical data
+=============================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/yearnv2/vaults/history
+
+   .. note::
+      This endpoint is only available for premium users
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on the yearn finance vaults history resource will return all yearn vault related events for addresses that have utilized yearn finance vaults.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/yearnv2/vaults/history HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson bool reset_db_data: Boolean denoting whether all yearn event data saved in the DB are going to be deleted and rewritten after this query. False by default.
+   :reqjson int from_timestamp: Timestamp from which to query yearn vaults historical data. If not given 0 is implied.
+   :reqjson int to_timestamp: Timestamp until which to query yearn vaults historical data. If not given current timestamp is implied.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+                  "YCRV Vault": {
+                      "events": [{
+                          "event_type": "deposit",
+                          "block_number": 1,
+                          "timestamp": 1,
+                          "from_asset": "yDAI+yUSDC+yUSDT+yTUSD",
+                          "from_value": {
+                              "amount": "115000", "usd_value": "119523.23"
+                          },
+                          "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+                          "to_value": {
+                              "amount": "108230.234", "usd_value": "119523.23"
+                          },
+                          "realized_pnl": null,
+                          "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                          "log_index": 1
+                      }, {
+                          "event_type": "withdraw",
+                          "block_number": 1,
+                          "timestamp": 1,
+                          "from_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+                          "from_value": {
+                              "amount": "108230.234", "usd_value": "125321.24"
+                          },
+                          "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+                          "to_value": {
+                              "amount": "117500.23", "usd_value": "123500.32"
+                          },
+                          "realized_pnl": {
+                              "amount": "2500.23", "usd_value": "2750.452"
+                          },
+                          "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                          "log_index": 1
+                      }],
+                      "profit_loss": {
+                              "amount": "2500.23", "usd_value": "2750.452"
+                      }
+                  },
+                  "YYFI Vault": {
+                      "events": [{
+                          "event_type": "deposit",
+                          "block_number": 1,
+                          "timestamp": 1,
+                          "from_asset": "YFI",
+                          "from_value": {
+                              "amount": "5", "usd_value": "155300.23"
+                          },
+                          "to_asset": "yYFI",
+                          "to_value": {
+                              "amount": "4.97423", "usd_value": "154300.44"
+                          },
+                          "realized_pnl": null,
+                          "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                          "log_index": 1
+                      }],
+                      "profit_loss": {
+                              "amount": "0.05", "usd_value": "1500"
+                      }
+              }
+          },
+          "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
+              "YSRENCURVE Vault": {
+                      "events": [{
+                          "event_type": "deposit",
+                          "block_number": 1,
+                          "timestamp": 1,
+                          "from_asset": "crvRenWSBTC",
+                          "from_value": {
+                              "amount": "20", "usd_value": "205213.12"
+                          },
+                          "to_asset": "ycrvRenWSBTC",
+                          "to_value": {
+                              "amount": "19.8523", "usd_value": "2049874.23"
+                          },
+                          "realized_pnl": null,
+                          "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
+                          "log_index": 1
+                      }],
+                      "profit_loss": {
+                              "amount": "0.1", "usd_value": "1984.23"
+                      }
+              }
+          }},
+          "message": ""
+      }
+
+   :resjson object result: A mapping of addresses to vault history results
+   :resjsonarr string event_type: The type of the yearn vault event.
+       - ``"deposit"``: when you deposit a token in the vault
+       - ``"withdraw"``: when you withdraw a token from the vault
+   :resjsonarr int timestamp: The unix timestamp at which the event occured.
+   :resjsonarr int block_number: The block number at which the event occured.
+   :resjsonarr string from_asset: The source asset involved in the event.
+       - For ``"deposit"`` events this is the asset being deposited in the vault
+       - For ``"withdraw"`` events this is the vault token that is being burned and converted to the original asset.
+   :resjsonarr object from_value: The value of the from asset for the event. The rate should be the asset/USD rate at the events's timestamp. But in reality due to current limitations of our implementation is the USD value at the current timestamp. We will address this soon.
+   :resjsonarr string to_asset: The target asset involved in the event.
+       - For ``"deposit"`` events this is the vault token that is minted to represent the equivalent of the deposited asset.
+       - For ``"withdraw"`` events this is the original token that the user withdrew from the vault
+   :resjsonarr object to_value: The value of the to asset for the event. The rate should be the asset/USD rate at the events's timestamp. But in reality due to current limitations of our implementation is the USD value at the current timestamp. We will address this soon.
+   :resjsonarr object realized_pnl: [Optional]. Realized profit/loss at this event if any. May happen for withdraw events. Same limitation as the usd value in from/to value applies.
+   :resjsonarr int tx_hash: The transaction hash of the event.
+   :resjsonarr int log_index: The log index of the event.
+   :resjson object profit_loss: The total profit/loss for the vault
+
+   :statuscode 200: Yearn vaults history succesfully queried.
+   :statuscode 409: User is not logged in. Or yearn module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+
 Getting Loopring balances
 ==============================
 
