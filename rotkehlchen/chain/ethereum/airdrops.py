@@ -19,7 +19,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.typing import ChecksumEthAddress
-from rotkehlchen.utils.serialization import rlk_jsondumps, jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 AIRDROPS = {
     'uniswap': (
@@ -37,7 +37,7 @@ AIRDROPS = {
     'tornado': (
         # is checksummed
         'https://raw.githubusercontent.com/tornadocash/airdrop/master/airdrop.csv',
-        A_TORN,  # Don't have TORN token yet?
+        A_TORN,
         'https://tornado.cash/',
     ),
     'cornichon': (

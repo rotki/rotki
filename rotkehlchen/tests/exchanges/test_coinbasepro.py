@@ -14,11 +14,10 @@ from unittest.mock import patch
 
 from typing_extensions import Literal
 
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_BAT, A_ETH
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro, coinbasepro_to_worldpair
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_BAT
 from rotkehlchen.tests.utils.mock import MockResponse
 
 PRODUCTS_RESPONSE = """[{

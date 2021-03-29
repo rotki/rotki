@@ -22,9 +22,30 @@ import gevent
 import requests
 from typing_extensions import Literal
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_COMP, A_DAI, A_USD, A_USDT, A_WETH
+from rotkehlchen.constants.assets import (
+    A_BAT,
+    A_BNB,
+    A_BZRX,
+    A_CDAI,
+    A_COMP,
+    A_CUSDC,
+    A_DAI,
+    A_DPI,
+    A_MCB,
+    A_REP,
+    A_SAI,
+    A_STAKE,
+    A_UNI,
+    A_USD,
+    A_USDC,
+    A_USDT,
+    A_WBTC,
+    A_WETH,
+    A_YFII,
+    A_ZRX,
+)
 from rotkehlchen.errors import (
     NoPriceForGivenTimestamp,
     PriceQueryUnsupportedAsset,
@@ -41,7 +62,7 @@ from rotkehlchen.utils.misc import (
     timestamp_to_date,
     ts_now,
 )
-from rotkehlchen.utils.serialization import rlk_jsondumps, jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -59,18 +80,6 @@ RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 CRYPTOCOMPARE_QUERY_RETRY_TIMES = 3
 CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME = 60
 CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
-    Asset('TLN'): A_WETH,
-    Asset('BLY'): A_USDT,
-    Asset('cDAI'): A_DAI,
-    Asset('cCOMP'): A_COMP,
-    Asset('cBAT'): Asset('BAT'),
-    Asset('cREP'): Asset('REP'),
-    Asset('cSAI'): Asset('SAI'),
-    Asset('cUSDC'): Asset('USDC'),
-    Asset('cUSDT'): A_USDT,
-    Asset('cWBTC'): Asset('WBTC'),
-    Asset('cUNI'): Asset('UNI'),
-    Asset('cZRX'): Asset('ZRX'),
     Asset('ADADOWN'): A_USDT,
     Asset('ADAUP'): A_USDT,
     Asset('BNBDOWN'): A_USDT,
@@ -89,66 +98,78 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     Asset('TRXUP'): A_USDT,
     Asset('XRPDOWN'): A_USDT,
     Asset('XRPUP'): A_USDT,
-    Asset('DEXT'): A_USDT,
-    Asset('DOS'): A_USDT,
-    Asset('GEEQ'): A_USDT,
     Asset('LINKDOWN'): A_USDT,
     Asset('LINKUP'): A_USDT,
     Asset('XTZDOWN'): A_USDT,
     Asset('XTZUP'): A_USDT,
-    Asset('STAKE'): A_USDT,
-    Asset('MCB'): A_USDT,
-    Asset('TRB'): A_USDT,
-    Asset('YFI'): A_USDT,
-    Asset('YAM'): A_USDT,
-    Asset('DEC-2'): A_USDT,
-    Asset('ORN'): A_USDT,
-    Asset('PERX'): A_USDT,
-    Asset('PRQ'): A_USDT,
-    Asset('RING'): A_USDT,
-    Asset('SBREE'): A_USDT,
-    Asset('YFII'): A_USDT,
-    Asset('BZRX'): A_USDT,
-    Asset('CREAM'): A_USDT,
-    Asset('ADEL'): A_USDT,
     Asset('ANK'): A_USDT,
     Asset('CORN'): A_USDT,
     Asset('SAL'): A_USDT,
     Asset('CRT'): A_USDT,
-    Asset('FSW'): A_USDT,
     Asset('JFI'): A_USDT,
     Asset('PEARL'): A_USDT,
     Asset('TAI'): A_USDT,
-    Asset('YFL'): A_USDT,
-    Asset('TRUMPWIN'): A_USDT,
-    Asset('TRUMPLOSE'): A_USDT,
     Asset('KLV'): A_USDT,
     Asset('KRT'): Asset('KRW'),
     Asset('RVC'): A_USDT,
     Asset('SDT'): A_USDT,
-    Asset('CHI'): A_USDT,
-    Asset('BAKE'): Asset('BNB'),
-    Asset('BURGER'): Asset('BNB'),
-    Asset('CAKE'): Asset('BNB'),
-    Asset('BREE'): A_USDT,
-    Asset('GHST'): A_USDT,
-    Asset('MEXP'): A_USDT,
-    Asset('POLS'): A_USDT,
-    Asset('RARI'): A_USDT,
-    Asset('VALUE'): A_USDT,
-    Asset('$BASED'): A_WETH,
-    Asset('DPI'): A_WETH,
-    Asset('JRT'): A_USDT,
-    Asset('PICKLE'): A_USDT,
+    Asset('BAKE'): A_BNB,
+    Asset('BURGER'): A_BNB,
+    Asset('CAKE'): A_BNB,
     Asset('FILDOWN'): A_USDT,
     Asset('FILUP'): A_USDT,
     Asset('YFIDOWN'): A_USDT,
     Asset('YFIUP'): A_USDT,
-    Asset('BOT'): A_USDT,
-    Asset('SG'): A_USDT,
-    Asset('SPARTA'): Asset('BNB'),
-    Asset('MIR'): Asset('USDC'),
-    Asset('NDX'): A_WETH,
+    Asset('SPARTA'): A_BNB,
+    EthereumToken('0x679131F591B4f369acB8cd8c51E68596806c3916'): A_WETH,  # Trustlines
+    EthereumToken('0xf8aD7dFe656188A23e89da09506Adf7ad9290D5d'): A_USDT,  # Blocery
+    A_CDAI: A_DAI,  # Compound DAI
+    EthereumToken('0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4'): A_COMP,  # Compound Comp
+    EthereumToken('0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E'): A_BAT,  # Comppound BAT
+    EthereumToken('0x158079Ee67Fce2f58472A96584A73C7Ab9AC95c1'): A_REP,  # Compound REP
+    EthereumToken('0xF5DCe57282A584D2746FaF1593d3121Fcac444dC'): A_SAI,  # Compound SAI
+    A_CUSDC: A_USDC,  # Compound USDC
+    EthereumToken('0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9'): A_USDT,  # Compound USDT
+    EthereumToken('0xC11b1268C1A384e55C48c2391d8d480264A3A7F4'): A_WBTC,  # Compound WBTC
+    EthereumToken('0x35A18000230DA775CAc24873d00Ff85BccdeD550'): A_UNI,  # Compound UNI
+    EthereumToken('0xB3319f5D18Bc0D84dD1b4825Dcde5d5f7266d407'): A_ZRX,  # Compound ZRX
+    EthereumToken('0x26CE25148832C04f3d7F26F32478a9fe55197166'): A_USDT,  # DEXTools
+    EthereumToken('0x0A913beaD80F321E7Ac35285Ee10d9d922659cB7'): A_USDT,  # DOS Network token
+    EthereumToken('0x6B9f031D718dDed0d681c20cB754F97b3BB81b78'): A_USDT,  # GEEQ
+    A_STAKE: A_USDT,  # xDAI STAKE
+    A_MCB: A_USDT,  # MCDEX Token
+    EthereumToken('0x0Ba45A8b5d5575935B8158a88C631E9F9C95a2e5'): A_USDT,  # Tellor Tributes
+    EthereumToken('0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e'): A_USDT,  # YFI
+    EthereumToken('0x0AaCfbeC6a24756c20D41914F2caba817C0d8521'): A_USDT,  # YAM
+    EthereumToken('0x30f271C9E86D2B7d00a6376Cd96A1cFBD5F0b9b3'): A_USDT,  # Decentr
+    EthereumToken('0x0258F474786DdFd37ABCE6df6BBb1Dd5dfC4434a'): A_USDT,  # Orion protocol
+    EthereumToken('0x3C6ff50c9Ec362efa359317009428d52115fe643'): A_USDT,  # PeerEx Network
+    EthereumToken('0xFE2786D7D1cCAb8B015f6Ef7392F67d778f8d8D7'): A_USDT,  # Parsiq Token
+    EthereumToken('0x9469D013805bFfB7D3DEBe5E7839237e535ec483'): A_USDT,  # Darwinia Network
+    EthereumToken('0x25377ddb16c79C93B0CBf46809C8dE8765f03FCd'): A_USDT,  # Synthetic CBDAO
+    A_YFII: A_USDT,  # Yfii.finance
+    A_BZRX: A_USDT,  # bZx Protocol
+    EthereumToken('0x2ba592F78dB6436527729929AAf6c908497cB200'): A_USDT,  # Cream finance
+    EthereumToken('0x94d863173EE77439E4292284fF13fAD54b3BA182'): A_USDT,  # Akropolis delphi
+    EthereumToken('0xfffffffFf15AbF397dA76f1dcc1A1604F45126DB'): A_USDT,  # FalconSwap Token
+    EthereumToken('0x28cb7e841ee97947a86B06fA4090C8451f64c0be'): A_USDT,  # YFLink
+    EthereumToken('0x073aF3f70516380654Ba7C5812c4Ab0255F081Bc'): A_USDT,  # TRUMPWIN
+    EthereumToken('0x70878b693A57a733A79560e33cF6a828E685d19a'): A_USDT,  # TRUMPLOSE
+    EthereumToken('0x0000000000004946c0e9F43F4Dee607b0eF1fA1c'): A_USDT,  # Chi Gas Token
+    EthereumToken('0x4639cd8cd52EC1CF2E496a606ce28D8AfB1C792F'): A_USDT,  # CBDAO
+    EthereumToken('0x3F382DbD960E3a9bbCeaE22651E88158d2791550'): A_USDT,  # AaveGotchi GHST
+    EthereumToken('0xDe201dAec04ba73166d9917Fdf08e1728E270F06'): A_USDT,  # Moji Experience Points
+    EthereumToken('0x83e6f1E41cdd28eAcEB20Cb649155049Fac3D5Aa'): A_USDT,  # Polkastarter
+    EthereumToken('0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'): A_USDT,  # Rarible
+    EthereumToken('0x49E833337ECe7aFE375e44F4E3e8481029218E5c'): A_USDT,  # Value Liquidity
+    EthereumToken('0x68A118Ef45063051Eac49c7e647CE5Ace48a68a5'): A_WETH,  # Based Money
+    A_DPI: A_WETH,  # Defipulse index
+    EthereumToken('0x8A9C67fee641579dEbA04928c4BC45F66e26343A'): A_USDT,  # Jarvis reward token
+    EthereumToken('0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5'): A_USDT,  # Pickle token
+    EthereumToken('0x5bEaBAEBB3146685Dd74176f68a0721F91297D37'): A_USDT,  # Bounce token
+    EthereumToken('0xdDF7Fd345D54ff4B40079579d4C4670415DbfD0A'): A_USDT,  # Social good
+    EthereumToken('0x09a3EcAFa817268f77BE1283176B946C4ff2E608'): A_USDC,  # Mirror protocol
+    EthereumToken('0x1966d718A565566e8E202792658D7b5Ff4ECe469'): A_WETH,  # nDex
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 CRYPTOCOMPARE_HOURQUERYLIMIT = 2000

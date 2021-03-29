@@ -6,10 +6,10 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveRepayEvent,
     AaveSimpleEvent,
 )
-from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_WBTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_ADAI, A_WBTC
+from rotkehlchen.tests.utils.constants import A_ADAI
 from rotkehlchen.typing import Timestamp
 
 AAVE_TEST_ACC_1 = '0x21d05071cA08593e13cd3aFD0b4869537e015C92'

@@ -10,7 +10,7 @@ import requests
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.modules.compound import A_COMP, CompoundEvent
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
-from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_CDAI, A_CUSDC, A_DAI, A_ETH, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.api import (
@@ -21,7 +21,6 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.constants import A_CDAI, A_CUSDC, A_USDC
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import Timestamp
 

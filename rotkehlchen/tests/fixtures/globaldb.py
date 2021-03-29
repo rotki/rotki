@@ -1,9 +1,9 @@
+from pathlib import Path
+from shutil import copyfile
 from typing import List, Optional
 
 import pytest
 
-from pathlib import Path
-from shutil import copyfile
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.globaldb import GlobalDBHandler
 

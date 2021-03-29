@@ -9,6 +9,7 @@ import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
+from rotkehlchen.constants.assets import A_USDC, A_WBTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -23,7 +24,6 @@ from rotkehlchen.tests.utils.checks import (
     assert_serialized_dicts_equal,
     assert_serialized_lists_equal,
 )
-from rotkehlchen.tests.utils.constants import A_USDC, A_WBTC
 from rotkehlchen.tests.utils.makerdao import mock_proxies
 
 mocked_prices = {

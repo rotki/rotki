@@ -13,6 +13,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap import UniswapPoolEvent, Uniswap
 from rotkehlchen.chain.ethereum.modules.uniswap.typing import UNISWAP_EVENTS_PREFIX, EventType
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.constants.assets import A_ADAI_V1, A_DAI, A_LEND, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
@@ -26,6 +27,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.constants import A_ADAI_V2, A_DOLLAR_BASED, A_SLP
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
@@ -156,7 +158,7 @@ def test_get_balances(
 
 EXPECTED_TRADES = [AMMTrade(
     trade_type=TradeType.BUY,
-    base_asset=EthereumToken('WETH'),
+    base_asset=A_WETH,
     quote_asset=UnknownEthereumToken(
         ethereum_address=string_to_ethereum_address('0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16'),  # noqa: E501
         symbol='YAM',
@@ -178,7 +180,7 @@ EXPECTED_TRADES = [AMMTrade(
             symbol='YAM',
             name='YAM',
         ),
-        token1=EthereumToken('WETH'),
+        token1=A_WETH,
         amount0_in=AssetAmount(FVal('12.5760601683024')),
         amount1_in=AssetAmount(ZERO),
         amount0_out=AssetAmount(ZERO),
@@ -186,7 +188,7 @@ EXPECTED_TRADES = [AMMTrade(
     )],
 ), AMMTrade(
     trade_type=TradeType.BUY,
-    base_asset=EthereumToken('WETH'),
+    base_asset=A_WETH,
     quote_asset=UnknownEthereumToken(
         ethereum_address=string_to_ethereum_address('0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16'),  # noqa: E501
         symbol='YAM',
@@ -208,7 +210,7 @@ EXPECTED_TRADES = [AMMTrade(
             symbol='YAM',
             name='YAM',
         ),
-        token1=EthereumToken('WETH'),
+        token1=A_WETH,
         amount0_in=AssetAmount(FVal('2.9857008445346')),
         amount1_in=AssetAmount(ZERO),
         amount0_out=AssetAmount(ZERO),
@@ -216,7 +218,7 @@ EXPECTED_TRADES = [AMMTrade(
     )],
 ), AMMTrade(
     trade_type=TradeType.BUY,
-    base_asset=EthereumToken('WETH'),
+    base_asset=A_WETH,
     quote_asset=UnknownEthereumToken(
         ethereum_address=string_to_ethereum_address('0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16'),  # noqa: E501
         symbol='YAM',
@@ -238,7 +240,7 @@ EXPECTED_TRADES = [AMMTrade(
             symbol='YAM',
             name='YAM',
         ),
-        token1=EthereumToken('WETH'),
+        token1=A_WETH,
         amount0_in=AssetAmount(FVal('12.0835000118708')),
         amount1_in=AssetAmount(ZERO),
         amount0_out=AssetAmount(ZERO),
@@ -246,7 +248,7 @@ EXPECTED_TRADES = [AMMTrade(
     )],
 ), AMMTrade(
     trade_type=TradeType.BUY,
-    base_asset=EthereumToken('DAI'),
+    base_asset=A_DAI,
     quote_asset=UnknownEthereumToken(
         ethereum_address=string_to_ethereum_address('0xC0134b5B924c2FCA106eFB33C45446c466FBe03e'),  # noqa: E501
         symbol='ALEPH',
@@ -268,7 +270,7 @@ EXPECTED_TRADES = [AMMTrade(
             symbol='ALEPH',
             name='aleph.im',
         ),
-        token1=EthereumToken('WETH'),
+        token1=A_WETH,
         amount0_in=AssetAmount(FVal('16602.230539197612')),
         amount1_in=AssetAmount(ZERO),
         amount0_out=AssetAmount(ZERO),
@@ -281,8 +283,8 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
         timestamp=Timestamp(1595787897),
         location=Location.UNISWAP,
-        token0=EthereumToken('DAI'),
-        token1=EthereumToken('WETH'),
+        token0=A_DAI,
+        token1=A_WETH,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('12.569723183207224488')),
         amount0_out=AssetAmount(FVal('3801.255053678779873244')),
@@ -290,8 +292,8 @@ EXPECTED_TRADES = [AMMTrade(
     )],
 ), AMMTrade(
     trade_type=TradeType.BUY,
-    base_asset=EthereumToken('LEND'),
-    quote_asset=EthereumToken('WETH'),
+    base_asset=A_LEND,
+    quote_asset=A_WETH,
     amount=AssetAmount(FVal('783.815545775206396604')),
     rate=Price(FVal('0.001336937475067974904054378106')),
     trade_index=0,
@@ -303,8 +305,8 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
         timestamp=Timestamp(1595252547),
         location=Location.UNISWAP,
-        token0=EthereumToken('LEND'),
-        token1=EthereumToken('WETH'),
+        token0=A_LEND,
+        token1=A_WETH,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('1.047912376687731144')),
         amount0_out=AssetAmount(FVal('783.815545775206396604')),
@@ -312,8 +314,8 @@ EXPECTED_TRADES = [AMMTrade(
     )],
 ), AMMTrade(
     trade_type=TradeType.BUY,
-    base_asset=EthereumToken('LEND'),
-    quote_asset=EthereumToken('WETH'),
+    base_asset=A_LEND,
+    quote_asset=A_WETH,
     amount=AssetAmount(FVal('3818.889005228581791673')),
     rate=Price(FVal('0.001121122145540436399587918681')),
     trade_index=0,
@@ -325,8 +327,8 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
         timestamp=Timestamp(1594917107),
         location=Location.UNISWAP,
-        token0=EthereumToken('DAI'),
-        token1=EthereumToken('WETH'),
+        token0=A_DAI,
+        token1=A_WETH,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('4.281441035122650458')),
         amount0_out=AssetAmount(FVal('980.087534272890506353')),
@@ -339,8 +341,8 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
         timestamp=Timestamp(1594917107),
         location=Location.UNISWAP,
-        token0=EthereumToken('DAI'),
-        token1=EthereumToken('LEND'),
+        token0=A_DAI,
+        token1=A_LEND,
         amount0_in=AssetAmount(FVal('980.087534272890506353')),
         amount1_in=AssetAmount(ZERO),
         amount0_out=AssetAmount(ZERO),
@@ -354,7 +356,7 @@ EXPECTED_TRADES = [AMMTrade(
         timestamp=Timestamp(1594917107),
         location=Location.UNISWAP,
         token0=EthereumToken('USDC'),
-        token1=EthereumToken('WETH'),
+        token1=A_WETH,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('4.281441035122650458')),
         amount0_out=AssetAmount(FVal('998.970468')),
@@ -367,7 +369,7 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
         timestamp=Timestamp(1594917107),
         location=Location.UNISWAP,
-        token0=EthereumToken('LEND'),
+        token0=A_LEND,
         token1=EthereumToken('USDC'),
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('998.970468')),
@@ -376,8 +378,8 @@ EXPECTED_TRADES = [AMMTrade(
     )],
 ), AMMTrade(
     trade_type=TradeType.BUY,
-    base_asset=EthereumToken('LEND'),
-    quote_asset=EthereumToken('WETH'),
+    base_asset=A_LEND,
+    quote_asset=A_WETH,
     amount=AssetAmount(FVal('21928.266845570798012768')),
     rate=Price(FVal('0.0005748315837851012488579182153')),
     trade_index=0,
@@ -389,8 +391,8 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x9Ca13029232C8f4AAC1D42FaA54A36aDE41aA10d'),
         timestamp=Timestamp(1592944381),
         location=Location.UNISWAP,
-        token0=EthereumToken('LEND'),
-        token1=EthereumToken('WETH'),
+        token0=A_LEND,
+        token1=A_WETH,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('12.605060360501788046')),
         amount0_out=AssetAmount(FVal('21928.266845570798012768')),
@@ -398,8 +400,8 @@ EXPECTED_TRADES = [AMMTrade(
     )],
 ), AMMTrade(
     trade_type=TradeType.BUY,
-    base_asset=EthereumToken('WETH'),
-    quote_asset=EthereumToken('DAI'),
+    base_asset=A_WETH,
+    quote_asset=A_DAI,
     amount=AssetAmount(FVal('4.136051879013406343')),
     rate=Price(FVal('232.4798219165320015500724464')),
     trade_index=0,
@@ -411,8 +413,8 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x09e3B36DbDc641d73c38656605538C4B666dB82B'),
         timestamp=Timestamp(1592398831),
         location=Location.UNISWAP,
-        token0=EthereumToken('DAI'),
-        token1=EthereumToken('WETH'),
+        token0=A_DAI,
+        token1=A_WETH,
         amount0_in=AssetAmount(FVal('961.548604270574270408')),
         amount1_in=AssetAmount(ZERO),
         amount0_out=AssetAmount(ZERO),
@@ -420,8 +422,8 @@ EXPECTED_TRADES = [AMMTrade(
     )],
 ), AMMTrade(
     trade_type=TradeType.BUY,
-    base_asset=EthereumToken('LEND'),
-    quote_asset=EthereumToken('DAI'),
+    base_asset=A_LEND,
+    quote_asset=A_DAI,
     amount=AssetAmount(FVal('2340.535105624007589249')),
     rate=Price(FVal('0.09658784621963269841181632766')),
     trade_index=0,
@@ -433,8 +435,8 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0xc3037b2A1a9E9268025FF6d45Fe7095436446D52'),
         timestamp=Timestamp(1592090465),
         location=Location.UNISWAP,
-        token0=EthereumToken('DAI'),
-        token1=EthereumToken('WETH'),
+        token0=A_DAI,
+        token1=A_WETH,
         amount0_in=AssetAmount(FVal('226.067244853663419909')),
         amount1_in=AssetAmount(ZERO),
         amount0_out=AssetAmount(ZERO),
@@ -447,8 +449,8 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0xc3037b2A1a9E9268025FF6d45Fe7095436446D52'),
         timestamp=Timestamp(1592090465),
         location=Location.UNISWAP,
-        token0=EthereumToken('LEND'),
-        token1=EthereumToken('WETH'),
+        token0=A_LEND,
+        token1=A_WETH,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('0.947308435652157362')),
         amount0_out=AssetAmount(FVal('2340.535105624007589249')),
@@ -514,8 +516,8 @@ def test_get_uniswap_trades_history(
 CRAZY_UNISWAP_ADDRESS = string_to_ethereum_address('0xB1637bE0173330664adecB343faF112Ca837dA06')
 EXPECTED_CRAZY_TRADES = [AMMTrade(
     trade_type=TradeType.BUY,
-    base_asset=EthereumToken('WETH'),
-    quote_asset=EthereumToken('WETH'),
+    base_asset=A_WETH,
+    quote_asset=A_WETH,
     amount=AssetAmount(FVal('0.088104479651219417')),
     rate=Price(FVal('0.9584427736363110293711465160')),
     trade_index=0,
@@ -527,8 +529,8 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x21aD02e972E968D9c76a7081a483d782001d6558'),
         timestamp=Timestamp(1605431265),
         location=Location.UNISWAP,
-        token0=EthereumToken('SLP'),
-        token1=EthereumToken('WETH'),
+        token0=A_SLP,
+        token1=A_WETH,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('0.084443101846698663')),
         amount0_out=AssetAmount(FVal('876')),
@@ -546,7 +548,7 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
             symbol='🐟',
             name='Penguin Party Fish',
         ),
-        token1=EthereumToken('SLP'),
+        token1=A_SLP,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('876')),
         amount0_out=AssetAmount(FVal('20.085448793024895802')),
@@ -564,7 +566,7 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
             symbol='🐟',
             name='Penguin Party Fish',
         ),
-        token1=EthereumToken('WETH'),
+        token1=A_WETH,
         amount0_in=AssetAmount(FVal('20.085448793024895802')),
         amount1_in=AssetAmount(ZERO),
         amount0_out=AssetAmount(ZERO),
@@ -598,7 +600,7 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
             symbol='FMK',
             name='https://t.me/fomok',
         ),
-        token1=EthereumToken('WETH'),
+        token1=A_WETH,
         amount0_in=AssetAmount(FVal('1.318527141747939222')),
         amount1_in=AssetAmount(ZERO),
         amount0_out=AssetAmount(ZERO),
@@ -616,7 +618,7 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
             symbol='🐟',
             name='Penguin Party Fish',
         ),
-        token1=EthereumToken('WETH'),
+        token1=A_WETH,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('0.023505635029170072')),
         amount0_out=AssetAmount(FVal('5.311132913120564692')),
@@ -630,8 +632,8 @@ EXPECTED_CRAZY_TRADES = [AMMTrade(
 # https://etherscan.io/tx/0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017
 BOTH_IN_TRADES = [AMMTrade(
     trade_type=TradeType.BUY,
-    base_asset=EthereumToken('WETH'),
-    quote_asset=EthereumToken('WETH'),
+    base_asset=A_WETH,
+    quote_asset=A_WETH,
     amount=AssetAmount(FVal('0.106591333983182783')),
     rate=Price(FVal('1.744688945746953393022811238')),
     trade_index=0,
@@ -643,8 +645,8 @@ BOTH_IN_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
         timestamp=Timestamp(1604657395),
         location=Location.UNISWAP,
-        token0=EthereumToken('WETH'),
-        token1=EthereumToken('aDAI'),
+        token0=A_WETH,
+        token1=A_ADAI_V2,
         amount0_in=AssetAmount(FVal('0.185968722112880576')),
         amount1_in=AssetAmount(FVal('0.150214308402939121')),
         amount0_out=AssetAmount(ZERO),
@@ -662,7 +664,7 @@ BOTH_IN_TRADES = [AMMTrade(
             symbol='🐟',
             name='Penguin Party Fish',
         ),
-        token1=EthereumToken('aDAI'),
+        token1=A_DAI_V2,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('77.451074341665209573')),
         amount0_out=AssetAmount(FVal('105.454952420015590185')),
@@ -680,7 +682,7 @@ BOTH_IN_TRADES = [AMMTrade(
             symbol='🐟',
             name='Penguin Party Fish',
         ),
-        token1=EthereumToken('WETH'),
+        token1=A_WETH,
         amount0_in=AssetAmount(FVal('105.454952420015590185')),
         amount1_in=AssetAmount(ZERO),
         amount0_out=AssetAmount(ZERO),
@@ -688,8 +690,8 @@ BOTH_IN_TRADES = [AMMTrade(
     )],
 ), AMMTrade(
     trade_type=TradeType.BUY,
-    base_asset=EthereumToken('WETH'),
-    quote_asset=EthereumToken('aDAI'),
+    base_asset=A_WETH,
+    quote_asset=A_ADAI_V1,
     amount=AssetAmount(FVal('0.106591333983182783')),
     rate=Price(FVal('1.409254418625053124546000710')),
     trade_index=1,
@@ -701,8 +703,8 @@ BOTH_IN_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
         timestamp=Timestamp(1604657395),
         location=Location.UNISWAP,
-        token0=EthereumToken('WETH'),
-        token1=EthereumToken('aDAI'),
+        token0=A_WETH,
+        token1=A_DAI_V1,
         amount0_in=AssetAmount(FVal('0.185968722112880576')),
         amount1_in=AssetAmount(FVal('0.150214308402939121')),
         amount0_out=AssetAmount(ZERO),
@@ -720,7 +722,7 @@ BOTH_IN_TRADES = [AMMTrade(
             symbol='🐟',
             name='Penguin Party Fish',
         ),
-        token1=EthereumToken('aDAI'),
+        token1=A_DAI_V1,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('77.451074341665209573')),
         amount0_out=AssetAmount(FVal('105.454952420015590185')),
@@ -738,7 +740,7 @@ BOTH_IN_TRADES = [AMMTrade(
             symbol='🐟',
             name='Penguin Party Fish',
         ),
-        token1=EthereumToken('WETH'),
+        token1=A_WETH,
         amount0_in=AssetAmount(FVal('105.454952420015590185')),
         amount1_in=AssetAmount(ZERO),
         amount0_out=AssetAmount(ZERO),
@@ -817,8 +819,8 @@ EXPECTED_EVENTS_BALANCES_1 = [
     UniswapPoolEventsBalance(
         address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
         pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
-        token0=EthereumToken('$BASED'),
-        token1=EthereumToken('WETH'),
+        token0=A_DOLLAR_BASED,
+        token1=A_WETH,
         events=[
             UniswapPoolEvent(
                 tx_hash='0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824',
@@ -827,8 +829,8 @@ EXPECTED_EVENTS_BALANCES_1 = [
                 timestamp=Timestamp(1604273256),
                 event_type=EventType.MINT,
                 pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
-                token0=EthereumToken('$BASED'),
-                token1=EthereumToken('WETH'),
+                token0=A_DOLLAR_BASED,
+                token1=A_WETH,
                 amount0=AssetAmount(FVal('605.773209925184996494')),
                 amount1=AssetAmount(FVal('1.106631443395672732')),
                 usd_price=Price(FVal('872.4689300619698095220125311431804')),
@@ -840,9 +842,9 @@ EXPECTED_EVENTS_BALANCES_1 = [
                 address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                 timestamp=Timestamp(1604283808),
                 event_type=EventType.BURN,
-                pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
-                token0=EthereumToken('$BASED'),
-                token1=EthereumToken('WETH'),
+                pool_address=string_to_ethereum_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
+                token0=A_DOLLAR_BASED,
+                token1=A_WETH,
                 amount0=AssetAmount(FVal('641.26289347330654345')),
                 amount1=AssetAmount(FVal('1.046665027131675546')),
                 usd_price=Price(FVal('837.2737746532695970921908229899852')),
@@ -859,7 +861,7 @@ EXPECTED_EVENTS_BALANCES_2 = [
     UniswapPoolEventsBalance(
         address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
         pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
-        token0=EthereumToken('WETH'),
+        token0=A_WETH,
         token1=UnknownEthereumToken(
             ethereum_address=string_to_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
             symbol='DICE',
@@ -873,7 +875,7 @@ EXPECTED_EVENTS_BALANCES_2 = [
                 timestamp=Timestamp(1598270334),
                 event_type=EventType.MINT,
                 pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
-                token0=EthereumToken('WETH'),
+                token0=A_WETH,
                 token1=UnknownEthereumToken(
                     ethereum_address=string_to_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
                     symbol='DICE',
@@ -891,7 +893,7 @@ EXPECTED_EVENTS_BALANCES_2 = [
                 timestamp=Timestamp(1599000975),
                 event_type=EventType.BURN,
                 pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
-                token0=EthereumToken('WETH'),
+                token0=A_WETH,
                 token1=UnknownEthereumToken(
                     ethereum_address=string_to_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
                     symbol='DICE',
@@ -916,7 +918,7 @@ EXPECTED_EVENTS_BALANCES_2 = [
             symbol='DGVC',
             name='DegenVC',
         ),
-        token1=EthereumToken('WETH'),
+        token1=A_WETH,
         events=[
             UniswapPoolEvent(
                 tx_hash='0xc612f05bf9f3d814ffbe3649feacbf5bda213297bf7af53a56956814652fe9cc',
@@ -930,7 +932,7 @@ EXPECTED_EVENTS_BALANCES_2 = [
                     symbol='DGVC',
                     name='DegenVC',
                 ),
-                token1=EthereumToken('WETH'),
+                token1=A_WETH,
                 amount0=AssetAmount(FVal('322.230285353834005677')),
                 amount1=AssetAmount(FVal('1.247571217823345601')),
                 usd_price=Price(FVal('945.2160925652988117900888961551871')),
@@ -948,7 +950,7 @@ EXPECTED_EVENTS_BALANCES_2 = [
                     symbol='DGVC',
                     name='DegenVC',
                 ),
-                token1=EthereumToken('WETH'),
+                token1=A_WETH,
                 amount0=AssetAmount(FVal('224.7799861151427733')),
                 amount1=AssetAmount(FVal('1.854907037058682998')),
                 usd_price=Price(FVal('1443.169924855633931959022716230101')),

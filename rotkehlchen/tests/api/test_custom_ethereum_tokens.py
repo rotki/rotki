@@ -8,6 +8,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
+from rotkehlchen.constants.assets import A_BAT
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -16,7 +17,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response_with_result,
 )
-from rotkehlchen.tests.utils.constants import A_BAT, A_MKR
+from rotkehlchen.tests.utils.constants import A_MKR
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import (
     CUSTOM_TOKEN3,

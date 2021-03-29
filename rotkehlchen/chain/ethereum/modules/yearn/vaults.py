@@ -4,8 +4,26 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.ethereum.modules.aave.constants import A_ALINK_V1
 from rotkehlchen.chain.ethereum.structures import YearnVault, YearnVaultEvent
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.constants.assets import (
+    A_CRV_3CRV,
+    A_CRVP_DAIUSDCTBUSD,
+    A_CRVP_DAIUSDCTTUSD,
+    A_CRVP_RENWSBTC,
+    A_DAI,
+    A_GUSD,
+    A_TUSD,
+    A_USDC,
+    A_USDT,
+    A_WETH,
+    A_YFI,
+    A_YV1_3CRV,
+    A_YV1_DAIUSDCTBUSD,
+    A_YV1_DAIUSDCTTUSD,
+    A_YV1_RENWSBTC,
+)
 from rotkehlchen.constants.ethereum import (
     ERC20TOKEN_ABI,
     MAX_BLOCKTIME_CACHE,
@@ -28,7 +46,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
-from rotkehlchen.inquirer import SPECIAL_SYMBOLS, Inquirer
+from rotkehlchen.inquirer import SPECIAL_TOKENS, Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -50,74 +68,74 @@ YEARN_VAULTS = {
     'yyDAI+yUSDC+yUSDT+yTUSD': YearnVault(
         name='YCRV Vault',
         contract=YEARN_YCRV_VAULT,
-        underlying_token=EthereumToken('yDAI+yUSDC+yUSDT+yTUSD'),
-        token=EthereumToken('yyDAI+yUSDC+yUSDT+yTUSD'),
+        underlying_token=A_CRVP_DAIUSDCTTUSD,
+        token=A_YV1_DAIUSDCTTUSD,
     ),
     'yDAI': YearnVault(
         name='YDAI Vault',
         contract=YEARN_DAI_VAULT,
-        underlying_token=EthereumToken('DAI'),
-        token=EthereumToken('yDAI'),
+        underlying_token=A_DAI,
+        token=EthereumToken('0xACd43E627e64355f1861cEC6d3a6688B31a6F952'),
     ),
     'yWETH': YearnVault(
         name='YWETH Vault',
         contract=YEARN_WETH_VAULT,
-        underlying_token=EthereumToken('WETH'),
-        token=EthereumToken('yWETH'),
+        underlying_token=A_WETH,
+        token=EthereumToken('0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7'),
     ),
     'yYFI': YearnVault(
         name='YYFI Vault',
         contract=YEARN_YFI_VAULT,
-        underlying_token=EthereumToken('YFI'),
-        token=EthereumToken('yYFI'),
+        underlying_token=A_YFI,
+        token=EthereumToken('0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1'),
     ),
     'yaLINK': YearnVault(
         name='YALINK Vault',
         contract=YEARN_ALINK_VAULT,
-        underlying_token=EthereumToken('aLINK'),
-        token=EthereumToken('yaLINK'),
+        underlying_token=A_ALINK_V1,
+        token=EthereumToken('0x29E240CFD7946BA20895a7a02eDb25C210f9f324'),
     ),
     'yUSDT': YearnVault(
         name='YUSDT Vault',
         contract=YEARN_USDT_VAULT,
-        underlying_token=EthereumToken('USDT'),
-        token=EthereumToken('yUSDT'),
+        underlying_token=A_USDT,
+        token=EthereumToken('0x2f08119C6f07c006695E079AAFc638b8789FAf18'),
     ),
     'yUSDC': YearnVault(
         name='YUSDC Vault',
         contract=YEARN_USDC_VAULT,
-        underlying_token=EthereumToken('USDC'),
-        token=EthereumToken('yUSDC'),
+        underlying_token=A_USDC,
+        token=EthereumToken('0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e'),
     ),
     'yTUSD': YearnVault(
         name='YTUSD Vault',
         contract=YEARN_TUSD_VAULT,
-        underlying_token=EthereumToken('TUSD'),
-        token=EthereumToken('yTUSD'),
+        underlying_token=A_TUSD,
+        token=EthereumToken('0x37d19d1c4E1fa9DC47bD1eA12f742a0887eDa74a'),
     ),
     'yGUSD': YearnVault(
         name='GUSD Vault',
         contract=YEARN_GUSD_VAULT,
-        underlying_token=EthereumToken('GUSD'),
-        token=EthereumToken('yGUSD'),
+        underlying_token=A_GUSD,
+        token=EthereumToken('0xec0d8D3ED5477106c6D4ea27D90a60e594693C90'),
     ),
     'yyDAI+yUSDC+yUSDT+yBUSD': YearnVault(
         name='YBCURVE Vault',
         contract=YEARN_BCURVE_VAULT,
-        underlying_token=EthereumToken('yDAI+yUSDC+yUSDT+yBUSD'),
-        token=EthereumToken('yyDAI+yUSDC+yUSDT+yBUSD'),
+        underlying_token=A_CRVP_DAIUSDCTBUSD,
+        token=A_YV1_DAIUSDCTBUSD,
     ),
     'ycrvRenWSBTC': YearnVault(
         name='YSRENCURVE Vault',
         contract=YEARN_SRENCURVE_VAULT,
-        underlying_token=EthereumToken('crvRenWSBTC'),
-        token=EthereumToken('ycrvRenWSBTC'),
+        underlying_token=A_CRVP_RENWSBTC,
+        token=A_YV1_RENWSBTC,
     ),
     'y3Crv': YearnVault(
         name='Y3CRV Vault',
         contract=YEARN_3CRV_VAULT,
-        underlying_token=EthereumToken('3Crv'),
-        token=EthereumToken('y3Crv'),
+        underlying_token=A_CRV_3CRV,
+        token=A_YV1_3CRV,
     ),
 }
 
@@ -155,7 +173,7 @@ def get_usd_price_zero_if_error(
     TODO: MAke an issue about this
     This can be solved when we have an archive node.
     """
-    if asset.identifier in SPECIAL_SYMBOLS:
+    if asset in SPECIAL_TOKENS:
         return Inquirer().find_usd_price(asset)
 
     return query_usd_price_zero_if_error(

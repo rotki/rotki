@@ -13,13 +13,6 @@ from rotkehlchen.accounting.structures import (
     DefiEventType,
 )
 from rotkehlchen.assets.asset import Asset
-from .common import (
-    MAKERDAO_REQUERY_PERIOD,
-    RAY,
-    RAY_DIGITS,
-    WAD,
-    MakerdaoCommon,
-)
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
@@ -84,6 +77,9 @@ from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
+
+from .common import MakerdaoCommon
+from .constants import MAKERDAO_REQUERY_PERIOD, RAY, RAY_DIGITS, WAD
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager

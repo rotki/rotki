@@ -15,6 +15,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.constants.assets import A_COMP
 from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, EthereumConstants
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnknownAsset
@@ -35,7 +36,6 @@ ADDRESS_TO_ASSETS = Dict[ChecksumEthAddress, Dict[Asset, Balance]]
 BLOCKS_PER_DAY = 4 * 60 * 24
 DAYS_PER_YEAR = 365
 ETH_MANTISSA = 10**18
-A_COMP = EthereumToken('COMP')
 
 COMPTROLLER_PROXY = EthereumConstants().contract('COMPTROLLER_PROXY')
 COMP_DEPLOYED_BLOCK = 9601359

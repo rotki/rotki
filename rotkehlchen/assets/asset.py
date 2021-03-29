@@ -1,7 +1,8 @@
-from dataclasses import dataclass, field, InitVar
+from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
 from typing import TYPE_CHECKING, Any, Optional, Type, TypeVar
 
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.errors import DeserializationError, UnsupportedAsset
 from rotkehlchen.typing import AssetType, ChecksumEthAddress, Timestamp
 
@@ -256,6 +257,9 @@ class Asset():
     def __repr__(self) -> str:
         return f'<Asset identifier:{self.identifier} name:{self.name} symbol:{self.symbol}>'
 
+    def to_ethereum_token(self) -> 'EthereumToken':
+        return EthereumToken(self.identifier)
+
     def to_kraken(self) -> str:
         return WORLD_TO_KRAKEN[self.identifier]
 
@@ -330,8 +334,8 @@ class HasEthereumToken(Asset):
     decimals: int = field(init=False)
 
     def __post_init__(self, form_with_incomplete_data: bool = False) -> None:
-        super().__post_init__()
-
+        object.__setattr__(self, 'identifier', ETHEREUM_DIRECTIVE + self.identifier)
+        super().__post_init__(form_with_incomplete_data)
         # TODO: figure out a way to move this out. Moved in here due to cyclic imports
         from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
 

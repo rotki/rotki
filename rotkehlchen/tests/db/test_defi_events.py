@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveSimpleEvent,
     YearnVaultEvent,
 )
-from rotkehlchen.constants.assets import A_DAI
+from rotkehlchen.constants.assets import A_DAI, A_YV1_DAI
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -146,7 +146,7 @@ def test_add_and_get_yearn_vault_events(data_dir, username):
         event_type='deposit',
         from_asset=A_DAI,
         from_value=Balance(amount=FVal(1), usd_value=FVal(1)),
-        to_asset=Asset('yDAI'),
+        to_asset=A_YV1_DAI,
         to_value=Balance(amount=FVal(1), usd_value=FVal(1)),
         realized_pnl=None,
         block_number=1,
@@ -155,7 +155,7 @@ def test_add_and_get_yearn_vault_events(data_dir, username):
         log_index=1,
     ), YearnVaultEvent(
         event_type='withdraw',
-        from_asset=Asset('yDAI'),
+        from_asset=A_YV1_DAI,
         from_value=Balance(amount=FVal(1), usd_value=FVal(1)),
         to_asset=A_DAI,
         to_value=Balance(amount=FVal(1), usd_value=FVal(1)),
@@ -171,7 +171,7 @@ def test_add_and_get_yearn_vault_events(data_dir, username):
         event_type='deposit',
         from_asset=A_DAI,
         from_value=Balance(amount=FVal(1), usd_value=FVal(1)),
-        to_asset=Asset('yDAI'),
+        to_asset=A_YV1_DAI,
         to_value=Balance(amount=FVal(1), usd_value=FVal(1)),
         realized_pnl=None,
         block_number=1,
@@ -180,7 +180,7 @@ def test_add_and_get_yearn_vault_events(data_dir, username):
         log_index=1,
     ), YearnVaultEvent(
         event_type='withdraw',
-        from_asset=Asset('yDAI'),
+        from_asset=A_YV1_DAI,
         from_value=Balance(amount=FVal(1), usd_value=FVal(1)),
         to_asset=A_DAI,
         to_value=Balance(amount=FVal(1), usd_value=FVal(1)),

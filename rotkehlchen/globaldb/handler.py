@@ -63,6 +63,18 @@ def _initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
     return connection
 
 
+def _initialize_global_db_directory(data_dir: Path) -> sqlite3.Connection:
+    global_dir = data_dir / 'global_data'
+    global_dir.mkdir(parents=True, exist_ok=True)
+    dbname = global_dir / 'global.db'
+    if not dbname.is_file():
+        # if no global db exists, copy the built-in file
+        root_dir = Path(__file__).resolve().parent.parent
+        builtin_data_dir = root_dir / 'data'
+        shutil.copyfile(builtin_data_dir / 'global.db', global_dir / 'global.db')
+    return _initialize_globaldb(dbname)
+
+
 class GlobalDBHandler():
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
@@ -92,25 +104,20 @@ class GlobalDBHandler():
                 GlobalDBHandler.__instance._temp_db_directory = None
                 GlobalDBHandler.__instance._data_directory = data_dir
                 # and initialize it in the proper place
-                global_dir = data_dir / 'global_data'
-                global_dir.mkdir(parents=True, exist_ok=True)
-                dbname = global_dir / 'global.db'
-                if not dbname.is_file():
-                    # if no global db exists, copy the built-in file
-                    root_dir = Path(__file__).resolve().parent.parent
-                    builtin_data_dir = root_dir / 'data'
-                    shutil.copyfile(builtin_data_dir / 'global.db', global_dir / 'global.db')
-                GlobalDBHandler.__instance._conn = _initialize_globaldb(dbname)
+                GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
 
             return GlobalDBHandler.__instance
 
-        # rotki not fully initialized yet. We don't know the data directory. Use temporary DB
-        assert data_dir is None, 'first call wont ever be with a data directory'
         GlobalDBHandler.__instance = object.__new__(cls)
-        tempdir = _initialize_temp_db_directory()
-        GlobalDBHandler.__instance._temp_db_directory = tempdir
-        dbname = Path(tempdir.name) / 'global.db'
-        GlobalDBHandler.__instance._conn = _initialize_globaldb(dbname)
+        if data_dir is None:
+            # rotki not fully initialized yet. We don't know the data directory. Use temporary DB
+            tempdir = _initialize_temp_db_directory()
+            GlobalDBHandler.__instance._temp_db_directory = tempdir
+            dbname = Path(tempdir.name) / 'global.db'
+            GlobalDBHandler.__instance._conn = _initialize_globaldb(dbname)
+        else:  # probably tests
+            GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
+
         return GlobalDBHandler.__instance
 
     @staticmethod

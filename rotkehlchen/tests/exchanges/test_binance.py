@@ -10,7 +10,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_USDT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import (
@@ -22,7 +22,7 @@ from rotkehlchen.exchanges.binance import (
 )
 from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_ADA, A_BNB, A_BUSD, A_DOT, A_RDN, A_USDT, A_XMR
+from rotkehlchen.tests.utils.constants import A_ADA, A_BUSD, A_DOT, A_RDN, A_XMR
 from rotkehlchen.tests.utils.exchanges import (
     BINANCE_MYTRADES_RESPONSE,
     mock_binance_balance_response,

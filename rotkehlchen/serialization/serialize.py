@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
-from rotkehlchen.chain.ethereum.modules.aave import (
+from rotkehlchen.chain.ethereum.modules.aave.aave import (
     AaveBalances,
     AaveBorrowingBalance,
     AaveHistory,

@@ -11,7 +11,7 @@ from rotkehlchen.accounting.structures import ActionType, BalanceType, LedgerAct
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USD
+from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -54,7 +54,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_trade_type_from_db,
 )
 from rotkehlchen.tests.utils.constants import (
-    A_1INCH,
     A_DAO,
     A_DOGE,
     A_EUR,

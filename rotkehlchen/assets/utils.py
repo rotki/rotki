@@ -2,9 +2,10 @@ import logging
 from typing import Any, Dict, Optional, Union, overload
 
 from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.typing import ChecksumEthAddress
 
-from .asset import EthereumToken
+from .asset import Asset, EthereumToken
 from .unknown_asset import UNKNOWN_TOKEN_KEYS, SerializeAsDictKeys, UnknownEthereumToken
 
 log = logging.getLogger(__name__)
@@ -72,3 +73,16 @@ def serialize_ethereum_token(
         return ethereum_token.serialize_as_dict(keys=unknown_ethereum_token_keys)
 
     raise AssertionError(f'Unexpected ethereum token type: {type(ethereum_token)}')
+
+
+def get_asset_by_symbol(symbol: str) -> Optional[Asset]:
+    """Gets an asset by symbol from the DB.
+
+    If no asset with that symbol or multiple assets with the same
+        symbol are found returns None
+    """
+    assets_data = GlobalDBHandler().get_assets_with_symbol(symbol)
+    if len(assets_data) != 1:
+        return None
+
+    return Asset(assets_data[0].identifier)

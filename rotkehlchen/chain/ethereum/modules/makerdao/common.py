@@ -11,21 +11,14 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
 
+from .constants import MAKERDAO_REQUERY_PERIOD
+
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-MAKERDAO_REQUERY_PERIOD = 7200  # Refresh queries every 2 hours
-
-WAD_DIGITS = 18
-WAD = 10**WAD_DIGITS
-RAY_DIGITS = 27
-RAY = 10**RAY_DIGITS
-RAD_DIGITS = 45
-RAD = 10**RAD_DIGITS
 
 
 class MakerdaoCommon(EthereumModule):

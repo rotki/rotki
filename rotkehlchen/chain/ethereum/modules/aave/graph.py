@@ -3,9 +3,9 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set, Tuple
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.ethereum.modules.makerdao.common import RAY
+from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
 from rotkehlchen.chain.ethereum.structures import (
     AaveBorrowEvent,
     AaveEvent,
@@ -16,24 +16,25 @@ from rotkehlchen.chain.ethereum.structures import (
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.ethereum import ATOKEN_ABI
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
 from .common import (
-    AAVE_RESERVE_TO_ASSET,
-    ASSET_TO_AAVE_RESERVE_ADDRESS,
     AaveBalances,
     AaveHistory,
     AaveInquirer,
     _get_reserve_address_decimals,
+    aave_reserve_to_asset,
+    asset_to_aave_reserve,
 )
+from .constants import ASSET_TO_ATOKENV1
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -185,7 +186,7 @@ def _calculate_loss(
             total_earned[b_action.principal_asset] += b_action.principal_balance  # type: ignore
 
     for b_asset, amount in historical_borrow_balances.items():
-        borrow_balance = balances.borrowing.get(b_asset.identifier, None)
+        borrow_balance = balances.borrowing.get(b_asset, None)
         if borrow_balance is not None:
             amount += borrow_balance.balance.amount
 
@@ -256,7 +257,7 @@ def _parse_atoken_balance_history(
             continue
 
         tx_hash = '0x' + pairs[3]
-        asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
+        asset = aave_reserve_to_asset(reserve_address)
         if asset is None:
             log.error(
                 f'Unknown aave reserve address returned by atoken balance history '
@@ -264,7 +265,7 @@ def _parse_atoken_balance_history(
             )
             continue
 
-        _, decimals = _get_reserve_address_decimals(asset.identifier)
+        _, decimals = _get_reserve_address_decimals(asset)
         balance = token_normalized_value_decimals(int(entry['balance']), token_decimals=decimals)
         result.append(ATokenBalanceHistory(
             reserve_address=reserve_address,
@@ -286,7 +287,7 @@ def _get_reserve_asset_and_decimals(
         log.error(f'Failed to Deserialize reserve address {entry[reserve_key]["id"]}')
         return None
 
-    asset = AAVE_RESERVE_TO_ASSET.get(reserve_address, None)
+    asset = aave_reserve_to_asset(reserve_address)
     if asset is None:
         log.error(
             f'Unknown aave reserve address returned by graph query: '
@@ -294,7 +295,7 @@ def _get_reserve_asset_and_decimals(
         )
         return None
 
-    _, decimals = _get_reserve_address_decimals(asset.identifier)
+    _, decimals = _get_reserve_address_decimals(asset)
     return asset, decimals
 
 
@@ -420,12 +421,19 @@ class AaveGraphInquirer(AaveInquirer):
             else:  # withdrawal
                 atoken_balances[action.asset] -= action.value.amount
 
-            reserve_address = ASSET_TO_AAVE_RESERVE_ADDRESS.get(action.asset.identifier, None)  # type: ignore  # noqa: E501
-            history = reserve_history.get(reserve_address, None)
+            action_reserve_address = asset_to_aave_reserve(action.asset)
+            if action_reserve_address is None:
+                log.error(
+                    f'Could not find aave reserve address for asset'
+                    f'{action.asset} in an aave graph response.'
+                    f' Skipping entry...',
+                )
+                continue
+            history = reserve_history.get(action_reserve_address, None)
             if history is None:
                 log.error(
                     f'Could not find aTokenBalanceHistory for reserve '
-                    f'{reserve_address} in an aave graph response.'
+                    f'{action_reserve_address} in an aave graph response.'
                     f' Skipping entry...',
                 )
                 continue
@@ -440,12 +448,11 @@ class AaveGraphInquirer(AaveInquirer):
                     diff = entry.balance - atoken_balances[action.asset]
                     if diff != ZERO:
                         atoken_balances[action.asset] = entry.balance
-                        try:
-                            asset = EthereumToken('a' + action.asset.identifier)
-                        except UnknownAsset:
+                        asset = ASSET_TO_ATOKENV1.get(action.asset, None)
+                        if asset is None:
                             log.error(
-                                f'Could not find corresponding aToken to'
-                                f'{action.asset.identifier} during an aave graph uery'
+                                f'Could not find corresponding aToken to '
+                                f'{action.asset.identifier} during an aave graph query'
                                 f' Skipping entry...',
                             )
                             continue
@@ -492,8 +499,15 @@ class AaveGraphInquirer(AaveInquirer):
                     atoken_balances[action.asset] -= action.value.amount
 
         # Take aave unpaid interest into account
-        for symbol, lending_balance in balances.lending.items():
-            atoken = EthereumToken('a' + symbol)
+        for balance_asset, lending_balance in balances.lending.items():
+            atoken = ASSET_TO_ATOKENV1.get(balance_asset, None)
+            if atoken is None:
+                log.error(
+                    f'Could not find corresponding aToken to '
+                    f'{balance_asset.identifier} during an aave graph unpair interest '
+                    f'query. Skipping entry...',
+                )
+                continue
             principal_balance = self.ethereum.call_contract(
                 contract_address=atoken.ethereum_address,
                 abi=ATOKEN_ABI,

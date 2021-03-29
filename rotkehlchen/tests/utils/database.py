@@ -2,9 +2,10 @@ import random
 from typing import Any, Dict, List, Optional
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.utils import BlockchainAccounts, ManuallyTrackedBalance
+from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.typing import (
     ApiKey,

@@ -10,12 +10,12 @@ import requests
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_KUCOIN_ASSETS, asset_from_kucoin
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO, A_USDT
+from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Fee, Location, Price, Timestamp
 from rotkehlchen.utils.serialization import jsonloads_dict

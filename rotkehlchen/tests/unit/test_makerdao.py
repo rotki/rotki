@@ -10,11 +10,10 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     MakerdaoVault,
     MakerdaoVaults,
 )
-from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_BAT, A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.tests.utils.constants import A_BAT
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.makerdao import VaultTestData, create_web3_mock
 
