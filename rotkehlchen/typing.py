@@ -377,6 +377,7 @@ class Location(Enum):
     KUCOIN = 23
     BALANCER = 24
     LOOPRING = 25
+    FTX = 26
 
     def __str__(self) -> str:
         if self == Location.EXTERNAL:
@@ -429,6 +430,8 @@ class Location(Enum):
             return 'balancer'
         if self == Location.LOOPRING:
             return 'loopring'
+        if self == Location.FTX:
+            return 'ftx'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 
@@ -483,6 +486,8 @@ class Location(Enum):
             return 'X'
         if self == Location.LOOPRING:
             return 'Y'
+        if self == Location.FTX:
+            return 'Z'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 

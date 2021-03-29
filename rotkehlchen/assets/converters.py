@@ -703,6 +703,18 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
     return symbol_to_asset_or_token(cb_name)
 
 
+def asset_from_ftx(ftx_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(ftx_name, str):
+        raise DeserializationError(f'Got non-string type {type(ftx_name)} for bitstamp asset')
+
+    return Asset(ftx_name)
+
+
 def asset_from_kucoin(kucoin_name: str) -> Asset:
     """May raise:
     - DeserializationError
