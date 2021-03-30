@@ -6,9 +6,22 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, A_USDT
+from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.constants.assets import (
+    A_BTC,
+    A_CBAT,
+    A_CDAI,
+    A_CETH,
+    A_CREP,
+    A_CUSDC,
+    A_CWBTC,
+    A_CZRX,
+    A_ETH,
+    A_USD,
+    A_USDT,
+)
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import NoPriceForGivenTimestamp
 from rotkehlchen.externalapis.cryptocompare import (
     A_COMP,
@@ -19,7 +32,7 @@ from rotkehlchen.externalapis.cryptocompare import (
     PairCacheKey,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_SNGLS, A_XMR
+from rotkehlchen.tests.utils.constants import A_DAO, A_SNGLS, A_XMR
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import get_or_make_price_history_dir
 
@@ -44,7 +57,8 @@ def test_cryptocompare_historical_data_use_cached_price(data_dir, database):
     "volumefrom": 10, "volumeto": 10}, {"time": 1438390800, "close": 20, "high": 20,
     "low": 20, "open": 20, "volumefrom": 20, "volumeto": 20}]}"""
     price_history_dir = get_or_make_price_history_dir(data_dir)
-    with open(price_history_dir / f'{PRICE_HISTORY_FILE_PREFIX}SNGLS_BTC.json', 'w') as f:
+    filename = f'{PRICE_HISTORY_FILE_PREFIX}{ethaddress_to_identifier("0xaeC2E87E0A235266D9C5ADc9DEb4b2E29b54D009")}_BTC.json'  # noqa: E501
+    with open(price_history_dir / filename, 'w') as f:
         f.write(contents)
 
     cc = Cryptocompare(data_directory=data_dir, database=database)
@@ -186,7 +200,7 @@ def test_empty_histohour(data_dir, database, freezer):
     freezer.move_to(datetime.fromtimestamp(now_ts))
     cc = Cryptocompare(data_directory=data_dir, database=database)
     result = cc.get_historical_data(
-        from_asset=Asset('CHI'),
+        from_asset=EthereumToken('0x0000000000004946c0e9F43F4Dee607b0eF1fA1c'),  # CHI
         to_asset=Asset('EUR'),
         timestamp=now_ts,
         only_check_cache=False,
@@ -229,7 +243,7 @@ def test_cryptocompare_dao_query(cryptocompare):
     Regression test for https://github.com/rotki/rotki/issues/548
     """
     price = cryptocompare.query_historical_price(
-        from_asset=Asset('DAO'),
+        from_asset=A_DAO,
         to_asset=A_USD,
         timestamp=1468886400,
     )
@@ -305,31 +319,31 @@ def test_cryptocompare_historical_data_price(
 )
 @pytest.mark.parametrize('run', (
     [{
-        'asset': Asset('cDAI'),
+        'asset': A_CDAI,
         'expected_price1': FVal('0.02008006'),
         'expected_price2': FVal('0.02033108'),
     }, {
-        'asset': Asset('cBAT'),
+        'asset': A_CBAT,
         'expected_price1': FVal('0.003809585'),
         'expected_price2': FVal('0.002713524'),
     }, {
-        'asset': Asset('cETH'),
+        'asset': A_CETH,
         'expected_price1': FVal('2.901'),
         'expected_price2': FVal('2.669'),
     }, {
-        'asset': Asset('cREP'),
+        'asset': A_CREP,
         'expected_price1': FVal('0.2046084'),
         'expected_price2': FVal('0.16380696'),
     }, {
-        'asset': Asset('cUSDC'),
+        'asset': A_CUSDC,
         'expected_price1': FVal('0.02082156'),
         'expected_price2': FVal('0.020944869'),
     }, {
-        'asset': Asset('cWBTC'),
+        'asset': A_CWBTC,
         'expected_price1': FVal('145.404910'),
         'expected_price2': FVal('99.411774'),
     }, {
-        'asset': Asset('cZRX'),
+        'asset': A_CZRX,
         'expected_price1': FVal('0.004415010'),
         'expected_price2': FVal('0.003037084'),
     }]),

@@ -28,9 +28,14 @@ from rotkehlchen.constants.assets import (
     A_BAT,
     A_BNB,
     A_BZRX,
+    A_CBAT,
     A_CDAI,
     A_COMP,
+    A_CREP,
     A_CUSDC,
+    A_CUSDT,
+    A_CWBTC,
+    A_CZRX,
     A_DAI,
     A_DPI,
     A_MCB,
@@ -125,14 +130,14 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     EthereumToken('0xf8aD7dFe656188A23e89da09506Adf7ad9290D5d'): A_USDT,  # Blocery
     A_CDAI: A_DAI,  # Compound DAI
     EthereumToken('0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4'): A_COMP,  # Compound Comp
-    EthereumToken('0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E'): A_BAT,  # Comppound BAT
-    EthereumToken('0x158079Ee67Fce2f58472A96584A73C7Ab9AC95c1'): A_REP,  # Compound REP
+    A_CBAT: A_BAT,  # Comppound BAT
+    A_CREP: A_REP,  # Compound REP
     EthereumToken('0xF5DCe57282A584D2746FaF1593d3121Fcac444dC'): A_SAI,  # Compound SAI
     A_CUSDC: A_USDC,  # Compound USDC
-    EthereumToken('0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9'): A_USDT,  # Compound USDT
-    EthereumToken('0xC11b1268C1A384e55C48c2391d8d480264A3A7F4'): A_WBTC,  # Compound WBTC
+    A_CUSDT: A_USDT,  # Compound USDT
+    A_CWBTC: A_WBTC,  # Compound WBTC
     EthereumToken('0x35A18000230DA775CAc24873d00Ff85BccdeD550'): A_UNI,  # Compound UNI
-    EthereumToken('0xB3319f5D18Bc0D84dD1b4825Dcde5d5f7266d407'): A_ZRX,  # Compound ZRX
+    A_CZRX: A_ZRX,  # Compound ZRX
     EthereumToken('0x26CE25148832C04f3d7F26F32478a9fe55197166'): A_USDT,  # DEXTools
     EthereumToken('0x0A913beaD80F321E7Ac35285Ee10d9d922659cB7'): A_USDT,  # DOS Network token
     EthereumToken('0x6B9f031D718dDed0d681c20cB754F97b3BB81b78'): A_USDT,  # GEEQ
