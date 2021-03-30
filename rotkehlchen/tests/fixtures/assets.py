@@ -35,7 +35,6 @@ def fixture_force_reinitialize_asset_resolver() -> bool:
 # initialized from here which would take more time
 @pytest.fixture(autouse=True)
 def asset_resolver(
-        data_dir,
         globaldb,
         query_github_for_assets,
         mock_asset_meta_github_response,

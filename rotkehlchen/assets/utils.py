@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional, Union, overload
 
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.typing import ChecksumEthAddress
 
 from .asset import Asset, EthereumToken
@@ -21,17 +22,9 @@ def get_ethereum_token(
     an <UnknownEthereumToken>.
     """
     ethereum_token: Union[EthereumToken, UnknownEthereumToken]
-    is_unknown_asset = False
-
     try:
-        ethereum_token = EthereumToken(symbol)
+        ethereum_token = EthereumToken(ethereum_address)
     except (UnknownAsset, DeserializationError):
-        is_unknown_asset = True
-    else:
-        if ethereum_token.ethereum_address != ethereum_address:
-            is_unknown_asset = True
-
-    if is_unknown_asset:
         log.warning(
             f'Encountered unknown asset {symbol} with address '
             f'{ethereum_address}. Instantiating UnknownEthereumToken',
@@ -79,8 +72,11 @@ def get_asset_by_symbol(symbol: str) -> Optional[Asset]:
     """Gets an asset by symbol from the DB.
 
     If no asset with that symbol or multiple assets with the same
-        symbol are found returns None
+    symbol are found returns None
     """
+    if symbol == 'ETH':
+        return A_ETH  # ETH can be ETH and ETH2 in the DB
+
     assets_data = GlobalDBHandler().get_assets_with_symbol(symbol)
     if len(assets_data) != 1:
         return None

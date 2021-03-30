@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.structures import Balance, BalanceSheet
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USD
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_EUR
@@ -200,7 +201,7 @@ def test_balance_sheet_serialize():
             'ETH': {'amount': '3', 'usd_value': '900'},
         },
         'liabilities': {
-            'DAI': {'amount': '5', 'usd_value': '5.1'},
+            ethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F'): {'amount': '5', 'usd_value': '5.1'},  # noqa: E501
             'ETH': {'amount': '0.5', 'usd_value': '150'},
         },
     }
@@ -223,7 +224,7 @@ def test_balance_sheet_to_dict():
             'ETH': {'amount': FVal('3'), 'usd_value': FVal('900')},
         },
         'liabilities': {
-            'DAI': {'amount': FVal('5'), 'usd_value': FVal('5.1')},
+            ethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F'): {'amount': FVal('5'), 'usd_value': FVal('5.1')},  # noqa: E501
             'ETH': {'amount': FVal('0.5'), 'usd_value': FVal('150')},
         },
     }

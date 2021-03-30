@@ -31,6 +31,7 @@ from rotkehlchen.constants.assets import (
     A_ETH,
     A_KNC,
     A_LINK,
+    A_LRC,
     A_MCB,
     A_MKR,
     A_PAX,
@@ -67,7 +68,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-A_LRC = EthereumToken('0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD')
 A_HT = EthereumToken('0x6f259637dcD74C767781E37Bc6133cd6A68aa161')
 A_OKB = EthereumToken('0x75231F58b43240C9718Dd58B4967c5114342a86c')
 A_KEEP = EthereumToken('0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC')

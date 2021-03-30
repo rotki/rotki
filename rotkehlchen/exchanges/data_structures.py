@@ -12,8 +12,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp,
     deserialize_trade_type,
-    get_pair_position_str,
-    pair_get_assets,
 )
 from rotkehlchen.typing import (
     AssetAmount,
@@ -214,20 +212,6 @@ class Loan(NamedTuple):
 
 def trade_pair_from_assets(base: Asset, quote: Asset) -> TradePair:
     return TradePair(f'{base.identifier}_{quote.identifier}')
-
-
-def invert_pair(pair: TradePair) -> TradePair:
-    left, right = pair_get_assets(pair)
-    return trade_pair_from_assets(right, left)
-
-
-def get_pair_position_asset(pair: TradePair, position: str) -> Asset:
-    """
-    Get the asset of a trade pair.
-
-    Can throw UnknownAsset if the asset is not known to Rotkehlchen
-    """
-    return Asset(get_pair_position_str(pair, position))
 
 
 def deserialize_trade(data: Dict[str, Any]) -> Trade:

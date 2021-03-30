@@ -20,7 +20,8 @@ DUMMY_HASH = b''
 history1 = [
     {
         'timestamp': 1446979735,
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 268.678317859,
         'fee': 0,
@@ -29,7 +30,8 @@ history1 = [
         'location': 'external',
     }, {
         'timestamp': 1446979735,
-        'pair': 'ETH_EUR',
+        'base_asset': 'ETH',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 0.2315893,
         'fee': 0,
@@ -38,7 +40,8 @@ history1 = [
         'location': 'external',
     }, {
         'timestamp': 1473505138,  # cryptocompare hourly BTC/EUR price: 556.435
-        'pair': 'ETH_BTC',  # cryptocompare hourly ETH/EUR price: 10.36
+        'base_asset': 'ETH',  # cryptocompare hourly ETH/EUR price: 10.36
+        'quote_asset': 'BTC',
         'trade_type': 'buy',  # Buy ETH with BTC
         'rate': 0.01858275,
         'fee': 0.06999999999999999,
@@ -47,7 +50,8 @@ history1 = [
         'location': 'poloniex',
     }, {
         'timestamp': 1475042230,  # cryptocompare hourly BTC/EUR price: 537.805
-        'pair': 'ETH_BTC',  # cryptocompare hourly ETH/EUR price: 11.925
+        'base_asset': 'ETH',  # cryptocompare hourly ETH/EUR price: 11.925
+        'quote_asset': 'BTC',
         'trade_type': 'sell',  # Sell ETH for BTC
         'rate': 0.02209898,
         'fee': 0.00082871175,
@@ -69,7 +73,8 @@ def test_simple_accounting(accountant):
 def test_selling_crypto_bought_with_crypto(accountant):
     history = [{
         'timestamp': 1446979735,
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 268.678317859,
         'fee': 0,
@@ -78,7 +83,8 @@ def test_selling_crypto_bought_with_crypto(accountant):
         'location': 'external',
     }, {
         'timestamp': 1449809536,  # cryptocompare hourly BTC/EUR price: 386.175
-        'pair': 'XMR_BTC',  # cryptocompare hourly XMR/EUR price: 0.39665
+        'base_asset': 'XMR',  # cryptocompare hourly XMR/EUR price: 0.39665
+        'quote_asset': 'BTC',
         'trade_type': 'buy',  # Buy XMR with BTC
         'rate': 0.0010275,
         'fee': 0.9375,
@@ -87,7 +93,8 @@ def test_selling_crypto_bought_with_crypto(accountant):
         'location': 'poloniex',
     }, {
         'timestamp': 1458070370,  # cryptocompare hourly rate XMR/EUR price: 1.0443027675
-        'pair': 'XMR_EUR',
+        'base_asset': 'XMR',
+        'quote_asset': 'EUR',
         'trade_type': 'sell',  # Sell XMR for EUR
         'rate': 1.0443027675,
         'fee': 0.117484061344,
@@ -114,7 +121,8 @@ def test_buying_selling_eth_before_daofork(accountant):
     history3 = [
         {
             'timestamp': 1446979735,  # 11/08/2015
-            'pair': 'ETH_EUR',
+            'base_asset': 'ETH',
+            'quote_asset': 'EUR',
             'trade_type': 'buy',
             'rate': 0.2315893,
             'fee': 0,
@@ -123,7 +131,8 @@ def test_buying_selling_eth_before_daofork(accountant):
             'location': 'external',
         }, {  # selling ETH prefork should also reduce our ETC amount
             'timestamp': 1461021812,  # 18/04/2016 (taxable)
-            'pair': 'ETH_EUR',  # cryptocompare hourly ETC/EUR price: 7.88
+            'base_asset': 'ETH',  # cryptocompare hourly ETC/EUR price: 7.88
+            'quote_asset': 'EUR',
             'trade_type': 'sell',
             'rate': 7.88,
             'fee': 0.5215,
@@ -132,7 +141,8 @@ def test_buying_selling_eth_before_daofork(accountant):
             'location': 'kraken',
         }, {  # sell ETC after the fork
             'timestamp': 1481979135,  # 17/12/2016
-            'pair': 'ETC_EUR',  # cryptocompare hourly ETC/EUR price: 1.78
+            'base_asset': 'ETC',  # cryptocompare hourly ETC/EUR price: 1.78
+            'quote_asset': 'EUR',
             'trade_type': 'sell',  # not-taxable -- considered bought with ETH so after year
             'rate': 1.78,
             'fee': 0.9375,
@@ -141,7 +151,8 @@ def test_buying_selling_eth_before_daofork(accountant):
             'location': 'kraken',
         }, {  # selling ETH after fork should not affect ETC amount
             'timestamp': 1482138141,  # 19/12/2016
-            'pair': 'ETH_EUR',  # cryptocompare hourly ETC/EUR price: 7.45
+            'base_asset': 'ETH',  # cryptocompare hourly ETC/EUR price: 7.45
+            'quote_asset': 'EUR',
             'trade_type': 'sell',  # not taxable after 1 year
             'rate': 7.45,
             'fee': 0.12,
@@ -162,7 +173,8 @@ def test_buying_selling_eth_before_daofork(accountant):
 def test_buying_selling_btc_before_bchfork(accountant):
     history = [{
         'timestamp': 1491593374,  # 04/07/2017
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 1128.905,
         'fee': 0.55,
@@ -171,7 +183,8 @@ def test_buying_selling_btc_before_bchfork(accountant):
         'location': 'external',
     }, {  # selling BTC prefork should also reduce the BCH equivalent -- taxable
         'timestamp': 1500595200,  # 21/07/2017
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 2380.835,
         'fee': 0.15,
@@ -180,7 +193,8 @@ def test_buying_selling_btc_before_bchfork(accountant):
         'location': 'external',
     }, {  # selling BCH after the fork -- taxable
         'timestamp': 1512693374,  # 08/12/2017
-        'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
+        'base_asset': 'BCH',  # cryptocompare hourly BCH/EUR price: 995.935
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 995.935,
         'fee': 0.26,
@@ -189,7 +203,8 @@ def test_buying_selling_btc_before_bchfork(accountant):
         'location': 'kraken',
     }, {
         'timestamp': 1514937600,  # 03/01/2018
-        'pair': 'BTC_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
+        'base_asset': 'BTC',  # cryptocompare hourly BCH/EUR price: 995.935
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 12404.88,
         'fee': 0.52,
@@ -219,7 +234,8 @@ def test_buying_selling_bch_before_bsvfork(accountant):
     history = [{
         # 6.5 BTC 6.5 BCH 6.5 BSV
         'timestamp': 1491593374,  # 04/07/2017
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 1128.905,
         'fee': 0.55,
@@ -229,7 +245,8 @@ def test_buying_selling_bch_before_bsvfork(accountant):
     }, {  # selling BTC pre both fork should also reduce the BCH and BSV equivalent -- taxable
         # 6 BTC 6 BCH 6 BSV
         'timestamp': 1500595200,  # 21/07/2017
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 2380.835,
         'fee': 0.15,
@@ -239,7 +256,8 @@ def test_buying_selling_bch_before_bsvfork(accountant):
     }, {  # selling BCH after the fork should also reduce BSV equivalent -- taxable
         # 6 BTC 3.9 BCH 3.9 BSV
         'timestamp': 1512693374,  # 08/12/2017
-        'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
+        'base_asset': 'BCH',  # cryptocompare hourly BCH/EUR price: 995.935
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 995.935,
         'fee': 0.26,
@@ -249,7 +267,8 @@ def test_buying_selling_bch_before_bsvfork(accountant):
     }, {
         # 4.8 BTC 3.9 BCH 3.9 BSV
         'timestamp': 1514937600,  # 03/01/2018
-        'pair': 'BTC_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
+        'base_asset': 'BTC',  # cryptocompare hourly BCH/EUR price: 995.935
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 12404.88,
         'fee': 0.52,
@@ -259,7 +278,8 @@ def test_buying_selling_bch_before_bsvfork(accountant):
     }, {  # buying BCH before the BSV fork should increase BSV equivalent
         # 4.8 BTC 4.9 BCH 4.9 BSV
         'timestamp': 1524937600,
-        'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 1146.98
+        'base_asset': 'BCH',  # cryptocompare hourly BCH/EUR price: 1146.98
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 1146.98,
         'fee': 0.52,
@@ -269,7 +289,8 @@ def test_buying_selling_bch_before_bsvfork(accountant):
     }, {  # selling BCH before the BSV fork should decrease the BSV equivalent
         # 4.8 BTC 4.6 BCH 4.6 BSV
         'timestamp': 1525937600,
-        'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 1146.98
+        'base_asset': 'BCH',  # cryptocompare hourly BCH/EUR price: 1146.98
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 1272.05,
         'fee': 0.52,
@@ -279,7 +300,8 @@ def test_buying_selling_bch_before_bsvfork(accountant):
     }, {  # selling BCH after the BSV fork should not affect the BSV equivalent
         # 4.8 BTC 4.1 BCH 4.6 BSV
         'timestamp': 1552304352,
-        'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 114.27
+        'base_asset': 'BCH',  # cryptocompare hourly BCH/EUR price: 114.27
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 114.27,
         'fee': 0.52,
@@ -312,7 +334,8 @@ def test_buying_selling_bch_before_bsvfork(accountant):
 
 history5 = history1 + [{
     'timestamp': 1512693374,  # cryptocompare hourly BTC/EUR price: 537.805
-    'pair': 'BTC_EUR',  # cryptocompare hourly ETH/EUR price: 11.925
+    'base_asset': 'BTC',  # cryptocompare hourly ETH/EUR price: 11.925
+    'quote_asset': 'EUR',
     'trade_type': 'sell',
     'rate': 13503.35,
     'fee': 0,
@@ -360,7 +383,8 @@ def test_big_taxfree_period(accountant):
 def test_buy_event_creation(accountant):
     history = [{
         'timestamp': 1476979735,
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 578.505,
         'fee': 0.0012,
@@ -369,7 +393,8 @@ def test_buy_event_creation(accountant):
         'location': 'kraken',
     }, {
         'timestamp': 1476979735,
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 578.505,
         'fee': 0.0012,
@@ -403,7 +428,8 @@ def test_not_include_gas_costs(accountant):
     """
     history = [{
         'timestamp': 1476979735,
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 578.505,
         'fee': 0.0012,
@@ -412,7 +438,8 @@ def test_not_include_gas_costs(accountant):
         'location': 'kraken',
     }, {
         'timestamp': 1496979735,
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 2519.62,
         'fee': 0.02,
@@ -450,7 +477,8 @@ def test_not_include_gas_costs(accountant):
 def test_ignored_assets(accountant):
     history = history1 + [{
         'timestamp': 1476979735,
-        'pair': 'DASH_EUR',
+        'base_asset': 'DASH',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 9.76775956284,
         'fee': 0.0011,
@@ -459,7 +487,8 @@ def test_ignored_assets(accountant):
         'location': 'kraken',
     }, {
         'timestamp': 1496979735,
-        'pair': 'DASH_EUR',
+        'base_asset': 'DASH',
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 128.09,
         'fee': 0.015,
@@ -475,7 +504,8 @@ def test_ignored_assets(accountant):
 def test_settlement_buy(accountant):
     history = [{
         'timestamp': 1476979735,
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 578.505,
         'fee': 0.0012,
@@ -484,7 +514,8 @@ def test_settlement_buy(accountant):
         'location': 'kraken',
     }, {  # 0.0079275 * 810.49 + 0.15 * 12.4625608386372145 = 8.29454360079
         'timestamp': 1484629704,  # 17/01/2017
-        'pair': 'DASH_BTC',  # DASH/EUR price: 12.88
+        'base_asset': 'DASH',  # DASH/EUR price: 12.88
+        'quote_asset': 'BTC',
         'trade_type': 'settlement_buy',  # Buy DASH with BTC to settle. Essentially BTC loss
         'rate': 0.015855,  # BTC/EUR price: 810.49
         'fee': 0.15,
@@ -493,7 +524,8 @@ def test_settlement_buy(accountant):
         'location': 'poloniex',
     }, {
         'timestamp': 1496979735,
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 2519.62,
         'fee': 0.02,
@@ -517,7 +549,8 @@ def test_settlement_buy(accountant):
 def test_margin_events_affect_gained_lost_amount(accountant):
     history = [{
         'timestamp': 1476979735,
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 578.505,
         'fee': 0.0012,
@@ -526,7 +559,8 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         'location': 'kraken',
     }, {  # 2519.62-0.02-((0.0012*578.505)/5 + 578.505)
         'timestamp': 1496979735,
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 2519.62,
         'fee': 0.02,
@@ -573,7 +607,8 @@ def test_margin_events_affect_gained_lost_amount(accountant):
 def test_no_corresponding_buy_for_sell(accountant):
     history = [{
         'timestamp': 1496979735,
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 2519.62,
         'fee': 0.02,
@@ -663,7 +698,8 @@ def test_not_calculate_past_cost_basis(accountant, db_settings):
 
     history = [{
         'timestamp': 1446979735,  # 08/11/2015
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 268.678317859,
         'fee': 0,
@@ -672,7 +708,8 @@ def test_not_calculate_past_cost_basis(accountant, db_settings):
         'location': 'external',
     }, {
         'timestamp': 1446979735,  # 08/11/2015
-        'pair': 'ETH_EUR',
+        'base_asset': 'ETH',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 0.2315893,
         'fee': 0,
@@ -681,7 +718,8 @@ def test_not_calculate_past_cost_basis(accountant, db_settings):
         'location': 'external',
     }, {
         'timestamp': 1488373504,  # 29/02/2017
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 1146.22,
         'fee': 0.01,

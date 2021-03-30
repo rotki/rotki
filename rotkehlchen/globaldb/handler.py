@@ -97,14 +97,14 @@ class GlobalDBHandler():
         """
         if GlobalDBHandler.__instance is not None:
             if GlobalDBHandler.__instance._data_directory is None and data_dir is not None:
-                assert GlobalDBHandler.__instance._temp_db_directory is not None
-                # we now know datadir. Cleanup temporary DB
-                GlobalDBHandler.__instance._conn.close()
-                GlobalDBHandler.__instance._temp_db_directory.cleanup()
-                GlobalDBHandler.__instance._temp_db_directory = None
-                GlobalDBHandler.__instance._data_directory = data_dir
-                # and initialize it in the proper place
-                GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
+                if GlobalDBHandler.__instance._temp_db_directory is not None:
+                    # we now know datadir. Cleanup temporary DB
+                    GlobalDBHandler.__instance._conn.close()
+                    GlobalDBHandler.__instance._temp_db_directory.cleanup()
+                    GlobalDBHandler.__instance._temp_db_directory = None
+                    GlobalDBHandler.__instance._data_directory = data_dir
+                    # and initialize it in the proper place
+                    GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
 
             return GlobalDBHandler.__instance
 
@@ -116,6 +116,7 @@ class GlobalDBHandler():
             dbname = Path(tempdir.name) / 'global.db'
             GlobalDBHandler.__instance._conn = _initialize_globaldb(dbname)
         else:  # probably tests
+            GlobalDBHandler.__instance._data_directory = data_dir
             GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
 
         return GlobalDBHandler.__instance

@@ -11,7 +11,7 @@ from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
+from rotkehlchen.errors import InputError, UnknownAsset
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.typing import AssetType
@@ -59,12 +59,12 @@ def test_asset_equals():
 
 
 def test_ethereum_tokens():
-    rdn_asset = EthereumToken('RDN')
+    rdn_asset = EthereumToken('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6')
     assert rdn_asset.ethereum_address == '0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'
     assert rdn_asset.decimals == 18
     assert rdn_asset.is_eth_token()
 
-    with pytest.raises(DeserializationError):
+    with pytest.raises(UnknownAsset):
         EthereumToken('BTC')
 
 
@@ -222,27 +222,6 @@ def test_assets_json_meta():
     assert saved_meta['md5'] == last_meta['md5'], msg
     msg = 'The last meta version of the test does not match the one in all_assets.meta'
     assert saved_meta['version'] == last_meta['version'], msg
-
-
-@pytest.mark.parametrize('mock_asset_meta_github_response', ['{"md5": "", "version": 99999999}'])
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('mock_asset_github_response', ["""{
-"COMPRLASSET": {
-    "coingecko": "",
-    "name": "Completely real asset, totally not for testing only",
-    "symbol": "COMPRLASSET",
-    "type": "own chain"
-}
-}"""])
-@pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
-def test_assets_pulling_from_github_works(asset_resolver):  # pylint: disable=unused-argument
-    """Test that pulling assets from mock github (due to super high version) makes the
-    pulled assets available to the local Rotki instance"""
-    new_asset = Asset("COMPRLASSET")
-    assert new_asset.name == 'Completely real asset, totally not for testing only'
-    # After the test runs we must reset the asset resolver so that it goes back to
-    # the normal list of assets
-    AssetResolver._AssetResolver__instance = None
 
 
 @pytest.mark.parametrize('mock_asset_meta_github_response', ['{"md5": "", "version": 99999999}'])

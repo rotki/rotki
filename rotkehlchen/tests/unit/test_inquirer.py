@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -134,9 +134,9 @@ def test_parsing_forex_cache_works(
 def test_fallback_to_coingecko(inquirer):  # pylint: disable=unused-argument
     """Cryptocompare does not return current prices for some assets.
     For those we are going to be using coingecko"""
-    price = inquirer.find_usd_price(Asset('RARI'))
+    price = inquirer.find_usd_price(EthereumToken('0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'))  # RARRI # noqa: E501
     assert price != Price(ZERO)
-    price = inquirer.find_usd_price(Asset('TLN'))
+    price = inquirer.find_usd_price(EthereumToken('0x679131F591B4f369acB8cd8c51E68596806c3916'))  # TLN # noqa: E501
     assert price != Price(ZERO)
 
 
@@ -166,26 +166,26 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
     inquirer.set_oracles_order(oracles=[CurrentPriceOracle.CRYPTOCOMPARE])
 
     with cc_patch as cc:
-        price = inquirer.find_usd_price(Asset('ETH'))
+        price = inquirer.find_usd_price(A_ETH)
         assert cc.call_count == 1
         assert price == Price(FVal('1'))
 
         # next time we run, make sure it's the cache
-        price = inquirer.find_usd_price(Asset('ETH'))
+        price = inquirer.find_usd_price(A_ETH)
         assert cc.call_count == 1
         assert price == Price(FVal('1'))
 
         # now move forward in time to invalidate the cache
         freezer.move_to(datetime.fromtimestamp(ts_now() + CURRENT_PRICE_CACHE_SECS + 1))
-        price = inquirer.find_usd_price(Asset('ETH'))
+        price = inquirer.find_usd_price(A_ETH)
         assert cc.call_count == 2
         assert price == Price(FVal('2'))
 
         # also test that ignore_cache works
-        price = inquirer.find_usd_price(Asset('ETH'))
+        price = inquirer.find_usd_price(A_ETH)
         assert cc.call_count == 2
         assert price == Price(FVal('2'))
-        price = inquirer.find_usd_price(Asset('ETH'), ignore_cache=True)
+        price = inquirer.find_usd_price(A_ETH, ignore_cache=True)
         assert cc.call_count == 3
         assert price == Price(FVal('2'))
 
@@ -229,7 +229,7 @@ def test_find_usd_price_all_rate_limited_in_last(inquirer):  # pylint: disable=u
     for oracle_instance in inquirer._oracle_instances:
         oracle_instance.rate_limited_in_last.return_value = True
 
-    price = inquirer.find_usd_price(Asset('BTC'))
+    price = inquirer.find_usd_price(A_BTC)
 
     assert price == Price(ZERO)
     for oracle_instance in inquirer._oracle_instances:
@@ -248,7 +248,7 @@ def test_find_usd_price_no_price_found(inquirer):
     for oracle_instance in inquirer._oracle_instances:
         oracle_instance.query_current_price.return_value = Price(ZERO)
 
-    price = inquirer.find_usd_price(Asset('BTC'))
+    price = inquirer.find_usd_price(A_BTC)
 
     assert price == Price(ZERO)
     for oracle_instance in inquirer._oracle_instances:
@@ -267,7 +267,7 @@ def test_find_usd_price_via_second_oracle(inquirer):
     inquirer._oracle_instances[0].query_current_price.side_effect = RemoteError
     inquirer._oracle_instances[1].query_current_price.return_value = expected_price
 
-    price = inquirer.find_usd_price(Asset('BTC'))
+    price = inquirer.find_usd_price(A_BTC)
 
     assert price == expected_price
     for oracle_instance in inquirer._oracle_instances[0:2]:

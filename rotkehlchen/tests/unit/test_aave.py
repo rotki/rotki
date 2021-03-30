@@ -17,5 +17,7 @@ def test_aave_reserve_mapping():
         underlying_asset = ATOKENV1_TO_ASSET[token]
         if underlying_asset == A_ETH:
             assert asset_to_aave_reserve(underlying_asset) == AAVE_ETH_RESERVE_ADDRESS
+            continue
 
-        assert aave_reserve_to_asset(underlying_asset.ethereum_address) == underlying_asset.ethereum_address  # noqa: E501
+        assert aave_reserve_to_asset(underlying_asset.ethereum_address) == underlying_asset
+        assert asset_to_aave_reserve(underlying_asset) == underlying_asset.ethereum_address

@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
@@ -320,8 +320,8 @@ class ZerionSDK():
             return special_handling
 
         try:
-            asset = Asset(token_symbol)
-            usd_price = Inquirer().find_usd_price(asset)
+            token = EthereumToken(token_address)
+            usd_price = Inquirer().find_usd_price(token)
         except (UnknownAsset, UnsupportedAsset):
             if not _is_token_non_standard(token_symbol, token_address):
                 self.msg_aggregator.add_warning(
@@ -360,7 +360,9 @@ class ZerionSDK():
         if asset is None:
             return None
 
-        token = asset.to_ethereum_token()
+        token = EthereumToken.from_asset(asset)
+        if token is None:
+            return None
         underlying_asset_price = get_underlying_asset_price(token)
         usd_price = handle_defi_price_query(self.ethereum, token, underlying_asset_price)
         if usd_price is None:

@@ -11,7 +11,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
-from .constants import ASSET_TO_ATOKENV1, ATOKENV1_TO_ASSET
+from .constants import ASSET_TO_ATOKENV1
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -65,7 +65,7 @@ def aave_reserve_to_asset(address: ChecksumEthAddress) -> Optional[Asset]:
     except UnknownAsset:
         return None
 
-    if asset not in ATOKENV1_TO_ASSET:
+    if asset not in ASSET_TO_ATOKENV1:
         return None
 
     return asset
@@ -75,9 +75,8 @@ def asset_to_aave_reserve(asset: Asset) -> Optional[ChecksumEthAddress]:
     if asset == A_ETH:
         return AAVE_ETH_RESERVE_ADDRESS
 
-    try:
-        token = asset.to_ethereum_token()
-    except UnknownAsset:
+    token = EthereumToken.from_asset(asset)
+    if token is None:  # should not be called with non token asset except for A_ETH
         return None
 
     if token not in ASSET_TO_ATOKENV1:
@@ -92,7 +91,8 @@ def _get_reserve_address_decimals(asset: Asset) -> Tuple[ChecksumEthAddress, int
         reserve_address = AAVE_ETH_RESERVE_ADDRESS
         decimals = 18
     else:
-        token = asset.to_ethereum_token()
+        token = EthereumToken.from_asset(asset)
+        assert token, 'should not be a non token asset at this point'
         reserve_address = token.ethereum_address
         decimals = token.decimals
 

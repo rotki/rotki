@@ -374,7 +374,8 @@ class Inquirer():
         if asset in SPECIAL_TOKENS:
             ethereum = instance._ethereum
             assert ethereum, 'Inquirer should never be called before the injection of ethereum'
-            token = asset.to_ethereum_token()
+            token = EthereumToken.from_asset(asset)
+            assert token, 'all assets in special tokens are already ethereum tokens'
             underlying_asset_price = get_underlying_asset_price(token)
             usd_price = handle_defi_price_query(
                 ethereum=ethereum,

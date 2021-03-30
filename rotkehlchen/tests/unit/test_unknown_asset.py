@@ -2,7 +2,7 @@ from dataclasses import asdict
 
 from eth_typing import HexAddress, HexStr
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.constants.assets import A_WETH
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.typing import ChecksumEthAddress
 
@@ -55,7 +55,7 @@ def test_eq_invalid_type():
         ethereum_address=SHUF_ETHEREUM_ADDRESS,
         symbol=SHUF_SYMBOL,
     )
-    token = EthereumToken('WETH')
+    token = A_WETH
     assert ue_token != token
 
 

@@ -1791,13 +1791,17 @@ class DBHandler:
         returned_list = []
         for x in tokens_list:
             try:
-                returned_list.append(EthereumToken(x))
+                token = EthereumToken.from_identifier(x)
             except (DeserializationError, UnknownAsset):
+                token = None
+            if token is None:
                 self.msg_aggregator.add_warning(
                     f'Could not deserialize {x} as a token when reading latest '
                     f'tokens list of {address}',
                 )
                 continue
+
+            returned_list.append(token)
 
         return returned_list
 

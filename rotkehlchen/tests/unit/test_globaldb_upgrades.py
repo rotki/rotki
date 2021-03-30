@@ -22,8 +22,8 @@ def test_upgrade_v1_v2(globaldb):
             assert entry['swapped_for'].startswith(ETHEREUM_DIRECTIVE)
 
     cursor = globaldb._conn.cursor()
-    assert cursor.execute('SELECT COUNT(*) from assets').fetchone() == 1886
-    assert cursor.execute('SELECT COUNT(*) from user_owned_assets').fetchone() == 105
+    assert cursor.execute('SELECT COUNT(*) from assets').fetchone()[0] == 1886
+    assert cursor.execute('SELECT COUNT(*) from user_owned_assets').fetchone()[0] == 105
     query = cursor.execute('SELECT * from underlying_tokens_list;')
     assert query.fetchall() == [
         ('0x42Fa37aC7c115bf17ca5DDfcb94b73b91B10B61B', '0.5', '0xBBc2AE13b23d715c30720F079fcd9B4a74093505'),  # noqa: E501

@@ -8,8 +8,7 @@ from eth_utils import to_checksum_address
 from hexbytes import HexBytes
 
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
-from rotkehlchen.errors import ConversionError, UnprocessableTradePair
-from rotkehlchen.exchanges.data_structures import invert_pair
+from rotkehlchen.errors import ConversionError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -80,13 +79,6 @@ def test_iso8601ts_to_timestamp():
     assert iso8601ts_to_timestamp('1997-07-16T22:30:45.99+01:00') == 869088646
     assert iso8601ts_to_timestamp('1997-07-16T22:30:45.999+01:00') == 869088646
     assert iso8601ts_to_timestamp('1997-07-16T21:30:45+00:00') == 869088645
-
-
-def test_invert_pair():
-    assert invert_pair('BTC_ETH') == 'ETH_BTC'
-    assert invert_pair('XMR_EUR') == 'EUR_XMR'
-    with pytest.raises(UnprocessableTradePair):
-        assert invert_pair('sdsadasd')
 
 
 def test_combine_dicts():

@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
 )
 from rotkehlchen.constants.assets import A_BAT, A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -153,7 +154,7 @@ def test_vault_types():
     assert set(COLLATERAL_TYPE_MAPPING.keys()) == set(GEMJOIN_MAPPING.keys())
     for collateral_type, asset in COLLATERAL_TYPE_MAPPING.items():
         if collateral_type == 'PAXUSD-A':
-            assert asset.identifier == 'PAX'
+            assert asset.identifier == ethaddress_to_identifier('0x8E870D67F660D95d5be530380D0eC0bd388289E1')  # PAX # noqa: E501
             continue
 
-        assert asset.identifier == collateral_type.split('-')[0]
+        assert asset.symbol.lower() == collateral_type.split('-')[0].lower()

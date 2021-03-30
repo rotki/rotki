@@ -2,7 +2,7 @@ from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
 from typing import TYPE_CHECKING, Any, Optional, Type, TypeVar
 
-from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE, ETHEREUM_DIRECTIVE_LENGTH
 from rotkehlchen.errors import DeserializationError, UnsupportedAsset
 from rotkehlchen.typing import AssetType, ChecksumEthAddress, Timestamp
 
@@ -194,10 +194,8 @@ class Asset():
     form_with_incomplete_data: InitVar[bool] = field(default=False)
     name: str = field(init=False)
     symbol: str = field(init=False)
-    active: bool = field(init=False)
     asset_type: AssetType = field(init=False)
     started: Timestamp = field(init=False)
-    ended: Optional[Timestamp] = field(init=False)
     forked: Optional[str] = field(init=False)
     swapped_for: Optional[str] = field(init=False)
     # None means no special mapping. '' means not supported
@@ -257,9 +255,6 @@ class Asset():
     def __repr__(self) -> str:
         return f'<Asset identifier:{self.identifier} name:{self.name} symbol:{self.symbol}>'
 
-    def to_ethereum_token(self) -> 'EthereumToken':
-        return EthereumToken(self.identifier)
-
     def to_kraken(self) -> str:
         return WORLD_TO_KRAKEN[self.identifier]
 
@@ -308,6 +303,7 @@ class Asset():
         if other is None:
             return False
 
+        # if isinstance(other, (Asset, EthereumToken)):
         if isinstance(other, Asset):
             return self.identifier == other.identifier
         if isinstance(other, str):
@@ -360,8 +356,16 @@ class EthereumToken(HasEthereumToken):
     @classmethod
     def from_asset(cls: Type[T], asset: Asset) -> Optional[T]:
         """Attempts to turn an asset into an EthereumToken. If it fails returns None"""
+        return cls.from_identifier(asset.identifier)
+
+    @classmethod
+    def from_identifier(cls: Type[T], identifier: str) -> Optional[T]:
+        """Attempts to turn an asset into an EthereumToken. If it fails returns None"""
+        if not identifier.startswith(ETHEREUM_DIRECTIVE):
+            return None
+
         try:
-            return cls(asset.identifier)
+            return cls(identifier[ETHEREUM_DIRECTIVE_LENGTH:])
         except DeserializationError:
             return None
 
