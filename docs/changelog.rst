@@ -13,6 +13,7 @@ Changelog
 * :feature:`2513` Users can now add/edit/delete all types of assets, not only ethereum tokens.
 * :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
+* :feature:`1007` Users will see in their trade history their assets conversions from the coinbase exchange.
 * :bug:`2479` Users will now see a < (less than) symbol in front of any amount with trailing decimals when rounding upwards is used.
 * :bug:`2610` Macos users will now be able to properly update every time using the auto-updater.
 * :bug:`2628` Users will now see the correct total asset value when visiting an asset's detail page for a second time.
