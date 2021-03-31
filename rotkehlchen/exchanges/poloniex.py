@@ -15,6 +15,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
+from rotkehlchen.constants.assets import A_LEND
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
@@ -489,7 +490,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                if asset == Asset('LEND'):  # poloniex mistakenly returns LEND balances
+                if asset == A_LEND:  # poloniex mistakenly returns LEND balances
                     continue  # https://github.com/rotki/rotki/issues/2530
 
                 try:

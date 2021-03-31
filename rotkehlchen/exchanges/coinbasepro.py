@@ -17,7 +17,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import asset_from_coinbase
+from rotkehlchen.assets.converters import asset_from_coinbasepro
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
@@ -74,8 +74,8 @@ def coinbasepro_to_worldpair(product: str) -> Tuple[Asset, Asset]:
     if len(parts) != 2:
         raise UnprocessableTradePair(product)
 
-    base_asset = Asset(parts[0])
-    quote_asset = Asset(parts[1])
+    base_asset = asset_from_coinbasepro(parts[0])
+    quote_asset = asset_from_coinbasepro(parts[1])
 
     return base_asset, quote_asset
 
@@ -261,7 +261,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.account_to_currency = {}
         for account in accounts:
             try:
-                asset = asset_from_coinbase(account['currency'])
+                asset = asset_from_coinbasepro(account['currency'])
                 self.account_to_currency[account['id']] = asset
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
@@ -303,7 +303,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 if amount == ZERO:
                     continue
 
-                asset = asset_from_coinbase(account['currency'])
+                asset = asset_from_coinbasepro(account['currency'])
                 try:
                     usd_price = Inquirer().find_usd_price(asset=asset)
                 except RemoteError as e:

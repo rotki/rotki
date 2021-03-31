@@ -13,7 +13,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import ICONOMI_TO_WORLD, UNSUPPORTED_ICONOMI_ASSETS
+from rotkehlchen.assets.converters import UNSUPPORTED_ICONOMI_ASSETS, asset_from_iconomi
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
@@ -38,20 +38,13 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def iconomi_asset(asset: str) -> Asset:
-    symbol = asset.upper()
-    if symbol in UNSUPPORTED_ICONOMI_ASSETS:
-        raise UnsupportedAsset(symbol)
-    return Asset(ICONOMI_TO_WORLD.get(symbol, symbol))
-
-
 def iconomi_pair_to_world(pair: str) -> Tuple[Asset, Asset]:
     """May raise:
     - UnsupportedAsset
     - UnknownAsset
     """
-    tx_asset = iconomi_asset(pair[:3])
-    native_asset = iconomi_asset(pair[3:])
+    tx_asset = asset_from_iconomi(pair[:3])
+    native_asset = asset_from_iconomi(pair[3:])
     return tx_asset, native_asset
 
 
@@ -68,21 +61,21 @@ def trade_from_iconomi(raw_trade: Dict) -> Trade:
 
     if raw_trade['type'] == 'buy_asset':
         trade_type = TradeType.BUY
-        tx_asset = Asset(raw_trade['target_ticker'])
+        tx_asset = asset_from_iconomi(raw_trade['target_ticker'])
         tx_amount = deserialize_asset_amount(raw_trade['target_amount'])
-        native_asset = Asset(raw_trade['source_ticker'])
+        native_asset = asset_from_iconomi(raw_trade['source_ticker'])
         native_amount = deserialize_asset_amount(raw_trade['source_amount'])
     elif raw_trade['type'] == 'sell_asset':
         trade_type = TradeType.SELL
-        tx_asset = Asset(raw_trade['source_ticker'])
+        tx_asset = asset_from_iconomi(raw_trade['source_ticker'])
         tx_amount = deserialize_asset_amount(raw_trade['source_amount'])
         native_amount = deserialize_asset_amount(raw_trade['target_amount'])
-        native_asset = Asset(raw_trade['target_ticker'])
+        native_asset = asset_from_iconomi(raw_trade['target_ticker'])
 
     amount = tx_amount
     rate = Price(native_amount / tx_amount)
     fee_amount = deserialize_fee(raw_trade['fee_amount'])
-    fee_asset = Asset(raw_trade['fee_ticker'])
+    fee_asset = asset_from_iconomi(raw_trade['fee_ticker'])
     return Trade(
         timestamp=timestamp,
         location=Location.ICONOMI,
@@ -222,7 +215,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         for balance_info in resp_info['assetList']:
             ticker = balance_info['ticker']
             try:
-                asset = iconomi_asset(ticker)
+                asset = asset_from_iconomi(ticker)
 
                 # There seems to be a bug in the ICONOMI API regarding balance_info['value'].
                 # The value is supposed to be in USD, but is actually returned

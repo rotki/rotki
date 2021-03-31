@@ -67,8 +67,7 @@ def test_coverage_of_kraken_balances(kraken):
     else:
         # Make sure all assets are covered by our from and to functions
         for kraken_asset in got_assets:
-            asset = asset_from_kraken(kraken_asset)
-            assert asset.to_kraken() == kraken_asset
+            _ = asset_from_kraken(kraken_asset)
 
     # also check that staked assets are properly processed
     assert asset_from_kraken('XTZ.S') == Asset('XTZ')

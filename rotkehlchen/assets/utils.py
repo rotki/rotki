@@ -1,10 +1,10 @@
 import logging
 from typing import Any, Dict, Optional, Union, overload
 
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.typing import AssetType, ChecksumEthAddress
 
 from .asset import Asset, EthereumToken
 from .unknown_asset import UNKNOWN_TOKEN_KEYS, SerializeAsDictKeys, UnknownEthereumToken
@@ -68,7 +68,7 @@ def serialize_ethereum_token(
     raise AssertionError(f'Unexpected ethereum token type: {type(ethereum_token)}')
 
 
-def get_asset_by_symbol(symbol: str) -> Optional[Asset]:
+def get_asset_by_symbol(symbol: str, asset_type: Optional[AssetType] = None) -> Optional[Asset]:
     """Gets an asset by symbol from the DB.
 
     If no asset with that symbol or multiple assets with the same
@@ -77,8 +77,26 @@ def get_asset_by_symbol(symbol: str) -> Optional[Asset]:
     if symbol == 'ETH':
         return A_ETH  # ETH can be ETH and ETH2 in the DB
 
-    assets_data = GlobalDBHandler().get_assets_with_symbol(symbol)
+    assets_data = GlobalDBHandler().get_assets_with_symbol(symbol, asset_type)
     if len(assets_data) != 1:
         return None
 
     return Asset(assets_data[0].identifier)
+
+
+def symbol_to_asset_or_token(symbol: str) -> Asset:
+    """Tries to turn the given symbol to an asset or an ethereum Token
+
+    May raise:
+    - UnknownAsset if the asset is not known
+    """
+    try:
+        asset = Asset(symbol)
+    except UnknownAsset:
+        # may be an ethereum token so let's search by symbol
+        maybe_asset = get_asset_by_symbol(symbol, asset_type=AssetType.ETHEREUM_TOKEN)
+        if maybe_asset is None:
+            raise
+        asset = maybe_asset
+
+    return asset

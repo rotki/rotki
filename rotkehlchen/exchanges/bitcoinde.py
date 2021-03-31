@@ -12,6 +12,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
@@ -58,8 +59,8 @@ BITCOINDE_TRADING_PAIRS = (
 )
 
 
-def bitcoinde_asset(asset: str) -> Asset:
-    return Asset(asset.upper())
+def bitcoinde_asset(symbol: str) -> Asset:
+    return symbol_to_asset_or_token(symbol.upper())
 
 
 def bitcoinde_pair_to_world(pair: str) -> Tuple[Asset, Asset]:

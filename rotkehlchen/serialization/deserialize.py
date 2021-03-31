@@ -500,7 +500,7 @@ def _split_pair(pair: TradePair) -> Tuple[str, str]:
     return assets[0], assets[1]
 
 
-def pair_get_assets(pair: TradePair, location: Optional[Location] = None) -> Tuple[Asset, Asset]:
+def pair_get_assets(pair: TradePair) -> Tuple[Asset, Asset]:
     """Returns a tuple with the (base, quote) assets
 
     May raise:

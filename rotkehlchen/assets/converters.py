@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_POLONIEX,
     Asset,
 )
+from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_DAI, A_SAI
 from rotkehlchen.db.upgrades.v7_v8 import COINBASE_DAI_UPGRADE_END_TS
 from rotkehlchen.errors import DeserializationError, UnsupportedAsset
@@ -332,6 +333,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'BTCTRON',  # neither in coingecko nor cryptocompare
     'FCT2',  # neither in coingecko nor cryptocompare
     'XFLR',  # neither in coingecko nor cryptocompare (is an iou for FLR - SPARK)
+    'WIN',  # add support for it first: https://www.coingecko.com/en/coins/wink
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
@@ -437,6 +439,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'TSLA',
     'UPCO2',  # neither in coingecko nor cryptocompare
     'WXBTC',  # neither in coingecko nor cryptocompare
+    'MTC',  # need to add support for it
 )
 
 
@@ -461,6 +464,7 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'XLMDOWN',  # no cryptocompare/coingecko data
     'XLMUP',  # no cryptocompare/coingecko data
     'UAH',  # no cryptocompare/coingecko data
+    'WIN',  # had wrong mapping. Need to add it to: https://www.coingecko.com/en/coins/wink
 )
 
 UNSUPPORTED_BITFINEX_ASSETS = (
@@ -492,6 +496,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'TT',  # delisted
     'VNX',  # delisted and no cryptocompare/coingecko data
     'VOL',  # delisted
+    'WINK',  # need to add it -> https://www.coingecko.com/en/coins/wink
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
@@ -572,7 +577,7 @@ def asset_from_kraken(kraken_name: str) -> Asset:
         name = kraken_name
     else:
         name = KRAKEN_TO_WORLD.get(kraken_name, kraken_name)
-    return Asset(name)
+    return symbol_to_asset_or_token(name)
 
 
 def asset_from_poloniex(poloniex_name: str) -> Asset:
@@ -588,7 +593,7 @@ def asset_from_poloniex(poloniex_name: str) -> Asset:
         raise UnsupportedAsset(poloniex_name)
 
     our_name = POLONIEX_TO_WORLD.get(poloniex_name, poloniex_name)
-    return Asset(our_name)
+    return symbol_to_asset_or_token(our_name)
 
 
 def asset_from_bitfinex(
@@ -613,8 +618,8 @@ def asset_from_bitfinex(
     if is_currency_map_updated is False:
         currency_map.update(BITFINEX_TO_WORLD)
 
-    name = currency_map.get(bitfinex_name, bitfinex_name)
-    return Asset(name)
+    symbol = currency_map.get(bitfinex_name, bitfinex_name)
+    return symbol_to_asset_or_token(symbol)
 
 
 def asset_from_bitstamp(bitstamp_name: str) -> Asset:
@@ -626,7 +631,7 @@ def asset_from_bitstamp(bitstamp_name: str) -> Asset:
     if not isinstance(bitstamp_name, str):
         raise DeserializationError(f'Got non-string type {type(bitstamp_name)} for bitstamp asset')
 
-    return Asset(bitstamp_name)
+    return symbol_to_asset_or_token(bitstamp_name)
 
 
 def asset_from_bittrex(bittrex_name: str) -> Asset:
@@ -642,7 +647,19 @@ def asset_from_bittrex(bittrex_name: str) -> Asset:
         raise UnsupportedAsset(bittrex_name)
 
     name = BITTREX_TO_WORLD.get(bittrex_name, bittrex_name)
-    return Asset(name)
+    return symbol_to_asset_or_token(name)
+
+
+def asset_from_coinbasepro(symbol: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(f'Got non-string type {type(symbol)} for coinbasepro asset')
+
+    return symbol_to_asset_or_token(symbol)
 
 
 def asset_from_binance(binance_name: str) -> Asset:
@@ -661,7 +678,7 @@ def asset_from_binance(binance_name: str) -> Asset:
         return Asset(RENAMED_BINANCE_ASSETS[binance_name])
 
     name = BINANCE_TO_WORLD.get(binance_name, binance_name)
-    return Asset(name)
+    return symbol_to_asset_or_token(name)
 
 
 def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset:
@@ -683,7 +700,7 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
         return A_DAI
 
     # else
-    return Asset(cb_name)
+    return symbol_to_asset_or_token(cb_name)
 
 
 def asset_from_kucoin(kucoin_name: str) -> Asset:
@@ -699,4 +716,30 @@ def asset_from_kucoin(kucoin_name: str) -> Asset:
         raise UnsupportedAsset(kucoin_name)
 
     name = KUCOIN_TO_WORLD.get(kucoin_name, kucoin_name)
-    return Asset(name)
+    return symbol_to_asset_or_token(name)
+
+
+def asset_from_gemini(symbol: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(f'Got non-string type {type(symbol)} for gemini asset')
+    return symbol_to_asset_or_token(symbol)
+
+
+def asset_from_iconomi(symbol: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(f'Got non-string type {type(symbol)} for iconomi asset')
+    symbol = symbol.upper()
+    if symbol in UNSUPPORTED_ICONOMI_ASSETS:
+        raise UnsupportedAsset(symbol)
+    name = ICONOMI_TO_WORLD.get(symbol, symbol)
+    return symbol_to_asset_or_token(name)

@@ -3,7 +3,7 @@ import shutil
 import sqlite3
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
 
 from typing_extensions import Literal
 
@@ -916,18 +916,28 @@ class GlobalDBHandler():
         connection.commit()
 
     @staticmethod
-    def get_assets_with_symbol(symbol: str) -> List[AssetData]:
+    def get_assets_with_symbol(symbol: str, asset_type: Optional[AssetType] = None) -> List[AssetData]:  # noqa: E501
         """Find all asset entries that have the given symbol"""
+        # if symbol == 'RENBTC':
+        #     __import__("pdb").set_trace()
+        #     a = 1
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
-        query = cursor.execute(
-            'SELECT A.identifier, A.type, B.address, B.decimals, B.name, B.symbol, B.started, null, B.swapped_for, B.coingecko, B.cryptocompare, B.protocol from assets as A LEFT OUTER JOIN ethereum_tokens as B '  # noqa: E501
-            'ON B.address = A.details_reference WHERE B.symbol=?'
-            ' UNION ALL '
-            'SELECT A.identifier, A.type, null, null, B.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null from assets as A LEFT OUTER JOIN common_asset_details as B '  # noqa: E501
-            'ON B.asset_id = A.identifier WHERE B.symbol=?;',
-            (symbol, symbol),
-        )
+        query_tuples: Union[Tuple[str, str], Tuple[str, str, str, str]]
+        if asset_type is not None:
+            asset_type_check = ' AND A.type=?'
+            query_tuples = (symbol, asset_type.serialize_for_db(), symbol, asset_type.serialize_for_db())  # noqa: E501
+        else:
+            asset_type_check = ''
+            query_tuples = (symbol, symbol)
+        querystr = f"""
+        SELECT A.identifier, A.type, B.address, B.decimals, B.name, B.symbol, B.started, null, B.swapped_for, B.coingecko, B.cryptocompare, B.protocol from assets as A LEFT OUTER JOIN ethereum_tokens as B
+        ON B.address = A.details_reference WHERE B.symbol=? COLLATE NOCASE{asset_type_check}
+        UNION ALL
+        SELECT A.identifier, A.type, null, null, B.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null from assets as A LEFT OUTER JOIN common_asset_details as B
+        ON B.asset_id = A.identifier WHERE B.symbol=? COLLATE NOCASE{asset_type_check};
+        """  # noqa: E501
+        query = cursor.execute(querystr, query_tuples)
         assets = []
         for entry in query:
             asset_type = AssetType.deserialize_from_db(entry[1])

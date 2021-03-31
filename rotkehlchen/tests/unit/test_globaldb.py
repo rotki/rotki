@@ -1,3 +1,5 @@
+import itertools
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -127,6 +129,7 @@ def test_get_asset_with_symbol(globaldb):
     selfkey_address = string_to_ethereum_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7')
     bihukey_address = string_to_ethereum_address('0x4Cd988AfBad37289BAAf53C13e98E2BD46aAEa8c')
     aave_address = string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9')
+    renbtc_address = string_to_ethereum_address('0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D')
     assert asset_data == [AssetData(
         identifier=ethaddress_to_identifier(selfkey_address),
         name='Selfkey',
@@ -199,3 +202,21 @@ def test_get_asset_with_symbol(globaldb):
     )]
     # finally non existing asset
     assert globaldb.get_assets_with_symbol('DASDSADSDSDSAD') == []
+
+    # also check that symbol comparison is case insensitive for many arg combinations
+    expected_renbtc = [AssetData(
+        identifier=ethaddress_to_identifier(renbtc_address),
+        name='renBTC',
+        symbol='renBTC',
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        started=1585090944,
+        forked=None,
+        swapped_for=None,
+        ethereum_address=renbtc_address,
+        decimals=8,
+        cryptocompare=None,
+        coingecko='renbtc',
+        protocol=None,
+    )]
+    for x in itertools.product(('ReNbTc', 'renbtc', 'RENBTC', 'rEnBTc'), (None, AssetType.ETHEREUM_TOKEN)):  # noqa: E501
+        assert globaldb.get_assets_with_symbol(*x) == expected_renbtc

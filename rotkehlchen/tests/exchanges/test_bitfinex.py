@@ -34,7 +34,7 @@ def test_name():
     assert exchange.name == str(Location.BITFINEX)
 
 
-def test_bitfinex_exchange_assets_are_known(mock_bitfinex):
+def test_assets_are_known(mock_bitfinex):
     """This tests only exchange (trades) assets (not margin, nor futures ones).
     """
     currencies_response = mock_bitfinex._query_currencies()
