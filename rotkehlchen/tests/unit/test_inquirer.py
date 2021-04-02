@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD
 from rotkehlchen.errors import RemoteError

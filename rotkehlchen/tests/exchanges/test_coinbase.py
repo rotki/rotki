@@ -922,11 +922,12 @@ def test_asset_conversion():
     expected_trade = Trade(
         timestamp=1623119536,
         location=Location.COINBASE,
-        pair='BTC_USD',
+        base_asset=A_BTC,
+        quote_asset=A_USD,
         trade_type=TradeType.SELL,
-        amount=FVal("0.01694165"),
-        rate=FVal("53713.77640312484321184772440"),
-        fee=FVal("90"),
+        amount=FVal('0.01694165'),
+        rate=FVal('53713.77640312484321184772440'),
+        fee=FVal('90'),
         fee_currency=A_USDC,
         link='5dceef97-ef34-41e6-9171-3e60cd01639e',
     )
