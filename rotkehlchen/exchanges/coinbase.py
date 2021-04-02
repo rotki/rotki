@@ -95,6 +95,57 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     )
 
 
+def trade_from_conversion(trade_a: Dict[str, Any], trade_b: Dict[str, Any]) -> Optional[Trade]:
+    """Turn information from a conversion into a trade
+
+    Mary raise:
+    - UnknownAsset due to Asset instantiation
+    - DeserializationError due to unexpected format of dict entries
+    - KeyError due to dict entires missing an expected entry
+    """
+    # Check that the status is complete
+    if trade_a['status'] != 'completed':
+        return None
+
+    # Trade b will represent the asset we are converting to
+    if trade_b['amount']['amount'].startswith('-'):
+        trade_a, trade_b = trade_b, trade_a
+
+    timestamp = deserialize_timestamp_from_date(trade_a['updated_at'], 'iso8601', 'coinbase')
+    trade_type = deserialize_trade_type('sell')
+    tx_amount = deserialize_asset_amount(trade_b['amount']['amount'])
+    tx_asset = asset_from_coinbase(trade_b['amount']['currency'], time=timestamp)
+    native_amount = deserialize_asset_amount(trade_b['native_amount']['amount'])
+    native_asset = asset_from_coinbase(trade_b['native_amount']['currency'], time=timestamp)
+    # in coinbase you are buying/selling tx_asset for native_asset
+    pair = TradePair(f'{tx_asset.symbol}_{native_asset.symbol}')
+    amount = tx_amount
+    # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
+    rate = Price(native_amount / tx_amount)
+
+    # Obtain fee amount using data from both trades
+    amount_after_fee = deserialize_asset_amount(trade_b['native_amount']['amount'])
+    amount_before_fee = deserialize_asset_amount(trade_a['amount']['amount'])
+    conversion_fee_amount = amount_after_fee + amount_before_fee
+    # Before this the conversion should be a negative number
+    conversion_fee_amount = abs(conversion_fee_amount)
+
+    fee_amount = deserialize_fee(str(conversion_fee_amount))
+    fee_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
+
+    return Trade(
+        timestamp=timestamp,
+        location=Location.COINBASE,
+        pair=pair,
+        trade_type=trade_type,
+        amount=amount,
+        rate=rate,
+        fee=fee_amount,
+        fee_currency=fee_asset,
+        link=str(trade_a['trade']['id']),
+    )
+
+
 class CoinbasePermissionError(Exception):
     pass
 
@@ -433,6 +484,66 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 log.error(
                     'Error processing a coinbase trade',
                     trade=raw_trade,
+                    error=msg,
+                )
+                continue
+
+            # limit coinbase trades in the requested time range here since there
+            # is no argument in the API call
+            if trade and trade.timestamp >= start_ts and trade.timestamp <= end_ts:
+                trades.append(trade)
+
+        # Analyze conversions of coins. We address them as sells
+        raw_transactions = []
+        for account_id in account_ids:
+            raw_transactions.extend(self._api_query(f'accounts/{account_id}/transactions'))
+
+        # Maps every trade id to their two transactions
+        trade_pairs = defaultdict(list)
+        for transaction in raw_transactions:
+            if transaction.get('type', '') == 'trade':
+                try:
+                    trade_pairs[transaction['trade']['id']].append(transaction)
+                except KeyError:
+                    log.error(
+                        f'Transaction of type trade doesnt have the '
+                        f'expected structure {transaction}',
+                    )
+
+        for trade_id, trades_conversion in trade_pairs.items():
+            # Assert that in fact we have two trades
+            if len(trades_conversion) != 2:
+                log.error(
+                    f'Conversion with id {trade_id} doesnt '
+                    f'have two transactions. {trades_conversion}',
+                )
+                continue
+
+            try:
+                trade = trade_from_conversion(trades_conversion[0], trades_conversion[1])
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found coinbase conversion with unknown asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
+                continue
+            except UnsupportedAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found coinbase conversion with unsupported asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
+                continue
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_error(
+                    'Error processing a coinbase conversion. Check logs '
+                    'for details. Ignoring it.',
+                )
+                log.error(
+                    'Error processing a coinbase conversion',
+                    trade=trades_conversion[0],
                     error=msg,
                 )
                 continue

@@ -13,6 +13,7 @@ Changelog
 * :feature:`2513` Users can now add/edit/delete all types of assets, not only ethereum tokens.
 * :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
+* :feature:`1007` Coinbase exchange users will now be able to see asset conversions in their trade history.
 * :bug:`2479` Users will now see a < (less than) symbol in front of any amount with trailing decimals when rounding upwards is used.
 * :bug:`2610` Macos users will now be able to properly update every time using the auto-updater.
 * :bug:`2628` Users will now see the correct total asset value when visiting an asset's detail page for a second time.
@@ -21,6 +22,7 @@ Changelog
 * :bug:`2633` User with incomplete deposits and withdrawals in Coinbase Pro will now be able to generate a profit/loss report.
 * :bug:`2644` Balance query should no longer hang if the user gets rate limited by beaconcha.in and the rate limiting should now be properly handled.
 * :bug:`2643` Beaconcha.in api key should now be properly used if given by the user
+* :bug:`2614` Uniswap users should no longer have missing trades in their uniswap history.
 
 * :release:`1.15.2 <2021-03-21>`
 * :bug:`1996` Querying coinbasepro deposits and withdrawals should now be much faster thanks to using their new API endpoints.
