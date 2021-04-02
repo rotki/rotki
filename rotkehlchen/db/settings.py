@@ -17,7 +17,7 @@ from rotkehlchen.serialization.deserialize import deserialize_ledger_action_type
 from rotkehlchen.typing import AVAILABLE_MODULES_MAP, ModuleName, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
-ROTKEHLCHEN_DB_VERSION = 24
+ROTKEHLCHEN_DB_VERSION = 25
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_INCLUDE_GAS_COSTS = True

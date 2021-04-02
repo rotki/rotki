@@ -1,16 +1,14 @@
 import json
 import os
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from shutil import copyfile
-from sqlite3 import Cursor
-from unittest.mock import patch, _patch
+from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
@@ -28,7 +26,7 @@ from rotkehlchen.db.upgrades.v7_v8 import (
 )
 from rotkehlchen.db.upgrades.v13_v14 import REMOVED_ASSETS, REMOVED_ETH_TOKENS
 from rotkehlchen.errors import DBUpgradeError
-from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
+from rotkehlchen.tests.utils.database import mock_dbhandler_update_owned_assets
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -36,14 +34,6 @@ creation_patch = patch(
     'rotkehlchen.db.dbhandler.DB_SCRIPT_CREATE_TABLES',
     new=OLD_DB_SCRIPT_CREATE_TABLES,
 )
-
-
-def mock_dbhandler_update_owned_assets() -> _patch:
-    """Just make sure update owned assets does nothing for older DB tests"""
-    return patch(
-        'rotkehlchen.db.dbhandler.DBHandler.update_owned_assets_in_globaldb',
-        lambda x: None,
-    )
 
 
 @contextmanager
@@ -76,7 +66,10 @@ def _init_db_with_target_version(
         user_data_dir: Path,
         msg_aggregator: MessagesAggregator,
 ) -> DBHandler:
-    with target_patch(target_version=target_version):
+    with ExitStack() as stack:
+        stack.enter_context(target_patch(target_version=target_version))
+        if target_version <= 24:
+            stack.enter_context(mock_dbhandler_update_owned_assets())
         db = DBHandler(
             user_data_dir=user_data_dir,
             password='123',
@@ -95,17 +88,16 @@ def _use_prepared_db(user_data_dir: Path, filename: str) -> None:
 
 
 def populate_db_and_check_for_asset_renaming(
-        cursor: Cursor,
-        data: DataHandler,
-        data_dir: Path,
+        db: DBHandler,
+        user_data_dir: Path,
         msg_aggregator: MessagesAggregator,
-        username: str,
         to_rename_asset: str,
-        renamed_asset: Asset,
+        renamed_asset: str,
         target_version: int,
 ):
     # Manually input data to the affected tables.
     # timed_balances, multisettings and (external) trades
+    cursor = db.conn.cursor()
 
     # At this time point we only have occurence of the to_rename_asset
     cursor.execute(
@@ -127,7 +119,7 @@ def populate_db_and_check_for_asset_renaming(
         'INSERT INTO timed_balances('
         '   time, currency, amount, usd_value) '
         ' VALUES(?, ?, ?, ?)',
-        ('1558499129', renamed_asset.identifier, '2.2', '25'),
+        ('1558499129', renamed_asset, '2.2', '25'),
     )
     # Add one different asset for control test
     cursor.execute(
@@ -224,33 +216,39 @@ def populate_db_and_check_for_asset_renaming(
             '',
         ),
     )
-    data.db.conn.commit()
+    db.conn.commit()
 
     # now relogin and check that all tables have appropriate data
-    with mock_dbhandler_update_owned_assets():
-        del data
-        data = DataHandler(data_dir, msg_aggregator)
-        with creation_patch, target_patch(target_version=target_version):
-            data.unlock(username, '123', create_new=False)
+    with mock_dbhandler_update_owned_assets(), creation_patch:
+        new_db = _init_db_with_target_version(
+            target_version=target_version,
+            user_data_dir=user_data_dir,
+            msg_aggregator=msg_aggregator,
+        )
+
+    cursor = new_db.conn.cursor()
     # Check that owned and ignored assets reflect the new state
-    ignored_assets = data.db.get_ignored_assets()
-    assert A_RDN in ignored_assets
+    query = cursor.execute(
+        'SELECT value FROM multisettings WHERE name="ignored_asset";',
+    )
+    ignored_assets = [q[0] for q in query]
+    assert 'RDN' in ignored_assets
     assert renamed_asset in ignored_assets
     results = cursor.execute(
         'SELECT DISTINCT currency FROM timed_balances ORDER BY time ASC;',
     )
     owned_assets = set()
     for result in results:
-        owned_assets.add(Asset(result[0]))
-    assert A_ETH in owned_assets
+        owned_assets.add(result[0])
+    assert 'ETH' in owned_assets
     assert renamed_asset in owned_assets
 
     # Make sure that the merging of both new and old name entry in same timestamp works
     querystr = (
         f'SELECT time, amount, usd_value FROM timed_balances WHERE time BETWEEN '
-        f'0 AND 2556392121 AND currency="{renamed_asset.identifier}" ORDER BY time ASC;'
+        f'0 AND 2556392121 AND currency="{renamed_asset}" ORDER BY time ASC;'
     )
-    cursor = data.db.conn.cursor()
+    cursor = new_db.conn.cursor()
     result = cursor.execute(querystr).fetchall()
     assert len(result) == 2
     assert result[0][0] == 1557499129
@@ -261,8 +259,8 @@ def populate_db_and_check_for_asset_renaming(
     assert result[1][2] == '40'
 
     # Assert that trades got renamed properly
-    cursor = data.db.conn.cursor()
-    query = (
+    cursor = new_db.conn.cursor()
+    querystr = (
         'SELECT id,'
         '  time,'
         '  location,'
@@ -275,7 +273,7 @@ def populate_db_and_check_for_asset_renaming(
         '  link,'
         '  notes FROM trades ORDER BY time ASC;'
     )
-    results = cursor.execute(query)
+    results = cursor.execute(querystr)
     trades = []
     for result in results:
         trades.append({
@@ -294,11 +292,13 @@ def populate_db_and_check_for_asset_renaming(
     assert len(trades) == 3
     assert trades[0]['fee_currency'] == 'EUR'
     assert trades[0]['pair'] == 'ETH_EUR'
-    assert trades[1]['fee_currency'] == renamed_asset.identifier
-    assert trades[1]['pair'] == f'{renamed_asset.identifier}_EUR'
-    assert trades[2]['pair'] == f'{renamed_asset.identifier}_EUR'
+    assert trades[1]['fee_currency'] == renamed_asset
+    assert trades[1]['pair'] == f'{renamed_asset}_EUR'
+    assert trades[2]['pair'] == f'{renamed_asset}_EUR'
 
-    assert data.db.get_version() == target_version
+    assert new_db.get_version() == target_version
+    with mock_dbhandler_update_owned_assets():
+        del new_db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_1_to_2(data_dir, username):
@@ -328,36 +328,30 @@ def test_upgrade_db_1_to_2(data_dir, username):
     version = data.db.get_version()
     # Also make sure that we have updated to the target_version
     assert version == 2
+    with mock_dbhandler_update_owned_assets():
+        del data.db  # explicit delete the db so update_owned_assets still runs mocked
 
 
-def test_upgrade_db_2_to_3(data_dir, username):
+def test_upgrade_db_2_to_3(user_data_dir):
     """Test upgrading the DB from version 2 to version 3, rename BCHSV to BSV"""
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch, mock_dbhandler_update_owned_assets():
-        data.unlock(username, '123', create_new=True)
-    # Manually set version (Both here and in 4 -> 5 it needs to be done like this and
-    # target patch can't be used for some reason. Still have not debugged what fails
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        ('version', str(2)),
-    )
-    data.db.conn.commit()
+    with creation_patch:
+        db = _init_db_with_target_version(
+            target_version=2,
+            user_data_dir=user_data_dir,
+            msg_aggregator=msg_aggregator,
+        )
+
     with mock_dbhandler_update_owned_assets():
         populate_db_and_check_for_asset_renaming(
-            cursor=cursor,
-            data=data,
-            data_dir=data_dir,
+            db=db,
+            user_data_dir=user_data_dir,
             msg_aggregator=msg_aggregator,
-            username=username,
             to_rename_asset='BCHSV',
-            renamed_asset=A_BSV,
+            renamed_asset='BSV',
             target_version=3,
         )
-    version = data.db.get_version()
-    # Also make sure that we have updated to the target_version
-    assert version == 3
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_3_to_4(data_dir, username):
@@ -395,36 +389,30 @@ def test_upgrade_db_3_to_4(data_dir, username):
     version = data.db.get_version()
     # Also make sure that we have updated to the target_version
     assert version == 4
+    with mock_dbhandler_update_owned_assets():
+        del data.db  # explicit delete the db so update_owned_assets still runs mocked
 
 
-def test_upgrade_db_4_to_5(data_dir, username):
+def test_upgrade_db_4_to_5(user_data_dir):
     """Test upgrading the DB from version 4 to version 5, rename BCC to BCH"""
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch, mock_dbhandler_update_owned_assets():
-        data.unlock(username, '123', create_new=True)
-    # Manually set version (Both here and in 2 -> 3 it needs to be done like this and
-    # target patch can't be used for some reason. Still have not debugged what fails
+    with creation_patch:
+        db = _init_db_with_target_version(
+            target_version=4,
+            user_data_dir=user_data_dir,
+            msg_aggregator=msg_aggregator,
+        )
 
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        ('version', str(4)),
-    )
-    data.db.conn.commit()
     with mock_dbhandler_update_owned_assets():
         populate_db_and_check_for_asset_renaming(
-            cursor=cursor,
-            data=data,
-            data_dir=data_dir,
+            db=db,
+            user_data_dir=user_data_dir,
             msg_aggregator=msg_aggregator,
-            username=username,
             to_rename_asset='BCC',
-            renamed_asset=A_BCH,
+            renamed_asset='BCH',
             target_version=5,
         )
-    # Also make sure that we have updated to the target version
-    assert data.db.get_version() == 5
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_5_to_6(user_data_dir):
@@ -516,6 +504,8 @@ def test_upgrade_db_5_to_6(user_data_dir):
         assert not os.path.exists(filename)
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 6
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_6_to_7(user_data_dir):
@@ -576,6 +566,8 @@ def test_upgrade_db_6_to_7(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 7
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_7_to_8(user_data_dir):
@@ -734,13 +726,15 @@ def test_upgrade_db_7_to_8(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 8
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_broken_db_7_to_8(user_data_dir):
     """Test that if SAI is already in owned tokens upgrade fails"""
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v7_rotkehlchen_broken.db')
-    with pytest.raises(DBUpgradeError):
+    with mock_dbhandler_update_owned_assets(), pytest.raises(DBUpgradeError):
         _init_db_with_target_version(
             target_version=8,
             user_data_dir=user_data_dir,
@@ -778,6 +772,8 @@ def test_upgrade_db_8_to_9(user_data_dir):
     assert len(names) == 0, 'not all exchanges were found in the new DB'
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 9
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_9_to_10(user_data_dir):
@@ -799,6 +795,8 @@ def test_upgrade_db_9_to_10(user_data_dir):
     assert len(results.fetchall()) == 0
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 10
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_10_to_11(user_data_dir):
@@ -828,6 +826,8 @@ def test_upgrade_db_10_to_11(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 11
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_11_to_12(user_data_dir):
@@ -851,6 +851,8 @@ def test_upgrade_db_11_to_12(user_data_dir):
     assert len(results.fetchall()) == 1
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 12
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_12_to_13(user_data_dir):
@@ -904,6 +906,8 @@ def test_upgrade_db_12_to_13(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 13
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_13_to_14(user_data_dir):
@@ -952,6 +956,8 @@ def test_upgrade_db_13_to_14(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 14
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_15_to_16(user_data_dir):
@@ -978,6 +984,8 @@ def test_upgrade_db_15_to_16(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 16
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_16_to_17(user_data_dir):
@@ -1024,6 +1032,8 @@ def test_upgrade_db_16_to_17(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 17
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_18_to_19(user_data_dir):
@@ -1050,6 +1060,8 @@ def test_upgrade_db_18_to_19(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 19
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_19_to_20(user_data_dir):
@@ -1080,6 +1092,8 @@ def test_upgrade_db_19_to_20(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 20
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_20_to_21(user_data_dir):
@@ -1143,6 +1157,8 @@ def test_upgrade_db_20_to_21(user_data_dir):
     )
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 21
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_21_to_22(user_data_dir):  # pylint: disable=unused-argument
@@ -1177,6 +1193,8 @@ def test_upgrade_db_21_to_22(user_data_dir):  # pylint: disable=unused-argument
     assert length == 0
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 22
+    with mock_dbhandler_update_owned_assets():
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_22_to_23_with_frontend_settings(user_data_dir):
@@ -1257,6 +1275,8 @@ def test_upgrade_db_22_to_23_with_frontend_settings(user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 23
+    with mock_dbhandler_update_owned_assets():
+        del db, db_v22  # explicit delete the db so update_owned_assets still runs mocked
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1337,6 +1357,8 @@ def test_upgrade_db_22_to_23_without_frontend_settings(data_dir, user_data_dir):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 23
+    with mock_dbhandler_update_owned_assets():
+        del db, db_v22  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
@@ -1346,12 +1368,12 @@ def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v23_rotkehlchen.db')
-    db = _init_db_with_target_version(
+    db_v23 = _init_db_with_target_version(
         target_version=23,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
-    cursor = db.conn.cursor()
+    cursor = db_v23.conn.cursor()
 
     # Checks before migration
     assert cursor.execute(
@@ -1396,6 +1418,276 @@ def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 24
+    with mock_dbhandler_update_owned_assets():
+        del db, db_v23  # explicit delete the db so update_owned_assets still runs mocked
+
+
+def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 24 to version 25.
+
+    - Upgrades to the new eth token identifier schema
+    - trade pairs are now replaced by base/quote asset
+    - purges some tables
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v24_rotkehlchen.db')
+    db_v24 = _init_db_with_target_version(
+        target_version=24,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db_v24.conn.cursor()
+
+    # Checks before migration
+    assert cursor.execute(
+        'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "uniswap%";',
+    ).fetchone()[0] == 4
+    assert cursor.execute('SELECT COUNT(*) from amm_swaps;').fetchone()[0] == 2
+    assert cursor.execute('SELECT COUNT(*) from uniswap_events;').fetchone()[0] == 1
+    assert cursor.execute('SELECT COUNT(*) from yearn_vaults_events;').fetchone()[0] == 1
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "yearn_vaults_events%";',
+    ).fetchone()[0] == 24
+    assert cursor.execute('SELECT COUNT(*) from ethereum_accounts_details;').fetchone()[0] == 3
+    # coinbase/coinbasepro exchange data purging
+    assert cursor.execute('SELECT COUNT(*) from trades where location IN ("G", "K");').fetchone()[0] == 2  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) from asset_movements where location IN ("G", "K");').fetchone()[0] == 2  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) from used_query_ranges where name LIKE "coinbase%";').fetchone()[0] == 6  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) from adex_events;').fetchone()[0] == 1
+    assert cursor.execute('SELECT COUNT(*) from used_query_ranges WHERE name LIKE "adex_events%";').fetchone()[0] == 1  # noqa: E501
+    trades_count = cursor.execute('SELECT COUNT(*) from trades;').fetchone()[0]
+    assert trades_count == 18
+    trades_query = cursor.execute(
+        'SELECT id, time, location, pair, type, amount, rate, fee,'
+        'fee_currency, link, notes from trades ORDER BY time ASC;',
+    ).fetchall()
+    assert trades_query == [
+        ('foo1', 1, 'G', 'ETH_BTC', 'A', '1', '1', '1', 'ETH', '', ''),
+        ('foo2', 1, 'K', 'ETH_BTC', 'A', '1', '1', '1', 'ETH', '', ''),
+        ('5a12acc85a2787a982f4fa4861103c8dd2fd4fb3e4535648894f46da4a5d0f6a', 1493227049, 'D', 'SWT_BTC', 'A', '867.46673624', '0.00114990', '0.00249374', 'BTC', 'l1', ''),  # noqa: E501
+        ('87fae909392162febb703010ceb00e1d23e998ddc02a524d477d0e4bbb81d62c', 1493228252, 'D', 'EDG_BTC', 'A', '11348.12286689', '0.00008790', '0.00249374', 'BTC', 'l2', ''),  # noqa: E501
+        ('8ad65d14ae4781afa03adcd0452bd7b0c3ded70821c2fa66fc3818fc8c708e6e', 1498949799, 'D', 'SWT_BTC', 'A', '150.00000000', '0.00091705', '0.00034389', 'BTC', 'l3', ''),  # noqa: E501
+        ('aee370e00bdaf393012895acdd0663f10375d2508deb8e214ca9fd7bb71879ed', 1498966605, 'D', 'SWT_BTC', 'A', '1000.00000000', '0.00091409', '0.00228521', 'BTC', 'l4', ''),  # noqa: E501
+        ('ae8660dfd750a68792057b1b075c2d075550ea1bf47f8fd58d6d981252ae8cad', 1499011364, 'D', 'SWT_BTC', 'A', '200.00000000', '0.00092401', '0.00046200', 'BTC', 'l5', ''),  # noqa: E501
+        ('2de3e2216c4887398a72435ac48db06c3ce36866cb15165e700f180c3d80f124', 1499051024, 'D', 'SWT_BTC', 'A', '120.00000000', '0.00091603', '0.00027480', 'BTC', 'l6', ''),  # noqa: E501
+        ('13b54258a2c089ff47f1116769b5ff6a9e10f182e4a38703b9c1247a4bc63024', 1499675187, 'D', 'SWT_BTC', 'A', '200.00000000', '0.00091747', '0.00045869', 'BTC', 'l7', ''),  # noqa: E501
+        ('3079ce93914cbab9e2e812932af84fde4cc4a60fec258ec34a214f869f80071a', 1499677638, 'D', 'SWT_BTC', 'A', '1135.00000000', '0.00088101', '0.00249985', 'BTC', 'l8', ''),  # noqa: E501
+        ('c45b5255b5cf099d9ea60a889ea01b7dc9ff520d82465125b4f362761288de15', 1500494329, 'D', 'EDG_BTC', 'B', '10490.34064784', '0.00024385', '0.00639521', 'BTC', 'l9', ''),  # noqa: E501
+        ('44156083e0f00c780e2375ea73d1123fa6a06b778113c6a0ea2548570d41e62e', 1500501003, 'D', 'EDG_BTC', 'B', '857.78221905', '0.00018099', '0.00038812', 'BTC', 'l10', ''),  # noqa: E501
+        ('5c41cbce8b992585e88c2980ab6640d31a6c75fbf8ff9bb9f2f72d27862f7536', 1501194075, 'D', 'SWT_BTC', 'A', '510.21713000', '0.00039101', '0.00049875', 'BTC', 'l11', ''),  # noqa: E501
+        ('90c6101f4991732d93f518f580f7e8442e82d9edf6059bc661b0aec0b813d666', 1501585385, 'D', 'SWT_BTC', 'A', '731.28354007', '0.00034101', '0.00062343', 'BTC', 'l12', ''),  # noqa: E501
+        ('306e28a5314355ca533a9ebb3b4ba20aabbe81ad698af0be02119af436f88a18', 1599751485, 'A', 'ETH_EUR', 'A', '150', '210.15', '0.2', 'EUR', '', ''),  # noqa: E501
+        ('94bf5ad1c9b73b1c35e92e49cb3296256a81b5ba387aa774710b8a6346fddfef', 1607172606, 'D', 'MAID_BTC', 'B', '15515.00000000', '0.00001299', '0.00040305', 'BTC', 'l13', ''),  # noqa: E501
+        ('493138ad2eadc0ead06aad345f8f4bdf196e44e34a71ad8a6e8fb5ad14d644ae', 1610915040, 'A', 'ETH_EUR', 'A', '5', '0.1', '0.001', '1INCH', 'dsad', 'ads'),  # noqa: E501
+        ('f96d90c8179b502fa1f67ed2829fbbcc5e8dfac0b5873188ee5f753473bf7384', 1612302374, 'A', 'UNI_ETH', 'A', '1', '0.01241', '0', 'UNI', '', ''),  # noqa: E501
+    ]
+    assert cursor.execute('SELECT COUNT(*) from timed_balances;').fetchone()[0] == 392
+    query = cursor.execute('SELECT id, location, open_time, close_time, profit_loss, pl_currency, fee, fee_currency, link, notes from margin_positions;')  # noqa: E501
+    assert query.fetchall() == [
+        ("foo1", "C", 1, 5, "500", "ETH", "1", "GNO", "", ""),
+        ("foo2", "A", 1, 5, "1", "BTC", "1", "RDN", "", ""),
+        ("foo3", "A", 0, 5, "1", "YFI", "1", "DPI", "", ""),
+    ]
+    query = cursor.execute('SELECT asset, label, amount, location from manually_tracked_balances;')  # noqa: E501
+    assert query.fetchall() == [
+        ('EUR', 'test eur balance', '1', 'A'),
+        ('USD', 'test usd balance', '1', 'A'),
+        ('CNY', 'test CNY balance', '1', 'A'),
+        ('AKRO', 'exotic asset', '1500', 'A'),
+        ('1INCH', 'test for duplication', '100000', 'J'),
+        ('_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94', 'test custom token balance', '65', 'A'),  # noqa: E501
+        ('FTT-2', 'test_asset_with_same_symbol', '85', 'A'),
+        ('_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e', 'test_custom_token', '25', 'A'),
+    ]
+    query = cursor.execute('SELECT id, location, category, address, transaction_id, time, asset, amount, fee_asset, fee, link from asset_movements;')  # noqa: E501
+    assert query.fetchall() == [
+        ('a5444b4263b72e86b6de724631346c8c89b6b44a46f10c882b4e9a15a5fdde13', 'D', 'A', '0xaddress', '0xtxid', 1577666912, 'MAID', '15515.00000000', 'MAID', '0', 'link1'),  # noqa: E501
+        ('48aa7e2ce1c16fa1094f0577a52f81a120ab1bb68eaf1d9da5bf6aafe63e4ac2', 'D', 'A', '0xaddress', '0xtxid', 1498941726, 'BTC', '4.20000000', 'BTC', '0', 'link2'),  # noqa: E501
+        ('f2847295c8d236d46242c6868f1da91ee83bb2a71e56134bd793872ebb9f4a0d', 'D', 'A', '0xaddress', '0xtxid', 1493226738, 'BTC', '2.00000000', 'BTC', '0', 'link3'),  # noqa: E501
+        ('f91fa46f5b7f8d7b3581d8be61d1243050af6ab8fa8aba0c36557ee13a2a4fe7', 'D', 'B', '0xaddress', '0xtxid', 1607094370, 'SWT', '4753.96740631', 'SWT', '160.00000000', 'link4'),  # noqa: E501
+        ('dbb994c9e36b1b00bcfc70876ce6f429fe1229d3c44beccd7d3f4194a994491b', 'D', 'B', '0xaddress', '0xtxid', 1501161076, 'BTC', '3.91944853', 'BTC', '0.00100000', 'link5'),  # noqa: E501
+        ('boo1', 'G', 'A', '', '', 1, 'BTC', '1', 'BTC', '1', ''),
+        ('boo2', 'K', 'A', '', '', 1, 'BTC', '1', 'BTC', '1', ''),
+        ('foo1', 'L', 'B', '0xaddy', '0xtxid', 1, 'YFI', '1', 'GNO', '1', 'customlink'),
+    ]
+    asset_movements_count = cursor.execute('SELECT COUNT(*) from asset_movements;').fetchone()[0]
+    query = cursor.execute('SELECT identifier, timestamp, type, location, amount, asset, link, notes from ledger_actions;')  # noqa: E501
+    assert query.fetchall() == [
+        (1, 1611260690, 'A', 'A', '1', 'ABYSS', 'dsad', 'sd'),
+        (2, 1610483475, 'A', 'A', '1', '0xBTC', 'sad', 'asdsad'),
+    ]
+
+    with mock_dbhandler_update_owned_assets():
+        del db_v24  # explicit delete the db so update_owned_assets still runs mocked
+    # Migrate to v25
+    db = _init_db_with_target_version(
+        target_version=25,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    # check that all tables that should have been purged/cleaned, were done so
+    assert cursor.execute(
+        'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "uniswap%";',
+    ).fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) from uniswap_events;').fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) from amm_swaps;').fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) from yearn_vaults_events;').fetchone()[0] == 0
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "yearn_vaults_events%";',
+    ).fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) from ethereum_accounts_details;').fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) from trades where location IN ("G", "K");').fetchone()[0] == 0  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) from asset_movements where location IN ("G", "K");').fetchone()[0] == 0  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) from used_query_ranges where name LIKE "coinbase%";').fetchone()[0] == 0  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) from adex_events;').fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) from used_query_ranges WHERE name LIKE "adex_events%";').fetchone()[0] == 0  # noqa: E501
+    new_trades_count = cursor.execute('SELECT COUNT(*) from trades;').fetchone()[0]
+    assert new_trades_count == trades_count - 2, 'all but the coinbase/pro trades should be there'
+    assert cursor.execute('SELECT COUNT(*) from timed_balances;').fetchone()[0] == 392
+
+    # check the ledger actions were upgraded
+    query = cursor.execute('SELECT identifier, timestamp, type, location, amount, asset, link, notes from ledger_actions;')  # noqa: E501
+    assert query.fetchall() == [
+        (1, 1611260690, 'A', 'A', '1', '_ceth_0x0E8d6b471e332F140e7d9dbB99E5E3822F728DA6', 'dsad', 'sd'),  # noqa: E501
+        (2, 1610483475, 'A', 'A', '1', '_ceth_0xB6eD7644C69416d67B522e20bC294A9a9B405B31', 'sad', 'asdsad'),  # noqa: E501
+    ]
+    # check that margin positions were upgraded
+    query = cursor.execute('SELECT id, location, open_time, close_time, profit_loss, pl_currency, fee, fee_currency, link, notes from margin_positions;')  # noqa: E501
+    raw_upgraded = query.fetchall()
+    assert raw_upgraded == [
+        ("3ebd1ff33f6b6431778db56393e6105b94b0b23d0976462d70279e6f82db9924", "C", 1, 5, "500", "ETH", "1", "_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96", "", ""),  # noqa: E501
+        ("2ecdf50622f0ad6277b2c4b28954118753db195c9ae2005ce7da7b30d4a873c4", "A", 1, 5, "1", "BTC", "1", "_ceth_0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6", "", ""),  # noqa: E501
+        ("bec34827cd9ce879e91d45dfe11942752f810504439701ff7f3d005850f458a8", "A", 0, 5, "1", "_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", "1", "_ceth_0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b", "", ""),  # noqa: E501
+    ]
+    # Check that identifiers match with what is expected. This may need amendment if the upgrade test stays around while the code changes.  # noqa: E501
+    margins = db.get_margin_positions()
+    assert all(x.identifier == raw_upgraded[idx][0] for idx, x in enumerate(margins))
+
+    # check that the asset movements were upgraded
+    query = cursor.execute('SELECT id, location, category, address, transaction_id, time, asset, amount, fee_asset, fee, link from asset_movements ORDER BY time ASC;')  # noqa: E501
+    raw_upgraded = query.fetchall()
+    assert raw_upgraded == [
+        ('822511b6035c5d2a7a7ff82c21b61381016e76764e84f656aedcfbc3b7a2e2f4', 'L', 'B', '0xaddy', '0xtxid', 1, '_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e', '1', '_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96', '1', 'customlink'),  # noqa: E501
+        ('98c8378892955d3c95cc24277188ad33504d2e668441ba23a270b6c65f00be43', 'D', 'A', '0xaddress', '0xtxid', 1493226738, 'BTC', '2.00000000', 'BTC', '0', 'link3'),  # noqa: E501
+        ('9713d2c2f90edfc375bfea1d014599e9f3a20eded94625c0a2483c4ab2692ff9', 'D', 'A', '0xaddress', '0xtxid', 1498941726, 'BTC', '4.20000000', 'BTC', '0', 'link2'),  # noqa: E501
+        ('86f6cda4bcd36e2fd0e8938fd3b31ebe895af2df6d8b60479c401cd846a3ccf8', 'D', 'B', '0xaddress', '0xtxid', 1501161076, 'BTC', '3.91944853', 'BTC', '0.00100000', 'link5'),  # noqa: E501
+        ('9a3ab62aea2892e9000c868ce29a471e34f57d3bbae7691b920bcf58fbea10ce', 'D', 'A', '0xaddress', '0xtxid', 1577666912, 'MAID', '15515.00000000', 'MAID', '0', 'link1'),  # noqa: E501
+        ('79d6d91d1fd2acf02a9d244e33ff340c04a938faaf0d1ba10aba9d8ae55b11cc', 'D', 'B', '0xaddress', '0xtxid', 1607094370, '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', '4753.96740631', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', '160.00000000', 'link4'),  # noqa: E501
+    ]
+    assert len(raw_upgraded) == asset_movements_count - 2, 'coinbase/pro movements should have been deleted'  # noqa: E501
+    # Check that identifiers match with what is expected. This may need amendment if the upgrade test stays around while the code changes.  # noqa: E501
+    movements = db.get_asset_movements()
+    assert all(x.identifier == raw_upgraded[idx][0] for idx, x in enumerate(movements))
+
+    # check that the timed balances had the currency properly changed
+    query = cursor.execute('SELECT category, time, currency, amount, usd_value from timed_balances;')  # noqa: E501
+    for idx, entry in enumerate(query):
+        # the test DB also has some custom tokens which are not in the globalDB as of this writing
+        # 1st one is random fake address, 2nd one is vBNT
+        if entry[2] in ('_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e', '_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94'):  # noqa: E501
+            continue
+
+        # make sure the asset is understood
+        _ = Asset(entry[2])
+        # check some specific entries are converted properly
+        if idx == 391:
+            assert entry == (
+                'A',
+                1616766011,
+                '_ceth_0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9',
+                '85',
+                '2909.55',
+            )
+        elif idx == 387:
+            assert entry == (
+                'A',
+                1616766011,
+                '_ceth_0x8Ab7404063Ec4DBcfd4598215992DC3F8EC853d7',
+                '1500',
+                '76.986000',
+            )
+        elif idx == 369:
+            assert entry == (
+                'A',
+                1616593325,
+                '_ceth_0xc00e94Cb662C3520282E6f5717214004A7f26888',
+                '0.001948068074186848',
+                '0.75082439715309495616',
+            )
+        elif idx == 2:
+            assert entry == (
+                'A',
+                1610559319,
+                '_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F',
+                '90.5639',
+                '90.54578722',
+            )
+        elif idx == 1:
+            assert entry == (
+                'A',
+                1610559319,
+                '_ceth_0x4DC3643DbC642b72C158E7F3d2ff232df61cb6CE',
+                '0.1',
+                '0.001504',
+            )
+
+    # test the manually tracked balances were upgraded
+    query = cursor.execute('SELECT asset, label, amount, location from manually_tracked_balances;')  # noqa: E501
+    assert query.fetchall() == [
+        ('EUR', 'test eur balance', '1', 'A'),
+        ('USD', 'test usd balance', '1', 'A'),
+        ('CNY', 'test CNY balance', '1', 'A'),
+        ('_ceth_0x8Ab7404063Ec4DBcfd4598215992DC3F8EC853d7', 'exotic asset', '1500', 'A'),
+        ('_ceth_0x111111111117dC0aa78b770fA6A738034120C302', 'test for duplication', '100000', 'J'),  # noqa: E501
+        ('_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94', 'test custom token balance', '65', 'A'),  # noqa: E501
+        ('_ceth_0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9', 'test_asset_with_same_symbol', '85', 'A'),  # noqa: E501
+        ('_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e', 'test_custom_token', '25', 'A'),
+    ]
+
+    # test that the trades were properly upgraded
+    trades_query = cursor.execute(
+        'SELECT id, time, location, base_asset, quote_asset, type, amount, rate, fee,'
+        'fee_currency, link, notes from trades ORDER BY time ASC;',
+    ).fetchall()
+    assert trades_query == [
+        ('fac279d109466a908119816d2ee7af90fba28f1ae60437bcbfab10e40a62bbc7', 1493227049, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '867.46673624', '0.00114990', '0.00249374', 'BTC', 'l1', ''),  # noqa: E501
+        ('56775b4b80f46d1dfc1b53fc0f6b61573c14142499bfe3a62e3371f7afc166db', 1493228252, 'D', '_ceth_0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c', 'BTC', 'A', '11348.12286689', '0.00008790', '0.00249374', 'BTC', 'l2', ''),  # noqa: E501
+        ('d38687c92fd4b56f7241b38653390a72022709ef8835c289f6d49cc436b8e05a', 1498949799, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '150.00000000', '0.00091705', '0.00034389', 'BTC', 'l3', ''),  # noqa: E501
+        ('cc31283b6e723f4a7364496b349869564b06b4320da3a14d95dcda1801369361', 1498966605, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '1000.00000000', '0.00091409', '0.00228521', 'BTC', 'l4', ''),  # noqa: E501
+        ('c76a42bc8b32407b7444da89cc9f73c22fd6a1bc0055b7d4112e3e59709b2b5b', 1499011364, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '200.00000000', '0.00092401', '0.00046200', 'BTC', 'l5', ''),  # noqa: E501
+        ('18810df423b24bb438360b23b50bd0fc11ed2d3701420651ef716f4840367894', 1499051024, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '120.00000000', '0.00091603', '0.00027480', 'BTC', 'l6', ''),  # noqa: E501
+        ('27bb15dfc1a008c2efa2c5510b30808d8246ab903cf9f950ea7a175f0779925d', 1499675187, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '200.00000000', '0.00091747', '0.00045869', 'BTC', 'l7', ''),  # noqa: E501
+        ('b0c4d1d816fa3448ba1ab1a285a35d71a42ff27d68438626eacecc4bf927ab07', 1499677638, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '1135.00000000', '0.00088101', '0.00249985', 'BTC', 'l8', ''),  # noqa: E501
+        ('6b91fc81d40c121af7397c5f3351547de4bd3f288fe483ace14b7b7922cfcd36', 1500494329, 'D', '_ceth_0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c', 'BTC', 'B', '10490.34064784', '0.00024385', '0.00639521', 'BTC', 'l9', ''),  # noqa: E501
+        ('59ea4f98a815467122d201d737b97f910c8918cfe8f476a74d51a4006ef1aaa8', 1500501003, 'D', '_ceth_0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c', 'BTC', 'B', '857.78221905', '0.00018099', '0.00038812', 'BTC', 'l10', ''),  # noqa: E501
+        ('dc4a8a1dd3ef78b6eae5ee69f24bed73196ba3677150015f80d28a70b963253c', 1501194075, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '510.21713000', '0.00039101', '0.00049875', 'BTC', 'l11', ''),  # noqa: E501
+        ('8ba98869f1398d9d64d974a13bc1e686746c7068b765223a46f886ef9c100722', 1501585385, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '731.28354007', '0.00034101', '0.00062343', 'BTC', 'l12', ''),  # noqa: E501
+        ('6f583c1297a86beadb46e8876db9589bb2ca60c603a4eca77b331611a49cd482', 1599751485, 'A', 'ETH', 'EUR', 'A', '150', '210.15', '0.2', 'EUR', '', ''),  # noqa: E501
+        ('3fc94b6b91de61d98b21bdba9a6e449b3ff25756f34a14d17dcf3979d08c4ee3', 1607172606, 'D', 'MAID', 'BTC', 'B', '15515.00000000', '0.00001299', '0.00040305', 'BTC', 'l13', ''),  # noqa: E501
+        ('ecd64dba4367a42292988abb34ed46b3dda0d48728c629f9727706d198023d6c', 1610915040, 'A', 'ETH', 'EUR', 'A', '5', '0.1', '0.001', '_ceth_0x111111111117dC0aa78b770fA6A738034120C302', 'dsad', 'ads'),  # noqa: E501
+        ('7aae102d9240f7d5f7f0669d6eefb47f2d1cf5bba462b0cee267719e9272ffde', 1612302374, 'A', '_ceth_0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', 'ETH', 'A', '1', '0.01241', '0', '_ceth_0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', '', ''),  # noqa: E501
+    ]
+    # Check that identifiers match with what is expected. This may need amendment if the upgrade test stays around while the code changes.  # noqa: E501
+    trades = db.get_trades()
+    assert all(x.identifier == trades_query[idx][0] for idx, x in enumerate(trades))
+
+    # Check errors/warnings
+    warnings = msg_aggregator.consume_warnings()
+    assert len(warnings) == 13
+    for idx in (0, 1, 3, 5, 7):
+        assert "During v24 -> v25 DB upgrade could not find key '_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94'" in warnings[idx]  # noqa: E501
+    for idx in (2, 4, 6):
+        assert "During v24 -> v25 DB upgrade could not find key '_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e'" in warnings[idx]  # noqa: E501
+    for idx in (9, 11):
+        assert 'Unknown/unsupported asset _ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94' in warnings[idx]  # noqa: E501
+    for idx in (10, 12):
+        assert 'Unknown/unsupported asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e' in warnings[idx]  # noqa: E501
+    errors = msg_aggregator.consume_errors()
+    assert len(errors) == 0
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 25
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

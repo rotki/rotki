@@ -68,6 +68,7 @@ from rotkehlchen.tests.utils.constants import (
     ETH_ADDRESS3,
     MOCK_INPUT_DATA,
 )
+from rotkehlchen.tests.utils.database import mock_dbhandler_update_owned_assets
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import (
     ApiKey,
@@ -410,8 +411,10 @@ def test_upgrade_sqlcipher_v3_to_v4_without_dbinfo(user_data_dir):
 
     # the constructor should migrate it in-place and we should have a working DB
     msg_aggregator = MessagesAggregator()
-    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
-    assert db.get_version() == ROTKEHLCHEN_DB_VERSION
+    with mock_dbhandler_update_owned_assets():
+        db = DBHandler(user_data_dir, '123', msg_aggregator, None)
+        assert db.get_version() == ROTKEHLCHEN_DB_VERSION
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_sqlcipher_v3_to_v4_with_dbinfo(user_data_dir):
@@ -770,7 +773,7 @@ def test_add_trades(data_dir, username, caplog):
         timestamp=1451607500,
         location=Location.BINANCE,
         base_asset=A_BTC,
-        quote_assets=A_ETH,
+        quote_asset=A_ETH,
         trade_type=TradeType.BUY,
         amount=FVal('0.00120'),
         rate=FVal('10'),
@@ -783,7 +786,7 @@ def test_add_trades(data_dir, username, caplog):
         timestamp=1451608600,
         location=Location.COINBASE,
         base_asset=A_BTC,
-        quote_assets=A_ETH,
+        quote_asset=A_ETH,
         trade_type=TradeType.SELL,
         amount=FVal('0.00120'),
         rate=FVal('1'),
@@ -805,10 +808,7 @@ def test_add_trades(data_dir, username, caplog):
     # Add the last 2 trades. Since trade2 already exists in the DB it should be
     # ignored and a warning should be logged
     data.db.add_trades([trade2, trade3])
-    assert (
-        'Did not add "buy trade with id 38d56b6c435894fe1faaf19c5aec4f817de'
-        'dd6b0a26afc41be4748daf36a5a5c'
-    ) in caplog.text
+    assert 'Did not add "buy trade with id a1ed19c8284940b4e59bdac941db2fd3c0ed004ddb10fdd3b9ef0a3a9b2c97bc' in caplog.text  # noqa: E501
     returned_trades = data.db.get_trades()
     assert returned_trades == [trade1, trade2, trade3]
 

@@ -21,6 +21,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
+from rotkehlchen.chain.ethereum.modules.aave.constants import ATOKENV1_TO_ASSET
 from rotkehlchen.chain.ethereum.modules.adex import (
     ADEX_EVENTS_PREFIX,
     AdexEventType,
@@ -174,9 +175,9 @@ def db_tuple_to_str(
     """
     if tuple_type == 'trade':
         return (
-            f'{deserialize_trade_type_from_db(data[4])} trade with id {data[0]} '
-            f'in {deserialize_location_from_db(data[2])} and pair {data[3]} '
-            f'at timestamp {data[1]}'
+            f'{deserialize_trade_type_from_db(data[5])} trade with id {data[0]} '
+            f'in {deserialize_location_from_db(data[2])} and base/quote asset {data[3]} / '
+            f'{data[4]} at timestamp {data[1]}'
         )
     if tuple_type == 'asset_movement':
         return (
@@ -250,8 +251,9 @@ class DBHandler:
         self.update_owned_assets_in_globaldb()
 
     def __del__(self) -> None:
-        self.update_owned_assets_in_globaldb()
-        self.disconnect()
+        if hasattr(self, 'conn') and self.conn:
+            self.update_owned_assets_in_globaldb()
+            self.disconnect()
         try:
             dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
         except (SystemPermissionError, FileNotFoundError) as e:
@@ -288,6 +290,7 @@ class DBHandler:
                     f'SQLCipher version: {self.sqlcipher_version} - Error: {errstr}. '
                     f'Wrong password while decrypting the database or not a database.',
                 )
+                del self.conn
                 raise AuthenticationError(
                     'Wrong password or invalid/corrupt database for user',
                 ) from e
@@ -814,8 +817,16 @@ class DBHandler:
         )
         values: Tuple
         if atoken is not None:  # when called by blockchain
+            underlying_token = ATOKENV1_TO_ASSET.get(atoken, None)
+            if underlying_token is None:  # should never happen
+                self.msg_aggregator.add_error(
+                    'Tried to query aave events for atoken with no underlying token. '
+                    'Returning no events.',
+                )
+                return []
+
             querystr += 'WHERE address = ? AND (asset1=? OR asset1=?);'
-            values = (address, atoken.identifier, atoken.identifier[1:])
+            values = (address, atoken.identifier, underlying_token.identifier)
         else:  # called by graph
             querystr += 'WHERE address = ?;'
             values = (address,)
@@ -2334,7 +2345,7 @@ class DBHandler:
         margin_positions = []
         for result in results:
             try:
-                if result[2] == '0':
+                if result[2] == 0:
                     open_time = None
                 else:
                     open_time = deserialize_timestamp(result[2])

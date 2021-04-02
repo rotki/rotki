@@ -1,5 +1,4 @@
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import YEARN_VAULTS
 from rotkehlchen.chain.ethereum.structures import (
     AaveBorrowEvent,
@@ -8,7 +7,7 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveSimpleEvent,
     YearnVaultEvent,
 )
-from rotkehlchen.constants.assets import A_DAI, A_YV1_DAI
+from rotkehlchen.constants.assets import A_DAI, A_YV1_DAI, A_ETH, A_MANA, A_WBTC, A_ADAI_V1
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -82,7 +81,7 @@ def test_add_and_get_aave_events(data_dir, username):
         log_index=2,
     ), AaveSimpleEvent(
         event_type='interest',
-        asset=Asset('WBTC'),
+        asset=A_WBTC,
         value=Balance(amount=FVal(1), usd_value=FVal(1)),
         block_number=4,
         timestamp=Timestamp(4),
@@ -90,7 +89,7 @@ def test_add_and_get_aave_events(data_dir, username):
         log_index=4,
     ), AaveBorrowEvent(
         event_type='borrow',
-        asset=Asset('ETH'),
+        asset=A_ETH,
         value=Balance(amount=FVal(1), usd_value=FVal(1)),
         block_number=5,
         timestamp=Timestamp(5),
@@ -101,7 +100,7 @@ def test_add_and_get_aave_events(data_dir, username):
         accrued_borrow_interest=FVal('5.112234'),
     ), AaveRepayEvent(
         event_type='repay',
-        asset=Asset('MANA'),
+        asset=A_MANA,
         value=Balance(amount=FVal(1), usd_value=FVal(1)),
         block_number=6,
         timestamp=Timestamp(6),
@@ -110,9 +109,9 @@ def test_add_and_get_aave_events(data_dir, username):
         fee=Balance(amount=FVal('0.1'), usd_value=FVal('0.1')),
     ), AaveLiquidationEvent(
         event_type='liquidation',
-        collateral_asset=Asset('ETH'),
+        collateral_asset=A_ETH,
         collateral_balance=Balance(amount=FVal(1), usd_value=FVal(1)),
-        principal_asset=Asset('ETH'),
+        principal_asset=A_ETH,
         principal_balance=Balance(amount=FVal(1), usd_value=FVal(1)),
         block_number=7,
         log_index=7,
@@ -121,9 +120,9 @@ def test_add_and_get_aave_events(data_dir, username):
     )]
     data.db.add_aave_events(address=addr3, events=addr3_events)
 
-    events = data.db.get_aave_events(address=addr1, atoken=EthereumToken('aDAI'))
+    events = data.db.get_aave_events(address=addr1, atoken=A_ADAI_V1)
     assert events == addr1_events
-    events = data.db.get_aave_events(address=addr2, atoken=EthereumToken('aDAI'))
+    events = data.db.get_aave_events(address=addr2, atoken=A_ADAI_V1)
     assert events == addr2_events
     events = data.db.get_aave_events(address=addr3)
     assert events == addr3_events

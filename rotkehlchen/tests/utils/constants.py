@@ -1,6 +1,7 @@
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 
+
 A_RDN = EthereumToken('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6')
 A_GNO = EthereumToken('0x6810e776880C02933D47DB1b9fc05908e5386b96')
 A_DAO = EthereumToken('0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413')
