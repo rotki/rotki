@@ -112,7 +112,7 @@ class Uniswap(EthereumModule):
         self.trades_lock = Semaphore()
         try:
             self.graph = Graph(
-                'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
+                'https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v2',
             )
         except RemoteError as e:
             self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
@@ -831,10 +831,20 @@ class Uniswap(EthereumModule):
                 self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
                 raise
 
-            result_data = result['swaps']
+            # Combine the two list of the query
+            result_data = result['swaps_from']
+            result_data.extend(result['swaps_to'])
+
+            # Store ids of swaps to avoid possible duplicates
+            fetched_ids = set()
+
             for entry in result_data:
                 swaps = []
                 for swap in entry['transaction']['swaps']:
+                    if swap['id'] in fetched_ids:
+                        continue
+                    fetched_ids.add(swap['id'])
+
                     timestamp = swap['timestamp']
                     swap_token0 = swap['pair']['token0']
                     swap_token1 = swap['pair']['token1']
@@ -884,6 +894,11 @@ class Uniswap(EthereumModule):
                         amount0_out=AssetAmount(amount0_out),
                         amount1_out=AssetAmount(amount1_out),
                     ))
+
+                # with the new logic the list of swaps can be empty, in that case don't try
+                # to make trades from the swaps
+                if len(swaps) == 0:
+                    continue
 
                 # Now that we got all swaps for a transaction, create the trade object
                 trades.extend(self._tx_swaps_to_trades(swaps))

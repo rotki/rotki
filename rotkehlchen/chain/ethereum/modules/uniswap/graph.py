@@ -62,7 +62,45 @@ TOKEN_DAY_DATAS_QUERY = (
 
 SWAPS_QUERY = (
     """
-    swaps
+    swaps_from: swaps
+    (
+        first: $limit,
+        skip: $offset,
+        where: {{
+            from: $address,
+            timestamp_gte: $start_ts,
+            timestamp_lte: $end_ts,
+        }}
+    ) {{
+        transaction {{
+            swaps {{
+                id
+                logIndex
+                sender
+                to
+                timestamp
+                pair {{
+                    token0 {{
+                        id
+                        decimals
+                        name
+                        symbol
+                    }}
+                    token1 {{
+                        id
+                        decimals
+                        name
+                        symbol
+                    }}
+                }}
+                amount0In
+                amount0Out
+                amount1In
+                amount1Out
+            }}
+        }}
+    }}
+    swaps_to: swaps
     (
         first: $limit,
         skip: $offset,
