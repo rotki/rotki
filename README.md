@@ -7,6 +7,15 @@ Rotki is an open source portfolio tracking, analytics, accounting and tax report
 [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/rotki/rotki.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rotki/rotki/context:javascript)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/rotki/rotki.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rotki/rotki/context:python)
 
+[![GitHub release](https://img.shields.io/github/release/rotki/rotki.svg)](https://GitHub.com/rotki/rotki/releases/)
+[![GitHub commits](https://img.shields.io/github/commits-since/rotki/rotki/latest.svg)](https://GitHub.com/rotki/rotki/commit/)
+
+[![GitHub contributors](https://img.shields.io/github/contributors/rotki/rotki.svg?style=flat)](https://github.com/rotki/rotki/graphs/contributors)
+[![Github All Releases](https://img.shields.io/github/downloads/rotki/rotki/total.svg)](https://GitHub.com/rotki/rotki/releases/)
+
+[![Twitter Follow](https://img.shields.io/twitter/follow/rotkiapp.svg?style=social)](https://twitter.com/rotkiapp)
+[![Discord](https://img.shields.io/discord/657906918408585217.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/aGCxHG7)
+
 
 ## Documentation
 
