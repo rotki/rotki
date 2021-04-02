@@ -6,8 +6,6 @@ from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
-import requests
-
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
@@ -29,13 +27,17 @@ from rotkehlchen.errors import (
     RemoteError,
     UnableToDecryptRemoteData,
 )
+from rotkehlchen.externalapis.xratescom import (
+    get_current_xratescom_exchange_rates,
+    get_historical_xratescom_exchange_rates,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_price
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date, ts_now
-from rotkehlchen.utils.network import request_get_dict, retry_calls
-from rotkehlchen.serialization.deserialize import deserialize_price
-from rotkehlchen.utils.serialization import rlk_jsondumps, jsonloads_dict
+from rotkehlchen.utils.network import request_get_dict
+from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -151,34 +153,6 @@ def get_underlying_asset_price(token_symbol: str) -> Optional[Price]:
         price = Inquirer().find_usd_price(A_BTC)
 
     return price
-
-
-def _query_exchanges_rateapi(base: Asset, quote: Asset) -> Optional[Price]:
-    assert base.is_fiat(), 'fiat currency should have been provided'
-    assert quote.is_fiat(), 'fiat currency should have been provided'
-    log.debug(
-        'Querying api.exchangeratesapi.io fiat pair',
-        base_currency=base.identifier,
-        quote_currency=quote.identifier,
-    )
-    querystr = (
-        f'https://api.exchangeratesapi.io/latest?base={base.identifier}&symbols={quote.identifier}'
-    )
-    try:
-        resp = request_get_dict(querystr)
-        return Price(FVal(resp['rates'][quote.identifier]))
-    except (
-            RemoteError,
-            KeyError,
-            requests.exceptions.TooManyRedirects,
-            UnableToDecryptRemoteData,
-    ):
-        log.error(
-            'Querying api.exchangeratesapi.io for fiat pair failed',
-            base_currency=base.identifier,
-            quote_currency=quote.identifier,
-        )
-        return None
 
 
 def _query_currency_converterapi(base: Asset, quote: Asset) -> Optional[Price]:
@@ -413,50 +387,28 @@ class Inquirer():
         if rate:
             return rate
 
-        log.debug(
-            'Querying exchangeratesapi',
-            from_fiat_currency=from_fiat_currency.identifier,
-            to_fiat_currency=to_fiat_currency.identifier,
-            timestamp=timestamp,
-        )
-
-        query_str = (
-            f'https://api.exchangeratesapi.io/{date}?'
-            f'base={from_fiat_currency.identifier}'
-        )
-        resp = retry_calls(
-            times=5,
-            location='query_exchangeratesapi',
-            handle_429=False,
-            backoff_in_seconds=0,
-            method_name='requests.get',
-            function=requests.get,
-            # function's arguments
-            url=query_str,
-        )
-
-        if resp.status_code != 200:
-            return None
-
         try:
-            result = jsonloads_dict(resp.text)
-        except JSONDecodeError:
+            prices_map = get_historical_xratescom_exchange_rates(
+                from_asset=from_fiat_currency,
+                time=timestamp,
+            )
+        except RemoteError:
             return None
 
-        if 'rates' not in result or to_fiat_currency.identifier not in result['rates']:
-            return None
-
+        # save all prices in cache
         if date not in instance._cached_forex_data:
             instance._cached_forex_data[date] = {}
 
         if from_fiat_currency not in instance._cached_forex_data[date]:
             instance._cached_forex_data[date][from_fiat_currency] = {}
 
-        for key, value in result['rates'].items():
-            instance._cached_forex_data[date][from_fiat_currency][key] = FVal(value)
+        rate = None
+        for asset, asset_price in prices_map.items():
+            instance._cached_forex_data[date][from_fiat_currency][asset] = asset_price
+            if asset == to_fiat_currency:
+                rate = asset_price
 
-        rate = Price(FVal(result['rates'][to_fiat_currency.identifier]))
-        log.debug('Exchangeratesapi query succesful', rate=rate)
+        log.debug('Historical fiat exchange rate query succesful', rate=rate)
         return rate
 
     @staticmethod
@@ -533,7 +485,19 @@ class Inquirer():
         if price:
             return price
 
-        price = _query_exchanges_rateapi(base, quote)
+        # Use the xratescom query and save all prices in the cache
+        price = None
+        try:
+            price_map = get_current_xratescom_exchange_rates(base)
+            for quote_asset, quote_price in price_map.items():
+                if quote_asset == quote:
+                    # if the quote asset price is found return it
+                    price = quote_price
+                    continue  # dont save cache here. Will be saved at the end
+                instance._save_forex_rate(date, base, quote_asset, quote_price)
+        except RemoteError:
+            pass  # price remains None
+
         if price is None:
             price = _query_currency_converterapi(base, quote)
 
