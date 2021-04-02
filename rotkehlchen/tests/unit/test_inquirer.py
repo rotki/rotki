@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
@@ -17,39 +18,48 @@ from rotkehlchen.inquirer import (
     DEFAULT_CURRENT_PRICE_ORACLES_ORDER,
     CurrentPriceOracle,
     _query_currency_converterapi,
-    _query_exchanges_rateapi,
 )
 from rotkehlchen.tests.fixtures.accounting import create_inquirer
-from rotkehlchen.tests.utils.constants import A_CNY, A_EUR, A_GBP, A_JPY
+from rotkehlchen.tests.utils.constants import A_CNY, A_EUR, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Price
 from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date, ts_now
 
 
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='This test would contribute in rate limiting of these apis',
+)
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_query_realtime_price_apis(inquirer):
+    """Query some of the exchange rates APIs we use.
+
+    For x-rates.com we already have a test in externalapis directory
+    """
     result = _query_currency_converterapi(A_USD, A_EUR)
     assert result and isinstance(result, FVal)
-    result = _query_exchanges_rateapi(A_USD, A_GBP)
-    assert result and isinstance(result, FVal)
     result = inquirer.query_historical_fiat_exchange_rates(A_USD, A_CNY, 1411603200)
-    assert result == FVal('6.1371932033')
+    assert result == FVal('6.133938')
 
 
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='This test would contribute in rate limiting of these apis',
+)
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_switching_to_backup_api(inquirer):
     count = 0
     original_get = requests.get
 
-    def mock_exchanges_rateapi_fail(url, timeout):  # pylint: disable=unused-argument
+    def mock_xratescom_fail(url):  # pylint: disable=unused-argument
         nonlocal count
         count += 1
-        if 'exchangeratesapi' in url:
+        if 'www.x-rates.com' in url:
             return MockResponse(501, '{"msg": "some error")')
         return original_get(url)
 
-    with patch('requests.get', side_effect=mock_exchanges_rateapi_fail):
+    with patch('requests.get', side_effect=mock_xratescom_fail):
         result = inquirer._query_fiat_pair(A_USD, A_EUR)
         assert result and isinstance(result, FVal)
         assert count > 1, 'requests.get should have been called more than once'
@@ -58,10 +68,10 @@ def test_switching_to_backup_api(inquirer):
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_fiat_pair_caching(inquirer):
-    def mock_exchanges_rate_api(url, timeout):  # pylint: disable=unused-argument
-        return MockResponse(200, '{"rates":{"EUR":0.9165902841},"base":"USD","date":"2020-05-25"}')
+    def mock_xratescom_exchange_rate(from_currency: Asset):  # pylint: disable=unused-argument
+        return {A_EUR: FVal('0.9165902841')}
 
-    with patch('requests.get', side_effect=mock_exchanges_rate_api):
+    with patch('rotkehlchen.inquirer.get_current_xratescom_exchange_rates', side_effect=mock_xratescom_exchange_rate):  # noqa: E501
         result = inquirer._query_fiat_pair(A_USD, A_EUR)
         assert result == FVal('0.9165902841')
 

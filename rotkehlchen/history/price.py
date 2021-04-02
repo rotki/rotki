@@ -175,7 +175,7 @@ class PriceHistorian():
         if from_asset == to_asset:
             return Price(FVal('1'))
 
-        # Querying historical forex data is attempted first via exchangerates API,
+        # Querying historical forex data is attempted first via the external apis
         # and then via any price oracle that has fiat to fiat.
         if from_asset.is_fiat() and to_asset.is_fiat():
             price = Inquirer().query_historical_fiat_exchange_rates(
