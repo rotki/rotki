@@ -487,6 +487,22 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             try:
                 pair = coinbasepro_to_worldpair(entry['product_id'])
+                if 'price' in entry:
+                    rate = deserialize_price(entry['price'])
+                elif 'executed_value' in entry:
+                    rate = deserialize_price(entry['executed_value'])
+                else:
+                    msg = (
+                        'Skipping coinbasepro trade since it lacks both a price and '
+                        'an executed_value key. Check logs for details.'
+                    )
+                    self.msg_aggregator.add_error(msg)
+                    log.error(
+                        'Error processing a coinbasepro trade.',
+                        raw_trade=entry,
+                        error=msg,
+                    )
+                    continue
                 # Fee currency seems to always be quote asset
                 # https://github.com/ccxt/ccxt/blob/ddf3a15cbff01541f0b37c35891aa143bb7f9d7b/python/ccxt/coinbasepro.py#L724  # noqa: E501
                 _, quote_asset = pair_get_assets(pair)
@@ -495,8 +511,8 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     location=Location.COINBASEPRO,
                     pair=coinbasepro_to_worldpair(entry['product_id']),
                     trade_type=deserialize_trade_type(entry['side']),
-                    amount=deserialize_asset_amount(entry['size']),
-                    rate=deserialize_price(entry['price']),
+                    amount=deserialize_asset_amount(entry['filled_size']),
+                    rate=rate,
                     fee=deserialize_fee(entry['fill_fees']),
                     fee_currency=quote_asset,
                     link=entry['id'],
