@@ -1,24 +1,21 @@
-from http import HTTPStatus
-from json.decoder import JSONDecodeError
 from unittest.mock import patch
+from typing import Optional
 import warnings as test_warnings
 
 import pytest
-import requests
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import asset_from_ftx
+from rotkehlchen.assets.converters import asset_from_ftx, UNSUPPORTED_FTX_ASSETS
 from rotkehlchen.constants.assets import A_ETH, A_USD, A_USDC
-from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.ftx import FTX
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
-from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.typing import AssetMovementCategory, Location, TradeType, Timestamp
 
 
-TEST_END_TS = 1617382780
+TEST_END_TS = Timestamp(1617382780)
 
 
 def test_name():
@@ -27,35 +24,16 @@ def test_name():
 
 
 def test_ftx_exchange_assets_are_known(mock_ftx):
-    request_url = f'{mock_ftx.base_uri}/api/markets'
-    try:
-        response = requests.get(request_url)
-    except requests.exceptions.RequestException as e:
-        raise RemoteError(
-            f'FTX get request at {request_url} connection error: {str(e)}.',
-        ) from e
 
-    if response.status_code != HTTPStatus.OK:
-        raise RemoteError(
-            f'FTX query responded with error status code: {response.status_code} '
-            f'and text: {response.text}',
-        )
-    try:
-        response_dict = jsonloads_dict(response.text)
-    except JSONDecodeError as e:
-        raise RemoteError(f'FTX returned invalid JSON response: {response.text}') from e
-
-    # Extract the unique symbols from the exchange pairs
     unknown_assets = set()
-    unsupported_assets = set()
-    for entry in response_dict['result']:
-        if entry['type'] == 'future':
-            continue
+    unsupported_assets = set(UNSUPPORTED_FTX_ASSETS)
 
-        base_currency = entry.get('baseCurrency', '')
-        quote_currency = entry.get('quoteCurrency', '')
+    def process_currency(currency: Optional[str]):
+        """Check if a currency is known for the FTX exchange"""
+        if currency is None:
+            return
         try:
-            if base_currency not in unknown_assets:
+            if currency not in unknown_assets:
                 asset_from_ftx(base_currency)
         except UnsupportedAsset:
             assert base_currency in unsupported_assets
@@ -66,17 +44,17 @@ def test_ftx_exchange_assets_are_known(mock_ftx):
             ))
             unknown_assets.add(base_currency)
 
-        try:
-            if quote_currency not in unknown_assets:
-                asset_from_ftx(quote_currency)
-        except UnsupportedAsset:
-            assert quote_currency in unsupported_assets
-        except UnknownAsset as e:
-            test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.asset_name} in FTX. '
-                f'Support for it has to be added',
-            ))
-            unknown_assets.add(quote_currency)
+    response = mock_ftx._api_query(endpoint='markets', paginate=False)
+
+    # Extract the unique symbols from the exchange pairs
+    for entry in response:
+        if entry['type'] == 'future':
+            continue
+
+        base_currency = entry.get('baseCurrency', None)
+        quote_currency = entry.get('quoteCurrency', None)
+        process_currency(base_currency)
+        process_currency(quote_currency)
 
 
 FILLS_RESPONSE = """{
@@ -269,7 +247,7 @@ def query_ftx_and_test(
     query_fn = getattr(ftx, query_fn_name)
     with patch.object(ftx.session, 'get', side_effect=mock_ftx_query):
         actions = query_fn(
-            start_ts=0,
+            start_ts=Timestamp(0),
             end_ts=TEST_END_TS,
         )
 
@@ -518,7 +496,7 @@ def test_query_deposits_withdrawals_unexpected_data(mock_ftx):
         query_fn_name='query_online_deposits_withdrawals',
         deposits_response=broken_response,
         expected_warnings_num=0,
-        expected_errors_num=2,
+        expected_errors_num=1,
         expected_actions_num=2,
     )
 
@@ -565,3 +543,36 @@ def test_query_deposits_withdrawals_unexpected_data(mock_ftx):
         expected_errors_num=1,
         expected_actions_num=2,
     )
+
+
+def test_pagination(mock_ftx):
+    """Test pagination in the eth/eur market (public endpoint)"""
+    # Try pagination good path
+    response = mock_ftx._api_query(
+        endpoint='markets/eth/eur/trades',
+        limit=3,
+        start_time=Timestamp(1617716695),
+        end_time=Timestamp(1617724135),
+    )
+
+    assert len(response) == 24
+
+    # Try with a page size divisor of the total orders
+    response = mock_ftx._api_query(
+        endpoint='markets/eth/eur/trades',
+        limit=3,
+        start_time=Timestamp(1617716695),
+        end_time=Timestamp(1617724135),
+    )
+
+    assert len(response) == 24
+
+    # Try pagination with same dates. Should return empty list
+    response = mock_ftx._api_query(
+        endpoint='markets/eth/eur/trades',
+        limit=3,
+        start_time=Timestamp(1617716695),
+        end_time=Timestamp(1617716695),
+    )
+
+    assert len(response) == 0

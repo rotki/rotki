@@ -481,6 +481,8 @@ def deserialize_location(symbol: str) -> Location:
         return Location.BALANCER
     if symbol == 'loopring':
         return Location.LOOPRING
+    if symbol == 'ftx':
+        return Location.FTX
     # else
     raise DeserializationError(
         f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
@@ -599,6 +601,8 @@ def deserialize_location_from_db(symbol: str) -> Location:
         return Location.BALANCER
     if symbol == 'Y':
         return Location.LOOPRING
+    if symbol == 'Z':
+        return Location.FTX
     # else
     raise DeserializationError(
         f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
