@@ -473,51 +473,45 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         log.debug('Query coinbasepro trade history', start_ts=start_ts, end_ts=end_ts)
 
         trades = []
-        raw_trades = []
+        # first get all orders, to see which product ids we need to query fills for
+        orders = []
         for batch in self._paginated_query(
             endpoint='orders',
             query_options={'status': 'done'},
         ):
-            raw_trades.extend(batch)
+            orders.extend(batch)
 
-        for entry in raw_trades:
-            timestamp = coinbasepro_deserialize_timestamp(entry, 'created_at')
-            if timestamp < start_ts or timestamp > end_ts:
+        queried_product_ids = set()
+
+        for order_entry in orders:
+            product_id = order_entry.get('product_id', None)
+            if product_id is None:
+                msg = (
+                    'Skipping coinbasepro trade since it lacks a product_id. '
+                    'Check logs for details'
+                )
+                self.msg_aggregator.add_error(msg)
+                log.error(
+                    'Error processing a coinbasepro order.',
+                    raw_trade=order_entry,
+                    error=msg,
+                )
                 continue
 
+            if product_id in queried_product_ids:
+                continue  # already queried this product id
+
+            # Now let's get all fills for this product id
+            queried_product_ids.add(product_id)
+            fills = []
+            for batch in self._paginated_query(
+                    endpoint='fills',
+                    query_options={'product_id': product_id},
+            ):
+                fills.extend(batch)
+
             try:
-                pair = coinbasepro_to_worldpair(entry['product_id'])
-                if 'price' in entry:
-                    rate = deserialize_price(entry['price'])
-                elif 'executed_value' in entry:
-                    rate = deserialize_price(entry['executed_value'])
-                else:
-                    msg = (
-                        'Skipping coinbasepro trade since it lacks both a price and '
-                        'an executed_value key. Check logs for details.'
-                    )
-                    self.msg_aggregator.add_error(msg)
-                    log.error(
-                        'Error processing a coinbasepro trade.',
-                        raw_trade=entry,
-                        error=msg,
-                    )
-                    continue
-                # Fee currency seems to always be quote asset
-                # https://github.com/ccxt/ccxt/blob/ddf3a15cbff01541f0b37c35891aa143bb7f9d7b/python/ccxt/coinbasepro.py#L724  # noqa: E501
-                _, quote_asset = pair_get_assets(pair)
-                trades.append(Trade(
-                    timestamp=timestamp,
-                    location=Location.COINBASEPRO,
-                    pair=coinbasepro_to_worldpair(entry['product_id']),
-                    trade_type=deserialize_trade_type(entry['side']),
-                    amount=deserialize_asset_amount(entry['filled_size']),
-                    rate=rate,
-                    fee=deserialize_fee(entry['fill_fees']),
-                    fee_currency=quote_asset,
-                    link=entry['id'],
-                    notes='',
-                ))
+                pair = coinbasepro_to_worldpair(product_id)
             except UnprocessableTradePair as e:
                 self.msg_aggregator.add_warning(
                     f'Found unprocessable Coinbasepro pair {e.pair}. Ignoring the trade.',
@@ -529,20 +523,53 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     f'Ignoring the trade.',
                 )
                 continue
-            except (DeserializationError, KeyError) as e:
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
-                    'Failed to deserialize a coinbasepro trade. '
-                    'Check logs for details. Ignoring it.',
-                )
-                log.error(
-                    'Error processing a coinbasepro trade.',
-                    raw_trade=entry,
-                    error=msg,
-                )
-                continue
+
+            for fill_entry in fills:
+                try:
+                    timestamp = coinbasepro_deserialize_timestamp(fill_entry, 'created_at')
+                    if timestamp < start_ts or timestamp > end_ts:
+                        continue
+
+                    # Fee currency seems to always be quote asset
+                    # https://github.com/ccxt/ccxt/blob/ddf3a15cbff01541f0b37c35891aa143bb7f9d7b/python/ccxt/coinbasepro.py#L724  # noqa: E501
+                    _, quote_asset = pair_get_assets(pair)
+                    trades.append(Trade(
+                        timestamp=timestamp,
+                        location=Location.COINBASEPRO,
+                        pair=pair,
+                        trade_type=deserialize_trade_type(fill_entry['side']),
+                        amount=deserialize_asset_amount(fill_entry['size']),
+                        rate=deserialize_price(fill_entry['price']),
+                        fee=deserialize_fee(fill_entry['fee']),
+                        fee_currency=quote_asset,
+                        link=str(fill_entry['trade_id']) + '_' + fill_entry['order_id'],
+                        notes='',
+                    ))
+                except UnprocessableTradePair as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found unprocessable Coinbasepro pair {e.pair}. Ignoring the trade.',
+                    )
+                    continue
+                except UnknownAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found unknown Coinbasepro asset {e.asset_name}. '
+                        f'Ignoring the trade.',
+                    )
+                    continue
+                except (DeserializationError, KeyError) as e:
+                    msg = str(e)
+                    if isinstance(e, KeyError):
+                        msg = f'Missing key entry for {msg}.'
+                    self.msg_aggregator.add_error(
+                        'Failed to deserialize a coinbasepro trade. '
+                        'Check logs for details. Ignoring it.',
+                    )
+                    log.error(
+                        'Error processing a coinbasepro fill.',
+                        raw_trade=fill_entry,
+                        error=msg,
+                    )
+                    continue
 
         return trades
 
