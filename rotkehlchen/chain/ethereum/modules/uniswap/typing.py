@@ -5,7 +5,7 @@ from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tupl
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.assets.unknown_asset import UnknownEthereumToken, ethereum_knownornot_token_parts
 from rotkehlchen.assets.utils import serialize_ethereum_token
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
@@ -221,12 +221,8 @@ class LiquidityPoolEvent(NamedTuple):
         )
 
     def to_db_tuple(self) -> LiquidityPoolEventDBTuple:
-        is_token0_unknown = (
-            1 if isinstance(self.token0, UnknownEthereumToken) else 0
-        )
-        is_token1_unknown = (
-            1 if isinstance(self.token1, UnknownEthereumToken) else 0
-        )
+        is_token0_unknown, token0_symbol_or_id = ethereum_knownornot_token_parts(self.token0)
+        is_token1_unknown, token1_symbol_or_id = ethereum_knownornot_token_parts(self.token1)
         db_tuple = (
             self.tx_hash,
             self.log_index,
@@ -236,12 +232,12 @@ class LiquidityPoolEvent(NamedTuple):
             str(self.pool_address),
             is_token0_unknown,
             str(self.token0.ethereum_address),
-            str(self.token0.symbol),
+            token0_symbol_or_id,
             str(self.token0.name),
             self.token0.decimals,
             is_token1_unknown,
             str(self.token1.ethereum_address),
-            str(self.token1.symbol),
+            token1_symbol_or_id,
             str(self.token1.name),
             self.token1.decimals,
             str(self.amount0),

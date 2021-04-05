@@ -227,8 +227,9 @@ class YearnVaults(EthereumModule):
         result = {}
         for balance in defi_balances:
             if balance.protocol.name == 'yearn.finance • Vaults':
-                underlying_symbol = balance.underlying_balances[0].token_symbol
+                underlying_address = balance.underlying_balances[0].token_address
                 vault_symbol = balance.base_balance.token_symbol
+                vault_address = balance.base_balance.token_address
                 vault = YEARN_VAULTS.get(vault_symbol, None)
                 if vault is None:
                     self.msg_aggregator.add_warning(
@@ -237,18 +238,18 @@ class YearnVaults(EthereumModule):
                     continue
 
                 try:
-                    underlying_asset = Asset(underlying_symbol)
-                    vault_asset = Asset(vault_symbol)
+                    underlying_asset = EthereumToken(underlying_address)
+                    vault_asset = EthereumToken(vault_address)
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
                         f'Found unknown asset {e.asset_name} for yearn vault entry',
                     )
                     continue
 
-                roi = roi_cache.get(underlying_symbol, None)
+                roi = roi_cache.get(underlying_asset.identifier, None)
                 if roi is None:
                     roi = self._calculate_vault_roi(vault)
-                    roi_cache[underlying_symbol] = roi
+                    roi_cache[underlying_asset.identifier] = roi
 
                 result[vault.name] = YearnVaultBalance(
                     underlying_token=underlying_asset,

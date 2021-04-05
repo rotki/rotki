@@ -7,6 +7,8 @@ from typing import Any, Dict, List
 import pytest
 import requests
 
+from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.constants.assets import A_BNB
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -17,6 +19,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.utils.misc import ts_now
 
@@ -102,7 +105,7 @@ def _populate_initial_balances(api_server) -> List[Dict[str, Any]]:
         "amount": "1.425",
         "location": "blockchain",
     }, {
-        "asset": "BNB",
+        "asset": A_BNB.identifier,
         "label": "My BNB in binance",
         "amount": "155",
         "location": "binance",
@@ -183,13 +186,22 @@ def test_add_and_query_manually_tracked_balances(
     result = result['assets']
     assert result['BTC']['amount'] == '1.425'
     assert result['XMR']['amount'] == '50.315'
-    assert result['BNB']['amount'] == '155'
+    assert result[A_BNB.identifier]['amount'] == '155'
     # Check DB to make sure a save happened
     assert rotki.data.db.get_last_balance_save_time() >= now
-    assert set(rotki.data.db.query_owned_assets()) == {'BTC', 'XMR', 'BNB', 'ETH', 'RDN'}
+    assert set(rotki.data.db.query_owned_assets()) == {
+        'BTC',
+        'XMR',
+        A_BNB.identifier,
+        'ETH',
+        A_RDN.identifier,
+    }
 
 
-@pytest.mark.parametrize('mocked_current_prices', [{'CYFM': FVal(0)}])
+A_CYFM = EthereumToken('0x3f06B5D78406cD97bdf10f5C420B241D32759c80')
+
+
+@pytest.mark.parametrize('mocked_current_prices', [{A_CYFM.identifier: FVal(0)}])
 def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
     """Test that adding a manually tracked balance of an asset for which we cant
     query a price is handled properly both in the adding and querying part
@@ -198,7 +210,7 @@ def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
     async_query = random.choice([False, True])
     _populate_tags(rotkehlchen_api_server)
     balances: List[Dict[str, Any]] = [{
-        "asset": "CYFM",
+        "asset": A_CYFM.identifier,
         "label": "CYFM account",
         "amount": "50.315",
         "tags": ["public"],

@@ -88,7 +88,8 @@ def symbol_to_asset_or_token(symbol: str) -> Asset:
     """Tries to turn the given symbol to an asset or an ethereum Token
 
     May raise:
-    - UnknownAsset if the asset is not known
+    - UnknownAsset if an asset can't be found by the symbol or if
+    more than one tokens match this symbol
     """
     try:
         asset = Asset(symbol)
@@ -100,3 +101,18 @@ def symbol_to_asset_or_token(symbol: str) -> Asset:
         asset = maybe_asset
 
     return asset
+
+
+def symbol_to_ethereum_token(symbol: str) -> EthereumToken:
+    """Tries to turn the given symbol to an ethereum token
+
+    May raise:
+    - UnknownAsset if an ethereum token can't be found by the symbol or if
+    more than one tokens match this symbol
+    """
+    maybe_asset = get_asset_by_symbol(symbol, asset_type=AssetType.ETHEREUM_TOKEN)
+    if maybe_asset is None:
+        raise UnknownAsset(symbol)
+
+    # ignore type here since the identifier has to match an ethereum token at this point
+    return EthereumToken.from_asset(maybe_asset)  # type: ignore

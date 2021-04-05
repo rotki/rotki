@@ -1,7 +1,6 @@
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 
-
 A_RDN = EthereumToken('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6')
 A_GNO = EthereumToken('0x6810e776880C02933D47DB1b9fc05908e5386b96')
 A_DAO = EthereumToken('0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413')
@@ -24,6 +23,8 @@ A_API3 = EthereumToken('0x0b38210ea11411557c13457D4dA7dC6ea731B88a')
 A_MFT = EthereumToken('0xDF2C7238198Ad8B389666574f2d8bc411A4b7428')
 A_SLP = EthereumToken('0x37236CD05b34Cc79d3715AF2383E96dd7443dCF1')
 A_DOLLAR_BASED = EthereumToken('0x68A118Ef45063051Eac49c7e647CE5Ace48a68a5')
+A_BAND = EthereumToken('0xBA11D00c5f74255f56a5E366F4F77f5A186d7f55')
+A_YAM_V1 = EthereumToken('0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16')
 
 A_ADAI_V2 = EthereumToken('0x028171bCA77440897B824Ca71D1c56caC55b68A3')
 

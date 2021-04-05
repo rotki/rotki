@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_SCAN, VOTE_ESCROWED_CRV, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -147,7 +147,7 @@ def _get_token(value: Any) -> Optional[EthereumToken]:
     if isinstance(value, str):
         try:
             token = EthereumToken(value)
-        except DeserializationError:
+        except (UnknownAsset, DeserializationError):
             # not a token
             return None
         return token

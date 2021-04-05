@@ -762,12 +762,11 @@ def deserialize_int_from_hex_or_int(symbol: Union[str, int], location: str) -> i
 
 def deserialize_ethereum_token_from_db(identifier: str) -> EthereumToken:
     """Takes an identifier and returns the <EthereumToken>"""
-    try:
-        ethereum_token = EthereumToken(identifier=identifier)
-    except UnknownAsset as e:
+    ethereum_token = EthereumToken.from_identifier(identifier=identifier)
+    if ethereum_token is None:
         raise DeserializationError(
-            f'Unknown ethereum token {e.asset_name} found',
-        ) from e
+            f'Could not initialize an ethereum token with identifier {identifier}',
+        )
 
     return ethereum_token
 

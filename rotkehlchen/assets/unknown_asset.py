@@ -1,8 +1,11 @@
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
 
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.typing import ChecksumEthAddress
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import EthereumToken
 
 # The most common keys for serializing an <UnknownEthereumToken> via
 # `serialize_as_dict()`
@@ -98,3 +101,17 @@ class UnknownEthereumToken:
 
     def has_coingecko(self) -> bool:  # pylint: disable=no-self-use
         return False
+
+
+def ethereum_knownornot_token_parts(
+        token: Union['EthereumToken', UnknownEthereumToken],
+) -> Tuple[int, str]:
+    """Get is_token_unknown and either symbol or token identifier of a token depending on type"""
+    if isinstance(token, UnknownEthereumToken):
+        is_token_unknown = 1
+        token_symbol_or_id = token.symbol
+    else:  # known token
+        is_token_unknown = 0
+        token_symbol_or_id = token.identifier  # store the identifier
+
+    return is_token_unknown, token_symbol_or_id

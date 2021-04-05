@@ -12,10 +12,11 @@ from rotkehlchen.accounting.structures import (
     DefiEventType,
 )
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.utils import symbol_to_asset_or_token, symbol_to_ethereum_token
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.constants.assets import A_COMP
+from rotkehlchen.constants.assets import A_COMP, A_ETH
 from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, EthereumConstants
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnknownAsset
@@ -167,7 +168,7 @@ class Compound(EthereumModule):
     def get_balances(
             self,
             given_defi_balances: GIVEN_DEFI_BALANCES,
-    ) -> Dict[ChecksumEthAddress, Dict]:
+    ) -> Dict[ChecksumEthAddress, Dict[str, Dict[Asset, CompoundBalance]]]:
         compound_balances = {}
         if isinstance(given_defi_balances, dict):
             defi_balances = given_defi_balances
@@ -183,13 +184,17 @@ class Compound(EthereumModule):
                     continue
 
                 entry = balance_entry.base_balance
-                try:
-                    asset = Asset(entry.token_symbol)
-                except UnknownAsset:
-                    log.error(
-                        f'Encountered unknown asset {entry.token_symbol} in compound. Skipping',
-                    )
-                    continue
+                if entry.token_address == '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
+                    asset = A_ETH  # hacky way to specify ETH in compound
+                else:
+                    try:
+                        asset = EthereumToken(entry.token_address)
+                    except UnknownAsset:
+                        log.error(
+                            f'Encountered unknown asset {entry.token_symbol} with address '
+                            f'{entry.token_address} in compound. Skipping',
+                        )
+                        continue
 
                 unclaimed_comp_rewards = (
                     entry.token_address == A_COMP.ethereum_address and
@@ -205,23 +210,24 @@ class Compound(EthereumModule):
 
                 if balance_entry.balance_type == 'Asset':
                     # Get the underlying balance
-                    underlying_symbol = balance_entry.underlying_balances[0].token_symbol
+                    underlying_token_address = balance_entry.underlying_balances[0].token_address
                     try:
-                        underlying_asset = Asset(underlying_symbol)
+                        underlying_asset = EthereumToken(underlying_token_address)
                     except UnknownAsset:
                         log.error(
-                            f'Encountered unknown asset {underlying_symbol} in compound. Skipping',
+                            f'Encountered unknown token with address '
+                            f'{underlying_token_address} in compound. Skipping',
                         )
                         continue
 
-                    lending_map[underlying_asset.identifier] = CompoundBalance(
+                    lending_map[underlying_asset] = CompoundBalance(
                         balance_type=BalanceType.ASSET,
                         balance=balance_entry.underlying_balances[0].balance,
                         apy=self._get_apy(entry.token_address, supply=True),
                     )
                 else:  # 'Debt'
                     try:
-                        ctoken = EthereumToken('c' + entry.token_symbol)
+                        ctoken = symbol_to_ethereum_token('c' + entry.token_symbol)
                     except UnknownAsset:
                         log.error(
                             f'Encountered unknown asset {entry.token_symbol} in '
@@ -229,7 +235,7 @@ class Compound(EthereumModule):
                         )
                         continue
 
-                    borrowing_map[asset.identifier] = CompoundBalance(
+                    borrowing_map[asset] = CompoundBalance(
                         balance_type=BalanceType.LIABILITY,
                         balance=entry.balance,
                         apy=self._get_apy(ctoken.ethereum_address, supply=False),
@@ -238,13 +244,14 @@ class Compound(EthereumModule):
             if lending_map == {} and borrowing_map == {} and rewards_map == {}:
                 # no balances for the account
                 continue
+
             compound_balances[account] = {
                 'rewards': rewards_map,
                 'lending': lending_map,
                 'borrowing': borrowing_map,
             }
 
-        return compound_balances
+        return compound_balances  # type: ignore
 
     def _get_borrow_events(
             self,
@@ -274,7 +281,7 @@ class Compound(EthereumModule):
         for entry in result[graph_event_name]:
             underlying_symbol = entry['underlyingSymbol']
             try:
-                underlying_asset = Asset(underlying_symbol)
+                underlying_asset = symbol_to_asset_or_token(underlying_symbol)
             except UnknownAsset:
                 log.error(
                     f'Found unexpected token symbol {underlying_symbol} during '
@@ -339,14 +346,14 @@ class Compound(EthereumModule):
         for entry in result['liquidationEvents']:
             ctoken_symbol = entry['cTokenSymbol']
             try:
-                ctoken_asset = Asset(ctoken_symbol)
+                ctoken_asset = symbol_to_asset_or_token(ctoken_symbol)
             except UnknownAsset:
                 log.error(
                     f'Found unexpected cTokenSymbol {ctoken_symbol} during graph query. Skipping.')
                 continue
             underlying_symbol = entry['underlyingSymbol']
             try:
-                underlying_asset = Asset(underlying_symbol)
+                underlying_asset = symbol_to_asset_or_token(underlying_symbol)
             except UnknownAsset:
                 log.error(
                     f'Found unexpected token symbol {underlying_symbol} during '
@@ -427,7 +434,7 @@ class Compound(EthereumModule):
         for entry in result[graph_event_name]:
             ctoken_symbol = entry['cTokenSymbol']
             try:
-                ctoken_asset = Asset(ctoken_symbol)
+                ctoken_asset = symbol_to_asset_or_token(ctoken_symbol)
             except UnknownAsset:
                 log.error(
                     f'Found unexpected cTokenSymbol {ctoken_symbol} during graph query. Skipping.')
@@ -435,7 +442,7 @@ class Compound(EthereumModule):
 
             underlying_symbol = ctoken_symbol[1:]
             try:
-                underlying_asset = Asset(underlying_symbol)
+                underlying_asset = symbol_to_asset_or_token(underlying_symbol)
             except UnknownAsset:
                 log.error(
                     f'Found unexpected token symbol {underlying_symbol} during '
@@ -625,7 +632,7 @@ class Compound(EthereumModule):
                         f'address: {address} asset: {asset} ',
                     )
                 else:
-                    usd_price = Inquirer().find_usd_price(Asset(asset))
+                    usd_price = Inquirer().find_usd_price(asset)
                     profit_so_far[address][asset] = Balance(
                         amount=profit_amount,
                         usd_value=profit_amount * usd_price,
@@ -639,7 +646,7 @@ class Compound(EthereumModule):
                 if loss_so_far[address][asset].usd_value < ZERO:
                     amount = loss_so_far[address][asset].amount
                     loss_so_far[address][asset] = Balance(
-                        amount=amount, usd_value=amount * Inquirer().find_usd_price(Asset(asset)),
+                        amount=amount, usd_value=amount * Inquirer().find_usd_price(asset),
                     )
 
             for asset, entry in bentry['rewards'].items():

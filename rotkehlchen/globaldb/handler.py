@@ -905,9 +905,9 @@ class GlobalDBHandler():
                 'INSERT OR IGNORE INTO user_owned_assets(asset_id) VALUES(?)',
                 [(x.identifier,) for x in assets],
             )
-        except sqlite3.IntegrityError:
+        except sqlite3.IntegrityError as e:
             log.error(
-                f'One of the following asset ids caused a DB IntegrityError: '
+                f'One of the following asset ids caused a DB IntegrityError ({str(e)}): '
                 f'{",".join([x.identifier for x in assets])}',
             )  # should not ever happen but need to handle with informative log if it does
             connection.rollback()
@@ -918,9 +918,6 @@ class GlobalDBHandler():
     @staticmethod
     def get_assets_with_symbol(symbol: str, asset_type: Optional[AssetType] = None) -> List[AssetData]:  # noqa: E501
         """Find all asset entries that have the given symbol"""
-        # if symbol == 'RENBTC':
-        #     __import__("pdb").set_trace()
-        #     a = 1
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
         query_tuples: Union[Tuple[str, str], Tuple[str, str, str, str]]

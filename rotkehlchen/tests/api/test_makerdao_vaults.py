@@ -9,7 +9,7 @@ import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
-from rotkehlchen.constants.assets import A_USDC, A_WBTC
+from rotkehlchen.constants.assets import A_DAI, A_USDC, A_WBTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -43,7 +43,7 @@ mocked_prices = {
             1590043699: FVal('198.56'),
         },
     },
-    'DAI': {
+    A_DAI.identifier: {
         'USD': {
             1582699808: FVal('1.002'),
             1584024065: FVal('1.002'),
@@ -66,13 +66,13 @@ mocked_prices = {
             1590521879: FVal('1.003'),
         },
     },
-    'WBTC': {
+    A_WBTC.identifier: {
         'USD': {
             1588664698: FVal('7915.09'),
             1588720248: FVal('7915.09'),
         },
     },
-    'USDC': {
+    A_USDC.identifier: {
         'USD': {
             1585286480: FVal(1),
             1585290300: FVal(1),
@@ -467,7 +467,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     ))
     vault_8913_details = {
         'identifier': 8913,
-        'collateral_asset': 'WBTC',
+        'collateral_asset': A_WBTC.identifier,
         'creation_ts': 1588664698,
         'total_interest_owed': '0.1903819198',
         'total_liquidated': {
@@ -560,7 +560,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     ))
     vault_7588_details = {
         'identifier': 7588,
-        'collateral_asset': 'USDC',
+        'collateral_asset': A_USDC.identifier,
         'creation_ts': 1585286480,
         'total_interest_owed': '0.00050636718',
         'total_liquidated': {
@@ -843,7 +843,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
     ))
     vault_7538_details = {
         'identifier': 7538,
-        'collateral_asset': 'USDC',
+        'collateral_asset': A_USDC.identifier,
         'creation_ts': 1585145754,
         'total_interest_owed': '0.0005943266',
         'total_liquidated': {

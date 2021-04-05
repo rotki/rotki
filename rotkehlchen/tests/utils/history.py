@@ -3,9 +3,11 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from unittest.mock import _patch, patch
 
 from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
+from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -110,7 +112,7 @@ prices = {
             1539713238: FVal(178.615),
         },
     },
-    'RDN': {
+    strethaddress_to_identifier('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'): {
         'EUR': {
             1512561942: ZERO,
         },
@@ -982,36 +984,34 @@ def assert_binance_trades_result(
         assert len(trades) == len(trades_to_check)
 
     for given_idx, idx in enumerate(trades_to_check):
-        trade = trades[given_idx]
-        expected_id = Trade(
-            **{k: v for k, v in trades[given_idx].items() if k != 'trade_id'},
-        ).identifier
-
-        assert trade['trade_id'] == expected_id
+        raw_trade = trades[given_idx]
+        input_data = {k: v for k, v in raw_trade.items() if k != 'trade_id'}
+        expected_id = Trade(**TradeSchema().load(input_data)).identifier
+        assert raw_trade['trade_id'] == expected_id
         if idx == 0:
-            assert trade['timestamp'] == 1512561942
-            assert trade['location'] == 'binance'
-            assert trade['base_asset'] == 'RDN'
-            assert trade['quote_asset'] == 'ETH'
-            assert trade['trade_type'] == 'sell'
-            assert trade['amount'] == '5.0'
-            assert trade['rate'] == '0.0063213'
-            assert trade['fee'] == '0.005'
-            assert trade['fee_currency'] == 'RDN'
-            assert trade['link'] == '2'
-            assert trade['notes'] == ''
+            assert raw_trade['timestamp'] == 1512561942
+            assert raw_trade['location'] == 'binance'
+            assert raw_trade['base_asset'] == A_RDN.identifier
+            assert raw_trade['quote_asset'] == 'ETH'
+            assert raw_trade['trade_type'] == 'sell'
+            assert raw_trade['amount'] == '5.0'
+            assert raw_trade['rate'] == '0.0063213'
+            assert raw_trade['fee'] == '0.005'
+            assert raw_trade['fee_currency'] == A_RDN.identifier
+            assert raw_trade['link'] == '2'
+            assert raw_trade['notes'] == ''
         elif idx == 1:
-            assert trade['timestamp'] == 1512561941
-            assert trade['location'] == 'binance'
-            assert trade['base_asset'] == 'ETH'
-            assert trade['quote_asset'] == 'BTC'
-            assert trade['trade_type'] == 'buy'
-            assert trade['amount'] == '5.0'
-            assert trade['rate'] == '0.0063213'
-            assert trade['fee'] == '0.005'
-            assert trade['fee_currency'] == 'ETH'
-            assert trade['link'] == '1'
-            assert trade['notes'] == ''
+            assert raw_trade['timestamp'] == 1512561941
+            assert raw_trade['location'] == 'binance'
+            assert raw_trade['base_asset'] == 'ETH'
+            assert raw_trade['quote_asset'] == 'BTC'
+            assert raw_trade['trade_type'] == 'buy'
+            assert raw_trade['amount'] == '5.0'
+            assert raw_trade['rate'] == '0.0063213'
+            assert raw_trade['fee'] == '0.005'
+            assert raw_trade['fee_currency'] == 'ETH'
+            assert raw_trade['link'] == '1'
+            assert raw_trade['notes'] == ''
         else:
             raise AssertionError('index out of range')
 
@@ -1036,48 +1036,46 @@ def assert_poloniex_trades_result(
         assert len(trades) == len(trades_to_check)
 
     for given_idx, idx in enumerate(trades_to_check):
-        trade = trades[given_idx]
-        expected_id = Trade(
-            **{k: v for k, v in trades[given_idx].items() if k != 'trade_id'},
-        ).identifier
-
-        assert trade['trade_id'] == expected_id
+        raw_trade = trades[given_idx]
+        input_data = {k: v for k, v in raw_trade.items() if k != 'trade_id'}
+        expected_id = Trade(**TradeSchema().load(input_data)).identifier
+        assert raw_trade['trade_id'] == expected_id
         if idx == 0:
-            assert trade['timestamp'] == 1539713238
-            assert trade['location'] == 'poloniex'
-            assert trade['base_asset'] == 'XMR'
-            assert trade['quote_asset'] == 'ETH'
-            assert trade['trade_type'] == 'buy'
-            assert FVal(trade['amount']) == FVal('1.40308443')
-            assert FVal(trade['rate']) == FVal('0.06935244')
-            assert FVal(trade['fee']) == FVal('0.00140308443')
-            assert trade['fee_currency'] == 'XMR'
-            assert trade['link'] == '394131415'
-            assert trade['notes'] == ''
+            assert raw_trade['timestamp'] == 1539713238
+            assert raw_trade['location'] == 'poloniex'
+            assert raw_trade['base_asset'] == 'XMR'
+            assert raw_trade['quote_asset'] == 'ETH'
+            assert raw_trade['trade_type'] == 'buy'
+            assert FVal(raw_trade['amount']) == FVal('1.40308443')
+            assert FVal(raw_trade['rate']) == FVal('0.06935244')
+            assert FVal(raw_trade['fee']) == FVal('0.00140308443')
+            assert raw_trade['fee_currency'] == 'XMR'
+            assert raw_trade['link'] == '394131415'
+            assert raw_trade['notes'] == ''
         elif idx == 1:
-            assert trade['timestamp'] == 1539713237
-            assert trade['location'] == 'poloniex'
-            assert trade['base_asset'] == 'ETH'
-            assert trade['quote_asset'] == 'BTC'
-            assert trade['trade_type'] == 'buy'
-            assert FVal(trade['amount']) == FVal('1.40308443')
-            assert FVal(trade['rate']) == FVal('0.06935244')
-            assert FVal(trade['fee']) == FVal('0.00140308443')
-            assert trade['fee_currency'] == 'ETH'
-            assert trade['link'] == '394131413'
-            assert trade['notes'] == ''
+            assert raw_trade['timestamp'] == 1539713237
+            assert raw_trade['location'] == 'poloniex'
+            assert raw_trade['base_asset'] == 'ETH'
+            assert raw_trade['quote_asset'] == 'BTC'
+            assert raw_trade['trade_type'] == 'buy'
+            assert FVal(raw_trade['amount']) == FVal('1.40308443')
+            assert FVal(raw_trade['rate']) == FVal('0.06935244')
+            assert FVal(raw_trade['fee']) == FVal('0.00140308443')
+            assert raw_trade['fee_currency'] == 'ETH'
+            assert raw_trade['link'] == '394131413'
+            assert raw_trade['notes'] == ''
         elif idx == 2:
-            assert trade['timestamp'] == 1539713117
-            assert trade['location'] == 'poloniex'
-            assert trade['base_asset'] == 'ETH'
-            assert trade['quote_asset'] == 'BTC'
-            assert trade['trade_type'] == 'sell'
-            assert trade['amount'] == '1.40308443'
-            assert FVal(trade['rate']) == FVal('0.06935244')
-            assert FVal(trade['fee']) == FVal('0.0000973073287465092')
-            assert trade['fee_currency'] == 'BTC'
-            assert trade['link'] == '394131412'
-            assert trade['notes'] == ''
+            assert raw_trade['timestamp'] == 1539713117
+            assert raw_trade['location'] == 'poloniex'
+            assert raw_trade['base_asset'] == 'ETH'
+            assert raw_trade['quote_asset'] == 'BTC'
+            assert raw_trade['trade_type'] == 'sell'
+            assert raw_trade['amount'] == '1.40308443'
+            assert FVal(raw_trade['rate']) == FVal('0.06935244')
+            assert FVal(raw_trade['fee']) == FVal('0.0000973073287465092')
+            assert raw_trade['fee_currency'] == 'BTC'
+            assert raw_trade['link'] == '394131412'
+            assert raw_trade['notes'] == ''
         else:
             raise AssertionError('index out of range')
 

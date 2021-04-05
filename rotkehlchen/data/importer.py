@@ -4,7 +4,7 @@ from itertools import count
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
@@ -108,11 +108,11 @@ class DataImporter():
         fee_currency = A_USD  # whatever (used only if there is no fee)
         if csv_row['Fee'] != '':
             fee = deserialize_fee(csv_row['Fee'])
-            fee_currency = Asset(csv_row['Cur.Fee'])
+            fee_currency = symbol_to_asset_or_token(csv_row['Cur.Fee'])
 
         if row_type in ('Gift/Tip', 'Trade', 'Income'):
-            base_asset = Asset(csv_row['Cur.Buy'])
-            quote_asset = None if csv_row['Cur.Sell'] == '' else Asset(csv_row['Cur.Sell'])
+            base_asset = symbol_to_asset_or_token(csv_row['Cur.Buy'])
+            quote_asset = None if csv_row['Cur.Sell'] == '' else symbol_to_asset_or_token(csv_row['Cur.Sell'])  # noqa: E501
             if quote_asset is None and row_type not in ('Gift/Tip', 'Income'):
                 raise DeserializationError('Got a trade entry with an empty quote asset')
 
@@ -144,10 +144,10 @@ class DataImporter():
             category = deserialize_asset_movement_category(row_type.lower())
             if category == AssetMovementCategory.DEPOSIT:
                 amount = deserialize_asset_amount(csv_row['Buy'])
-                asset = Asset(csv_row['Cur.Buy'])
+                asset = symbol_to_asset_or_token(csv_row['Cur.Buy'])
             else:
                 amount = deserialize_asset_amount_force_positive(csv_row['Sell'])
-                asset = Asset(csv_row['Cur.Sell'])
+                asset = symbol_to_asset_or_token(csv_row['Cur.Sell'])
 
             asset_movement = AssetMovement(
                 location=location,
@@ -245,15 +245,15 @@ class DataImporter():
 
             if row_type == 'crypto_exchange':
                 # trades crypto to crypto
-                base_asset = Asset(to_currency)
-                quote_asset = Asset(currency)
+                base_asset = symbol_to_asset_or_token(to_currency)
+                quote_asset = symbol_to_asset_or_token(currency)
                 if quote_asset is None:
                     raise DeserializationError('Got a trade entry with an empty quote asset')
                 base_amount_bought = deserialize_asset_amount(to_amount)
                 quote_amount_sold = deserialize_asset_amount(amount)
             else:
-                base_asset = Asset(currency)
-                quote_asset = Asset(native_currency)
+                base_asset = symbol_to_asset_or_token(currency)
+                quote_asset = symbol_to_asset_or_token(native_currency)
                 base_amount_bought = deserialize_asset_amount(amount)
                 quote_amount_sold = deserialize_asset_amount(native_amount)
 
@@ -281,7 +281,7 @@ class DataImporter():
                 category = AssetMovementCategory.DEPOSIT
                 amount = deserialize_asset_amount(csv_row['Amount'])
 
-            asset = Asset(csv_row['Currency'])
+            asset = symbol_to_asset_or_token(csv_row['Currency'])
             asset_movement = AssetMovement(
                 location=Location.CRYPTOCOM,
                 category=category,
@@ -336,6 +336,10 @@ class DataImporter():
         same timestamp to handle them as one trade.
 
         Known kind: 'dynamic_coin_swap' or 'dust_conversion'
+
+        May raise:
+        - UnknownAsset if an unknown asset is encountered in the imported files
+        - KeyError if a row contains unexpected data entries
         """
         multiple_rows: Dict[Any, Dict[str, Any]] = {}
         debited_row = None
@@ -392,8 +396,8 @@ class DataImporter():
                     fee = Fee(ZERO)
                     fee_currency = A_USD
 
-                    base_asset = Asset(credited_row['Currency'])
-                    quote_asset = Asset(debited_row['Currency'])
+                    base_asset = symbol_to_asset_or_token(credited_row['Currency'])
+                    quote_asset = symbol_to_asset_or_token(debited_row['Currency'])
                     part_of_total = (
                         FVal(1)
                         if len(debited_rows) == 1
@@ -440,7 +444,9 @@ class DataImporter():
                 csvfile.seek(0)
                 next(data)
             except KeyError as e:
-                return False, str(e)
+                return False, f'Crypto.com csv missing entry for {str(e)}'
+            except UnknownAsset as e:
+                return False, f'Encountered unknown asset {str(e)} at crypto.com csv import'
 
             for row in data:
                 try:

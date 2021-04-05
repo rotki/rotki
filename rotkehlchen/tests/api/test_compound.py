@@ -24,7 +24,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import Timestamp
 
-TEST_ACC1 = '0x65304d6aff5096472519ca86a6a1fea31cb47Ced'
+TEST_ACC1 = '0x2bddEd18E2CA464355091266B7616956944ee7eE'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
@@ -79,7 +79,7 @@ def test_query_compound_balances(rotkehlchen_api_server, ethereum_accounts):
     rewards = result[TEST_ACC1]['rewards']
     if len(rewards) != 0:
         assert len(rewards) == 1
-        assert 'COMP' in rewards
+        assert A_COMP.identifier in rewards
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
@@ -106,7 +106,7 @@ def test_query_compound_balances_module_not_activated(
 
 
 mocked_historical_prices: Dict[str, Any] = {
-    'DAI': {
+    A_DAI.identifier: {
         'USD': {
             1581184577: FVal('1.008'),
             1587601131: FVal('1.016'),
@@ -121,7 +121,7 @@ mocked_historical_prices: Dict[str, Any] = {
             1597982781: FVal('1.006'),
         },
     },
-    'cUSDC': {
+    A_CUSDC.identifier: {
         'USD': {
             1588459991: FVal('0.02102'),
             1586159213: FVal('0.02102'),
@@ -130,7 +130,7 @@ mocked_historical_prices: Dict[str, Any] = {
             1588464109: FVal('0.02102'),
         },
     },
-    'USDC': {
+    A_USDC.identifier: {
         'USD': {
             1585558039: FVal(1),
         },
@@ -148,7 +148,7 @@ mocked_historical_prices: Dict[str, Any] = {
             1588464109: FVal('210.06'),
         },
     },
-    'COMP': {
+    A_COMP.identifier: {
         'USD': {
             1597452580: FVal('196.9'),
         },
@@ -559,15 +559,15 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
 
     # Check interest profit mappings
     profit_0 = result['interest_profit']['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']
-    assert FVal(profit_0['DAI']['amount']) > FVal(9)
+    assert FVal(profit_0[A_DAI.identifier]['amount']) > FVal(9)
     profit_1 = result['interest_profit']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']
-    assert FVal(profit_1['USDC']['amount']) > FVal(2)
+    assert FVal(profit_1[A_USDC.identifier]['amount']) > FVal(2)
     profit_2 = result['interest_profit']['0xF59D4937BF1305856C3a267bB07791507a3377Ee']
-    assert FVal(profit_2['DAI']['amount']) > FVal('0.3')
+    assert FVal(profit_2[A_DAI.identifier]['amount']) > FVal('0.3')
 
     # Check debt loss mappings
     debt_0 = result['debt_loss']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']
-    assert FVal(debt_0['cUSDC']['amount']) > FVal('84')
+    assert FVal(debt_0[A_CUSDC.identifier]['amount']) > FVal('84')
     assert FVal(debt_0['ETH']['amount']) > FVal('0.000012422')
 
     # Check liquidation profit mappings
@@ -576,9 +576,9 @@ def test_query_compound_history(rotkehlchen_api_server, ethereum_accounts):  # p
 
     # Check rewards mappings
     rewards_0 = result['rewards']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']
-    assert FVal(rewards_0['COMP']['amount']) > FVal('0.000036')
+    assert FVal(rewards_0[A_COMP.identifier]['amount']) > FVal('0.000036')
     rewards_1 = result['rewards']['0xF59D4937BF1305856C3a267bB07791507a3377Ee']
-    assert FVal(rewards_1['COMP']['amount']) > FVal('0.003613')
+    assert FVal(rewards_1[A_COMP.identifier]['amount']) > FVal('0.003613')
 
 
 @pytest.mark.parametrize('ethereum_modules', [['compound']])

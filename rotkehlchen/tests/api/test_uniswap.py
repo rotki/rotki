@@ -6,14 +6,13 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.modules.uniswap import UniswapPoolEvent, UniswapPoolEventsBalance
 from rotkehlchen.chain.ethereum.modules.uniswap.typing import UNISWAP_EVENTS_PREFIX, EventType
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
-from rotkehlchen.constants.assets import A_ADAI_V1, A_DAI, A_LEND, A_WETH
+from rotkehlchen.constants.assets import A_ADAI_V1, A_DAI, A_LEND, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium
@@ -27,7 +26,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.constants import A_ADAI_V2, A_DOLLAR_BASED, A_SLP
+from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED, A_SLP, A_YAM_V1
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
@@ -35,7 +34,7 @@ from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeTyp
 # Addresses
 # DAI/WETH pool: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
 # From that pool find a holder and test
-LP_HOLDER_ADDRESS = string_to_ethereum_address('0x631fdEF0781c00ADd20176f254F5ae5C26Da1c99')
+LP_HOLDER_ADDRESS = string_to_ethereum_address('0xc4d15CbE36BE26596fA676Ff1B21421541d7e8e6')
 # Uniswap Factory contract
 TEST_ADDRESS_FACTORY_CONTRACT = (
     string_to_ethereum_address('0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f')
@@ -115,7 +114,7 @@ def test_get_balances(
     else:
         result = assert_proper_response_with_result(response)
 
-    if len(result) != 1:
+    if LP_HOLDER_ADDRESS not in result or len(result[LP_HOLDER_ADDRESS]) == 0:
         test_warnings.warn(
             UserWarning(f'Test account {LP_HOLDER_ADDRESS} has no uniswap balances'),
         )
@@ -159,11 +158,7 @@ def test_get_balances(
 EXPECTED_TRADES = [AMMTrade(
     trade_type=TradeType.BUY,
     base_asset=A_WETH,
-    quote_asset=UnknownEthereumToken(
-        ethereum_address=string_to_ethereum_address('0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16'),  # noqa: E501
-        symbol='YAM',
-        name='YAM',
-    ),
+    quote_asset=A_YAM_V1,
     amount=AssetAmount(FVal('1.170318698476688004')),
     rate=Price(FVal('10.74584229464304934592083644')),
     trade_index=0,
@@ -175,11 +170,7 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         timestamp=Timestamp(1597186835),
         location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16'),  # noqa: E501
-            symbol='YAM',
-            name='YAM',
-        ),
+        token0=A_YAM_V1,
         token1=A_WETH,
         amount0_in=AssetAmount(FVal('12.5760601683024')),
         amount1_in=AssetAmount(ZERO),
@@ -189,11 +180,7 @@ EXPECTED_TRADES = [AMMTrade(
 ), AMMTrade(
     trade_type=TradeType.BUY,
     base_asset=A_WETH,
-    quote_asset=UnknownEthereumToken(
-        ethereum_address=string_to_ethereum_address('0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16'),  # noqa: E501
-        symbol='YAM',
-        name='YAM',
-    ),
+    quote_asset=A_YAM_V1,
     amount=AssetAmount(FVal('0.408291837660462176')),
     rate=Price(FVal('7.312663563501178473215709887')),
     trade_index=0,
@@ -205,11 +192,7 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         timestamp=Timestamp(1597183725),
         location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16'),  # noqa: E501
-            symbol='YAM',
-            name='YAM',
-        ),
+        token0=A_YAM_V1,
         token1=A_WETH,
         amount0_in=AssetAmount(FVal('2.9857008445346')),
         amount1_in=AssetAmount(ZERO),
@@ -219,11 +202,7 @@ EXPECTED_TRADES = [AMMTrade(
 ), AMMTrade(
     trade_type=TradeType.BUY,
     base_asset=A_WETH,
-    quote_asset=UnknownEthereumToken(
-        ethereum_address=string_to_ethereum_address('0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16'),  # noqa: E501
-        symbol='YAM',
-        name='YAM',
-    ),
+    quote_asset=A_YAM_V1,
     amount=AssetAmount(FVal('1.396503415128306884')),
     rate=Price(FVal('8.652682034981347560720977038')),
     trade_index=0,
@@ -235,11 +214,7 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         timestamp=Timestamp(1597182868),
         location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16'),  # noqa: E501
-            symbol='YAM',
-            name='YAM',
-        ),
+        token0=A_YAM_V1,
         token1=A_WETH,
         amount0_in=AssetAmount(FVal('12.0835000118708')),
         amount1_in=AssetAmount(ZERO),
@@ -355,7 +330,7 @@ EXPECTED_TRADES = [AMMTrade(
         to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
         timestamp=Timestamp(1594917107),
         location=Location.UNISWAP,
-        token0=EthereumToken('USDC'),
+        token0=A_USDC,
         token1=A_WETH,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('4.281441035122650458')),
@@ -370,7 +345,7 @@ EXPECTED_TRADES = [AMMTrade(
         timestamp=Timestamp(1594917107),
         location=Location.UNISWAP,
         token0=A_LEND,
-        token1=EthereumToken('USDC'),
+        token1=A_USDC,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('998.970468')),
         amount0_out=AssetAmount(FVal('3818.889005228581791673')),
@@ -646,7 +621,7 @@ BOTH_IN_TRADES = [AMMTrade(
         timestamp=Timestamp(1604657395),
         location=Location.UNISWAP,
         token0=A_WETH,
-        token1=A_ADAI_V2,
+        token1=A_ADAI_V1,
         amount0_in=AssetAmount(FVal('0.185968722112880576')),
         amount1_in=AssetAmount(FVal('0.150214308402939121')),
         amount0_out=AssetAmount(ZERO),
@@ -664,7 +639,7 @@ BOTH_IN_TRADES = [AMMTrade(
             symbol='🐟',
             name='Penguin Party Fish',
         ),
-        token1=A_ADAI_V2,
+        token1=A_ADAI_V1,
         amount0_in=AssetAmount(ZERO),
         amount1_in=AssetAmount(FVal('77.451074341665209573')),
         amount0_out=AssetAmount(FVal('105.454952420015590185')),
@@ -814,7 +789,7 @@ def test_get_uniswap_exotic_history(
 
 # Get events history tests
 
-TEST_EVENTS_ADDRESS_1 = "0x6C0F75eb3D69B9Ea2fB88dbC37fc086a12bBC93F"
+TEST_EVENTS_ADDRESS_1 = '0x6C0F75eb3D69B9Ea2fB88dbC37fc086a12bBC93F'
 EXPECTED_EVENTS_BALANCES_1 = [
     UniswapPoolEventsBalance(
         address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),

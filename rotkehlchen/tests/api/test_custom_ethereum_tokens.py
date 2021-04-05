@@ -305,6 +305,8 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     underlying2_id = ETHEREUM_DIRECTIVE + underlying_address2
     underlying3_id = ETHEREUM_DIRECTIVE + underlying_address3
     cursor = GlobalDBHandler()._conn.cursor()
+    initial_underlying_num = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]  # noqa: E501
+    assert initial_underlying_num == 3, 'check underlying tokens mapping start number is expected'
     # Make sure the equivalent assets we will delete exist in the DB
     result = cursor.execute(
         'SELECT COUNT(*) from assets WHERE identifier IN (?, ?, ?, ?, ?)',
@@ -333,7 +335,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     assert_token_entry_exists_in_result(result, expected_result)
     # also check the mapping for the underlying still tokens exists
     result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
-    assert result == 3
+    assert result == initial_underlying_num, 'check underlying tokens mapping is unchanged'  # noqa: E501
 
     # test that deleting a non existing address is handled properly
     non_existing_address = make_ethereum_address()
@@ -384,7 +386,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
         json={'address': INITIAL_TOKENS[0].address},
     )
     result = assert_proper_response_with_result(response)
-    assert result['swapped_for'] == 'MKR'
+    assert result['swapped_for'] == A_MKR.identifier
 
     # test that trying to delete a token (MKR) that is used as swapped_for
     # of another token is handled correctly

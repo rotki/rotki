@@ -3,7 +3,11 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import UNKNOWN_TOKEN_KEYS, UnknownEthereumToken
+from rotkehlchen.assets.unknown_asset import (
+    UNKNOWN_TOKEN_KEYS,
+    UnknownEthereumToken,
+    ethereum_knownornot_token_parts,
+)
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.serialization.deserialize import (
@@ -185,12 +189,8 @@ class AMMSwap(NamedTuple):
         }
 
     def to_db_tuple(self) -> AMMSwapDBTuple:
-        is_token0_unknown = (
-            1 if isinstance(self.token0, UnknownEthereumToken) else 0
-        )
-        is_token1_unknown = (
-            1 if isinstance(self.token1, UnknownEthereumToken) else 0
-        )
+        is_token0_unknown, token0_symbol_or_id = ethereum_knownornot_token_parts(self.token0)
+        is_token1_unknown, token1_symbol_or_id = ethereum_knownornot_token_parts(self.token1)
         db_tuple = (
             self.tx_hash,
             self.log_index,
@@ -201,12 +201,12 @@ class AMMSwap(NamedTuple):
             self.location.serialize_for_db(),
             is_token0_unknown,
             str(self.token0.ethereum_address),
-            str(self.token0.symbol),
+            token0_symbol_or_id,
             self.token0.name,
             self.token0.decimals,
             is_token1_unknown,
             str(self.token1.ethereum_address),
-            str(self.token1.symbol),
+            token1_symbol_or_id,
             self.token1.name,
             self.token1.decimals,
             str(self.amount0_in),

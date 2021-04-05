@@ -21,12 +21,15 @@ from rotkehlchen.constants.assets import (
     A_AAVE,
     A_BAL,
     A_BAT,
+    A_COMP,
     A_KNC,
     A_LEND,
     A_LINK,
     A_MKR,
     A_SNX,
+    A_WBTC,
     A_WETH,
+    A_ZRX,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -36,7 +39,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.constants import A_API3, A_MFT, A_SYN
+from rotkehlchen.tests.utils.constants import A_API3, A_BAND, A_MFT, A_SYN
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
 
@@ -550,49 +553,49 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL2 = (
     )
 )
 TEST_ADDR3_MOCKED_PRICES = {
-    'BAL': {
+    A_BAL.identifier: {
         'USD': {
             1597243001: FVal('20.104674263041243'),
         },
     },
-    'BAND': {
+    A_BAND.identifier: {
         'USD': {
             1597156065: FVal('14.466103356644934'),
             1597224640: FVal('12.534750403373085'),
         },
     },
-    'COMP': {
+    A_COMP.identifier: {
         'USD': {
             1597156065: FVal('176.4065022915484'),
             1597224640: FVal('218.51'),
 
         },
     },
-    'LEND': {
+    A_LEND.identifier: {
         'USD': {
             1597156065: FVal('0.39952667693410726'),
             1597224136: FVal('0.4026941951749709'),
         },
     },
-    'LINK': {
+    A_LINK.identifier: {
         'USD': {
             1597156065: FVal('13.379675286664355'),
             1597224062: FVal('13.080656699562843'),
         },
     },
-    'MKR': {
+    A_MKR.identifier: {
         'USD': {
             1597156065: FVal('624.6542090701207'),
             1597224640: FVal('591.9805247479154'),
         },
     },
-    'WBTC': {
+    A_WBTC.identifier: {
         'USD': {
             1597156065: FVal('11865.846868426604'),
             1597224062: FVal('11851'),
         },
     },
-    'WETH': {
+    A_WETH.identifier: {
         'USD': {
             1597144247: FVal('395.5897732474379'),
             1597156065: FVal('395.5897732474379'),
@@ -604,7 +607,7 @@ TEST_ADDR3_MOCKED_PRICES = {
             1598377474: FVal('408.7084082189914'),
         },
     },
-    'ZRX': {
+    A_ZRX.identifier: {
         'USD': {
             1597156065: FVal('0.4791234716020489'),
             1597224640: FVal('0.4416470964397209'),

@@ -29,9 +29,6 @@ def create_globaldb(
 @pytest.fixture(name='globaldb')
 def fixture_globaldb(globaldb_version, tmpdir_factory):
     root_dir = Path(__file__).resolve().parent.parent.parent
-    # if globaldb_version is None:  # no specific version -- normal test
-    #     return create_globaldb(data_directory=data_dir)
-
     if globaldb_version is None:  # no specific version -- normal test
         source_db_path = root_dir / 'data' / 'global.db'
     else:

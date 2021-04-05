@@ -252,7 +252,6 @@ class DBHandler:
 
     def __del__(self) -> None:
         if hasattr(self, 'conn') and self.conn:
-            self.update_owned_assets_in_globaldb()
             self.disconnect()
         try:
             dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}

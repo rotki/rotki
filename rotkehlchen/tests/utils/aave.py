@@ -1,12 +1,11 @@
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.structures import (
     AaveBorrowEvent,
     AaveLiquidationEvent,
     AaveRepayEvent,
     AaveSimpleEvent,
 )
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_WBTC
+from rotkehlchen.constants.assets import A_ADAI_V1, A_AWBTC_V1, A_BUSD, A_DAI, A_ETH, A_WBTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_ADAI
@@ -17,7 +16,7 @@ AAVE_TEST_ACC_2 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 AAVE_TEST_ACC_3 = '0xbA215F7BE6c620dA3F8240B82741eaF3C5f5D786'
 
 aave_mocked_historical_prices = {
-    'aDAI': {
+    A_ADAI_V1: {  # aDAI
         'USD': {
             1589155650: FVal('1.007'),
             1590753905: FVal('1.003'),
@@ -28,7 +27,7 @@ aave_mocked_historical_prices = {
             1594502373: FVal('1.019'),
         },
     },
-    'DAI': {
+    A_DAI: {  # DAI
         'USD': {
             1589155650: FVal('1.007'),
             1590753905: FVal('1.003'),
@@ -40,7 +39,7 @@ aave_mocked_historical_prices = {
         },
     },
 }
-aave_mocked_current_prices = {'aDAI': FVal('1.017')}
+aave_mocked_current_prices = {A_ADAI_V1: FVal('1.017')}
 
 expected_aave_deposit_test_events = [
     AaveSimpleEvent(
@@ -290,7 +289,7 @@ expected_aave_liquidation_test_events = [
         log_index=4,
     ), AaveSimpleEvent(
         event_type='interest',
-        asset=Asset('aWBTC'),
+        asset=A_AWBTC_V1,
         value=Balance(
             amount=FVal('0.00000833'),
             usd_value=FVal('0.00000833'),
@@ -323,7 +322,7 @@ expected_aave_liquidation_test_events = [
         log_index=1,
     ), AaveBorrowEvent(
         event_type='borrow',
-        asset=Asset('BUSD'),
+        asset=A_BUSD,
         value=Balance(
             amount=FVal('5000'),
             usd_value=FVal('5000'),

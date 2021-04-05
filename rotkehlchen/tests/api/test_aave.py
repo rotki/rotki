@@ -7,6 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.api.server import APIServer
+from rotkehlchen.constants.assets import A_ADAI_V1, A_AWBTC_V1, A_WBTC, A_BUSD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
@@ -31,7 +32,10 @@ from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
+AAVE_BALANCES_TEST_ACC = '0xC2cB1040220768554cf699b0d863A3cd4324ce32'
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCES_TEST_ACC]])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the aave balances endpoint works. Uses real data.
@@ -63,17 +67,17 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
             result = assert_proper_response_with_result(response)
 
     if len(result) != 1:
-        test_warnings.warn(UserWarning(f'Test account {AAVE_TEST_ACC_1} has no aave balances'))
+        test_warnings.warn(UserWarning(f'Test account {AAVE_BALANCES_TEST_ACC} has no aave balances'))  # noqa: E501
         return
 
-    lending = result[AAVE_TEST_ACC_1]['lending']
+    lending = result[AAVE_BALANCES_TEST_ACC]['lending']
     for _, entry in lending.items():
         assert len(entry) == 2
         assert len(entry['balance']) == 2
         assert 'amount' in entry['balance']
         assert 'usd_value' in entry['balance']
         assert '%' in entry['apy']
-    borrowing = result[AAVE_TEST_ACC_1]['borrowing']
+    borrowing = result[AAVE_BALANCES_TEST_ACC]['borrowing']
     for _, entry in borrowing.items():
         assert len(entry) == 3
         assert len(entry['balance']) == 2
@@ -83,7 +87,7 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
         assert '%' in entry['stable_apr']
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCES_TEST_ACC]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 def test_query_aave_balances_module_not_activated(
         rotkehlchen_api_server,
@@ -145,9 +149,9 @@ def _query_simple_aave_history_test(
     assert len(total_lost) == 0
     assert len(total_earned_liquidations) == 0
     assert len(total_earned_interest) == 1
-    assert len(total_earned_interest['aDAI']) == 2
-    assert FVal(total_earned_interest['aDAI']['amount']) >= FVal('24.207179802347627414')
-    assert FVal(total_earned_interest['aDAI']['usd_value']) >= FVal('24.580592532348742989192')
+    assert len(total_earned_interest[A_ADAI_V1.identifier]) == 2
+    assert FVal(total_earned_interest[A_ADAI_V1.identifier]['amount']) >= FVal('24.207179802347627414')  # noqa: E501
+    assert FVal(total_earned_interest[A_ADAI_V1.identifier]['usd_value']) >= FVal('24.580592532348742989192')  # noqa: E501
 
     expected_events = process_result_list(expected_aave_deposit_test_events)
     if use_graph:
@@ -208,9 +212,9 @@ def _query_borrowing_aave_history_test(setup: BalancesTestSetup, server: APIServ
     total_earned_liquidations = result[AAVE_TEST_ACC_3]['total_earned_liquidations']
 
     assert len(total_earned_interest) >= 1
-    assert len(total_earned_interest['aWBTC']) == 2
-    assert FVal(total_earned_interest['aWBTC']['amount']) >= FVal('0.00000833')
-    assert FVal(total_earned_interest['aWBTC']['usd_value']) >= ZERO
+    assert len(total_earned_interest[A_AWBTC_V1.identifier]) == 2
+    assert FVal(total_earned_interest[A_AWBTC_V1.identifier]['amount']) >= FVal('0.00000833')
+    assert FVal(total_earned_interest[A_AWBTC_V1.identifier]['usd_value']) >= ZERO
 
     assert len(total_earned_liquidations) == 1
     assert len(total_earned_liquidations['ETH']) == 2
@@ -222,11 +226,11 @@ def _query_borrowing_aave_history_test(setup: BalancesTestSetup, server: APIServ
     assert len(eth_lost) == 2
     assert FVal(eth_lost['amount']) >= FVal('0.004452186358507873')
     assert FVal(eth_lost['usd_value']) >= ZERO
-    busd_lost = total_lost['BUSD']
+    busd_lost = total_lost[A_BUSD.identifier]
     assert len(busd_lost) == 2
     assert FVal(busd_lost['amount']) >= FVal('21.605824443625747553')
     assert FVal(busd_lost['usd_value']) >= ZERO
-    wbtc_lost = total_lost['WBTC']
+    wbtc_lost = total_lost[A_WBTC.identifier]
     assert len(wbtc_lost) == 2
     assert FVal(wbtc_lost['amount']) >= FVal('0.41590034')  # ouch
     assert FVal(wbtc_lost['usd_value']) >= ZERO

@@ -7,6 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
@@ -82,7 +83,7 @@ def test_query_statistics_asset_balance(
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "allbalancesresource",
+                'allbalancesresource',
             ), json={'save_data': True},
         )
     assert_proper_response(response)
@@ -102,7 +103,7 @@ def test_query_statistics_asset_balance(
         assert len(data['result']) == 1
         entry = data['result'][0]
         assert len(entry) == 4
-        assert FVal(entry['amount']) == get_asset_balance_total('ETH', setup)
+        assert FVal(entry['amount']) == get_asset_balance_total(A_ETH, setup)
         assert entry['category'] == 'asset'
         assert entry['time'] >= start_time
         assert entry['usd_value'] is not None
@@ -128,7 +129,7 @@ def test_query_statistics_asset_balance(
         assert len(data['result']) == 1
         entry = data['result'][0]
         assert len(entry) == 4
-        assert FVal(entry['amount']) == get_asset_balance_total('BTC', setup)
+        assert FVal(entry['amount']) == get_asset_balance_total(A_BTC, setup)
         assert entry['time'] >= start_time
         assert entry['category'] == 'asset'
         assert entry['usd_value'] is not None
@@ -308,10 +309,10 @@ def test_query_statistics_value_distribution(
         assert data['message'] == ''
         assert len(data['result']) == 4
         totals = {
-            'ETH': get_asset_balance_total('ETH', setup),
-            'BTC': get_asset_balance_total('BTC', setup),
-            'EUR': get_asset_balance_total('EUR', setup),
-            'RDN': get_asset_balance_total('RDN', setup),
+            'ETH': get_asset_balance_total(A_ETH, setup),
+            'BTC': get_asset_balance_total(A_BTC, setup),
+            'EUR': get_asset_balance_total(A_EUR, setup),
+            A_RDN.identifier: get_asset_balance_total(A_RDN, setup),
         }
         for entry in data['result']:
             assert len(entry) == 5

@@ -37,6 +37,7 @@ class DataHandler():
             self.username = 'no_user'
             self.password = ''
             self.user_data_dir: Optional[Path] = None
+            self.db.update_owned_assets_in_globaldb()
             del self.db
             self.logged_in = False
 

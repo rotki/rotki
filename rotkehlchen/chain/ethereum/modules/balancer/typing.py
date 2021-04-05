@@ -6,7 +6,7 @@ from eth_typing.evm import ChecksumAddress
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.assets.unknown_asset import UnknownEthereumToken, ethereum_knownornot_token_parts
 from rotkehlchen.assets.utils import serialize_ethereum_token
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
@@ -427,17 +427,12 @@ class BalancerEventPool(NamedTuple):
         serialized_for_db_attributes = [self.address, tokens_number]
         for pool_token in self.tokens:
             token = pool_token.token
-            if isinstance(token, EthereumToken):
-                is_token_unknown = 0
-            elif isinstance(token, UnknownEthereumToken):
-                is_token_unknown = 1
-            else:
-                raise AssertionError(f'Unexpected token type: {type(token)}.')
+            is_token_unknown, token_symbol_or_id = ethereum_knownornot_token_parts(token)
 
             serialized_for_db_attributes.extend([
                 is_token_unknown,
                 token.ethereum_address,
-                token.symbol,
+                token_symbol_or_id,
                 token.name,
                 token.decimals,
                 str(pool_token.weight),
