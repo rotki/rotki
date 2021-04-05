@@ -126,7 +126,7 @@ jobs:
   test-backend:
     if: ${{ needs.check-changes.outputs.backend_tasks }}
     needs: ['lint-backend', 'check-changes']
-    timeout-minutes: 40
+    timeout-minutes: 60
     env:
       CI: true
     strategy:
