@@ -214,6 +214,10 @@ if [[ "$PLATFORM" == "linux" ]]; then
   generate_checksum "$PLATFORM" "rotki-linux*.AppImage" APPIMAGE_CHECKSUM
   generate_checksum "$PLATFORM" "rotki-linux*.tar.xz" TAR_CHECKSUM
   generate_checksum "$PLATFORM" "rotki-linux*.deb" DEB_CHECKSUM
+  cd "$WORKDIR/rotkehlchen_py_dist" || exit 1
+  BACKEND_BINARY=$(find "$(pwd)" -name "rotkehlchen-*-linux"  | head -n 1)
+  generate_checksum "$PLATFORM" "rotkehlchen-*-linux" BACKEND_CHECKSUM
+
 
   if [[ -n "${CI-}" ]]; then
     echo "::set-output name=binary::$GENERATED_APPIMAGE"
@@ -224,6 +228,10 @@ if [[ "$PLATFORM" == "linux" ]]; then
     echo "::set-output name=archive_checksum_name::${TAR_CHECKSUM##*/}"
     echo "::set-output name=deb_checksum::$DEB_CHECKSUM"
     echo "::set-output name=deb_checksum_name::${DEB_CHECKSUM##*/}"
+    echo "::set-output name=backend_binary::${BACKEND_BINARY}"
+    echo "::set-output name=backend_binary_name::${BACKEND_BINARY##*/}"
+    echo "::set-output name=backend_binary_checksum::${BACKEND_CHECKSUM}"
+    echo "::set-output name=backend_binary_checksum_name::${BACKEND_CHECKSUM##*/}"
   fi
 
   export APPIMAGE_CHECKSUM
