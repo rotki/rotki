@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS common_asset_details (
 
 # We declare the identifier to be case insensitive .This is so that queries like
 # cETH and CETH all work and map to the same asset
+# details_reference is not a FOREIGN key here since it can be for multiple tables
 DB_CREATE_ASSETS = """
 CREATE TABLE IF NOT EXISTS assets (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,

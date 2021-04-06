@@ -296,6 +296,13 @@ class V24V25UpgradeHelper():
         cursor.executemany(executestr, new_trade_tuples)
 
 
+def delete_icons_cache(icons_directory: Path) -> None:
+    """Deletes all icons cached in the icons directory. Does not delete custom icons"""
+    for entry in icons_directory.glob('*.*'):
+        if entry.is_file():
+            entry.unlink()
+
+
 def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     """Upgrades the DB from v24 to v25.
 
@@ -306,6 +313,7 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     - Purges coinbase/coinbasepro exchange data due to the changes in:
         * https://github.com/rotki/rotki/pull/2660
         * https://github.com/rotki/rotki/pull/2615
+    - Deletes custom icon cache so it can be requeried making sure identifiers are correct.
 
     Tables containing asset identifiers. [X] -> should not be deleted and repulled
     - amm_swaps
@@ -374,6 +382,8 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     helper.update_margin_positions(cursor)
     helper.update_asset_movements(cursor)
     helper.update_trades(cursor)
+
+    delete_icons_cache(db.user_data_dir.parent / 'icons')
 
     del helper
     db.conn.commit()

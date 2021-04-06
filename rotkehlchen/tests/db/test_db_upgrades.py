@@ -1422,9 +1422,11 @@ def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
         del db, db_v23  # explicit delete the db so update_owned_assets still runs mocked
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     """Test upgrading the DB from version 24 to version 25.
 
+    - deletes the icon cache of all icons (they will be repulled with new ids)
     - Upgrades to the new eth token identifier schema
     - trade pairs are now replaced by base/quote asset
     - purges some tables
@@ -1435,9 +1437,22 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
         target_version=24,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
-    )
-    cursor = db_v24.conn.cursor()
 
+    )
+    # copy some test icons in the test directory
+    icons_dir = user_data_dir.parent / 'icons'
+    custom_icons_dir = icons_dir / 'custom'
+    custom_icons_dir.mkdir(parents=True, exist_ok=True)
+    test_icondata_dir = Path(os.path.realpath(__file__)).parent.parent / 'data' / 'icons'
+    custom_icon_filename = '_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94.webp'
+    copyfile(test_icondata_dir / custom_icon_filename, custom_icons_dir / custom_icon_filename)
+    for size in ('small', 'thumb', 'large'):
+        name = f'USDT_{size}.png'
+        copyfile(test_icondata_dir / name, icons_dir / name)
+    icon_files = list(icons_dir.glob('*.*'))
+    assert len(icon_files) == 3
+
+    cursor = db_v24.conn.cursor()
     # Checks before migration
     assert cursor.execute(
         'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "uniswap%";',
@@ -1672,6 +1687,10 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     # Check that identifiers match with what is expected. This may need amendment if the upgrade test stays around while the code changes.  # noqa: E501
     trades = db.get_trades()
     assert all(x.identifier == trades_query[idx][0] for idx, x in enumerate(trades))
+
+    # Check that cached icons were purged but custom icons were not
+    assert (custom_icons_dir / custom_icon_filename).is_file()
+    assert not any(x.is_file() for x in icons_dir.glob('*.*'))
 
     # Check errors/warnings
     warnings = msg_aggregator.consume_warnings()
