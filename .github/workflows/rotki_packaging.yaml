@@ -139,6 +139,24 @@ jobs:
           asset_path: ${{ steps.packaging.outputs.deb_checksum }}
           asset_name: ${{ steps.packaging.outputs.deb_checksum_name }}
           asset_content_type: text/plain
+      - name: Upload backend binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.backend_binary }}
+          asset_name: ${{ steps.packaging.outputs.backend_binary_name }}
+          asset_content_type: application/octet-stream
+      - name: Upload backend binary checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.backend_binary_checksum }}
+          asset_name: ${{ steps.packaging.outputs.backend_binary_checksum_name }}
+          asset_content_type: text/plain
 
   osx:
     env:
@@ -210,6 +228,24 @@ jobs:
           asset_path: ${{ steps.packaging.outputs.archive_checksum }}
           asset_name: ${{ steps.packaging.outputs.archive_checksum_name }}
           asset_content_type: text/plain
+      - name: Upload backend binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.backend_binary }}
+          asset_name: ${{ steps.packaging.outputs.backend_binary_name }}
+          asset_content_type: application/zip
+      - name: Upload backend binary checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.backend_binary_checksum }}
+          asset_name: ${{ steps.packaging.outputs.backend_binary_checksum_name }}
+          asset_content_type: text/plain
 
   windows:
     env:
@@ -267,7 +303,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
       - name: Build rotki
-        id: build
+        id: packaging
         run: |
           npm install -g npm@7
           .\package.ps1
@@ -278,8 +314,26 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.build.outputs.binary_checksum }}
-          asset_name: ${{ steps.build.outputs.binary_checksum_name }}
+          asset_path: ${{ steps.packaging.outputs.binary_checksum }}
+          asset_name: ${{ steps.packaging.outputs.binary_checksum_name }}
+          asset_content_type: text/plain
+      - name: Upload backend binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.backend_binary }}
+          asset_name: ${{ steps.packaging.outputs.backend_binary_name }}
+          asset_content_type: application/octet-stream
+      - name: Upload backend binary checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.backend_binary_checksum }}
+          asset_name: ${{ steps.packaging.outputs.backend_binary_checksum_name }}
           asset_content_type: text/plain
 
   docker:
