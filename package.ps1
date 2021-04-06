@@ -288,11 +288,24 @@ $APP_CHECKSUM = "$PWD\$CHECKSUM_NAME"
 
 Get-FileHash $APP_BINARY -Algorithm SHA512 | Select-Object Hash | foreach {$_.Hash} | Out-File -FilePath $APP_CHECKSUM
 
+echo "Preparing backend binary for publishing"
+
+$BACKEND_DIST = "$PROJECT_DIR\rotkehlchen_py_dist"
+cd $BACKEND_DIST
+$BACKEND_BINARY_FILE = "$BACKEND_DIST\$BACKEND_BINARY"
+$BACKEND_BINARY_CHECKSUM_NAME = "$BACKEND_BINARY.sha512"
+$BACKEND_BINARY_CHECKSUM = "$BACKEND_DIST\$BACKEND_BINARY_CHECKSUM_NAME"
+Get-FileHash $BACKEND_BINARY_FILE -Algorithm SHA512 | Select-Object Hash | foreach {$_.Hash} | Out-File -FilePath $BACKEND_BINARY_CHECKSUM_NAME
+
 if ($Env:CI) {
     echo "::set-output name=binary::$($APP_BINARY)"
     echo "::set-output name=binary_name::$($BINARY_NAME)"
     echo "::set-output name=binary_checksum::$($APP_CHECKSUM)"
     echo "::set-output name=binary_checksum_name::$($CHECKSUM_NAME)"
+    echo "::set-output name=backend_binary::$($BACKEND_BINARY_FILE)"
+    echo "::set-output name=backend_binary_name::$($BACKEND_BINARY)"
+    echo "::set-output name=backend_binary_checksum::$($BACKEND_BINARY_CHECKSUM)"
+    echo "::set-output name=backend_binary_checksum_name::$($BACKEND_BINARY_CHECKSUM_NAME)"
 }
 
 echo "Rotki $SETUP_VERSION was build successfully"
