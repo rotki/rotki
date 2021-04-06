@@ -349,8 +349,8 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         final_data = json_ret['data']
 
-        # If we got pagination and this is the first query, gather all the subsequent queries
-        if 'pagination' in json_ret and not pagination_next_uri and not ignore_pagination:
+        # If we got pagination recursively gather all the subsequent queries
+        if 'pagination' in json_ret and not ignore_pagination:
             if 'next_uri' not in json_ret['pagination']:
                 raise RemoteError('Coinbase json response contained no "next_uri" key')
 
