@@ -7,12 +7,6 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
-from .common import (
-    MAKERDAO_REQUERY_PERIOD,
-    RAD,
-    RAY,
-    MakerdaoCommon,
-)
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import MAKERDAO_DAI_JOIN, MAKERDAO_POT
@@ -24,6 +18,9 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hexstr_to_int, ts_now
+
+from .common import MakerdaoCommon
+from .constants import MAKERDAO_REQUERY_PERIOD, RAD, RAY
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager

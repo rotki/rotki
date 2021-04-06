@@ -1,7 +1,7 @@
 import hashlib
 import hmac
-import logging
 import json
+import logging
 from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
@@ -37,12 +37,7 @@ from rotkehlchen.assets.converters import (
     asset_from_bitfinex,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import (
-    DeserializationError,
-    RemoteError,
-    UnknownAsset,
-    UnsupportedAsset,
-)
+from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.inquirer import Inquirer
@@ -60,7 +55,6 @@ from rotkehlchen.typing import (
     Fee,
     Location,
     Timestamp,
-    TradePair,
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -559,7 +553,8 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         trade = Trade(
             timestamp=Timestamp(int(raw_result[2] / 1000)),
             location=Location.BITFINEX,
-            pair=TradePair(f'{base_asset.identifier}_{quote_asset.identifier}'),
+            base_asset=base_asset,
+            quote_asset=quote_asset,
             trade_type=trade_type,
             amount=AssetAmount(abs(amount)),
             rate=deserialize_price(raw_result[5]),

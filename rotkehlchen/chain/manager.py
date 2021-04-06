@@ -1173,7 +1173,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 continue
 
             try:
-                asset = Asset(entry.base_balance.token_symbol)
+                token = EthereumToken(entry.base_balance.token_address)
             except UnknownAsset:
                 log.warning(
                     f'Found unknown asset {entry.base_balance.token_symbol} in DeFi '
@@ -1182,23 +1182,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 )
                 continue
 
-            token = EthereumToken.from_asset(asset)
-            if token is not None and token.ethereum_address != entry.base_balance.token_address:
-                log.warning(
-                    f'Found token {token.identifier} with address '
-                    f'{entry.base_balance.token_address} instead of expected '
-                    f'{token.ethereum_address} for account: {account} and '
-                    f'protocol: {entry.protocol.name}. Ignoring ...',
-                )
-                continue
-
             eth_balances = self.balances.eth
             if entry.balance_type == 'Asset':
-                eth_balances[account].assets[asset] += entry.base_balance.balance
-                self.totals.assets[asset] += entry.base_balance.balance
+                eth_balances[account].assets[token] += entry.base_balance.balance
+                self.totals.assets[token] += entry.base_balance.balance
             elif entry.balance_type == 'Debt':
-                eth_balances[account].liabilities[asset] += entry.base_balance.balance
-                self.totals.liabilities[asset] += entry.base_balance.balance
+                eth_balances[account].liabilities[token] += entry.base_balance.balance
+                self.totals.liabilities[token] += entry.base_balance.balance
             else:
                 log.warning(  # type: ignore # is an unreachable statement but we are defensive
                     f'Zerion Defi Adapter returned unknown asset type {entry.balance_type}. '

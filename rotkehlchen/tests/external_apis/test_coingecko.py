@@ -1,11 +1,12 @@
 import pytest
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+
+from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_YFI
+from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.externalapis.coingecko import CoingeckoAssetData, CoingeckoImageURLs
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.typing import Price
-from rotkehlchen.errors import UnsupportedAsset
 
 
 def assert_coin_data_same(given, expected, compare_description=False):
@@ -47,11 +48,11 @@ def test_asset_data(session_coingecko):
             large='https://assets.coingecko.com/coins/images/11849/large/yfi-192x192.png?1598325330',  # noqa: E501
         ),
     )
-    data = session_coingecko.asset_data(Asset('YFI'))
+    data = session_coingecko.asset_data(A_YFI)
     assert_coin_data_same(data, expected_data, compare_description=False)
 
     with pytest.raises(UnsupportedAsset):
-        session_coingecko.asset_data(Asset('PRL'))
+        session_coingecko.asset_data(EthereumToken('0x1844b21593262668B7248d0f57a220CaaBA46ab9'))  # PRL, a token without coingecko page  # noqa: E501
 
 
 def test_coingecko_historical_price(session_coingecko):

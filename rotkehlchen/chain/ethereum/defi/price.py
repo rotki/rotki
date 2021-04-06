@@ -1,6 +1,36 @@
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.constants.assets import (
+    A_CRV_3CRV,
+    A_CRV_3CRVSUSD,
+    A_CRV_GUSD,
+    A_CRV_RENWBTC,
+    A_CRV_YPAX,
+    A_CRVP_DAIUSDCTBUSD,
+    A_CRVP_DAIUSDCTTUSD,
+    A_CRVP_RENWSBTC,
+    A_FARM_CRVRENWBTC,
+    A_FARM_DAI,
+    A_FARM_RENBTC,
+    A_FARM_TUSD,
+    A_FARM_USDC,
+    A_FARM_USDT,
+    A_FARM_WBTC,
+    A_FARM_WETH,
+    A_YV1_3CRV,
+    A_YV1_ALINK,
+    A_YV1_DAI,
+    A_YV1_DAIUSDCTBUSD,
+    A_YV1_DAIUSDCTTUSD,
+    A_YV1_GUSD,
+    A_YV1_RENWSBTC,
+    A_YV1_TUSD,
+    A_YV1_USDC,
+    A_YV1_USDT,
+    A_YV1_WETH,
+    A_YV1_YFI,
+)
 from rotkehlchen.constants.ethereum import (
     FARM_ASSET_ABI,
     YEARN_3CRV_VAULT,
@@ -36,7 +66,16 @@ CURVEFI_3POOLSWAP = EthereumConstants().contract('CURVEFI_3POOLSWAP')
 CURVEFI_GUSDC3CRVSWAP = EthereumConstants().contract('CURVEFI_GUSDC3CRVSWAP')
 YEARN_CONTROLLER = EthereumConstants().contract('YEARN_CONTROLLER')
 
-HARVEST_VAULTS = ('fUSDC', 'fUSDT', 'fDAI', 'fWETH', 'fTUSD', 'fWBTC', 'frenBTC', 'fcrvRenWBTC')
+HARVEST_VAULTS = (
+    A_FARM_USDC,
+    A_FARM_USDT,
+    A_FARM_DAI,
+    A_FARM_WETH,
+    A_FARM_TUSD,
+    A_FARM_WBTC,
+    A_FARM_RENBTC,
+    A_FARM_CRVRENWBTC,
+)
 
 
 def _handle_yearn_curve_vault(
@@ -127,7 +166,7 @@ def handle_underlying_price_harvest_vault(
 
 def handle_defi_price_query(
         ethereum: 'EthereumManager',
-        token_symbol: str,
+        token: EthereumToken,
         underlying_asset_price: Optional[Price],
 ) -> Optional[FVal]:
     """Handles price queries for token/protocols which are queriable on-chain
@@ -137,7 +176,7 @@ def handle_defi_price_query(
     We can't query it from this module due to recursive imports between rotkehlchen/inquirer
     and rotkehlchen/chain/ethereum/defi
     """
-    if token_symbol == 'yyDAI+yUSDC+yUSDT+yTUSD':
+    if token == A_YV1_DAIUSDCTTUSD:
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
             curve_contract=CURVEFI_YSWAP,
@@ -145,7 +184,7 @@ def handle_defi_price_query(
             div_decimals=36,
             asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
-    elif token_symbol == 'yyDAI+yUSDC+yUSDT+yBUSD':
+    elif token == A_YV1_DAIUSDCTBUSD:
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
             curve_contract=CURVEFI_BUSDSWAP,
@@ -153,7 +192,7 @@ def handle_defi_price_query(
             div_decimals=36,
             asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
-    elif token_symbol == 'ycrvRenWSBTC':
+    elif token == A_YV1_RENWSBTC:
         assert underlying_asset_price
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
@@ -162,7 +201,7 @@ def handle_defi_price_query(
             div_decimals=36,
             asset_price=underlying_asset_price,
         )
-    elif token_symbol == 'y3Crv':
+    elif token == A_YV1_3CRV:
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
             curve_contract=CURVEFI_3POOLSWAP,
@@ -170,117 +209,100 @@ def handle_defi_price_query(
             div_decimals=36,
             asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
-    elif token_symbol == 'yDAI+yUSDC+yUSDT+yTUSD':
-        token = EthereumToken(token_symbol)
+    elif token == A_CRVP_DAIUSDCTTUSD:
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_YSWAP, token.decimals, ONE)
-    elif token_symbol == 'ypaxCrv':
-        token = EthereumToken(token_symbol)
+    elif token == A_CRV_YPAX:
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_PAXSWAP, token.decimals, ONE)
-    elif token_symbol == 'crvRenWBTC':
+    elif token == A_CRV_RENWBTC:
         assert underlying_asset_price
-        token = EthereumToken(token_symbol)
         usd_value = _handle_curvepool_price(
             ethereum=ethereum,
             contract=CURVEFI_RENSWAP,
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
-    elif token_symbol == 'crvRenWSBTC':
+    elif token == A_CRVP_RENWSBTC:
         assert underlying_asset_price
-        token = EthereumToken(token_symbol)
         usd_value = _handle_curvepool_price(
             ethereum=ethereum,
             contract=CURVEFI_SRENSWAP,
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
-    elif token_symbol == 'crvPlain3andSUSD':
-        token = EthereumToken(token_symbol)
+    elif token == A_CRV_3CRVSUSD:
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_SUSDV2SWAP, token.decimals, ONE)
-    elif token_symbol == '3Crv':
-        token = EthereumToken(token_symbol)
+    elif token == A_CRV_3CRV:
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_3POOLSWAP, token.decimals, ONE)
-    elif token_symbol == 'gusd3CRV':
-        token = EthereumToken(token_symbol)
+    elif token == A_CRV_GUSD:
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_GUSDC3CRVSWAP, token.decimals, ONE)
-    elif token_symbol == 'yDAI+yUSDC+yUSDT+yBUSD':
-        token = EthereumToken(token_symbol)
+    elif token == A_CRVP_DAIUSDCTBUSD:
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_BUSDSWAP, token.decimals, ONE)
-    elif token_symbol == 'yaLINK':
+    elif token == A_YV1_ALINK:
         assert underlying_asset_price
-        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
             contract=YEARN_ALINK_VAULT,
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
-    elif token_symbol == 'yDAI':
+    elif token == A_YV1_DAI:
         assert underlying_asset_price
-        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
             contract=YEARN_DAI_VAULT,
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
-    elif token_symbol == 'yWETH':
+    elif token == A_YV1_WETH:
         assert underlying_asset_price
-        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
             contract=YEARN_WETH_VAULT,
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
-    elif token_symbol == 'yYFI':
+    elif token == A_YV1_YFI:
         assert underlying_asset_price
-        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
             contract=YEARN_YFI_VAULT,
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
-    elif token_symbol == 'yUSDT':
+    elif token == A_YV1_USDT:
         assert underlying_asset_price
-        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
             contract=YEARN_USDT_VAULT,
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
-    elif token_symbol == 'yUSDC':
+    elif token == A_YV1_USDC:
         assert underlying_asset_price
-        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
             contract=YEARN_USDC_VAULT,
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
-    elif token_symbol == 'yTUSD':
+    elif token == A_YV1_TUSD:
         assert underlying_asset_price
-        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
             contract=YEARN_TUSD_VAULT,
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
-    elif token_symbol == 'yGUSD':
+    elif token == A_YV1_GUSD:
         assert underlying_asset_price
-        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
             contract=YEARN_GUSD_VAULT,
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
-    elif token_symbol in HARVEST_VAULTS:
+    elif token in HARVEST_VAULTS:
         assert underlying_asset_price
-        token = EthereumToken(token_symbol)
         usd_value = handle_underlying_price_harvest_vault(
             ethereum=ethereum,
             token=token,

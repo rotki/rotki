@@ -8,8 +8,8 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bitstamp
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USD
 from rotkehlchen.errors import RemoteError, UnknownAsset
 from rotkehlchen.exchanges.bitstamp import (
     API_ERR_AUTH_NONCE_CODE,
@@ -27,8 +27,9 @@ from rotkehlchen.exchanges.data_structures import (
     TradeType,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.constants import A_EUR, A_GBP
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Fee, Location, Timestamp, TradePair
+from rotkehlchen.typing import Fee, Location, Timestamp
 from rotkehlchen.utils.serialization import jsonloads_list
 
 
@@ -248,11 +249,11 @@ def test_query_balances_asset_balance(mock_bitstamp, inquirer):  # pylint: disab
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
         asset_balance, msg = mock_bitstamp.query_balances()
         assert asset_balance == {
-            Asset('ETH'): Balance(
+            A_ETH: Balance(
                 amount=FVal('32'),
                 usd_value=FVal('48'),
             ),
-            Asset('LINK'): Balance(
+            A_LINK: Balance(
                 amount=FVal('1000'),
                 usd_value=FVal('1500'),
             ),
@@ -274,12 +275,13 @@ def test_deserialize_trade_buy(mock_bitstamp):
     expected_trade = Trade(
         timestamp=1606901400,
         location=Location.BITSTAMP,
-        pair=TradePair('BTC_USD'),
+        base_asset=A_BTC,
+        quote_asset=A_USD,
         trade_type=TradeType.BUY,
         amount=FVal('0.50000000'),
         rate=FVal('0.00005000'),
         fee=FVal('20.00000000'),
-        fee_currency=Asset('USD'),
+        fee_currency=A_USD,
         link='2',
         notes='',
     )
@@ -300,12 +302,13 @@ def test_deserialize_trade_buy(mock_bitstamp):
     expected_trade = Trade(
         timestamp=1555402145,
         location=Location.BITSTAMP,
-        pair=TradePair('BTC_EUR'),
+        base_asset=A_BTC,
+        quote_asset=A_EUR,
         trade_type=TradeType.BUY,
         amount=FVal('0.0006'),
         rate=FVal('8364.0'),
         fee=FVal('0.02'),
-        fee_currency=Asset('EUR'),
+        fee_currency=A_EUR,
         link='2',
         notes='',
     )
@@ -326,12 +329,13 @@ def test_deserialize_trade_buy(mock_bitstamp):
     expected_trade = Trade(
         timestamp=1555345154,
         location=Location.BITSTAMP,
-        pair=TradePair('EUR_USD'),
+        base_asset=A_EUR,
+        quote_asset=A_USD,
         trade_type=TradeType.BUY,
         amount=FVal('6.8763'),
         rate=FVal('1.12124'),
         fee=FVal('0.02'),
-        fee_currency=Asset('USD'),
+        fee_currency=A_USD,
         link='15',
         notes='',
     )
@@ -353,12 +357,13 @@ def test_deserialize_trade_sell(mock_bitstamp):
     expected_trade = Trade(
         timestamp=1606995000,
         location=Location.BITSTAMP,
-        pair=TradePair('EUR_USD'),
+        base_asset=A_EUR,
+        quote_asset=A_USD,
         trade_type=TradeType.SELL,
         amount=FVal('1'),
         rate=FVal('0.81967213'),
         fee=FVal('0.00610000'),
-        fee_currency=Asset('USD'),
+        fee_currency=A_USD,
         link='5',
         notes='',
     )
@@ -379,12 +384,13 @@ def test_deserialize_trade_sell(mock_bitstamp):
     expected_trade = Trade(
         timestamp=1561498868,
         location=Location.BITSTAMP,
-        pair=TradePair('BTC_EUR'),
+        base_asset=A_BTC,
+        quote_asset=A_EUR,
         trade_type=TradeType.SELL,
         amount=FVal('1.81213214'),
         rate=FVal('10119.82'),
         fee=FVal('40.35'),
-        fee_currency=Asset('EUR'),
+        fee_currency=A_EUR,
         link='10',
         notes='',
     )
@@ -716,24 +722,26 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
         Trade(
             timestamp=1606901400,
             location=Location.BITSTAMP,
-            pair=TradePair('BTC_USD'),
+            base_asset=A_BTC,
+            quote_asset=A_USD,
             trade_type=TradeType.BUY,
             amount=FVal('0.50000000'),
             rate=FVal('0.00005000'),
             fee=FVal('20.00000000'),
-            fee_currency=Asset('USD'),
+            fee_currency=A_USD,
             link='2',
             notes='',
         ),
         Trade(
             timestamp=1606995000,
             location=Location.BITSTAMP,
-            pair=TradePair('EUR_USD'),
+            base_asset=A_EUR,
+            quote_asset=A_USD,
             trade_type=TradeType.SELL,
             amount=FVal('1'),
             rate=FVal('0.81967213'),
             fee=FVal('0.00610000'),
-            fee_currency=Asset('USD'),
+            fee_currency=A_USD,
             link='5',
             notes='',
         ),
@@ -750,24 +758,26 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         Trade(
             timestamp=1606995000,
             location=Location.BITSTAMP,
-            pair=TradePair('EUR_USD'),
+            base_asset=A_EUR,
+            quote_asset=A_USD,
             trade_type=TradeType.SELL,
             amount=FVal('1.22000000'),
             rate=FVal('0.81967213'),
             fee=FVal('0.00610000'),
-            fee_currency=Asset('EUR'),
+            fee_currency=A_EUR,
             link='5',
             notes='',
         ),
         Trade(
             timestamp=1606901400,
             location=Location.BITSTAMP,
-            pair=TradePair('BTC_USD'),
+            base_asset=A_BTC,
+            quote_asset=A_USD,
             trade_type=TradeType.BUY,
             amount=FVal('0.50000000'),
             rate=FVal('0.00005000'),
             fee=FVal('20.00000000'),
-            fee_currency=Asset('USD'),
+            fee_currency=A_USD,
             link='2',
             notes='',
         ),
@@ -807,7 +817,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
         'order_id': 2,
         'eur': '0.00',
     }
-    asset = Asset('BTC')
+    asset = A_BTC
     movement = AssetMovement(
         timestamp=1606901400,
         location=Location.BITSTAMP,
@@ -834,7 +844,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
         'order_id': 2,
         'gbp': '1000.51',
     }
-    asset = Asset('GBP')
+    asset = A_GBP
     movement = AssetMovement(
         timestamp=1521614766,
         location=Location.BITSTAMP,
@@ -863,7 +873,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
         'order_id': 2,
         'eur': '0.00',
     }
-    asset = Asset('USD')
+    asset = A_USD
     movement = AssetMovement(
         timestamp=1606901400,
         location=Location.BITSTAMP,
@@ -890,7 +900,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
         'order_id': 2,
         'eur': '500',
     }
-    asset = Asset('EUR')
+    asset = A_EUR
     movement = AssetMovement(
         timestamp=1521614766,
         location=Location.BITSTAMP,
@@ -913,8 +923,8 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
     Also tests `db_asset_movements` are sorted by `link` (as int) in ascending
     mode.
     """
-    asset_btc = Asset('BTC')
-    asset_usd = Asset('USD')
+    asset_btc = A_BTC
+    asset_usd = A_USD
     movements = [
         AssetMovement(
             timestamp=1606901400,

@@ -2,8 +2,9 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.chain.ethereum.modules.l2.loopring import Loopring
+from rotkehlchen.constants.assets import A_DPI, A_ETH, A_LRC
+from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -64,6 +65,6 @@ def test_query_balances(temp_loopring, inquirer):  # pylint: disable=W0613
 
     with patched_loopring:
         result = loopring.get_account_balances(account_id=1)
-        assert result['ETH'].amount == FVal(8.4270061497)
-        assert result['LRC'].amount == FVal(435.974889)
-        assert result['DPI'].amount == FVal(2.82924992)
+        assert result[A_ETH].amount == FVal(8.4270061497)
+        assert result[A_LRC].amount == FVal(435.974889)
+        assert result[A_DPI].amount == FVal(2.82924992)

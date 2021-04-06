@@ -5,8 +5,10 @@ import requests
 
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.constants.assets import A_BAT, A_MKR
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import mock_etherscan_query
+from rotkehlchen.tests.utils.constants import A_GNO
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 
 
@@ -33,7 +35,7 @@ def test_detect_tokens_for_addresses(ethtokens, inquirer):  # pylint: disable=un
     result, token_usd_prices = ethtokens.query_tokens_for_addresses([addr1, addr2], False)
 
     assert len(result[addr1]) >= 170
-    balance = result[addr1]['BAT']
+    balance = result[addr1][A_BAT]
     assert isinstance(balance, FVal)
     assert balance > FVal('478763')  # BAT burned at time of test writing
     assert len(result[addr2]) >= 20
@@ -48,7 +50,7 @@ def test_detected_tokens_cache(ethtokens, inquirer):  # pylint: disable=unused-a
     """
     addr1 = make_ethereum_address()
     addr2 = make_ethereum_address()
-    eth_map = {addr1: {'GNO': 5000, 'MKR': 4000}, addr2: {'MKR': 6000}}
+    eth_map = {addr1: {A_GNO: 5000, A_MKR: 4000}, addr2: {A_MKR: 6000}}
     etherscan_patch = mock_etherscan_query(
         eth_map=eth_map,
         etherscan=ethtokens.ethereum.etherscan,

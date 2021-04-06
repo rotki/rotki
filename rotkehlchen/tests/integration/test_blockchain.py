@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
-from rotkehlchen.constants.assets import A_BTC, A_DAI
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import mock_beaconchain, mock_etherscan_query
 from rotkehlchen.typing import SupportedBlockchain
@@ -38,7 +38,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
     addr1 = '0xe188c6BEBB81b96A65aa20dDB9e2aef62627fa4c'
     addr2 = '0x78a087fCf440315b843632cFd6FDE6E5adcCc2C2'
     etherscan_patch = mock_etherscan_query(
-        eth_map={addr1: {'ETH': 1, 'DAI': 1 * 10**18}, addr2: {'ETH': 2}},
+        eth_map={addr1: {A_ETH: 1, A_DAI: 1 * 10**18}, addr2: {A_ETH: 2}},
         etherscan=blockchain.ethereum.etherscan,
         original_requests_get=requests.get,
         original_queries=[],
@@ -112,5 +112,5 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         ]
         gevent.joinall(greenlets)
 
-    assert blockchain.totals.assets['DAI'].amount == 2
-    assert blockchain.balances.eth[addr1].assets['DAI'].amount == 2
+    assert blockchain.totals.assets[A_DAI].amount == 2
+    assert blockchain.balances.eth[addr1].assets[A_DAI].amount == 2

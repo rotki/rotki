@@ -68,9 +68,10 @@ def asset_normalized_value(amount: int, asset: Asset) -> FVal:
     if asset.identifier == 'ETH':
         decimals = 18
     else:
-        if not asset.is_eth_token():
+        token = EthereumToken.from_asset(asset)
+        if token is None:
             raise UnsupportedAsset(asset.identifier)
-        decimals = EthereumToken(asset.identifier).decimals
+        decimals = token.decimals
 
     return token_normalized_value_decimals(amount, decimals)
 

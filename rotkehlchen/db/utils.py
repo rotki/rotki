@@ -7,7 +7,6 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.substrate.typing import KusamaAddress
 from rotkehlchen.chain.substrate.utils import is_valid_kusama_address
 from rotkehlchen.typing import (
@@ -23,6 +22,7 @@ from rotkehlchen.utils.misc import rgetattr
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
+    from rotkehlchen.balances.manual import ManuallyTrackedBalance
 
 
 class BlockchainAccounts(NamedTuple):
@@ -122,7 +122,7 @@ def deserialize_tags_from_db(val: Optional[str]) -> Optional[List[str]]:
 
 def insert_tag_mappings(
         cursor: Cursor,
-        data: Union[List[ManuallyTrackedBalance], List[BlockchainAccountData], List['XpubData']],
+        data: Union[List['ManuallyTrackedBalance'], List[BlockchainAccountData], List['XpubData']],
         object_reference_keys: List[
             Literal['label', 'address', 'xpub.xpub', 'derivation_path'],
         ],

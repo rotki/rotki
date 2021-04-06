@@ -1,7 +1,9 @@
 import logging
+import shutil
 import sqlite3
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast, overload
+from tempfile import TemporaryDirectory
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
 
 from typing_extensions import Literal
 
@@ -9,14 +11,11 @@ from rotkehlchen.chain.ethereum.typing import (
     CustomEthereumToken,
     CustomEthereumTokenWithIdentifier,
     UnderlyingToken,
+    string_to_ethereum_address,
 )
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
-from rotkehlchen.errors import (
-    DeserializationError,
-    InputError,
-    ModuleInitializationFailure,
-    UnknownAsset,
-)
+from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
+from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
 from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress
 
 from .schema import DB_SCRIPT_CREATE_TABLES
@@ -26,62 +25,107 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-GLOBAL_DB_VERSION = 1
+GLOBAL_DB_VERSION = 2
+
+
+def _get_setting_value(cursor: sqlite3.Cursor, name: str, default_value: int) -> int:
+    query = cursor.execute(
+        'SELECT value FROM settings WHERE name=?;', (name,),
+    )
+    result = query.fetchall()
+    # If setting is not set, it's the default
+    if len(result) == 0:
+        return default_value
+
+    return int(result[0][0])
+
+
+def _initialize_temp_db_directory() -> TemporaryDirectory:
+    root_dir = Path(__file__).resolve().parent.parent
+    builtin_data_dir = root_dir / 'data'
+    tempdir = TemporaryDirectory()
+    shutil.copyfile(builtin_data_dir / 'global.db', Path(tempdir.name) / 'global.db')
+    return tempdir
+
+
+def _initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
+    connection = sqlite3.connect(dbpath)
+    connection.executescript(DB_SCRIPT_CREATE_TABLES)
+    cursor = connection.cursor()
+    db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+    if db_version == 1:
+        upgrade_ethereum_asset_ids(connection)
+    cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        ('version', str(GLOBAL_DB_VERSION)),
+    )
+    connection.commit()
+    return connection
+
+
+def _initialize_global_db_directory(data_dir: Path) -> sqlite3.Connection:
+    global_dir = data_dir / 'global_data'
+    global_dir.mkdir(parents=True, exist_ok=True)
+    dbname = global_dir / 'global.db'
+    if not dbname.is_file():
+        # if no global db exists, copy the built-in file
+        root_dir = Path(__file__).resolve().parent.parent
+        builtin_data_dir = root_dir / 'data'
+        shutil.copyfile(builtin_data_dir / 'global.db', global_dir / 'global.db')
+    return _initialize_globaldb(dbname)
 
 
 class GlobalDBHandler():
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
-    _data_directory: Path
+    _data_directory: Optional[Path] = None
+    _temp_db_directory: Optional[TemporaryDirectory] = None
     _conn: sqlite3.Connection
 
     def __new__(
             cls,
             data_dir: Path = None,
     ) -> 'GlobalDBHandler':
+        """
+        Lazily initializes the GlobalDB.
+
+        If the data dir is not given it uses a copy of the built-in global DB copied
+        in a temporary directory.
+
+        If the data dir is given it used the already existing global DB in that directory,
+        of if there is none copies the built-in one there.
+        """
         if GlobalDBHandler.__instance is not None:
+            if GlobalDBHandler.__instance._data_directory is None and data_dir is not None:
+                if GlobalDBHandler.__instance._temp_db_directory is not None:
+                    # we now know datadir. Cleanup temporary DB
+                    GlobalDBHandler.__instance._conn.close()
+                    GlobalDBHandler.__instance._temp_db_directory.cleanup()
+                    GlobalDBHandler.__instance._temp_db_directory = None
+                    GlobalDBHandler.__instance._data_directory = data_dir
+                    # and initialize it in the proper place
+                    GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
+
             return GlobalDBHandler.__instance
 
-        if data_dir is None:
-            # Can happen in tests. And perhaps in an edge case when the resolver
-            # tries to use the db handler before it's initialized with a data directory
-            raise ModuleInitializationFailure(
-                'GlobalDBHandler invoked before being primed with the data directory',
-            )
-
         GlobalDBHandler.__instance = object.__new__(cls)
+        if data_dir is None:
+            # rotki not fully initialized yet. We don't know the data directory. Use temporary DB
+            tempdir = _initialize_temp_db_directory()
+            GlobalDBHandler.__instance._temp_db_directory = tempdir
+            dbname = Path(tempdir.name) / 'global.db'
+            GlobalDBHandler.__instance._conn = _initialize_globaldb(dbname)
+        else:  # probably tests
+            GlobalDBHandler.__instance._data_directory = data_dir
+            GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
 
-        GlobalDBHandler.__instance._data_directory = data_dir
-
-        # Create global data directory if not existing
-        global_dir = data_dir / 'global_data'
-        global_dir.mkdir(parents=True, exist_ok=True)
-        dbname = global_dir / 'global.db'
-        # Initialize the DB
-        connection = sqlite3.connect(dbname)
-        connection.executescript(DB_SCRIPT_CREATE_TABLES)
-        cursor = connection.cursor()
-        cursor.execute(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            ('version', str(GLOBAL_DB_VERSION)),
-        )
-        connection.commit()
-        GlobalDBHandler.__instance._conn = connection
         return GlobalDBHandler.__instance
 
     @staticmethod
     def get_setting_value(name: str, default_value: int) -> int:
         """Get the value of a setting or default. Typing is always int for now"""
         cursor = GlobalDBHandler()._conn.cursor()
-        query = cursor.execute(
-            'SELECT value FROM settings WHERE name=?;', (name,),
-        )
-        result = query.fetchall()
-        # If setting is not set, it's the default
-        if len(result) == 0:
-            return default_value
-
-        return int(result[0][0])
+        return _get_setting_value(cursor, name, default_value)
 
     @staticmethod
     def add_setting_value(name: str, value: Any) -> None:
@@ -349,16 +393,15 @@ class GlobalDBHandler():
                 identifier=identifier,
                 name=token.name,  # type: ignore # check from missing_basic_data()
                 symbol=token.symbol,  # type: ignore # check from missing_basic_data()
-                active=True,
                 asset_type=asset_type,
                 started=token.started,
-                ended=None,
                 forked=None,
                 swapped_for=token.swapped_for.identifier if token.swapped_for else None,
                 ethereum_address=token.address,
                 decimals=token.decimals,
                 cryptocompare=token.cryptocompare,
                 coingecko=token.coingecko,
+                protocol=token.protocol,
             )
 
         # else
@@ -381,16 +424,15 @@ class GlobalDBHandler():
             identifier=identifier,
             name=result[0],
             symbol=result[1],
-            active=True,
             asset_type=asset_type,
             started=result[2],
-            ended=None,
             forked=result[3],
             swapped_for=result[4],
             ethereum_address=None,
             decimals=None,
             coingecko=result[5],
             cryptocompare=result[6],
+            protocol=None,
         )
 
     @staticmethod
@@ -863,12 +905,57 @@ class GlobalDBHandler():
                 'INSERT OR IGNORE INTO user_owned_assets(asset_id) VALUES(?)',
                 [(x.identifier,) for x in assets],
             )
-        except sqlite3.IntegrityError:
+        except sqlite3.IntegrityError as e:
             log.error(
-                f'One of the following asset ids caused a DB IntegrityError: '
+                f'One of the following asset ids caused a DB IntegrityError ({str(e)}): '
                 f'{",".join([x.identifier for x in assets])}',
             )  # should not ever happen but need to handle with informative log if it does
             connection.rollback()
             return
 
         connection.commit()
+
+    @staticmethod
+    def get_assets_with_symbol(symbol: str, asset_type: Optional[AssetType] = None) -> List[AssetData]:  # noqa: E501
+        """Find all asset entries that have the given symbol"""
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        query_tuples: Union[Tuple[str, str], Tuple[str, str, str, str]]
+        if asset_type is not None:
+            asset_type_check = ' AND A.type=?'
+            query_tuples = (symbol, asset_type.serialize_for_db(), symbol, asset_type.serialize_for_db())  # noqa: E501
+        else:
+            asset_type_check = ''
+            query_tuples = (symbol, symbol)
+        querystr = f"""
+        SELECT A.identifier, A.type, B.address, B.decimals, B.name, B.symbol, B.started, null, B.swapped_for, B.coingecko, B.cryptocompare, B.protocol from assets as A LEFT OUTER JOIN ethereum_tokens as B
+        ON B.address = A.details_reference WHERE B.symbol=? COLLATE NOCASE{asset_type_check}
+        UNION ALL
+        SELECT A.identifier, A.type, null, null, B.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null from assets as A LEFT OUTER JOIN common_asset_details as B
+        ON B.asset_id = A.identifier WHERE B.symbol=? COLLATE NOCASE{asset_type_check};
+        """  # noqa: E501
+        query = cursor.execute(querystr, query_tuples)
+        assets = []
+        for entry in query:
+            asset_type = AssetType.deserialize_from_db(entry[1])
+            ethereum_address: Optional[ChecksumEthAddress]
+            if asset_type == AssetType.ETHEREUM_TOKEN:
+                ethereum_address = string_to_ethereum_address(entry[2])
+            else:
+                ethereum_address = None
+            assets.append(AssetData(
+                identifier=entry[0],
+                asset_type=asset_type,
+                ethereum_address=ethereum_address,
+                decimals=entry[3],
+                name=entry[4],
+                symbol=entry[5],
+                started=entry[6],
+                forked=entry[7],
+                swapped_for=entry[8],
+                coingecko=entry[9],
+                cryptocompare=entry[10],
+                protocol=entry[11],
+            ))
+
+        return assets

@@ -7,15 +7,11 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures import (
-    BalanceType,
-    ActionType,
-    LedgerActionType,
-)
+from rotkehlchen.accounting.structures import ActionType, BalanceType, LedgerActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USD
+from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -46,22 +42,25 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition,
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
-    deserialize_location_from_db,
-    deserialize_location,
-    deserialize_trade_type_from_db,
-    deserialize_trade_type,
-    deserialize_action_type_from_db,
     deserialize_action_type,
-    deserialize_ledger_action_type_from_db,
-    deserialize_ledger_action_type,
-    deserialize_asset_movement_category_from_db,
+    deserialize_action_type_from_db,
     deserialize_asset_movement_category,
+    deserialize_asset_movement_category_from_db,
+    deserialize_ledger_action_type,
+    deserialize_ledger_action_type_from_db,
+    deserialize_location,
+    deserialize_location_from_db,
+    deserialize_trade_type,
+    deserialize_trade_type_from_db,
 )
 from rotkehlchen.tests.utils.constants import (
     A_DAO,
     A_DOGE,
     A_EUR,
     A_RDN,
+    A_SDC,
+    A_SDT2,
+    A_SUSHI,
     A_XMR,
     DEFAULT_TESTS_MAIN_CURRENCY,
     ETH_ADDRESS1,
@@ -69,6 +68,7 @@ from rotkehlchen.tests.utils.constants import (
     ETH_ADDRESS3,
     MOCK_INPUT_DATA,
 )
+from rotkehlchen.tests.utils.database import mock_dbhandler_update_owned_assets
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import (
     ApiKey,
@@ -84,7 +84,6 @@ from rotkehlchen.typing import (
     Price,
     SupportedBlockchain,
     Timestamp,
-    TradePair,
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -412,8 +411,10 @@ def test_upgrade_sqlcipher_v3_to_v4_without_dbinfo(user_data_dir):
 
     # the constructor should migrate it in-place and we should have a working DB
     msg_aggregator = MessagesAggregator()
-    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
-    assert db.get_version() == ROTKEHLCHEN_DB_VERSION
+    with mock_dbhandler_update_owned_assets():
+        db = DBHandler(user_data_dir, '123', msg_aggregator, None)
+        assert db.get_version() == ROTKEHLCHEN_DB_VERSION
+        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_sqlcipher_v3_to_v4_with_dbinfo(user_data_dir):
@@ -608,7 +609,8 @@ def test_query_owned_assets(data_dir, username):
         Trade(
             timestamp=Timestamp(1),
             location=Location.EXTERNAL,
-            pair=TradePair('ETH_BTC'),
+            base_asset=A_ETH,
+            quote_asset=A_BTC,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal(1)),
             rate=Price(FVal(1)),
@@ -619,7 +621,8 @@ def test_query_owned_assets(data_dir, username):
         ), Trade(
             timestamp=Timestamp(99),
             location=Location.EXTERNAL,
-            pair=TradePair('ETH_BTC'),
+            base_asset=A_ETH,
+            quote_asset=A_BTC,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal(2)),
             rate=Price(FVal(1)),
@@ -630,7 +633,8 @@ def test_query_owned_assets(data_dir, username):
         ), Trade(
             timestamp=Timestamp(1),
             location=Location.EXTERNAL,
-            pair=TradePair('SDC_SDT-2'),
+            base_asset=A_SDC,
+            quote_asset=A_SDT2,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal(1)),
             rate=Price(FVal(1)),
@@ -641,7 +645,8 @@ def test_query_owned_assets(data_dir, username):
         ), Trade(
             timestamp=Timestamp(1),
             location=Location.EXTERNAL,
-            pair=TradePair('SUSHI_1INCH'),
+            base_asset=A_SUSHI,
+            quote_asset=A_1INCH,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal(1)),
             rate=Price(FVal(1)),
@@ -652,20 +657,10 @@ def test_query_owned_assets(data_dir, username):
         ), Trade(
             timestamp=Timestamp(3),
             location=Location.EXTERNAL,
-            pair=TradePair('SUSHI_1INCH'),
+            base_asset=A_SUSHI,
+            quote_asset=A_1INCH,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal(2)),
-            rate=Price(FVal(1)),
-            fee=Fee(FVal('0.1')),
-            fee_currency=A_BTC,
-            link='',
-            notes='',
-        ), Trade(
-            timestamp=Timestamp(1),
-            location=Location.EXTERNAL,
-            pair=TradePair('UNKNOWNTOKEN_BTC'),
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(1)),
             rate=Price(FVal(1)),
             fee=Fee(FVal('0.1')),
             fee_currency=A_BTC,
@@ -675,7 +670,7 @@ def test_query_owned_assets(data_dir, username):
     ])
 
     assets_list = data.db.query_owned_assets()
-    assert set(assets_list) == {A_USD, A_ETH, A_DAI, A_BTC, A_XMR, Asset('SDC'), Asset('SDT-2'), Asset('SUSHI'), Asset('1INCH')}  # noqa: E501
+    assert set(assets_list) == {A_USD, A_ETH, A_DAI, A_BTC, A_XMR, A_SDC, A_SDT2, A_SUSHI, A_1INCH}  # noqa: E501
     assert all(isinstance(x, Asset) for x in assets_list)
     warnings = data.db.msg_aggregator.consume_warnings()
     assert len(warnings) == 1
@@ -764,7 +759,8 @@ def test_add_trades(data_dir, username, caplog):
     trade1 = Trade(
         timestamp=1451606400,
         location=Location.KRAKEN,
-        pair='ETH_EUR',
+        base_asset=A_ETH,
+        quote_asset=A_EUR,
         trade_type=TradeType.BUY,
         amount=FVal('1.1'),
         rate=FVal('10'),
@@ -776,7 +772,8 @@ def test_add_trades(data_dir, username, caplog):
     trade2 = Trade(
         timestamp=1451607500,
         location=Location.BINANCE,
-        pair='BTC_ETH',
+        base_asset=A_BTC,
+        quote_asset=A_ETH,
         trade_type=TradeType.BUY,
         amount=FVal('0.00120'),
         rate=FVal('10'),
@@ -788,7 +785,8 @@ def test_add_trades(data_dir, username, caplog):
     trade3 = Trade(
         timestamp=1451608600,
         location=Location.COINBASE,
-        pair='BTC_ETH',
+        base_asset=A_BTC,
+        quote_asset=A_ETH,
         trade_type=TradeType.SELL,
         amount=FVal('0.00120'),
         rate=FVal('1'),
@@ -810,10 +808,7 @@ def test_add_trades(data_dir, username, caplog):
     # Add the last 2 trades. Since trade2 already exists in the DB it should be
     # ignored and a warning should be logged
     data.db.add_trades([trade2, trade3])
-    assert (
-        'Did not add "buy trade with id 38d56b6c435894fe1faaf19c5aec4f817de'
-        'dd6b0a26afc41be4748daf36a5a5c'
-    ) in caplog.text
+    assert 'Did not add "buy trade with id a1ed19c8284940b4e59bdac941db2fd3c0ed004ddb10fdd3b9ef0a3a9b2c97bc' in caplog.text  # noqa: E501
     returned_trades = data.db.get_trades()
     assert returned_trades == [trade1, trade2, trade3]
 

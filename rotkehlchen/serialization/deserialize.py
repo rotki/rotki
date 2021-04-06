@@ -5,6 +5,7 @@ from eth_utils import to_checksum_address
 from rotkehlchen.accounting.structures import ActionType, LedgerActionType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
@@ -507,9 +508,12 @@ def pair_get_assets(pair: TradePair) -> Tuple[Asset, Asset]:
     - UnknownAsset
     """
     base_str, quote_str = _split_pair(pair)
-
-    base_asset = Asset(base_str)
-    quote_asset = Asset(quote_str)
+    base_asset = get_asset_by_symbol(base_str)
+    if base_asset is None:
+        raise UnknownAsset(base_str)
+    quote_asset = get_asset_by_symbol(quote_str)
+    if quote_asset is None:
+        raise UnknownAsset(quote_str)
     return base_asset, quote_asset
 
 
@@ -758,12 +762,11 @@ def deserialize_int_from_hex_or_int(symbol: Union[str, int], location: str) -> i
 
 def deserialize_ethereum_token_from_db(identifier: str) -> EthereumToken:
     """Takes an identifier and returns the <EthereumToken>"""
-    try:
-        ethereum_token = EthereumToken(identifier=identifier)
-    except UnknownAsset as e:
+    ethereum_token = EthereumToken.from_identifier(identifier=identifier)
+    if ethereum_token is None:
         raise DeserializationError(
-            f'Unknown ethereum token {e.asset_name} found',
-        ) from e
+            f'Could not initialize an ethereum token with identifier {identifier}',
+        )
 
     return ethereum_token
 

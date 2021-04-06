@@ -4,6 +4,7 @@ from typing import Dict, List
 import pytest
 import requests
 
+from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -26,7 +27,7 @@ def _add_ledger_actions(server) -> List[Dict]:
         'action_type': 'expense',
         'location': 'blockchain',
         'amount': '5',
-        'asset': 'DAI',
+        'asset': A_DAI.identifier,
         'link': 'explorer link',
         'notes': 'Spent 5 DAI for something',
     }, {

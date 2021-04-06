@@ -35,7 +35,6 @@ def fixture_force_reinitialize_asset_resolver() -> bool:
 # initialized from here which would take more time
 @pytest.fixture(autouse=True)
 def asset_resolver(
-        data_dir,
         globaldb,
         query_github_for_assets,
         mock_asset_meta_github_response,
@@ -55,7 +54,7 @@ def asset_resolver(
         AssetResolver._AssetResolver__instance = None
 
     if query_github_for_assets:
-        resolver = AssetResolver(data_dir)
+        resolver = AssetResolver()
     else:
         # mock the github request to return version lower than anything possible
         def mock_get_request(url: str) -> MockResponse:
@@ -68,7 +67,7 @@ def asset_resolver(
 
         get_patch = patch('requests.get', side_effect=mock_get_request)
         with get_patch:
-            resolver = AssetResolver(data_dir)
+            resolver = AssetResolver()
 
     # add any custom ethereum tokens given by the fixtures for a test
     if custom_ethereum_tokens is not None:

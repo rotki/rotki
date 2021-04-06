@@ -1,17 +1,18 @@
 from rotkehlchen.accounting.structures import LedgerActionType
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC
 from rotkehlchen.db.ledger_actions import DBLedgerActions
-from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events import limit_trade_list_to_period
-from rotkehlchen.typing import Location, TradeType, Timestamp
+from rotkehlchen.typing import Location, Timestamp, TradeType
 
 
 def test_limit_trade_list_to_period():
     trade1 = Trade(
         timestamp=1459427707,
         location=Location.KRAKEN,
-        pair='ETH_BTC',
+        base_asset=A_ETH,
+        quote_asset=A_BTC,
         trade_type=TradeType.BUY,
         amount=FVal(1),
         rate=FVal(1),
@@ -22,7 +23,8 @@ def test_limit_trade_list_to_period():
     trade2 = Trade(
         timestamp=1469427707,
         location=Location.POLONIEX,
-        pair='ETH_BTC',
+        base_asset=A_ETH,
+        quote_asset=A_BTC,
         trade_type=TradeType.BUY,
         amount=FVal(1),
         rate=FVal(1),
@@ -33,7 +35,8 @@ def test_limit_trade_list_to_period():
     trade3 = Trade(
         timestamp=1479427707,
         location=Location.POLONIEX,
-        pair='ETH_BTC',
+        base_asset=A_ETH,
+        quote_asset=A_BTC,
         trade_type=TradeType.BUY,
         amount=FVal(1),
         rate=FVal(1),

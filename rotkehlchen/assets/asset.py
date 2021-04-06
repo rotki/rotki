@@ -1,7 +1,12 @@
-from dataclasses import dataclass, field, InitVar
+from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
 from typing import TYPE_CHECKING, Any, Optional, Type, TypeVar
 
+from rotkehlchen.constants.resolver import (
+    ETHEREUM_DIRECTIVE,
+    ETHEREUM_DIRECTIVE_LENGTH,
+    strethaddress_to_identifier,
+)
 from rotkehlchen.errors import DeserializationError, UnsupportedAsset
 from rotkehlchen.typing import AssetType, ChecksumEthAddress, Timestamp
 
@@ -15,25 +20,36 @@ WORLD_TO_BITTREX = {
     'USNBT': 'NBT',
     # In Rotkehlchen BTM-2 is Bytom but in Bittrex it's BTM
     'BTM-2': 'BTM',
-    # In Rotkehlchen PAI-2 is PCHAIN token but in Bittrex it's PI
-    'PAI-2': 'PI',
-    # In Rotkehlchen PLA-2 is Playchip but in Bittrex is PLA
-    'PLA-2': 'PLA',
-    # In Rotkehlchen sUSD is Synt USD but in Bittrex it's SUSD
-    'sUSD': 'SUSD',
+    # Bittrex PI shoould map to rotki's PCHAIN
+    strethaddress_to_identifier('0xB9bb08AB7E9Fa0A1356bd4A39eC0ca267E03b0b3'): 'PI',
+    # Bittrex PLA should map to rotki's PlayChip
+    strethaddress_to_identifier('0x0198f46f520F33cd4329bd4bE380a25a90536CD5'): 'PLA',
     # In Rotkehlchen LUNA-2 is Terra Luna but in Bittrex it's LUNA
     'LUNA-2': 'LUNA',
+    # WASP in binance maps to WorldWideAssetExchange in rotki
     # In Rotkehlchen WorldWideAssetExchange is WAX but in Bittrex it's WASP
-    'WAX': 'WAXP',
+    strethaddress_to_identifier('0x39Bb259F66E1C59d5ABEF88375979b4D20D98022'): 'WAXP',
     # In Rotkehlchen Validity is RADS, the old name but in Bittrex it's VAL
     'RADS': 'VAL',
+    # make sure bittrex matches ADX latest contract
+    strethaddress_to_identifier('0xADE00C28244d5CE17D72E40330B1c318cD12B7c3'): 'ADX',
+    # Bittrex AID maps to Aidcoin
+    strethaddress_to_identifier('0x37E8789bB9996CaC9156cD5F5Fd32599E6b91289'): 'AID',
+    # make sure bittrex matches ANT latest contract
+    strethaddress_to_identifier('0xa117000000f279D81A1D3cc75430fAA017FA5A2e'): 'ANT',
+    # Bittrex CMCT maps to Crowdmachine
+    strethaddress_to_identifier('0x47bc01597798DCD7506DCCA36ac4302fc93a8cFb'): 'CMCT',
+    # Bittrex REV maps to REV (and not R)
+    strethaddress_to_identifier('0x2ef52Ed7De8c5ce03a4eF0efbe9B7450F2D7Edc9'): 'REV',
+    # make sure bittrex matches latest VRA contract
+    strethaddress_to_identifier('0xF411903cbC70a74d22900a5DE66A2dda66507255'): 'VRA',
 }
 
 WORLD_TO_POLONIEX = {
     # AIR-2 is aircoin for us and AIR is airtoken. Poloniex has only aircoin
     'AIR-2': 'AIR',
-    # Decentr is DEC-2 for us but DEC in Poloniex
-    'DEC-2': 'DEC',
+    # DEC in poloniex matches Decentr
+    strethaddress_to_identifier('0x30f271C9E86D2B7d00a6376Cd96A1cFBD5F0b9b3'): 'DEC',
     # Poloniex delisted BCH and listed it as BCHABC after the Bitcoin Cash
     # ABC / SV fork. In Rotkehlchen we consider BCH to be the same as BCHABC
     'BCH': 'BCHABC',
@@ -66,6 +82,8 @@ WORLD_TO_POLONIEX = {
     'XWC': 'WC',
     # Poloniex uses a different name for 1inch. Maybe due to starting with number?
     '1INCH': 'ONEINCH',
+    # FTT is FTX token in poloniex
+    strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
 }
 
 WORLD_TO_KRAKEN = {
@@ -82,7 +100,8 @@ WORLD_TO_KRAKEN = {
     'ETC': 'XETC',
     'ETH': 'XETH',
     'LTC': 'XLTC',
-    'REP': 'XREP',
+    # REP V1
+    strethaddress_to_identifier('0x1985365e9f78359a9B6AD760e32412f4a445E862'): 'XREP',
     'BTC': 'XXBT',
     'XMR': 'XXMR',
     'XRP': 'XXRP',
@@ -94,7 +113,8 @@ WORLD_TO_KRAKEN = {
     'JPY': 'ZJPY',
     'CHF': 'CHF',
     'KRW': 'ZKRW',
-    'REPV2': 'REPV2',
+    # REP V2
+    strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REPV2',
     'DAO': 'XDAO',
     'MLN': 'XMLN',
     'ICN': 'XICN',
@@ -130,7 +150,8 @@ WORLD_TO_KRAKEN = {
     'FIL': 'FIL',
     'UNI': 'UNI',
     'YFI': 'YFI',
-    'ANT': 'ANT',
+    # Make sure kraken maps to latest ANT
+    strethaddress_to_identifier('0xa117000000f279D81A1D3cc75430fAA017FA5A2e'): 'ANT',
     'KEEP': 'KEEP',
     'TBTC': 'TBTC',
     'ETH2': 'ETH2',
@@ -147,13 +168,13 @@ WORLD_TO_BINANCE = {
     'BCH': 'BCHABC',
     'BSV': 'BCHSV',
     # ETHOS is known as BQX in Binance
-    'ETHOS': 'BQX',
+    strethaddress_to_identifier('0x5Af2Be193a6ABCa9c8817001F45744777Db30756'): 'BQX',
     # GXChain is GXS in Binance but GXC in Rotkehlchen
     'GXC': 'GXS',
     # Luna Terra is LUNA-2 in rotki
     'LUNA-2': 'LUNA',
     # YOYOW is known as YOYO in Binance
-    'YOYOW': 'YOYO',
+    strethaddress_to_identifier('0xcbeAEc699431857FDB4d37aDDBBdc20E132D4903'): 'YOYO',
     # Solana is SOL-2 in rotki
     'SOL-2': 'SOL',
     # BETH is the eth staked in beacon chain
@@ -163,26 +184,69 @@ WORLD_TO_BINANCE = {
     # ONE is Harmony in Binance
     'ONE-2': 'ONE',
     # FTT is FTX in Binance
-    'FTT-2': 'FTT',
+    strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
+    # make sure binance matches ADX latest contract
+    strethaddress_to_identifier('0xADE00C28244d5CE17D72E40330B1c318cD12B7c3'): 'ADX',
+    # make sure binance matces ANT latest contract
+    strethaddress_to_identifier('0xa117000000f279D81A1D3cc75430fAA017FA5A2e'): 'ANT',
+    # HOT is Holo in Binance
+    strethaddress_to_identifier('0x6c6EE5e31d828De241282B9606C8e98Ea48526E2'): 'HOT',
+    # Key is SelfKey in Binance
+    strethaddress_to_identifier('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7'): 'KEY',
+    # PNT is pNetwork in Binance
+    strethaddress_to_identifier('0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD'): 'PNT',
 }
 
 WORLD_TO_BITFINEX = {
     'BCH': 'BCHABC',
     'CNY': 'CNH',
     'DOGE': 'DOG',
-    'REPV2': 'REP',
-    'TRIO': 'TRI',
-    'ZB': 'ZBT',
+    # make sure REP maps to latest one in bitfinex
+    strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REP',
+    # TRIO is TRI in bitfinex
+    strethaddress_to_identifier('0x8B40761142B9aa6dc8964e61D0585995425C3D94'): 'TRI',
+    # ZB token is ZBT in bitfinex
+    strethaddress_to_identifier('0xBd0793332e9fB844A52a205A233EF27a5b34B927'): 'ZBT',
+    # GOT is parkingo in bitfinex
+    strethaddress_to_identifier('0x613Fa2A6e6DAA70c659060E86bA1443D2679c9D7'): 'GOT',
+    # make sure ANT maps to latest one in bitfinex
+    strethaddress_to_identifier('0xa117000000f279D81A1D3cc75430fAA017FA5A2e'): 'ANT',
+    # PNT is pNetwork in bitfinex. Also original symbol is EDO there.
+    strethaddress_to_identifier('0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD'): 'EDO',
+    # ORS is orsgroup in bitfinex
+    strethaddress_to_identifier('0xac2e58A06E6265F1Cf5084EE58da68e5d75b49CA'): 'ORS',
+    # FTT is ftx in bitfinex
+    strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
 }
 
 WORLD_TO_KUCOIN = {
     'BSV': 'BCHSV',
     'LUNA-2': 'LUNA',
+    # make sure Veracity maps to latest one in kucoin
+    strethaddress_to_identifier('0xF411903cbC70a74d22900a5DE66A2dda66507255'): 'VRA',
+    # KEY is selfkey in kucoin
+    strethaddress_to_identifier('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7'): 'KEY',
+    # MTC is doc.com in kucoin
+    strethaddress_to_identifier('0x905E337c6c8645263D3521205Aa37bf4d034e745'): 'MTC',
+    # R is revain in kucoin
+    strethaddress_to_identifier('0x2ef52Ed7De8c5ce03a4eF0efbe9B7450F2D7Edc9'): 'R',
 }
 
 WORLD_TO_ICONOMI = {
     # In Rotkehlchen LUNA-2 is Terra Luna but in Iconomi it's LUNA
     'LUNA-2': 'LUNA',
+    # make sure iconomi matches ADX latest contract
+    strethaddress_to_identifier('0xADE00C28244d5CE17D72E40330B1c318cD12B7c3'): 'ADX',
+    # make sure iconomi matces ANT latest contract
+    strethaddress_to_identifier('0xa117000000f279D81A1D3cc75430fAA017FA5A2e'): 'ANT',
+    # make sure iconomi matces REP latest contract
+    strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REP',
+    # FTT is ftx in iconomi
+    strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
+    # HOT is Holo chain token in iconomi
+    strethaddress_to_identifier('0x6c6EE5e31d828De241282B9606C8e98Ea48526E2'): 'HOT',
+    # PNT is pNetwork in iconomi
+    strethaddress_to_identifier('0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD'): 'PNT',
 }
 
 
@@ -193,10 +257,8 @@ class Asset():
     form_with_incomplete_data: InitVar[bool] = field(default=False)
     name: str = field(init=False)
     symbol: str = field(init=False)
-    active: bool = field(init=False)
     asset_type: AssetType = field(init=False)
     started: Timestamp = field(init=False)
-    ended: Optional[Timestamp] = field(init=False)
     forked: Optional[str] = field(init=False)
     swapped_for: Optional[str] = field(init=False)
     # None means no special mapping. '' means not supported
@@ -234,10 +296,8 @@ class Asset():
         # https://docs.python.org/3/library/dataclasses.html#frozen-instances
         object.__setattr__(self, 'name', data.name)
         object.__setattr__(self, 'symbol', data.symbol)
-        object.__setattr__(self, 'active', data.active)
         object.__setattr__(self, 'asset_type', data.asset_type)
         object.__setattr__(self, 'started', data.started)
-        object.__setattr__(self, 'ended', data.ended)
         object.__setattr__(self, 'forked', data.forked)
         object.__setattr__(self, 'swapped_for', data.swapped_for)
         object.__setattr__(self, 'cryptocompare', data.cryptocompare)
@@ -332,8 +392,8 @@ class HasEthereumToken(Asset):
     decimals: int = field(init=False)
 
     def __post_init__(self, form_with_incomplete_data: bool = False) -> None:
-        super().__post_init__()
-
+        object.__setattr__(self, 'identifier', ETHEREUM_DIRECTIVE + self.identifier)
+        super().__post_init__(form_with_incomplete_data)
         # TODO: figure out a way to move this out. Moved in here due to cyclic imports
         from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
 
@@ -358,8 +418,16 @@ class EthereumToken(HasEthereumToken):
     @classmethod
     def from_asset(cls: Type[T], asset: Asset) -> Optional[T]:
         """Attempts to turn an asset into an EthereumToken. If it fails returns None"""
+        return cls.from_identifier(asset.identifier)
+
+    @classmethod
+    def from_identifier(cls: Type[T], identifier: str) -> Optional[T]:
+        """Attempts to turn an asset into an EthereumToken. If it fails returns None"""
+        if not identifier.startswith(ETHEREUM_DIRECTIVE):
+            return None
+
         try:
-            return cls(asset.identifier)
+            return cls(identifier[ETHEREUM_DIRECTIVE_LENGTH:])
         except DeserializationError:
             return None
 

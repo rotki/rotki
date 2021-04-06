@@ -63,7 +63,8 @@ def test_query_trade_history(function_scope_bitcoinde):
     assert len(trades) == 2
     assert trades[0].timestamp == 1512531092
     assert trades[0].location == Location.BITCOINDE
-    assert trades[0].pair == 'BTC_EUR'
+    assert trades[0].base_asset == A_BTC
+    assert trades[0].quote_asset == A_EUR
     assert trades[0].trade_type == TradeType.BUY
     assert trades[0].amount == FVal('10')
     assert trades[0].rate.is_close(FVal('234.121'))
@@ -73,7 +74,8 @@ def test_query_trade_history(function_scope_bitcoinde):
 
     assert trades[1].timestamp == 1502439199
     assert trades[1].location == Location.BITCOINDE
-    assert trades[1].pair == 'BTC_EUR'
+    assert trades[1].base_asset == A_BTC
+    assert trades[1].quote_asset == A_EUR
     assert trades[1].trade_type == TradeType.BUY
     assert trades[1].amount == FVal('241.214')
     assert trades[1].rate.is_close(FVal('17.09736582453754757186564627'))

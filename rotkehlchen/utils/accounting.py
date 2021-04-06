@@ -4,13 +4,7 @@ from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
-    Loan,
-    MarginPosition,
-    Trade,
-    trade_get_assets,
-)
+from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.typing import EthereumTransaction, Timestamp
 
 TaxableAction = Union[  # TODO: At this point we perhaps should create an interface/superclass
@@ -76,7 +70,7 @@ def action_get_assets(action: TaxableAction) -> List[Asset]:
 
     """
     if isinstance(action, (Trade, AMMTrade)):
-        return list(trade_get_assets(action))
+        return [action.base_asset, action.quote_asset]  # type: ignore
     if isinstance(action, (AssetMovement, LedgerAction)):
         return [action.asset]
     if isinstance(action, DefiEvent):

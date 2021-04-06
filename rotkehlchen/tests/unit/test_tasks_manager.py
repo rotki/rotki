@@ -63,11 +63,12 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
     task_manager.potential_tasks = [task_manager._maybe_query_ethereum_transactions]
     now = ts_now()
 
-    def tx_query_mock(address, start_ts, end_ts, with_limit):
+    def tx_query_mock(address, start_ts, end_ts, with_limit, only_cache):
         assert address in ethereum_accounts
         assert start_ts == 0
         assert end_ts >= now
         assert with_limit is False
+        assert only_cache is False
 
     tx_query_patch = patch.object(
         task_manager.chain_manager.ethereum.transactions,
@@ -126,9 +127,10 @@ def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex)
     now = ts_now()
     task_manager.potential_tasks = [task_manager._maybe_schedule_exchange_history_query]
 
-    def mock_query_history(start_ts, end_ts):
+    def mock_query_history(start_ts, end_ts, only_cache):
         assert start_ts == 0
         assert end_ts >= now
+        assert only_cache is False
 
     exchange_manager.connected_exchanges['poloniex'] = poloniex
     poloniex_patch = patch.object(poloniex, 'query_trade_history', wraps=mock_query_history)

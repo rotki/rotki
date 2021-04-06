@@ -8,22 +8,15 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_KUCOIN_ASSETS, asset_from_kucoin
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT, A_LINK
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import (
-    AssetAmount,
-    AssetMovementCategory,
-    Fee,
-    Location,
-    Price,
-    Timestamp,
-    TradePair,
-)
+from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Fee, Location, Price, Timestamp
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 
@@ -209,23 +202,23 @@ def test_deserialize_accounts_balances(mock_kucoin, inquirer):  # pylint: disabl
     ]
     assets_balance = mock_kucoin._deserialize_accounts_balances({'data': accounts_data})
     assert assets_balance == {
-        Asset('BTC'): Balance(
+        A_BTC: Balance(
             amount=FVal('2.61018067'),
             usd_value=FVal('3.915271005'),
         ),
-        Asset('ETH'): Balance(
+        A_ETH: Balance(
             amount=FVal('47.43934995'),
             usd_value=FVal('71.159024925'),
         ),
-        Asset('KCS'): Balance(
+        A_KCS: Balance(
             amount=FVal('0.2'),
             usd_value=FVal('0.30'),
         ),
-        Asset('USDT'): Balance(
+        A_USDT: Balance(
             amount=FVal('45097.26244755'),
             usd_value=FVal('67645.893671325'),
         ),
-        Asset('BSV'): Balance(
+        A_BSV: Balance(
             amount=FVal('1'),
             usd_value=FVal('1.5'),
         ),
@@ -255,12 +248,13 @@ def test_deserialize_v2_trade_buy(mock_kucoin):
     expected_trade = Trade(
         timestamp=Timestamp(1612556794),
         location=Location.KUCOIN,
-        pair=TradePair('KCS_USDT'),
+        base_asset=A_KCS,
+        quote_asset=A_USDT,
         trade_type=TradeType.BUY,
         amount=AssetAmount(FVal('0.2')),
         rate=Price(FVal('1000')),
         fee=Fee(FVal('0.14')),
-        fee_currency=Asset('USDT'),
+        fee_currency=A_USDT,
         link='601da9faf1297d0007efd712',
         notes='',
     )
@@ -294,12 +288,13 @@ def test_deserialize_v2_trade_sell(mock_kucoin):
     expected_trade = Trade(
         timestamp=Timestamp(1612556794),
         location=Location.KUCOIN,
-        pair=TradePair('BSV_USDT'),
+        base_asset=A_BSV,
+        quote_asset=A_USDT,
         trade_type=TradeType.SELL,
         amount=AssetAmount(FVal('0.0013')),
         rate=Price(FVal('37624.4')),
         fee=Fee(FVal('0.034238204')),
-        fee_currency=Asset('USDT'),
+        fee_currency=A_USDT,
         link='601da995e0ee8b00063a075c',
         notes='',
     )
@@ -324,12 +319,13 @@ def test_deserialize_v1_trade(mock_kucoin):
     expected_trade = Trade(
         timestamp=Timestamp(1520471876),
         location=Location.KUCOIN,
-        pair=TradePair('NANO_ETH'),
+        base_asset=A_NANO,
+        quote_asset=A_ETH,
         trade_type=TradeType.SELL,
         amount=AssetAmount(FVal('0.002186')),
         rate=Price(FVal('0.015743')),
         fee=Fee(FVal('0.00000003')),
-        fee_currency=Asset('ETH'),
+        fee_currency=A_ETH,
         link='xxxx',
         notes='',
     )
@@ -360,9 +356,9 @@ def test_deserialize_asset_movement_deposit(mock_kucoin):
         category=AssetMovementCategory.DEPOSIT,
         address='0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
         transaction_id='3e2414d82acce78d38be7fe9',
-        asset=Asset('ETH'),
+        asset=A_ETH,
         amount=AssetAmount(FVal('1')),
-        fee_asset=Asset('ETH'),
+        fee_asset=A_ETH,
         fee=Fee(FVal('0.01')),
         link='',
     )
@@ -394,9 +390,9 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin):
         category=AssetMovementCategory.WITHDRAWAL,
         address='0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
         transaction_id='3e2414d82acce78d38be7fe9',
-        asset=Asset('ETH'),
+        asset=A_ETH,
         amount=AssetAmount(FVal('1')),
-        fee_asset=Asset('ETH'),
+        fee_asset=A_ETH,
         fee=Fee(FVal('0.01')),
         link='5c2dc64e03aa675aa263f1ac',
     )
@@ -412,19 +408,19 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin):
 def test_query_balances_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unused-argument
     assets_balance, msg = sandbox_kuckoin.query_balances()
     assert assets_balance == {
-        Asset('BTC'): Balance(
+        A_BTC: Balance(
             amount=FVal('2.61018067'),
             usd_value=FVal('3.915271005'),
         ),
-        Asset('ETH'): Balance(
+        A_ETH: Balance(
             amount=FVal('47.43934995'),
             usd_value=FVal('71.159024925'),
         ),
-        Asset('KCS'): Balance(
+        A_KCS: Balance(
             amount=FVal('0.2'),
             usd_value=FVal('0.30'),
         ),
-        Asset('USDT'): Balance(
+        A_USDT: Balance(
             amount=FVal('45097.26244755'),
             usd_value=FVal('67645.893671325'),
         ),
@@ -451,48 +447,52 @@ def test_query_trades_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unu
         Trade(
             timestamp=Timestamp(1612556765),
             location=Location.KUCOIN,
-            pair=TradePair('ETH_BTC'),
+            base_asset=A_ETH,
+            quote_asset=A_BTC,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal('0.02934995')),
             rate=Price(FVal('0.046058')),
             fee=Fee(FVal('9.4625999797E-7')),
-            fee_currency=Asset('BTC'),
+            fee_currency=A_BTC,
             link='601da9ddf73c300006194ec6',
             notes='',
         ),
         Trade(
             timestamp=Timestamp(1612556765),
             location=Location.KUCOIN,
-            pair=TradePair('ETH_BTC'),
+            base_asset=A_ETH,
+            quote_asset=A_BTC,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal('0.02')),
             rate=Price(FVal('0.04561')),
             fee=Fee(FVal('6.3854E-7')),
-            fee_currency=Asset('BTC'),
+            fee_currency=A_BTC,
             link='601da9ddf73c300006194ec5',
             notes='',
         ),
         Trade(
             timestamp=Timestamp(1612556765),
             location=Location.KUCOIN,
-            pair=TradePair('ETH_BTC'),
+            base_asset=A_ETH,
+            quote_asset=A_BTC,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal('0.06')),
             rate=Price(FVal('0.0456')),
             fee=Fee(FVal('0.0000019152')),
-            fee_currency=Asset('BTC'),
+            fee_currency=A_BTC,
             link='601da9ddf73c300006194ec4',
             notes='',
         ),
         Trade(
             timestamp=Timestamp(1612556693),
             location=Location.KUCOIN,
-            pair=TradePair('BTC_USDT'),
+            base_asset=A_BTC,
+            quote_asset=A_USDT,
             trade_type=TradeType.SELL,
             amount=AssetAmount(FVal('0.0013')),
             rate=Price(FVal('37624.4')),
             fee=Fee(FVal('0.034238204')),
-            fee_currency=Asset('USDT'),
+            fee_currency=A_USDT,
             link='601da995e0ee8b00063a075c',
             notes='',
         ),
@@ -689,9 +689,9 @@ def test_query_asset_movements_sandbox(
             timestamp=Timestamp(1612556652),
             address='0x5f047b29041bcfdbf0e4478cdfa753a336ba6989',
             transaction_id='5bbb57386d99522d9f954c5a',
-            asset=Asset('KCS'),
+            asset=A_KCS,
             amount=AssetAmount(FVal('1')),
-            fee_asset=Asset('KCS'),
+            fee_asset=A_KCS,
             fee=Fee(FVal('0.0001')),
             link='',
         ),
@@ -701,9 +701,9 @@ def test_query_asset_movements_sandbox(
             timestamp=Timestamp(1612556651),
             address='0x5f047b29041bcfdbf0e4478cdfa753a336ba6989',
             transaction_id='5bbb57386d99522d9f954c5b',
-            asset=Asset('LINK'),
+            asset=A_LINK,
             amount=AssetAmount(FVal('1000')),
-            fee_asset=Asset('LINK'),
+            fee_asset=A_LINK,
             fee=Fee(FVal('0.01')),
             link='',
         ),
@@ -713,9 +713,9 @@ def test_query_asset_movements_sandbox(
             timestamp=Timestamp(1612556652),
             address='1DrT5xUaJ3CBZPDeFR2qdjppM6dzs4rsMt',
             transaction_id='b893c3ece1b8d7cacb49a39ddd759cf407817f6902f566c443ba16614874ada4',
-            asset=Asset('BSV'),
+            asset=A_BSV,
             amount=AssetAmount(FVal('2.5')),
-            fee_asset=Asset('BSV'),
+            fee_asset=A_BSV,
             fee=Fee(FVal('0.25')),
             link='5c2dc64e03aa675aa263f1a4',
         ),

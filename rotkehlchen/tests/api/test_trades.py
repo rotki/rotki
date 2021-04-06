@@ -4,6 +4,8 @@ from typing import Any, Dict
 import pytest
 import requests
 
+from rotkehlchen.api.v1.encoding import TradeSchema
+from rotkehlchen.constants.assets import A_BTC, A_WETH
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import FREE_TRADES_LIMIT
@@ -37,7 +39,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "tradesresource",
+                'tradesresource',
             ),
         )
     result = assert_proper_response_with_result(response)
@@ -57,7 +59,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
         ), json={'action_type': 'trade', 'action_ids': binance_ids},
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'trade': binance_ids}
+    assert set(result['trade']) == set(binance_ids)
 
     def assert_okay(response):
         """Helper function to run next query and its assertion twice"""
@@ -186,7 +188,8 @@ def test_query_trades_over_limit(rotkehlchen_api_server_with_exchanges, start_wi
     spam_trades = [Trade(
         timestamp=x,
         location=Location.EXTERNAL,
-        pair='BTC_EUR',
+        base_asset=A_BTC,
+        quote_asset=A_EUR,
         trade_type=TradeType.BUY,
         amount=FVal(x + 1),
         rate=FVal(1),
@@ -225,7 +228,8 @@ def test_add_trades(rotkehlchen_api_server):
     new_trade = {
         'timestamp': 1575640208,
         'location': 'external',
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'amount': '0.5541',
         'rate': '8422.1',
@@ -237,14 +241,14 @@ def test_add_trades(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=new_trade,
     )
     assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
     # And check that the identifier is correctly generated when returning the trade
-    new_trade['trade_id'] = Trade(**new_trade).identifier
+    new_trade['trade_id'] = Trade(**TradeSchema().load(new_trade)).identifier
     assert data['result'] == new_trade
 
     # and now make sure the trade is saved by querying for it
@@ -264,7 +268,8 @@ def test_add_trades(rotkehlchen_api_server):
     zero_rate_trade = {
         'timestamp': 1575640208,
         'location': 'external',
-        'pair': 'ETH_WETH',
+        'base_asset': 'ETH',
+        'quote_asset': A_WETH.identifier,
         'trade_type': 'buy',
         'amount': '0.5541',
         'rate': '0',
@@ -321,7 +326,8 @@ def test_add_trades_errors(rotkehlchen_api_server):
     correct_trade = {
         'timestamp': 1575640208,
         'location': 'external',
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'amount': '0.5541',
         'rate': '8422.1',
@@ -374,46 +380,32 @@ def test_add_trades_errors(rotkehlchen_api_server):
         contained_in_msg="Failed to deserialize location symbol. Unknown symbol foo for location",
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    # Test that invalid pair type is handled
+    # Test that invalid base_asset type is handled
     broken_trade = correct_trade.copy()
-    broken_trade['pair'] = 55
+    broken_trade['base_asset'] = 55
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Provided non-string trade pair value 55",
+        contained_in_msg='Tried to initialize an asset out of a non-string identifier',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    # Test that unparsable pair is handled
+    # Test that unknown base_asset type is handled
     broken_trade = correct_trade.copy()
-    broken_trade['pair'] = 'notapair'
+    broken_trade['base_asset'] = 'definitelyunknownassetid'
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Unprocessable pair notapair encountered",
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-    # Test that unknown assets in a pair are handled
-    broken_trade = correct_trade.copy()
-    broken_trade['pair'] = 'ETH_INVALIDASSET'
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            "tradesresource",
-        ), json=broken_trade,
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg="Unknown asset INVALIDASSET found while processing trade pair",
+        contained_in_msg='Unknown asset definitelyunknownassetid provided',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Test that invalid value type for trade_type is handled
@@ -641,7 +633,8 @@ def test_edit_trades_errors(rotkehlchen_api_server):
     trade = {
         'timestamp': 1575640208,
         'location': 'external',
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'amount': '0.5541',
         'rate': '8422.1',

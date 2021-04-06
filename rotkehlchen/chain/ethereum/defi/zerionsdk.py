@@ -2,7 +2,8 @@ import logging
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.defi.structures import (
@@ -15,12 +16,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import (
-    RemoteError,
-    UnknownAsset,
-    UnsupportedAsset,
-    DeserializationError,
-)
+from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
@@ -324,8 +320,8 @@ class ZerionSDK():
             return special_handling
 
         try:
-            asset = Asset(token_symbol)
-            usd_price = Inquirer().find_usd_price(asset)
+            token = EthereumToken(token_address)
+            usd_price = Inquirer().find_usd_price(token)
         except (UnknownAsset, UnsupportedAsset):
             if not _is_token_non_standard(token_symbol, token_address):
                 self.msg_aggregator.add_warning(
@@ -360,8 +356,15 @@ class ZerionSDK():
             if result is not None:
                 return result
 
-        underlying_asset_price = get_underlying_asset_price(token_symbol)
-        usd_price = handle_defi_price_query(self.ethereum, token_symbol, underlying_asset_price)
+        asset = get_asset_by_symbol(token_symbol)
+        if asset is None:
+            return None
+
+        token = EthereumToken.from_asset(asset)
+        if token is None:
+            return None
+        underlying_asset_price = get_underlying_asset_price(token)
+        usd_price = handle_defi_price_query(self.ethereum, token, underlying_asset_price)
         if usd_price is None:
             return None
 

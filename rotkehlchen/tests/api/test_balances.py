@@ -45,10 +45,10 @@ def assert_all_balances(
         expected_data_in_db,
         setup: BalancesTestSetup,
 ) -> None:
-    total_eth = get_asset_balance_total('ETH', setup)
-    total_rdn = get_asset_balance_total('RDN', setup)
-    total_btc = get_asset_balance_total('BTC', setup)
-    total_eur = get_asset_balance_total('EUR', setup)
+    total_eth = get_asset_balance_total(A_ETH, setup)
+    total_rdn = get_asset_balance_total(A_RDN, setup)
+    total_btc = get_asset_balance_total(A_BTC, setup)
+    total_eur = get_asset_balance_total(A_EUR, setup)
 
     got_external = any(x.location == Location.EXTERNAL for x in setup.manually_tracked_balances)
 
@@ -58,9 +58,9 @@ def assert_all_balances(
     assert FVal(assets['ETH']['amount']) == total_eth
     assert assets['ETH']['usd_value'] is not None
     assert assets['ETH']['percentage_of_net_value'] is not None
-    assert FVal(assets['RDN']['amount']) == total_rdn
-    assert assets['RDN']['usd_value'] is not None
-    assert assets['RDN']['percentage_of_net_value'] is not None
+    assert FVal(assets[A_RDN.identifier]['amount']) == total_rdn
+    assert assets[A_RDN.identifier]['usd_value'] is not None
+    assert assets[A_RDN.identifier]['percentage_of_net_value'] is not None
     assert FVal(assets['BTC']['amount']) == total_btc
     assert assets['BTC']['usd_value'] is not None
     assert assets['BTC']['percentage_of_net_value'] is not None
@@ -614,10 +614,10 @@ def test_balances_caching_mixup(
             timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
         )
         assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets']['ETH']['amount'] == '1'  # noqa: E501
-        assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets']['RDN']['amount'] == '2'  # noqa: E501
+        assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets'][A_RDN.identifier]['amount'] == '2'  # noqa: E501
         assert result_eth['totals']['assets']['ETH']['amount'] == '1'
-        assert result_eth['totals']['assets']['RDN']['amount'] == '2'
-        assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets']['RDN']['amount'] == '2'  # noqa: E501
+        assert result_eth['totals']['assets'][A_RDN.identifier]['amount'] == '2'
+        assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets'][A_RDN.identifier]['amount'] == '2'  # noqa: E501
         assert result_btc['per_account'] == {}
         assert result_btc['totals']['assets'] == {}
         assert result_btc['totals']['liabilities'] == {}

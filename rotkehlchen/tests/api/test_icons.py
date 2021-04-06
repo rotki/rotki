@@ -14,6 +14,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response_with_result,
 )
+from rotkehlchen.tests.utils.constants import A_GNO
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
@@ -31,7 +32,7 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
             api_url_for(
                 rotkehlchen_api_server,
                 'asseticonsresource',
-                asset='GNO',
+                asset=A_GNO.identifier,
             ),
             files=files,
         )
@@ -41,13 +42,13 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
             api_url_for(
                 rotkehlchen_api_server,
                 'asseticonsresource',
-                asset='GNO',
+                asset=A_GNO.identifier,
             ), json=json_data,
         )
 
     result = assert_proper_response_with_result(response)
-    assert result == {'identifier': 'GNO'}
-    uploaded_icon = data_dir / 'icons' / 'custom' / 'GNO.png'
+    assert result == {'identifier': A_GNO.identifier}
+    uploaded_icon = data_dir / 'icons' / 'custom' / f'{A_GNO.identifier}.png'
     assert uploaded_icon.is_file()
     assert filecmp.cmp(uploaded_icon, filepath)
 
@@ -71,7 +72,7 @@ def test_upload_custom_icon_errors(rotkehlchen_api_server, file_upload):
                 api_url_for(
                     rotkehlchen_api_server,
                     'asseticonsresource',
-                    asset='GNO',
+                    asset=A_GNO.identifier,
                 ),
                 files=files,
             )
@@ -81,7 +82,7 @@ def test_upload_custom_icon_errors(rotkehlchen_api_server, file_upload):
                 api_url_for(
                     rotkehlchen_api_server,
                     'asseticonsresource',
-                    asset='GNO',
+                    asset=A_GNO.identifier,
                 ), json=json_data,
             )
 

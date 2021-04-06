@@ -6,11 +6,12 @@ import pytest
 from eth_utils import is_checksum_address
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.assets.resolver import AssetResolver, asset_type_mapping
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
-from rotkehlchen.assets.utils import get_ethereum_token
+from rotkehlchen.assets.utils import get_ethereum_token, symbol_to_ethereum_token
 from rotkehlchen.constants.assets import A_DAI
-from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.errors import InputError, UnknownAsset
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.typing import AssetType
@@ -58,12 +59,12 @@ def test_asset_equals():
 
 
 def test_ethereum_tokens():
-    rdn_asset = EthereumToken('RDN')
+    rdn_asset = EthereumToken('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6')
     assert rdn_asset.ethereum_address == '0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'
     assert rdn_asset.decimals == 18
     assert rdn_asset.is_eth_token()
 
-    with pytest.raises(DeserializationError):
+    with pytest.raises(UnknownAsset):
         EthereumToken('BTC')
 
 
@@ -71,47 +72,48 @@ def test_cryptocompare_asset_support(cryptocompare):
     """Try to detect if a token that we have as not supported by cryptocompare got added"""
     cc_assets = cryptocompare.all_coins()
     exceptions = (
-        'BKC',     # Bankcoin Cash but Balkan Coin in CC
-        'BNC',     # Bionic but Benja Coin in CC
+        ethaddress_to_identifier('0xc88Be04c809856B75E3DfE19eB4dCf0a3B15317a'),  # noqa: E501 # Bankcoin Cash but Balkan Coin in CC
+        ethaddress_to_identifier('0xEf51c9377FeB29856E61625cAf9390bD0B67eA18'),     # noqa: E501 # Bionic but Benja Coin in CC
         'BTG-2',   # Bitgem but Bitcoin Gold in CC
-        'BTR',     # Bitether but Bither in CC
+        ethaddress_to_identifier('0x499A6B77bc25C26bCf8265E2102B1B3dd1617024'),  # noqa: E501 # Bitether but Bither in CC
         'CBC-2',   # Cashbery coin but Casino Betting Coin in CC
-        'CCN',     # CustomContractnetwork but CannaCoin in CC
+        ethaddress_to_identifier('0x17B26400621695c2D8C2D8869f6259E82D7544c4'),  # noqa: E501 #  CustomContractnetwork but CannaCoin in CC
         'CMCT-2',  # Cyber Movie Chain but Crowd Machine in CC
-        'CORN-2',  # Cornichon but Corn in CC
+        ethaddress_to_identifier('0xa456b515303B2Ce344E9d2601f91270f8c2Fea5E'),  # noqa: E501 # Cornichon but Corn in CC
         'CTX',     # Centauri coin but CarTaxi in CC
-        'DIT',     # Direct insurance token but DitCoin in CC
+        ethaddress_to_identifier('0xf14922001A2FB8541a433905437ae954419C2439'),  # noqa: E501 # Direct insurance token but DitCoin in CC
         'DRM',     # Dreamcoin but Dreamchain in CC
-        'DTX-2',   # Digital Ticks but Data Exchange in CC
+        ethaddress_to_identifier('0x82fdedfB7635441aA5A92791D001fA7388da8025'),  # noqa: E501 # Digital Ticks but Data Exchange in CC
         'GNC',     # Galaxy network but Greencoin in CC
-        'KNT',     # Kora network but Knekted in CC
-        'LKY',     # Linkey but LuckyCoin in CC
-        'NTK-2',   # Netkoin but Neurotoken in CC
-        'PAN',     # Panvala but Pantos in CC
-        'PTT',     # Proton token but Pink Taxi Token in CC
-        'RMC',     # Remicoin but Russian Miner Coin in CC
-        'SOUL-2',  # Cryptosoul but Phantasma in CC
-        'TIC',     # Thingschain but True Investment Coin in CC
-        'TOK',     # TOKOK but Tokugawa Coin in CC
-        'VD',      # Bitcoin card but Vindax Coin in CC
-        'DT',      # Dragon Token but Dark Token in CC
-        'MUST',    # Must (Cometh) but Must protocol in CC
-        'SDT-2',   # Stake DAO token but TerraSDT in CC
-        'BAC',     # Basis Cash but BACoin in CC
-        'IHF',     # waiting until cryptocompare fixes historical price for this. https://github.com/rotki/rotki/pull/2176  # noqa: E501
+        ethaddress_to_identifier('0xfF5c25D2F40B47C4a37f989DE933E26562Ef0Ac0'),  # noqa: E501 # Kora network but Knekted in CC
+        ethaddress_to_identifier('0x49bD2DA75b1F7AF1E4dFd6b1125FEcDe59dBec58'),  # noqa: E501 # Linkey but LuckyCoin in CC
+        ethaddress_to_identifier('0x5D4d57cd06Fa7fe99e26fdc481b468f77f05073C'),  # noqa: E501 # Netkoin but Neurotoken in CC
+        ethaddress_to_identifier('0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44'),  # noqa: E501 # Panvala but Pantos in CC
+        ethaddress_to_identifier('0x4689a4e169eB39cC9078C0940e21ff1Aa8A39B9C'),  # noqa: E501 # Proton token but Pink Taxi Token in CC
+        ethaddress_to_identifier('0x7Dc4f41294697a7903C4027f6Ac528C5d14cd7eB'),  # noqa: E501 # Remicoin but Russian Miner Coin in CC
+        ethaddress_to_identifier('0xBb1f24C0c1554b9990222f036b0AaD6Ee4CAec29'),  # noqa: E501 # Cryptosoul but Phantasma in CC
+        ethaddress_to_identifier('0x72430A612Adc007c50e3b6946dBb1Bb0fd3101D1'),  # noqa: E501 # Thingschain but True Investment Coin in CC
+        ethaddress_to_identifier('0x9a49f02e128a8E989b443a8f94843C0918BF45E7'),  # noqa: E501 # TOKOK but Tokugawa Coin in CC
+        ethaddress_to_identifier('0x9a9bB9b4b11BF8eccff84B58a6CCCCD4058A7f0D'),  # noqa: E501 # Bitcoin card but Vindax Coin in CC
+        ethaddress_to_identifier('0x1da015eA4AD2d3e5586E54b9fB0682Ca3CA8A17a'),  # noqa: E501 # Dragon Token but Dark Token in CC
+        ethaddress_to_identifier('0x9C78EE466D6Cb57A4d01Fd887D2b5dFb2D46288f'),  # noqa: E501 # Must (Cometh) but Must protocol in CC
+        ethaddress_to_identifier('0x73968b9a57c6E53d41345FD57a6E6ae27d6CDB2F'),  # noqa: E501 # Stake DAO token but TerraSDT in CC
+        ethaddress_to_identifier('0x3449FC1Cd036255BA1EB19d65fF4BA2b8903A69a'),  # noqa: E501 # Basis Cash but BACoin in CC
+        ethaddress_to_identifier('0xaF1250fa68D7DECD34fD75dE8742Bc03B29BD58e'),  # noqa: E501 # waiting until cryptocompare fixes historical price for this. https://github.com/rotki/rotki/pull/2176
         'FLOW',    # FLOW from dapper labs but "Flow Protocol" in CC
-        'NCT-2',   # Name change token but Polyswarm in CC
-        'NDX',     # newdex token but Index token in CC
-        'ARCH-2',  # Archer DAO Governance token but Archcoin in CC
-        'AC-2',    # Acoconut token but Asiacoin in CC
-        'TON',     # Tontoken but Tokamak network in CC
-        'FNK',     # Finiko token but FunKeyPai network in CC
-        'LOTTO',   # Lotto token but LottoCoin in CC
-        'XFI',     # Dfinance token but XFinance in CC
-        'GOLD',    # Gold token but Golden Goose in CC
+        ethaddress_to_identifier('0x8A9c4dfe8b9D8962B31e4e16F8321C44d48e246E'),  # noqa: E501 # Name change token but Polyswarm in CC
+        ethaddress_to_identifier('0x1966d718A565566e8E202792658D7b5Ff4ECe469'),  # noqa: E501 # newdex token but Index token in CC
+        ethaddress_to_identifier('0x1F3f9D3068568F8040775be2e8C03C103C61f3aF'),  # noqa: E501 # Archer DAO Governance token but Archcoin in CC
+        ethaddress_to_identifier('0x9A0aBA393aac4dFbFf4333B06c407458002C6183'),  # noqa: E501 # Acoconut token but Asiacoin in CC
+        ethaddress_to_identifier('0x6a6c2adA3Ce053561C2FbC3eE211F23d9b8C520a'),  # noqa: E501 # Tontoken but Tokamak network in CC
+        ethaddress_to_identifier('0xB5FE099475d3030DDe498c3BB6F3854F762A48Ad'),  # noqa: E501 # Finiko token but FunKeyPai network in CC
+        ethaddress_to_identifier('0xb0dFd28d3CF7A5897C694904Ace292539242f858'),  # noqa: E501 # Lotto token but LottoCoin in CC
+        ethaddress_to_identifier('0xE4E822C0d5b329E8BB637972467d2E313824eFA0'),  # noqa: E501 # Dfinance token but XFinance in CC
+        ethaddress_to_identifier('0xE081b71Ed098FBe1108EA48e235b74F122272E68'),  # noqa: E501 # Gold token but Golden Goose in CC
         'ACM',     # AC Milan Fan Token but Actinium in CC
         'TFC',     # TheFutbolCoin but The Freedom Coin in CC
-        'MASK',    # Mask Network but NFTX Hashmask Index in CC
+        ethaddress_to_identifier('0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074'),  # noqa: E501 # Mask Network but NFTX Hashmask Index in CC
+        ethaddress_to_identifier('0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14'),  # noqa: E501 # balanced crypto pie but 0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14 in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -121,8 +123,8 @@ def test_cryptocompare_asset_support(cryptocompare):
         )
         if potential_support:
             msg = (
-                f'We have {asset_data.identifier} as not supported by cryptocompare but '
-                f'the symbol appears in its supported assets'
+                f'We have {asset_data.identifier} with symbol {asset_data.symbol} as not supported'
+                f' by cryptocompare but the symbol appears in its supported assets'
             )
             test_warnings.warn(UserWarning(msg))
 
@@ -152,47 +154,15 @@ def test_asset_identifiers_are_unique_all_lowercased():
 
 def test_case_does_not_matter_for_asset_constructor():
     """Test that whatever case we give to asset constructor result is the same"""
-    a1 = Asset('USDt')
-    a2 = Asset('USDT')
+    a1 = Asset('bTc')
+    a2 = Asset('BTC')
     assert a1 == a2
-    assert a1.identifier == 'USDT'
-    assert a2.identifier == 'USDT'
+    assert a1.identifier == 'BTC'
+    assert a2.identifier == 'BTC'
 
-
-def test_all_assets_json_assets_have_common_keys():
-    """Test that checks that the keys and types of tokens in all_assets.json are correct"""
-    root_dir = Path(__file__).resolve().parent.parent.parent
-    with open(root_dir / 'data' / 'all_assets.json', 'r') as f:
-        assets = json.loads(f.read())
-    # Create a list of pairs with fields with their types. We'll add more fields to check
-    # if we are dealing with a token
-    verify = (("symbol", str), ("name", str), ("type", str), ("started", int))
-    verify_fiat = (("symbol", str), ("name", str), ("type", str))
-    verify_token = (("symbol", str), ("name", str), ("type", str), ("started", int),
-                    ("ethereum_address", str), ("ethereum_token_decimals", int))
-    optional = (("active", bool), ("ended", int), ("forked", str), ("swapped_for", str),
-                ("cryptocompare", str), ("coingecko", str))
-
-    for asset_id, asset_data in assets.items():
-        verify_against = verify
-
-        # Check if the asset is a token and update the keys to verify
-        asset_type = asset_type_mapping[asset_data['type']]
-        if asset_type == AssetType.ETHEREUM_TOKEN:
-            verify_against = verify_token
-        elif asset_type == AssetType.FIAT:
-            verify_against = verify_fiat
-
-        # make the basic checks
-        msg = f'Key verification in asset {asset_id} failed'
-        assert all((key in asset_data.keys() and isinstance(asset_data[key], key_type)
-                    for (key, key_type) in verify_against
-                    )), msg
-
-        # check the optional fields
-        for key, key_type in optional:
-            if asset_data.get(key) is not None:
-                assert isinstance(asset_data.get(key), key_type), msg
+    a3 = symbol_to_ethereum_token('UsDt')
+    a4 = symbol_to_ethereum_token('usdt')
+    assert a3.identifier == a4.identifier == ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7')  # noqa: E501
 
 
 def test_coingecko_identifiers_are_reachable(data_dir):
@@ -233,7 +203,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
                     suggestions.append((entry['id'], entry['name'], entry['symbol']))
                     continue
 
-        msg = f'Asset {identifier} coingecko mapping does not exist.'
+        msg = f'Asset {identifier} with symbol {asset_data.symbol} coingecko mapping does not exist.'  # noqa: E501
         if len(suggestions) != 0:
             for s in suggestions:
                 msg += f'\nSuggestion: id:{s[0]} name:{s[1]} symbol:{s[2]}'
@@ -257,27 +227,6 @@ def test_assets_json_meta():
     assert saved_meta['md5'] == last_meta['md5'], msg
     msg = 'The last meta version of the test does not match the one in all_assets.meta'
     assert saved_meta['version'] == last_meta['version'], msg
-
-
-@pytest.mark.parametrize('mock_asset_meta_github_response', ['{"md5": "", "version": 99999999}'])
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('mock_asset_github_response', ["""{
-"COMPRLASSET": {
-    "coingecko": "",
-    "name": "Completely real asset, totally not for testing only",
-    "symbol": "COMPRLASSET",
-    "type": "own chain"
-}
-}"""])
-@pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
-def test_assets_pulling_from_github_works(asset_resolver):  # pylint: disable=unused-argument
-    """Test that pulling assets from mock github (due to super high version) makes the
-    pulled assets available to the local Rotki instance"""
-    new_asset = Asset("COMPRLASSET")
-    assert new_asset.name == 'Completely real asset, totally not for testing only'
-    # After the test runs we must reset the asset resolver so that it goes back to
-    # the normal list of assets
-    AssetResolver._AssetResolver__instance = None
 
 
 @pytest.mark.parametrize('mock_asset_meta_github_response', ['{"md5": "", "version": 99999999}'])

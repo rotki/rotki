@@ -7,9 +7,10 @@ import pytest
 import requests
 
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
-from rotkehlchen.tests.utils.constants import A_EUR
+from rotkehlchen.tests.utils.constants import A_EUR, A_GNO, A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import Location
@@ -63,7 +64,7 @@ def test_query_owned_assets(
     assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
-    assert set(data['result']) == {'ETH', 'BTC', 'EUR', 'RDN'}
+    assert set(data['result']) == {'ETH', 'BTC', 'EUR', A_RDN.identifier}
 
 
 def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
@@ -71,7 +72,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
 
     # add three assets to ignored assets
-    ignored_assets = ['GNO', 'RDN', 'XMR']
+    ignored_assets = [A_GNO.identifier, A_RDN.identifier, 'XMR']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
@@ -81,10 +82,10 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
     assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
-    assert data['result'] == ignored_assets
+    assert set(data['result']) == set(ignored_assets)
 
     # check they are there
-    assert rotki.data.db.get_ignored_assets() == ignored_assets
+    assert set(rotki.data.db.get_ignored_assets()) == set(ignored_assets)
     # Query for ignored assets and check that the response returns them
     response = requests.get(
         api_url_for(
@@ -95,16 +96,16 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
     assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
-    assert data['result'] == ignored_assets
+    assert set(data['result']) == set(ignored_assets)
 
     # remove two assets from ignored assets
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
             "ignoredassetsresource",
-        ), json={'assets': ['GNO', 'XMR']},
+        ), json={'assets': [A_GNO.identifier, 'XMR']},
     )
-    assets_after_deletion = ['RDN']
+    assets_after_deletion = [A_RDN.identifier]
     assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
@@ -131,7 +132,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
 
     # add three assets to ignored assets
-    ignored_assets = ['GNO', 'RDN', 'XMR']
+    ignored_assets = [A_GNO.identifier, A_RDN.identifier, 'XMR']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
@@ -197,12 +198,12 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Check that assets did not get modified
-    assert rotki.data.db.get_ignored_assets() == ignored_assets
+    assert set(rotki.data.db.get_ignored_assets()) == set(ignored_assets)
 
     # Test the adding an already existing asset or removing a non-existing asset is an error
     if method == 'put':
-        asset = 'RDN'
-        expected_msg = 'RDN is already in ignored assets'
+        asset = A_RDN.identifier
+        expected_msg = f'{A_RDN.identifier} is already in ignored assets'
     else:
         asset = 'ETH'
         expected_msg = 'ETH is not in ignored assets'
@@ -218,7 +219,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         status_code=HTTPStatus.CONFLICT,
     )
     # Check that assets did not get modified
-    assert rotki.data.db.get_ignored_assets() == ignored_assets
+    assert set(rotki.data.db.get_ignored_assets()) == set(ignored_assets)
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
@@ -226,15 +227,13 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
 def test_query_all_assets(rotkehlchen_api_server):
     """Test that using the query all owned assets endpoint works
 
-    Compare with the contents of all_assets.json. Essentially tests that priming the DB works.
-
-    That's why there is quite a few extra checks for things that changed
-    when moving to global DB
+    Compare with the contents of all_assets.json. Essentially tests that moving
+    assets from all_assets.json to the DB was fine.
     """
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "allassetsresource",
+            'allassetsresource',
         ),
     )
     assert_proper_response(response)
@@ -246,35 +245,13 @@ def test_query_all_assets(rotkehlchen_api_server):
         expected_assets = json.loads(f.read())
 
     returned_ids = set(data['result'].keys())
-    expected_ids = set(expected_assets.keys())
-    expected_missing_ids = {'XD'}
-    assert expected_ids - returned_ids == expected_missing_ids, f'Missing ids: {expected_ids - returned_ids - expected_missing_ids}'  # noqa: E501
+    expected_ids = set()
+    for key, entry in expected_assets.items():
+        if entry['type'] == 'ethereum token':
+            expected_ids.add(strethaddress_to_identifier(entry['ethereum_address']))
+        else:
+            expected_ids.add(key)
 
-    for asset_id, entry_data in data['result'].items():
-        for key, val in entry_data.items():
-            if key in ('active', 'ended'):
-                continue  # we ignore these keys after DB insertion
-
-            other_key = key
-            if key == 'asset_type':
-                other_key = 'type'
-            elif key == 'decimals':
-                other_key = 'ethereum_token_decimals'
-
-            if val is not None:
-                is_ethereum_token_and_more = (
-                    key == 'asset_type' and
-                    val == 'ethereum token' and
-                    expected_assets[asset_id][other_key] == 'ethereum token and more'
-                )
-                if is_ethereum_token_and_more:
-                    continue  # we ignore this distinction in the DB
-
-                expected_val = expected_assets[asset_id][other_key]
-                if key == 'asset_type':
-                    expected_val = expected_val.lower()
-                    if expected_val == 'ethereum token and own chain':
-                        expected_val = 'own chain'
-                assert val == expected_val, f'mismatch of {other_key} for {asset_id}'  # noqa: E501
-            else:
-                assert other_key not in expected_assets[asset_id]
+    assert expected_ids == returned_ids
+    # not going into more details in this test as all_assets.json is deprecated and
+    # will be removed

@@ -13,6 +13,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import asset_from_gemini
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT, QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
@@ -36,7 +37,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
@@ -54,33 +55,33 @@ class GeminiPermissionError(Exception):
     pass
 
 
-def gemini_symbol_to_pair(symbol: str) -> TradePair:
-    """Turns a gemini symbol product into our trade pair format
+def gemini_symbol_to_base_quote(symbol: str) -> Tuple[Asset, Asset]:
+    """Turns a gemini symbol product into a base/quote asset tuple
 
     - Can raise UnprocessableTradePair if symbol is in unexpected format
     - Case raise UnknownAsset if any of the pair assets are not known to Rotki
     """
     if len(symbol) == 6:
-        base_asset = Asset(symbol[:3].upper())
-        quote_asset = Asset(symbol[3:].upper())
+        base_asset = asset_from_gemini(symbol[:3].upper())
+        quote_asset = asset_from_gemini(symbol[3:].upper())
     elif len(symbol) == 7:
         try:
-            base_asset = Asset(symbol[:4].upper())
-            quote_asset = Asset(symbol[4:].upper())
+            base_asset = asset_from_gemini(symbol[:4].upper())
+            quote_asset = asset_from_gemini(symbol[4:].upper())
         except UnknownAsset:
-            base_asset = Asset(symbol[:3].upper())
-            quote_asset = Asset(symbol[3:].upper())
+            base_asset = asset_from_gemini(symbol[:3].upper())
+            quote_asset = asset_from_gemini(symbol[3:].upper())
     elif len(symbol) == 8:
-        if 'storj' in symbol:
-            base_asset = Asset(symbol[:5].upper())
-            quote_asset = Asset(symbol[5:].upper())
+        if 'storj' in symbol or '1inch' in symbol:
+            base_asset = asset_from_gemini(symbol[:5].upper())
+            quote_asset = asset_from_gemini(symbol[5:].upper())
         else:
-            base_asset = Asset(symbol[:4].upper())
-            quote_asset = Asset(symbol[4:].upper())
+            base_asset = asset_from_gemini(symbol[:4].upper())
+            quote_asset = asset_from_gemini(symbol[4:].upper())
     else:
         raise UnprocessableTradePair(symbol)
 
-    return TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
+    return base_asset, quote_asset
 
 
 class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
@@ -296,7 +297,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 if amount == ZERO:
                     continue
 
-                asset = Asset(entry['currency'])
+                asset = asset_from_gemini(entry['currency'])
                 try:
                     usd_price = Inquirer().find_usd_price(asset=asset)
                 except RemoteError as e:
@@ -434,15 +435,17 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     if timestamp > end_ts:
                         break
 
+                    base, quote = gemini_symbol_to_base_quote(symbol)
                     trades.append(Trade(
                         timestamp=timestamp,
                         location=Location.GEMINI,
-                        pair=gemini_symbol_to_pair(symbol),
+                        base_asset=base,
+                        quote_asset=quote,
                         trade_type=deserialize_trade_type(entry['type']),
                         amount=deserialize_asset_amount(entry['amount']),
                         rate=deserialize_price(entry['price']),
                         fee=deserialize_fee(entry['fee_amount']),
-                        fee_currency=Asset(entry['fee_currency']),
+                        fee_currency=asset_from_gemini(entry['fee_currency']),
                         link=str(entry['tid']),
                         notes='',
                     ))
@@ -489,7 +492,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             try:
                 timestamp = deserialize_timestamp(entry['timestampms'])
                 timestamp = Timestamp(int(timestamp / 1000))
-                asset = Asset(entry['currency'])
+                asset = asset_from_gemini(entry['currency'])
 
                 movement = AssetMovement(
                     location=Location.GEMINI,

@@ -10,7 +10,7 @@ __all__ = [
     'YearnVaults',
 ]
 
-from .aave import Aave
+from .aave.aave import Aave
 from .adex.adex import Adex
 from .balancer.balancer import Balancer
 from .compound import Compound

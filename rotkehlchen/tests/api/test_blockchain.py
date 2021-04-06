@@ -600,16 +600,16 @@ def test_add_blockchain_accounts_concurrent(
 
                 rdn = from_wei(FVal(token_balances[A_RDN][idx]))
                 if rdn != ZERO:
-                    assert FVal(per_acc['assets']['RDN']['amount']) == rdn
-                    assert FVal(totals['RDN']['amount']) == rdn
+                    assert FVal(per_acc['assets'][A_RDN.identifier]['amount']) == rdn
+                    assert FVal(totals[A_RDN.identifier]['amount']) == rdn
                 gno = from_wei(FVal(token_balances[A_GNO][idx]))
                 if gno != ZERO:
-                    assert FVal(per_acc['assets']['GNO']['amount']) == gno
-                    assert FVal(totals['GNO']['amount']) == gno
+                    assert FVal(per_acc['assets'][A_GNO.identifier]['amount']) == gno
+                    assert FVal(totals[A_GNO.identifier]['amount']) == gno
                 dai = from_wei(FVal(token_balances[A_DAI][idx]))
                 if dai != ZERO:
-                    assert FVal(per_acc['assets']['DAI']['amount']) == dai
-                    assert FVal(totals['DAI']['amount']) == dai
+                    assert FVal(per_acc['assets'][A_DAI.identifier]['amount']) == dai
+                    assert FVal(totals[A_DAI.identifier]['amount']) == dai
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])

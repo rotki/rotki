@@ -12,7 +12,6 @@ from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.exchanges.binance import create_binance_symbols_to_pair
 from rotkehlchen.exchanges.data_structures import Trade, TradeType, trade_pair_from_assets
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import pair_get_assets
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import Timestamp, TradePair
 
@@ -123,9 +122,8 @@ class FakeBinance():
 
     def trade_to_binance(self, trade: Trade) -> Dict[str, Any]:
         """Turns our trade into a binance trade"""
-        base, quote = pair_get_assets(trade.pair)
-        bbase = base.to_binance()
-        bquote = quote.to_binance()
+        bbase = trade.base_asset.to_binance()
+        bquote = trade.quote_asset.to_binance()
         binance_symbol = bbase + bquote
         # Binance trades have timestamps with 3 extra zeros at the end
         timestamp = trade.timestamp * 1000

@@ -2,9 +2,10 @@ import warnings as test_warnings
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.assets.converters import asset_from_iconomi
+from rotkehlchen.constants.assets import A_ETH, A_REP
 from rotkehlchen.errors import UnknownAsset
-from rotkehlchen.exchanges.iconomi import Iconomi, iconomi_asset
+from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
@@ -42,8 +43,8 @@ def test_iconomi_query_balances_unknown_asset(function_scope_iconomi):
     assert len(balances) == 3
     assert balances[A_ETH].amount == FVal('32.0')
     assert balances[A_ETH].usd_value == FVal('48.0')
-    assert balances[Asset('REP')].amount == FVal('0.5314532451')
-    assert balances[Asset('REP')].usd_value == FVal('0.79717986765')
+    assert balances[A_REP].amount == FVal('0.5314532451')
+    assert balances[A_REP].usd_value == FVal('0.79717986765')
 
     warnings = iconomi.msg_aggregator.consume_warnings()
     assert len(warnings) == 2
@@ -70,7 +71,8 @@ def test_query_trade_history(function_scope_iconomi):
     assert len(trades) == 2
     assert trades[0].timestamp == 1539713117
     assert trades[0].location == Location.ICONOMI
-    assert trades[0].pair == 'REP_EUR'
+    assert trades[0].base_asset == A_REP
+    assert trades[0].quote_asset == A_EUR
     assert trades[0].trade_type == TradeType.SELL
     assert trades[0].amount == FVal('1000.23')
     assert trades[0].rate.is_close(FVal('1.50528378472'))
@@ -80,7 +82,8 @@ def test_query_trade_history(function_scope_iconomi):
 
     assert trades[1].timestamp == 1539713118
     assert trades[1].location == Location.ICONOMI
-    assert trades[1].pair == 'REP_EUR'
+    assert trades[1].base_asset == A_REP
+    assert trades[1].quote_asset == A_EUR
     assert trades[1].trade_type == TradeType.BUY
     assert trades[1].amount == FVal('1234')
     assert trades[1].rate.is_close(FVal('0.8102917341977309562398703404'))
@@ -104,7 +107,7 @@ def test_iconomi_assets_are_known(
     supported_tickers = iconomi.query_supported_tickers()
     for ticker in supported_tickers:
         try:
-            _ = iconomi_asset(ticker)
+            _ = asset_from_iconomi(ticker)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.asset_name} in ICONOMI. '

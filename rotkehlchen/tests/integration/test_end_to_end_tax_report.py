@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
@@ -28,7 +29,8 @@ DUMMY_HASH = b''
 trades_history = [
     {
         'timestamp': 1446979735,  # 08/11/2015
-        'pair': 'BTC_EUR',
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 268.678317859,
         'fee': 0,
@@ -37,7 +39,8 @@ trades_history = [
         'location': 'external',
     }, {
         'timestamp': 1446979735,  # 08/11/2015
-        'pair': 'ETH_EUR',
+        'base_asset': 'ETH',
+        'quote_asset': 'EUR',
         'trade_type': 'buy',
         'rate': 0.2315893,
         'fee': 0,
@@ -46,7 +49,8 @@ trades_history = [
         'location': 'external',
     }, {
         'timestamp': 1467378304,  # 31/06/2016
-        'pair': 'BTC_EUR',  # cryptocompare hourly BTC/EUR price 612.45
+        'base_asset': 'BTC',  # cryptocompare hourly BTC/EUR price 612.45
+        'quote_asset': 'EUR',
         'trade_type': 'sell',
         'rate': 612.45,
         'fee': '0.15',
@@ -55,7 +59,8 @@ trades_history = [
         'location': 'kraken',
     }, {
         'timestamp': 1473505138,  # 10/09/2016
-        'pair': 'ETH_BTC',  # cryptocompare hourly ETH/EUR price: 10.365
+        'base_asset': 'ETH',  # cryptocompare hourly ETH/EUR price: 10.365
+        'quote_asset': 'BTC',
         'trade_type': 'buy',  # Buy ETH with BTC -- taxable (within 1 year)
         'rate': 0.01858275,  # cryptocompare hourly BTC/EUR price: 556.435
         'fee': 0.06999999999999999,
@@ -64,7 +69,8 @@ trades_history = [
         'location': 'poloniex',
     }, {
         'timestamp': 1475042230,  # 28/09/2016
-        'pair': 'ETH_BTC',  # cryptocompare hourly ETH/EUR price: 11.925
+        'base_asset': 'ETH',  # cryptocompare hourly ETH/EUR price: 11.925
+        'quote_asset': 'BTC',
         'trade_type': 'sell',  # Sell ETH for BTC -- taxable (within 1 year)
         'rate': 0.022165,  # cryptocompare hourly BTC/EUR price: 537.805
         'fee': 0.001,            # asset. In this case 'ETH'. So BTC buy rate is:
@@ -73,7 +79,8 @@ trades_history = [
         'location': 'poloniex',
     }, {
         'timestamp': 1476536704,  # 15/10/2016
-        'pair': 'ETH_BTC',  # cryptocompare hourly ETH/EUR price: 10.775
+        'base_asset': 'ETH',  # cryptocompare hourly ETH/EUR price: 10.775
+        'quote_asset': 'BTC',
         'trade_type': 'sell',  # Sell ETH for BTC -- taxable (within 1 year)
         'rate': 0.018355,  # cryptocompare hourly BTC/EUR price: 585.96
         'fee': 0.01,             # asset.In this case 'ETH'. So BTC buy rate is:
@@ -82,7 +89,8 @@ trades_history = [
         'location': 'poloniex',
     }, {
         'timestamp': 1479200704,  # 15/11/2016
-        'pair': 'DASH_BTC',  # cryptocompare hourly DASH/EUR price: 8.9456
+        'base_asset': 'DASH',  # cryptocompare hourly DASH/EUR price: 8.9456
+        'quote_asset': 'BTC',
         'trade_type': 'buy',  # Buy DASH with BTC -- non taxable (after 1 year)
         'rate': 0.0134,  # cryptocompare hourly BTC/EUR price: 667.185
         'fee': 0.00082871175,
@@ -91,7 +99,8 @@ trades_history = [
         'location': 'poloniex',
     }, {  # 0.00146445 * 723.505 + 0.005 * 8.104679571509114828039 = 1.10006029511
         'timestamp': 1480683904,  # 02/12/2016
-        'pair': 'DASH_BTC',  # cryptocompare hourly DASH/EUR price: 8.104679571509114828039
+        'base_asset': 'DASH',  # cryptocompare hourly DASH/EUR price: 8.104679571509114828039
+        'quote_asset': 'BTC',
         'trade_type': 'settlement_sell',  # settlement sell DASH for BTC -- taxable (within 1 year)
         'rate': 0.011265,  # cryptocompare hourly BTC/EUR price: 723.505
         'fee': 0.005,
@@ -100,7 +109,8 @@ trades_history = [
         'location': 'poloniex',
     }, {  # 129.2517-0.01 - ((0.536+0.00082871175)*10/40)*667.185 = 39.7006839878
         'timestamp': 1483520704,  # 04/01/2017
-        'pair': 'DASH_EUR',  # cryptocompare hourly DASH/EUR price: 12.92517
+        'base_asset': 'DASH',  # cryptocompare hourly DASH/EUR price: 12.92517
+        'quote_asset': 'EUR',
         'trade_type': 'sell',  # Sell DASH for EUR -- taxable (within 1 year)
         'rate': 12.92517,
         'fee': 0.01,
@@ -109,7 +119,8 @@ trades_history = [
         'location': 'kraken',
     }, {  # 0.0079275 * 810.49 + 0.15 * 12.4625608386372145 = 8.29454360079
         'timestamp': 1484629704,  # 17/01/2017
-        'pair': 'DASH_BTC',  # DASH/EUR price: 12.4625608386372145
+        'base_asset': 'DASH',  # DASH/EUR price: 12.4625608386372145
+        'quote_asset': 'BTC',
         'trade_type': 'settlement_buy',  # Buy DASH with BTC to settle. Essentially BTC loss
         'rate': 0.015855,  # BTC/EUR price: 810.49
         'fee': 0.15,
@@ -118,7 +129,8 @@ trades_history = [
         'location': 'poloniex',
     }, {  # 0.00244725 * 942.78 + 0.01*15.36169816590634019 = 2.46083533666
         'timestamp': 1486299904,  # 05/02/2017
-        'pair': 'DASH_BTC',  # cryptocompare hourly DASH/EUR price: 15.36169816590634019
+        'base_asset': 'DASH',  # cryptocompare hourly DASH/EUR price: 15.36169816590634019
+        'quote_asset': 'BTC',
         'trade_type': 'settlement_sell',  # settlement sell DASH for BTC -- taxable (within 1 year)
         'rate': 0.016315,  # cryptocompare hourly BTC/EUR price: 942.78
         'fee': 0.01,
@@ -127,7 +139,8 @@ trades_history = [
         'location': 'poloniex',
     }, {  # Partly taxable sell.
         'timestamp': 1488373504,  # 29/02/2017
-        'pair': 'BTC_EUR',  # cryptocompare hourly DASH/EUR price: 15.36169816590634019
+        'base_asset': 'BTC',  # cryptocompare hourly DASH/EUR price: 15.36169816590634019
+        'quote_asset': 'EUR',
         'trade_type': 'sell',  # sell BTC for EUR -- partly taxable (within 1 year)
         'rate': 1146.22,  # cryptocompare hourly BTC/EUR price: 1146.22
         'fee': 0.01,
@@ -600,13 +613,15 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
 
     Regression for https://github.com/rotki/rotki/issues/432
     """
+    fgp_identifier = strethaddress_to_identifier('0xd9A8cfe21C232D485065cb62a96866799d4645f7')
     bad_trades = [{
         'timestamp': 1492685761,
-        'pair': 'FGP_BTC',
+        'base_asset': fgp_identifier,
+        'quote_asset': 'BTC',
         'trade_type': 'buy',
         'rate': '0.100',
         'fee': '0.15',
-        'fee_currency': 'FGP',
+        'fee_currency': fgp_identifier,
         'amount': 2.5,
         'location': 'kraken',
     }]

@@ -1,10 +1,12 @@
 import random
 from typing import Any, Dict, List, Optional
+from unittest.mock import _patch, patch
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.utils import BlockchainAccounts, ManuallyTrackedBalance
+from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.typing import (
     ApiKey,
@@ -88,3 +90,11 @@ def add_manually_tracked_balances_to_test_db(
         balances: List[ManuallyTrackedBalance],
 ) -> None:
     db.add_manually_tracked_balances(balances)
+
+
+def mock_dbhandler_update_owned_assets() -> _patch:
+    """Just make sure update owned assets does nothing for older DB tests"""
+    return patch(
+        'rotkehlchen.db.dbhandler.DBHandler.update_owned_assets_in_globaldb',
+        lambda x: None,
+    )

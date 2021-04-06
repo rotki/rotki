@@ -1,7 +1,6 @@
 import pytest
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_CORN, A_USD
 from rotkehlchen.externalapis.cryptocompare import PRICE_HISTORY_FILE_PREFIX, Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_DASH, A_EUR, A_XMR
@@ -32,6 +31,5 @@ def test_price_queries(price_historian, data_dir, database):
     price_historian.set_oracles_order(price_historian._oracles)
     assert price_historian.query_historical_price(A_DASH, A_USD, 1438387700) == FVal('10')
     # this should hit coingecko, since cornichon is not in cryptocompare
-    cornichon = Asset('CORN-2')
     expected_price = FVal('0.07830444726516915')
-    assert price_historian.query_historical_price(cornichon, A_USD, 1608854400) == expected_price
+    assert price_historian.query_historical_price(A_CORN, A_USD, 1608854400) == expected_price

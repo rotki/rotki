@@ -10,7 +10,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_USDT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import (
@@ -22,7 +22,7 @@ from rotkehlchen.exchanges.binance import (
 )
 from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_BNB, A_BUSD, A_DOT, A_RDN, A_USDT, A_XMR
+from rotkehlchen.tests.utils.constants import A_ADA, A_BUSD, A_DOT, A_RDN, A_XMR
 from rotkehlchen.tests.utils.exchanges import (
     BINANCE_MYTRADES_RESPONSE,
     mock_binance_balance_response,
@@ -96,7 +96,8 @@ def test_trade_from_binance(function_scope_binance):
         Trade(
             timestamp=1512561941,
             location=Location.BINANCE,
-            pair='RDN_ETH',
+            base_asset=A_RDN,
+            quote_asset=A_ETH,
             trade_type=TradeType.BUY,
             amount=FVal(5.0),
             rate=FVal(0.0063213),
@@ -107,7 +108,8 @@ def test_trade_from_binance(function_scope_binance):
         Trade(
             timestamp=1531117990,
             location=Location.BINANCE,
-            pair='ETH_USDT',
+            base_asset=A_ETH,
+            quote_asset=A_USDT,
             trade_type=TradeType.SELL,
             amount=FVal(0.505),
             rate=FVal(481.0),
@@ -118,7 +120,8 @@ def test_trade_from_binance(function_scope_binance):
         Trade(
             timestamp=1531728338,
             location=Location.BINANCE,
-            pair='BTC_USDT',
+            base_asset=A_BTC,
+            quote_asset=A_USDT,
             trade_type=TradeType.BUY,
             amount=FVal(0.051942),
             rate=FVal(6376.39),
@@ -129,7 +132,8 @@ def test_trade_from_binance(function_scope_binance):
         Trade(
             timestamp=1531871806,
             location=Location.BINANCE,
-            pair='ADA_USDT',
+            base_asset=A_ADA,
+            quote_asset=A_USDT,
             trade_type=TradeType.SELL,
             amount=FVal(285.2),
             rate=FVal(0.17442),
@@ -229,7 +233,8 @@ def test_binance_query_trade_history(function_scope_binance):
     expected_trade = Trade(
         timestamp=1499865549,
         location=Location.BINANCE,
-        pair='BNB_BTC',
+        base_asset=A_BNB,
+        quote_asset=A_BTC,
         trade_type=TradeType.BUY,
         amount=FVal('12'),
         rate=FVal('4.00000100'),

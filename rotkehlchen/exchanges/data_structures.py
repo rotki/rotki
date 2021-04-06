@@ -1,8 +1,7 @@
 from datetime import datetime
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.crypto import sha3
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
@@ -12,10 +11,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_location,
     deserialize_price,
     deserialize_timestamp,
-    deserialize_trade_pair,
     deserialize_trade_type,
-    get_pair_position_str,
-    pair_get_assets,
 )
 from rotkehlchen.typing import (
     AssetAmount,
@@ -93,7 +89,7 @@ class Trade(NamedTuple):
     example in Poloniex the pair is called BTC_ETH and you buy and sell ETH for
     BTC. In Kraken XXBTZEUR translates to BTC_EUR. This means we buy BTC for EUR
     or we sell BTC for EUR. So for some exchanges like poloniex when importing a
-    trade, the pair needs to be swapped.
+    trade, the base and quote assets need to be swapped.
 
     All trades have a unique ID which is generated from some of the attributes.
     For details check identifier() function
@@ -102,7 +98,8 @@ class Trade(NamedTuple):
     """
     timestamp: Timestamp
     location: Location
-    pair: TradePair
+    base_asset: Asset
+    quote_asset: Asset
     trade_type: TradeType
     # The amount represents the amount bought if it's a buy or or the amount
     # sold if it's a sell. Should NOT include fees
@@ -119,16 +116,6 @@ class Trade(NamedTuple):
     notes: str = ''
 
     @property
-    def base_asset(self) -> Asset:
-        base, _ = pair_get_assets(self.pair)
-        return base
-
-    @property
-    def quote_asset(self) -> Asset:
-        _, quote = pair_get_assets(self.pair)
-        return quote
-
-    @property
     def identifier(self) -> TradeID:
         """Formulates a unique identifier for the trade to become the DB primary key
         """
@@ -136,7 +123,8 @@ class Trade(NamedTuple):
             str(self.location) +
             str(self.timestamp) +
             str(self.trade_type) +
-            self.pair +
+            self.base_asset.identifier +
+            self.quote_asset.identifier +
             str(self.amount) +
             str(self.rate) +
             self.link
@@ -148,7 +136,8 @@ class Trade(NamedTuple):
         return {
             'timestamp': self.timestamp,
             'location': str(self.location),
-            'pair': self.pair,
+            'base_asset': self.base_asset.identifier,
+            'quote_asset': self.quote_asset.identifier,
             'trade_type': str(self.trade_type),
             'amount': str(self.amount),
             'rate': str(self.rate),
@@ -162,7 +151,8 @@ class Trade(NamedTuple):
         return (
             f'trade at {str(self.location)} location and date '
             f'{datetime.fromtimestamp(self.timestamp)} '
-            f'of type {str(self.trade_type)} on the pair {str(self.pair)}'
+            f'of type {str(self.trade_type)} with base asset: {self.base_asset.name} '
+            f'and quote asset: {self.quote_asset.name}'
         )
 
 
@@ -224,38 +214,15 @@ def trade_pair_from_assets(base: Asset, quote: Asset) -> TradePair:
     return TradePair(f'{base.identifier}_{quote.identifier}')
 
 
-def invert_pair(pair: TradePair) -> TradePair:
-    left, right = pair_get_assets(pair)
-    return trade_pair_from_assets(right, left)
-
-
-def get_pair_position_asset(pair: TradePair, position: str) -> Asset:
-    """
-    Get the asset of a trade pair.
-
-    Can throw UnknownAsset if the asset is not known to Rotkehlchen
-    """
-    return Asset(get_pair_position_str(pair, position))
-
-
-def trade_get_assets(trade: Union[Trade, AMMTrade]) -> Tuple[Asset, Asset]:
-    if isinstance(trade, Trade):
-        return pair_get_assets(trade.pair)
-
-    # else should only be AMMTrade
-    return trade.base_asset, trade.quote_asset  # type: ignore
-
-
 def deserialize_trade(data: Dict[str, Any]) -> Trade:
     """
     Takes a dict trade representation of our common trade format and serializes
     it into the Trade object
 
     May raise:
-        - UnknownAsset: If the fee_currency string is not a known asset
+        - UnknownAsset: If the base, quote, fee asset string is not a known asset
         - DeserializationError: If any of the trade dict entries is not as expected
     """
-    pair = deserialize_trade_pair(data['pair'])
     rate = deserialize_price(data['rate'])
     amount = deserialize_asset_amount(data['amount'])
     trade_type = deserialize_trade_type(data['trade_type'])
@@ -271,7 +238,8 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
     return Trade(
         timestamp=data['timestamp'],
         location=location,
-        pair=pair,
+        base_asset=Asset(data['base_asset']),
+        quote_asset=Asset(data['quote_asset']),
         trade_type=trade_type,
         amount=amount,
         rate=rate,

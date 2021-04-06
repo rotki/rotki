@@ -1,7 +1,6 @@
 import functools
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.modules.uniswap.typing import (
     EventType,
@@ -12,7 +11,9 @@ from rotkehlchen.chain.ethereum.modules.uniswap.typing import (
 )
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_USDT, A_WETH
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED
 from rotkehlchen.typing import AssetAmount, Price, Timestamp
 
 # Logic: Get balances
@@ -21,11 +22,6 @@ from rotkehlchen.typing import AssetAmount, Price, Timestamp
 TEST_ADDRESS_1 = string_to_ethereum_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')
 TEST_ADDRESS_2 = string_to_ethereum_address('0xcf2B8EeC2A9cE682822b252a1e9B78EedebEFB02')
 TEST_ADDRESS_3 = string_to_ethereum_address('0x7777777777777777777777777777777777777777')
-
-# Known tokens
-ASSET_USDT = EthereumToken('USDT')
-ASSET_WETH = EthereumToken('WETH')
-TOKEN_BASED = EthereumToken('$BASED')
 
 # Unknown tokens
 ASSET_SHUF = UnknownEthereumToken(
@@ -116,7 +112,7 @@ EXP_LIQUIDITY_POOL_1 = (
                 usd_price=Price(ZERO),
             ),
             LiquidityPoolAsset(
-                asset=ASSET_WETH,
+                asset=A_WETH,
                 total_amount=FVal('72.576018267058292417'),
                 user_balance=Balance(
                     amount=FVal('1.332490679729371260856256139'),
@@ -148,7 +144,7 @@ EXP_LIQUIDITY_POOL_2 = (
                 usd_price=Price(ZERO),
             ),
             LiquidityPoolAsset(
-                asset=ASSET_USDT,
+                asset=A_USDT,
                 total_amount=FVal('2351046.688852'),
                 user_balance=Balance(
                     amount=FVal('997021.3061952553312356558897'),
@@ -166,11 +162,11 @@ EXP_LIQUIDITY_POOL_2 = (
 )
 
 # Expected `known_assets` and `unknown_assets` for LIQUIDITY_POSITION_1
-EXP_KNOWN_ASSETS_1 = {ASSET_WETH}
+EXP_KNOWN_ASSETS_1 = {A_WETH}
 EXP_UNKNOWN_ASSETS_1 = {ASSET_SHUF}
 
 # Expected `known_assets` and `unknown_assets` for LIQUIDITY_POSITION_2
-EXP_KNOWN_ASSETS_2 = {ASSET_USDT}
+EXP_KNOWN_ASSETS_2 = {A_USDT}
 EXP_UNKNOWN_ASSETS_2 = {ASSET_TGX}
 
 
@@ -208,7 +204,7 @@ UPDATED_LIQUIDITY_POOL_1 = (
                 usd_price=Price(FVal('0.2373897544244518146892192714786454')),  # Updated
             ),
             LiquidityPoolAsset(
-                asset=ASSET_WETH,
+                asset=A_WETH,
                 total_amount=FVal('72.576018267058292417'),
                 user_balance=Balance(
                     amount=FVal('1.332490679729371260856256139'),
@@ -240,7 +236,7 @@ UPDATED_LIQUIDITY_POOL_2 = (
                 usd_price=Price(FVal('0.2635575008126147388714187358722384')),  # Updated
             ),
             LiquidityPoolAsset(
-                asset=ASSET_USDT,
+                asset=A_USDT,
                 total_amount=FVal('2351046.688852'),
                 user_balance=Balance(
                     amount=FVal('997021.3061952553312356558897'),
@@ -272,7 +268,7 @@ UPDATED_LIQUIDITY_POOL_2_ONLY_USDT = (
                 usd_price=Price(ZERO),
             ),
             LiquidityPoolAsset(
-                asset=ASSET_USDT,
+                asset=A_USDT,
                 total_amount=FVal('2351046.688852'),
                 user_balance=Balance(
                     amount=FVal('997021.3061952553312356558897'),
@@ -299,8 +295,8 @@ LP_1_EVENTS = [
         timestamp=Timestamp(1604273256),
         event_type=EventType.MINT,
         pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
-        token0=TOKEN_BASED,
-        token1=ASSET_WETH,
+        token0=A_DOLLAR_BASED,
+        token1=A_WETH,
         amount0=AssetAmount(FVal('605.773209925184996494')),
         amount1=AssetAmount(FVal('1.106631443395672732')),
         usd_price=Price(FVal('872.4689300619698095220125311431804')),
@@ -313,8 +309,8 @@ LP_1_EVENTS = [
         timestamp=Timestamp(1604283808),
         event_type=EventType.BURN,
         pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
-        token0=TOKEN_BASED,
-        token1=ASSET_WETH,
+        token0=A_DOLLAR_BASED,
+        token1=A_WETH,
         amount0=AssetAmount(FVal('641.26289347330654345')),
         amount1=AssetAmount(FVal('1.046665027131675546')),
         usd_price=Price(FVal('837.2737746532695970921908229899852')),
@@ -329,7 +325,7 @@ LP_2_EVENTS = [
         timestamp=Timestamp(1598270334),
         event_type=EventType.MINT,
         pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
-        token0=ASSET_WETH,
+        token0=A_WETH,
         token1=TOKEN_DICE,
         amount0=AssetAmount(FVal('1.580431277572006656')),
         amount1=AssetAmount(FVal('3')),
@@ -343,7 +339,7 @@ LP_2_EVENTS = [
         timestamp=Timestamp(1599000975),
         event_type=EventType.BURN,
         pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
-        token0=ASSET_WETH,
+        token0=A_WETH,
         token1=TOKEN_DICE,
         amount0=AssetAmount(FVal('0.970300671842796406')),
         amount1=AssetAmount(FVal('4.971799615456732408')),
@@ -355,8 +351,8 @@ LP_1_EVENTS_BALANCE = (
     LiquidityPoolEventsBalance(
         address=TEST_ADDRESS_1,
         pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
-        token0=TOKEN_BASED,
-        token1=ASSET_WETH,
+        token0=A_DOLLAR_BASED,
+        token1=A_WETH,
         events=LP_1_EVENTS,
         profit_loss0=AssetAmount(FVal('35.489683548121546956')),
         profit_loss1=AssetAmount(FVal('-0.059966416263997186')),
@@ -367,7 +363,7 @@ LP_2_EVENTS_BALANCE = (
     LiquidityPoolEventsBalance(
         address=TEST_ADDRESS_1,
         pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
-        token0=ASSET_WETH,
+        token0=A_WETH,
         token1=TOKEN_DICE,
         events=LP_2_EVENTS,
         profit_loss0=AssetAmount(FVal('-0.610130605729210250')),
@@ -383,8 +379,8 @@ LP_3_EVENTS = [
         timestamp=Timestamp(1604273256),
         event_type=EventType.MINT,
         pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
-        token0=TOKEN_BASED,
-        token1=ASSET_WETH,
+        token0=A_DOLLAR_BASED,
+        token1=A_WETH,
         amount0=AssetAmount(FVal('605.773209925184996494')),
         amount1=AssetAmount(FVal('1.106631443395672732')),
         usd_price=Price(FVal('872.4689300619698095220125311431804')),
@@ -397,8 +393,8 @@ LP_3_EVENTS = [
         timestamp=Timestamp(1604283808),
         event_type=EventType.BURN,
         pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
-        token0=TOKEN_BASED,
-        token1=ASSET_WETH,
+        token0=A_DOLLAR_BASED,
+        token1=A_WETH,
         amount0=AssetAmount(FVal('600')),
         amount1=AssetAmount(FVal('1')),
         usd_price=Price(FVal('800')),
@@ -410,7 +406,7 @@ LP_3_BALANCE = (
         address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
         assets=[
             LiquidityPoolAsset(
-                asset=TOKEN_BASED,
+                asset=A_DOLLAR_BASED,
                 total_amount=FVal('13364.706850726724616147'),
                 user_balance=Balance(
                     amount=FVal('5'),
@@ -419,7 +415,7 @@ LP_3_BALANCE = (
                 usd_price=Price(FVal('4.38427')),  # Updated
             ),
             LiquidityPoolAsset(
-                asset=ASSET_WETH,
+                asset=A_WETH,
                 total_amount=FVal('24.831854200785672749'),
                 user_balance=Balance(
                     amount=FVal('0.05'),
@@ -439,8 +435,8 @@ LP_3_EVENTS_BALANCE = (
     LiquidityPoolEventsBalance(
         address=TEST_ADDRESS_1,
         pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),
-        token0=TOKEN_BASED,
-        token1=ASSET_WETH,
+        token0=A_DOLLAR_BASED,
+        token1=A_WETH,
         events=LP_3_EVENTS,
         profit_loss0=AssetAmount(FVal('-0.773209925184996494')),
         profit_loss1=AssetAmount(FVal('-0.056631443395672732')),

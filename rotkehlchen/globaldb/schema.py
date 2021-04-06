@@ -3,8 +3,9 @@ CREATE TABLE IF NOT EXISTS underlying_tokens_list (
     address VARCHAR[42] NOT NULL,
     weight TEXT NOT NULL,
     parent_token_entry TEXT NOT NULL,
-    FOREIGN KEY(parent_token_entry) REFERENCES ethereum_tokens(address) ON DELETE CASCADE
-    FOREIGN KEY(address) REFERENCES ethereum_tokens(address)
+    FOREIGN KEY(parent_token_entry) REFERENCES ethereum_tokens(address)
+        ON DELETE CASCADE ON UPDATE CASCADE
+    FOREIGN KEY(address) REFERENCES ethereum_tokens(address) ON UPDATE CASCADE
     PRIMARY KEY(address, parent_token_entry)
 );
 """  # noqa: E501
@@ -20,7 +21,7 @@ CREATE TABLE IF NOT EXISTS ethereum_tokens (
     coingecko TEXT,
     cryptocompare TEXT,
     protocol TEXT,
-    FOREIGN KEY(swapped_for) REFERENCES assets(identifier)
+    FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
 
@@ -90,9 +91,9 @@ CREATE TABLE IF NOT EXISTS common_asset_details (
     swapped_for STRING,
     coingecko TEXT,
     cryptocompare TEXT,
-    FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON DELETE CASCADE,
-    FOREIGN KEY(swapped_for) REFERENCES assets(identifier),
-    FOREIGN KEY(forked) REFERENCES assets(identifier)
+    FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(forked) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
 
@@ -116,7 +117,7 @@ CREATE TABLE IF NOT EXISTS settings (
 DB_CREATE_USER_OWNED_ASSETS = """
 CREATE TABLE IF NOT EXISTS user_owned_assets (
     asset_id VARCHAR[24] NOT NULL PRIMARY KEY,
-    FOREIGN KEY(asset_id) REFERENCES assets(identifier)
+    FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
 

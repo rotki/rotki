@@ -1,22 +1,14 @@
 import pytest
 import requests
 
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.tests.utils.api import api_url_for, assert_simple_ok_response
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import (
-    AssetAmount,
-    EthereumTransaction,
-    Fee,
-    Price,
-    Timestamp,
-    TradePair,
-    TradeType,
-)
+from rotkehlchen.typing import AssetAmount, EthereumTransaction, Fee, Price, Timestamp, TradeType
 
 
 def mock_exchange_data_in_db(exchanges, rotki) -> None:
@@ -25,7 +17,8 @@ def mock_exchange_data_in_db(exchanges, rotki) -> None:
         db.add_trades([Trade(
             timestamp=Timestamp(1),
             location=deserialize_location(exchange_name),
-            pair=TradePair('BTC_ETH'),
+            base_asset=A_BTC,
+            quote_asset=A_ETH,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal(1)),
             rate=Price(FVal(1)),

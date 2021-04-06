@@ -3,17 +3,18 @@ import random
 from typing import Any, Dict, List, Optional
 
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD
+from rotkehlchen.assets.asset import WORLD_TO_KRAKEN
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import TradeType
-from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken, world_to_kraken_pair
+from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import (
     make_random_positive_fval,
     make_random_timestamp,
     make_random_uppercasenumeric_string,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -192,7 +193,8 @@ def generate_random_kraken_id() -> str:
 
 def create_kraken_trade(
         tradeable_pairs: List[str],
-        pair: Optional[TradePair] = None,
+        base_asset: Optional[str] = None,
+        quote_asset: Optional[str] = None,
         time: Optional[Timestamp] = None,
         start_ts: Optional[Timestamp] = None,
         end_ts: Optional[Timestamp] = None,
@@ -204,10 +206,12 @@ def create_kraken_trade(
     trade = {}
     trade['ordertxid'] = str(generate_random_kraken_id())
     trade['postxid'] = str(generate_random_kraken_id())
-    if pair:
-        trade['pair'] = world_to_kraken_pair(tradeable_pairs=tradeable_pairs, pair=pair)
+    if base_asset is None or quote_asset is None:
+        pair = random.choice(tradeable_pairs)
     else:
-        trade['pair'] = random.choice(tradeable_pairs)
+        pair = WORLD_TO_KRAKEN[base_asset] + WORLD_TO_KRAKEN[quote_asset]
+
+    trade['pair'] = pair
     if time:
         trade['time'] = str(time) + '.0000'
     else:

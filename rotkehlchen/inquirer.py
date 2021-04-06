@@ -6,20 +6,48 @@ from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
 from rotkehlchen.constants.assets import (
-    A_ALINK,
+    A_ALINK_V1,
     A_BTC,
+    A_CRV_3CRV,
+    A_CRV_3CRVSUSD,
+    A_CRV_GUSD,
+    A_CRV_RENWBTC,
+    A_CRV_YPAX,
+    A_CRVP_DAIUSDCTBUSD,
+    A_CRVP_DAIUSDCTTUSD,
+    A_CRVP_RENWSBTC,
     A_DAI,
     A_ETH,
+    A_FARM_CRVRENWBTC,
+    A_FARM_DAI,
+    A_FARM_RENBTC,
+    A_FARM_TUSD,
+    A_FARM_USDC,
+    A_FARM_USDT,
+    A_FARM_WBTC,
+    A_FARM_WETH,
     A_GUSD,
     A_TUSD,
     A_USD,
     A_USDC,
     A_USDT,
     A_YFI,
+    A_YV1_3CRV,
+    A_YV1_ALINK,
+    A_YV1_DAI,
+    A_YV1_DAIUSDCTBUSD,
+    A_YV1_DAIUSDCTTUSD,
+    A_YV1_GUSD,
+    A_YV1_RENWSBTC,
+    A_YV1_TUSD,
+    A_YV1_USDC,
+    A_YV1_USDT,
+    A_YV1_WETH,
+    A_YV1_YFI,
 )
 from rotkehlchen.errors import (
     DeserializationError,
@@ -50,44 +78,45 @@ log = RotkehlchenLogsAdapter(logger)
 
 CURRENT_PRICE_CACHE_SECS = 300  # 5 mins
 
-SPECIAL_SYMBOLS = (
-    'yyDAI+yUSDC+yUSDT+yBUSD',
-    'yyDAI+yUSDC+yUSDT+yTUSD',
-    'yDAI+yUSDC+yUSDT+yBUSD',
-    'yDAI+yUSDC+yUSDT+yTUSD',
-    'ycrvRenWSBTC',
-    'ypaxCrv',
-    'gusd3CRV',
-    '3Crv',
-    'crvRenWBTC',
-    'crvRenWSBTC',
-    'crvPlain3andSUSD',
-    'yaLINK',
-    'yDAI',
-    'yWETH',
-    'yYFI',
-    'yUSDT',
-    'yUSDC',
-    'yTUSD',
-    'y3Crv',
-    'yGUSD',
-    'fUSDC',
-    'fUSDT',
-    'fDAI',
-    'fTUSD',
-    'fWETH',
-    'fWBTC',
-    'frenBTC',
-    'fcrvRenWBTC',
+SPECIAL_TOKENS = (
+    A_YV1_DAIUSDCTBUSD,
+    A_CRVP_DAIUSDCTBUSD,
+    A_CRVP_DAIUSDCTTUSD,
+    A_YV1_DAIUSDCTTUSD,
+    A_YV1_DAIUSDCTTUSD,
+    A_CRVP_RENWSBTC,
+    A_YV1_RENWSBTC,
+    A_CRV_RENWBTC,
+    A_CRV_YPAX,
+    A_CRV_GUSD,
+    A_CRV_3CRV,
+    A_YV1_3CRV,
+    A_CRV_3CRVSUSD,
+    A_YV1_ALINK,
+    A_YV1_DAI,
+    A_YV1_WETH,
+    A_YV1_YFI,
+    A_YV1_USDT,
+    A_YV1_USDC,
+    A_YV1_TUSD,
+    A_YV1_GUSD,
+    A_FARM_USDC,
+    A_FARM_USDT,
+    A_FARM_DAI,
+    A_FARM_TUSD,
+    A_FARM_WETH,
+    A_FARM_WBTC,
+    A_FARM_RENBTC,
+    A_FARM_CRVRENWBTC,
 )
 
 ASSETS_UNDERLYING_BTC = (
-    'fcrvRenWBTC',
-    'frenBTC',
-    'fWBTC',
-    'ycrvRenWSBTC',
-    'crvRenWBTC',
-    'crvRenWSBTC',
+    A_YV1_RENWSBTC,
+    A_FARM_CRVRENWBTC,
+    A_FARM_RENBTC,
+    A_FARM_WBTC,
+    A_CRV_RENWBTC,
+    A_CRVP_RENWSBTC,
 )
 
 
@@ -125,31 +154,33 @@ DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
 ]
 
 
-def get_underlying_asset_price(token_symbol: str) -> Optional[Price]:
-    """Gets the underlying asset price for token symbol, if any
+def get_underlying_asset_price(token: EthereumToken) -> Optional[Price]:
+    """Gets the underlying asset price for the given ethereum token
 
+    TODO: This should be eventually pulled from the assets DB. All of these
+    need to be updated, to contain proper protocol, and underlying assets.
 
     This function is neither in inquirer.py or chain/ethereum/defi.py
     due to recursive import problems
     """
     price = None
-    if token_symbol == 'yaLINK':
-        price = Inquirer().find_usd_price(A_ALINK)
-    elif token_symbol == 'yGUSD':
+    if token == A_YV1_ALINK:
+        price = Inquirer().find_usd_price(A_ALINK_V1)
+    elif token == A_YV1_GUSD:
         price = Inquirer().find_usd_price(A_GUSD)
-    elif token_symbol in ('yDAI', 'fDAI'):
+    elif token in (A_YV1_DAI, A_FARM_DAI):
         price = Inquirer().find_usd_price(A_DAI)
-    elif token_symbol in ('fWETH', 'yWETH'):
+    elif token in (A_FARM_WETH, A_YV1_WETH):
         price = Inquirer().find_usd_price(A_ETH)
-    elif token_symbol == 'yYFI':
+    elif token == A_YV1_YFI:
         price = Inquirer().find_usd_price(A_YFI)
-    elif token_symbol in ('fUSDT', 'yUSDT'):
+    elif token in (A_FARM_USDT, A_YV1_USDT):
         price = Inquirer().find_usd_price(A_USDT)
-    elif token_symbol in ('fUSDC', 'yUSDC'):
+    elif token in (A_FARM_USDC, A_YV1_USDC):
         price = Inquirer().find_usd_price(A_USDC)
-    elif token_symbol in ('fTUSD', 'yTUSD'):
+    elif token in (A_FARM_TUSD, A_YV1_TUSD):
         price = Inquirer().find_usd_price(A_TUSD)
-    elif token_symbol in ASSETS_UNDERLYING_BTC:
+    elif token in ASSETS_UNDERLYING_BTC:
         price = Inquirer().find_usd_price(A_BTC)
 
     return price
@@ -340,13 +371,15 @@ class Inquirer():
             except RemoteError:
                 pass  # continue, a price can be found by one of the oracles (CC for example)
 
-        if asset.identifier in SPECIAL_SYMBOLS:
+        if asset in SPECIAL_TOKENS:
             ethereum = instance._ethereum
             assert ethereum, 'Inquirer should never be called before the injection of ethereum'
-            underlying_asset_price = get_underlying_asset_price(asset.identifier)
+            token = EthereumToken.from_asset(asset)
+            assert token, 'all assets in special tokens are already ethereum tokens'
+            underlying_asset_price = get_underlying_asset_price(token)
             usd_price = handle_defi_price_query(
                 ethereum=ethereum,
-                token_symbol=asset.identifier,
+                token=token,
                 underlying_asset_price=underlying_asset_price,
             )
             if usd_price is None:

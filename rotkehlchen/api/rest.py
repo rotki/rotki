@@ -102,7 +102,6 @@ from rotkehlchen.typing import (
     Price,
     SupportedBlockchain,
     Timestamp,
-    TradePair,
     TradeType,
 )
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
@@ -705,7 +704,8 @@ class RestAPI():
             self,
             timestamp: Timestamp,
             location: Location,
-            pair: TradePair,
+            base_asset: Asset,
+            quote_asset: Asset,
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
@@ -717,7 +717,8 @@ class RestAPI():
         trade = Trade(
             timestamp=timestamp,
             location=location,
-            pair=pair,
+            base_asset=base_asset,
+            quote_asset=quote_asset,
             trade_type=trade_type,
             amount=amount,
             rate=rate,
@@ -739,7 +740,8 @@ class RestAPI():
             trade_id: str,
             timestamp: Timestamp,
             location: Location,
-            pair: TradePair,
+            base_asset: Asset,
+            quote_asset: Asset,
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
@@ -751,7 +753,8 @@ class RestAPI():
         trade = Trade(
             timestamp=timestamp,
             location=location,
-            pair=pair,
+            base_asset=base_asset,
+            quote_asset=quote_asset,
             trade_type=trade_type,
             amount=amount,
             rate=rate,

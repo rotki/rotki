@@ -5,7 +5,7 @@ from unittest.mock import _patch, patch
 import requests
 
 from rotkehlchen.accounting.structures import BalanceType
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
@@ -27,8 +27,8 @@ class BalancesTestSetup(NamedTuple):
     eth_balances: List[str]
     btc_balances: List[str]
     token_balances: Dict[EthereumToken, List[str]]
-    binance_balances: Dict[str, FVal]
-    poloniex_balances: Dict[str, FVal]
+    binance_balances: Dict[Asset, FVal]
+    poloniex_balances: Dict[Asset, FVal]
     manually_tracked_balances: List[ManuallyTrackedBalance]
     poloniex_patch: _patch
     binance_patch: _patch
@@ -152,9 +152,9 @@ def setup_balances(
         original_requests_get=requests.get,
     )
     # Taken from BINANCE_BALANCES_RESPONSE from tests.utils.exchanges
-    binance_balances = {'ETH': FVal('4763368.68006011'), 'BTC': FVal('4723846.89208129')}
+    binance_balances = {A_ETH: FVal('4763368.68006011'), A_BTC: FVal('4723846.89208129')}
     # Taken from POLONIEX_BALANCES_RESPONSE from tests.utils.exchanges
-    poloniex_balances = {'ETH': FVal('11.0'), 'BTC': FVal('5.5')}
+    poloniex_balances = {A_ETH: FVal('11.0'), A_BTC: FVal('5.5')}
 
     if manually_tracked_balances is None:
         manually_tracked_balances = []

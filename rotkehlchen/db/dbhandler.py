@@ -21,6 +21,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
+from rotkehlchen.chain.ethereum.modules.aave.constants import ATOKENV1_TO_ASSET
 from rotkehlchen.chain.ethereum.modules.adex import (
     ADEX_EVENTS_PREFIX,
     AdexEventType,
@@ -82,7 +83,6 @@ from rotkehlchen.errors import (
     SystemPermissionError,
     TagConstraintError,
     UnknownAsset,
-    UnprocessableTradePair,
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -102,7 +102,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp,
     deserialize_trade_type_from_db,
-    pair_get_assets,
 )
 from rotkehlchen.typing import (
     ApiCredentials,
@@ -176,9 +175,9 @@ def db_tuple_to_str(
     """
     if tuple_type == 'trade':
         return (
-            f'{deserialize_trade_type_from_db(data[4])} trade with id {data[0]} '
-            f'in {deserialize_location_from_db(data[2])} and pair {data[3]} '
-            f'at timestamp {data[1]}'
+            f'{deserialize_trade_type_from_db(data[5])} trade with id {data[0]} '
+            f'in {deserialize_location_from_db(data[2])} and base/quote asset {data[3]} / '
+            f'{data[4]} at timestamp {data[1]}'
         )
     if tuple_type == 'asset_movement':
         return (
@@ -252,8 +251,8 @@ class DBHandler:
         self.update_owned_assets_in_globaldb()
 
     def __del__(self) -> None:
-        self.update_owned_assets_in_globaldb()
-        self.disconnect()
+        if hasattr(self, 'conn') and self.conn:
+            self.disconnect()
         try:
             dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
         except (SystemPermissionError, FileNotFoundError) as e:
@@ -290,6 +289,7 @@ class DBHandler:
                     f'SQLCipher version: {self.sqlcipher_version} - Error: {errstr}. '
                     f'Wrong password while decrypting the database or not a database.',
                 )
+                del self.conn
                 raise AuthenticationError(
                     'Wrong password or invalid/corrupt database for user',
                 ) from e
@@ -816,8 +816,16 @@ class DBHandler:
         )
         values: Tuple
         if atoken is not None:  # when called by blockchain
+            underlying_token = ATOKENV1_TO_ASSET.get(atoken, None)
+            if underlying_token is None:  # should never happen
+                self.msg_aggregator.add_error(
+                    'Tried to query aave events for atoken with no underlying token. '
+                    'Returning no events.',
+                )
+                return []
+
             querystr += 'WHERE address = ? AND (asset1=? OR asset1=?);'
-            values = (address, atoken.identifier, atoken.identifier[1:])
+            values = (address, atoken.identifier, underlying_token.identifier)
         else:  # called by graph
             querystr += 'WHERE address = ?;'
             values = (address,)
@@ -1793,13 +1801,17 @@ class DBHandler:
         returned_list = []
         for x in tokens_list:
             try:
-                returned_list.append(EthereumToken(x))
+                token = EthereumToken.from_identifier(x)
             except (DeserializationError, UnknownAsset):
+                token = None
+            if token is None:
                 self.msg_aggregator.add_warning(
                     f'Could not deserialize {x} as a token when reading latest '
                     f'tokens list of {address}',
                 )
                 continue
+
+            returned_list.append(token)
 
         return returned_list
 
@@ -2332,7 +2344,7 @@ class DBHandler:
         margin_positions = []
         for result in results:
             try:
-                if result[2] == '0':
+                if result[2] == 0:
                     open_time = None
                 else:
                     open_time = deserialize_timestamp(result[2])
@@ -2656,7 +2668,8 @@ class DBHandler:
                 trade.identifier,
                 trade.timestamp,
                 trade.location.serialize_for_db(),
-                trade.pair,
+                trade.base_asset.identifier,
+                trade.quote_asset.identifier,
                 trade.trade_type.serialize_for_db(),
                 str(trade.amount),
                 str(trade.rate),
@@ -2671,7 +2684,8 @@ class DBHandler:
               id,
               time,
               location,
-              pair,
+              base_asset,
+              quote_asset,
               type,
               amount,
               rate,
@@ -2679,7 +2693,7 @@ class DBHandler:
               fee_currency,
               link,
               notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.write_tuples(tuple_type='trade', query=query, tuples=trade_tuples)
 
@@ -2694,7 +2708,8 @@ class DBHandler:
             '  id=?, '
             '  time=?,'
             '  location=?,'
-            '  pair=?,'
+            '  base_asset=?,'
+            '  quote_asset=?,'
             '  type=?,'
             '  amount=?,'
             '  rate=?,'
@@ -2707,7 +2722,8 @@ class DBHandler:
                 trade.identifier,
                 trade.timestamp,
                 trade.location.serialize_for_db(),
-                trade.pair,
+                trade.base_asset.identifier,
+                trade.quote_asset.identifier,
                 trade.trade_type.serialize_for_db(),
                 str(trade.amount),
                 str(trade.rate),
@@ -2739,7 +2755,8 @@ class DBHandler:
             'SELECT id,'
             '  time,'
             '  location,'
-            '  pair,'
+            '  base_asset,'
+            '  quote_asset,'
             '  type,'
             '  amount,'
             '  rate,'
@@ -2759,14 +2776,15 @@ class DBHandler:
                 trade = Trade(
                     timestamp=deserialize_timestamp(result[1]),
                     location=deserialize_location_from_db(result[2]),
-                    pair=result[3],
-                    trade_type=deserialize_trade_type_from_db(result[4]),
-                    amount=deserialize_asset_amount(result[5]),
-                    rate=deserialize_price(result[6]),
-                    fee=deserialize_fee(result[7]),
-                    fee_currency=Asset(result[8]),
-                    link=result[9],
-                    notes=result[10],
+                    base_asset=Asset(result[3]),
+                    quote_asset=Asset(result[4]),
+                    trade_type=deserialize_trade_type_from_db(result[5]),
+                    amount=deserialize_asset_amount(result[6]),
+                    rate=deserialize_price(result[7]),
+                    fee=deserialize_fee(result[8]),
+                    fee_currency=Asset(result[9]),
+                    link=result[10],
+                    notes=result[11],
                 )
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
@@ -3064,15 +3082,15 @@ class DBHandler:
                 continue
 
         query = cursor.execute(
-            'SELECT DISTINCT pair FROM trades ORDER BY time ASC;',
+            'SELECT DISTINCT base_asset, quote_asset FROM trades ORDER BY time ASC;',
         )
-        for result in query:
+        for entry in query:
             try:
-                asset1, asset2 = pair_get_assets(result[0])
-            except (UnprocessableTradePair, UnknownAsset) as e:
+                asset1, asset2 = [Asset(x) for x in entry]
+            except UnknownAsset as e:
                 logger.warning(
-                    f'At processing owned assets from pair could not deserialize '
-                    f'pair {result[0]} due to {str(e)}',
+                    f'At processing owned assets from base/quote could not deserialize '
+                    f'asset due to {str(e)}',
                 )
                 continue
             results.add(asset1)

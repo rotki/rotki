@@ -18,13 +18,8 @@ from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hexstr_to_int
 
-from .common import (
-    ATOKENS_LIST,
-    AaveBalances,
-    AaveHistory,
-    AaveInquirer,
-    _get_reserve_address_decimals,
-)
+from .common import AaveBalances, AaveHistory, AaveInquirer, _get_reserve_address_decimals
+from .constants import ATOKENS_LIST, ATOKENV1_TO_ASSET
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -244,8 +239,8 @@ class AaveBlockchainInquirer(AaveInquirer):
             mint_data.add(entry)
             mint_data_to_log_index[entry] = event['logIndex']
 
-        reserve_asset = _atoken_to_reserve_asset(atoken)
-        reserve_address, decimals = _get_reserve_address_decimals(reserve_asset.identifier)
+        reserve_asset = ATOKENV1_TO_ASSET[atoken]  # should never raise KeyError
+        reserve_address, decimals = _get_reserve_address_decimals(reserve_asset)
         aave_events = []
         for event in deposit_events:
             if hex_or_bytes_to_address(event['topics'][1]) == reserve_address:

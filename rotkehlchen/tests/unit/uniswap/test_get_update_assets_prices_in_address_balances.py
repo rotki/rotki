@@ -1,8 +1,8 @@
+from rotkehlchen.constants.assets import A_USDT, A_WETH
+
 from .utils import (
     ASSET_SHUF,
     ASSET_TGX,
-    ASSET_USDT,
-    ASSET_WETH,
     EXP_LIQUIDITY_POOL_1,
     EXP_LIQUIDITY_POOL_2,
     TEST_ADDRESS_1,
@@ -28,7 +28,7 @@ def test_half_asset_prices_are_updated(mock_uniswap):
         - Liquidity pool only counts USDT USD value
     """
     address_balances = {TEST_ADDRESS_2: [EXP_LIQUIDITY_POOL_2]}
-    known_asset_price = {ASSET_USDT.ethereum_address: USD_PRICE_USDT}
+    known_asset_price = {A_USDT.ethereum_address: USD_PRICE_USDT}
     unknown_asset_price = {}  # TGX not in it
 
     # Main call
@@ -55,8 +55,8 @@ def test_all_asset_prices_are_updated(mock_uniswap):
         TEST_ADDRESS_2: [EXP_LIQUIDITY_POOL_2],
     }
     known_asset_price = {
-        ASSET_WETH.ethereum_address: USD_PRICE_WETH,
-        ASSET_USDT.ethereum_address: USD_PRICE_USDT,
+        A_WETH.ethereum_address: USD_PRICE_WETH,
+        A_USDT.ethereum_address: USD_PRICE_USDT,
     }
     unknown_asset_price = {
         ASSET_SHUF.ethereum_address: USD_PRICE_SHUF,

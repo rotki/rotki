@@ -166,7 +166,13 @@ class EthTokens():
             call_order=call_order,
         )
         for token_identifier, value in ret.items():
-            token = EthereumToken(token_identifier)
+            token = EthereumToken.from_identifier(token_identifier)
+            if token is None:  # should not happen
+                log.warning(
+                    f'Could not initialize token with identifier {token_identifier}. '
+                    f'Should not happen. Skipping its token balance query',
+                )
+                continue
             balances[token] += value
             if token in token_usd_price:
                 continue

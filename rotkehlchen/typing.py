@@ -299,12 +299,10 @@ class AssetData(NamedTuple):
     identifier: str
     name: str
     symbol: str
-    active: bool
     asset_type: AssetType
     # Every asset should have a started timestamp except for FIAT which are
     # most of the times older than epoch
     started: Optional[Timestamp]
-    ended: Optional[Timestamp]
     forked: Optional[str]
     swapped_for: Optional[str]
     ethereum_address: Optional[ChecksumEthAddress]
@@ -312,6 +310,7 @@ class AssetData(NamedTuple):
     # None means, no special mapping. '' means not supported
     cryptocompare: Optional[str]
     coingecko: Optional[str]
+    protocol: Optional[str]
 
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member

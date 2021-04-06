@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from web3 import Web3
 
-from rotkehlchen.chain.ethereum.modules.makerdao.common import RAY, WAD
+from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY, WAD
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_GET_CDPS,

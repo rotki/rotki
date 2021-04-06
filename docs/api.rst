@@ -832,7 +832,7 @@ Query the current price of assets
       Content-Type: application/json;charset=UTF-8
 
       {
-          "assets": ["BTC", "ETH", "LINK", "USD", "EUR"],
+          "assets": ["BTC", "ETH", "_ceth_0x514910771AF9Ca656af840dff83E8264EcF986CA", "USD", "EUR"],
           "target_asset": "USD",
           "ignore_cache": true
       }
@@ -856,7 +856,7 @@ Query the current price of assets
                   "ETH": "1302.62",
                   "EUR": "1.209",
                   "GBP": "1.362",
-                  "LINK": "20.29",
+                  "_ceth_0x514910771AF9Ca656af840dff83E8264EcF986CA": "20.29",
                   "USD": "1"
               },
               "target_asset": "USD"
@@ -1396,8 +1396,8 @@ Get oracle price cache data
       }
 
    :resjson list result: A list of cache results. Each entry contains the from/to asset of the cache pair and the range of the cache.
-   :resjson string from_asset: The identifier of the from asset. For some oracles this is going to be the oracle specific identifier
-   :resjson string to_asset: The identifier of the to asset. For some oracles this is going to be the oracle specific identifier
+   :resjson string from_asset: The identifier of the from asset.
+   :resjson string to_asset: The identifier of the to asset.
    :resjson int from_timestamp: The timestamp at which the price cache for the pair starts
    :resjson int to_timestamp: The timestamp at which the price cache for the pair ends
 
@@ -1887,10 +1887,10 @@ Querying onchain balances
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
                        "assets": {
                            "ETH": {"amount": "10", "usd_value": "1650.53"},
-                           "DAI": {"amount": "15", "usd_value": "15.21"}
+                           "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "15", "usd_value": "15.21"}
                        },
                        "liabilities": {
-                           "DAI": {"amount": "20", "usd_value": "20.35"}
+                           "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "20", "usd_value": "20.35"}
                        }
                   }}
               },
@@ -1898,10 +1898,10 @@ Querying onchain balances
                   "assets": {
                       "BTC": {"amount": "1", "usd_value": "7540.15"},
                       "ETH": {"amount": "10", "usd_value": "1650.53"},
-                      "DAI": {"amount": "15", "usd_value": "15.21"}
+                      "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "15", "usd_value": "15.21"}
                   },
                   "liabilities": {
-                      "DAI": {"amount": "20", "usd_value": "20.35"}
+                      "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "20", "usd_value": "20.35"}
                   }
               }
           },
@@ -1979,7 +1979,7 @@ Querying all balances
                    }
                },
                "liabilities": {
-                   "DAI": {
+                   "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
                        "amount": "100",
                        "usd_value": "102.5",
                        "percentage_of_net_value": "1%"
@@ -2021,13 +2021,16 @@ The details of each asset can contain the following keys:
 
 - **type**: The type of asset. Valid values are ethereum token, own chain, omni token and more. For all valid values check here: https://github.com/rotki/rotki/blob/develop/rotkehlchen/assets/resolver.py#L7
 - **started**: An optional unix timestamp denoting where we know price data for the asset started
-- **ended**: If an asset is no longer in circulation this value should denote the unix timestamp after which price data is no longer available
 - **name**: The long name of the asset. Does not need to be the same as the unique symbol identifier
 - **forked**: An optional attribute representing another asset out of which this asset forked from. For example ``ETC`` would have ``ETH`` here.
 - **swapped_for**: An optional attribute representing another asset for which this asset was swapped for. For example ``VEN`` tokens were at some point swapped for ``VET`` tokens.
 - **symbol**: The symbol used for this asset. This is not guaranteed to be unique. Unfortunately some assets use the same symbol as others.
 - **ethereum_address**: If the type is ``ethereum_token`` then this will be the hexadecimal address of the token's contract.
 - **ethereum_token_decimals**: If the type is ``ethereum_token`` then this will be the number of decimals the token has
+- **cryptocompare**: The cryptocompare identifier for the asset. can be missing if not known. If missing the symbol is attempted to be queried.
+- **coingecko**: The coingecko identifier for the asset. can be missing if not known.
+- **protocol**: An optional string for ethereum tokens denoting the protocol they belong to. For example uniswap, for uniswap LP tokens.
+- **underlying_tokens**: Optional. If the token is an LP token or a token set or something similar which represents a pool of multiple other tokens, then this is a list of the underlying token addresses and a percentage that each token contributes to the pool.
 
    **Example Request**:
 
@@ -2045,7 +2048,7 @@ The details of each asset can contain the following keys:
 
       {
           "result": {
-              "0xBTC": {
+              "_ceth_0xB6eD7644C69416d67B522e20bC294A9a9B405B31": {
                   "ethereum_address": "0xB6eD7644C69416d67B522e20bC294A9a9B405B31",
                   "ethereum_token_decimals": 8,
                   "name": "0xBitcoin",
@@ -2059,9 +2062,7 @@ The details of each asset can contain the following keys:
                   "symbol": "DCR",
                   "type": "own chain"
               },
-              "DDF": {
-                  "active": false,
-                  "ended": 1542153600,
+              "_ceth_0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38": {
                   "ethereum_address": "0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38",
                   "ethereum_token_decimals": 18,
                   "name": "DigitalDevelopersFund",
@@ -2081,16 +2082,15 @@ The details of each asset can contain the following keys:
                   "symbol": "KRW",
                   "type": "fiat"
               },
-              "VEN": {
-                  "active": false,
-                  "ended": 1533254400,
+              "_ceth_0xD850942eF8811f2A866692A623011bDE52a462C1": {
                   "ethereum_address": "0xD850942eF8811f2A866692A623011bDE52a462C1",
                   "ethereum_token_decimals": 18,
                   "name": "Vechain Token",
                   "started": 1503360000,
                   "swapped_for": "VET",
                   "symbol": "VEN",
-                  "type": "ethereum token"
+                  "type": "ethereum token",
+		  "coingecko": "vechain"
               },
           },
           "message": ""
@@ -2163,7 +2163,7 @@ Getting custom ethereum tokens
 
       {
           "result": [{
-              "identifier": "FTK",
+              "identifier": "_ceth_0x1169C72f36A843cD3a3713a76019FAB9503B2807",
               "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
               "decimals": 18,
               "name": "foo",
@@ -2408,7 +2408,7 @@ Adding custom asset
    .. _custom_asset:
 
    :reqjson string name: The name of the asset. Required.
-   :reqjson string name: The symol of the asset. Required.
+   :reqjson string symbol: The symol of the asset. Required.
    :reqjson integer started: The time the asset started existing. Optional
    :reqjson string forked: The identifier of an asset from which this asset got forked. For example ETC would have ETH as forked. Optional.
    :reqjson string swapped_for: The identifier of an asset for which this asset got swapped for. For example GNT got swapped for GLM. Optional.
@@ -2532,7 +2532,7 @@ Querying asset icons
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/assets/YFI/icon/large HTTP/1.1
+      GET /api/1/assets/_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e/icon/large HTTP/1.1
       Host: localhost:5042
 
    **Example Response**:
@@ -2578,7 +2578,7 @@ Uploading custom asset icons
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      {"result": {"identifier": "GNO"}, "message": ""}
+      {"result": {"identifier": "_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96"}, "message": ""}
 
    :resjson strin identifier: The identifier of the asset for which the icon was uploaded.
    :statuscode 200: Icon succesfully uploaded
@@ -2628,7 +2628,7 @@ Statistics for netvalue over time
 Statistics for asset balance over time
 ======================================
 
-.. http:get:: /api/(version)/statistics/balance/(asset name)
+.. http:get:: /api/(version)/statistics/balance/(asset identifier)
 
    .. note::
       This endpoint is only available for premium users
@@ -2879,7 +2879,8 @@ Dealing with trades
                       "trade_id": "dsadfasdsad",
                       "timestamp": 1491606401,
                       "location": "external",
-                      "pair": "BTC_EUR",
+                      "base_asset": "BTC",
+                      "quote_asset": "EUR",
                       "trade_type": "buy",
                       "amount": "0.5541",
                       "rate": "8422.1",
@@ -2899,7 +2900,8 @@ Dealing with trades
    :resjsonarr string trade_id: The uniquely identifying identifier for this trade.
    :resjsonarr int timestamp: The timestamp at which the trade occured
    :resjsonarr string location: A valid location at which the trade happened
-   :resjsonarr string pair: The pair for the trade. e.g. ``"BTC_EUR"``
+   :resjsonarr string base_asset: The base_asset of the trade.
+   :resjsonarr string quote_asset: The quote_asset of the trade.
    :resjsonarr string trade_type: The type of the trade. e.g. ``"buy"`` or ``"sell"``
    :resjsonarr string amount: The amount that was bought or sold
    :resjsonarr string rate: The rate at which 1 unit of ``base_asset`` was exchanges for 1 unit of ``quote_asset``
@@ -2930,7 +2932,8 @@ Dealing with trades
       {
           "timestamp": 1491606401,
           "location": "external",
-          "pair": "BTC_EUR",
+          "base_asset": "BTC",
+          "quote_asset": "EUR",
           "trade_type": "buy",
           "amount": "0.5541",
           "rate": "8422.1",
@@ -2942,7 +2945,8 @@ Dealing with trades
 
    :reqjson int timestamp: The timestamp at which the trade occured
    :reqjson string location: A valid location at which the trade happened
-   :reqjson string pair: The pair for the trade. e.g. ``"BTC_EUR"``
+   :resjsonarr string base_asset: The base_asset of the trade.
+   :resjsonarr string quote_asset: The quote_asset of the trade.
    :reqjson string trade_type: The type of the trade. e.g. ``"buy"`` or ``"sell"``
    :reqjson string amount: The amount that was bought or sold
    :reqjson string rate: The rate at which 1 unit of ``base_asset`` was exchanges for 1 unit of ``quote_asset``
@@ -2963,7 +2967,8 @@ Dealing with trades
                   "trade_id": "dsadfasdsad",
                   "timestamp": 1491606401,
                   "location": "external",
-                  "pair": "BTC_EUR",
+                  "base_asset": "BTC",
+                  "quote_asset": "EUR",
                   "trade_type": "buy",
                   "amount": "0.5541",
                   "rate": "8422.1",
@@ -2997,7 +3002,8 @@ Dealing with trades
           "trade_id" : "dsadfasdsad",
           "timestamp": 1491606401,
           "location": "external",
-          "pair": "BTC_EUR",
+          "base_asset": "BTC",
+          "quote_asset": "EUR",
           "trade_type": "buy",
           "amount": "1.5541",
           "rate": "8422.1",
@@ -3010,7 +3016,8 @@ Dealing with trades
    :reqjson string trade_id: The ``trade_id`` of the trade to edit
    :reqjson int timestamp: The new timestamp
    :reqjson string location: The new location
-   :reqjson string pair: The new pair
+   :reqjson string base_asset: The new base_asset
+   :reqjson string quote_asset: The new quote_asset
    :reqjson string trade_type: The new trade type
    :reqjson string rate: The new trade rate
    :reqjson string fee: The new fee
@@ -3030,7 +3037,8 @@ Dealing with trades
               "trade_id": "sdfhdjskfha",
               "timestamp": 1491606401,
               "location": "external",
-              "pair": "BTC_EUR",
+              "base_asset": "BTC",
+              "quote_asset": "EUR",
               "trade_type": "buy",
               "amount": "1.5541",
               "rate": "8422.1",
@@ -3207,7 +3215,7 @@ Dealing with ledger actions
                       "action_type": "loss",
                       "location": "blockchain",
                       "amount": "1550",
-                      "asset": "DAI",
+                      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
                       "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
                       "notes": "The DAI I lost in the pickle finance hack"
                   },
@@ -4171,7 +4179,7 @@ Getting MakerDAO vaults basic data
               "identifier": 55,
               "collateral_type": "USDC-A",
               "owner": "0xB26a9561ffFD9fC603F7d6A30c37D79665207876",
-              "collateral_asset": "USDC",
+              "collateral_asset": "_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
               "collateral": {
                   "amount": "150",
                   "usd_value": "150"
@@ -4192,7 +4200,7 @@ Getting MakerDAO vaults basic data
    :resjsonarr string identifier: A unique integer identifier for the vault.
    :resjsonarr string collateral_type: The collateral_type of the vault. e.g. ETH-A. Various collateral types can be seen here: https://catflip.co/
    :resjsonarr string owner: The address of the owner of the vault.
-   :resjsonarr string collateral_asset: The asset deposited in the vault as collateral. As of this writing supported assets are ``["ETH", "BAT", "USDC", "WBTC"]``
+   :resjsonarr string collateral_asset: The identifier of the asset deposited in the vault as collateral.
    :resjsonarr string collateral: The amount of collateral currently deposited in the vault along with the current value in USD of all the collateral in the vault according to the MakerDAO price feed.
    :resjsonarr string debt: The amount of DAI owed to the vault. So generated DAI plus the stability fee interest. Along with its current usd value.
    :resjsonarr string collateralization_ratio: A string denoting the percentage of collateralization of the vault.
@@ -4267,7 +4275,7 @@ Getting MakerDAO vault details
               }]
           }, {
               "identifier": 56,
-              "collateral_asset": "USDC",
+              "collateral_asset": "_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
               "creation_ts": 1589067897,
               "total_interest_owed": "-751.32",
               "total_liquidated": {
@@ -4312,7 +4320,7 @@ Getting MakerDAO vault details
       }
 
    :resjson object result: A list of all vault details detected.
-   :resjsonarr string collateral_asset: The asset deposited in the vault as collateral.
+   :resjsonarr string collateral_asset: The identifier of the asset deposited in the vault as collateral.
    :resjsonarr int creation_ts: The timestamp of the vault's creation.
    :resjsonarr string total_interest_owed: Total amount of DAI lost to the vault as interest rate. This can be negative, if the vault has been liquidated. In that case the negative number is the DAI that is out in the wild and does not need to be returned after liquidation. Even if the vault has been paid out this still shows how much interest was paid to the vault. So it's past and future interest owed.
    :resjsonarr string total_liquidated: The total amount/usd_value of the collateral asset that has been lost to liquidation. Will be ``0`` if no liquidations happened.
@@ -4360,14 +4368,14 @@ Getting Aave balances
           "result": {
               "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
                   "lending": {
-                      "DAI": {
+                      "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
                           "balance": {
                               "amount": "350.0",
                               "usd_value": "351.21"
                           },
                           "apy": "3.51%"
                       },
-                      "KNC": {
+                      "_ceth_0xdd974D5C2e2928deA5F71b9825b8b646686BD200": {
                           "balance": {
                               "amount": "220.21",
                               "usd_value": "363.3465"
@@ -4376,7 +4384,7 @@ Getting Aave balances
                       },
                   },
                   "borrowing": {
-                      "LEND": {
+                      "_ceth_0x80fB784B7eD66730e8b1DBd9820aFD29931aab03": {
                           "balance": {
                               "amount": "590.21",
                               "usd_value": "146.076975"
@@ -4389,7 +4397,7 @@ Getting Aave balances
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                   "lending": {},
                   "borrowing": {
-                      "BAT": {
+                      "_ceth_0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
                           "balance": {
                               "amount": "560",
                               "usd_value": "156.8"
@@ -4449,7 +4457,7 @@ Getting Aave historical data
               "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
                   "events": [{
                       "event_type": "deposit",
-                      "asset": "DAI",
+                      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
                       "value": {
                           "amount": "350.0",
                           "usd_value": "351.21"
@@ -4460,7 +4468,7 @@ Getting Aave historical data
                       "log_index": 1
                   }, {
                       "event_type": "interest",
-                      "asset": "DAI",
+                      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
                       "value": {
                           "amount": "0.5323",
                           "usd_value": "0.5482"
@@ -4471,7 +4479,7 @@ Getting Aave historical data
                       "log_index": 1
                   }, {
                       "event_type": "withdrawal",
-                      "asset": "DAI",
+                      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
                       "value": {
                           "amount": "150",
                           "usd_value": "150.87"
@@ -4482,7 +4490,7 @@ Getting Aave historical data
                       "log_index": 1
                   }, {
                       "event_type": "deposit",
-                      "asset": "ZRX",
+                      "asset": "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498",
                       "value": {
                           "amount": "150",
                           "usd_value": "60.995"
@@ -4493,17 +4501,17 @@ Getting Aave historical data
                       "log_index": 1
                   }],
                   "total_earned": {
-                      "DAI": {
+                      "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
                           "amount": "0.9482",
                           "usd_value": "1.001"
                       },
-                      "ZRX": {
+                      "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498": {
                           "amount": "0.523",
                           "usd_value": "0.0253"
                       }
                   },
                   "total_lost": {
-                      "WBTC": {
+                      "_ceth_0xFC4B8ED459e00e5400be803A9BB3954234FD50e3": {
                           "amount": "0.3212",
                           "usd_value": "3560.32"
                       }
@@ -4512,7 +4520,7 @@ Getting Aave historical data
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                   "events": [{
                       "event_type": "deposit",
-                      "asset": "BAT",
+                      "asset": "_ceth_0x0D8775F648430679A709E98d2b0Cb6250d2887EF",
                       "value": {
                           "amount": "500",
                           "usd_value": "124.1"
@@ -4523,7 +4531,7 @@ Getting Aave historical data
                       "log_index": 1
                   }],
                   "total_earned_interest": {
-                      "BAT": {
+                      "_ceth_0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
                           "amount": "0.9482",
                           "usd_value": "0.2312"
                       }
@@ -4674,7 +4682,7 @@ Getting AdEx historical data
                             "amount": "50",
                             "usd_value": "45.23"
                         },
-                        "token": "ADX",
+                        "token": "_ceth_0xADE00C28244d5CE17D72E40330B1c318cD12B7c3",
                     },
                     {
                         "bond_id": "0x540cab9883923c01e657d5da4ca5674b6e4626b4a148224635495502d674c7c5",
@@ -4713,7 +4721,7 @@ Getting AdEx historical data
                             "amount": "43",
                             "usd_value": "39.233"
                         },
-                        "token": "ADX",
+                        "token": "_ceth_0xADE00C28244d5CE17D72E40330B1c318cD12B7c3",
                     },
                     {
                         "bond_id": "0x16bb43690fe3764b15a2eb8d5e94e1ac13d6ef38e6c6f9d9f9c745eaff92d427",
@@ -4843,7 +4851,7 @@ Getting Balancer balances
               "address": "0x1efF8aF5D577060BA4ac8A29A13525bb0Ee2A3D5",
               "tokens": [
                 {
-                  "token": "WBTC",
+                  "token": "_ceth_0xFC4B8ED459e00e5400be803A9BB3954234FD50e3",
                   "total_amount": "2326.81686488",
                   "user_balance": {
                     "amount": "331.3943886097855861540937492",
@@ -4853,7 +4861,7 @@ Getting Balancer balances
                   "weight": "50"
                 },
                 {
-                  "token": "WETH",
+                  "token": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                   "total_amount": "74878.381384930530866965",
                   "user_balance": {
                     "amount": "10664.47290875603144268225218",
@@ -4873,7 +4881,7 @@ Getting Balancer balances
               "address": "0x280267901C175565C64ACBD9A3c8F60705A72639",
               "tokens": [
                 {
-                  "token": "CREAM",
+                  "token": "_ceth_0x2ba592F78dB6436527729929AAf6c908497cB200",
                   "total_amount": "3728.283461100135483274",
                   "user_balance": {
                     "amount": "3115.861971106915456546519315",
@@ -4883,7 +4891,7 @@ Getting Balancer balances
                   "weight": "75.0"
                 },
                 {
-                  "token": "WETH",
+                  "token": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                   "total_amount": "98.530639172406329742",
                   "user_balance": {
                     "amount": "82.34563567641578625390887189",
@@ -4958,8 +4966,8 @@ Getting Balancer events
                   {
                     "pool_address": "0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4",
                     "pool_tokens": [
-                      { "token": "WETH", "weight": "20" },
-                      { "token": "BAL", "weight": "80" }
+                      { "token": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "weight": "20" },
+                      { "token": "_ceth_0xba100000625a3754423978a60c9317c58a424e3D", "weight": "80" }
                     ],
                     "events": [
                       {
@@ -4972,8 +4980,8 @@ Getting Balancer events
                           "usd_value": "19.779488662371895"
                         },
                         "amounts": {
-                          "WETH": "0.05",
-                          "BAL": "0"
+                          "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": "0.05",
+                          "_ceth_0xba100000625a3754423978a60c9317c58a424e3D": "0"
                         }
                       },
                       {
@@ -4986,14 +4994,14 @@ Getting Balancer events
                           "usd_value": "19.01364749076136579119809947"
                         },
                         "amounts": {
-                          "WETH": "0.010687148200906598",
-                          "BAL": "0.744372160905819159"
+                          "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": "0.010687148200906598",
+                          "_ceth_0xba100000625a3754423978a60c9317c58a424e3D": "0.744372160905819159"
                         }
                       }
                     ],
                     "profit_loss_amounts": {
-                      "WETH": "-0.039312851799093402",
-                      "BAL": "0.744372160905819159"
+                      "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": "-0.039312851799093402",
+                      "_ceth_0xba100000625a3754423978a60c9317c58a424e3D": "0.744372160905819159"
                     },
                     "usd_profit_loss": "-0.76584117161052920880190053"
                   }
@@ -5061,12 +5069,11 @@ Getting Balancer trades
                 {
                     "address": "0x029f388aC4D5C8BfF490550ce0853221030E822b",
                     "amount": "0.075627332013165531",
-                    "base_asset": "WETH",
+                    "base_asset": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                     "fee": "0",
-                    "fee_currency": "QNT",
+                    "fee_currency": "_ceth_0x4a220E6096B25EADb88358cb44068A3248254675",
                     "location": "balancer",
-                    "pair": "WETH_QNT",
-                    "quote_asset": "QNT",
+                    "quote_asset": "_ceth_0x4a220E6096B25EADb88358cb44068A3248254675",
                     "rate": "0.02194014031410883771422129499",
                     "swaps": [
                         {
@@ -5077,8 +5084,8 @@ Getting Balancer trades
                             "from_address": "0x0000000000007F150Bd6f54c40A34d7C3d5e9f56",
                             "log_index": 37,
                             "to_address": "0x6545773483142Fd781023EC74ee008d93aD5466B",
-                            "token0": "QNT",
-                            "token1": "WETH",
+                            "token0": "_ceth_0x4a220E6096B25EADb88358cb44068A3248254675",
+                            "token1": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                             "tx_hash": "0x9a5c2c73762ef2e8af326e7b286488a4b238b9855d3fd749370bb3074aabf6e5"
                         }
                     ],
@@ -5090,12 +5097,11 @@ Getting Balancer trades
                 {
                     "address": "0x029f388aC4D5C8BfF490550ce0853221030E822b",
                     "amount": "3.214606868598057153",
-                    "base_asset": "MKR",
+                    "base_asset": "_ceth_0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",
                     "fee": "0",
-                    "fee_currency": "WETH",
+                    "fee_currency": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                     "location": "balancer",
-                    "pair": "MKR_WETH",
-                    "quote_asset": "WETH",
+                    "quote_asset": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                     "rate": "1.068431955314709719236410104",
                     "swaps": [
                         {
@@ -5106,8 +5112,8 @@ Getting Balancer trades
                             "from_address": "0x0000000000007F150Bd6f54c40A34d7C3d5e9f56",
                             "log_index": 334,
                             "to_address": "0x987D7Cc04652710b74Fff380403f5c02f82e290a",
-                            "token0": "WETH",
-                            "token1": "MKR",
+                            "token0": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                            "token1": "_ceth_0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",
                             "tx_hash": "0xe8f02a2c1105a0dd093d6bff6983bbc6ac662424e116fe4d53ea4f2fd4d36497"
                         }
                     ],
@@ -5130,7 +5136,6 @@ Getting Balancer trades
    :resjson string location: Always balancer.
    :resjson string fee: Always 0 for now.
    :resjson string fee_currency: Always quote_asset.
-   :resjson string pair: BASE_ASSET_QUOTE_ASSET
    :resjson int timestamp: The timestamp of the trade
    :resjson string trade_id: A combination of transaction hash plus a unique id (for custom trades that are virtually made by us)
    :resjson string trade_type: Always buy
@@ -5188,7 +5193,7 @@ Getting Compound balances
           "result": {
               "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
                   "rewards": {
-                      "COMP": {
+                      "_ceth_0xc00e94Cb662C3520282E6f5717214004A7f26888": {
                           "balance" :{
                               "amount": "3.5",
                               "usd_value": "892.5",
@@ -5196,14 +5201,14 @@ Getting Compound balances
                       }
                   },
                   "lending": {
-                      "DAI": {
+                      "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
                           "balance": {
                               "amount": "350.0",
                               "usd_value": "351.21"
                           },
                           "apy": "3.51%"
                       },
-                      "WBTC": {
+                      "_ceth_0xFC4B8ED459e00e5400be803A9BB3954234FD50e3": {
                           "balance": {
                               "amount": "1",
                               "usd_value": "9500"
@@ -5224,7 +5229,7 @@ Getting Compound balances
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                   "lending": {},
                   "borrowing": {
-                      "BAT": {
+                      "_ceth_0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
                           "balance": {
                               "amount": "560",
                               "usd_value": "156.8"
@@ -5237,7 +5242,7 @@ Getting Compound balances
           "message": ""
       }
 
-   :resjson object result: A mapping of all accounts that currently have compound balance to the balances and APY data for each account for lending and borrowing. Each key is an asset and its values are the current balance and the APY in %
+   :resjson object result: A mapping of all accounts that currently have compound balance to the balances and APY data for each account for lending and borrowing. Each key is an asset identifier and its values are the current balance and the APY in %
 
    :statuscode 200: Compound balances succesfully queried.
    :statuscode 409: User is not logged in. Or compound module is not activated.
@@ -5287,12 +5292,12 @@ Getting compound historical data
                   "address": "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056",
                   "block_number": 1,
                   "timestamp": 2,
-                  "asset": "DAI",
+                  "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
                   "value": {
                       "amount": "10.5",
                       "usd_value": "10.86"
                   },
-                  "to_asset": "cDAI",
+                  "to_asset": "_ceth_0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
                   "to_value": {
                       "amount": "165.21",
                       "usd_value": "10.86"
@@ -5304,12 +5309,12 @@ Getting compound historical data
                   "address": "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056",
                   "block_number": 1,
                   "timestamp": 2,
-                  "asset": "cDAI",
+                  "asset": "_ceth_0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
                   "value": {
                       "amount": "165.21",
                       "usd_value": "12.25"
                   },
-                  "to_asset": "DAI",
+                  "to_asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
                   "to_value": {
                       "amount": "12.01",
                       "usd_value": "12.25"
@@ -5325,7 +5330,7 @@ Getting compound historical data
                   "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
                   "block_number": 1,
                   "timestamp": 2,
-                  "asset": "ZRX",
+                  "asset": "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498",
                   "value": {
                       "amount": "10",
                       "usd_value": "4.5"
@@ -5337,7 +5342,7 @@ Getting compound historical data
                   "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
                   "block_number": 1,
                   "timestamp": 2,
-                  "asset": "ZRX",
+                  "asset": "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498",
                   "value": {
                       "amount": "10.5",
                       "usd_value": "4.8"
@@ -5358,7 +5363,7 @@ Getting compound historical data
                       "amount": "0.00005",
                       "usd_value": "0.09"
                   },
-                  "to_asset": "ZRX",
+                  "to_asset": "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498",
                   "to_value": {
                       "amount": "10",
                       "usd_value": "4.5"
@@ -5371,7 +5376,7 @@ Getting compound historical data
                   "address": "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237",
                   "block_number": 1,
                   "timestamp": 2,
-                  "asset": "COMP",
+                  "asset": "_ceth_0xc00e94Cb662C3520282E6f5717214004A7f26888",
                   "value": {
                       "amount": "1.01",
                       "usd_value": "195"
@@ -5385,17 +5390,17 @@ Getting compound historical data
               }],
               "interest_profit": {
                   "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-                      "COMP": {
+                      "_ceth_0xc00e94Cb662C3520282E6f5717214004A7f26888": {
                               "amount": "3.5",
                               "usd_value": "892.5",
                           },
-                       "DAI": {
+                       "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
                               "amount": "250",
                               "usd_value": "261.1",
                       }
                   },
                   "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-                      "ZRX": {
+                      "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498": {
                           "amount": "0.55",
                           "usd_value": "86.1"
                       }
@@ -5419,7 +5424,7 @@ Getting compound historical data
                },
                "rewards": {
                   "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-                      "COMP": {
+                      "_ceth_0xc00e94Cb662C3520282E6f5717214004A7f26888": {
                               "amount": "3.5",
                               "usd_value": "892.5",
                           },
@@ -5516,7 +5521,7 @@ Getting Uniswap balances
                   }
                 },
                 {
-                  "asset": "USDT",
+                  "asset": "_ceth_0xdAC17F958D2ee523a2206206994597C13D831ec7",
                   "total_amount": "2897321.681999",
                   "usd_price": "1.001",
                   "user_balance": {
@@ -5612,7 +5617,7 @@ Getting Uniswap events
                           "name": "YAM",
                           "symbol": "YAM"
                       },
-                      "token1": "yDAI+yUSDC+yUSDT+yTUSD",
+                      "token1": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
                       "usd_profit_loss": "162.1876736563418464415499063"
                   }
               ]
@@ -5680,12 +5685,11 @@ Getting Uniswap trades
           "0x21d05071cA08593e13cd3aFD0b4869537e015C92": [{
               "address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
               "amount": "1411.453463704718081611",
-              "base_asset": "DAI",
+              "base_asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
               "fee": "0",
-              "fee_currency": "WETH",
+              "fee_currency": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
               "location": "uniswap",
-              "pair": "DAI_WETH",
-              "quote_asset": "WETH",
+              "quote_asset": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
               "rate": "371.4351220275573898976315789",
               "swaps": [{
                   "amount0_in": "0",
@@ -5695,8 +5699,8 @@ Getting Uniswap trades
                   "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
                   "log_index": 90,
                   "to_address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
-                  "token0": "DAI",
-                  "token1": "WETH",
+                  "token0": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                  "token1": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                   "tx_hash": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900"}],
               "timestamp": 1603056982,
               "trade_id": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900-0",
@@ -5704,11 +5708,10 @@ Getting Uniswap trades
               "tx_hash": "0xf6272151d26f391886232263a384d1d9fb84c54e33119d014bc0b556dc27e900"}, {
               "address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
               "amount": "904.171423330858608178",
-              "base_asset": "DAI",
+              "base_asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
               "fee": "0",
               "fee_currency": "ALEPH",
               "location": "uniswap",
-              "pair": "DAI_ALEPH",
               "quote_asset": {
                   "ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
                   "name": "aleph.im v2",
@@ -5724,7 +5727,7 @@ Getting Uniswap trades
                   "log_index": 98,
                   "to_address": "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11",
                   "token0": {"ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628", "name": "aleph.im v2", "symbol": "ALEPH"},
-                  "token1": "WETH",
+                  "token1": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                   "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}, {
                   "amount0_in": "0",
                   "amount0_out": "904.171423330858608178",
@@ -5733,8 +5736,8 @@ Getting Uniswap trades
                   "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
                   "log_index": 101,
                   "to_address": "0x21d05071cA08593e13cd3aFD0b4869537e015C92",
-                  "token0": "DAI",
-                  "token1": "WETH",
+                  "token0": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                  "token1": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                   "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}],
               "timestamp": 1602796833,
               "trade_id": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6-0",
@@ -5754,7 +5757,6 @@ Getting Uniswap trades
    :resjson string location: Always uniswap.
    :resjson string fee: Always 0 for now.
    :resjson string fee_currency: Always quote_asset.
-   :resjson string pair: BASE_ASSET_QUOTE_ASSET
    :resjson int timestamp: The timestamp of the trade
    :resjson string trade_id: A combination of transaction hash plus a unique id (for custom trades that are virtually made by us)
    :resjson string trade_type: Always buy
@@ -5813,8 +5815,8 @@ Getting yearn finance vaults balances
           "result": {
               "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
                   "YCRV Vault": {
-                      "underlying_token": "yDAI+yUSDC+yUSDT+yTUSD",
-                      "vault_token": "yyDAI+yUSDC+yUSDT+yTUSD",
+                      "underlying_token": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
+                      "vault_token": "_ceth_0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c",
                       "underlying_value": {
                           "amount": "25", "usd_value": "150"
                       },
@@ -5824,8 +5826,8 @@ Getting yearn finance vaults balances
                       "roi": "25.55%",
                   },
                   "YYFI Vault": {
-                      "underlying_token": "YFI",
-                      "vault_token": "yYFI",
+                      "underlying_token": "_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
+                      "vault_token": "_ceth_0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1",
                       "underlying_value": {
                           "amount": "25", "usd_value": "150"
                       },
@@ -5837,8 +5839,8 @@ Getting yearn finance vaults balances
               },
           "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
               "YALINK Vault": {
-                      "underlying_token": "aLINK",
-                      "vault_token": "yaLINK",
+                      "underlying_token": "_ceth_0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84",
+                      "vault_token": "_ceth_0x29E240CFD7946BA20895a7a02eDb25C210f9f324",
                       "underlying_value": {
                           "amount": "25", "usd_value": "150"
                       },
@@ -5910,11 +5912,11 @@ Getting yearn finance vaults historical data
                           "event_type": "deposit",
                           "block_number": 1,
                           "timestamp": 1,
-                          "from_asset": "yDAI+yUSDC+yUSDT+yTUSD",
+                          "from_asset": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
                           "from_value": {
                               "amount": "115000", "usd_value": "119523.23"
                           },
-                          "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+                          "to_asset": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
                           "to_value": {
                               "amount": "108230.234", "usd_value": "119523.23"
                           },
@@ -5925,11 +5927,11 @@ Getting yearn finance vaults historical data
                           "event_type": "withdraw",
                           "block_number": 1,
                           "timestamp": 1,
-                          "from_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+                          "from_asset": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
                           "from_value": {
                               "amount": "108230.234", "usd_value": "125321.24"
                           },
-                          "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
+                          "to_asset": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
                           "to_value": {
                               "amount": "117500.23", "usd_value": "123500.32"
                           },
@@ -5948,7 +5950,7 @@ Getting yearn finance vaults historical data
                           "event_type": "deposit",
                           "block_number": 1,
                           "timestamp": 1,
-                          "from_asset": "YFI",
+                          "from_asset": "_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
                           "from_value": {
                               "amount": "5", "usd_value": "155300.23"
                           },
@@ -5971,11 +5973,11 @@ Getting yearn finance vaults historical data
                           "event_type": "deposit",
                           "block_number": 1,
                           "timestamp": 1,
-                          "from_asset": "crvRenWSBTC",
+                          "from_asset": "_ceth_0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3",
                           "from_value": {
                               "amount": "20", "usd_value": "205213.12"
                           },
-                          "to_asset": "ycrvRenWSBTC",
+                          "to_asset": "_ceth_0x7Ff566E1d69DEfF32a7b244aE7276b9f90e9D0f6",
                           "to_value": {
                               "amount": "19.8523", "usd_value": "2049874.23"
                           },
@@ -6048,7 +6050,7 @@ Getting Loopring balances
                         "amount": "1050",
                         "usd_value": "950"
                     },
-                    "GNO": {
+                    "_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96": {
                         "amount": "1",
                         "usd_value": "5"
                     }
@@ -6285,19 +6287,19 @@ Querying ethereum airdrops
               "0xe5B3330A43CeC5A01A80E75ebaB2d3bc17e70819": {
                   "1inch": {
                       "amount": "675.55",
-                      "asset": "1INCH",
+                      "asset": "_ceth_0x111111111117dC0aa78b770fA6A738034120C302",
                       "link": "https://app.uniswap.org/"
                   }
               },
               "0x0B89f648eEcCc574a9B7449B5242103789CCD9D7": {
                   "1inch": {
                       "amount": "1823.23",
-                      "asset": "1INCH",
+                      "asset": "_ceth_0x111111111117dC0aa78b770fA6A738034120C302",
                       "link": "https://1inch.exchange/"
                   },
                   "uniswap": {
                       "amount": "400",
-                      "asset": "UNI",
+                      "asset": "_ceth_0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
                       "link": "https://app.uniswap.org/"
                   }
               },
@@ -6513,8 +6515,8 @@ Adding blockchain accounts
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
                        "assets": {
                            "ETH": {"amount": "10", "usd_value": "1755.53"},
-                           "GNO": {"amount": "1", "usd_value": "50"},
-                           "RDN": {"amount": "1", "usd_value": "1.5"}
+                           "_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96": {"amount": "1", "usd_value": "50"},
+                           "_ceth_0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6": {"amount": "1", "usd_value": "1.5"}
                        },
                        "liabilities": {}
                    },
@@ -6530,8 +6532,8 @@ Adding blockchain accounts
                       "BTC": {"amount": "1", "usd_value": "7540.15"},
                       "ETH": {"amount": "10", "usd_value": "1650.53"},
                       "KSM": {"amount": "12", "usd_value": "894.84"},
-                      "RDN": {"amount": "1", "usd_value": "1.5"},
-                      "GNO": {"amount": "1", "usd_value": "50"}
+                      "_ceth_0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6": {"amount": "1", "usd_value": "1.5"},
+                      "_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96": {"amount": "1", "usd_value": "50"}
                   },
                   "liabilities": {}
           },
@@ -7501,7 +7503,7 @@ Dealing with ignored assets
       Content-Type: application/json
 
       {
-          "result": ["1ST", "DAO"]
+          "result": ["_ceth_0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7", "_ceth_0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413"]
           "message": ""
       }
 
@@ -7524,7 +7526,7 @@ Dealing with ignored assets
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"assets": ["GNO"]}
+      {"assets": ["_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96"]}
 
    :reqjson list assets: A list of asset symbols to add to the ignored assets.
 
@@ -7536,7 +7538,7 @@ Dealing with ignored assets
       Content-Type: application/json
 
       {
-          "result": ["1ST", "DAO", "GNO"]
+          "result": ["_ceth_0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7", "_ceth_0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413", "_ceth_0x6810e776880C02933D47DB1b9fc05908e5386b96"]
           "message": ""
       }
 
@@ -7559,7 +7561,7 @@ Dealing with ignored assets
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"assets": ["DAO"]}
+      {"assets": ["_ceth_0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413"]}
 
    :reqjson list assets: A list of asset symbols to remove from the ignored assets.
 
@@ -7571,7 +7573,7 @@ Dealing with ignored assets
       Content-Type: application/json
 
       {
-          "result": ["1ST"]
+          "result": ["_ceth_0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7"]
           "message": ""
       }
 

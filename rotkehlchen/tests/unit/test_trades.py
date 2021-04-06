@@ -3,14 +3,10 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import UnknownAsset
-from rotkehlchen.exchanges.data_structures import (
-    Trade,
-    deserialize_trade,
-    trade_get_assets,
-    trades_from_dictlist,
-)
+from rotkehlchen.exchanges.data_structures import Trade, deserialize_trade, trades_from_dictlist
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Location, Timestamp, TradePair, TradeType
+from rotkehlchen.tests.utils.constants import A_EUR
+from rotkehlchen.typing import Location, Timestamp, TradeType
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 
@@ -21,30 +17,11 @@ def test_trade_type_to_string():
     assert str(TradeType.SETTLEMENT_SELL) == 'settlement_sell'
 
 
-def test_trade_get_assets():
-    trade = Trade(
-        timestamp=1546985746,
-        location=Location.BITTREX,
-        pair=TradePair('BTC_ETH'),
-        trade_type=TradeType.BUY,
-        amount=FVal(10),
-        rate=FVal(0.05),
-        fee=FVal(0.001),
-        fee_currency=A_ETH,
-        link='',
-        notes='',
-    )
-    a1, a2 = trade_get_assets(trade)
-    assert isinstance(a1, Asset)
-    assert a1 == A_BTC
-    assert isinstance(a2, Asset)
-    assert a2 == A_ETH
-
-
 raw_trade1 = {
     'timestamp': 1516985746,
     'location': 'external',
-    'pair': 'ETH_EUR',
+    'base_asset': 'ETH',
+    'quote_asset': 'EUR',
     'trade_type': 'buy',
     'amount': '20.51',
     'rate': '134.1',
@@ -55,7 +32,8 @@ raw_trade1 = {
 raw_trade2 = {
     'timestamp': 1537985746,
     'location': 'kraken',
-    'pair': 'ETH_BTC',
+    'base_asset': 'ETH',
+    'quote_asset': 'BTC',
     'trade_type': 'sell',
     'amount': '2.80',
     'rate': '0.1234',
@@ -68,7 +46,8 @@ raw_trade2 = {
 raw_trade3 = {
     'timestamp': 1557985746,
     'location': 'kraken',
-    'pair': 'ETH_BTC',
+    'base_asset': 'ETH',
+    'quote_asset': 'BTC',
     'trade_type': 'sell',
     'amount': '2.80',
     'rate': '0.1234',
@@ -84,7 +63,8 @@ def test_deserialize_trade():
     assert isinstance(trade1, Trade)
     assert trade1.timestamp == Timestamp(1516985746)
     assert trade1.location == Location.EXTERNAL
-    assert trade1.pair == TradePair('ETH_EUR')
+    assert trade1.base_asset == A_ETH
+    assert trade1.quote_asset == A_EUR
     assert trade1.trade_type == TradeType.BUY
     assert trade1.amount == FVal('20.51')
     assert trade1.rate == FVal('134.1')
@@ -98,7 +78,8 @@ def test_deserialize_trade():
     assert isinstance(trade2, Trade)
     assert trade2.timestamp == Timestamp(1537985746)
     assert trade2.location == Location.KRAKEN
-    assert trade2.pair == TradePair('ETH_BTC')
+    assert trade2.base_asset == A_ETH
+    assert trade2.quote_asset == A_BTC
     assert trade2.trade_type == TradeType.SELL
     assert trade2.amount == FVal('2.80')
     assert trade2.rate == FVal('0.1234')
@@ -131,7 +112,8 @@ def test_serialize_deserialize_trade():
     trade = Trade(
         timestamp=Timestamp(1537985746),
         location=Location.KRAKEN,
-        pair=TradePair('ETH_BTC'),
+        base_asset=A_ETH,
+        quote_asset=A_BTC,
         trade_type=TradeType.SELL,
         amount=FVal('2.80'),
         rate=FVal('0.1234'),

@@ -35,7 +35,6 @@ from rotkehlchen.typing import (
     Location,
     Price,
     Timestamp,
-    TradePair,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
@@ -74,8 +73,6 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     tx_asset = asset_from_coinbase(raw_trade['amount']['currency'], time=timestamp)
     native_amount = deserialize_asset_amount(raw_trade['subtotal']['amount'])
     native_asset = asset_from_coinbase(raw_trade['subtotal']['currency'], time=timestamp)
-    # in coinbase you are buying/selling tx_asset for native_asset
-    pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')
     amount = tx_amount
     # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
     rate = Price(native_amount / tx_amount)
@@ -85,7 +82,9 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     return Trade(
         timestamp=timestamp,
         location=Location.COINBASE,
-        pair=pair,
+        # in coinbase you are buying/selling tx_asset for native_asset
+        base_asset=tx_asset,
+        quote_asset=native_asset,
         trade_type=trade_type,
         amount=amount,
         rate=rate,
@@ -117,8 +116,6 @@ def trade_from_conversion(trade_a: Dict[str, Any], trade_b: Dict[str, Any]) -> O
     tx_asset = asset_from_coinbase(trade_b['amount']['currency'], time=timestamp)
     native_amount = deserialize_asset_amount(trade_b['native_amount']['amount'])
     native_asset = asset_from_coinbase(trade_b['native_amount']['currency'], time=timestamp)
-    # in coinbase you are buying/selling tx_asset for native_asset
-    pair = TradePair(f'{tx_asset.symbol}_{native_asset.symbol}')
     amount = tx_amount
     # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
     rate = Price(native_amount / tx_amount)
@@ -136,7 +133,9 @@ def trade_from_conversion(trade_a: Dict[str, Any], trade_b: Dict[str, Any]) -> O
     return Trade(
         timestamp=timestamp,
         location=Location.COINBASE,
-        pair=pair,
+        # in coinbase you are buying/selling tx_asset for native_asset
+        base_asset=tx_asset,
+        quote_asset=native_asset,
         trade_type=trade_type,
         amount=amount,
         rate=rate,
