@@ -3216,6 +3216,8 @@ Dealing with ledger actions
                       "location": "blockchain",
                       "amount": "1550",
                       "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+		      "rate": "0.85",
+		      "rate_asset": "EUR",
                       "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
                       "notes": "The DAI I lost in the pickle finance hack"
                   },
@@ -3233,6 +3235,8 @@ Dealing with ledger actions
    :resjsonarr string location: A valid location at which the action happened.
    :resjsonarr string amount: The amount of asset for the action
    :resjsonarr string asset: The asset for the action
+   :resjsonarr string rate: Optional. If given then this is the rate in ``rate_asset`` for the ``asset`` of the action.
+   :resjsonarr string rate_asset: Optional. If given then this is the asset for which ``rate`` is given.
    :resjsonarr string link: Optional unique identifier or link to the action. Can be an empty string
    :resjsonarr string notes: Optional notes about the action. Can be an empty string
    :resjson int entries_found: The amount of actions found for the user. That disregards the filter and shows all actions found.
@@ -3261,6 +3265,8 @@ Dealing with ledger actions
               "location": "external",
               "amount": "1",
               "asset": "ETH",
+	      "rate": "650",
+	      "rate_asset": "EUR",
               "link": "Optional unique identifier",
               "notes": "Eth I received for being pretty"
       }}
@@ -3304,6 +3310,8 @@ Dealing with ledger actions
           "location": "external",
           "amount": "2",
           "asset": "ETH",
+          "rate": "650",
+          "rate_asset": "EUR",
           "link": "Optional unique identifier",
           "notes": "Eth I received for being pretty"
       }
@@ -3327,6 +3335,8 @@ Dealing with ledger actions
                       "location": "external",
                       "amount": "2",
                       "asset": "ETH",
+                      "rate": "650",
+                      "rate_asset": "EUR",
                       "link": "Optional unique identifier",
                       "notes": "Eth I received for being pretty"
                   },
@@ -3378,6 +3388,8 @@ Dealing with ledger actions
                       "location": "external",
                       "amount": "2",
                       "asset": "ETH",
+                      "rate": "650",
+                      "rate_asset": "EUR",
                       "link": "Optional unique identifier",
                       "notes": "Eth I received for being pretty"
                   },
