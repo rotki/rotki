@@ -1,18 +1,19 @@
 from unittest.mock import patch
-from typing import Optional
+from typing import Optional, Set
 import warnings as test_warnings
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_ftx, UNSUPPORTED_FTX_ASSETS
-from rotkehlchen.constants.assets import A_ETH, A_USD, A_USDC
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_ETH, A_USD, A_USDC, A_1INCH
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.ftx import FTX
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location, TradeType, Timestamp
+from rotkehlchen.typing import AssetMovementCategory, Location, TradeType, Timestamp, Fee
 
 
 TEST_END_TS = Timestamp(1617382780)
@@ -23,9 +24,9 @@ def test_name():
     assert exchange.name == 'FTX'
 
 
-def test_ftx_exchange_assets_are_known(mock_ftx):
+def test_ftx_exchange_assets_are_known(mock_ftx: FTX):
 
-    unknown_assets = set()
+    unknown_assets: Set[str] = set()
     unsupported_assets = set(UNSUPPORTED_FTX_ASSETS)
 
     def process_currency(currency: Optional[str]):
@@ -210,7 +211,7 @@ DEPOSITS_RESPONSE = """
 """
 
 
-def mock_normal_ftx_query(url):  # pylint: disable=unused-argument
+def mock_normal_ftx_query(url: str):  # pylint: disable=unused-argument
     if 'fills' in url:
         return MockResponse(200, FILLS_RESPONSE)
     if 'deposits' in url:
@@ -224,15 +225,15 @@ def mock_normal_ftx_query(url):  # pylint: disable=unused-argument
 
 
 def query_ftx_and_test(
-        ftx,
-        query_fn_name,
-        fills_response=FILLS_RESPONSE,
-        deposits_response=DEPOSITS_RESPONSE,
-        withdrawals_response=WITHDRAWALS_RESPONSE,
-        expected_warnings_num=0,
-        expected_errors_num=0,
+        ftx: FTX,
+        query_fn_name: str,
+        fills_response: str = FILLS_RESPONSE,
+        deposits_response: str = DEPOSITS_RESPONSE,
+        withdrawals_response: str = WITHDRAWALS_RESPONSE,
+        expected_warnings_num: int = 0,
+        expected_errors_num: int = 0,
         # Since this test only mocks as breaking only one of the two actions by default
-        expected_actions_num=1,
+        expected_actions_num: int = 1,
 ):
     def mock_ftx_query(url):  # pylint: disable=unused-argument
         if 'fills' in url:
@@ -272,9 +273,10 @@ def test_ftx_trade_history(mock_ftx):
     assert len(trades) == 3
 
     expected_trades = [Trade(
-        timestamp=1614387662,
+        timestamp=Timestamp(1614387662),
         location=Location.FTX,
-        pair='ETH_USD',
+        base_asset=A_ETH,
+        quote_asset=A_USD,
         trade_type=TradeType.SELL,
         amount=FVal('1'),
         rate=FVal('2000'),
@@ -282,9 +284,10 @@ def test_ftx_trade_history(mock_ftx):
         fee_currency=A_USD,
         link='1',
     ), Trade(
-        timestamp=1615338062,
+        timestamp=Timestamp(1615338062),
         location=Location.FTX,
-        pair='1INCH_ETH',
+        base_asset=A_1INCH,
+        quote_asset=A_ETH,
         trade_type=TradeType.BUY,
         amount=FVal('400'),
         rate=FVal('0.005'),
@@ -292,9 +295,10 @@ def test_ftx_trade_history(mock_ftx):
         fee_currency=A_ETH,
         link='2',
     ), Trade(
-        timestamp=1615424462,
+        timestamp=Timestamp(1615424462),
         location=Location.FTX,
-        pair='1INCH_ETH',
+        base_asset=A_1INCH,
+        quote_asset=A_ETH,
         trade_type=TradeType.SELL,
         amount=FVal('200'),
         rate=FVal('0.006'),
@@ -316,11 +320,22 @@ def test_ftx_trade_history_unexpected_data(mock_ftx):
         expected_actions_num=3,
     )
 
-    # Invalid time
-    broken_time = FILLS_RESPONSE.replace('2021-03-11T01:01:01.662266+00:00', 'true')
+    # missing key
+    broken_response = FILLS_RESPONSE.replace('size', 'ides')
     query_ftx_and_test(
         ftx=mock_ftx,
-        fills_response=broken_time,
+        fills_response=broken_response,
+        query_fn_name='query_online_trade_history',
+        expected_warnings_num=0,
+        expected_errors_num=3,
+        expected_actions_num=0,
+    )
+
+    # Invalid time
+    broken_response = FILLS_RESPONSE.replace('2021-03-11T01:01:01.662266+00:00', 'true')
+    query_ftx_and_test(
+        ftx=mock_ftx,
+        fills_response=broken_response,
         query_fn_name='query_online_trade_history',
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -328,10 +343,10 @@ def test_ftx_trade_history_unexpected_data(mock_ftx):
     )
 
     # Unknown assets
-    broken_time = FILLS_RESPONSE.replace('USD', 'oldmoney')
+    broken_response = FILLS_RESPONSE.replace('USD', 'oldmoney')
     query_ftx_and_test(
         ftx=mock_ftx,
-        fills_response=broken_time,
+        fills_response=broken_response,
         query_fn_name='query_online_trade_history',
         expected_warnings_num=1,
         expected_errors_num=0,
@@ -339,10 +354,10 @@ def test_ftx_trade_history_unexpected_data(mock_ftx):
     )
 
     # Invalid asset format
-    broken_time = FILLS_RESPONSE.replace('USD', '123')
+    broken_response = FILLS_RESPONSE.replace('USD', '123')
     query_ftx_and_test(
         ftx=mock_ftx,
-        fills_response=broken_time,
+        fills_response=broken_response,
         query_fn_name='query_online_trade_history',
         expected_warnings_num=1,
         expected_errors_num=0,
@@ -350,10 +365,10 @@ def test_ftx_trade_history_unexpected_data(mock_ftx):
     )
 
     # Invalid trade types
-    broken_time = FILLS_RESPONSE.replace('buy', 'investmentss')
+    broken_response = FILLS_RESPONSE.replace('buy', 'investmentss')
     query_ftx_and_test(
         ftx=mock_ftx,
-        fills_response=broken_time,
+        fills_response=broken_response,
         query_fn_name='query_online_trade_history',
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -361,10 +376,10 @@ def test_ftx_trade_history_unexpected_data(mock_ftx):
     )
 
     # Invalid amount
-    broken_time = FILLS_RESPONSE.replace('400', '"four hundred"')
+    broken_response = FILLS_RESPONSE.replace('400', '"four hundred"')
     query_ftx_and_test(
         ftx=mock_ftx,
-        fills_response=broken_time,
+        fills_response=broken_response,
         query_fn_name='query_online_trade_history',
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -372,10 +387,10 @@ def test_ftx_trade_history_unexpected_data(mock_ftx):
     )
 
     # Invalid fee amount
-    broken_time = FILLS_RESPONSE.replace('0.6', '"zero dot six"')
+    broken_response = FILLS_RESPONSE.replace('0.6', '"zero dot six"')
     query_ftx_and_test(
         ftx=mock_ftx,
-        fills_response=broken_time,
+        fills_response=broken_response,
         query_fn_name='query_online_trade_history',
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -383,31 +398,23 @@ def test_ftx_trade_history_unexpected_data(mock_ftx):
     )
 
     # Unknown fee asset
-    broken_time = FILLS_RESPONSE.replace('BTC', 'AUGMENTED')
+    broken_response = FILLS_RESPONSE.replace('BTC', 'AUGMENTED')
     query_ftx_and_test(
         ftx=mock_ftx,
-        fills_response=broken_time,
+        fills_response=broken_response,
         query_fn_name='query_online_trade_history',
         expected_warnings_num=1,
         expected_errors_num=0,
         expected_actions_num=2,
     )
 
-    # missing key
-    broken_time = FILLS_RESPONSE.replace('id', 'ides')
-    query_ftx_and_test(
-        ftx=mock_ftx,
-        fills_response=broken_time,
-        query_fn_name='query_online_trade_history',
-        expected_warnings_num=0,
-        expected_errors_num=3,
-        expected_actions_num=0,
-    )
 
-
-@pytest.mark.parametrize('mocked_current_prices', [{"USDC": FVal(1), "ETH": FVal(2000)}])
-def test_balances(mock_ftx):
-    """Test that the mocked balances are correctly mocked"""
+@pytest.mark.parametrize('mocked_current_prices', [{
+    A_USDC: FVal(1),
+    "ETH": FVal(2000),
+}])
+def test_balances(mock_ftx: FTX):
+    """Test that balances are correctly extracted"""
 
     with patch.object(mock_ftx.session, 'get', side_effect=mock_normal_ftx_query):
         balances, msg = mock_ftx.query_balances()
@@ -425,11 +432,11 @@ def test_balances(mock_ftx):
     assert balances[A_ETH].usd_value == FVal('20020000.0')
 
 
-def test_query_deposits_withdrawals(mock_ftx):
+def test_query_deposits_withdrawals(mock_ftx: FTX):
     """Test happy path of deposits/withdrawls"""
     with patch.object(mock_ftx.session, 'get', side_effect=mock_normal_ftx_query):
         movements = mock_ftx.query_online_deposits_withdrawals(
-            start_ts=0,
+            start_ts=Timestamp(0),
             end_ts=TEST_END_TS,
         )
     warnings = mock_ftx.msg_aggregator.consume_warnings()
@@ -442,33 +449,33 @@ def test_query_deposits_withdrawals(mock_ftx):
         category=AssetMovementCategory.DEPOSIT,
         address='0x541163adf0a2e830d9f940763e912807d1a359f5',
         transaction_id='0xf787fa6b62edf1c97fb3f73f80a5eb7550bbf3dcf4269b9bfb9e8c1c0a3bc1a9',
-        timestamp=1612159566,
+        timestamp=Timestamp(1612159566),
         asset=A_ETH,
         amount=FVal('20'),
         fee_asset=A_ETH,
-        fee=FVal('0'),
+        fee=Fee(ZERO),
         link='3',
     ), AssetMovement(
         location=Location.FTX,
         category=AssetMovementCategory.WITHDRAWAL,
-        timestamp=1612159566,
+        timestamp=Timestamp(1612159566),
         address='0x903d12bf2c57a29f32365917c706ce0e1a84cce3',
         transaction_id='0xbb27f24c2a348526fc23767d3d8bb303099e90f253ef9fdbb28ce38c1635d116',
         asset=A_ETH,
         amount=FVal('11.0'),
         fee_asset=A_ETH,
-        fee=FVal('0'),
+        fee=Fee(ZERO),
         link='1',
     ), AssetMovement(
         location=Location.FTX,
         category=AssetMovementCategory.WITHDRAWAL,
         address=None,
         transaction_id=None,
-        timestamp=1612159566,
+        timestamp=Timestamp(1612159566),
         asset=A_USD,
         amount=FVal('21.0'),
         fee_asset=A_USD,
-        fee=FVal('0'),
+        fee=Fee(ZERO),
         link='2',
     )]
 
@@ -476,7 +483,7 @@ def test_query_deposits_withdrawals(mock_ftx):
     assert movements == expected_movements
 
 
-def test_query_deposits_withdrawals_unexpected_data(mock_ftx):
+def test_query_deposits_withdrawals_unexpected_data(mock_ftx: FTX):
     """Test that ftx deposit/withdrawals query handles unexpected data properly"""
     # first query with proper data and expect no errors
     query_ftx_and_test(
@@ -545,7 +552,7 @@ def test_query_deposits_withdrawals_unexpected_data(mock_ftx):
     )
 
 
-def test_pagination(mock_ftx):
+def test_pagination(mock_ftx: FTX):
     """Test pagination in the eth/eur market (public endpoint)"""
     # Try pagination good path
     response = mock_ftx._api_query(

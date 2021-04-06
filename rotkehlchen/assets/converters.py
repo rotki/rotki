@@ -741,7 +741,7 @@ def asset_from_ftx(ftx_name: str) -> Asset:
     if ftx_name in UNSUPPORTED_FTX_ASSETS:
         raise UnsupportedAsset(ftx_name)
 
-    return Asset(ftx_name)
+    return symbol_to_asset_or_token(ftx_name)
 
 
 def asset_from_kucoin(kucoin_name: str) -> Asset:

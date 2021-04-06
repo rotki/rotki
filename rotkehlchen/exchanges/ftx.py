@@ -14,6 +14,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_ftx
+from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -35,7 +36,6 @@ from rotkehlchen.typing import (
     Fee,
     Location,
     Timestamp,
-    TradePair,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
@@ -46,6 +46,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+INITIAL_BACKOFF_TIME = 2
+BACKOFF_LIMIT = 60
+PAGINATION_LIMIT = 100
 
 
 def trade_from_ftx(raw_trade: Dict[str, Any]) -> Optional[Trade]:
@@ -64,20 +67,18 @@ def trade_from_ftx(raw_trade: Dict[str, Any]) -> Optional[Trade]:
 
     timestamp = deserialize_timestamp_from_date(raw_trade['time'], 'iso8601', 'FTX')
     trade_type = deserialize_trade_type(raw_trade['side'])
-
     base_asset = asset_from_ftx(raw_trade['baseCurrency'])
     quote_asset = asset_from_ftx(raw_trade['quoteCurrency'])
-
     amount = deserialize_asset_amount(raw_trade['size'])
     rate = deserialize_price(raw_trade['price'])
-
     fee_currency = asset_from_ftx(raw_trade['feeCurrency'])
     fee = deserialize_fee(raw_trade['fee'])
 
     return Trade(
         timestamp=timestamp,
         location=Location.FTX,
-        pair=TradePair(f'{base_asset.identifier}_{quote_asset.identifier}'),
+        base_asset=base_asset,
+        quote_asset=quote_asset,
         trade_type=trade_type,
         amount=amount,
         rate=rate,
@@ -85,10 +86,6 @@ def trade_from_ftx(raw_trade: Dict[str, Any]) -> Optional[Trade]:
         fee_currency=fee_currency,
         link=str(raw_trade['id']),
     )
-
-
-class FTXLoginError(Exception):
-    pass
 
 
 class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
@@ -99,8 +96,8 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
-            initial_backoff: int = 4,
-            backoff_limit: int = 180,
+            initial_backoff: int = INITIAL_BACKOFF_TIME,
+            backoff_limit: int = BACKOFF_LIMIT,
     ):
         super().__init__('FTX', api_key, secret, database)
         self.apiversion = 'v2'
@@ -126,15 +123,14 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _make_request(
         self,
         endpoint: str,
-        start_time: Timestamp = None,
-        end_time: Timestamp = None,
-        limit: int = 100,
+        start_time: Optional[Timestamp] = None,
+        end_time: Optional[Timestamp] = None,
+        limit: int = PAGINATION_LIMIT,
     ) -> Union[List[Dict[str, Any]], Dict[str, List[Any]]]:
-        """Performs an FTX API Query for endpoint
-
-        You can optionally provide extra arguments to the endpoint via the options argument.
-        If this is an ongoing paginating call then provide pagination_next_uri.
-        If you want just the first results then set ignore_pagination to True.
+        """Performs an FTX API Query for endpoint adding the needed information to
+        authenticate user and handling errors.
+        This function can raise:
+        - RemoteError
         """
         request_verb = "GET"
         backoff = self.initial_backoff
@@ -142,9 +138,7 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         # Use a while loop to retry request if rate limit is reached
         while True:
             request_url = '/api/' + endpoint
-            options = {}
-            if limit is not None:
-                options['limit'] = limit
+            options = {'limit': limit}
             if start_time is not None:
                 options['start_time'] = start_time
             if end_time is not None:
@@ -155,10 +149,8 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             timestamp = int(time.time() * 1000)
             signature_payload = f'{timestamp}{request_verb}{request_url}'.encode()
-
             signature = hmac.new(self.secret, signature_payload, 'sha256').hexdigest()
             log.debug('FTX API query', request_url=request_url)
-
             self.session.headers.update({
                 'FTX-KEY': self.api_key,
                 'FTX-SIGN': signature,
@@ -174,7 +166,7 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 if backoff < self.backoff_limit:
                     log.debug(
-                        f'FTX rate limit exceeded on endpoint {request_url}. Backing off',
+                        f'FTX rate limit exceeded on request {request_url}. Backing off',
                         seconds=backoff,
                     )
                     gevent.sleep(backoff)
@@ -183,13 +175,7 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             # We got a result here
             break
 
-        if response.status_code == 401:
-            raise FTXLoginError(
-                f'Authentication to FTX failed for {request_url}. Verify the time of the machine'
-                f'and that the keys for the API are correct',
-            )
-
-        if response.status_code != 200:
+        if response.status_code != HTTPStatus.OK:
             raise RemoteError(
                 f'FTX query {full_url} responded with error status code: '
                 f'{response.status_code} and text: {response.text}',
@@ -209,9 +195,9 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['wallet/all_balances'],
-            start_time: Timestamp = None,
-            end_time: Timestamp = None,
-            limit: int = 100,
+            start_time: Optional[Timestamp] = None,
+            end_time: Optional[Timestamp] = None,
+            limit: int = PAGINATION_LIMIT,
             paginate: bool = True,
     ) -> Dict[str, List[Any]]:
         ...
@@ -226,9 +212,9 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 'markets',
                 'markets/eth/eur/trades',
             ],
-            start_time: Timestamp = None,
-            end_time: Timestamp = None,
-            limit: int = 100,
+            start_time: Optional[Timestamp] = None,
+            end_time: Optional[Timestamp] = None,
+            limit: int = PAGINATION_LIMIT,
             paginate: bool = True,
     ) -> List[Dict[str, Any]]:
         ...
@@ -236,11 +222,16 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def _api_query(
             self,
             endpoint: str,
-            start_time: Timestamp = None,
-            end_time: Timestamp = None,
-            limit: int = 100,
+            start_time: Optional[Timestamp] = None,
+            end_time: Optional[Timestamp] = None,
+            limit: int = PAGINATION_LIMIT,
             paginate: bool = True,
     ) -> Union[List[Dict[str, Any]], Dict[str, List[Any]]]:
+        """Query FTX endpoint and retrieve all available information if pagination
+        is requested. In case of paginate being set to False only one request is made.
+        Can raise:
+        - RemoteError
+        """
         if not paginate:
             final_data_no_pag = self._make_request(
                 endpoint=endpoint,
@@ -290,7 +281,7 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 new_end_time = min(times)
             else:
                 log.error(
-                    f'Error processing ftx trade history. Fill query step '
+                    f'Error processing FTX trade history. Query step '
                     f'returned invalid entries when trying pagination for endpoint '
                     f'{endpoint} with start_time {start_time}, end_time {end_time} '
                     f'and limit of {limit}',
@@ -323,14 +314,11 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         for balance_info in balances:
             try:
                 amount = deserialize_asset_amount(balance_info['total'])
-
                 # ignore empty balances. FTX returns zero for some coins
-                # I believe those that the user previously owned
                 if amount == ZERO:
                     continue
 
-                asset = Asset(balance_info['coin'])
-
+                asset = symbol_to_asset_or_token(balance_info['coin'])
                 try:
                     usd_price = Inquirer().find_usd_price(asset=asset)
                 except RemoteError as e:
@@ -379,7 +367,7 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[Trade]:
 
         raw_data = self._api_query('fills', start_time=start_ts, end_time=end_ts)
-        log.debug('FTX buys/sells history result', results_num=len(raw_data))
+        log.debug('FTX trades history result', results_num=len(raw_data))
 
         trades = []
         for raw_trade in raw_data:
@@ -425,26 +413,21 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         Can log error/warning and return None if something went wrong at deserialization
         """
         try:
-            if raw_data.get('status') not in ('complete', 'confirmed'):
+            if raw_data['status'] not in ('complete', 'confirmed'):
                 return None
 
             timestamp = deserialize_timestamp_from_date(raw_data['time'], 'iso8601', 'FTX')
 
             amount = deserialize_asset_amount_force_positive(raw_data['size'])
-            asset = asset_from_ftx(raw_data.get('coin', ''))
-
+            asset = asset_from_ftx(raw_data['coin'])
             # Only get address/transaction id for "send" type of transactions
             fee = Fee(ZERO)
-
             movement_category = movement_type
             if raw_data.get('fee', None) is not None:
                 fee = deserialize_fee(raw_data['fee'])
-
             address = raw_data.get('address', None)
-
             if isinstance(address, dict):
                 address = raw_data['address'].get('address', None)
-
             transaction_id = raw_data.get('txid', None)
 
             return AssetMovement(
@@ -478,8 +461,9 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 'asset movement. Check logs for details and open a bug report.',
             )
             log.error(
-                f'Unexpected data encountered during deserialization of FTX '
-                f'asset_movement {raw_data}. Error was: {str(e)}',
+                'Error processing FTX trade',
+                trade=raw_data,
+                error=msg,
             )
 
         return None
@@ -505,14 +489,17 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         movements = []
         for raw_deposit in raw_data_deposits:
-            movement = self._deserialize_asset_movement(raw_deposit, AssetMovementCategory.DEPOSIT)
+            movement = self._deserialize_asset_movement(
+                raw_data=raw_deposit,
+                movement_type=AssetMovementCategory.DEPOSIT,
+            )
             if movement:
                 movements.append(movement)
 
         for raw_withdrawal in raw_data_withdrawals:
             movement = self._deserialize_asset_movement(
-                raw_withdrawal,
-                AssetMovementCategory.WITHDRAWAL,
+                raw_data=raw_withdrawal,
+                movement_type=AssetMovementCategory.WITHDRAWAL,
             )
             if movement:
                 movements.append(movement)
