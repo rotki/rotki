@@ -8,7 +8,7 @@ from eth_utils import is_checksum_address
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
-from rotkehlchen.assets.utils import get_ethereum_token
+from rotkehlchen.assets.utils import get_ethereum_token, symbol_to_ethereum_token
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError, UnknownAsset
@@ -113,6 +113,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'ACM',     # AC Milan Fan Token but Actinium in CC
         'TFC',     # TheFutbolCoin but The Freedom Coin in CC
         ethaddress_to_identifier('0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074'),  # noqa: E501 # Mask Network but NFTX Hashmask Index in CC
+        ethaddress_to_identifier('0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14'),  # noqa: E501 # balanced crypto pie but 0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14 in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -122,8 +123,8 @@ def test_cryptocompare_asset_support(cryptocompare):
         )
         if potential_support:
             msg = (
-                f'We have {asset_data.identifier} as not supported by cryptocompare but '
-                f'the symbol appears in its supported assets'
+                f'We have {asset_data.identifier} with symbol {asset_data.symbol} as not supported'
+                f' by cryptocompare but the symbol appears in its supported assets'
             )
             test_warnings.warn(UserWarning(msg))
 
@@ -153,11 +154,15 @@ def test_asset_identifiers_are_unique_all_lowercased():
 
 def test_case_does_not_matter_for_asset_constructor():
     """Test that whatever case we give to asset constructor result is the same"""
-    a1 = Asset('USDt')
-    a2 = Asset('USDT')
+    a1 = Asset('bTc')
+    a2 = Asset('BTC')
     assert a1 == a2
-    assert a1.identifier == 'USDT'
-    assert a2.identifier == 'USDT'
+    assert a1.identifier == 'BTC'
+    assert a2.identifier == 'BTC'
+
+    a3 = symbol_to_ethereum_token('UsDt')
+    a4 = symbol_to_ethereum_token('usdt')
+    assert a3.identifier == a4.identifier == ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7')  # noqa: E501
 
 
 def test_coingecko_identifiers_are_reachable(data_dir):
@@ -198,7 +203,7 @@ def test_coingecko_identifiers_are_reachable(data_dir):
                     suggestions.append((entry['id'], entry['name'], entry['symbol']))
                     continue
 
-        msg = f'Asset {identifier} coingecko mapping does not exist.'
+        msg = f'Asset {identifier} with symbol {asset_data.symbol} coingecko mapping does not exist.'  # noqa: E501
         if len(suggestions) != 0:
             for s in suggestions:
                 msg += f'\nSuggestion: id:{s[0]} name:{s[1]} symbol:{s[2]}'
