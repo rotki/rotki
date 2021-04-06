@@ -28,12 +28,8 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
-from rotkehlchen.accounting.structures import (
-    ActionType,
-    BalanceType,
-    LedgerAction,
-    LedgerActionType,
-)
+from rotkehlchen.accounting.ledger_actions import LedgerAction
+from rotkehlchen.accounting.structures import ActionType, BalanceType
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
@@ -905,26 +901,9 @@ class RestAPI():
         return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
-    def add_ledger_action(
-            self,
-            timestamp: Timestamp,
-            action_type: LedgerActionType,
-            location: Location,
-            amount: AssetAmount,
-            asset: Asset,
-            link: str,
-            notes: str,
-    ) -> Response:
+    def add_ledger_action(self, action: LedgerAction) -> Response:
         db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
-        identifier = db.add_ledger_action(
-            timestamp=timestamp,
-            action_type=action_type,
-            location=location,
-            amount=amount,
-            asset=asset,
-            link=link,
-            notes=notes,
-        )
+        identifier = db.add_ledger_action(action)
         result_dict = _wrap_in_ok_result({'identifier': identifier})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 

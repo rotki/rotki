@@ -1,6 +1,7 @@
 from typing import List, Union
 
-from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
+from rotkehlchen.accounting.ledger_actions import LedgerAction
+from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_ETH

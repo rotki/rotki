@@ -10,7 +10,8 @@ from marshmallow.exceptions import ValidationError
 from webargs.compat import MARSHMALLOW_VERSION_INFO
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.structures import ActionType, LedgerAction, LedgerActionType
+from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
@@ -40,7 +41,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_hex_color_code,
-    deserialize_ledger_action_type,
     deserialize_location,
     deserialize_price,
     deserialize_timestamp,
@@ -476,7 +476,7 @@ class LedgerActionTypeField(fields.Field):
             **_kwargs: Any,
     ) -> LedgerActionType:
         try:
-            action_type = deserialize_ledger_action_type(value)
+            action_type = LedgerActionType.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
@@ -800,8 +800,10 @@ class LedgerActionSchema(Schema):
     location = LocationField(required=True)
     amount = AmountField(required=True)
     asset = AssetField(required=True)
-    link = fields.String(missing='')
-    notes = fields.String(missing='')
+    rate = PriceField(missing=None)
+    rate_asset = AssetField(missing=None)
+    link = fields.String(missing=None)
+    notes = fields.String(missing=None)
 
 
 class LedgerActionWithIdentifierSchema(LedgerActionSchema):

@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 import gevent
 
 from rotkehlchen.accounting.events import TaxableEvents
-from rotkehlchen.accounting.structures import ActionType, DefiEvent, LedgerAction
+from rotkehlchen.accounting.ledger_actions import LedgerAction
+from rotkehlchen.accounting.structures import ActionType, DefiEvent
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH

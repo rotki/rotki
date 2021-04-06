@@ -2,7 +2,8 @@ import json
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from unittest.mock import _patch, patch
 
-from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
+from rotkehlchen.accounting.ledger_actions import LedgerAction
+from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -46,6 +47,11 @@ TEST_END_TS = 1559427707
 
 # Prices queried by cryptocompare
 prices = {
+    'USD': {
+        'EUR': {
+            1467279735: FVal('0.9004'),
+        },
+    },
     'BTC': {
         'EUR': {
             1428994442: FVal(210.865),

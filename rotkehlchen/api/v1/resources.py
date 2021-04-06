@@ -11,7 +11,8 @@ from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.structures import ActionType, LedgerAction, LedgerActionType
+from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
@@ -625,18 +626,24 @@ class LedgerActionsResource(BaseResource):
             location: Location,
             amount: AssetAmount,
             asset: Asset,
-            link: str,
-            notes: str,
+            rate: Optional[Price],
+            rate_asset: Optional[Asset],
+            link: Optional[str],
+            notes: Optional[str],
     ) -> Response:
-        return self.rest_api.add_ledger_action(
+        action = LedgerAction(
+            identifier=0,  # whatever -- is not used at insertion
             timestamp=timestamp,
             action_type=action_type,
             location=location,
             amount=amount,
             asset=asset,
+            rate=rate,
+            rate_asset=rate_asset,
             link=link,
             notes=notes,
         )
+        return self.rest_api.add_ledger_action(action)
 
     @use_kwargs(patch_schema, location='json')  # type: ignore
     def patch(self, action: LedgerAction) -> Response:
