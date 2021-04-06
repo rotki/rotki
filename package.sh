@@ -126,6 +126,12 @@ if [[ -n "${CI-}" ]] && [[ "$PLATFORM" == "darwin" ]] && [[ -n "${CERTIFICATE_OS
   echo "::endgroup::"
 fi
 
+if [[ "$PLATFORM" == "darwin" ]]; then
+  cd rotkehlchen_py_dist || exit 1
+  zip -vr "rotkehlchen-backend-${ROTKEHLCHEN_VERSION}-macos.zip" rotkehlchen/ -x "*.DS_Store"
+  cd "$WORKDIR" || exit 1
+fi
+
 
 # From here and on we go into the frontend/app directory
 cd frontend/app || exit 1
@@ -226,6 +232,10 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
   DMG=$(find "$(pwd)" -name "rotki-darwin*.dmg"  | head -n 1)
   generate_checksum "$PLATFORM" "rotki-darwin*.dmg" DMG_CHECKSUM
   generate_checksum "$PLATFORM" "rotki-darwin*.zip" ZIP_CHECKSUM
+  # Creates checksum for the backend archive
+  cd "$WORKDIR/rotkehlchen_py_dist" || exit 1
+  BACKEND=$(find "$(pwd)" -name "rotkehlchen-backend*-macos.zip"  | head -n 1)
+  generate_checksum "$PLATFORM" "rotkehlchen-backend-*-macos.zip" BACKEND_CHECKSUM
 
   if [[ -n "${CI-}" ]]; then
     echo "::set-output name=binary::$DMG"
@@ -234,6 +244,10 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
     echo "::set-output name=binary_checksum_name::${DMG_CHECKSUM##*/}"
     echo "::set-output name=archive_checksum::$ZIP_CHECKSUM"
     echo "::set-output name=archive_checksum_name::${ZIP_CHECKSUM##*/}"
+    echo "::set-output name=backend_binary::${BACKEND}"
+    echo "::set-output name=backend_binary_name::${BACKEND##*/}"
+    echo "::set-output name=backend_binary_checksum::${BACKEND_CHECKSUM}"
+    echo "::set-output name=backend_binary_checksum_name::${BACKEND_CHECKSUM##*/}"
   fi
 
   export DMG_CHECKSUM
