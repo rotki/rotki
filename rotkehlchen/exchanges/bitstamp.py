@@ -270,10 +270,10 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 to_ts=start_ts,
                 location=Location.BITSTAMP,
             )
-            # NB: sort trades by int(link) in asc mode
-            db_trades.sort(key=lambda trade: int(trade.link))
+            # NB: sort trades by int(link) in asc mode. Type ignore is since we always got a link
+            db_trades.sort(key=lambda trade: int(trade.link))  # type: ignore
             if db_trades:
-                options.update({'since_id': int(db_trades[-1].link) + 1})
+                options.update({'since_id': int(db_trades[-1].link) + 1})  # type: ignore
 
         trades: List[Trade] = self._api_query_paginated(
             start_ts=start_ts,
@@ -491,7 +491,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 # NB: re-assign dict instead of update, prevent lose call args values
                 call_options = call_options.copy()
                 offset = 0 if has_results else call_options['offset'] + API_MAX_LIMIT
-                since_id = int(results[-1].link) + 1 if has_results else call_options['since_id']
+                since_id = int(results[-1].link) + 1 if has_results else call_options['since_id']  # type: ignore # noqa: E501 # we always got a link in bitstamp trades
                 call_options.update({
                     'since_id': since_id,
                     'offset': offset,

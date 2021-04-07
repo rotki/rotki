@@ -475,10 +475,10 @@ class TradesResource(BaseResource):
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
-            fee: Fee,
-            fee_currency: Asset,
-            link: str,
-            notes: str,
+            fee: Optional[Fee],
+            fee_currency: Optional[Asset],
+            link: Optional[str],
+            notes: Optional[str],
     ) -> Response:
         return self.rest_api.add_trade(
             timestamp=timestamp,
@@ -505,10 +505,10 @@ class TradesResource(BaseResource):
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
-            fee: Fee,
-            fee_currency: Asset,
-            link: str,
-            notes: str,
+            fee: Optional[Fee],
+            fee_currency: Optional[Asset],
+            link: Optional[str],
+            notes: Optional[str],
     ) -> Response:
         return self.rest_api.edit_trade(
             trade_id=trade_id,

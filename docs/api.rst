@@ -2905,10 +2905,10 @@ Dealing with trades
    :resjsonarr string trade_type: The type of the trade. e.g. ``"buy"`` or ``"sell"``
    :resjsonarr string amount: The amount that was bought or sold
    :resjsonarr string rate: The rate at which 1 unit of ``base_asset`` was exchanges for 1 unit of ``quote_asset``
-   :resjsonarr string fee: The fee that was paid, if anything, for this trade
-   :resjsonarr string fee_currency: The currency in which ``fee`` is denominated in
-   :resjsonarr string link: Optional unique trade identifier or link to the trade. Can be an empty string
-   :resjsonarr string notes: Optional notes about the trade. Can be an empty string
+   :resjsonarr string fee: Optional. The fee that was paid, if anything, for this trade
+   :resjsonarr string fee_currency: Optional. The currency in which ``fee`` is denominated in.
+   :resjsonarr string link: Optional unique trade identifier or link to the trade.
+   :resjsonarr string notes: Optional notes about the trade.
    :resjson int entries_found: The amount of trades found for the user. That disregards the filter and shows all trades found.
    :resjson int entries_limit: The trades limit for the account tier of the user. If unlimited then -1 is returned.
    :statuscode 200: Trades are succesfully returned
@@ -2950,10 +2950,10 @@ Dealing with trades
    :reqjson string trade_type: The type of the trade. e.g. ``"buy"`` or ``"sell"``
    :reqjson string amount: The amount that was bought or sold
    :reqjson string rate: The rate at which 1 unit of ``base_asset`` was exchanges for 1 unit of ``quote_asset``
-   :reqjson string fee: The fee that was paid, if anything, for this trade
-   :reqjson string fee_currency: The currency in which ``fee`` is denominated in
-   :reqjson string link: Optional unique trade identifier or link to the trade. Can be an empty string
-   :reqjson string notes: Optional notes about the trade. Can be an empty string
+   :reqjson string fee: Optional. The fee that was paid, if anything, for this trade
+   :reqjson string fee_currency: Optional. The currency in which ``fee`` is denominated in
+   :reqjson string link: Optional unique trade identifier or link to the trade.
+   :reqjson string notes: Optional notes about the trade.
 
    **Example Response**:
 
@@ -3020,10 +3020,10 @@ Dealing with trades
    :reqjson string quote_asset: The new quote_asset
    :reqjson string trade_type: The new trade type
    :reqjson string rate: The new trade rate
-   :reqjson string fee: The new fee
-   :reqjson string fee_currency: The new fee currency
-   :reqjson string link: The new link attribute
-   :reqjson string notes: The new notes attribute
+   :reqjson string fee: The new fee. Can be set to null.
+   :reqjson string fee_currency: The new fee currency. Can be set to null.
+   :reqjson string link: The new link attribute. Can be set to null.
+   :reqjson string notes: The new notes attribute. Can be set to null.
 
    **Example Response**:
 

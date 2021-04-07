@@ -107,7 +107,6 @@ class TaxableEvents():
             paid_with_asset: Asset,
             trade_rate: FVal,
             fee_in_profit_currency: Fee,
-            fee_currency: Asset,
             timestamp: Timestamp,
             is_from_prefork_virtual_buy: bool,
     ) -> None:
@@ -125,7 +124,6 @@ class TaxableEvents():
                 paid_with_asset=paid_with_asset,
                 trade_rate=trade_rate,
                 fee_in_profit_currency=fee_in_profit_currency,
-                fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
@@ -140,7 +138,6 @@ class TaxableEvents():
                 paid_with_asset=paid_with_asset,
                 trade_rate=trade_rate,
                 fee_in_profit_currency=fee_in_profit_currency,
-                fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
@@ -152,7 +149,6 @@ class TaxableEvents():
                 paid_with_asset=paid_with_asset,
                 trade_rate=trade_rate,
                 fee_in_profit_currency=fee_in_profit_currency,
-                fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
@@ -167,7 +163,6 @@ class TaxableEvents():
                 paid_with_asset=paid_with_asset,
                 trade_rate=trade_rate,
                 fee_in_profit_currency=fee_in_profit_currency,
-                fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
@@ -216,7 +211,6 @@ class TaxableEvents():
             paid_with_asset: Asset,
             trade_rate: FVal,
             fee_in_profit_currency: Fee,
-            fee_currency: Asset,
             timestamp: Timestamp,
     ) -> None:
         """
@@ -236,7 +230,6 @@ class TaxableEvents():
             paid_with_asset=paid_with_asset,
             trade_rate=trade_rate,
             fee_in_profit_currency=fee_in_profit_currency,
-            fee_currency=fee_currency,
             timestamp=timestamp,
             is_virtual=False,
         )
@@ -308,7 +301,6 @@ class TaxableEvents():
             paid_with_asset: Asset,
             trade_rate: FVal,
             fee_in_profit_currency: Fee,
-            fee_currency: Asset,
             timestamp: Timestamp,
             is_virtual: bool = False,
             is_from_prefork_virtual_buy: bool = False,
@@ -346,7 +338,6 @@ class TaxableEvents():
             paid_with_asset=paid_with_asset,
             trade_rate=trade_rate,
             fee_in_profit_currency=fee_in_profit_currency,
-            fee_currency=fee_currency,
             timestamp=timestamp,
             is_from_prefork_virtual_buy=is_from_prefork_virtual_buy,
         )
@@ -444,7 +435,6 @@ class TaxableEvents():
             paid_with_asset=selling_asset,
             trade_rate=1 / trade_rate,
             fee_in_profit_currency=total_fee_in_profit_currency,
-            fee_currency=receiving_asset,  # does not matter
             timestamp=timestamp,
             is_virtual=True,
         )

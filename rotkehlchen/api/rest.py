@@ -705,10 +705,10 @@ class RestAPI():
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
-            fee: Fee,
-            fee_currency: Asset,
-            link: str,
-            notes: str,
+            fee: Optional[Fee],
+            fee_currency: Optional[Asset],
+            link: Optional[str],
+            notes: Optional[str],
     ) -> Response:
         trade = Trade(
             timestamp=timestamp,
@@ -741,10 +741,10 @@ class RestAPI():
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
-            fee: Fee,
-            fee_currency: Asset,
-            link: str,
-            notes: str,
+            fee: Optional[Fee],
+            fee_currency: Optional[Asset],
+            link: Optional[str],
+            notes: Optional[str],
     ) -> Response:
         trade = Trade(
             timestamp=timestamp,

@@ -332,7 +332,8 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             results.extend(cast(Iterable, results_))
             # NB: Copying the set before updating it prevents losing the call args values
             processed_result_ids = processed_result_ids.copy()
-            processed_result_ids.update({int(result.link) for result in results_})
+            # type ignore is due to always having a trade link for bitfinex trades
+            processed_result_ids.update({int(result.link) for result in results_})  # type: ignore
 
             if len(response_list) < limit:
                 break

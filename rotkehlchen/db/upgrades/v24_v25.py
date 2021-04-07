@@ -299,7 +299,9 @@ class V24V25UpgradeHelper():
             timestamp = entry[1]
             amount = entry[5]
             rate = entry[6]
-            link = entry[9]
+            old_link = entry[9]
+            link = None if old_link == '' else old_link
+            notes = None if entry[10] == '' else entry[10]
             # Copy the identifier() functionality. This identifier does not sound like a good idea
             new_trade_id_string = (
                 str(deserialize_location_from_db(entry[2])) +
@@ -309,7 +311,7 @@ class V24V25UpgradeHelper():
                 new_quote +
                 amount +
                 rate +
-                link
+                old_link
             )
             new_trade_id = hash_id(new_trade_id_string)
             new_trade_tuples.append((
@@ -324,25 +326,25 @@ class V24V25UpgradeHelper():
                 entry[7],   # fee
                 new_fee_currency,
                 link,
-                entry[10],  # notes
+                notes,
             ))
 
         # Upgrade the table
         cursor.execute('DROP TABLE IF EXISTS trades;')
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS trades (
-        id TEXT PRIMARY KEY,
-        time INTEGER,
-        location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-        base_asset VARCHAR[10],
-        quote_asset VARCHAR[10],
-        type CHAR(1) NOT NULL DEFAULT ('A') REFERENCES trade_type(type),
-        amount TEXT,
-        rate TEXT,
-        fee TEXT,
-        fee_currency VARCHAR[10],
-        link TEXT,
-        notes TEXT
+            id TEXT PRIMARY KEY NOT NULL,
+            time INTEGER NOT NULL,
+            location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+            base_asset TEXT NOT NULL,
+            quote_asset TEXT NOT NULL,
+            type CHAR(1) NOT NULL DEFAULT ('A') REFERENCES trade_type(type),
+            amount TEXT NOT NULL,
+            rate TEXT NOT NULL,
+            fee TEXT,
+            fee_currency TEXT,
+            link TEXT,
+            notes TEXT
         );
         """)
         # Insert the new data

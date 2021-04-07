@@ -296,16 +296,16 @@ CREATE TABLE IF NOT EXISTS multisettings (
 
 DB_CREATE_TRADES = """
 CREATE TABLE IF NOT EXISTS trades (
-    id TEXT PRIMARY KEY,
-    time INTEGER,
+    id TEXT PRIMARY KEY NOT NULL,
+    time INTEGER NOT NULL,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-    base_asset VARCHAR[10],
-    quote_asset VARCHAR[10],
+    base_asset TEXT NOT NULL,
+    quote_asset TEXT NOT NULL,
     type CHAR(1) NOT NULL DEFAULT ('A') REFERENCES trade_type(type),
-    amount TEXT,
-    rate TEXT,
+    amount TEXT NOT NULL,
+    rate TEXT NOT NULL,
     fee TEXT,
-    fee_currency VARCHAR[10],
+    fee_currency TEXT[10],
     link TEXT,
     notes TEXT
 );

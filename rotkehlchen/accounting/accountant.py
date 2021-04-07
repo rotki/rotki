@@ -125,6 +125,9 @@ class Accountant():
         - RemoteError if there is a problem reaching the price oracle server
         or with reading the response returned by the server
         """
+        if trade.fee_currency is None or trade.fee is None:
+            return Fee(ZERO)
+
         fee_rate = PriceHistorian().query_historical_price(
             from_asset=trade.fee_currency,
             to_asset=self.profit_currency,
@@ -626,7 +629,6 @@ class Accountant():
                 paid_with_asset=trade.quote_asset,
                 trade_rate=trade.rate,
                 fee_in_profit_currency=self.get_fee_in_profit_currency(trade),
-                fee_currency=trade.fee_currency,
                 timestamp=trade.timestamp,
             )
         elif trade.trade_type == TradeType.SELL:

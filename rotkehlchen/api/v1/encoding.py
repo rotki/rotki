@@ -788,10 +788,10 @@ class TradeSchema(Schema):
     trade_type = TradeTypeField(required=True)
     amount = PositiveAmountField(required=True)
     rate = PriceField(required=True)
-    fee = FeeField(required=True)
-    fee_currency = AssetField(required=True)
-    link = fields.String(missing='')
-    notes = fields.String(missing='')
+    fee = FeeField(missing=None)
+    fee_currency = AssetField(missing=None)
+    link = fields.String(missing=None)
+    notes = fields.String(missing=None)
 
 
 class LedgerActionSchema(Schema):
