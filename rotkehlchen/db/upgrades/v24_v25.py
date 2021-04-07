@@ -3,7 +3,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from rotkehlchen.chain.ethereum.modules.adex.utils import ADEX_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.modules.balancer.typing import BALANCER_TRADES_PREFIX
+from rotkehlchen.chain.ethereum.modules.balancer.typing import (
+    BALANCER_EVENTS_PREFIX,
+    BALANCER_TRADES_PREFIX,
+)
 from rotkehlchen.chain.ethereum.modules.uniswap.typing import (
     UNISWAP_EVENTS_PREFIX,
     UNISWAP_TRADES_PREFIX,
@@ -187,6 +190,75 @@ class V24V25UpgradeHelper():
             new_tuples,
         )
 
+    def update_ledger_actions(self, cursor: 'Cursor') -> None:
+        """Upgrades the ledger_actions table
+
+        Upgrades it to have an optional rate and asset
+        and to also upgrade old asset to the new identifier schema for eth tokens
+        """
+        # Get old data and transform to the new schema
+        query = cursor.execute(
+            'SELECT identifier, '
+            '       timestamp, '
+            '       type, '
+            '       location, '
+            '       amount, '
+            '       asset, '
+            '       link, '
+            '       notes from ledger_actions; ',
+        )
+        new_tuples = []
+        for entry in query:
+            asset_id = self.get_new_asset_identifier_if_existing(entry[5])
+            link = None if entry[6] == '' else entry[6]
+            notes = None if entry[7] == '' else entry[7]
+            new_tuples.append((
+                entry[0],  # identifier
+                entry[1],  # timestamp
+                entry[2],  # type
+                entry[3],  # location
+                entry[4],  # amount
+                asset_id,
+                None,      # rate
+                None,      # rate asset
+                link,
+                notes,
+            ))
+
+        # Upgrade the table
+        cursor.execute('DROP TABLE IF EXISTS ledger_actions;')
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS ledger_actions (
+        identifier INTEGER NOT NULL PRIMARY KEY,
+        timestamp INTEGER NOT NULL,
+        type CHAR(1) NOT NULL DEFAULT('A') REFERENCES ledger_action_type(type),
+        location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+        amount TEXT NOT NULL,
+        asset TEXT NOT NULL,
+        rate TEXT,
+        rate_asset TEXT,
+        link TEXT,
+        notes TEXT
+        );
+        """)
+
+        # Insert the new data
+        executestr = """
+        INSERT INTO ledger_actions(
+              identifier,
+              timestamp,
+              type,
+              location,
+              amount,
+              asset,
+              rate,
+              rate_asset,
+              link,
+              notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        cursor.executemany(executestr, new_tuples)
+
     def update_trades(self, cursor: 'Cursor') -> None:
         """Upgrades the trades table to use base/quote asset instead of a pair
 
@@ -230,7 +302,9 @@ class V24V25UpgradeHelper():
             timestamp = entry[1]
             amount = entry[5]
             rate = entry[6]
-            link = entry[9]
+            old_link = entry[9]
+            link = None if old_link == '' else old_link
+            notes = None if entry[10] == '' else entry[10]
             # Copy the identifier() functionality. This identifier does not sound like a good idea
             new_trade_id_string = (
                 str(deserialize_location_from_db(entry[2])) +
@@ -240,7 +314,7 @@ class V24V25UpgradeHelper():
                 new_quote +
                 amount +
                 rate +
-                link
+                old_link
             )
             new_trade_id = hash_id(new_trade_id_string)
             new_trade_tuples.append((
@@ -255,25 +329,25 @@ class V24V25UpgradeHelper():
                 entry[7],   # fee
                 new_fee_currency,
                 link,
-                entry[10],  # notes
+                notes,
             ))
 
         # Upgrade the table
         cursor.execute('DROP TABLE IF EXISTS trades;')
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS trades (
-        id TEXT PRIMARY KEY,
-        time INTEGER,
-        location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-        base_asset VARCHAR[10],
-        quote_asset VARCHAR[10],
-        type CHAR(1) NOT NULL DEFAULT ('A') REFERENCES trade_type(type),
-        amount TEXT,
-        rate TEXT,
-        fee TEXT,
-        fee_currency VARCHAR[10],
-        link TEXT,
-        notes TEXT
+            id TEXT PRIMARY KEY NOT NULL,
+            time INTEGER NOT NULL,
+            location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+            base_asset TEXT NOT NULL,
+            quote_asset TEXT NOT NULL,
+            type CHAR(1) NOT NULL DEFAULT ('A') REFERENCES trade_type(type),
+            amount TEXT NOT NULL,
+            rate TEXT NOT NULL,
+            fee TEXT,
+            fee_currency TEXT,
+            link TEXT,
+            notes TEXT
         );
         """)
         # Insert the new data
@@ -296,6 +370,13 @@ class V24V25UpgradeHelper():
         cursor.executemany(executestr, new_trade_tuples)
 
 
+def delete_icons_cache(icons_directory: Path) -> None:
+    """Deletes all icons cached in the icons directory. Does not delete custom icons"""
+    for entry in icons_directory.glob('*.*'):
+        if entry.is_file():
+            entry.unlink()
+
+
 def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     """Upgrades the DB from v24 to v25.
 
@@ -306,10 +387,13 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     - Purges coinbase/coinbasepro exchange data due to the changes in:
         * https://github.com/rotki/rotki/pull/2660
         * https://github.com/rotki/rotki/pull/2615
+    - Deletes custom icon cache so it can be requeried making sure identifiers are correct.
 
     Tables containing asset identifiers. [X] -> should not be deleted and repulled
     - amm_swaps
     - uniswap_events
+    - balancer_events
+    - balancer_pools
     - adex_events
     - aave_events
     - yearn_vaults_events
@@ -336,6 +420,11 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     )
     cursor.execute(
         f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_TRADES_PREFIX}%";',
+    )
+    cursor.execute('DELETE FROM balancer_events;')
+    cursor.execute('DELETE FROM balancer_pools;')
+    cursor.execute(
+        f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_EVENTS_PREFIX}%";',
     )
     cursor.execute('DELETE FROM uniswap_events;')
     cursor.execute(
@@ -366,14 +455,12 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
         select_str='SELECT asset from manually_tracked_balances;',
         update_str='UPDATE manually_tracked_balances SET asset=? WHERE asset=?;',
     )
-    helper.update_table(
-        cursor=cursor,
-        select_str='SELECT asset from ledger_actions;',
-        update_str='UPDATE ledger_actions  SET asset=? WHERE asset=?;',
-    )
     helper.update_margin_positions(cursor)
     helper.update_asset_movements(cursor)
+    helper.update_ledger_actions(cursor)
     helper.update_trades(cursor)
+
+    delete_icons_cache(db.user_data_dir.parent / 'icons')
 
     del helper
     db.conn.commit()

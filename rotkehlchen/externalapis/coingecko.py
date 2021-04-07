@@ -11,12 +11,13 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors import RemoteError, UnsupportedAsset
+from rotkehlchen.errors import DeserializationError, RemoteError, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_price
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date
-from rotkehlchen.utils.serialization import rlk_jsondumps, jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -458,7 +459,14 @@ class Coingecko():
         if not isinstance(data, dict):
             return None
 
-        return data.get(date, None)
+        price_str = data.get(date, None)
+        if price_str is None:
+            return None
+
+        try:
+            return deserialize_price(price_str)
+        except DeserializationError:
+            return None
 
     def _save_cached_price(
             self,

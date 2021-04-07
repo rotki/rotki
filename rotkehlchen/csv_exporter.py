@@ -5,7 +5,8 @@ from tempfile import mkdtemp
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from zipfile import ZipFile
 
-from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
+from rotkehlchen.accounting.ledger_actions import LedgerAction
+from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import (
     EV_ASSET_MOVE,
@@ -35,8 +36,8 @@ from rotkehlchen.typing import (
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.accounting.cost_basis import CostBasisInfo
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

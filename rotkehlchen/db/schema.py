@@ -296,16 +296,16 @@ CREATE TABLE IF NOT EXISTS multisettings (
 
 DB_CREATE_TRADES = """
 CREATE TABLE IF NOT EXISTS trades (
-    id TEXT PRIMARY KEY,
-    time INTEGER,
+    id TEXT PRIMARY KEY NOT NULL,
+    time INTEGER NOT NULL,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-    base_asset VARCHAR[10],
-    quote_asset VARCHAR[10],
+    base_asset TEXT NOT NULL,
+    quote_asset TEXT NOT NULL,
     type CHAR(1) NOT NULL DEFAULT ('A') REFERENCES trade_type(type),
-    amount TEXT,
-    rate TEXT,
+    amount TEXT NOT NULL,
+    rate TEXT NOT NULL,
     fee TEXT,
-    fee_currency VARCHAR[10],
+    fee_currency TEXT[10],
     link TEXT,
     notes TEXT
 );
@@ -344,12 +344,14 @@ CREATE TABLE IF NOT EXISTS asset_movements (
 
 DB_CREATE_LEDGER_ACTIONS = """
 CREATE TABLE IF NOT EXISTS ledger_actions (
-    identifier INTEGER PRIMARY KEY,
-    timestamp INTEGER,
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    timestamp INTEGER NOT NULL,
     type CHAR(1) NOT NULL DEFAULT('A') REFERENCES ledger_action_type(type),
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-    amount TEXT,
-    asset VARCHAR[10],
+    amount TEXT NOT NULL,
+    asset TEXT NOT NULL,
+    rate TEXT,
+    rate_asset TEXT,
     link TEXT,
     notes TEXT
 );

@@ -1,50 +1,13 @@
-from typing import List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
-from rotkehlchen.accounting.structures import LedgerAction, LedgerActionType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors import DeserializationError, UnknownAsset
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_ledger_action_type_from_db,
-    deserialize_location_from_db,
-    deserialize_timestamp,
-)
-from rotkehlchen.typing import AssetAmount, Location, Timestamp
+from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-
-LedgerActionDBTuple = Tuple[
-    int,  # timestamp
-    str,  # action_type
-    str,  # location
-    str,  # amount
-    str,  # asset
-    str,  # link
-    str,  # notes
-]
-
-
-def _serialize_action_for_db(
-        timestamp: Timestamp,
-        action_type: LedgerActionType,
-        location: Location,
-        amount: AssetAmount,
-        asset: Asset,
-        link: str,
-        notes: str,
-) -> LedgerActionDBTuple:
-    return (
-        timestamp,
-        action_type.serialize_for_db(),
-        location.serialize_for_db(),
-        str(amount),
-        asset.identifier,
-        link,
-        notes,
-    )
 
 
 class DBLedgerActions():
@@ -67,6 +30,8 @@ class DBLedgerActions():
             '  location,'
             '  amount,'
             '  asset,'
+            '  rate,'
+            '  rate_asset,'
             '  link,'
             '  notes FROM ledger_actions '
         )
@@ -77,16 +42,7 @@ class DBLedgerActions():
         actions = []
         for result in results:
             try:
-                action = LedgerAction(
-                    identifier=result[0],
-                    timestamp=deserialize_timestamp(result[1]),
-                    action_type=deserialize_ledger_action_type_from_db(result[2]),
-                    location=deserialize_location_from_db(result[3]),
-                    amount=deserialize_asset_amount(result[4]),
-                    asset=Asset(result[5]),
-                    link=result[6],
-                    notes=result[7],
-                )
+                action = LedgerAction.deserialize_from_db(result)
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing Ledger Action from the DB. Skipping it.'
@@ -103,33 +59,15 @@ class DBLedgerActions():
 
         return actions
 
-    def add_ledger_action(
-            self,
-            timestamp: Timestamp,
-            action_type: LedgerActionType,
-            location: Location,
-            amount: AssetAmount,
-            asset: Asset,
-            link: str,
-            notes: str,
-    ) -> int:
+    def add_ledger_action(self, action: LedgerAction) -> int:
         """Adds a new ledger action to the DB and returns its identifier for success"""
         cursor = self.db.conn.cursor()
         query = """
-        INSERT INTO ledger_actions(timestamp, type, location, amount, asset, link, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?);"""
-        cursor.execute(
-            query,
-            _serialize_action_for_db(
-                timestamp=timestamp,
-                action_type=action_type,
-                location=location,
-                amount=amount,
-                asset=asset,
-                link=link,
-                notes=notes,
-            ),
+        INSERT INTO ledger_actions(
+            timestamp, type, location, amount, asset, rate, rate_asset, link, notes
         )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+        cursor.execute(query, action.serialize_for_db())
         identifier = cursor.lastrowid
         self.db.conn.commit()
         return identifier
@@ -161,16 +99,8 @@ class DBLedgerActions():
         cursor = self.db.conn.cursor()
         query = """
         UPDATE ledger_actions SET timestamp=?, type=?, location=?, amount=?,
-        asset=?, link=?, notes=? WHERE identifier=?"""
-        db_action_tuple = _serialize_action_for_db(
-            timestamp=action.timestamp,
-            action_type=action.action_type,
-            location=action.location,
-            amount=action.amount,
-            asset=action.asset,
-            link=action.link,
-            notes=action.notes,
-        )
+        asset=?, rate=?, rate_asset=?, link=?, notes=? WHERE identifier=?"""
+        db_action_tuple = action.serialize_for_db()
         cursor.execute(query, (*db_action_tuple, action.identifier))
         if cursor.rowcount != 1:
             error_msg = (

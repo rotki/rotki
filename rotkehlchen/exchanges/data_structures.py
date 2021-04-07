@@ -105,15 +105,15 @@ class Trade(NamedTuple):
     # sold if it's a sell. Should NOT include fees
     amount: AssetAmount
     rate: Price
-    fee: Fee
-    fee_currency: Asset
+    fee: Optional[Fee]
+    fee_currency: Optional[Asset]
     # For external trades this is optional and is a link to the trade in an explorer
     # For exchange trades this should be the exchange unique trade identifer
     # For trades imported from third parties we should generate a unique id for this.
     # If trades are both imported from third parties like cointracking.info and from
     # the exchanges themselves then there is no way to avoid duplicates.
-    link: str
-    notes: str = ''
+    link: Optional[str]
+    notes: Optional[str] = None
 
     @property
     def identifier(self) -> TradeID:
@@ -127,7 +127,7 @@ class Trade(NamedTuple):
             self.quote_asset.identifier +
             str(self.amount) +
             str(self.rate) +
-            self.link
+            (self.link if self.link else '')
         )
         return TradeID(hash_id(string))
 
@@ -141,8 +141,8 @@ class Trade(NamedTuple):
             'trade_type': str(self.trade_type),
             'amount': str(self.amount),
             'rate': str(self.rate),
-            'fee': str(self.fee),
-            'fee_currency': self.fee_currency.identifier,
+            'fee': str(self.fee) if self.fee else None,
+            'fee_currency': self.fee_currency.identifier if self.fee_currency else None,
             'link': self.link,
             'notes': self.notes,
         }

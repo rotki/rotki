@@ -2,7 +2,8 @@ import logging
 from typing import List, Optional
 
 from rotkehlchen.accounting.cost_basis import CostBasisCalculator
-from rotkehlchen.accounting.structures import DefiEvent, LedgerAction, LedgerActionType
+from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BCH_BSV_FORK_TS, BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETC, A_ETH
@@ -106,7 +107,6 @@ class TaxableEvents():
             paid_with_asset: Asset,
             trade_rate: FVal,
             fee_in_profit_currency: Fee,
-            fee_currency: Asset,
             timestamp: Timestamp,
             is_from_prefork_virtual_buy: bool,
     ) -> None:
@@ -124,7 +124,6 @@ class TaxableEvents():
                 paid_with_asset=paid_with_asset,
                 trade_rate=trade_rate,
                 fee_in_profit_currency=fee_in_profit_currency,
-                fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
@@ -139,7 +138,6 @@ class TaxableEvents():
                 paid_with_asset=paid_with_asset,
                 trade_rate=trade_rate,
                 fee_in_profit_currency=fee_in_profit_currency,
-                fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
@@ -151,7 +149,6 @@ class TaxableEvents():
                 paid_with_asset=paid_with_asset,
                 trade_rate=trade_rate,
                 fee_in_profit_currency=fee_in_profit_currency,
-                fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
@@ -166,7 +163,6 @@ class TaxableEvents():
                 paid_with_asset=paid_with_asset,
                 trade_rate=trade_rate,
                 fee_in_profit_currency=fee_in_profit_currency,
-                fee_currency=fee_currency,
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
@@ -215,7 +211,6 @@ class TaxableEvents():
             paid_with_asset: Asset,
             trade_rate: FVal,
             fee_in_profit_currency: Fee,
-            fee_currency: Asset,
             timestamp: Timestamp,
     ) -> None:
         """
@@ -235,7 +230,6 @@ class TaxableEvents():
             paid_with_asset=paid_with_asset,
             trade_rate=trade_rate,
             fee_in_profit_currency=fee_in_profit_currency,
-            fee_currency=fee_currency,
             timestamp=timestamp,
             is_virtual=False,
         )
@@ -307,7 +301,6 @@ class TaxableEvents():
             paid_with_asset: Asset,
             trade_rate: FVal,
             fee_in_profit_currency: Fee,
-            fee_currency: Asset,
             timestamp: Timestamp,
             is_virtual: bool = False,
             is_from_prefork_virtual_buy: bool = False,
@@ -345,7 +338,6 @@ class TaxableEvents():
             paid_with_asset=paid_with_asset,
             trade_rate=trade_rate,
             fee_in_profit_currency=fee_in_profit_currency,
-            fee_currency=fee_currency,
             timestamp=timestamp,
             is_from_prefork_virtual_buy=is_from_prefork_virtual_buy,
         )
@@ -443,7 +435,6 @@ class TaxableEvents():
             paid_with_asset=selling_asset,
             trade_rate=1 / trade_rate,
             fee_in_profit_currency=total_fee_in_profit_currency,
-            fee_currency=receiving_asset,  # does not matter
             timestamp=timestamp,
             is_virtual=True,
         )
@@ -850,9 +841,17 @@ class TaxableEvents():
         assert action.timestamp <= self.query_end_ts, (
             'Ledger action time > query_end_ts found in processing'
         )
-        rate = self.get_rate_in_profit_currency(action.asset, action.timestamp)
-        profit_loss = action.amount * rate
+        # calculate the profit currency rate
+        if action.rate is None or action.rate_asset is None:
+            rate = self.get_rate_in_profit_currency(action.asset, action.timestamp)
+        else:
+            if action.rate_asset == self.profit_currency:
+                rate = action.rate
+            else:
+                quote_rate = self.get_rate_in_profit_currency(action.rate_asset, action.timestamp)
+                rate = action.rate * quote_rate
 
+        profit_loss = action.amount * rate
         account_for_action = (
             action.timestamp > self.query_start_ts and
             action.action_type in self.taxable_ledger_actions
@@ -861,6 +860,7 @@ class TaxableEvents():
             'Processing LedgerAction',
             sensitive_log=True,
             action=action,
+            rate_used=rate,
             account_for_action=account_for_action,
         )
         if account_for_action is False:

@@ -1,8 +1,8 @@
-from typing import Tuple, Union
+from typing import Callable, Tuple, TypeVar, Union
 
 from eth_utils import to_checksum_address
 
-from rotkehlchen.accounting.structures import ActionType, LedgerActionType
+from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
@@ -315,62 +315,6 @@ def deserialize_trade_type_from_db(symbol: str) -> TradeType:
     )
 
 
-LEDGER_ACTION_TYPE_MAPPING = {str(x): x for x in LedgerActionType}
-
-
-def deserialize_ledger_action_type(symbol: str) -> LedgerActionType:
-    """Takes a string and attempts to turn it into a LedgerActionType
-
-    Can throw DeserializationError if the symbol is not as expected
-    """
-    if not isinstance(symbol, str):
-        raise DeserializationError(
-            f'Failed to deserialize ledger action type symbol from {type(symbol)} entry',
-        )
-
-    value = LEDGER_ACTION_TYPE_MAPPING.get(symbol, None)
-    if value is None:
-        raise DeserializationError(
-            f'Failed to deserialize ledger action symbol. Unknown symbol '
-            f'{symbol} for ledger action',
-        )
-
-    return value
-
-
-def deserialize_ledger_action_type_from_db(symbol: str) -> LedgerActionType:
-    """Takes a string from the DB and attempts to turn it into a LedgerActionType
-
-    Can throw DeserializationError if the symbol is not as expected
-    """
-    if not isinstance(symbol, str):
-        raise DeserializationError(
-            f'Failed to deserialize ledger action type symbol from {type(symbol)} entry',
-        )
-
-    if symbol == 'A':
-        return LedgerActionType.INCOME
-    if symbol == 'B':
-        return LedgerActionType.EXPENSE
-    if symbol == 'C':
-        return LedgerActionType.LOSS
-    if symbol == 'D':
-        return LedgerActionType.DIVIDENDS_INCOME
-    if symbol == 'E':
-        return LedgerActionType.DONATION_RECEIVED
-    if symbol == 'F':
-        return LedgerActionType.AIRDROP
-    if symbol == 'G':
-        return LedgerActionType.GIFT
-    if symbol == 'H':
-        return LedgerActionType.GRANT
-    # else
-    raise DeserializationError(
-        f'Failed to deserialize ledger action type symbol. Unknown DB '
-        f'symbol {symbol} for trade type',
-    )
-
-
 ACTION_TYPE_MAPPING = {str(x): x for x in ActionType}
 
 
@@ -388,7 +332,7 @@ def deserialize_action_type(symbol: str) -> ActionType:
     if value is None:
         raise DeserializationError(
             f'Failed to deserialize action symbol. Unknown symbol '
-            f'{symbol} for ledger action',
+            f'{symbol} for an action',
         )
 
     return value
@@ -795,3 +739,15 @@ def deserialize_unknown_ethereum_token_from_db(
         ) from e
 
     return unknown_ethereum_token
+
+
+X = TypeVar('X')
+Y = TypeVar('Y')
+
+
+def deserialize_optional(input_val: Optional[X], fn: Callable[[X], Y]) -> Optional[Y]:
+    """An optional deserialization wrapper for any deserialize function"""
+    if input_val is None:
+        return None
+
+    return fn(input_val)

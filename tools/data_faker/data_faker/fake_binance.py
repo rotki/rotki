@@ -129,7 +129,7 @@ class FakeBinance():
         timestamp = trade.timestamp * 1000
         msg = 'The given trade symbol is not a valid binance pair'
         assert binance_symbol in self._symbols_to_pair, msg
-
+        assert trade.fee_currency, 'Fake binance trade should have fee currency'
         trade_data = {
             'symbol': binance_symbol,
             'id': 1,

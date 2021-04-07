@@ -17,7 +17,8 @@ from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
+    from rotkehlchen.accounting.ledger_actions import LedgerAction
+    from rotkehlchen.accounting.structures import DefiEvent
     from rotkehlchen.chain.manager import ChainManager
     from rotkehlchen.db.dbhandler import DBHandler
 

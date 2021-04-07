@@ -2,7 +2,8 @@ import json
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from unittest.mock import _patch, patch
 
-from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
+from rotkehlchen.accounting.ledger_actions import LedgerAction
+from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -46,6 +47,11 @@ TEST_END_TS = 1559427707
 
 # Prices queried by cryptocompare
 prices = {
+    'USD': {
+        'EUR': {
+            1467279735: FVal('0.9004'),
+        },
+    },
     'BTC': {
         'EUR': {
             1428994442: FVal(210.865),
@@ -999,7 +1005,7 @@ def assert_binance_trades_result(
             assert raw_trade['fee'] == '0.005'
             assert raw_trade['fee_currency'] == A_RDN.identifier
             assert raw_trade['link'] == '2'
-            assert raw_trade['notes'] == ''
+            assert raw_trade['notes'] is None
         elif idx == 1:
             assert raw_trade['timestamp'] == 1512561941
             assert raw_trade['location'] == 'binance'
@@ -1011,7 +1017,7 @@ def assert_binance_trades_result(
             assert raw_trade['fee'] == '0.005'
             assert raw_trade['fee_currency'] == 'ETH'
             assert raw_trade['link'] == '1'
-            assert raw_trade['notes'] == ''
+            assert raw_trade['notes'] is None
         else:
             raise AssertionError('index out of range')
 
@@ -1051,7 +1057,7 @@ def assert_poloniex_trades_result(
             assert FVal(raw_trade['fee']) == FVal('0.00140308443')
             assert raw_trade['fee_currency'] == 'XMR'
             assert raw_trade['link'] == '394131415'
-            assert raw_trade['notes'] == ''
+            assert raw_trade['notes'] is None
         elif idx == 1:
             assert raw_trade['timestamp'] == 1539713237
             assert raw_trade['location'] == 'poloniex'
@@ -1063,7 +1069,7 @@ def assert_poloniex_trades_result(
             assert FVal(raw_trade['fee']) == FVal('0.00140308443')
             assert raw_trade['fee_currency'] == 'ETH'
             assert raw_trade['link'] == '394131413'
-            assert raw_trade['notes'] == ''
+            assert raw_trade['notes'] is None
         elif idx == 2:
             assert raw_trade['timestamp'] == 1539713117
             assert raw_trade['location'] == 'poloniex'
@@ -1075,7 +1081,7 @@ def assert_poloniex_trades_result(
             assert FVal(raw_trade['fee']) == FVal('0.0000973073287465092')
             assert raw_trade['fee_currency'] == 'BTC'
             assert raw_trade['link'] == '394131412'
-            assert raw_trade['notes'] == ''
+            assert raw_trade['notes'] is None
         else:
             raise AssertionError('index out of range')
 

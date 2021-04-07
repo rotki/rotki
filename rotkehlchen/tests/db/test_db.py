@@ -7,7 +7,8 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures import ActionType, BalanceType, LedgerActionType
+from rotkehlchen.accounting.ledger_actions import LedgerActionType
+from rotkehlchen.accounting.structures import ActionType, BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import YEAR_IN_SECONDS
@@ -46,8 +47,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_action_type_from_db,
     deserialize_asset_movement_category,
     deserialize_asset_movement_category_from_db,
-    deserialize_ledger_action_type,
-    deserialize_ledger_action_type_from_db,
     deserialize_location,
     deserialize_location_from_db,
     deserialize_trade_type,
@@ -1287,7 +1286,7 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
     assert 'Overflow error while trying to add "asset_movement" tuples to the DB. Tuples:' in caplog.text  # noqa: E501
 
 
-@pytest.mark.parametrize("enum_class, query, deserialize_from_db, deserialize", [
+@pytest.mark.parametrize('enum_class, query, deserialize_from_db, deserialize', [
     (Location, 'SELECT location, seq from location',
         deserialize_location_from_db, deserialize_location),
     (TradeType, 'SELECT type, seq from trade_type',
@@ -1295,7 +1294,7 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
     (ActionType, 'SELECT type, seq from action_type',
         deserialize_action_type_from_db, deserialize_action_type),
     (LedgerActionType, 'SELECT type, seq from ledger_action_type',
-        deserialize_ledger_action_type_from_db, deserialize_ledger_action_type),
+        LedgerActionType.deserialize_from_db, LedgerActionType.deserialize),
     (AssetMovementCategory, 'SELECT category, seq from asset_movement_category',
         deserialize_asset_movement_category_from_db, deserialize_asset_movement_category),
 ])

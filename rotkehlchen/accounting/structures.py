@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Dict, List, Option
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import AssetAmount, Location, Timestamp
+from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.misc import combine_dicts
 
 if TYPE_CHECKING:
@@ -284,100 +284,6 @@ def _evaluate_balance_sheet_input(other: Any, operation: str) -> BalanceSheet:
         raise InputError(f'Found a {type(other)} object during BalanceSheet {operation}')
 
     return transformed_input
-
-
-class LedgerActionType(Enum):
-    INCOME = 1
-    EXPENSE = 2
-    LOSS = 3
-    DIVIDENDS_INCOME = 4
-    DONATION_RECEIVED = 5
-    AIRDROP = 6
-    GIFT = 7
-    GRANT = 8
-
-    def serialize(self) -> str:
-        return str(self)
-
-    def __str__(self) -> str:
-        if self == LedgerActionType.INCOME:
-            return 'income'
-        if self == LedgerActionType.EXPENSE:
-            return 'expense'
-        if self == LedgerActionType.LOSS:
-            return 'loss'
-        if self == LedgerActionType.DIVIDENDS_INCOME:
-            return 'dividends income'
-        if self == LedgerActionType.DONATION_RECEIVED:
-            return 'donation received'
-        if self == LedgerActionType.AIRDROP:
-            return 'airdrop'
-        if self == LedgerActionType.GIFT:
-            return 'gift'
-        if self == LedgerActionType.GRANT:
-            return 'grant'
-
-        # else
-        raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
-
-    def serialize_for_db(self) -> str:
-        if self == LedgerActionType.INCOME:
-            return 'A'
-        if self == LedgerActionType.EXPENSE:
-            return 'B'
-        if self == LedgerActionType.LOSS:
-            return 'C'
-        if self == LedgerActionType.DIVIDENDS_INCOME:
-            return 'D'
-        if self == LedgerActionType.DONATION_RECEIVED:
-            return 'E'
-        if self == LedgerActionType.AIRDROP:
-            return 'F'
-        if self == LedgerActionType.GIFT:
-            return 'G'
-        if self == LedgerActionType.GRANT:
-            return 'H'
-
-        # else
-        raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
-
-    def is_profitable(self) -> bool:
-        return self in (
-            LedgerActionType.INCOME,
-            LedgerActionType.DIVIDENDS_INCOME,
-            LedgerActionType.DONATION_RECEIVED,
-            LedgerActionType.AIRDROP,
-            LedgerActionType.GIFT,
-            LedgerActionType.GRANT,
-        )
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class LedgerAction:
-    """Represents an income/loss/expense for accounting purposes"""
-    identifier: int  # the unique id of the action and DB primary key
-    timestamp: Timestamp
-    action_type: LedgerActionType
-    location: Location
-    amount: AssetAmount
-    asset: 'Asset'
-    link: str
-    notes: str
-
-    def serialize(self) -> Dict[str, Any]:
-        return {
-            'identifier': self.identifier,
-            'timestamp': self.timestamp,
-            'action_type': str(self.action_type),
-            'location': str(self.location),
-            'amount': str(self.amount),
-            'asset': self.asset.identifier,
-            'link': self.link,
-            'notes': self.notes,
-        }
-
-    def is_profitable(self) -> bool:
-        return self.action_type.is_profitable()
 
 
 class ActionType(Enum):
