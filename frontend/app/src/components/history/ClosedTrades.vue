@@ -48,6 +48,41 @@
                 @input="setSelected($event)"
               />
             </template>
+            <template #item.baseAsset="{ item }">
+              <asset-details
+                v-if="typeof item.baseAsset === 'string'"
+                data-cy="trade_base"
+                hide-name
+                :asset="item.baseAsset"
+              />
+              <asset-details-base
+                v-else
+                data-cy="trade_base"
+                hide-name
+                :asset="item.baseAsset"
+              />
+            </template>
+            <template #item.quoteAsset="{ item }">
+              <asset-details
+                v-if="typeof item.quoteAsset === 'string'"
+                data-cy="trade_quote"
+                hide-name
+                :asset="item.quoteAsset"
+              />
+              <asset-details-base
+                v-else
+                hide-name
+                :asset="item.quoteAsset"
+                data-cy="trade_quote"
+              />
+            </template>
+            <template #item.description="{ item }">
+              {{
+                item.tradeType === 'buy'
+                  ? $t('closed_trades.description.with')
+                  : $t('closed_trades.description.for')
+              }}
+            </template>
             <template #item.selection="{ item }">
               <v-simple-checkbox
                 :ripple="false"
@@ -191,6 +226,7 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import ExternalTradeForm from '@/components/ExternalTradeForm.vue';
+import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -207,6 +243,7 @@ import { ActionStatus, Message } from '@/store/types';
 
 @Component({
   components: {
+    AssetDetailsBase,
     DataTable,
     TableExpandContainer,
     Fragment,
@@ -246,7 +283,20 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
       value: 'tradeType',
       width: '90px'
     },
-    { text: this.$tc('closed_trades.headers.pair'), value: 'pair' },
+    {
+      text: this.$t('closed_trades.headers.base').toString(),
+      value: 'baseAsset'
+    },
+    {
+      text: '',
+      value: 'description',
+      sortable: false,
+      width: '40px'
+    },
+    {
+      text: this.$t('closed_trades.headers.quote').toString(),
+      value: 'quoteAsset'
+    },
     {
       text: this.$tc('closed_trades.headers.rate'),
       value: 'rate',
@@ -400,7 +450,7 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
 
   promptForDelete(trade: TradeEntry) {
     this.confirmationMessage = this.$t('closed_trades.confirmation.message', {
-      pair: trade.pair,
+      pair: `${trade.baseAsset} ${trade.quoteAsset}`,
       action: trade.tradeType,
       amount: trade.amount
     }).toString();

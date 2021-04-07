@@ -1,5 +1,9 @@
 <template>
-  <asset-details-base :asset="currentAsset" :opens-details="opensDetails" />
+  <asset-details-base
+    :hide-name="hideName"
+    :asset="currentAsset"
+    :opens-details="opensDetails"
+  />
 </template>
 
 <script lang="ts">
@@ -26,6 +30,8 @@ export default class AssetDetails extends Vue {
   asset!: string;
   @Prop({ required: false, type: Boolean, default: false })
   opensDetails!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  hideName!: boolean;
 
   assetInfo!: (identifier: string) => SupportedAsset;
 

@@ -19,7 +19,7 @@
         class="mr-1 ml-1"
         :show-currency="shownCurrency"
         :currency="currency"
-        :asset="asset"
+        :asset="symbol"
       />
       <span>
         <v-tooltip
@@ -34,6 +34,7 @@
         >
           <template #activator="{ on, attrs }">
             <span
+              data-cy="display-amount"
               class="amount-display__value text-no-wrap"
               v-bind="attrs"
               v-on="on"
@@ -52,7 +53,7 @@
         :asset-padding="assetPadding"
         :show-currency="shownCurrency"
         :currency="currency"
-        :asset="asset"
+        :asset="symbol"
       />
     </v-skeleton-loader>
   </div>
@@ -65,6 +66,7 @@ import { mapGetters, mapState } from 'vuex';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { Currency } from '@/model/currency';
+import { SupportedAsset } from '@/services/types-model';
 import { ExchangeRateGetter } from '@/store/balances/types';
 import {
   AMOUNT_ROUNDING_MODE,
@@ -89,7 +91,7 @@ type ShownCurrency = 'none' | 'ticker' | 'symbol' | 'name';
     ]),
     ...mapState('settings', [AMOUNT_ROUNDING_MODE, VALUE_ROUNDING_MODE]),
     ...mapState('session', ['privacyMode', 'scrambleData']),
-    ...mapGetters('balances', ['exchangeRate'])
+    ...mapGetters('balances', ['exchangeRate', 'assetInfo'])
   }
 })
 export default class AmountDisplay extends Vue {
@@ -137,6 +139,14 @@ export default class AmountDisplay extends Vue {
   exchangeRate!: ExchangeRateGetter;
   amountRoundingMode!: RoundingMode;
   valueRoundingMode!: RoundingMode;
+  assetInfo!: (identifier: string) => SupportedAsset;
+
+  get symbol(): string {
+    if (!this.asset) {
+      return '';
+    }
+    return this.assetInfo(this.asset)?.symbol ?? this.asset;
+  }
 
   get shownCurrency(): ShownCurrency {
     return this.showCurrency === 'none' && !!this.fiatCurrency

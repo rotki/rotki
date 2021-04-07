@@ -43,8 +43,8 @@
                   data-cy="base_asset"
                   :hint="$t('external_trade_form.base_asset.hint')"
                   :label="$t('external_trade_form.base_asset.label')"
-                  :error-messages="errorMessages['pair']"
-                  @focus="delete errorMessages['pair']"
+                  :error-messages="errorMessages['baseAsset']"
+                  @focus="delete errorMessages['baseAsset']"
                 />
               </v-col>
               <v-col cols="12" md="6" class="d-flex flex-row align-center">
@@ -58,8 +58,8 @@
                   data-cy="quote_asset"
                   :hint="$t('external_trade_form.quote_asset.hint')"
                   :label="$t('external_trade_form.quote_asset.label')"
-                  :error-messages="errorMessages['pair']"
-                  @focus="delete errorMessages['pair']"
+                  :error-messages="errorMessages['quoteAsset']"
+                  @focus="delete errorMessages['quoteAsset']"
                 />
               </v-col>
             </v-row>
@@ -141,6 +141,7 @@ import { NewTrade, Trade, TradeType } from '@/services/history/types';
 import { HistoricPricePayload } from '@/store/balances/types';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
+import { assert } from '@/utils/assertions';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
 @Component({
@@ -210,21 +211,6 @@ export default class ExternalTradeForm extends Vue {
     return this.isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
   }
 
-  get pair(): string {
-    return `${this.base}_${this.quote}`;
-  }
-
-  set pair(pair: string) {
-    if (pair.includes('_')) {
-      const [base, quote] = pair.split('_');
-      this.base = base;
-      this.quote = quote;
-    } else {
-      this.base = '';
-      this.quote = '';
-    }
-  }
-
   mounted() {
     this.setEditMode();
   }
@@ -287,7 +273,11 @@ export default class ExternalTradeForm extends Vue {
     }
 
     const trade: Trade = this.edit;
-    this.pair = trade.pair;
+    assert(typeof trade.baseAsset === 'string');
+    assert(typeof trade.quoteAsset === 'string');
+    assert(typeof trade.feeCurrency === 'string');
+    this.base = trade.baseAsset;
+    this.quote = trade.quoteAsset;
     this.datetime = moment(trade.timestamp * 1000).format(
       ExternalTradeForm.format
     );
@@ -303,7 +293,6 @@ export default class ExternalTradeForm extends Vue {
 
   reset() {
     this.id = '';
-    this.pair = '';
     this.datetime = moment().format(ExternalTradeForm.format);
     this.amount = '';
     this.rate = '';
@@ -326,7 +315,8 @@ export default class ExternalTradeForm extends Vue {
       feeCurrency: this.feeCurrency,
       link: this.link,
       notes: this.notes,
-      pair: this.pair,
+      baseAsset: this.base,
+      quoteAsset: this.quote,
       rate: rate.isNaN() ? Zero : rate,
       location: 'external',
       timestamp: moment(this.datetime, ExternalTradeForm.format).unix(),

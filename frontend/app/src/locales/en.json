@@ -917,11 +917,16 @@
     }
   },
   "closed_trades": {
+    "description": {
+      "with": "With",
+      "for": "For"
+    },
     "title": "Closed Orders",
     "headers": {
       "location": "Location",
       "action": "Action",
-      "pair": "Pair",
+      "base": "Base",
+      "quote": "Quote",
       "rate": "Rate",
       "amount": "Amount",
       "fee": "Fee",
@@ -1562,12 +1567,6 @@
           "message": "Failed to retrieve ignored assets: {error}"
         }
       },
-      "ignore_asset": {
-        "error": {
-          "title": "Ignoring {asset}",
-          "message": "Failed to ignore asset: {error}"
-        }
-      },
       "kraken_account": {
         "error": {
           "title": "Error setting kraken account type"
@@ -1605,12 +1604,6 @@
       "tag_edit": {
         "error": {
           "title": "Editing tag"
-        }
-      },
-      "unignore_asset": {
-        "error": {
-          "title": "Unignoring {asset}",
-          "message": "Failed to unignore asset: {error}"
         }
       },
       "force_sync": {

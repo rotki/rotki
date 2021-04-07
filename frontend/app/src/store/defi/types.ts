@@ -315,9 +315,8 @@ export interface DexTrade {
   readonly amount: BigNumber;
   readonly baseAsset: TokenDetails;
   readonly fee: BigNumber;
-  readonly feeCurrency: string;
+  readonly feeCurrency: TokenDetails;
   readonly location: 'uniswap' | 'balancer';
-  readonly pair: string;
   readonly quoteAsset: TokenDetails;
   readonly rate: BigNumber;
   readonly swaps: DexSwap[];
