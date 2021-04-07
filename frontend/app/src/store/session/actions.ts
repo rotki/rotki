@@ -468,11 +468,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('ignoreAssets', ignoredAssets);
       return { success: true };
     } catch (e) {
-      const title = i18n.tc('actions.session.ignore_asset.error.title');
-      const message = i18n.tc('actions.session.ignore_asset.error.message', 0, {
-        error: e.message
-      });
-      notify(message, title, Severity.ERROR, true);
       return { success: false, message: e.message };
     }
   },
@@ -482,15 +477,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('ignoreAssets', ignoredAssets);
       return { success: true };
     } catch (e) {
-      const title = i18n.tc('actions.session.unignore_asset.error.title');
-      const message = i18n.tc(
-        'actions.session.unignore_asset.error.message',
-        0,
-        {
-          error: e.message
-        }
-      );
-      notify(message, title, Severity.ERROR, true);
       return { success: false, message: e.message };
     }
   },

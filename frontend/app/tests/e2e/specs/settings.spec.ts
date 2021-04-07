@@ -157,10 +157,6 @@ describe('Settings', () => {
           '.accounting-settings__asset-to-ignore',
           '1SG'
         );
-        pageAccounting.confirmInlineFailure(
-          '.accounting-settings__asset-to-ignore',
-          '1SG'
-        );
       });
       it('remove an ignored asset, validate UI message, and confirm count is 2', () => {
         pageAccounting.remIgnoredAsset('1SG');
