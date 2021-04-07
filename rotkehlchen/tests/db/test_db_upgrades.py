@@ -1528,7 +1528,7 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     asset_movements_count = cursor.execute('SELECT COUNT(*) from asset_movements;').fetchone()[0]
     query = cursor.execute('SELECT identifier, timestamp, type, location, amount, asset, link, notes from ledger_actions;')  # noqa: E501
     assert query.fetchall() == [
-        (1, 1611260690, 'A', 'A', '1', 'ABYSS', 'dsad', 'sd'),
+        (1, 1611260690, 'A', 'A', '1', 'ABYSS', '', ''),
         (2, 1610483475, 'A', 'A', '1', '0xBTC', 'sad', 'asdsad'),
     ]
 
@@ -1563,10 +1563,10 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) from timed_balances;').fetchone()[0] == 392
 
     # check the ledger actions were upgraded
-    query = cursor.execute('SELECT identifier, timestamp, type, location, amount, asset, link, notes from ledger_actions;')  # noqa: E501
+    query = cursor.execute('SELECT identifier, timestamp, type, location, amount, asset, rate, rate_asset, link, notes from ledger_actions;')  # noqa: E501
     assert query.fetchall() == [
-        (1, 1611260690, 'A', 'A', '1', '_ceth_0x0E8d6b471e332F140e7d9dbB99E5E3822F728DA6', 'dsad', 'sd'),  # noqa: E501
-        (2, 1610483475, 'A', 'A', '1', '_ceth_0xB6eD7644C69416d67B522e20bC294A9a9B405B31', 'sad', 'asdsad'),  # noqa: E501
+        (1, 1611260690, 'A', 'A', '1', '_ceth_0x0E8d6b471e332F140e7d9dbB99E5E3822F728DA6', None, None, None, None),  # noqa: E501
+        (2, 1610483475, 'A', 'A', '1', '_ceth_0xB6eD7644C69416d67B522e20bC294A9a9B405B31', None, None, 'sad', 'asdsad'),  # noqa: E501
     ]
     # check that margin positions were upgraded
     query = cursor.execute('SELECT id, location, open_time, close_time, profit_loss, pl_currency, fee, fee_currency, link, notes from margin_positions;')  # noqa: E501
