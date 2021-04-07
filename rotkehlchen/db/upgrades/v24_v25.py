@@ -3,7 +3,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from rotkehlchen.chain.ethereum.modules.adex.utils import ADEX_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.modules.balancer.typing import BALANCER_TRADES_PREFIX
+from rotkehlchen.chain.ethereum.modules.balancer.typing import (
+    BALANCER_EVENTS_PREFIX,
+    BALANCER_TRADES_PREFIX,
+)
 from rotkehlchen.chain.ethereum.modules.uniswap.typing import (
     UNISWAP_EVENTS_PREFIX,
     UNISWAP_TRADES_PREFIX,
@@ -389,6 +392,8 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     Tables containing asset identifiers. [X] -> should not be deleted and repulled
     - amm_swaps
     - uniswap_events
+    - balancer_events
+    - balancer_pools
     - adex_events
     - aave_events
     - yearn_vaults_events
@@ -415,6 +420,11 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     )
     cursor.execute(
         f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_TRADES_PREFIX}%";',
+    )
+    cursor.execute('DELETE FROM balancer_events;')
+    cursor.execute('DELETE FROM balancer_pools;')
+    cursor.execute(
+        f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_EVENTS_PREFIX}%";',
     )
     cursor.execute('DELETE FROM uniswap_events;')
     cursor.execute(

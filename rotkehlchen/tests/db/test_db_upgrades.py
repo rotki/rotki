@@ -1459,6 +1459,14 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     ).fetchone()[0] == 4
     assert cursor.execute('SELECT COUNT(*) from amm_swaps;').fetchone()[0] == 2
     assert cursor.execute('SELECT COUNT(*) from uniswap_events;').fetchone()[0] == 1
+    assert cursor.execute('SELECT COUNT(*) from balancer_events;').fetchone()[0] == 1
+    assert cursor.execute('SELECT COUNT(*) from balancer_pools;').fetchone()[0] == 1
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "balancer_events%";',
+    ).fetchone()[0] == 1
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "balancer_trades%";',
+    ).fetchone()[0] == 3
     assert cursor.execute('SELECT COUNT(*) from yearn_vaults_events;').fetchone()[0] == 1
     assert cursor.execute(
         'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "yearn_vaults_events%";',
@@ -1546,7 +1554,15 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute(
         'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "uniswap%";',
     ).fetchone()[0] == 0
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "balancer_events%";',
+    ).fetchone()[0] == 0
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "balancer_trades%";',
+    ).fetchone()[0] == 0
     assert cursor.execute('SELECT COUNT(*) from uniswap_events;').fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) from balancer_events;').fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) from balancer_pools;').fetchone()[0] == 0
     assert cursor.execute('SELECT COUNT(*) from amm_swaps;').fetchone()[0] == 0
     assert cursor.execute('SELECT COUNT(*) from yearn_vaults_events;').fetchone()[0] == 0
     assert cursor.execute(
