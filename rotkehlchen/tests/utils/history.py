@@ -1005,7 +1005,7 @@ def assert_binance_trades_result(
             assert raw_trade['fee'] == '0.005'
             assert raw_trade['fee_currency'] == A_RDN.identifier
             assert raw_trade['link'] == '2'
-            assert raw_trade['notes'] == ''
+            assert raw_trade['notes'] is None
         elif idx == 1:
             assert raw_trade['timestamp'] == 1512561941
             assert raw_trade['location'] == 'binance'
@@ -1017,7 +1017,7 @@ def assert_binance_trades_result(
             assert raw_trade['fee'] == '0.005'
             assert raw_trade['fee_currency'] == 'ETH'
             assert raw_trade['link'] == '1'
-            assert raw_trade['notes'] == ''
+            assert raw_trade['notes'] is None
         else:
             raise AssertionError('index out of range')
 
@@ -1057,7 +1057,7 @@ def assert_poloniex_trades_result(
             assert FVal(raw_trade['fee']) == FVal('0.00140308443')
             assert raw_trade['fee_currency'] == 'XMR'
             assert raw_trade['link'] == '394131415'
-            assert raw_trade['notes'] == ''
+            assert raw_trade['notes'] is None
         elif idx == 1:
             assert raw_trade['timestamp'] == 1539713237
             assert raw_trade['location'] == 'poloniex'
@@ -1069,7 +1069,7 @@ def assert_poloniex_trades_result(
             assert FVal(raw_trade['fee']) == FVal('0.00140308443')
             assert raw_trade['fee_currency'] == 'ETH'
             assert raw_trade['link'] == '394131413'
-            assert raw_trade['notes'] == ''
+            assert raw_trade['notes'] is None
         elif idx == 2:
             assert raw_trade['timestamp'] == 1539713117
             assert raw_trade['location'] == 'poloniex'
@@ -1081,7 +1081,7 @@ def assert_poloniex_trades_result(
             assert FVal(raw_trade['fee']) == FVal('0.0000973073287465092')
             assert raw_trade['fee_currency'] == 'BTC'
             assert raw_trade['link'] == '394131412'
-            assert raw_trade['notes'] == ''
+            assert raw_trade['notes'] is None
         else:
             raise AssertionError('index out of range')
 
