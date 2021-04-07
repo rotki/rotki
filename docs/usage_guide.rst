@@ -367,6 +367,14 @@ To stop tracking a particular account scroll down to the accounts tables and cli
 
 If an ethereum account also contains tracked tokens you can click on the arrow under "Actions" in order to expand its view and show the balance breakdown for the account over all assets it holds.
 
+For Bitcoin you can add addresses manually or let rotki discover them using an xpub. From this key rotki can generate your addresses and query the Bitcoin blockchain for each one of them until it finds unused addresses.
+There are also different types of xpubs. P2PKH xpubs generate addresses that have "1" as a prefix, P2SH_P2WPKH xpubs generate addresses that start with a "3" and WPKH xpubs generate addresses that start with "bc1". You will need to know what type of xpub your bitcoin wallet generates in order to choose the correct type at the dropdown menu. If your wallet generates an xpub prefixed with ``ypub`` or an xpub prefix with ``zpub`` rotki can deduce the type for you automatically.
+An xpub does not allow spending your coins but provides information about your wallet. In rotki this information is stored safely encrypted in your local database.
+
+.. image:: images/add_xpub_key.png
+   :alt: Add a bitcoin account using XPUB
+   :align: center
+
 
 Checking Exchange Balances
 ===========================
@@ -650,4 +658,3 @@ Timeout or price not found for timestamp
 -------------------------------------------------
 
 Figure out which asset caused the price not found. Then check the historical price caches and make sure you have the historical price cache for that asset pair created. For example if you are creating a GBP profit/loss report and the asset is GNO then make sure to create the GNO -> GBP historical price cache. See :ref:`manage-historical-price-cache` on how to do it.
-
