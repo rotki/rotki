@@ -26,7 +26,7 @@ setup(
     packages=find_packages('.'),
     package_data={
         # TODO: Investigate if it's needed. rotkehlchen.spec is where files seem to be copied
-        "rotkehlchen": ["data/*.json", "data/*.meta"],
+        'rotkehlchen': ['data/*.json', 'data/*.meta', 'data/*.db'],
     },
     python_requires='>=3.6',
     install_requires=requirements,

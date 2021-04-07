@@ -90,6 +90,7 @@ a = Entrypoint(
         ('rotkehlchen/data/all_assets.meta', 'rotkehlchen/data'),
         ('rotkehlchen/data/uniswapv2_lp_tokens.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/uniswapv2_lp_tokens.meta', 'rotkehlchen/data'),
+        ('rotkehlchen/data/global.db', 'rotkehlchen/data'),
     ],
     excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter', 'packaging'],
 )
