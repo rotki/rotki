@@ -19,7 +19,10 @@
       >
         {{ symbol }}
       </span>
-      <span class="grey--text asset-details-base__details__subtitle">
+      <span
+        v-if="!hideName"
+        class="grey--text asset-details-base__details__subtitle"
+      >
         <v-tooltip open-delay="400" top :disabled="$vuetify.breakpoint.lgAndUp">
           <template #activator="{ on, attrs }">
             <span v-bind="attrs" class="text-truncate" v-on="on">
@@ -54,6 +57,9 @@ export default class AssetDetailsBase extends Vue {
   opensDetails!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   changeable!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  hideName!: boolean;
+
   forceSymbol = false;
 
   get identifier(): string {

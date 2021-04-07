@@ -917,11 +917,16 @@
     }
   },
   "closed_trades": {
+    "description": {
+      "with": "With",
+      "for": "For"
+    },
     "title": "Closed Orders",
     "headers": {
       "location": "Location",
       "action": "Action",
-      "pair": "Pair",
+      "base": "Base",
+      "quote": "Quote",
       "rate": "Rate",
       "amount": "Amount",
       "fee": "Fee",

@@ -3,6 +3,7 @@ import {
   SupportedExchange,
   SupportedTradeLocation
 } from '@/services/balances/types';
+import { TokenDetails } from '@/services/defi/types';
 import { TradeEntry } from '@/store/history/types';
 
 export type TradeType = 'buy' | 'sell';
@@ -11,12 +12,13 @@ export interface Trade {
   readonly tradeId: string;
   readonly timestamp: number;
   readonly location: TradeLocation;
-  readonly pair: string;
+  readonly baseAsset: TokenDetails;
+  readonly quoteAsset: TokenDetails;
   readonly tradeType: TradeType;
   readonly amount: BigNumber;
   readonly rate: BigNumber;
   readonly fee: BigNumber;
-  readonly feeCurrency: string;
+  readonly feeCurrency: TokenDetails;
   readonly link: string;
   readonly notes: string;
 }
