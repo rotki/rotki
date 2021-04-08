@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`-` The users can now optionally add a rate and rate asset when adding a ledger action.
+* :feature:`-` The external trade fee and fee currency are now optional and the users can skip them when adding a trade.
 * :feature:`929` Users can now select which rounding mode is used for displayed amounts via the frontend settings.
 * :feature:`2620` Users will now be able to disable oracles per asset using the asset editor.
 * :feature:`2602` Users will now have the erc20 token details (name, symbol, decimals) automatically filled when possible when they add new ethereum token assets.
