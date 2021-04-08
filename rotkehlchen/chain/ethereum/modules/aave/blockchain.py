@@ -3,7 +3,11 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.chain.ethereum.structures import AaveSimpleEvent
+from rotkehlchen.chain.ethereum.structures import (
+    AaveDepositWithdrawalEvent,
+    AaveEvent,
+    AaveInterestEvent,
+)
 from rotkehlchen.constants.ethereum import (
     AAVE_LENDING_POOL,
     ATOKEN_ABI,
@@ -134,7 +138,7 @@ class AaveBlockchainInquirer(AaveInquirer):
             events = []
             if given_from_block:
                 events.extend(self.database.get_aave_events(user_address, token))
-                events = cast(List[AaveSimpleEvent], events)  # type: ignore
+                events = cast(List[AaveEvent], events)  # type: ignore
 
             new_events = []
             if query_events:
@@ -209,7 +213,7 @@ class AaveBlockchainInquirer(AaveInquirer):
             withdraw_events: List[Dict[str, Any]],
             from_block: int,
             to_block: int,
-    ) -> List[AaveSimpleEvent]:
+    ) -> List[AaveEvent]:
         """This function should be entered while holding the history_lock
         semaphore"""
         argument_filters = {
@@ -241,7 +245,7 @@ class AaveBlockchainInquirer(AaveInquirer):
 
         reserve_asset = ATOKENV1_TO_ASSET[atoken]  # should never raise KeyError
         reserve_address, decimals = _get_reserve_address_decimals(reserve_asset)
-        aave_events = []
+        aave_events: List[AaveEvent] = []
         for event in deposit_events:
             if hex_or_bytes_to_address(event['topics'][1]) == reserve_address:
                 # first 32 bytes of the data are the amount
@@ -263,9 +267,10 @@ class AaveBlockchainInquirer(AaveInquirer):
                     msg_aggregator=self.msg_aggregator,
                 )
                 deposit_amount = deposit / (FVal(10) ** FVal(decimals))
-                aave_events.append(AaveSimpleEvent(
+                aave_events.append(AaveDepositWithdrawalEvent(
                     event_type='deposit',
                     asset=reserve_asset,
+                    atoken=atoken,
                     value=Balance(
                         amount=deposit_amount,
                         usd_value=deposit_amount * usd_price,
@@ -284,7 +289,7 @@ class AaveBlockchainInquirer(AaveInquirer):
                 msg_aggregator=self.msg_aggregator,
             )
             interest_amount = data[1] / (FVal(10) ** FVal(decimals))
-            aave_events.append(AaveSimpleEvent(
+            aave_events.append(AaveInterestEvent(
                 event_type='interest',
                 asset=atoken,
                 value=Balance(
@@ -311,9 +316,10 @@ class AaveBlockchainInquirer(AaveInquirer):
                     msg_aggregator=self.msg_aggregator,
                 )
                 withdrawal_amount = withdrawal / (FVal(10) ** FVal(decimals))
-                aave_events.append(AaveSimpleEvent(
+                aave_events.append(AaveDepositWithdrawalEvent(
                     event_type='withdrawal',
                     asset=reserve_asset,
+                    atoken=atoken,
                     value=Balance(
                         amount=withdrawal_amount,
                         usd_value=withdrawal_amount * usd_price,

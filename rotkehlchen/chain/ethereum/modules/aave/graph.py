@@ -8,10 +8,11 @@ from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
 from rotkehlchen.chain.ethereum.structures import (
     AaveBorrowEvent,
+    AaveDepositWithdrawalEvent,
     AaveEvent,
+    AaveInterestEvent,
     AaveLiquidationEvent,
     AaveRepayEvent,
-    AaveSimpleEvent,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.ethereum import ATOKEN_ABI
@@ -156,7 +157,7 @@ class AaveUserReserve(NamedTuple):
 
 
 class AaveEventProcessingResult(NamedTuple):
-    interest_events: List[AaveSimpleEvent]
+    interest_events: List[AaveInterestEvent]
     total_earned_interest: Dict[Asset, Balance]
     total_lost: Dict[Asset, Balance]
     total_earned_liquidations: Dict[Asset, Balance]
@@ -371,12 +372,12 @@ class AaveGraphInquirer(AaveInquirer):
             self,
             user_address: ChecksumEthAddress,
             user_result: Dict[str, Any],
-            actions: List[AaveSimpleEvent],
+            actions: List[AaveDepositWithdrawalEvent],
             balances: AaveBalances,
-            db_interest_events: Set[AaveSimpleEvent],
+            db_interest_events: Set[AaveInterestEvent],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> Tuple[List[AaveSimpleEvent], Dict[Asset, Balance]]:
+    ) -> Tuple[List[AaveInterestEvent], Dict[Asset, Balance]]:
         reserve_history = {}
         for reserve in user_result['reserves']:
             pairs = reserve['id'].split('0x')
@@ -404,7 +405,7 @@ class AaveGraphInquirer(AaveInquirer):
             )
             reserve_history[reserve_address] = atoken_history
 
-        interest_events: List[AaveSimpleEvent] = []
+        interest_events: List[AaveInterestEvent] = []
         atoken_balances: Dict[Asset, FVal] = defaultdict(FVal)
         used_history_indices = set()
         total_earned: Dict[Asset, Balance] = defaultdict(Balance)
@@ -464,7 +465,7 @@ class AaveGraphInquirer(AaveInquirer):
                             msg_aggregator=self.msg_aggregator,
                         )
                         earned_balance = Balance(amount=diff, usd_value=diff * usd_price)
-                        interest_event = AaveSimpleEvent(
+                        interest_event = AaveInterestEvent(
                             event_type='interest',
                             asset=asset,
                             value=earned_balance,
@@ -529,8 +530,8 @@ class AaveGraphInquirer(AaveInquirer):
             user_result: Dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
-            deposits: List[AaveSimpleEvent],
-            withdrawals: List[AaveSimpleEvent],
+            deposits: List[AaveDepositWithdrawalEvent],
+            withdrawals: List[AaveDepositWithdrawalEvent],
             borrows: List[AaveBorrowEvent],
             repays: List[AaveRepayEvent],
             liquidations: List[AaveLiquidationEvent],
@@ -542,9 +543,9 @@ class AaveGraphInquirer(AaveInquirer):
 
         Also returns the edited DB events
         """
-        actions: List[AaveSimpleEvent] = []
+        actions: List[AaveDepositWithdrawalEvent] = []
         borrow_actions: List[AaveEvent] = []
-        db_interest_events: Set[AaveSimpleEvent] = set()
+        db_interest_events: Set[AaveInterestEvent] = set()
         for db_event in db_events:
             if db_event.event_type == 'deposit':
                 actions.append(db_event)  # type: ignore
@@ -662,8 +663,8 @@ class AaveGraphInquirer(AaveInquirer):
             deposits: List[Dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[AaveSimpleEvent]:
-        events: List[AaveSimpleEvent] = []
+    ) -> List[AaveDepositWithdrawalEvent]:
+        events: List[AaveDepositWithdrawalEvent] = []
         for entry in deposits:
             common = _parse_common_event_data(entry, from_ts, to_ts)
             if common is None:
@@ -679,9 +680,15 @@ class AaveGraphInquirer(AaveInquirer):
             if result is None:
                 continue  # problem parsing, error already logged
             asset, balance = result
-            events.append(AaveSimpleEvent(
+            atoken = ASSET_TO_ATOKENV1.get(asset, None)
+            if atoken is None:
+                log.error(f'Could not find an aToken for asset {asset} during aave deposit')
+                continue
+
+            events.append(AaveDepositWithdrawalEvent(
                 event_type='deposit',
                 asset=asset,
+                atoken=atoken,
                 value=balance,
                 block_number=0,  # can't get from graph query
                 timestamp=timestamp,
@@ -696,7 +703,7 @@ class AaveGraphInquirer(AaveInquirer):
             withdrawals: List[Dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[AaveSimpleEvent]:
+    ) -> List[AaveDepositWithdrawalEvent]:
         events = []
         for entry in withdrawals:
             common = _parse_common_event_data(entry, from_ts, to_ts)
@@ -713,9 +720,15 @@ class AaveGraphInquirer(AaveInquirer):
             if result is None:
                 continue  # problem parsing, error already logged
             asset, balance = result
-            events.append(AaveSimpleEvent(
+            atoken = ASSET_TO_ATOKENV1.get(asset, None)
+            if atoken is None:
+                log.error(f'Could not find an aToken for asset {asset} during aave withdraw')
+                continue
+
+            events.append(AaveDepositWithdrawalEvent(
                 event_type='withdrawal',
                 asset=asset,
+                atoken=atoken,
                 value=balance,
                 block_number=0,  # can't get from graph query
                 timestamp=timestamp,

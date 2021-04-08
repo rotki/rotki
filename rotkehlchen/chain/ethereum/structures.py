@@ -78,7 +78,7 @@ class AaveEvent:
 
 
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
-class AaveSimpleEvent(AaveEvent):
+class AaveInterestEvent(AaveEvent):
     """A simple event of the Aave protocol. Deposit, withdrawal or interest"""
     asset: Asset
     value: Balance
@@ -102,7 +102,33 @@ class AaveSimpleEvent(AaveEvent):
 
 
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
-class AaveBorrowEvent(AaveSimpleEvent):
+class AaveDepositWithdrawalEvent(AaveEvent):
+    """A deposit or withdrawal in the aave protocol"""
+    asset: Asset
+    value: Balance
+    atoken: EthereumToken
+
+    def serialize(self) -> Dict[str, Any]:
+        result = super().serialize()
+        result['asset'] = self.asset.identifier
+        result['atoken'] = self.atoken.identifier
+        return result
+
+    def to_db_tuple(self, address: ChecksumEthAddress) -> AAVE_EVENT_DB_TUPLE:  # type: ignore
+        base_tuple = super().to_db_tuple(address)
+        return base_tuple + (
+            self.asset.identifier,
+            str(self.value.amount),
+            str(self.value.usd_value),
+            str(self.atoken.identifier),  # asset2
+            None,  # asset2 amount / borrow rate / fee amount
+            None,  # asset2 usd value / borrow accrued interest rate / fee usd value
+            None,  # borrow rate mode
+        )
+
+
+@dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
+class AaveBorrowEvent(AaveInterestEvent):
     """A borrow event of the Aave protocol"""
     borrow_rate_mode: Literal['stable', 'variable']
     borrow_rate: FVal
@@ -122,7 +148,7 @@ class AaveBorrowEvent(AaveSimpleEvent):
 
 
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
-class AaveRepayEvent(AaveSimpleEvent):
+class AaveRepayEvent(AaveInterestEvent):
     """A repay event of the Aave protocol"""
     fee: Balance
 
@@ -176,19 +202,39 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
     timestamp = Timestamp(event_tuple[3])
     tx_hash = event_tuple[4]
     log_index = event_tuple[5]
+    asset2 = None
+    if event_tuple[9] is not None:
+        try:
+            asset2 = Asset(event_tuple[9])
+        except UnknownAsset as e:
+            raise DeserializationError(
+                f'Unknown asset {event_tuple[6]} encountered during deserialization '
+                f'of Aave event from DB for asset2',
+            ) from e
 
     try:
         asset1 = Asset(event_tuple[6])
     except UnknownAsset as e:
         raise DeserializationError(
             f'Unknown asset {event_tuple[6]} encountered during deserialization '
-            f'of Aave event from DB',
+            f'of Aave event from DB for asset1',
         ) from e
     asset1_amount = FVal(event_tuple[7])
     asset1_usd_value = FVal(event_tuple[8])
 
-    if event_type in ('deposit', 'withdrawal', 'interest'):
-        return AaveSimpleEvent(
+    if event_type in ('deposit', 'withdrawal'):
+        return AaveDepositWithdrawalEvent(
+            event_type=event_type,
+            block_number=block_number,
+            timestamp=timestamp,
+            tx_hash=tx_hash,
+            log_index=log_index,
+            asset=asset1,
+            atoken=EthereumToken.from_asset(asset2),  # type: ignore # should be a token
+            value=Balance(amount=asset1_amount, usd_value=asset1_usd_value),
+        )
+    if event_type == 'interest':
+        return AaveInterestEvent(
             event_type=event_type,
             block_number=block_number,
             timestamp=timestamp,
@@ -247,14 +293,10 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
             fee=Balance(amount=fee_amount, usd_value=fee_usd_value),
         )
     if event_type == 'liquidation':
-        try:
-            # If event_tuple[9] is None DeserializationError is raised from Asset ctor->type ignore
-            principal_asset = Asset(event_tuple[9])  # type: ignore
-        except UnknownAsset as e:
+        if asset2 is None:
             raise DeserializationError(
-                f'Unknown asset {event_tuple[6]} encountered during deserialization '
-                f'of Aave event from DB',
-            ) from e
+                'Did not find asset2 in an aave liquidation event fom the DB.',
+            )
         principal_amount = deserialize_optional_fval(
             value=event_tuple[10],
             name='principal_amount',
@@ -273,7 +315,7 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
             log_index=log_index,
             collateral_asset=asset1,
             collateral_balance=Balance(amount=asset1_amount, usd_value=asset1_usd_value),
-            principal_asset=principal_asset,
+            principal_asset=asset2,
             principal_balance=Balance(
                 amount=principal_amount,
                 usd_value=principal_usd_value,

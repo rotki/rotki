@@ -10,9 +10,10 @@ from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
 from rotkehlchen.chain.ethereum.structures import (
     AaveBorrowEvent,
+    AaveDepositWithdrawalEvent,
+    AaveInterestEvent,
     AaveLiquidationEvent,
     AaveRepayEvent,
-    AaveSimpleEvent,
 )
 from rotkehlchen.constants.ethereum import AAVE_LENDING_POOL
 from rotkehlchen.constants.misc import ZERO
@@ -31,7 +32,6 @@ from .common import (
     AaveLendingBalance,
     _get_reserve_address_decimals,
 )
-from .constants import ASSET_TO_ATOKENV1
 from .graph import AaveGraphInquirer
 
 log = logging.getLogger(__name__)
@@ -230,37 +230,21 @@ class Aave(EthereumModule):
                 spent_asset: Optional[Asset]
                 pnl = got_asset = got_balance = spent_asset = spent_balance = None  # noqa: E501
                 if event.event_type == 'deposit':
-                    event = cast(AaveSimpleEvent, event)
+                    event = cast(AaveDepositWithdrawalEvent, event)
                     spent_asset = event.asset
                     spent_balance = event.value
                     # this will need editing for v2
-                    got_asset = ASSET_TO_ATOKENV1.get(event.asset, None)
-                    if got_asset is None:
-                        # should not really happen
-                        log.error(
-                            f'Could not find corresponding aToken to'
-                            f'{event.asset.identifier} during an aave event processing'
-                            f' Skipping entry...',
-                        )
-                        continue
+                    got_asset = event.atoken
                     got_balance = event.value
                 elif event.event_type == 'withdrawal':
-                    event = cast(AaveSimpleEvent, event)
+                    event = cast(AaveDepositWithdrawalEvent, event)
                     got_asset = event.asset
                     got_balance = event.value
                     # this will need editing for v2
-                    spent_asset = ASSET_TO_ATOKENV1.get(got_asset, None)
-                    if spent_asset is None:
-                        # should not really happen
-                        log.error(
-                            f'Could not find corresponding asset to aToken'
-                            f'{event.asset.identifier} during an aave event processing'
-                            f' Skipping entry...',
-                        )
-                        continue
+                    spent_asset = event.atoken
                     spent_balance = got_balance
                 elif event.event_type == 'interest':
-                    event = cast(AaveSimpleEvent, event)
+                    event = cast(AaveInterestEvent, event)
                     pnl = [AssetBalance(asset=event.asset, balance=event.value)]
                 elif event.event_type == 'borrow':
                     event = cast(AaveBorrowEvent, event)
