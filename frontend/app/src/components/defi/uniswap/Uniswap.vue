@@ -45,8 +45,8 @@
           <template #title>
             {{
               $t('uniswap.pool_header', {
-                asset1: assetName(entry.assets[0].asset),
-                asset2: assetName(entry.assets[1].asset)
+                asset1: assetName(entry.assets[0].asset, true),
+                asset2: assetName(entry.assets[1].asset, true)
               })
             }}
           </template>
@@ -125,13 +125,13 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import DefiModuleMixin from '@/mixins/defi-module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
+import { UniswapDetails } from '@/premium/premium';
 import { UnknownToken } from '@/services/defi/types';
 import { AssetInfoGetter } from '@/store/balances/types';
 import { Section } from '@/store/const';
 import { UniswapBalance } from '@/store/defi/types';
 import { assetName } from '@/store/defi/utils';
 import { ETH, GeneralAccount } from '@/typing/types';
-import { UniswapDetails } from '@/utils/premium';
 
 @Component({
   components: {

@@ -27,8 +27,8 @@
             <span class="font-weight-medium">
               {{
                 $t('uniswap.pool_header', {
-                  asset1: assetName(data.item.assets[0]),
-                  asset2: assetName(data.item.assets[1])
+                  asset1: assetName(data.item.assets[0], true),
+                  asset2: assetName(data.item.assets[1], true)
                 })
               }}
             </span>
@@ -42,8 +42,8 @@
             <v-list-item-title>
               {{
                 $t('uniswap.pool_header', {
-                  asset1: assetName(item.assets[0]),
-                  asset2: assetName(item.assets[1])
+                  asset1: assetName(item.assets[0], true),
+                  asset2: assetName(item.assets[1], true)
                 })
               }}
             </v-list-item-title>
@@ -79,8 +79,8 @@ export default class UniswapPoolFilter extends Vue {
 
   filter(item: UniswapPool, queryText: string) {
     const searchString = queryText.toLocaleLowerCase();
-    const asset1 = assetName(item.assets[0]).toLocaleLowerCase();
-    const asset2 = assetName(item.assets[1]).toLocaleLowerCase();
+    const asset1 = assetName(item.assets[0], true).toLocaleLowerCase();
+    const asset2 = assetName(item.assets[1], true).toLocaleLowerCase();
     const name = `${asset1}/${asset2}`;
     return name.indexOf(searchString) > -1;
   }

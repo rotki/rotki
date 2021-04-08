@@ -24,8 +24,8 @@ import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue'
 import DefiModuleMixin from '@/mixins/defi-module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
+import { BalancerBalances } from '@/premium/premium';
 import { Section } from '@/store/const';
-import { BalancerBalances } from '@/utils/premium';
 
 @Component({
   components: {

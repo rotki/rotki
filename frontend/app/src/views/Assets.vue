@@ -28,8 +28,8 @@ import { mapGetters } from 'vuex';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
+import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { AssetInfoGetter } from '@/store/balances/types';
-import { AssetAmountAndValueOverTime } from '@/utils/premium';
 
 @Component({
   components: { AssetLocations, AssetValueRow, AssetAmountAndValueOverTime },

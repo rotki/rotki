@@ -7,10 +7,7 @@
       sort-by="balance.usdValue"
     >
       <template #item.asset="{ item }">
-        <span class="d-flex flex-row align-center">
-          <asset-icon size="26px" :identifier="item.asset" class="mr-2" />
-          {{ item.asset }}
-        </span>
+        <asset-details :asset="item.asset" hide-name />
       </template>
       <template #item.balance.amount="{ item }">
         <amount-display :value="item.balance.amount" />

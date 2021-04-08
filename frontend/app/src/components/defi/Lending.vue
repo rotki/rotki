@@ -184,6 +184,12 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import StatusMixin from '@/mixins/status-mixin';
 import {
+  AaveEarnedDetails,
+  CompoundLendingDetails,
+  LendingHistory,
+  YearnVaultsProfitDetails
+} from '@/premium/premium';
+import {
   DEFI_AAVE,
   DEFI_COMPOUND,
   DEFI_PROTOCOLS,
@@ -194,12 +200,6 @@ import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
 import { Section } from '@/store/const';
 import { BaseDefiBalance, ProfitLossModel } from '@/store/defi/types';
 import { Account, DefiAccount } from '@/typing/types';
-import {
-  AaveEarnedDetails,
-  CompoundLendingDetails,
-  LendingHistory,
-  YearnVaultsProfitDetails
-} from '@/utils/premium';
 
 @Component({
   components: {
