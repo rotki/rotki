@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 WORKDIR=$PWD
+BACKEND_DIST_DIR="rotkehlchen_py_dist"
 # cleanup before starting to package stuff
 make clean
 
@@ -66,8 +67,8 @@ if [[ -n "${CI-}" ]]; then
   echo "::group::PyInstaller"
 fi
 # Use pyinstaller to package the python app
-rm -rf build rotkehlchen_py_dist
-pyinstaller --noconfirm --clean --distpath rotkehlchen_py_dist rotkehlchen.spec
+rm -rf build "${BACKEND_DIST_DIR}"
+pyinstaller --noconfirm --clean --distpath "${BACKEND_DIST_DIR}" rotkehlchen.spec
 
 if [[ -n "${CI-}" ]]; then
   echo "::endgroup::"
@@ -85,12 +86,12 @@ fi
 
 echo 'Checking binary'
 if [[ "$PLATFORM" == "darwin" ]]; then
-  PYINSTALLER_GENERATED_EXECUTABLE=$(find ./rotkehlchen_py_dist/rotkehlchen -name "rotkehlchen-*-macos")
-  ./rotkehlchen_py_dist/rotkehlchen/${PYINSTALLER_GENERATED_EXECUTABLE##*/} version
+  PYINSTALLER_GENERATED_EXECUTABLE=$(find ./${BACKEND_DIST_DIR}/rotkehlchen -name "rotkehlchen-*-macos")
+  ./${BACKEND_DIST_DIR}/rotkehlchen/"${PYINSTALLER_GENERATED_EXECUTABLE##*/}" version
 else
   # Sanity check that the generated python executable works
-  PYINSTALLER_GENERATED_EXECUTABLE=$(ls rotkehlchen_py_dist | head -n 1)
-  ./rotkehlchen_py_dist/$PYINSTALLER_GENERATED_EXECUTABLE version
+  PYINSTALLER_GENERATED_EXECUTABLE=$(find ./${BACKEND_DIST_DIR} -name "rotkehlchen-*-linux")
+  ./${BACKEND_DIST_DIR}/"${PYINSTALLER_GENERATED_EXECUTABLE##*/}" version
 fi
 
 
@@ -116,7 +117,7 @@ if [[ -n "${CI-}" ]] && [[ "$PLATFORM" == "darwin" ]] && [[ -n "${CERTIFICATE_OS
   security set-key-partition-list -S apple-tool:,apple: -s -k actions $KEY_CHAIN
 
   echo "::group::Preparing to sign"
-  files=(`find ./rotkehlchen_py_dist -type f -exec ls -dl \{\} \; | awk '{ print $9 }'`)
+  files=(`find ./${BACKEND_DIST_DIR} -type f -exec ls -dl \{\} \; | awk '{ print $9 }'`)
   for i in "${files[@]}"
   do
     echo "Signing $i"
@@ -124,6 +125,12 @@ if [[ -n "${CI-}" ]] && [[ "$PLATFORM" == "darwin" ]] && [[ -n "${CERTIFICATE_OS
     codesign --verify --verbose $i || exit 1
   done
   echo "::endgroup::"
+fi
+
+if [[ "$PLATFORM" == "darwin" ]]; then
+  cd ${BACKEND_DIST_DIR} || exit 1
+  zip -vr "rotkehlchen-backend-${ROTKEHLCHEN_VERSION}-macos.zip" rotkehlchen/ -x "*.DS_Store"
+  cd "$WORKDIR" || exit 1
 fi
 
 
@@ -208,6 +215,10 @@ if [[ "$PLATFORM" == "linux" ]]; then
   generate_checksum "$PLATFORM" "rotki-linux*.AppImage" APPIMAGE_CHECKSUM
   generate_checksum "$PLATFORM" "rotki-linux*.tar.xz" TAR_CHECKSUM
   generate_checksum "$PLATFORM" "rotki-linux*.deb" DEB_CHECKSUM
+  cd "$WORKDIR/${BACKEND_DIST_DIR}" || exit 1
+  BACKEND_BINARY=$(find "$(pwd)" -name "rotkehlchen-*-linux"  | head -n 1)
+  generate_checksum "$PLATFORM" "rotkehlchen-*-linux" BACKEND_CHECKSUM
+
 
   if [[ -n "${CI-}" ]]; then
     echo "::set-output name=binary::$GENERATED_APPIMAGE"
@@ -218,6 +229,10 @@ if [[ "$PLATFORM" == "linux" ]]; then
     echo "::set-output name=archive_checksum_name::${TAR_CHECKSUM##*/}"
     echo "::set-output name=deb_checksum::$DEB_CHECKSUM"
     echo "::set-output name=deb_checksum_name::${DEB_CHECKSUM##*/}"
+    echo "::set-output name=backend_binary::${BACKEND_BINARY}"
+    echo "::set-output name=backend_binary_name::${BACKEND_BINARY##*/}"
+    echo "::set-output name=backend_binary_checksum::${BACKEND_CHECKSUM}"
+    echo "::set-output name=backend_binary_checksum_name::${BACKEND_CHECKSUM##*/}"
   fi
 
   export APPIMAGE_CHECKSUM
@@ -226,6 +241,10 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
   DMG=$(find "$(pwd)" -name "rotki-darwin*.dmg"  | head -n 1)
   generate_checksum "$PLATFORM" "rotki-darwin*.dmg" DMG_CHECKSUM
   generate_checksum "$PLATFORM" "rotki-darwin*.zip" ZIP_CHECKSUM
+  # Creates checksum for the backend archive
+  cd "$WORKDIR/${BACKEND_DIST_DIR}" || exit 1
+  BACKEND=$(find "$(pwd)" -name "rotkehlchen-backend*-macos.zip"  | head -n 1)
+  generate_checksum "$PLATFORM" "rotkehlchen-backend-*-macos.zip" BACKEND_CHECKSUM
 
   if [[ -n "${CI-}" ]]; then
     echo "::set-output name=binary::$DMG"
@@ -234,6 +253,10 @@ elif [[ "$PLATFORM" == "darwin" ]]; then
     echo "::set-output name=binary_checksum_name::${DMG_CHECKSUM##*/}"
     echo "::set-output name=archive_checksum::$ZIP_CHECKSUM"
     echo "::set-output name=archive_checksum_name::${ZIP_CHECKSUM##*/}"
+    echo "::set-output name=backend_binary::${BACKEND}"
+    echo "::set-output name=backend_binary_name::${BACKEND##*/}"
+    echo "::set-output name=backend_binary_checksum::${BACKEND_CHECKSUM}"
+    echo "::set-output name=backend_binary_checksum_name::${BACKEND_CHECKSUM##*/}"
   fi
 
   export DMG_CHECKSUM
