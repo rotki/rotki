@@ -267,7 +267,7 @@ Eth2DepositDBTuple = (
 
 
 class ValidatorDetails(NamedTuple):
-    validator_index: int
+    validator_index: Optional[int]
     public_key: str
     eth1_depositor: ChecksumEthAddress
     performance: ValidatorPerformance

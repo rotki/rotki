@@ -230,19 +230,29 @@ def get_eth2_details(
     indices = []
     index_to_address = {}
     index_to_pubkey = {}
+    result = []
     assert beaconchain.db is not None, 'Beaconchain db should be populated'
-    # and for each address get the validator info (to get the index) -- this could be avoided
+
     for address in addresses:
         validators = beaconchain.get_eth1_address_validators(address)
         for validator in validators:
             if validator.validator_index is None:
-                continue  # skip validators that are depositing and dont have an index yet
+                # for validators that are so early in the depositing queue that no
+                # validator index is confirmed yet let's return only the most basic info
+                result.append(ValidatorDetails(
+                    validator_index=None,
+                    public_key=validator.public_key,
+                    eth1_depositor=address,
+                    performance=DEPOSITING_VALIDATOR_PERFORMANCE,
+                    daily_stats=[],
+                ))
+                continue
+
             index_to_address[validator.validator_index] = address
             index_to_pubkey[validator.validator_index] = validator.public_key
             indices.append(validator.validator_index)
 
     # Get current balance of all validator indices
-    result = []
     performance_result = beaconchain.get_performance(list(indices))
     for validator_index, entry in performance_result.items():
         stats = get_validator_daily_stats(
