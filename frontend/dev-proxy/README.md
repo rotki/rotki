@@ -77,14 +77,20 @@ directory. Follow a similar structure as the example.
   "/api/1/assets/updates": {
     "GET": [
       {
-        "local_version": 1,
-        "remote_version": 5
+        "result": {
+          "local_version": 1,
+          "remote_version": 6
+        },
+        "message": ""
       },
       {
-        "local_version": 2,
-        "remote_version": 5
+        "result": {
+          "local_version": 2,
+          "remote_version": 5
+        },
+        "message": ""
       }
-    ]
+    ],
   }
 }
 ```
