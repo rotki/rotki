@@ -433,6 +433,12 @@
     "notes": {
       "label": "Notes"
     },
+    "rate": {
+      "label": "Rate"
+    },
+    "rate_asset": {
+      "label": "Rate asset"
+    },
     "type": {
       "label": "Type"
     }
@@ -1120,7 +1126,10 @@
       "hint": "[Optional] Additional notes to store for the trade"
     },
     "validation": {
-      "non_empty_fee": "The fee currency cannot be empty"
+      "non_empty_amount": "The amount cannot be empty",
+      "non_empty_base": "The base asset cannot be empty",
+      "non_empty_quote": "The quote asset cannot be empty",
+      "non_empty_rate": "The rate cannot be empty"
     }
   },
   "user_dropdown": {

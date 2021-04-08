@@ -34,3 +34,5 @@ export type Properties<TObj, TResult> = {
 }[keyof TObj];
 
 export type Diff<T, U> = T extends U ? never : T;
+
+export type Nullable<T> = T | null;

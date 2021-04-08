@@ -41,6 +41,7 @@
                 <asset-select
                   v-model="base"
                   data-cy="base_asset"
+                  :rules="baseRules"
                   :hint="$t('external_trade_form.base_asset.hint')"
                   :label="$t('external_trade_form.base_asset.label')"
                   :error-messages="errorMessages['baseAsset']"
@@ -56,6 +57,7 @@
                 <asset-select
                   v-model="quote"
                   data-cy="quote_asset"
+                  :rules="quoteRules"
                   :hint="$t('external_trade_form.quote_asset.hint')"
                   :label="$t('external_trade_form.quote_asset.label')"
                   :error-messages="errorMessages['quoteAsset']"
@@ -65,6 +67,8 @@
             </v-row>
             <v-text-field
               v-model="amount"
+              required
+              :rules="amountRules"
               data-cy="amount"
               :label="$t('external_trade_form.amount.label')"
               persistent-hint
@@ -74,6 +78,7 @@
             />
             <v-text-field
               v-model="rate"
+              :rules="rateRules"
               data-cy="rate"
               :loading="fetching"
               :label="$t('external_trade_form.rate.label')"
@@ -95,7 +100,6 @@
               v-model="feeCurrency"
               :label="$t('external_trade_form.fee_currency.label')"
               data-cy="fee-currency"
-              :rules="assetRules"
               :error-messages="errorMessages['feeCurrency']"
               @focus="delete errorMessages['feeCurrency']"
             />
@@ -175,9 +179,21 @@ export default class ExternalTradeForm extends Vue {
   fetchHistoricPrice!: (payload: HistoricPricePayload) => Promise<BigNumber>;
 
   private static format = 'DD/MM/YYYY HH:mm:ss';
-  readonly assetRules = [
+  readonly baseRules = [
     (v: string) =>
-      !!v || this.$t('external_trade_form.validation.non_empty_fee')
+      !!v || this.$t('external_trade_form.validation.non_empty_base')
+  ];
+  readonly quoteRules = [
+    (v: string) =>
+      !!v || this.$t('external_trade_form.validation.non_empty_quote')
+  ];
+  readonly amountRules = [
+    (v: string) =>
+      !!v || this.$t('external_trade_form.validation.non_empty_amount')
+  ];
+  readonly rateRules = [
+    (v: string) =>
+      !!v || this.$t('external_trade_form.validation.non_empty_rate')
   ];
 
   base: string = '';
@@ -283,10 +299,10 @@ export default class ExternalTradeForm extends Vue {
     );
     this.amount = trade.amount.toString();
     this.rate = trade.rate.toString();
-    this.fee = trade.fee.toString();
-    this.feeCurrency = trade.feeCurrency;
-    this.link = trade.link;
-    this.notes = trade.notes;
+    this.fee = trade.fee?.toString() ?? '';
+    this.feeCurrency = trade.feeCurrency ?? '';
+    this.link = trade.link ?? '';
+    this.notes = trade.notes ?? '';
     this.type = trade.tradeType;
     this.id = trade.tradeId;
   }
@@ -311,10 +327,10 @@ export default class ExternalTradeForm extends Vue {
 
     const tradePayload: Writeable<NewTrade> = {
       amount: amount.isNaN() ? Zero : amount,
-      fee: fee.isNaN() ? Zero : fee,
-      feeCurrency: this.feeCurrency,
-      link: this.link,
-      notes: this.notes,
+      fee: fee.isNaN() ? undefined : fee,
+      feeCurrency: this.feeCurrency ? this.feeCurrency : undefined,
+      link: this.link ? this.link : undefined,
+      notes: this.notes ? this.notes : undefined,
       baseAsset: this.base,
       quoteAsset: this.quote,
       rate: rate.isNaN() ? Zero : rate,
