@@ -1,8 +1,8 @@
 <template>
   <div class="balancer-pool-asset d-flex flex-column pa-1">
-    <crypto-icon :symbol="assetIdentifier(assets[0])" size="22px" />
-    <crypto-icon
-      :symbol="assetIdentifier(assets[1])"
+    <asset-icon :identifier="assetIdentifier(assets[0])" size="22px" />
+    <asset-icon
+      :identifier="assetIdentifier(assets[1])"
       size="22px"
       class="align-self-end"
     />

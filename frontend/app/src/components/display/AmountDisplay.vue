@@ -66,8 +66,7 @@ import { mapGetters, mapState } from 'vuex';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { Currency } from '@/model/currency';
-import { SupportedAsset } from '@/services/types-model';
-import { ExchangeRateGetter } from '@/store/balances/types';
+import { AssetInfoGetter, ExchangeRateGetter } from '@/store/balances/types';
 import {
   AMOUNT_ROUNDING_MODE,
   VALUE_ROUNDING_MODE
@@ -139,7 +138,7 @@ export default class AmountDisplay extends Vue {
   exchangeRate!: ExchangeRateGetter;
   amountRoundingMode!: RoundingMode;
   valueRoundingMode!: RoundingMode;
-  assetInfo!: (identifier: string) => SupportedAsset;
+  assetInfo!: AssetInfoGetter;
 
   get symbol(): string {
     if (!this.asset) {

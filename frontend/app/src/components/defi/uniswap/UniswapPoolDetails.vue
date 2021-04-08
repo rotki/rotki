@@ -23,8 +23,8 @@
         align="center"
       >
         <v-col cols="auto">
-          <crypto-icon
-            :symbol="assetName(token.asset)"
+          <asset-icon
+            :identifier="assetName(token.asset)"
             size="24px"
             class="mr-1"
           />

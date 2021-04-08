@@ -9,7 +9,7 @@ import { tradeLocations } from '@/components/history/consts';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocationData } from '@/components/history/type';
 import { TradeLocation } from '@/services/history/types';
-import { SupportedAsset } from '@/services/types-model';
+import { AssetInfoGetter } from '@/store/balances/types';
 import { SupportedBlockchains } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 
@@ -26,12 +26,12 @@ export default class LocationDisplay extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
   icon!: boolean;
 
-  assetInfo!: (key: string) => SupportedAsset;
+  assetInfo!: AssetInfoGetter;
 
   get location(): TradeLocationData {
     if (this.isSupportedBlockchain(this.identifier)) {
       return {
-        name: this.assetInfo(this.identifier).name ?? '',
+        name: this.assetInfo(this.identifier)?.name ?? '',
         identifier: this.identifier,
         exchange: false,
         imageIcon: true,

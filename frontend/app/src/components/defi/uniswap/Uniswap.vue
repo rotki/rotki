@@ -87,7 +87,7 @@
             justify="end"
           >
             <v-col cols="auto">
-              <crypto-icon :symbol="assetName(asset.asset)" size="32px" />
+              <asset-icon :identifier="assetName(asset.asset)" size="32px" />
             </v-col>
             <v-col class="d-flex" cols="auto">
               <div>
@@ -126,7 +126,7 @@ import DefiModuleMixin from '@/mixins/defi-module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { UnknownToken } from '@/services/defi/types';
-import { SupportedAsset } from '@/services/types-model';
+import { AssetInfoGetter } from '@/store/balances/types';
 import { Section } from '@/store/const';
 import { UniswapBalance } from '@/store/defi/types';
 import { assetName } from '@/store/defi/utils';
@@ -162,7 +162,7 @@ export default class Uniswap extends Mixins(
   section = Section.DEFI_UNISWAP_BALANCES;
   secondSection = Section.DEFI_UNISWAP_EVENTS;
 
-  assetInfo!: (asset: string) => SupportedAsset | undefined;
+  assetInfo!: AssetInfoGetter;
   uniswapBalances!: (addresses: string[]) => UniswapBalance[];
   uniswapAddresses!: string[];
   selectedAccount: GeneralAccount | null = null;

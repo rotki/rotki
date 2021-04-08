@@ -8,7 +8,7 @@
     >
       <template #item.asset="{ item }">
         <span class="d-flex flex-row align-center">
-          <crypto-icon size="26px" :symbol="item.asset" class="mr-2" />
+          <asset-icon size="26px" :identifier="item.asset" class="mr-2" />
           {{ item.asset }}
         </span>
       </template>
@@ -40,15 +40,15 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
-import CryptoIcon from '@/components/CryptoIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { Currency } from '@/model/currency';
 import { DefiBalance } from '@/store/defi/types';
 
 @Component({
-  components: { DataTable, PercentageDisplay, AmountDisplay, CryptoIcon },
+  components: { DataTable, PercentageDisplay, AmountDisplay, AssetIcon },
   computed: {
     ...mapGetters('session', ['currency'])
   }

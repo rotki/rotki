@@ -186,3 +186,8 @@ export interface ERC20Token {
 }
 
 export type ExchangeRateGetter = (currency: string) => BigNumber | undefined;
+export type AssetInfoGetter = (
+  identifier: string
+) => SupportedAsset | undefined;
+
+export type IdentifierForSymbolGetter = (symbol: string) => string | undefined;

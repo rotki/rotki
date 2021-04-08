@@ -9,13 +9,11 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
-import CryptoIcon from '@/components/CryptoIcon.vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-
-import { SupportedAsset } from '@/services/types-model';
+import { AssetInfoGetter } from '@/store/balances/types';
 
 @Component({
-  components: { AssetDetailsBase, CryptoIcon },
+  components: { AssetDetailsBase },
   computed: {
     ...mapGetters('balances', ['assetInfo'])
   }
@@ -33,7 +31,7 @@ export default class AssetDetails extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
   hideName!: boolean;
 
-  assetInfo!: (identifier: string) => SupportedAsset;
+  assetInfo!: AssetInfoGetter;
 
   get currentAsset() {
     const details = this.assetInfo(this.asset);

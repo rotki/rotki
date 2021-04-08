@@ -2,7 +2,6 @@ import Chart from 'chart.js';
 import moment from 'moment';
 import Vue, { VueConstructor } from 'vue';
 import Vuex from 'vuex';
-import CryptoIcon from '@/components/CryptoIcon.vue';
 import { TIME_UNIT_DAY } from '@/components/dashboard/const';
 import { TimeUnit } from '@/components/dashboard/types';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
@@ -20,6 +19,7 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import Card from '@/components/helper/Card.vue';
 import DataTable from '@/components/helper/DataTable.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
@@ -39,7 +39,7 @@ export const setupPremium = () => {
   window.moment = moment;
   window.rotki = {
     useHostComponents: true,
-    version: 10,
+    version: 11,
     utils: {
       date: {
         epoch(): number {
@@ -77,7 +77,7 @@ export const setupPremium = () => {
   // version: 2
   Vue.component('AssetMovementDisplay', AssetMovementDisplay);
   Vue.component('EventTypeDisplay', EventTypeDisplay);
-  Vue.component('CryptoIcon', CryptoIcon);
+  //  CryptoIcon was replaced with AssetIcon on v11
   Vue.component('BalanceDisplay', BalanceDisplay);
   // version: 3
   Vue.component('PercentageDisplay', PercentageDisplay);
@@ -101,6 +101,8 @@ export const setupPremium = () => {
   // version 10
   Vue.component('DataTable', DataTable);
   Vue.component('TableExpandContainer', TableExpandContainer);
+  // version 11
+  Vue.component('AssetIcon', AssetIcon);
 };
 
 function findComponents(): string[] {

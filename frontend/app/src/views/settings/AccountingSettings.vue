@@ -160,7 +160,7 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import LedgerActionSettings from '@/components/settings/accounting/LedgerActionSettings.vue';
 import { settingsMessages } from '@/components/settings/utils';
 import SettingsMixin from '@/mixins/settings-mixin';
-import { SupportedAsset } from '@/services/types-model';
+import { AssetInfoGetter } from '@/store/balances/types';
 import { ActionStatus } from '@/store/types';
 
 const crypto2crypto = 'crypto2crypto';
@@ -204,7 +204,7 @@ export default class Accounting extends Mixins<SettingsMixin<SettingsEntries>>(
   ignoredAssets!: string[];
   ignoreAsset!: (asset: string) => Promise<ActionStatus>;
   unignoreAsset!: (asset: string) => Promise<ActionStatus>;
-  assetInfo!: (asset: string) => SupportedAsset | undefined;
+  assetInfo!: AssetInfoGetter;
 
   crypto2CryptoTrades: boolean = false;
   gasCosts: boolean = false;

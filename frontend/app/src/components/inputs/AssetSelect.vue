@@ -23,7 +23,11 @@
     </template>
     <template #item="{ item }">
       <v-list-item-avatar>
-        <crypto-icon size="50px" :symbol="item.identifier" />
+        <asset-icon
+          size="50px"
+          :identifier="item.identifier"
+          :symbol="item.symbol"
+        />
       </v-list-item-avatar>
       <v-list-item-content :id="`asset-${item.identifier.toLocaleLowerCase()}`">
         <v-list-item-title>{{ item.symbol }}</v-list-item-title>
@@ -36,14 +40,14 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
-import CryptoIcon from '@/components/CryptoIcon.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { SupportedAsset } from '@/services/types-model';
 
 const { mapState } = createNamespacedHelpers('balances');
 
 @Component({
-  components: { AssetDetails, CryptoIcon },
+  components: { AssetDetails, AssetIcon },
   computed: {
     ...mapState(['supportedAssets'])
   }

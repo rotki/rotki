@@ -1,7 +1,7 @@
 <template>
   <div class="uniswap-pool-asset d-flex flex-column pa-1">
-    <crypto-icon :symbol="assets[0]" size="22px" />
-    <crypto-icon :symbol="assets[1]" size="22px" class="align-self-end" />
+    <asset-icon :identifier="assets[0]" size="22px" />
+    <asset-icon :identifier="assets[1]" size="22px" class="align-self-end" />
   </div>
 </template>
 

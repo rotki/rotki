@@ -20,7 +20,7 @@ type Style = { [key: string]: string };
 
 type Dimension = { value: number; unit: string };
 @Component({})
-export default class GeneretedIcon extends Vue {
+export default class GeneratedIcon extends Vue {
   @Prop({ required: true })
   size!: string;
   @Prop({ required: false, default: '#fff' })
