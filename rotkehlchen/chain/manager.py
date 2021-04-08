@@ -51,6 +51,7 @@ from rotkehlchen.chain.ethereum.modules import (
     MakerdaoVaults,
     Uniswap,
     YearnVaults,
+    Eth2,
 )
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
@@ -402,6 +403,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     @overload
     def get_module(self, module_name: Literal['compound']) -> Optional[Compound]:
+        ...
+
+    @overload
+    def get_module(self, module_name: Literal['eth2']) -> Optional[Eth2]:
         ...
 
     @overload

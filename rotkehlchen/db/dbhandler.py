@@ -1260,6 +1260,21 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
+    def delete_eth2_deposits(self) -> None:
+        """Delete all historical ETH2 eth2_deposits data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM eth2_deposits;')
+        cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{ETH2_DEPOSITS_PREFIX}%";')
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_eth2_daily_stats(self) -> None:
+        """Delete all historical ETH2 eth2_daily_staking_details data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM eth2_daily_staking_details;')
+        self.conn.commit()
+        self.update_last_write()
+
     def add_uniswap_events(self, events: Sequence[UniswapPoolEvent]) -> None:
         query = (
             """
@@ -1379,6 +1394,8 @@ class DBHandler:
             self.delete_adex_events_data()
             self.delete_yearn_vaults_data()
             self.delete_loopring_data()
+            self.delete_eth2_deposits()
+            self.delete_eth2_daily_stats()
             logger.debug('Purged all module data from the DB')
             return
 
@@ -1396,6 +1413,9 @@ class DBHandler:
             self.delete_yearn_vaults_data()
         elif module_name == 'loopring':
             self.delete_loopring_data()
+        elif module_name == 'eth2':
+            self.delete_eth2_deposits()
+            self.delete_eth2_daily_stats()
         else:
             logger.debug(f'Requested to purge {module_name} data from the DB but nothing to do')
             return
