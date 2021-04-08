@@ -84,7 +84,7 @@ class NodeName(Enum):
 # Ethereum 2 stuff. Perhaps on its own file at some point?
 class ValidatorID(NamedTuple):
     # not using index due to : https://github.com/python/mypy/issues/9043
-    validator_index: int
+    validator_index: Optional[int]  # may be null if the index is not yet determined
     public_key: str
 
 
@@ -267,7 +267,7 @@ Eth2DepositDBTuple = (
 
 
 class ValidatorDetails(NamedTuple):
-    validator_index: int
+    validator_index: Optional[int]
     public_key: str
     eth1_depositor: ChecksumEthAddress
     performance: ValidatorPerformance

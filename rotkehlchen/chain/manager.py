@@ -1267,6 +1267,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
             addresses=self.accounts.eth,
         )
         for entry in eth2_details:
+            if entry.validator_index is None:
+                continue  # don't query stats for validators without an index yet
+
             stats = get_validator_daily_stats(
                 db=self.database,
                 validator_index=entry.validator_index,

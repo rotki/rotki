@@ -27,6 +27,7 @@ Changelog
 * :bug:`2614` Uniswap users should no longer have missing trades in their uniswap history.
 * :bug:`2674` Coinbasepro should now also properly parse historical market trades and not only limit ones. Also all fills will be separately shown and not just the executed orders.
 * :bug:`2656` Users of coinbase with a lot of assets or trades should now see all of them again. There should be no missing balances or trades thanks to a fix at query pagination.
+* :bug:`2690` Eth2 stakers that have very recently deposited and don't have a validator index yet will now be handled properly and their balance should be shown.
 
 * :release:`1.15.2 <2021-03-21>`
 * :bug:`1996` Querying coinbasepro deposits and withdrawals should now be much faster thanks to using their new API endpoints.
