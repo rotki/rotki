@@ -78,6 +78,7 @@ SAPI_METHODS = (
     'lending/daily/token/position',
     'lending/daily/product/list',
     'lending/union/account',
+    'bswap/liquidity',
 )
 
 FAPI_METHODS = (
@@ -680,6 +681,73 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return balances
 
+    def _query_pools_balances(
+            self,
+            balances: DefaultDict[Asset, Balance],
+    ) -> DefaultDict[Asset, Balance]:
+
+        def process_pool_asset(asset_name: str, asset_amount: FVal) -> None:
+
+            if asset_amount == ZERO:
+                return None
+
+            try:
+                asset = asset_from_binance(asset_name)
+            except UnsupportedAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found unsupported {self.name} asset {asset_name}. '
+                    f'Ignoring its margined futures balance query. {str(e)}',
+                )
+                return None
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found unknown {self.name} asset {asset_name}. '
+                    f'Ignoring its margined futures balance query. {str(e)}',
+                )
+                return None
+            except DeserializationError as e:
+                log.error(
+                    f'{self.name} balance deserialization error ',
+                    f'with asset {asset_name}. {str(e)}',
+                )
+                return None
+
+            try:
+                usd_price = Inquirer().find_usd_price(asset)
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Error processing {self.name} balance entry due to inability to '
+                    f'query USD price: {str(e)}. Skipping margined futures balance entry',
+                )
+                return None
+
+            balances[asset] += Balance(
+                amount=asset_amount,
+                usd_value=asset_amount * usd_price,
+            )
+
+            return None
+
+        try:
+            response = self.api_query('sapi', 'bswap/liquidity')
+        except RemoteError as e:
+            log.warning(
+                f'Insufficient permission to query {self.name} pool balances.'
+                f'Skipping query. Response details: {str(e)}',
+            )
+            return balances
+
+        try:
+            for entry in response:
+                for asset_name, asset_amount in entry['share']['asset'].items():
+                    process_pool_asset(asset_name, FVal(asset_amount))
+        except KeyError as e:
+            log.error(
+                f'At {self.name} pool balances did not find expected key {str(e)}',
+            )
+
+        return balances
+
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> ExchangeQueryBalances:
@@ -692,6 +760,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 returned_balances = self._query_cross_collateral_futures_balances(returned_balances)  # noqa: E501
                 returned_balances = self._query_margined_futures_balances('fapi', returned_balances)  # noqa: E501
                 returned_balances = self._query_margined_futures_balances('dapi', returned_balances)  # noqa: E501
+                returned_balances = self._query_pools_balances(returned_balances)
 
         except RemoteError as e:
             msg = (
