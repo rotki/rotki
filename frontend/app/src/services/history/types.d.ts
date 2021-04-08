@@ -5,6 +5,7 @@ import {
 } from '@/services/balances/types';
 import { TokenDetails } from '@/services/defi/types';
 import { TradeEntry } from '@/store/history/types';
+import { Nullable } from '@/types';
 
 export type TradeType = 'buy' | 'sell';
 
@@ -17,10 +18,10 @@ export interface Trade {
   readonly tradeType: TradeType;
   readonly amount: BigNumber;
   readonly rate: BigNumber;
-  readonly fee: BigNumber;
-  readonly feeCurrency: TokenDetails;
-  readonly link: string;
-  readonly notes: string;
+  readonly fee?: Nullable<BigNumber>;
+  readonly feeCurrency?: Nullable<TokenDetails>;
+  readonly link?: Nullable<string>;
+  readonly notes?: Nullable<string>;
 }
 
 export type NewTrade = Omit<Trade, 'tradeId' | 'ignoredInAccounting'>;

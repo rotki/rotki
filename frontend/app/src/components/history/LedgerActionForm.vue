@@ -63,6 +63,30 @@
       </v-col>
     </v-row>
 
+    <v-row
+      :class="
+        $vuetify.breakpoint.mdAndUp ? 'ledger-action-form__rate-wrapper' : null
+      "
+    >
+      <v-col cols="12" md="6">
+        <v-text-field
+          type="number"
+          :error-messages="errors['rate']"
+          :value="action.rate"
+          :label="$t('ledger_action_form.rate.label')"
+          @input="updateAction('rate', $event)"
+        />
+      </v-col>
+      <v-col cols="12" md="6">
+        <asset-select
+          :error-messages="errors['rateAsset']"
+          :value="action.rateAsset"
+          :label="$t('ledger_action_form.rate_asset.label')"
+          @input="updateAction('rateAsset', $event)"
+        />
+      </v-col>
+    </v-row>
+
     <v-text-field
       :error-messages="errors['link']"
       :value="action.link"
@@ -85,7 +109,6 @@ import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { ledgerActionsData } from '@/store/history/consts';
 import { LedgerAction, UnsavedAction } from '@/store/history/types';
-import { Properties } from '@/types';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 type Action = LedgerAction | UnsavedAction;
@@ -99,7 +122,7 @@ export default class LedgerActionForm extends Vue {
   @Prop({ required: true, type: Object })
   action!: Action;
   @Prop({ required: true, type: Object })
-  errors!: { [key in Properties<UnsavedAction, any>]?: string };
+  errors!: { [key in keyof UnsavedAction]?: string };
 
   @Emit()
   input(_value: boolean) {}
@@ -114,7 +137,7 @@ export default class LedgerActionForm extends Vue {
     this.actionUpdate({ ...this.action, timestamp: convertToTimestamp(date) });
   }
 
-  updateAction(prop: Properties<UnsavedAction, any>, value: string | null) {
+  updateAction(prop: keyof UnsavedAction, value: string | null) {
     this.actionUpdate({ ...this.action, [prop]: value });
   }
 
@@ -145,7 +168,8 @@ export default class LedgerActionForm extends Vue {
 
 <style scoped lang="scss">
 .ledger-action-form {
-  &__amount-wrapper {
+  &__amount-wrapper,
+  &__rate-wrapper {
     ::v-deep {
       .v-input {
         input {

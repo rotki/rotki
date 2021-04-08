@@ -504,7 +504,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           .t('actions.ledger_actions.task.description', {})
           .toString(),
         ignoreResult: false,
-        numericKeys: balanceKeys
+        numericKeys: [...balanceKeys, 'rate']
       });
 
       commit('tasks/add', task, { root: true });
