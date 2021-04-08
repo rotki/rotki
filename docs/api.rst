@@ -4470,6 +4470,7 @@ Getting Aave historical data
                   "events": [{
                       "event_type": "deposit",
                       "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "atoken": "_ceth_0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
                       "value": {
                           "amount": "350.0",
                           "usd_value": "351.21"
@@ -4480,7 +4481,7 @@ Getting Aave historical data
                       "log_index": 1
                   }, {
                       "event_type": "interest",
-                      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "asset": "_ceth_0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
                       "value": {
                           "amount": "0.5323",
                           "usd_value": "0.5482"
@@ -4492,6 +4493,7 @@ Getting Aave historical data
                   }, {
                       "event_type": "withdrawal",
                       "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "atoken": "_ceth_0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
                       "value": {
                           "amount": "150",
                           "usd_value": "150.87"
@@ -4503,6 +4505,7 @@ Getting Aave historical data
                   }, {
                       "event_type": "deposit",
                       "asset": "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498",
+                      "atoken": "_ceth_0x6Fb0855c404E09c47C3fBCA25f08d4E41f9F062f",
                       "value": {
                           "amount": "150",
                           "usd_value": "60.995"
@@ -4563,6 +4566,7 @@ Getting Aave historical data
    :resjsonarr string tx_hash: The transaction hash of the event.
    :resjsonarr int log_index: The log_index of the event. For the graph this is indeed a unique number in combination with the transaction hash, but it's unfortunately not the log index.
    :resjsonarr string asset: This attribute appears in all event types except for ``"liquidation"``. It shows the asset that this event is about. This can only be an underlying asset of an aToken.
+   :resjsonarr string atoken: This attribute appears in ``"deposit"`` and ``"withdrawals"``. It shows the aToken involved in the event.
    :resjsonarr object value: This attribute appears in all event types except for ``"liquidation"``. The value (amount and usd_value mapping) of the asset for the event. The rate is the asset/USD rate at the events's timestamp.
    :resjsonarr string borrow_rate_mode: This attribute appears only in ``"borrow"`` events. Signifies the type of borrow. Can be either ``"stable"`` or ``"variable"``.
    :resjsonarr string borrow_rate: This attribute appears only in ``"borrow"`` events. Shows the rate at which the asset was borrowed. It's a floating point number. For example ``"0.155434"`` would means 15.5434% interest rate for this borrowing.

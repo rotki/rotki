@@ -1,9 +1,10 @@
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.structures import (
     AaveBorrowEvent,
+    AaveDepositWithdrawalEvent,
+    AaveInterestEvent,
     AaveLiquidationEvent,
     AaveRepayEvent,
-    AaveSimpleEvent,
 )
 from rotkehlchen.constants.assets import A_ADAI_V1, A_AWBTC_V1, A_BUSD, A_DAI, A_ETH, A_WBTC
 from rotkehlchen.constants.misc import ZERO
@@ -42,9 +43,10 @@ aave_mocked_historical_prices = {
 aave_mocked_current_prices = {A_ADAI_V1: FVal('1.017')}
 
 expected_aave_deposit_test_events = [
-    AaveSimpleEvent(
+    AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(
             amount=FVal('102.926986169186236436'),
             usd_value=FVal('104.367963975554843746104'),
@@ -53,9 +55,10 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1588114293),
         tx_hash='0x8b72307967c4f7a486c1cb1b6ebca5e549de06e02930ece0399e2096f1a132c5',
         log_index=72,
-    ), AaveSimpleEvent(
+    ), AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(
             amount=FVal('160'),
             usd_value=FVal('161.440'),
@@ -64,7 +67,7 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1588430911),
         tx_hash='0x78ae48d93e0284d1f9a5e1cd4a7e5f2e3daf65ab5dafb0c4bd626aa90e783d60',
         log_index=146,
-    ), AaveSimpleEvent(
+    ), AaveInterestEvent(
         event_type='interest',
         asset=A_ADAI,
         value=Balance(
@@ -75,9 +78,10 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1588430911),
         tx_hash='0x78ae48d93e0284d1f9a5e1cd4a7e5f2e3daf65ab5dafb0c4bd626aa90e783d60',
         log_index=142,
-    ), AaveSimpleEvent(
+    ), AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(
             amount=FVal('390'),
             usd_value=FVal('393.510'),
@@ -86,7 +90,7 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1588463542),
         tx_hash='0xb9999b06b706dcc973bcf381d69f12620f1bef887082bce9679cf256f7e8023c',
         log_index=157,
-    ), AaveSimpleEvent(
+    ), AaveInterestEvent(
         event_type='interest',
         asset=A_ADAI,
         value=Balance(
@@ -97,9 +101,10 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1588463542),
         tx_hash='0xb9999b06b706dcc973bcf381d69f12620f1bef887082bce9679cf256f7e8023c',
         log_index=153,
-    ), AaveSimpleEvent(
+    ), AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(
             amount=FVal('58.985239852398524415'),
             usd_value=FVal('59.398136531365314085905'),
@@ -108,7 +113,7 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1589155650),
         tx_hash='0x28054d29620515337b8ffb2f7f2dda5b2033beae9844b42359893f4f73d855bc',
         log_index=35,
-    ), AaveSimpleEvent(
+    ), AaveInterestEvent(
         event_type='interest',
         asset=A_ADAI,
         value=Balance(
@@ -119,7 +124,7 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1589155650),
         tx_hash='0x28054d29620515337b8ffb2f7f2dda5b2033beae9844b42359893f4f73d855bc',
         log_index=31,
-    ), AaveSimpleEvent(
+    ), AaveInterestEvent(
         event_type='interest',
         asset=A_ADAI,
         value=Balance(
@@ -130,9 +135,10 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1590753905),
         tx_hash='0x07ac09cc06c7cd74c7312f3a82c9f77d69ba7a89a4a3b7ded33db07e32c3607c',
         log_index=152,
-    ), AaveSimpleEvent(
+    ), AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(
             amount=FVal('168.84093462143338681'),
             usd_value=FVal('171.03586677151202083853'),
@@ -141,7 +147,7 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1592175763),
         tx_hash='0x90b818ba8d3b55f332b64f3df58bf37f33addcbfc1f27bd1ec6102ae4bf2d871',
         log_index=82,
-    ), AaveSimpleEvent(
+    ), AaveInterestEvent(
         event_type='interest',
         asset=A_ADAI,
         value=Balance(
@@ -152,9 +158,10 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1592175763),
         tx_hash='0x90b818ba8d3b55f332b64f3df58bf37f33addcbfc1f27bd1ec6102ae4bf2d871',
         log_index=78,
-    ), AaveSimpleEvent(
+    ), AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(
             amount=FVal('1939.840878392183347402'),
             usd_value=FVal('1976.697855081634831002638'),
@@ -163,7 +170,7 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1594502373),
         tx_hash='0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
         log_index=104,
-    ), AaveSimpleEvent(
+    ), AaveInterestEvent(
         event_type='interest',
         asset=A_ADAI,
         value=Balance(
@@ -174,9 +181,10 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1594502373),
         tx_hash='0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41',
         log_index=100,
-    ), AaveSimpleEvent(
+    ), AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(
             amount=FVal('2507.675873220870275072'),
             usd_value=FVal('2507.675873220870275072'),
@@ -185,7 +193,7 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1595376667),
         tx_hash='0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410',
         log_index=96,
-    ), AaveSimpleEvent(
+    ), AaveInterestEvent(
         event_type='interest',
         asset=A_ADAI,
         value=Balance(
@@ -196,7 +204,7 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1595376667),
         tx_hash='0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410',
         log_index=92,
-    ), AaveSimpleEvent(
+    ), AaveInterestEvent(
         event_type='interest',
         asset=A_ADAI,
         value=Balance(
@@ -207,9 +215,10 @@ expected_aave_deposit_test_events = [
         timestamp=Timestamp(1598217272),
         tx_hash='0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486',
         log_index=97,
-    ), AaveSimpleEvent(
+    ), AaveDepositWithdrawalEvent(
         event_type='withdrawal',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(
             amount=FVal('7968.408929477087756071'),
             usd_value=FVal('7968.408929477087756071'),
@@ -222,9 +231,10 @@ expected_aave_deposit_test_events = [
 ]
 
 expected_aave_liquidation_test_events = [
-    AaveSimpleEvent(
+    AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_WBTC,
+        atoken=A_AWBTC_V1,
         value=Balance(
             amount=FVal('1.11'),
             usd_value=FVal('1.11'),
@@ -287,7 +297,7 @@ expected_aave_liquidation_test_events = [
         timestamp=Timestamp(1599401677),
         tx_hash='0xefde39a330215fb189b70e9964b4f7d8cd6f1335c5994899dd04de7a1b30b3aa',
         log_index=4,
-    ), AaveSimpleEvent(
+    ), AaveInterestEvent(
         event_type='interest',
         asset=A_AWBTC_V1,
         value=Balance(
@@ -298,9 +308,10 @@ expected_aave_liquidation_test_events = [
         timestamp=Timestamp(1599401782),
         tx_hash='0x54eee67a3f1e114d102ea76d69298636caf717e19c1b910264d955c4ba942905',
         log_index=4,
-    ), AaveSimpleEvent(
+    ), AaveDepositWithdrawalEvent(
         event_type='withdrawal',
         asset=A_WBTC,
+        atoken=A_AWBTC_V1,
         value=Balance(
             amount=FVal('0.69410968'),
             usd_value=FVal('0.69410968'),
@@ -309,9 +320,10 @@ expected_aave_liquidation_test_events = [
         timestamp=Timestamp(1599401782),
         tx_hash='0x54eee67a3f1e114d102ea76d69298636caf717e19c1b910264d955c4ba942905',
         log_index=3,
-    ), AaveSimpleEvent(
+    ), AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_WBTC,
+        atoken=A_AWBTC_V1,
         value=Balance(
             amount=FVal('1.47386645'),
             usd_value=FVal('1.47386645'),

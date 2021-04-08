@@ -2,12 +2,13 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import YEARN_VAULTS
 from rotkehlchen.chain.ethereum.structures import (
     AaveBorrowEvent,
+    AaveDepositWithdrawalEvent,
+    AaveInterestEvent,
     AaveLiquidationEvent,
     AaveRepayEvent,
-    AaveSimpleEvent,
     YearnVaultEvent,
 )
-from rotkehlchen.constants.assets import A_DAI, A_YV1_DAI, A_ETH, A_MANA, A_WBTC, A_ADAI_V1
+from rotkehlchen.constants.assets import A_ADAI_V1, A_DAI, A_ETH, A_MANA, A_WBTC, A_YV1_DAI
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -22,17 +23,19 @@ def test_add_and_get_aave_events(data_dir, username):
     data.unlock(username, '123', create_new=True)
 
     addr1 = make_ethereum_address()
-    addr1_events = [AaveSimpleEvent(
+    addr1_events = [AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(amount=FVal(1), usd_value=FVal(1)),
         block_number=1,
         timestamp=Timestamp(1),
         tx_hash='0x01653e88600a6492ad6e9ae2af415c990e623479057e4e93b163e65cfb2d4436',
         log_index=1,
-    ), AaveSimpleEvent(
+    ), AaveDepositWithdrawalEvent(
         event_type='withdrawal',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(amount=FVal(1), usd_value=FVal(1)),
         block_number=2,
         timestamp=Timestamp(2),
@@ -42,17 +45,19 @@ def test_add_and_get_aave_events(data_dir, username):
     data.db.add_aave_events(address=addr1, events=addr1_events)
 
     addr2 = make_ethereum_address()
-    addr2_events = [AaveSimpleEvent(
+    addr2_events = [AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(amount=FVal(1), usd_value=FVal(1)),
         block_number=1,
         timestamp=Timestamp(1),
         tx_hash='0x8c094d58f33e8dedcd348cb33b58f3bd447602f1fecb99e51b1c2868029eab55',
         log_index=1,
-    ), AaveSimpleEvent(
+    ), AaveDepositWithdrawalEvent(
         event_type='withdrawal',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(amount=FVal(1), usd_value=FVal(1)),
         block_number=2,
         timestamp=Timestamp(2),
@@ -63,23 +68,25 @@ def test_add_and_get_aave_events(data_dir, username):
 
     # addr3 has all types of aave events so we test serialization/deserialization
     addr3 = make_ethereum_address()
-    addr3_events = [AaveSimpleEvent(
+    addr3_events = [AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(amount=FVal(1), usd_value=FVal(1)),
         block_number=1,
         timestamp=Timestamp(1),
         tx_hash='0x9e394d58f33e8dedcd348cb33b58f3bd447602f1fecb99e51b1c2868029eab55',
         log_index=1,
-    ), AaveSimpleEvent(
+    ), AaveDepositWithdrawalEvent(
         event_type='withdrawal',
         asset=A_DAI,
+        atoken=A_ADAI_V1,
         value=Balance(amount=FVal(1), usd_value=FVal(1)),
         block_number=2,
         timestamp=Timestamp(2),
         tx_hash='0x4c167445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
         log_index=2,
-    ), AaveSimpleEvent(
+    ), AaveInterestEvent(
         event_type='interest',
         asset=A_WBTC,
         value=Balance(amount=FVal(1), usd_value=FVal(1)),
