@@ -7820,7 +7820,7 @@ Data imports
    :statuscode 500: Internal Rotki error
 
 ERC20 token info
-=============
+====================
 
 .. http:get:: /api/(version)/blockchains/ETH/erc20details/
 
