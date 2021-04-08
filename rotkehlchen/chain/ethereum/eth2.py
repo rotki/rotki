@@ -192,8 +192,15 @@ def get_eth2_balances(
 
         address_to_validators[address] = validators
         for validator in validators:
-            validator_indices.append(validator.validator_index)
-            index_to_address[validator.validator_index] = address
+            if validator.validator_index is not None:
+                validator_indices.append(validator.validator_index)
+                index_to_address[validator.validator_index] = address
+            else:
+                # Validator is early in depositing, and no index is known yet.
+                # Simply count 32 ETH balance for them
+                balance_mapping[address] += Balance(
+                    amount=FVal('32'), usd_value=FVal('32') * usd_price,
+                )
 
     # Get current balance of all validator indices
     performance = beaconchain.get_performance(validator_indices)
@@ -202,6 +209,7 @@ def get_eth2_balances(
         balance_mapping[index_to_address[validator_index]] += Balance(amount, amount * usd_price)
 
     # The performance call does not return validators that are not active and are still depositing
+    # So for them let's just count 32 ETH
     depositing_indices = set(index_to_address.keys()) - set(performance.keys())
     for index in depositing_indices:
         balance_mapping[index_to_address[index]] += Balance(
@@ -227,6 +235,8 @@ def get_eth2_details(
     for address in addresses:
         validators = beaconchain.get_eth1_address_validators(address)
         for validator in validators:
+            if validator.validator_index is None:
+                continue  # skip validators that are depositing and dont have an index yet
             index_to_address[validator.validator_index] = address
             index_to_pubkey[validator.validator_index] = validator.public_key
             indices.append(validator.validator_index)
