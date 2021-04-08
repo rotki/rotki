@@ -271,8 +271,9 @@ class FeeField(fields.Field):
             attr: str,  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> str:
-        return str(value)
+    ) -> Optional[str]:
+        # Fee can be missing so we need to handle None when serializing from schema
+        return str(value) if value else None
 
     def _deserialize(
             self,
@@ -350,8 +351,9 @@ class AssetField(fields.Field):
             attr: str,  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> str:
-        return str(value.identifier)
+    ) -> Optional[str]:
+        # Asset can be missing so we need to handle None when serializing from schema
+        return str(value.identifier) if value else None
 
     def _deserialize(
             self,

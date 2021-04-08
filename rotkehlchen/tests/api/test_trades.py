@@ -5,7 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.api.v1.encoding import TradeSchema
-from rotkehlchen.constants.assets import A_BTC, A_WETH
+from rotkehlchen.constants.assets import A_BTC, A_WETH, A_AAVE, A_DAI
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import FREE_TRADES_LIMIT
@@ -224,8 +224,7 @@ def test_query_trades_over_limit(rotkehlchen_api_server_with_exchanges, start_wi
 
 def test_add_trades(rotkehlchen_api_server):
     """Test that adding trades to the trades endpoint works as expected"""
-    # add a new external trade
-    new_trade = {
+    new_trades = [{  # own chain to fiat
         'timestamp': 1575640208,
         'location': 'external',
         'base_asset': 'BTC',
@@ -237,31 +236,53 @@ def test_add_trades(rotkehlchen_api_server):
         'fee_currency': 'USD',
         'link': 'optional trader identifier',
         'notes': 'optional notes',
-    }
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'tradesresource',
-        ), json=new_trade,
-    )
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    # And check that the identifier is correctly generated when returning the trade
-    new_trade['trade_id'] = Trade(**TradeSchema().load(new_trade)).identifier
-    assert data['result'] == new_trade
-
-    # and now make sure the trade is saved by querying for it
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            "tradesresource",
-        ),
-    )
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert data['result']['entries'] == [{'entry': new_trade, 'ignored_in_accounting': False}]
+    }, {  # own chain to eth token, with some optional fields (link,notes) missing
+        'timestamp': 1585640208,
+        'location': 'external',
+        'base_asset': 'ETH',
+        'quote_asset': A_AAVE.identifier,
+        'trade_type': 'buy',
+        'amount': '0.5541',
+        'rate': '8422.1',
+        'fee': '0.55',
+        'fee_currency': 'USD',
+    }, {  # token to token, with all optional fields (fee,fee_currency,link,notes) missing
+        'timestamp': 1595640208,
+        'location': 'external',
+        'base_asset': A_DAI.identifier,
+        'quote_asset': A_AAVE.identifier,
+        'trade_type': 'buy',
+        'amount': '1.5541',
+        'rate': '22.1',
+    }]
+    # add multple trades
+    all_expected_trades = []
+    for new_trade in new_trades:
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'tradesresource',
+            ), json=new_trade,
+        )
+        result = assert_proper_response_with_result(response)
+        # And check that the identifier is correctly generated when returning the trade
+        new_trade['trade_id'] = Trade(**TradeSchema().load(new_trade)).identifier
+        expected_trade = new_trade.copy()
+        for x in ('fee', 'fee_currency', 'link', 'notes'):
+            expected_trade[x] = new_trade.get(x, None)
+        assert result == expected_trade
+        all_expected_trades.insert(0, expected_trade)
+        # and now make sure the trade is saved by querying for it
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                "tradesresource",
+            ),
+        )
+        result = assert_proper_response_with_result(response)
+        data = response.json()
+        assert data['message'] == ''
+        assert result['entries'] == [{'entry': x, 'ignored_in_accounting': False} for x in all_expected_trades]  # noqa: E501
 
     # Test trade with rate 0. Should fail
 
