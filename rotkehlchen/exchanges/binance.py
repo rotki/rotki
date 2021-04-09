@@ -510,6 +510,11 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             balances: DefaultDict[Asset, Balance],
     ) -> DefaultDict[Asset, Balance]:
+        """Queries binance lending balances and if any found adds them to `balances`
+
+        May raise:
+        - RemoteError
+        """
         data = self.api_query_dict('sapi', 'lending/union/account')
         positions = data.get('positionAmountVos', None)
         if positions is None:
@@ -567,6 +572,11 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             balances: DefaultDict[Asset, Balance],
     ) -> DefaultDict[Asset, Balance]:
+        """Queries binance collateral future balances and if any found adds them to `balances`
+
+        May raise:
+        - RemoteError
+        """
         futures_response = self.api_query_dict('sapi', 'futures/loan/wallet')
         try:
             cross_collaterals = futures_response['crossCollaterals']
@@ -623,6 +633,11 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             api_type: Literal['fapi', 'dapi'],
             balances: DefaultDict[Asset, Balance],
     ) -> DefaultDict[Asset, Balance]:
+        """Queries binance margined future balances and if any found adds them to `balances`
+
+        May raise:
+        - RemoteError
+        """
         try:
             response = self.api_query_list(api_type, 'balance')
         except BinancePermissionError as e:
@@ -685,9 +700,13 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             balances: DefaultDict[Asset, Balance],
     ) -> DefaultDict[Asset, Balance]:
+        """Queries binance pool balances and if any found adds them to `balances`
+
+        May raise:
+        - RemoteError
+        """
 
         def process_pool_asset(asset_name: str, asset_amount: FVal) -> None:
-
             if asset_amount == ZERO:
                 return None
 
@@ -696,19 +715,19 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found unsupported {self.name} asset {asset_name}. '
-                    f'Ignoring its margined futures balance query. {str(e)}',
+                    f'Ignoring its {self.name} pool balance query. {str(e)}',
                 )
                 return None
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found unknown {self.name} asset {asset_name}. '
-                    f'Ignoring its margined futures balance query. {str(e)}',
+                    f'Ignoring its {self.name} pool balance query. {str(e)}',
                 )
                 return None
             except DeserializationError as e:
-                log.error(
-                    f'{self.name} balance deserialization error ',
-                    f'with asset {asset_name}. {str(e)}',
+                self.msg_aggregator.add_error(
+                    f'{self.name} balance deserialization error '
+                    f'for asset {asset_name}: {str(e)}. Skipping entry.',
                 )
                 return None
 
@@ -717,7 +736,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} balance entry due to inability to '
-                    f'query USD price: {str(e)}. Skipping margined futures balance entry',
+                    f'query USD price: {str(e)}. Skipping {self.name} pool balance entry',
                 )
                 return None
 
@@ -725,12 +744,11 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 amount=asset_amount,
                 usd_value=asset_amount * usd_price,
             )
-
             return None
 
         try:
             response = self.api_query('sapi', 'bswap/liquidity')
-        except RemoteError as e:
+        except BinancePermissionError as e:
             log.warning(
                 f'Insufficient permission to query {self.name} pool balances.'
                 f'Skipping query. Response details: {str(e)}',
@@ -741,9 +759,18 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             for entry in response:
                 for asset_name, asset_amount in entry['share']['asset'].items():
                     process_pool_asset(asset_name, FVal(asset_amount))
-        except KeyError as e:
+        except (KeyError, AttributeError) as e:
+            self.msg_aggregator.add_error(
+                f'At {self.name} pool balances got unexpected data format. '
+                f'Skipping them in the balance query. Check logs for details',
+            )
+            if isinstance(e, KeyError):
+                msg = f'Missing key {str(e)}'
+            else:
+                msg = str(e)
             log.error(
-                f'At {self.name} pool balances did not find expected key {str(e)}',
+                f'Unexpected data format returned by {self.name} pools. '
+                f'Data: {response}. Error: {msg}',
             )
 
         return balances
