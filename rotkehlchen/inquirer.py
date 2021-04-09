@@ -460,8 +460,6 @@ class Inquirer():
         if from_currency not in instance._cached_forex_data[date]:
             instance._cached_forex_data[date][from_currency] = {}
 
-        msg = 'Cached value should not already exist'
-        assert to_currency not in instance._cached_forex_data[date][from_currency], msg
         instance._cached_forex_data[date][from_currency][to_currency] = price
         instance.save_historical_forex_data()
 
