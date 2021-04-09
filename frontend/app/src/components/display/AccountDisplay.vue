@@ -1,7 +1,7 @@
 <template>
   <span>
     <v-avatar left>
-      <crypto-icon size="24px" :symbol="account.chain" />
+      <asset-icon size="24px" :identifier="account.chain" />
     </v-avatar>
     <span class="font-weight-bold mr-1">{{ account.label }}</span>
     <span :class="privacyMode ? 'blur-content' : ''">
@@ -13,13 +13,13 @@
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
-import CryptoIcon from '@/components/CryptoIcon.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 import { GeneralAccount } from '@/typing/types';
 import { randomHex } from '@/typing/utils';
 
 @Component({
-  components: { CryptoIcon },
+  components: { AssetIcon },
   computed: { ...mapState('session', ['privacyMode']) }
 })
 export default class AccountDisplay extends Mixins(ScrambleMixin) {

@@ -6,6 +6,7 @@ import {
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
+import { TokenDetails } from '@/services/defi/types';
 import {
   Balance,
   BtcAccountData,
@@ -186,3 +187,9 @@ export interface ERC20Token {
 }
 
 export type ExchangeRateGetter = (currency: string) => BigNumber | undefined;
+export type AssetInfoGetter = (
+  identifier: string
+) => SupportedAsset | undefined;
+
+export type IdentifierForSymbolGetter = (symbol: string) => string | undefined;
+export type AssetSymbolGetter = (identifier: TokenDetails) => string;

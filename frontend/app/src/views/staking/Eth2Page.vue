@@ -19,8 +19,8 @@ import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import StatusMixin from '@/mixins/status-mixin';
+import { Eth2Staking } from '@/premium/premium';
 import { Section } from '@/store/const';
-import { Eth2Staking } from '@/utils/premium';
 
 @Component({
   components: { ProgressScreen, Eth2Staking },

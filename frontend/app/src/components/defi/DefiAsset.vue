@@ -1,6 +1,10 @@
 <template>
   <div class="defi-asset d-flex flex-row align-center">
-    <crypto-icon size="32px" :symbol="asset.tokenSymbol" />
+    <asset-icon
+      size="32px"
+      :identifier="`_ceth_${asset.tokenAddress}`"
+      :symbol="asset.tokenSymbol"
+    />
     <span class="ml-3">{{ asset.tokenSymbol }}</span>
     <v-spacer />
     <div class="d-flex flex-column align-end">
@@ -19,12 +23,12 @@
 </template>
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import CryptoIcon from '@/components/CryptoIcon.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { DefiAsset as Asset } from '@/store/defi/types';
 
 @Component({
-  components: { AmountDisplay, CryptoIcon }
+  components: { AmountDisplay, AssetIcon }
 })
 export default class DefiAsset extends Vue {
   @Prop({ required: true })

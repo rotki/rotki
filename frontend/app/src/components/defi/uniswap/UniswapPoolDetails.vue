@@ -19,12 +19,12 @@
       <template #title>{{ $t('uniswap_pool_details.title') }}</template>
       <v-row
         v-for="token in balance.assets"
-        :key="assetName(token.asset)"
+        :key="getIdentifier(token.asset)"
         align="center"
       >
         <v-col cols="auto">
-          <crypto-icon
-            :symbol="assetName(token.asset)"
+          <asset-icon
+            :identifier="getIdentifier(token.asset)"
             size="24px"
             class="mr-1"
           />
@@ -37,7 +37,7 @@
             <v-col cols="auto">
               <amount-display
                 class="ps-4"
-                :asset="assetName(token.asset)"
+                :asset="getIdentifier(token.asset)"
                 :value="token.totalAmount"
               />
             </v-col>
@@ -70,15 +70,14 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
+import AssetMixin from '@/mixins/asset-mixin';
 import { UniswapBalance } from '@/store/defi/types';
-import { assetName } from '@/store/defi/utils';
 
 @Component({
   name: 'UniswapPoolDetails'
 })
-export default class UniswapPoolDetails extends Vue {
-  readonly assetName = assetName;
+export default class UniswapPoolDetails extends Mixins(AssetMixin) {
   details: boolean = false;
   @Prop({ required: true })
   balance!: UniswapBalance;

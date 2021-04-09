@@ -1,5 +1,5 @@
 <template>
-  <genereted-icon
+  <generated-icon
     v-if="!!currency || error || isUnknown"
     :asset="displayAsset"
     :currency="!!currency"
@@ -11,29 +11,32 @@
     :max-width="size"
     :min-width="size"
     contain
-    @error="statusChange(true)"
+    @error="error = true"
   />
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import GeneretedIcon from '@/components/helper/GeneretedIcon.vue';
+import { Component, Mixins, Prop, Watch } from 'vue-property-decorator';
+import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import { currencies } from '@/data/currencies';
+import AssetMixin from '@/mixins/asset-mixin';
 import { TokenDetails } from '@/services/defi/types';
-import { assetName } from '@/store/defi/utils';
 import { BTC, ETH } from '@/typing/types';
 
 @Component({
-  components: { GeneretedIcon }
+  components: { GeneratedIcon }
 })
-export default class CryptoIcon extends Vue {
+export default class AssetIcon extends Mixins(AssetMixin) {
   @Prop({ required: true })
-  symbol!: TokenDetails;
+  identifier!: TokenDetails;
+  @Prop({ required: false, type: String, default: '' })
+  symbol!: string;
   @Prop({ required: true, type: String })
   size!: string;
-  error: boolean = false;
   @Prop({ required: false, type: Boolean, default: false })
   changeable!: boolean;
+
+  error: boolean = false;
 
   @Watch('symbol')
   onSymbolChange() {
@@ -42,23 +45,21 @@ export default class CryptoIcon extends Vue {
 
   @Watch('changeable')
   onChange() {
-    this.statusChange(false);
-  }
-
-  @Emit()
-  statusChange(_error: boolean) {
-    this.error = _error;
+    this.error = false;
   }
 
   get isUnknown(): boolean {
-    return typeof this.symbol !== 'string';
+    return typeof this.identifier !== 'string';
   }
 
   get asset(): string {
-    return assetName(this.symbol);
+    return this.getIdentifier(this.identifier);
   }
 
   get displayAsset(): string {
+    if (this.error && this.symbol) {
+      return this.symbol;
+    }
     return this.currency || this.asset;
   }
 
@@ -71,7 +72,10 @@ export default class CryptoIcon extends Vue {
   }
 
   get url(): string {
-    if (this.asset === 'WETH') {
+    if (
+      this.symbol === 'WETH' ||
+      this.getIdentifierForSymbol('WETH') === this.identifier
+    ) {
       return require(`@/assets/images/defi/weth.svg`);
     }
     const url = `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.asset}/icon/small`;

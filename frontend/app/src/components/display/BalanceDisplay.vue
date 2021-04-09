@@ -7,7 +7,7 @@
       'balance-display--loss': mode === 'loss'
     }"
   >
-    <crypto-icon v-if="!noIcon" :symbol="asset" size="24px" class="mr-1" />
+    <asset-icon v-if="!noIcon" :identifier="asset" size="24px" class="mr-1" />
     <div
       class="ml-1 d-flex flex-column align-end"
       :style="{ 'min-width': `${minWidth}ch` }"

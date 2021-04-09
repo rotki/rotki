@@ -16,8 +16,8 @@ import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import StatusMixin from '@/mixins/status-mixin';
+import { AdexStaking } from '@/premium/premium';
 import { Section } from '@/store/const';
-import { AdexStaking } from '@/utils/premium';
 
 @Component({
   components: { AdexStaking, ProgressScreen },

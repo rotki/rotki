@@ -5,12 +5,12 @@
     :class="opensDetails ? 'asset-details-base--link' : null"
     @click="navigate"
   >
-    <crypto-icon
+    <asset-icon
       :changeable="changeable"
       size="26px"
       class="asset-details-base__icon"
-      :symbol="identifier"
-      @status-change="forceSymbol = $event"
+      :identifier="identifier"
+      :symbol="symbol"
     />
     <span class="asset-details-base__details">
       <span
@@ -38,21 +38,17 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import CryptoIcon from '@/components/CryptoIcon.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { Routes } from '@/router/routes';
-
-type Asset = {
-  readonly symbol: string;
-  readonly name: string;
-  readonly identifier?: string;
-};
+import { UnknownToken } from '@/services/defi/types';
+import { SupportedAsset } from '@/services/types-model';
 
 @Component({
-  components: { CryptoIcon }
+  components: { AssetIcon }
 })
 export default class AssetDetailsBase extends Vue {
   @Prop({ required: true })
-  asset!: Asset;
+  asset!: SupportedAsset | UnknownToken;
   @Prop({ required: false, type: Boolean, default: false })
   opensDetails!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
@@ -60,13 +56,11 @@ export default class AssetDetailsBase extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
   hideName!: boolean;
 
-  forceSymbol = false;
-
   get identifier(): string {
-    if (this.forceSymbol) {
-      return this.symbol;
+    if ('ethereumAddress' in this.asset) {
+      return `_ceth_${this.asset.ethereumAddress}`;
     }
-    return this.asset.identifier ?? this.symbol;
+    return this.asset.identifier;
   }
 
   get symbol(): string {
@@ -77,13 +71,8 @@ export default class AssetDetailsBase extends Vue {
     return this.asset.name;
   }
 
-  mounted() {
-    this.forceSymbol = false;
-  }
-
   get name(): string {
     const name = this.fullName;
-
     const truncLength = 7;
     const xsOnly = this.$vuetify.breakpoint.mdAndDown;
     const length = name.length;
@@ -104,10 +93,7 @@ export default class AssetDetailsBase extends Vue {
       return;
     }
     this.$router.push({
-      path: Routes.ASSETS.replace(
-        ':identifier',
-        this.asset.identifier ?? this.asset.symbol
-      )
+      path: Routes.ASSETS.replace(':identifier', this.identifier ?? this.symbol)
     });
   }
 }

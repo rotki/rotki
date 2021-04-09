@@ -61,12 +61,12 @@
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
+import AssetMixin from '@/mixins/asset-mixin';
 import { Currency } from '@/model/currency';
-import { SupportedAsset } from '@/services/types-model';
 import { ExchangeRateGetter } from '@/store/balances/types';
 import {
   AMOUNT_ROUNDING_MODE,
@@ -91,10 +91,10 @@ type ShownCurrency = 'none' | 'ticker' | 'symbol' | 'name';
     ]),
     ...mapState('settings', [AMOUNT_ROUNDING_MODE, VALUE_ROUNDING_MODE]),
     ...mapState('session', ['privacyMode', 'scrambleData']),
-    ...mapGetters('balances', ['exchangeRate', 'assetInfo'])
+    ...mapGetters('balances', ['exchangeRate'])
   }
 })
-export default class AmountDisplay extends Vue {
+export default class AmountDisplay extends Mixins(AssetMixin) {
   @Prop({ required: true })
   value!: BigNumber;
   @Prop({ required: false, type: Boolean, default: false })
@@ -139,13 +139,12 @@ export default class AmountDisplay extends Vue {
   exchangeRate!: ExchangeRateGetter;
   amountRoundingMode!: RoundingMode;
   valueRoundingMode!: RoundingMode;
-  assetInfo!: (identifier: string) => SupportedAsset;
 
   get symbol(): string {
     if (!this.asset) {
       return '';
     }
-    return this.assetInfo(this.asset)?.symbol ?? this.asset;
+    return this.getSymbol(this.asset);
   }
 
   get shownCurrency(): ShownCurrency {

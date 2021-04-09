@@ -27,8 +27,8 @@
             <span class="font-weight-medium">
               {{
                 $t('uniswap.pool_header', {
-                  asset1: assetName(data.item.assets[0]),
-                  asset2: assetName(data.item.assets[1])
+                  asset1: getSymbol(data.item.assets[0]),
+                  asset2: getSymbol(data.item.assets[1])
                 })
               }}
             </span>
@@ -42,8 +42,8 @@
             <v-list-item-title>
               {{
                 $t('uniswap.pool_header', {
-                  asset1: assetName(item.assets[0]),
-                  asset2: assetName(item.assets[1])
+                  asset1: getSymbol(item.assets[0]),
+                  asset2: getSymbol(item.assets[1])
                 })
               }}
             </v-list-item-title>
@@ -58,20 +58,19 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
+import AssetMixin from '@/mixins/asset-mixin';
 import { GETTER_UNISWAP_ASSETS } from '@/store/defi/const';
 import { UniswapPool } from '@/store/defi/types';
-import { assetName } from '@/store/defi/utils';
 
 @Component({
   computed: {
     ...mapGetters('defi', [GETTER_UNISWAP_ASSETS])
   }
 })
-export default class UniswapPoolFilter extends Vue {
+export default class UniswapPoolFilter extends Mixins(AssetMixin) {
   uniswapAssets!: UniswapPool[];
-  readonly assetName = assetName;
   @Prop({ required: true, type: Array })
   value!: string[];
   @Emit()
@@ -79,8 +78,8 @@ export default class UniswapPoolFilter extends Vue {
 
   filter(item: UniswapPool, queryText: string) {
     const searchString = queryText.toLocaleLowerCase();
-    const asset1 = assetName(item.assets[0]).toLocaleLowerCase();
-    const asset2 = assetName(item.assets[1]).toLocaleLowerCase();
+    const asset1 = this.getSymbol(item.assets[0]).toLocaleLowerCase();
+    const asset2 = this.getSymbol(item.assets[1]).toLocaleLowerCase();
     const name = `${asset1}/${asset2}`;
     return name.indexOf(searchString) > -1;
   }

@@ -1,5 +1,4 @@
 import { default as BigNumber } from 'bignumber.js';
-import { TokenDetails } from '@/services/defi/types';
 import { CompoundProfitAndLoss } from '@/services/defi/types/compound';
 import { HasBalance } from '@/services/types-api';
 import { ProfitLossModel } from '@/store/defi/types';
@@ -27,11 +26,4 @@ export function toProfitLossModel(
   }
 
   return data;
-}
-
-export function assetName(asset: TokenDetails) {
-  if (typeof asset === 'string') {
-    return asset;
-  }
-  return asset.symbol;
 }

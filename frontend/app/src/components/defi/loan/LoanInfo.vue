@@ -68,13 +68,13 @@ import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LoanLiquidation from '@/components/defi/loan/LoanLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
-import { CompoundLoan } from '@/services/defi/types/compound';
-import { Section, Status } from '@/store/const';
 import {
   AaveBorrowingDetails,
   CompoundBorrowingDetails,
   VaultEventsList
-} from '@/utils/premium';
+} from '@/premium/premium';
+import { CompoundLoan } from '@/services/defi/types/compound';
+import { Section, Status } from '@/store/const';
 
 @Component({
   components: {

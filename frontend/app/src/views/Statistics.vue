@@ -23,7 +23,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
-import { PremiumStatistics } from '@/utils/premium';
+import { PremiumStatistics } from '@/premium/premium';
 
 @Component({
   components: { BasePageHeader, PremiumStatistics, BaseExternalLink },

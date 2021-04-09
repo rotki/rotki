@@ -3,16 +3,18 @@ import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
 import { BlockchainAssetBalances } from '@/services/balances/types';
 import { Balance, GeneralAccountData, HasBalance } from '@/services/types-api';
-import { SupportedAsset } from '@/services/types-model';
 import {
   AccountAssetBalances,
   AssetBalance,
   AssetBreakdown,
+  AssetInfoGetter,
   AssetPriceInfo,
+  AssetSymbolGetter,
   BalanceState,
   BlockchainAccountWithBalance,
   BlockchainTotal,
   ExchangeRateGetter,
+  IdentifierForSymbolGetter,
   L2Totals,
   LocationBalance,
   ManualBalanceByLocation
@@ -55,12 +57,14 @@ export interface BalanceGetters {
   manualLabels: string[];
   accounts: GeneralAccount[];
   account: (address: string) => GeneralAccount | undefined;
-  assetInfo: (asset: string) => SupportedAsset | undefined;
+  assetInfo: AssetInfoGetter;
+  assetSymbol: AssetSymbolGetter;
   isEthereumToken: (asset: string) => boolean;
   assetPriceInfo: (asset: string) => AssetPriceInfo;
   breakdown: (asset: string) => AssetBreakdown[];
   loopringBalances: (address: string) => AssetBalance[];
   blockchainAssets: AssetBalance[];
+  getIdentifierForSymbol: IdentifierForSymbolGetter;
 }
 
 function balances(
@@ -665,5 +669,16 @@ export const getters: Getters<
       }
     }
     return blockchainTotal;
+  },
+  getIdentifierForSymbol: state => symbol => {
+    const asset = state.supportedAssets.find(asset => asset.symbol === symbol);
+    return asset?.identifier;
+  },
+  assetSymbol: (_bs, { assetInfo }) => identifier => {
+    if (typeof identifier === 'string') {
+      const asset = assetInfo(identifier);
+      return asset?.symbol ?? identifier;
+    }
+    return identifier.symbol;
   }
 };
