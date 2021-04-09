@@ -503,7 +503,7 @@ def test_query_deposits_withdrawals_unexpected_data(mock_ftx: FTX):
         query_fn_name='query_online_deposits_withdrawals',
         deposits_response=broken_response,
         expected_warnings_num=0,
-        expected_errors_num=1,
+        expected_errors_num=2,
         expected_actions_num=2,
     )
 

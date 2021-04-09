@@ -54,15 +54,15 @@ PAGINATION_LIMIT = 100
 def trade_from_ftx(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     """Turns an FTX transaction into a rotki Trade.
 
-    Mary raise:
+    May raise:
         - UnknownAsset due to Asset instantiation
         - DeserializationError due to unexpected format of dict entries
-        - KeyError due to dict entires missing an expected entry
+        - KeyError due to dict entries missing an expected key
     """
     # In the case of perpetuals and futures this fields can be None
-    if raw_trade.get('baseCurrency') is None:
+    if raw_trade.get('baseCurrency', None) is None:
         return None
-    if raw_trade.get('quoteCurrency') is None:
+    if raw_trade.get('quoteCurrency', None) is None:
         return None
 
     timestamp = deserialize_timestamp_from_date(raw_trade['time'], 'iso8601', 'FTX')
@@ -96,15 +96,11 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
-            initial_backoff: int = INITIAL_BACKOFF_TIME,
-            backoff_limit: int = BACKOFF_LIMIT,
     ):
         super().__init__('FTX', api_key, secret, database)
         self.apiversion = 'v2'
         self.base_uri = 'https://ftx.com'
         self.msg_aggregator = msg_aggregator
-        self.initial_backoff = initial_backoff
-        self.backoff_limit = backoff_limit
 
     def first_connection(self) -> None:
         self.first_connection_made = True
@@ -133,7 +129,7 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         - RemoteError
         """
         request_verb = "GET"
-        backoff = self.initial_backoff
+        backoff = INITIAL_BACKOFF_TIME
 
         # Use a while loop to retry request if rate limit is reached
         while True:
@@ -164,7 +160,7 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 raise RemoteError(f'FTX API request {full_url} failed due to {str(e)}') from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                if backoff < self.backoff_limit:
+                if backoff < BACKOFF_LIMIT:
                     log.debug(
                         f'FTX rate limit exceeded on request {request_url}. Backing off',
                         seconds=backoff,
@@ -256,7 +252,11 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 end_time=new_end_time,
             )
 
-            assert isinstance(step, list), 'Doing pagination in something that is not a list'
+            if not isinstance(step, list):
+                raise RemoteError(
+                    f'FTX pagination returned something different to a list for route {endpoint} '
+                    f'with start_time {start_time} and end_time {end_time}. Result was {step}.',
+                )
 
             # remove possible duplicates
             deduped = [
@@ -280,11 +280,11 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if len(times) != 0:
                 new_end_time = min(times)
             else:
-                log.error(
+                self.msg_aggregator.add_error(
                     f'Error processing FTX trade history. Query step '
                     f'returned invalid entries when trying pagination for endpoint '
                     f'{endpoint} with start_time {start_time}, end_time {end_time} '
-                    f'and limit of {limit}',
+                    f'and page limit of {limit}.',
                 )
                 break
 
@@ -417,10 +417,8 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 return None
 
             timestamp = deserialize_timestamp_from_date(raw_data['time'], 'iso8601', 'FTX')
-
             amount = deserialize_asset_amount_force_positive(raw_data['size'])
             asset = asset_from_ftx(raw_data['coin'])
-            # Only get address/transaction id for "send" type of transactions
             fee = Fee(ZERO)
             movement_category = movement_type
             if raw_data.get('fee', None) is not None:
