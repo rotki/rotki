@@ -4,16 +4,16 @@
       <div v-if="isVault" class="loan-header__identifier">
         {{
           $t('loan_header.maker_vault', {
-            identifier: scrambleData ? '-' : loan.identifier,
+            identifier: scrambleData ? '-' : getSymbol(loan.identifier),
             collateralType: loan.collateralType
           })
         }}
       </div>
       <div v-if="isAave" class="loan-header__identifier">
-        {{ $t('loan_header.aave_loan', { asset: loan.asset }) }}
+        {{ $t('loan_header.aave_loan', { asset: getSymbol(loan.asset) }) }}
       </div>
       <div v-if="isCompound" class="loan-header__identifier">
-        {{ $t('loan_header.compound_loan', { asset: loan.asset }) }}
+        {{ $t('loan_header.compound_loan', { asset: getSymbol(loan.asset) }) }}
       </div>
       <div class="loan-header__owner secondary--text text--lighten-2">
         {{ $t('loan_header.owned_by') }}
@@ -26,6 +26,7 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import LoanDisplayMixin from '@/components/defi/loan/loan-display-mixin';
 import HashLink from '@/components/helper/HashLink.vue';
+import AssetMixin from '@/mixins/asset-mixin';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 
 @Component({
@@ -33,7 +34,8 @@ import ScrambleMixin from '@/mixins/scramble-mixin';
 })
 export default class LoanHeader extends Mixins(
   LoanDisplayMixin,
-  ScrambleMixin
+  ScrambleMixin,
+  AssetMixin
 ) {}
 </script>
 

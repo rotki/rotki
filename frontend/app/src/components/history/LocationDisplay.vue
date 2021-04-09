@@ -3,35 +3,29 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { tradeLocations } from '@/components/history/consts';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocationData } from '@/components/history/type';
+import AssetMixin from '@/mixins/asset-mixin';
 import { TradeLocation } from '@/services/history/types';
-import { AssetInfoGetter } from '@/store/balances/types';
 import { SupportedBlockchains } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 
 @Component({
-  components: { LocationIcon },
-  computed: {
-    ...mapGetters('balances', ['assetInfo'])
-  }
+  components: { LocationIcon }
 })
-export default class LocationDisplay extends Vue {
+export default class LocationDisplay extends Mixins(AssetMixin) {
   readonly tradeLocations = tradeLocations;
   @Prop({ required: true, type: String })
   identifier!: TradeLocation;
   @Prop({ required: false, type: Boolean, default: false })
   icon!: boolean;
 
-  assetInfo!: AssetInfoGetter;
-
   get location(): TradeLocationData {
     if (this.isSupportedBlockchain(this.identifier)) {
       return {
-        name: this.assetInfo(this.identifier)?.name ?? '',
+        name: this.getAssetName(this.identifier),
         identifier: this.identifier,
         exchange: false,
         imageIcon: true,

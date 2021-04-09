@@ -50,7 +50,6 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { Pool } from '@/store/defi/types';
-import { assetName } from '@/store/defi/utils';
 
 @Component({
   name: 'LiquidityPoolSelector'
@@ -58,7 +57,6 @@ import { assetName } from '@/store/defi/utils';
 export default class LiquidityPoolSelector extends Vue {
   @Prop({ required: true })
   pools!: Pool[];
-  readonly assetName = assetName;
   @Prop({ required: true, type: Array })
   value!: string[];
   @Emit()

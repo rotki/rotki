@@ -45,8 +45,8 @@
           <template #title>
             {{
               $t('uniswap.pool_header', {
-                asset1: assetName(entry.assets[0].asset, true),
-                asset2: assetName(entry.assets[1].asset, true)
+                asset1: getSymbol(entry.assets[0].asset),
+                asset2: getSymbol(entry.assets[1].asset)
               })
             }}
           </template>
@@ -58,7 +58,7 @@
           </template>
           <template #icon>
             <uniswap-pool-asset
-              :assets="entry.assets.map(value => assetName(value.asset))"
+              :assets="entry.assets.map(({ asset }) => getIdentifier(asset))"
             />
           </template>
           <v-row align="center">
@@ -81,23 +81,26 @@
 
           <v-row
             v-for="asset in entry.assets"
-            :key="`${assetName(asset.asset)}-${entry.poolAddress}-balances`"
+            :key="`${getIdentifier(asset.asset)}-${entry.poolAddress}-balances`"
             class="uniswap__tokens"
             align="center"
             justify="end"
           >
             <v-col cols="auto">
-              <asset-icon :identifier="assetName(asset.asset)" size="32px" />
+              <asset-icon
+                :identifier="getIdentifier(asset.asset)"
+                size="32px"
+              />
             </v-col>
             <v-col class="d-flex" cols="auto">
               <div>
                 <balance-display
                   no-icon
-                  :asset="assetName(asset.asset)"
+                  :asset="getIdentifier(asset.asset)"
                   :value="asset.userBalance"
                 />
               </div>
-              <hash-link link-only :text="assetAddress(asset.asset)" />
+              <hash-link link-only :text="getTokenAddress(asset.asset)" />
             </v-col>
           </v-row>
         </card>
@@ -122,15 +125,13 @@ import UniswapPoolFilter from '@/components/defi/uniswap/UniswapPoolFilter.vue';
 import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import AssetMixin from '@/mixins/asset-mixin';
 import DefiModuleMixin from '@/mixins/defi-module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { UniswapDetails } from '@/premium/premium';
-import { UnknownToken } from '@/services/defi/types';
-import { AssetInfoGetter } from '@/store/balances/types';
 import { Section } from '@/store/const';
 import { UniswapBalance } from '@/store/defi/types';
-import { assetName } from '@/store/defi/utils';
 import { ETH, GeneralAccount } from '@/typing/types';
 
 @Component({
@@ -145,7 +146,6 @@ import { ETH, GeneralAccount } from '@/typing/types';
     BlockchainAccountSelector
   },
   computed: {
-    ...mapGetters('balances', ['assetInfo']),
     ...mapGetters('defi', ['uniswapBalances', 'uniswapAddresses'])
   },
   methods: {
@@ -155,14 +155,13 @@ import { ETH, GeneralAccount } from '@/typing/types';
 export default class Uniswap extends Mixins(
   StatusMixin,
   DefiModuleMixin,
-  PremiumMixin
+  PremiumMixin,
+  AssetMixin
 ) {
   readonly ETH = ETH;
-  readonly assetName = assetName;
   section = Section.DEFI_UNISWAP_BALANCES;
   secondSection = Section.DEFI_UNISWAP_EVENTS;
 
-  assetInfo!: AssetInfoGetter;
   uniswapBalances!: (addresses: string[]) => UniswapBalance[];
   uniswapAddresses!: string[];
   selectedAccount: GeneralAccount | null = null;
@@ -182,13 +181,6 @@ export default class Uniswap extends Mixins(
     return balances.filter(({ poolAddress }) =>
       this.selectedPools.includes(poolAddress)
     );
-  }
-
-  assetAddress(asset: UnknownToken | string) {
-    if (typeof asset === 'string') {
-      return this.assetInfo(asset)?.ethereumAddress ?? '';
-    }
-    return asset.ethereumAddress;
   }
 
   async mounted() {

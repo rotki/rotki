@@ -155,12 +155,12 @@
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapState } from 'vuex';
+import { mapActions, mapState } from 'vuex';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import LedgerActionSettings from '@/components/settings/accounting/LedgerActionSettings.vue';
 import { settingsMessages } from '@/components/settings/utils';
+import AssetMixin from '@/mixins/asset-mixin';
 import SettingsMixin from '@/mixins/settings-mixin';
-import { AssetInfoGetter } from '@/store/balances/types';
 import { ActionStatus } from '@/store/types';
 
 const crypto2crypto = 'crypto2crypto';
@@ -191,20 +191,18 @@ type SettingsEntries = typeof SETTINGS[number];
     AssetSelect
   },
   computed: {
-    ...mapState('session', ['ignoredAssets']),
-    ...mapGetters('balances', ['assetInfo'])
+    ...mapState('session', ['ignoredAssets'])
   },
   methods: {
     ...mapActions('session', ['ignoreAsset', 'unignoreAsset'])
   }
 })
-export default class Accounting extends Mixins<SettingsMixin<SettingsEntries>>(
-  SettingsMixin
-) {
+export default class Accounting extends Mixins<
+  SettingsMixin<SettingsEntries> & AssetMixin
+>(SettingsMixin, AssetMixin) {
   ignoredAssets!: string[];
   ignoreAsset!: (asset: string) => Promise<ActionStatus>;
   unignoreAsset!: (asset: string) => Promise<ActionStatus>;
-  assetInfo!: AssetInfoGetter;
 
   crypto2CryptoTrades: boolean = false;
   gasCosts: boolean = false;
@@ -419,7 +417,7 @@ export default class Accounting extends Mixins<SettingsMixin<SettingsEntries>>(
   async addAsset() {
     const identifier = this.assetToIgnore;
     const { message, success } = await this.ignoreAsset(identifier);
-    const asset = this.assetInfo(identifier)?.symbol ?? identifier;
+    const asset = this.getSymbol(identifier);
 
     const validationMessage = success
       ? this.$tc('account_settings.messages.ignored_success', 0, { asset })
@@ -441,7 +439,7 @@ export default class Accounting extends Mixins<SettingsMixin<SettingsEntries>>(
   async removeAsset() {
     const identifier = this.assetToRemove;
     const { message, success } = await this.unignoreAsset(identifier);
-    const asset = this.assetInfo(identifier)?.symbol ?? identifier;
+    const asset = this.getSymbol(identifier);
 
     const validationMessage = success
       ? this.$tc('account_settings.messages.unignored_success', 0, { asset })

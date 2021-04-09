@@ -16,17 +16,17 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
+import { Component, Mixins, Prop, Watch } from 'vue-property-decorator';
 import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import { currencies } from '@/data/currencies';
+import AssetMixin from '@/mixins/asset-mixin';
 import { TokenDetails } from '@/services/defi/types';
-import { assetName } from '@/store/defi/utils';
 import { BTC, ETH } from '@/typing/types';
 
 @Component({
   components: { GeneratedIcon }
 })
-export default class AssetIcon extends Vue {
+export default class AssetIcon extends Mixins(AssetMixin) {
   @Prop({ required: true })
   identifier!: TokenDetails;
   @Prop({ required: false, type: String, default: '' })
@@ -53,7 +53,7 @@ export default class AssetIcon extends Vue {
   }
 
   get asset(): string {
-    return assetName(this.identifier);
+    return this.getIdentifier(this.identifier);
   }
 
   get displayAsset(): string {
@@ -72,7 +72,10 @@ export default class AssetIcon extends Vue {
   }
 
   get url(): string {
-    if (this.symbol === 'WETH') {
+    if (
+      this.symbol === 'WETH' ||
+      this.getIdentifierForSymbol('WETH') === this.identifier
+    ) {
       return require(`@/assets/images/defi/weth.svg`);
     }
     const url = `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.asset}/icon/small`;

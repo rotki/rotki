@@ -1,8 +1,13 @@
 <template>
   <div class="balancer-pool-asset d-flex flex-column pa-1">
-    <asset-icon :identifier="assetIdentifier(assets[0])" size="22px" />
     <asset-icon
-      :identifier="assetIdentifier(assets[1])"
+      :identifier="getTokenIdentifier(assets[0])"
+      :symbol="getTokenSymbol(assets[0])"
+      size="22px"
+    />
+    <asset-icon
+      :identifier="getTokenIdentifier(assets[1])"
+      :symbol="getTokenSymbol(assets[1])"
       size="22px"
       class="align-self-end"
     />
@@ -10,19 +15,28 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
+import AssetMixin from '@/mixins/asset-mixin';
 import { BalancerUnderlyingToken } from '@/store/defi/types';
 
 @Component({})
-export default class BalancerPoolAsset extends Vue {
+export default class BalancerPoolAsset extends Mixins(AssetMixin) {
   @Prop({ required: true, type: Array, validator: value => value.length >= 2 })
   assets!: BalancerUnderlyingToken[] | string[];
 
-  assetIdentifier(token: BalancerUnderlyingToken | string): string {
+  getTokenIdentifier(token: BalancerUnderlyingToken | string): string {
     if (typeof token === 'string') {
       return token;
     }
-    return typeof token.token === 'string' ? token.token : token.token.symbol;
+    return this.getIdentifier(token.token);
+  }
+
+  getTokenSymbol(token: BalancerUnderlyingToken | string): string {
+    if (typeof token === 'string') {
+      return token;
+    }
+
+    return this.getSymbol(token.token);
   }
 }
 </script>

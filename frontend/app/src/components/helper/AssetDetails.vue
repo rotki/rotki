@@ -7,18 +7,14 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import { AssetInfoGetter } from '@/store/balances/types';
+import AssetMixin from '@/mixins/asset-mixin';
 
 @Component({
-  components: { AssetDetailsBase },
-  computed: {
-    ...mapGetters('balances', ['assetInfo'])
-  }
+  components: { AssetDetailsBase }
 })
-export default class AssetDetails extends Vue {
+export default class AssetDetails extends Mixins(AssetMixin) {
   @Prop({
     required: true,
     validator(value: string): boolean {
@@ -30,8 +26,6 @@ export default class AssetDetails extends Vue {
   opensDetails!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   hideName!: boolean;
-
-  assetInfo!: AssetInfoGetter;
 
   get currentAsset() {
     const details = this.assetInfo(this.asset);

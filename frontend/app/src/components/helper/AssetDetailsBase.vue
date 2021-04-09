@@ -40,20 +40,15 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { Routes } from '@/router/routes';
-import { assert } from '@/utils/assertions';
-
-type Asset = {
-  readonly symbol: string;
-  readonly name: string;
-  readonly identifier?: string;
-};
+import { UnknownToken } from '@/services/defi/types';
+import { SupportedAsset } from '@/services/types-model';
 
 @Component({
   components: { AssetIcon }
 })
 export default class AssetDetailsBase extends Vue {
   @Prop({ required: true })
-  asset!: Asset;
+  asset!: SupportedAsset | UnknownToken;
   @Prop({ required: false, type: Boolean, default: false })
   opensDetails!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
@@ -62,9 +57,10 @@ export default class AssetDetailsBase extends Vue {
   hideName!: boolean;
 
   get identifier(): string {
-    const identifier = this.asset.identifier;
-    assert(identifier);
-    return identifier;
+    if ('ethereumAddress' in this.asset) {
+      return `_ceth_${this.asset.ethereumAddress}`;
+    }
+    return this.asset.identifier;
   }
 
   get symbol(): string {
@@ -97,10 +93,7 @@ export default class AssetDetailsBase extends Vue {
       return;
     }
     this.$router.push({
-      path: Routes.ASSETS.replace(
-        ':identifier',
-        this.asset.identifier ?? this.asset.symbol
-      )
+      path: Routes.ASSETS.replace(':identifier', this.identifier ?? this.symbol)
     });
   }
 }

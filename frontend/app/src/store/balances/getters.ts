@@ -9,6 +9,7 @@ import {
   AssetBreakdown,
   AssetInfoGetter,
   AssetPriceInfo,
+  AssetSymbolGetter,
   BalanceState,
   BlockchainAccountWithBalance,
   BlockchainTotal,
@@ -57,6 +58,7 @@ export interface BalanceGetters {
   accounts: GeneralAccount[];
   account: (address: string) => GeneralAccount | undefined;
   assetInfo: AssetInfoGetter;
+  assetSymbol: AssetSymbolGetter;
   isEthereumToken: (asset: string) => boolean;
   assetPriceInfo: (asset: string) => AssetPriceInfo;
   breakdown: (asset: string) => AssetBreakdown[];
@@ -671,5 +673,12 @@ export const getters: Getters<
   getIdentifierForSymbol: state => symbol => {
     const asset = state.supportedAssets.find(asset => asset.symbol === symbol);
     return asset?.identifier;
+  },
+  assetSymbol: (_bs, { assetInfo }) => identifier => {
+    if (typeof identifier === 'string') {
+      const asset = assetInfo(identifier);
+      return asset?.symbol ?? identifier;
+    }
+    return identifier.symbol;
   }
 };

@@ -6,6 +6,7 @@ import {
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
+import { TokenDetails } from '@/services/defi/types';
 import {
   Balance,
   BtcAccountData,
@@ -191,3 +192,4 @@ export type AssetInfoGetter = (
 ) => SupportedAsset | undefined;
 
 export type IdentifierForSymbolGetter = (symbol: string) => string | undefined;
+export type AssetSymbolGetter = (identifier: TokenDetails) => string;

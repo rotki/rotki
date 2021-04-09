@@ -6,8 +6,7 @@ import {
   EventType,
   MakerDAOVaultEventType,
   SupportedDefiProtocols,
-  TokenDetails,
-  UnknownToken
+  TokenDetails
 } from '@/services/defi/types';
 import {
   AaveBalances,
@@ -392,7 +391,7 @@ export interface BalancerBalances {
 }
 
 interface PoolToken {
-  readonly token: UnknownToken | string;
+  readonly token: TokenDetails;
   readonly weight: string;
 }
 
@@ -429,6 +428,7 @@ export interface BalancerEvents {
 
 export interface BalancerProfitLoss {
   readonly pool: Pool;
+  readonly tokens: string[];
   readonly usdProfitLoss: BigNumber;
   readonly profitLossAmount: PoolAmounts;
 }

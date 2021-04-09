@@ -24,28 +24,21 @@
 
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
+import AssetMixin from '@/mixins/asset-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
-import { AssetInfoGetter } from '@/store/balances/types';
 
 @Component({
-  components: { AssetLocations, AssetValueRow, AssetAmountAndValueOverTime },
-  computed: {
-    ...mapGetters('balances', ['assetInfo'])
-  }
+  components: { AssetLocations, AssetValueRow, AssetAmountAndValueOverTime }
 })
-export default class Assets extends Mixins(PremiumMixin) {
+export default class Assets extends Mixins(PremiumMixin, AssetMixin) {
   @Prop({ required: true, type: String })
   identifier!: string;
 
-  assetInfo!: AssetInfoGetter;
-
   get assetName(): string {
-    const asset = this.assetInfo(this.identifier);
-    return asset ? (asset.name ? asset.name : '') : '';
+    return this.getAssetName(this.identifier);
   }
 
   get icon(): string {
@@ -53,12 +46,7 @@ export default class Assets extends Mixins(PremiumMixin) {
   }
 
   get symbol(): string {
-    const asset = this.assetInfo(this.identifier);
-    return asset
-      ? asset.symbol
-        ? asset.symbol
-        : this.identifier
-      : this.identifier;
+    return this.getSymbol(this.identifier);
   }
 }
 </script>
