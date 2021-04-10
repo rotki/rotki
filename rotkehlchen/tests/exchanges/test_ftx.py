@@ -9,7 +9,7 @@ from rotkehlchen.assets.converters import asset_from_ftx, UNSUPPORTED_FTX_ASSETS
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USD, A_USDC, A_1INCH
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.ftx import FTX
+from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -20,11 +20,11 @@ TEST_END_TS = Timestamp(1617382780)
 
 
 def test_name():
-    exchange = FTX('a', b'a', object(), object())
-    assert exchange.name == 'FTX'
+    exchange = Ftx('a', b'a', object(), object())
+    assert exchange.name == 'ftx'
 
 
-def test_ftx_exchange_assets_are_known(mock_ftx: FTX):
+def test_ftx_exchange_assets_are_known(mock_ftx: Ftx):
 
     unknown_assets: Set[str] = set()
     unsupported_assets = set(UNSUPPORTED_FTX_ASSETS)
@@ -225,7 +225,7 @@ def mock_normal_ftx_query(url: str):  # pylint: disable=unused-argument
 
 
 def query_ftx_and_test(
-        ftx: FTX,
+        ftx: Ftx,
         query_fn_name: str,
         fills_response: str = FILLS_RESPONSE,
         deposits_response: str = DEPOSITS_RESPONSE,
@@ -413,7 +413,7 @@ def test_ftx_trade_history_unexpected_data(mock_ftx):
     A_USDC: FVal(1),
     "ETH": FVal(2000),
 }])
-def test_balances(mock_ftx: FTX):
+def test_balances(mock_ftx: Ftx):
     """Test that balances are correctly extracted"""
 
     with patch.object(mock_ftx.session, 'get', side_effect=mock_normal_ftx_query):
@@ -432,7 +432,7 @@ def test_balances(mock_ftx: FTX):
     assert balances[A_ETH].usd_value == FVal('20020000.0')
 
 
-def test_query_deposits_withdrawals(mock_ftx: FTX):
+def test_query_deposits_withdrawals(mock_ftx: Ftx):
     """Test happy path of deposits/withdrawls"""
     with patch.object(mock_ftx.session, 'get', side_effect=mock_normal_ftx_query):
         movements = mock_ftx.query_online_deposits_withdrawals(
@@ -483,7 +483,7 @@ def test_query_deposits_withdrawals(mock_ftx: FTX):
     assert movements == expected_movements
 
 
-def test_query_deposits_withdrawals_unexpected_data(mock_ftx: FTX):
+def test_query_deposits_withdrawals_unexpected_data(mock_ftx: Ftx):
     """Test that ftx deposit/withdrawals query handles unexpected data properly"""
     # first query with proper data and expect no errors
     query_ftx_and_test(
@@ -552,7 +552,7 @@ def test_query_deposits_withdrawals_unexpected_data(mock_ftx: FTX):
     )
 
 
-def test_pagination(mock_ftx: FTX):
+def test_pagination(mock_ftx: Ftx):
     """Test pagination in the eth/eur market (public endpoint)"""
     # Try pagination good path
     response = mock_ftx._api_query(

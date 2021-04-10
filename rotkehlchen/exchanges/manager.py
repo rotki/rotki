@@ -32,6 +32,7 @@ SUPPORTED_EXCHANGES = [
     'bitcoinde',
     'iconomi',
     'kucoin',
+    'ftx',
 ]
 # Exchanges for which we allow import via CSV
 EXTERNAL_EXCHANGES = ['crypto.com']

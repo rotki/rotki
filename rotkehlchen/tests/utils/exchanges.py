@@ -13,7 +13,7 @@ from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro
-from rotkehlchen.exchanges.ftx import FTX
+from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.exchanges.kucoin import Kucoin
@@ -456,8 +456,8 @@ def create_test_coinbasepro(
 def create_test_ftx(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
-) -> FTX:
-    mock = FTX(
+) -> Ftx:
+    mock = Ftx(
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
