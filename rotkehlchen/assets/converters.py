@@ -474,6 +474,32 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'IQX',  # no cryptocompare/coingecko data (EOS token)
 )
 
+UNSUPPORTED_FTX_ASSETS = (
+    'AAPL',
+    'ABNB',
+    'ACB',
+    'AMC',
+    'AMD',
+    'AMZN',
+    'APHA',
+    'ARKK',
+    'BABA',
+    'BB',
+    'BILI',
+    'BITW',
+    'BNTX',
+    'FB',
+    'GME',
+    'GOOGL',
+    'MSTR',
+    'NFLX',
+    'NOK',
+    'NVDA',
+    'PFE',
+    'SLV',  # iShares Silver Trust
+    'TSLA',
+)
+
 # https://api.kucoin.com/api/v1/currencies
 UNSUPPORTED_KUCOIN_ASSETS = (
     'AXE',  # delisted
@@ -701,6 +727,21 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
 
     # else
     return symbol_to_asset_or_token(cb_name)
+
+
+def asset_from_ftx(ftx_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(ftx_name, str):
+        raise DeserializationError(f'Got non-string type {type(ftx_name)} for ftx asset')
+
+    if ftx_name in UNSUPPORTED_FTX_ASSETS:
+        raise UnsupportedAsset(ftx_name)
+
+    return symbol_to_asset_or_token(ftx_name)
 
 
 def asset_from_kucoin(kucoin_name: str) -> Asset:
