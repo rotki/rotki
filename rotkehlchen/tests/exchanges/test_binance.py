@@ -10,7 +10,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
-from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_USDT
+from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_USDT, A_WBTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import (
@@ -202,12 +202,13 @@ def test_binance_query_balances_include_features(function_scope_binance):
         balances, msg = binance.query_balances()
 
     assert msg == ''
-    assert len(balances) == 5
-    assert balances[A_BTC].amount == FVal('4723847.39208129')
+    assert len(balances) == 6
+    assert balances[A_BTC].amount == FVal('4723849.39208129')
     assert balances[A_ETH].amount == FVal('4763368.68006011')
     assert balances[A_BUSD].amount == FVal('7.49283144')
     assert balances[A_USDT].amount == FVal('201.01')
     assert balances[A_DOT].amount == FVal('500.55')
+    assert balances[A_WBTC].amount == FVal('2.1')
 
     warnings = binance.msg_aggregator.consume_warnings()
     assert len(warnings) == 2

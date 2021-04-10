@@ -17,6 +17,7 @@ Changelog
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
 * :feature:`1007` Coinbase exchange users will now be able to see asset conversions in their trade history.
 * :feature:`1334` FTX users will now be able to see their balances and have their deposit/withdrawal/trade history taken into account during profit/loss calculation.
+* :feature:`2332` Binance users will now be able to see their Binance Pool's assets in rotki.
 * :bug:`2479` Users will now see a < (less than) symbol in front of any amount with trailing decimals when rounding upwards is used.
 * :bug:`2610` Macos users will now be able to properly update every time using the auto-updater.
 * :bug:`2628` Users will now see the correct total asset value when visiting an asset's detail page for a second time.
