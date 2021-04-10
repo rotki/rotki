@@ -3,6 +3,7 @@ from typing import List, Union
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -62,7 +63,7 @@ def action_get_type(action: TaxableAction) -> str:
     raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
 
 
-def action_get_assets(action: TaxableAction) -> List[Asset]:
+def action_get_assets(action: TaxableAction) -> List[Union[Asset, UnknownEthereumToken]]:
     """Gets the assets involved in the action
 
     May raise:
@@ -71,7 +72,7 @@ def action_get_assets(action: TaxableAction) -> List[Asset]:
 
     """
     if isinstance(action, (Trade, AMMTrade)):
-        return [action.base_asset, action.quote_asset]  # type: ignore
+        return [action.base_asset, action.quote_asset]
     if isinstance(action, (AssetMovement, LedgerAction)):
         return [action.asset]
     if isinstance(action, DefiEvent):

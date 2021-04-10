@@ -1,14 +1,15 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Dict, DefaultDict, NamedTuple, Any, Callable
+from typing import Any, Callable, DefaultDict, Dict, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Timestamp, Location
+from rotkehlchen.typing import Location, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -142,9 +143,15 @@ class CostBasisInfo(NamedTuple):
 
 class CostBasisCalculator():
 
-    def __init__(self, csv_exporter: CSVExporter, profit_currency: Asset) -> None:
+    def __init__(
+            self,
+            csv_exporter: CSVExporter,
+            profit_currency: Asset,
+            msg_aggregator: MessagesAggregator,
+    ) -> None:
         self._taxfree_after_period: Optional[int] = None
         self.csv_exporter = csv_exporter
+        self.msg_aggregator = msg_aggregator
         self.reset(profit_currency)
 
     def reset(self, profit_currency: Asset) -> None:
@@ -160,6 +167,29 @@ class CostBasisCalculator():
         is_valid = isinstance(value, int) or value is None
         assert is_valid, 'set taxfree_after_period should only get int or None'
         self._taxfree_after_period = value
+
+    def inform_user_missing_acquisition(
+            self,
+            asset: Asset,
+            time: Timestamp,
+            found_amount: Optional[FVal] = None,
+            missing_amount: Optional[FVal] = None,
+    ) -> None:
+        """Inform the user for missing data for an acquisition via the msg aggregator"""
+        if found_amount is None:
+            self.msg_aggregator.add_error(
+                f'No documented acquisition found for {asset} before '
+                f'{self.csv_exporter.timestamp_to_date(time)}. Let rotki '
+                f'know how you acquired it via a ledger action',
+            )
+            return
+
+        self.msg_aggregator.add_error(
+            f'Not enough documented acquisitions found for {asset} before '
+            f'{self.csv_exporter.timestamp_to_date(time)}. Only found acquisitions '
+            f'for {found_amount} {asset} and miss {missing_amount} {asset}.'
+            f'Let rotki know how you acquired it via a ledger action',
+        )
 
     def reduce_asset_amount(self, asset: Asset, amount: FVal) -> bool:
         """Searches all acquisition events for asset and reduces them by amount
@@ -339,12 +369,7 @@ class CostBasisCalculator():
                 stop_index = idx + 1
 
         if len(self.events[spending_asset].acquisitions) == 0:
-            log.critical(
-                'No documented acquisition found for "{}" before {}'.format(
-                    spending_asset,
-                    self.csv_exporter.timestamp_to_date(timestamp),
-                ),
-            )
+            self.inform_user_missing_acquisition(spending_asset, timestamp)
             # That means we had no documented acquisition for that asset. This is not good
             # because we can't prove a corresponding acquisition and as such we are burdened
             # calculating the entire spend as profit which needs to be taxed
@@ -369,10 +394,11 @@ class CostBasisCalculator():
             # if we still have sold amount but no acquisitions to satisfy it then we only
             # found acquisitions to partially satisfy the sell
             adjusted_amount = spending_amount - taxfree_amount
-            log.critical(
-                f'Not enough documented acquisitions found for "{spending_asset}" before '
-                f'{self.csv_exporter.timestamp_to_date(timestamp)}.'
-                f'Only found acquisitions for {taxable_amount + taxfree_amount} {spending_asset}',
+            self.inform_user_missing_acquisition(
+                asset=spending_asset,
+                time=timestamp,
+                found_amount=taxable_amount + taxfree_amount,
+                missing_amount=remaining_sold_amount,
             )
             taxable_amount = adjusted_amount
             is_complete = False

@@ -545,13 +545,13 @@ class Accountant():
             )
             return True, prev_time
 
-        if any(isinstance(x, UnknownEthereumToken) for x in action_assets):
-            log.debug(
-                'Ignoring action with unknown token',
-                action_type=action_type,
-                assets=[x.identifier for x in action_assets],
-            )
-            return True, prev_time
+        for x in action_assets:
+            if isinstance(x, UnknownEthereumToken):
+                self.msg_aggregator.add_error(
+                    f'Ignoring action {action_type} with unknown token asset {x}. '
+                    f'Add it as a token in rotki manually with a working price oracle to fix this',
+                )
+                return True, prev_time
 
         if any(x in ignored_assets for x in action_assets):
             log.debug(
