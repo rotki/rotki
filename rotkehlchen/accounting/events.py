@@ -35,7 +35,7 @@ class TaxableEvents():
         self.profit_currency = profit_currency
         # later customized via accountant._customize()
         self.taxable_ledger_actions: List[LedgerActionType] = []
-        self.cost_basis = CostBasisCalculator(csv_exporter, profit_currency)
+        self.cost_basis = CostBasisCalculator(csv_exporter, profit_currency, msg_aggregator)
 
         # If this flag is True when your asset is being forcefully sold as a
         # loan/margin settlement then profit/loss is also calculated before the entire
@@ -173,6 +173,9 @@ class TaxableEvents():
             sold_amount: FVal,
             timestamp: Timestamp,
     ) -> None:
+        # For now for those don't use inform_user_missing_acquisition since if those hit
+        # the preforked asset acquisition data is what's missing so user would getLogger
+        # two messages. So as an example one for missing ETH data and one for ETC data
         if sold_asset == A_ETH and timestamp < ETH_DAO_FORK_TS:
             if not self.cost_basis.reduce_asset_amount(asset=A_ETC, amount=sold_amount):
                 log.critical(
