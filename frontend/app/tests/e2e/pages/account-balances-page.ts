@@ -31,7 +31,9 @@ export class AccountBalancesPage {
       cy.get('.manual-balances-form__tags').type(tag).type('{enter}');
     }
     cy.get('.manual-balances-form__location').click();
-    cy.get(`#balance-location__${balances.location}`).click();
+    cy.get(
+      '.manual-balances-form__location div.v-select__selections input'
+    ).type(`{selectall}{backspace}${balances.location}{enter}`);
     cy.get('.big-dialog__buttons__confirm').click();
     cy.get('.big-dialog', { timeout: 45000 }).should('not.be.visible');
   }
