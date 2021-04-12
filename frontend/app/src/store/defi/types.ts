@@ -223,6 +223,7 @@ export interface DefiLendingHistory<T extends SupportedDefiProtocols> {
   protocol: T;
   address: string;
   asset: string;
+  atoken?: string;
   value: Balance;
   extras: LendingHistoryExtras[T];
   blockNumber: number;

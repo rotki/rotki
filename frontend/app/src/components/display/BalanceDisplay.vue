@@ -7,7 +7,13 @@
       'balance-display--loss': mode === 'loss'
     }"
   >
-    <asset-icon v-if="!noIcon" :identifier="asset" size="24px" class="mr-1" />
+    <asset-icon
+      v-if="!noIcon"
+      :identifier="asset"
+      :symbol="getSymbol(asset)"
+      size="24px"
+      class="mr-1"
+    />
     <div
       class="ml-1 d-flex flex-column align-end"
       :style="{ 'min-width': `${minWidth}ch` }"
@@ -31,11 +37,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
+import AssetMixin from '@/mixins/asset-mixin';
 import { Balance } from '@/services/types-api';
 
 @Component({})
-export default class BalanceDisplay extends Vue {
+export default class BalanceDisplay extends Mixins(AssetMixin) {
   @Prop({ required: true })
   asset!: string;
   @Prop({ required: true })

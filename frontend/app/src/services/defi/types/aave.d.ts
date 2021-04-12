@@ -50,6 +50,7 @@ interface AaveBaseEvent {
 interface AaveEvent extends AaveBaseEvent {
   readonly eventType: Diff<AaveEventType, typeof DEFI_EVENT_LIQUIDATION>;
   readonly asset: string;
+  readonly atoken: string;
   readonly value: Balance;
 }
 

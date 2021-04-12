@@ -864,6 +864,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
             protocol: DEFI_AAVE,
             address,
             asset: event.asset,
+            atoken: event.atoken,
             value: event.value,
             blockNumber: event.blockNumber,
             timestamp: event.timestamp,
