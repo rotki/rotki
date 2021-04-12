@@ -88,7 +88,8 @@
           >
             <v-col cols="auto">
               <asset-icon
-                :identifier="getIdentifier(asset.asset)"
+                :identifier="asset.asset"
+                :symbol="getSymbol(asset.asset)"
                 size="32px"
               />
             </v-col>
@@ -96,7 +97,7 @@
               <div>
                 <balance-display
                   no-icon
-                  :asset="getIdentifier(asset.asset)"
+                  :asset="asset.asset"
                   :value="asset.userBalance"
                 />
               </div>

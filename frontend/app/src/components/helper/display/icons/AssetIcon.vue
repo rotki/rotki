@@ -57,8 +57,13 @@ export default class AssetIcon extends Mixins(AssetMixin) {
   }
 
   get displayAsset(): string {
-    if (this.error && this.symbol) {
-      return this.symbol;
+    if (typeof this.identifier !== 'string') {
+      return this.identifier.symbol ?? '';
+    }
+
+    const symbol = this.symbol;
+    if (this.error && symbol) {
+      return symbol;
     }
     return this.currency || this.asset;
   }
