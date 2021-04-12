@@ -15,7 +15,7 @@ First time sign-up
 
 When you start Rotki you are greeted with a sign-in/signup prompt.
 
-.. image:: images/sc_newacc1.png
+.. image:: images/rotki_login_screen.png
    :alt: Creating a new account
    :align: center
 
@@ -28,7 +28,7 @@ For creating an account press "Create New Account" and provide a username and a 
 
 If you have purchased a premium subscription you can also add the **API Key** and the **secret** here. See the section :ref:`sync-data-with-rotki-server` to know how to sync your data with Roki Server (this option is disabled by default).
 
-.. image:: images/sc_newacc2.png
+.. image:: images/rotki_create_account.png
    :alt: Creating a new account with a premium Rotki API key/secret pair
    :align: center
 
@@ -329,6 +329,32 @@ Rotki can import any trade CSV data exported from cointracking.info. But in gene
    :alt: Importing data from cointracking.info
    :align: center
 
+Loopring balances
+===================
+
+To have available your loopring balances you will need an API Key from loopring. To get them visit `https://exchange.loopring.io/ <https://exchange.loopring.io/>`_ and unlock your account. In the right panel you need to click in **Export Account**
+
+.. image:: images/get_loopring_keys.png
+   :alt: Get loopring keys
+   :align: center
+
+Then in rotki you need to add the API key. Go to API Keys > External Services > Loopring and paste the key that you obtained in the loopring website.
+
+.. image:: images/loopring_add_key.png
+   :alt: Add loopring key
+   :align: center
+
+After following this steps your balances will be updated including the loopring information
+
+.. image:: images/loopring_balances.png
+   :alt: Loopring balances in the UI
+   :align: center
+
+If you want to see the balances for a loopring account you can also do this
+
+.. image:: images/loopring_balances_account.gif
+   :alt: Loopring balances for an account
+   :align: center
 
 Tracking accounts and balances
 **********************************
@@ -409,7 +435,7 @@ You can filter the tables by a combination of tags.
 
 Simply add the tags you wish to filter by in the filter textbox above the tables.
 
-ETH2 Stacking
+ETH2 Staking
 =====================
 
 If you are an ETH2 stacker you can see the total value earned both in (2) at current ETH price but also counting the (3) price of the daily payouts of ETH2 staking.
@@ -430,8 +456,28 @@ Finally this can also be taken into account in the profit/loss report for any gi
    :alt: See ETH2 value earned
    :align: center
 
+Airdrops
+==========
+
+rotki can detect some airdrops for you
+
+.. image:: images/rotki_airdrops.png
+   :alt: rotki airdrops detection
+   :align: center
+
+The list of currently supported airdrops is:
+
+- Uniswap
+- 1INCH
+- Tornado
+- Cornichon
+- Grain
+- Furocombo
+- Lido
+- Curve
+
 Manually adding trades or other events
-**********************
+**************************************
 
 Rotki will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
 
@@ -452,10 +498,10 @@ You can optionally provide additional notes or even links to blockchain explorer
 At the bottom of this page you can see a table of all your OTC trades. You can edit or delete a trade by clicking on the appropriate icon at the rightmost part of each trade under the "Actions" column.
 
 Customization of the list of supported assets
-**********************
+*********************************************
 
 Inspecting list of assets
-===========
+=========================
 
 You can now manage the list of supported assets by your local rotki instance. At the moment only ethereum tokens are modifiable but from next releases you will be able to add all kind of assets.
 
@@ -466,7 +512,7 @@ You can inspect the list of all supported assets, edit them, delete them or add 
    :align: center
 
 Adding/editing an asset
-===========
+=======================
 
 .. image:: images/rotki_add_edit_token.png
    :alt: Add or edit a custom token
