@@ -356,6 +356,8 @@ If you want to see the balances for a loopring account you can also do this
    :alt: Loopring balances for an account
    :align: center
 
+.. _track_balances: 
+
 Tracking accounts and balances
 **********************************
 
@@ -496,6 +498,8 @@ If there was a fee for the trade you should input it in the corresponding box an
 You can optionally provide additional notes or even links to blockchain explorers for each trade.
 
 At the bottom of this page you can see a table of all your OTC trades. You can edit or delete a trade by clicking on the appropriate icon at the rightmost part of each trade under the "Actions" column.
+
+Currently rotki tracks your balance querying the different supported protocols, exchanges and blockchains. If you manually add information about a trade your balances won't be updated since trades are not consulted when updating the accounts' balances. If after adding a trade you want to update the accounts balances please refer to the :ref:`manual balances section <track_balances>`.
 
 Customization of the list of supported assets
 *********************************************
