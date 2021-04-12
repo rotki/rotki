@@ -16,6 +16,7 @@ interface DateUtilities {
   epochToFormat(epoch: number, format: string): string;
   dateToEpoch(date: string, format: string): number;
   epochStartSubtract(amount: number, unit: TimeUnit): number;
+  toUserSelectedFormat(timestamp: number): string;
 }
 
 interface DataUtilities {

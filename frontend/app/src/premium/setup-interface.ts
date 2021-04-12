@@ -4,6 +4,7 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import { TIME_UNIT_DAY } from '@/components/dashboard/const';
 import { TimeUnit } from '@/components/dashboard/types';
+import { displayDateFormatter } from '@/data/date_formatter';
 import { registerComponents } from '@/premium/register-components';
 import { DataUtilities, DateUtilities } from '@/premium/types';
 import store from '@/store/store';
@@ -26,6 +27,12 @@ const date: DateUtilities = {
   },
   epochStartSubtract(amount: number, unit: TimeUnit): number {
     return moment().subtract(amount, unit).startOf(TIME_UNIT_DAY).unix();
+  },
+  toUserSelectedFormat(timestamp: number): string {
+    return displayDateFormatter.format(
+      new Date(timestamp * 1000),
+      store.getters['session/dateDisplayFormat']
+    );
   }
 };
 
