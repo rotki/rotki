@@ -88,7 +88,7 @@ def trade_from_ftx(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     )
 
 
-class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,
@@ -97,7 +97,7 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super().__init__('FTX', api_key, secret, database)
+        super().__init__('ftx', api_key, secret, database)
         self.apiversion = 'v2'
         self.base_uri = 'https://ftx.com'
         self.msg_aggregator = msg_aggregator
@@ -108,7 +108,7 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the FTX API key is good for usage in Rotki"""
         try:
-            self._api_query('wallet/all_balances')
+            self._api_query('wallet/all_balances', paginate=False)
         except RemoteError as e:
             error = str(e)
             if 'Not logged in' in error:
@@ -299,10 +299,7 @@ class FTX(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         try:
             resp = self._api_query('wallet/all_balances', paginate=False)
         except RemoteError as e:
-            msg = (
-                f'FTX API request failed. Could not reach FTX due '
-                f'to {e}'
-            )
+            msg = f'FTX API request failed. Could not reach FTX due to {str(e)}'
             log.error(msg)
             return None, msg
 
