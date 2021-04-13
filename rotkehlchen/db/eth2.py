@@ -53,14 +53,6 @@ class DBEth2():
         self.db.conn.commit()
         self.db.update_last_write()
 
-    def delete_eth2_deposits(self) -> None:
-        """Delete all historical ETH2 eth2_deposits data"""
-        cursor = self.db.conn.cursor()
-        cursor.execute('DELETE FROM eth2_deposits;')
-        cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{ETH2_DEPOSITS_PREFIX}%";')
-        self.db.conn.commit()
-        self.db.update_last_write()
-
     def get_eth2_deposits(
             self,
             from_ts: Optional[Timestamp] = None,

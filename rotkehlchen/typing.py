@@ -19,6 +19,7 @@ ModuleName = Literal[
     'adex',
     'loopring',
     'balancer',
+    'eth2',
 ]
 # TODO: Turn this into some kind of light data structure and not just a mapping
 # This is a mapping of module ids to human readable names
@@ -32,6 +33,7 @@ AVAILABLE_MODULES_MAP = {
     'adex': 'AdEx',
     'loopring': 'Loopring',
     'balancer': 'Balancer',
+    'eth2': 'Eth2',
 }
 
 T_BinaryEthAddress = bytes
