@@ -267,6 +267,8 @@ class AssetType(Enum):
     FUSION_TOKEN = 21
     LUNIVERSE_TOKEN = 22
     OTHER = 23
+    AVALANCHE_TOKEN = 24
+    SOLANA_TOKEN = 25
 
     def __str__(self) -> str:
         return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member
