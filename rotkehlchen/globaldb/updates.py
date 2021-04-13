@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import sqlite3
+import sys
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 import requests
@@ -84,16 +85,22 @@ class AssetsUpdater():
         self.common_asset_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *asset_id *, *forked *\) +VALUES\((.*?),(.*?)\).*')  # noqa: E501
         self.string_re = re.compile(r'.*"(.*?)".*')
 
+        self.branch = 'master'
+        if not getattr(sys, 'frozen', False):
+            # not packaged -- must be in develop mode
+            self.branch = 'develop'
+
     def check_for_updates(self) -> Tuple[int, int, int]:
         """
         Checks the remote to see if there is new assets to get
         May raise:
            - RemoteError if there is a problem querying Github
         """
+        url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/info.json'
         try:
-            response = requests.get('https://raw.githubusercontent.com/rotki/assets/master/updates/info.json')  # noqa: E501
+            response = requests.get(url)
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to query Github during assets update: {str(e)}') from e
+            raise RemoteError(f'Failed to query Github {url} during assets update: {str(e)}') from e  # noqa: E501
 
         self.local_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
         try:
@@ -329,7 +336,7 @@ class AssetsUpdater():
 
         while version <= target_version:
             try:
-                url = f'https://raw.githubusercontent.com/rotki/assets/master/updates/{version}/updates.sql'  # noqa: E501
+                url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/{version}/updates.sql'  # noqa: E501
                 response = requests.get(url)  # noqa: E501
             except requests.exceptions.RequestException as e:
                 connection.rollback()
