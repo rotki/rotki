@@ -55,13 +55,14 @@ def api_url_for(api_server: APIServer, endpoint: str, **kwargs) -> str:
 
 def assert_proper_response(
         response: Optional[requests.Response],
-        status_code=HTTPStatus.OK,
+        status_code: Optional[HTTPStatus] = HTTPStatus.OK,
 ) -> None:
     assert (
         response is not None and
-        response.status_code == status_code and
         response.headers["Content-Type"] == "application/json"
     )
+    if status_code:
+        assert response.status_code == status_code
 
 
 def assert_simple_ok_response(response: requests.Response) -> None:
