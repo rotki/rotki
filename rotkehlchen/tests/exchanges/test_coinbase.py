@@ -1,9 +1,10 @@
 from unittest.mock import patch
 
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, A_USDC
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, A_USDC, A_1INCH
 from rotkehlchen.exchanges.coinbase import Coinbase, trade_from_conversion
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
@@ -922,13 +923,178 @@ def test_asset_conversion():
     expected_trade = Trade(
         timestamp=1623119536,
         location=Location.COINBASE,
-        base_asset=A_BTC,
-        quote_asset=A_USD,
+        base_asset=A_USDC,
+        quote_asset=A_BTC,
         trade_type=TradeType.SELL,
-        amount=FVal('0.01694165'),
-        rate=FVal('53713.77640312484321184772440'),
+        amount=FVal('1000.0'),
+        rate=FVal('0.00001694165'),
         fee=FVal('90'),
         fee_currency=A_USDC,
+        link='5dceef97-ef34-41e6-9171-3e60cd01639e',
+    )
+    assert trade == expected_trade
+
+
+def test_asset_conversion_not_stable_coin():
+    """Test a conversion using a from asset that is not a stable coin"""
+    trade_a = {
+        "id": "77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
+        "type": "trade",
+        "status": "completed",
+        "amount": {
+            "amount": "-6000.000000",
+            "currency": "1INCH",
+        },
+        "native_amount": {
+            "amount": "-1000.00",
+            "currency": "USD",
+        },
+        "description": None,
+        "created_at": "2020-06-08T02:32:16Z",
+        "updated_at": "2021-06-08T02:32:16Z",
+        "resource": "transaction",
+        "resource_path": "/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
+        "instant_exchange": False,
+        "trade": {
+            "id": "5dceef97-ef34-41e6-9171-3e60cd01639e",
+            "resource": "trade",
+            "resource_path": "/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e",
+        },
+        "details": {
+            "title": "Converted from USD Coin",
+            "subtitle": "Using USDC Wallet",
+            "header": "Converted 1,000.0000 USDC ($1,000.00)",
+            "health": "positive",
+            "payment_method_name": "USDC Wallet",
+        },
+    }
+
+    trade_b = {
+        "id": "8f530cd1-5ec0-4aae-afdc-198502a53b17",
+        "type": "trade",
+        "status": "completed",
+        "amount": {
+            "amount": "0.01694165",
+            "currency": "BTC",
+        },
+        "native_amount": {
+            "amount": "910.00",
+            "currency": "USD",
+        },
+        "description": None,
+        "created_at": "2020-06-08T02:32:16Z",
+        "updated_at": "2020-06-08T02:32:16Z",
+        "resource": "transaction",
+        "resource_path": "/v2/accounts/sd5af/transactions/8f530cd1-5ec0-4aae-afdc-198502a53b17",
+        "instant_exchange": False,
+        "trade": {
+            "id": "5dceef97-ef34-41e6-9171-3e60cd01639e",
+            "resource": "trade",
+            "resource_path": "/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e",
+        },
+        "details": {
+            "title": "Converted to Bitcoin",
+            "subtitle": "Using USDC Wallet",
+            "header": "Converted 0.01694165 BTC ($910.00)",
+            "health": "positive",
+            "payment_method_name": "USDC Wallet",
+        },
+    }
+
+    trade = trade_from_conversion(trade_a, trade_b)
+    expected_trade = Trade(
+        timestamp=1623119536,
+        location=Location.COINBASE,
+        base_asset=A_1INCH,
+        quote_asset=A_BTC,
+        trade_type=TradeType.SELL,
+        amount=FVal('6000.0'),
+        rate=FVal('0.000002823608333333333333333333333'),
+        fee=FVal('15'),
+        fee_currency=A_1INCH,
+        link='5dceef97-ef34-41e6-9171-3e60cd01639e',
+    )
+    assert trade == expected_trade
+
+
+def test_asset_conversion_zero_fee():
+    """Test a conversion with 0 fee"""
+
+    trade_a = {
+        "id": "77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
+        "type": "trade",
+        "status": "completed",
+        "amount": {
+            "amount": "-6000.000000",
+            "currency": "1INCH",
+        },
+        "native_amount": {
+            "amount": "-1000.00",
+            "currency": "USD",
+        },
+        "description": None,
+        "created_at": "2020-06-08T02:32:16Z",
+        "updated_at": "2021-06-08T02:32:16Z",
+        "resource": "transaction",
+        "resource_path": "/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
+        "instant_exchange": False,
+        "trade": {
+            "id": "5dceef97-ef34-41e6-9171-3e60cd01639e",
+            "resource": "trade",
+            "resource_path": "/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e",
+        },
+        "details": {
+            "title": "Converted from USD Coin",
+            "subtitle": "Using USDC Wallet",
+            "header": "Converted 1,000.0000 USDC ($1,000.00)",
+            "health": "positive",
+            "payment_method_name": "USDC Wallet",
+        },
+    }
+
+    trade_b = {
+        "id": "8f530cd1-5ec0-4aae-afdc-198502a53b17",
+        "type": "trade",
+        "status": "completed",
+        "amount": {
+            "amount": "0.01694165",
+            "currency": "BTC",
+        },
+        "native_amount": {
+            "amount": "1000.00",
+            "currency": "USD",
+        },
+        "description": None,
+        "created_at": "2020-06-08T02:32:16Z",
+        "updated_at": "2020-06-08T02:32:16Z",
+        "resource": "transaction",
+        "resource_path": "/v2/accounts/sd5af/transactions/8f530cd1-5ec0-4aae-afdc-198502a53b17",
+        "instant_exchange": False,
+        "trade": {
+            "id": "5dceef97-ef34-41e6-9171-3e60cd01639e",
+            "resource": "trade",
+            "resource_path": "/v2/accounts/sd5af/trades/5dceef97-ef34-41e6-9171-3e60cd01639e",
+        },
+        "details": {
+            "title": "Converted to Bitcoin",
+            "subtitle": "Using USDC Wallet",
+            "header": "Converted 0.01694165 BTC ($910.00)",
+            "health": "positive",
+            "payment_method_name": "USDC Wallet",
+        },
+    }
+
+    trade = trade_from_conversion(trade_a, trade_b)
+    expected_trade = Trade(
+        timestamp=1623119536,
+        location=Location.COINBASE,
+        base_asset=A_1INCH,
+        quote_asset=A_BTC,
+        trade_type=TradeType.SELL,
+        amount=FVal('6000.0'),
+        rate=FVal('0.000002823608333333333333333333333'),
+        fee=FVal(ZERO),
+        fee_currency=A_1INCH,
         link='5dceef97-ef34-41e6-9171-3e60cd01639e',
     )
     assert trade == expected_trade

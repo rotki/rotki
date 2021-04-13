@@ -30,6 +30,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     AssetMovementCategory,
     Fee,
     Location,
@@ -112,22 +113,26 @@ def trade_from_conversion(trade_a: Dict[str, Any], trade_b: Dict[str, Any]) -> O
 
     timestamp = deserialize_timestamp_from_date(trade_a['updated_at'], 'iso8601', 'coinbase')
     trade_type = deserialize_trade_type('sell')
-    tx_amount = deserialize_asset_amount(trade_b['amount']['amount'])
-    tx_asset = asset_from_coinbase(trade_b['amount']['currency'], time=timestamp)
-    native_amount = deserialize_asset_amount(trade_b['native_amount']['amount'])
-    native_asset = asset_from_coinbase(trade_b['native_amount']['currency'], time=timestamp)
+    tx_amount = AssetAmount(abs(deserialize_asset_amount(trade_a['amount']['amount'])))
+    tx_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
+    native_amount = deserialize_asset_amount(trade_b['amount']['amount'])
+    native_asset = asset_from_coinbase(trade_b['amount']['currency'], time=timestamp)
     amount = tx_amount
     # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
     rate = Price(native_amount / tx_amount)
 
-    # Obtain fee amount using data from both trades
+    # Obtain fee amount in the native currency using data from both trades
     amount_after_fee = deserialize_asset_amount(trade_b['native_amount']['amount'])
-    amount_before_fee = deserialize_asset_amount(trade_a['amount']['amount'])
-    conversion_fee_amount = amount_after_fee + amount_before_fee
-    # Before this the conversion should be a negative number
-    conversion_fee_amount = abs(conversion_fee_amount)
-
-    fee_amount = deserialize_fee(str(conversion_fee_amount))
+    amount_before_fee = deserialize_asset_amount(trade_a['native_amount']['amount'])
+    # amount_after_fee + amount_before_fee is a negative amount and the fee needs to be positive
+    conversion_native_fee_amount = abs(amount_after_fee + amount_before_fee)
+    if ZERO not in (tx_amount, conversion_native_fee_amount, amount_before_fee):
+        # We have the fee amount in the native currency. To get it in the
+        # converted asset we have to get the rate
+        asset_native_rate = tx_amount / abs(amount_before_fee)
+        fee_amount = Fee(conversion_native_fee_amount / asset_native_rate)
+    else:
+        fee_amount = Fee(ZERO)
     fee_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
 
     return Trade(
