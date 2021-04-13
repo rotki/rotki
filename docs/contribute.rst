@@ -305,9 +305,7 @@ Premium Analytics
 Updating the documentation
 ==========================
 
-rotki is continuously changing and sometimes documentation gets outdated. One way to contribute to rotki is helping
-to keep changes updated in the documentation. To do so you have to edit the corresponding section in the .rst files
-inside the docs folder of the git repo. 
+rotki is continuously changing and sometimes documentation gets outdated. One way to contribute to rotki is by helping to keep the documentation up to date. To do so you have to edit the corresponding section in the .rst files inside the docs folder of the git repo. 
 
 To review your changes you can compile the documentation using the command 
 

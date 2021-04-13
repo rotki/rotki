@@ -332,7 +332,7 @@ Rotki can import any trade CSV data exported from cointracking.info. But in gene
 Loopring balances
 ===================
 
-To have available your loopring balances you will need an API Key from loopring. To get them visit `https://exchange.loopring.io/ <https://exchange.loopring.io/>`_ and unlock your account. In the right panel you need to click in **Export Account**
+To have your loopring balances detected you will need an API Key from loopring. To get one visit `https://exchange.loopring.io/ <https://exchange.loopring.io/>`_ and unlock your account. In the right panel you need to click in **Export Account**
 
 .. image:: images/get_loopring_keys.png
    :alt: Get loopring keys
@@ -344,13 +344,13 @@ Then in rotki you need to add the API key. Go to API Keys > External Services > 
    :alt: Add loopring key
    :align: center
 
-After following this steps your balances will be updated including the loopring information
+After following this steps your balances in the dashboard will be updated including the loopring information
 
 .. image:: images/loopring_balances.png
    :alt: Loopring balances in the UI
    :align: center
 
-If you want to see the balances for a loopring account you can also do this
+The loopring account balances are also visible in the blockchain accounts view.
 
 .. image:: images/loopring_balances_account.gif
    :alt: Loopring balances for an account
@@ -440,7 +440,7 @@ Simply add the tags you wish to filter by in the filter textbox above the tables
 ETH2 Staking
 =====================
 
-If you are an ETH2 stacker you can see the total value earned both in (2) at current ETH price but also counting the (3) price of the daily payouts of ETH2 staking.
+If you are an ETH2 staker you can see the total value earned both in the current ETH price (2) but also counting the price of the daily payouts of ETH2 staking (3).
 
 .. image:: images/rotki_eth2_staking.png
    :alt: See ETH2 value earned
