@@ -4,6 +4,10 @@ export const ACTION_FETCH_LEDGER_ACTIONS = 'fetchLedgerActions' as const;
 export const ACTION_ADD_LEDGER_ACTION = 'addLedgerAction' as const;
 export const ACTION_EDIT_LEDGER_ACTION = 'editLedgerAction' as const;
 export const ACTION_DELETE_LEDGER_ACTION = 'deleteLedgerAction' as const;
+export const ACTION_PURGE_TRANSACTIONS = 'purgeTransactions' as const;
+export const ACTION_PURGE_EXCHANGE = 'purgeExchange' as const;
+export const ACTION_REMOVE_EXCHANGE_TRADES = 'removeExchangeTrades' as const;
+export const ACTION_REMOVE_EXCHANGE_MOVEMENTS = 'removeExchangeMovements' as const;
 
 export const MUTATION_ADD_LEDGER_ACTION = 'addLedgerAction' as const;
 export const MUTATION_SET_LEDGER_ACTIONS = 'setLedgerActions' as const;

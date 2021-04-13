@@ -1,5 +1,14 @@
+import { CompoundHistory } from '@/services/defi/types/compound';
 import { DefiState } from '@/store/defi/types';
 import { Zero } from '@/utils/bignumbers';
+
+export const defaultCompoundHistory = (): CompoundHistory => ({
+  events: [],
+  debtLoss: {},
+  interestProfit: {},
+  rewards: {},
+  liquidationProfit: {}
+});
 
 export const defaultState = (): DefiState => ({
   dsrHistory: {},
@@ -13,13 +22,7 @@ export const defaultState = (): DefiState => ({
   aaveHistory: {},
   allProtocols: {},
   compoundBalances: {},
-  compoundHistory: {
-    events: [],
-    debtLoss: {},
-    interestProfit: {},
-    rewards: {},
-    liquidationProfit: {}
-  },
+  compoundHistory: defaultCompoundHistory(),
   yearnVaultsHistory: {},
   yearnVaultsBalances: {},
   uniswapBalances: {},

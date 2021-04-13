@@ -27,6 +27,7 @@ import {
 } from '@/services/defi/types/yearn';
 import { api } from '@/services/rotkehlchen-api';
 import {
+  ALL_MODULES,
   MODULE_AAVE,
   MODULE_BALANCER,
   MODULE_COMPOUND,
@@ -35,27 +36,31 @@ import {
   MODULE_UNISWAP,
   MODULE_YEARN
 } from '@/services/session/consts';
+import { SupportedModules } from '@/services/session/types';
 import { Section, Status } from '@/store/const';
 import {
+  ACTION_PURGE_PROTOCOL,
+  dexTradeNumericKeys,
   uniswapEventsNumericKeys,
-  uniswapNumericKeys,
-  dexTradeNumericKeys
+  uniswapNumericKeys
 } from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
+import { defaultCompoundHistory } from '@/store/defi/state';
 import {
   Airdrops,
   AllDefiProtocols,
   DefiState,
+  DexTrades,
   DSRBalances,
   DSRHistory,
   MakerDAOVaultDetails,
-  UniswapEvents,
-  DexTrades
+  UniswapEvents
 } from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
 import { fetchAsync, isLoading, setStatus } from '@/store/utils';
+import { Zero } from '@/utils/bignumbers';
 
 export const actions: ActionTree<DefiState, RotkehlchenState> = {
   async fetchDSRBalances(
@@ -66,7 +71,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     if (!activeModules.includes(MODULE_MAKERDAO_DSR)) {
       return;
     }
-    const section = Section.DEFI_DRS_BALANCES;
+    const section = Section.DEFI_DSR_BALANCES;
     const currentStatus = status(section);
 
     if (
@@ -1062,5 +1067,96 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
             .toString()
       }
     });
+  },
+  async [ACTION_PURGE_PROTOCOL](
+    { commit, rootGetters: { status } },
+    module: SupportedModules | typeof ALL_MODULES
+  ) {
+    function resetStatus(section: Section) {
+      setStatus(Status.NONE, section, status, commit);
+    }
+
+    function clearDSRState() {
+      commit('dsrBalances', {
+        currentDsr: Zero,
+        balances: {}
+      } as DSRBalances);
+      commit('dsrHistory', {});
+      resetStatus(Section.DEFI_DSR_BALANCES);
+      resetStatus(Section.DEFI_DSR_HISTORY);
+    }
+
+    function clearMakerDAOVaultState() {
+      commit('makerDAOVaults', []);
+      commit('makerDAOVaultDetails', []);
+      resetStatus(Section.DEFI_MAKERDAO_VAULTS);
+      resetStatus(Section.DEFI_MAKERDAO_VAULT_DETAILS);
+    }
+
+    function clearAaveState() {
+      commit('aaveBalances', {});
+      commit('aaveHistory', {});
+      resetStatus(Section.DEFI_AAVE_BALANCES);
+      resetStatus(Section.DEFI_AAVE_HISTORY);
+    }
+
+    function clearCompoundState() {
+      commit('compoundBalances', {});
+      commit('compoundHistory', defaultCompoundHistory());
+      resetStatus(Section.DEFI_COMPOUND_BALANCES);
+      resetStatus(Section.DEFI_COMPOUND_HISTORY);
+    }
+
+    function clearYearnVaultsState() {
+      commit('yearnVaultsBalances', {});
+      commit('yearnVaultsHistory', {});
+
+      resetStatus(Section.DEFI_YEARN_VAULTS_BALANCES);
+      resetStatus(Section.DEFI_YEARN_VAULTS_HISTORY);
+    }
+
+    function clearUniswapState() {
+      commit('uniswapBalances', {});
+      commit('uniswapTrades', {});
+      commit('uniswapEvents', {});
+
+      resetStatus(Section.DEFI_UNISWAP_BALANCES);
+      resetStatus(Section.DEFI_UNISWAP_TRADES);
+      resetStatus(Section.DEFI_UNISWAP_EVENTS);
+    }
+
+    function clearBalancerState() {
+      commit('balancerBalances', {});
+      commit('balancerTrades', {});
+      commit('balancerEvents', {});
+
+      resetStatus(Section.DEFI_BALANCER_BALANCES);
+      resetStatus(Section.DEFI_BALANCER_TRADES);
+      resetStatus(Section.DEFI_BALANCER_EVENTS);
+    }
+
+    if (module === MODULE_MAKERDAO_DSR) {
+      clearDSRState();
+    } else if (module === MODULE_MAKERDAO_VAULTS) {
+      clearMakerDAOVaultState();
+    } else if (module === MODULE_AAVE) {
+      clearAaveState();
+    } else if (module === MODULE_COMPOUND) {
+      clearCompoundState();
+    } else if (module === MODULE_YEARN) {
+      clearYearnVaultsState();
+    } else if (module === MODULE_UNISWAP) {
+      clearUniswapState();
+    } else if (module === MODULE_BALANCER) {
+      clearBalancerState();
+    } else if (module === ALL_MODULES) {
+      clearDSRState();
+      clearMakerDAOVaultState();
+      clearAaveState();
+      clearCompoundState();
+      clearYearnVaultsState();
+      clearUniswapState();
+      clearBalancerState();
+    }
   }
 };
