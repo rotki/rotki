@@ -313,7 +313,7 @@ class Asset():
         return self.asset_type == AssetType.ETHEREUM_TOKEN
 
     def __str__(self) -> str:
-        return self.name
+        return f'{self.symbol}({self.name})'
 
     def __repr__(self) -> str:
         return f'<Asset identifier:{self.identifier} name:{self.name} symbol:{self.symbol}>'
@@ -416,6 +416,9 @@ T = TypeVar('T', bound='EthereumToken')
 
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class EthereumToken(HasEthereumToken):
+
+    def __str__(self) -> str:
+        return f'{self.symbol}({self.ethereum_address})'
 
     @classmethod
     def from_asset(cls: Type[T], asset: Asset) -> Optional[T]:
