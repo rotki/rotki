@@ -137,7 +137,7 @@ class CostBasisInfo(NamedTuple):
         if len(self.matched_acquisitions) == 0:
             return value
 
-        value += f'Used: {",".join([x.to_string(converter) for x in self.matched_acquisitions])}'
+        value += f'Used: {"|".join([x.to_string(converter) for x in self.matched_acquisitions])}'
         return value
 
 
