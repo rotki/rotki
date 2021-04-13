@@ -1,6 +1,9 @@
 <template>
   <v-navigation-drawer
     class="notification-sidebar"
+    :class="
+      $vuetify.breakpoint.smAndDown ? 'notification-sidebar--mobile' : null
+    "
     width="400px"
     absolute
     clipped
@@ -105,6 +108,7 @@ export default class NotificationSidebar extends Vue {
   clear() {
     this.confirmClear = false;
     this.reset();
+    this.close();
   }
 
   input(visible: boolean) {
@@ -130,6 +134,16 @@ export default class NotificationSidebar extends Vue {
   padding-top: 0 !important;
   border-top: var(--v-rotki-light-grey-darken1) solid thin;
 
+  &.v-navigation-drawer {
+    &--is-mobile {
+      padding-top: 0 !important;
+    }
+  }
+
+  &--mobile {
+    top: 56px !important;
+  }
+
   &__details {
     background-color: white;
     overflow-y: hidden;
@@ -153,7 +167,7 @@ export default class NotificationSidebar extends Vue {
   }
 
   &__messages {
-    height: 100%;
+    height: calc(100% - 64px);
     overflow-y: scroll !important;
   }
 
