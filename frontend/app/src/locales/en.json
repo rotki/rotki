@@ -162,6 +162,29 @@
     "address": "Addresses",
     "chain_selector": "Blockchain"
   },
+  "help_sidebar": {
+    "faq": {
+      "subtitle": "Questions on the application",
+      "title": "FAQ"
+    },
+    "github": {
+      "title": "Github",
+      "subtitle": "Review our code and open issues"
+    },
+    "support": {
+      "subtitle": "Join our active community and get support",
+      "title": "Discord"
+    },
+    "title": "Help & Support",
+    "twitter": {
+      "subtitle": "Follow us",
+      "title": "Twitter"
+    },
+    "user_guide": {
+      "subtitle": "Get started here",
+      "title": "Usage Guide"
+    }
+  },
   "rounding_settings": {
     "amount_rounding": "Amount Rounding",
     "round": {

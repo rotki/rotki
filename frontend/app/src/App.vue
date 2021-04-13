@@ -46,6 +46,7 @@
           @click="notifications = !notifications"
         />
         <progress-indicator class="app__app-bar__button" />
+        <help-indicator :visible="help" @visible:update="help = $event" />
         <currency-drop-down class="red--text app__app-bar__button" />
         <user-dropdown class="app__app-bar__button" />
       </v-app-bar>
@@ -53,6 +54,7 @@
         :visible="notifications"
         @close="notifications = false"
       />
+      <help-sidebar :visible="help" @visible:update="help = $event" />
       <v-main v-if="logged" class="fill-height">
         <router-view />
       </v-main>
@@ -87,6 +89,8 @@ import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
+import HelpIndicator from '@/components/help/HelpIndicator.vue';
+import HelpSidebar from '@/components/help/HelpSidebar.vue';
 import BackButton from '@/components/helper/BackButton.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
@@ -105,6 +109,8 @@ import { Message } from '@/store/types';
 
 @Component({
   components: {
+    HelpIndicator,
+    HelpSidebar,
     BackButton,
     UpdatePopup,
     StartupErrorScreen,
@@ -141,6 +147,7 @@ export default class App extends Vue {
   completeLogin!: (complete: boolean) => void;
 
   notifications: boolean = false;
+  help: boolean = false;
 
   get canNavigateBack(): boolean {
     const canNavigateBack = this.$route.meta?.canNavigateBack ?? false;
