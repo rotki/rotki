@@ -15,7 +15,7 @@ First time sign-up
 
 When you start Rotki you are greeted with a sign-in/signup prompt.
 
-.. image:: images/sc_newacc1.png
+.. image:: images/rotki_login_screen.png
    :alt: Creating a new account
    :align: center
 
@@ -28,7 +28,7 @@ For creating an account press "Create New Account" and provide a username and a 
 
 If you have purchased a premium subscription you can also add the **API Key** and the **secret** here. See the section :ref:`sync-data-with-rotki-server` to know how to sync your data with Roki Server (this option is disabled by default).
 
-.. image:: images/sc_newacc2.png
+.. image:: images/rotki_create_account.png
    :alt: Creating a new account with a premium Rotki API key/secret pair
    :align: center
 
@@ -329,6 +329,34 @@ Rotki can import any trade CSV data exported from cointracking.info. But in gene
    :alt: Importing data from cointracking.info
    :align: center
 
+Loopring balances
+===================
+
+To have your loopring balances detected you will need an API Key from loopring. To get one visit `https://exchange.loopring.io/ <https://exchange.loopring.io/>`_ and unlock your account. In the right panel you need to click in **Export Account**
+
+.. image:: images/get_loopring_keys.png
+   :alt: Get loopring keys
+   :align: center
+
+Then in rotki you need to add the API key. Go to API Keys > External Services > Loopring and paste the key that you obtained in the loopring website.
+
+.. image:: images/loopring_add_key.png
+   :alt: Add loopring key
+   :align: center
+
+After following this steps your balances in the dashboard will be updated including the loopring information
+
+.. image:: images/loopring_balances.png
+   :alt: Loopring balances in the UI
+   :align: center
+
+The loopring account balances are also visible in the blockchain accounts view.
+
+.. image:: images/loopring_balances_account.gif
+   :alt: Loopring balances for an account
+   :align: center
+
+.. _track_balances: 
 
 Tracking accounts and balances
 **********************************
@@ -409,9 +437,49 @@ You can filter the tables by a combination of tags.
 
 Simply add the tags you wish to filter by in the filter textbox above the tables.
 
+ETH2 Staking
+=====================
+
+If you are an ETH2 staker you can see the total value earned both in the current ETH price (2) but also counting the price of the daily payouts of ETH2 staking (3).
+
+.. image:: images/rotki_eth2_staking.png
+   :alt: See ETH2 value earned
+   :align: center
+
+Moreover you can see a breakout of daily stats of validating. How much ETH was earned per day, attestation stats, block proposing stats and more.
+
+.. image:: images/rotki_eth2_daily_stats.png
+   :alt: See ETH2 value earned
+   :align: center
+
+Finally this can also be taken into account in the profit/loss report for any given period of time and also exported via CSV to a spreadsheet.
+
+.. image:: images/rotki_eth2_pnl.png
+   :alt: See ETH2 value earned
+   :align: center
+
+Airdrops
+==========
+
+rotki can detect some airdrops for you
+
+.. image:: images/rotki_airdrops.png
+   :alt: rotki airdrops detection
+   :align: center
+
+The list of currently supported airdrops is:
+
+- Uniswap
+- 1INCH
+- Tornado
+- Cornichon
+- Grain
+- Furocombo
+- Lido
+- Curve
 
 Manually adding trades or other events
-*******************************************
+**************************************
 
 Rotki will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
 
@@ -430,6 +498,56 @@ If there was a fee for the trade you should input it in the corresponding box an
 You can optionally provide additional notes or even links to blockchain explorers for each trade.
 
 At the bottom of this page you can see a table of all your OTC trades. You can edit or delete a trade by clicking on the appropriate icon at the rightmost part of each trade under the "Actions" column.
+
+Currently rotki tracks your balance querying the different supported protocols, exchanges and blockchains. If you manually add information about a trade your balances won't be updated since trades are not consulted when updating the accounts' balances. If after adding a trade you want to update the accounts balances please refer to the :ref:`manual balances section <track_balances>`.
+
+Customization of the list of supported assets
+*********************************************
+
+Inspecting list of assets
+=========================
+
+You can now manage the list of supported assets by your local rotki instance. At the moment only ethereum tokens are modifiable but from next releases you will be able to add all kind of assets.
+
+You can inspect the list of all supported assets, edit them, delete them or add new ones.
+
+.. image:: images/rotki_manage_assets.png
+   :alt: Manage the list of assets
+   :align: center
+
+Adding/editing an asset
+=======================
+
+.. image:: images/rotki_add_edit_token.png
+   :alt: Add or edit a custom token
+   :align: center
+
+When you press the + button on the top right, or edit an existing token you can see the Asset form.
+
+You can fill in the following fields:
+
+1. The token address. This is required.
+2. The token name. This is required.
+3. The token symbol. This is required.
+4. The token decimals. This is required.
+5. Coingecko identifier. This is optional, but highly recommended. If the asset is supported by coingecko you should get its coingecko identifier. Information on how to do this here. This will allow the usage of coingecko as a price oracle and also will automatically pull the asset icon from coingecko.
+6. Cryptocompare identifier. This is optional but recommended. At least one of coingecko or cryptocompare should be given so that prices can be queried. If not given, the symbol of the asset will be used. If that fails, then cryptocompare is not used. To get the cryptocompare identifier check the docs.
+7. You can upload an icon for the asset. Any of the common image extensions is accepted (png, jpg, jpeg, webp). The custom icon always takes precedence over the one auto-detected by coingecko.
+
+When you input the address of the token rotki will try to fetch its name, symbol and decimals and use them if they are available.
+
+There is also some other fields that are completely optional and expand if you press the (7) Optional Fields section.
+
+.. image:: images/rotki_add_edit_token_optionals.png
+   :alt: Optional information when adding a custom token
+   :align: center
+
+1. You can specify a timestamp at which the asset started to exist. This should be the token deployment timestamp for tokens.
+2. If the asset is part of a protocol, specify it here. For example 'uniswap' for uniswap pool tokens, 'aave' for aTokens etc.
+3. If the token is swapped for another token, specify it here. For example LEND was swapped for AAVE.
+4. A token can have underlying tokens. Like a pool, or a token set. Here add the underlying token's address.
+5. And here add the underlying token's weight.
+6. Here you can edit or delete underlying token address/weights. Note: The weight of the underlying tokens should add up to 100%.
 
 Decentralized Finance
 **********************
