@@ -367,9 +367,9 @@ class Asset():
             return False
 
         if isinstance(other, Asset):
-            return self.identifier == other.identifier
+            return self.identifier.lower() == other.identifier.lower()
         if isinstance(other, str):
-            return self.identifier == other
+            return self.identifier.lower() == other.lower()
         # else
         raise ValueError(f'Invalid comparison of asset with {type(other)}')
 

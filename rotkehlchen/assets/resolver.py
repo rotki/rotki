@@ -32,7 +32,7 @@ class AssetResolver():
         if identifier is None:  # clean all
             AssetResolver.__instance.assets_cache.clear()
         else:
-            AssetResolver.__instance.assets_cache.pop(identifier, None)
+            AssetResolver.__instance.assets_cache.pop(identifier.lower(), None)
 
     @staticmethod
     def get_asset_data(
