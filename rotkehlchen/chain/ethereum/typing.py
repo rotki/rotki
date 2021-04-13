@@ -420,43 +420,6 @@ class CustomEthereumToken:
 
         return result
 
-    def to_db_tuple(self) -> CustomEthereumTokenDBTuple:
-        return (
-            self.address,
-            self.decimals,
-            self.name,
-            self.symbol,
-            self.started,
-            self.swapped_for.identifier if self.swapped_for else None,
-            self.coingecko,
-            self.cryptocompare,
-            self.protocol,
-        )
-
-    @classmethod
-    def deserialize_from_db(
-            cls,
-            entry: CustomEthereumTokenDBTuple,
-            underlying_tokens: Optional[List[UnderlyingToken]] = None,
-    ) -> 'CustomEthereumToken':
-        """May raise UnknownAsset if the swapped for asset can't be recognized
-
-        That error would be bad because it would mean somehow an unknown id made it into the DB
-        """
-        swapped_for = Asset(entry[5]) if entry[5] is not None else None
-        return CustomEthereumToken(
-            address=string_to_ethereum_address(entry[0]),
-            decimals=entry[1],
-            name=entry[2],
-            symbol=entry[3],
-            started=Timestamp(entry[4]),  # type: ignore
-            swapped_for=swapped_for,
-            coingecko=entry[6],
-            cryptocompare=entry[7],
-            protocol=entry[8],
-            underlying_tokens=underlying_tokens,
-        )
-
 
 # Not using inheritance here due to problems with:
 # Having to make identifier optional and some mypy warnings for incompatible overrides

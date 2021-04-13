@@ -7,6 +7,7 @@ import webargs
 from eth_utils import to_checksum_address
 from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
+from typing_extensions import Literal
 from webargs.compat import MARSHMALLOW_VERSION_INFO
 from werkzeug.datastructures import FileStorage
 
@@ -631,6 +632,50 @@ class DirectoryField(fields.Field):
             raise ValidationError(f'Given path {value} is not a directory')
 
         return path
+
+
+class AssetConflictsField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: Dict[str, Any],
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        # TODO: If this ever gets used we probably need to change
+        # the dict keys to identifiers from assets
+        return value
+
+    def _deserialize(
+            self,
+            value: Dict[str, str],
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Dict[Asset, Literal['remote', 'local']]:
+        if not isinstance(value, dict):
+            raise ValidationError('A dict object should be given for the conflictss')
+
+        if len(value) == 0:
+            raise ValidationError('An empty dict object should not be given. Provide null instead')
+
+        deserialized_dict = {}
+        for asset_id, choice in value.items():
+            try:
+                asset = Asset(asset_id)
+            except UnknownAsset as e:
+                raise ValidationError(f'Unknown asset identifier {asset_id}') from e
+
+            if choice not in ('remote', 'local'):
+                raise ValidationError(
+                    f'Unknown asset update choice: {choice}. Valid values '
+                    f'are "remote" or "local"',
+                )
+
+            deserialized_dict[asset] = choice
+
+        return deserialized_dict  # type: ignore
 
 
 class FileField(fields.Field):
@@ -1672,6 +1717,19 @@ class HistoricalAssetsPriceSchema(Schema):
     )
     target_asset = AssetField(required=True)
     async_query = fields.Boolean(missing=False)
+
+
+class AssetUpdatesRequestSchema(Schema):
+    async_query = fields.Boolean(missing=False)
+    up_to_version = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=0,
+            error='Asset update target version should be >= 0',
+        ),
+        missing=None,
+    )
+    conflicts = AssetConflictsField(missing=None)
 
 
 class NamedEthereumModuleDataSchema(Schema):

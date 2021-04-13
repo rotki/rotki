@@ -14,14 +14,7 @@ DB_CREATE_ETHEREUM_TOKENS = """
 CREATE TABLE IF NOT EXISTS ethereum_tokens (
     address VARCHAR[42] PRIMARY KEY NOT NULL,
     decimals INTEGER,
-    name TEXT,
-    symbol TEXT,
-    started INTEGER,
-    swapped_for TEXT,
-    coingecko TEXT,
-    cryptocompare TEXT,
-    protocol TEXT,
-    FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE
+    protocol TEXT
 );
 """
 
@@ -84,15 +77,8 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('W', 23);
 DB_CREATE_COMMON_ASSET_DETAILS = """
 CREATE TABLE IF NOT EXISTS common_asset_details (
     asset_id TEXT PRIMARY KEY NOT NULL,
-    name TEXT NOT NULL,
-    symbol TEXT,
-    started INTEGER,
     forked STRING,
-    swapped_for STRING,
-    coingecko TEXT,
-    cryptocompare TEXT,
     FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE,
     FOREIGN KEY(forked) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
@@ -104,7 +90,14 @@ DB_CREATE_ASSETS = """
 CREATE TABLE IF NOT EXISTS assets (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
     type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type),
-    details_reference TEXT
+    name TEXT,
+    symbol TEXT,
+    started INTEGER,
+    swapped_for TEXT,
+    coingecko TEXT,
+    cryptocompare TEXT,
+    details_reference TEXT,
+    FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
 

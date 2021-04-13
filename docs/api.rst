@@ -2517,6 +2517,152 @@ Deleting custom assets
    :statuscode 409: Some conflict at deleting. For example identifier does not exist in the DB. Or deleting the asset would break a constraint since it's used by other assets.
    :statuscode 500: Internal Rotki error
 
+
+Checking for pending asset updates
+=====================================
+
+.. http:get:: /api/(version)/assets/updates
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on this endpoint will prompt a query on the remote github server and return how many updates (if any) exists for the local asset database.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/updates HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": true}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "local": 1,
+	      "remote": 4,
+	      "new_changes": 121
+          "message": ""
+      }
+
+   :resjson int local: The version of the local assets database
+   :resjson int remote: The latest assets update version on the remote
+   :resjson int new_changes: The number of changes (additions, edits and deletions) that would be applied to reach the remote version.
+   :statuscode 200: Pending asset updates information is succesfully queried
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: Error while trying to reach the remote for asset updates.
+
+Performing an asset update
+=====================================
+
+.. http:post:: /api/(version)/assets/updates
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+
+   Doing a POST on this endpoint will attempt an update of the assets database.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/assets/updates HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "async_query": true,
+	  "up_to_version": 5,
+	  "conflicts": {
+	      "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015": "local",
+	      "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015": "remote",
+	      "Fas-23-da20": "local"
+	  }
+      }
+
+   :reqjson bool async_query: Optional. If given and true then the query becomes an asynchronous query.
+   :reqjson int up_to_version: Optional. If given then the asset updates up to and including this version will be pulled and applied
+   :reqjson object conflicts: Optional. Should only be given if at the previous run there were conflicts returned. This is a mapping of asset identifiers to either ``"local"`` or ``"remote"`` specifying which of the two to keep in a conflict.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true
+          "message": ""
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+      	"result": [{
+      	    "identifier":  "assetid1",
+      	    "local": {
+      		"coingecko": "2give",
+      		"name": "2GIVE",
+      		"started": 1460937600,
+      		"symbol": "2GIVE",
+      		"type": "own chain"
+      	    },
+      	    "remote": {
+      		"coingecko": "TWOgive",
+      		"name": "TWOGIVE",
+      		"started": 1460937600,
+      		"symbol": "2GIVEORNOTTOGIVE",
+      		"type": "own chain"
+      	   }}, {
+      	   "identifier": "asset_id2",
+      	   "local": {
+      		   "coingecko": "aave",
+      		   "ethereum_address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+      		   "ethereum_token_decimals": 18,
+      		   "name": "Aave Token",
+      		   "started": 1600970788,
+      		   "symbol": "AAVE",
+      		   "type": "ethereum token"
+      	   },
+      	   "remote": {
+      		   "coingecko": "aaveNGORZ",
+      		   "ethereum_address": "0x1Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+      		   "ethereum_token_decimals": 15,
+      		   "name": "Aave Token FOR REALZ",
+      		   "started": 1600970789,
+      		   "symbol": "AAVE_YO!",
+      		   "type": "binance token"
+      	   }
+      	}],
+      	"message": ""
+      }
+
+   :resjson object result: Either ``true`` if all went fine or a a list of conflicts, containing the identifier of the asset in question and the local and remote versions.
+   :statuscode 200: Update was succesfully applied (if any).
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: Conflicts were found during update. The conflicts should also be returned.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: Error while trying to reach the remote for asset updates.
+
 Querying asset icons
 ======================
 

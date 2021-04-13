@@ -335,6 +335,7 @@ class RestAPI():
                         result = function_response['result']
                         # The message of the original request
                         message = function_response['message']
+                        status_code = function_response.get('status_code', HTTPStatus.OK)
                         ret = {'result': result, 'message': message}
                         result_dict = {
                             'result': {'status': 'completed', 'outcome': process_result(ret)},
@@ -342,7 +343,7 @@ class RestAPI():
                         }
                         # Also remove the greenlet from the api tasks
                         self.rotkehlchen.api_task_greenlets.pop(idx)
-                        return api_response(result=result_dict, status_code=HTTPStatus.OK)
+                        return api_response(result=result_dict, status_code=status_code)
                     # else task is still pending and the greenlet is running
                     result_dict = {
                         'result': {'status': 'pending', 'outcome': None},
@@ -2837,3 +2838,59 @@ class RestAPI():
         # Success
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
+
+    def _get_assets_updates(self) -> Dict[str, Any]:
+        try:
+            local, remote, new_changes = self.rotkehlchen.assets_updater.check_for_updates()
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        return _wrap_in_ok_result({'local': local, 'remote': remote, 'new_changes': new_changes})
+
+    def get_assets_updates(self, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_get_assets_updates')
+
+        response = self._get_assets_updates()
+        return api_response(
+            result={'result': response['result'], 'message': response['message']},
+            status_code=response.get('status_code', HTTPStatus.OK),
+        )
+
+    def _perform_assets_updates(
+            self,
+            up_to_version: Optional[int],
+            conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
+    ) -> Dict[str, Any]:
+        try:
+            result = self.rotkehlchen.assets_updater.perform_update(up_to_version, conflicts)
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        if result is None:
+            return OK_RESULT
+
+        return {
+            'result': result,
+            'message': 'Found conflicts during assets upgrade',
+            'status_code': HTTPStatus.CONFLICT,
+        }
+
+    def perform_assets_updates(
+            self,
+            async_query: bool,
+            up_to_version: Optional[int],
+            conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_perform_assets_updates',
+                up_to_version=up_to_version,
+                conflicts=conflicts,
+            )
+
+        response = self._perform_assets_updates(up_to_version, conflicts)
+        return api_response(
+            result={'result': response['result'], 'message': response['message']},
+            status_code=response.get('status_code', HTTPStatus.OK),
+        )

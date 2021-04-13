@@ -20,6 +20,7 @@ from rotkehlchen.api.v1.encoding import (
     AssetIconUploadSchema,
     AssetSchema,
     AssetSchemaWithIdentifier,
+    AssetUpdatesRequestSchema,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
@@ -395,6 +396,25 @@ class EthereumAssetsResource(BaseResource):
     @use_kwargs(delete_schema, location='json')  # type: ignore
     def delete(self, address: ChecksumEthAddress) -> Response:
         return self.rest_api.delete_custom_ethereum_token(address)
+
+
+class AssetUpdatesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+    post_schema = AssetUpdatesRequestSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_assets_updates(async_query)
+
+    @use_kwargs(post_schema, location='json')  # type: ignore
+    def post(
+            self,
+            async_query: bool,
+            up_to_version: Optional[int],
+            conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
+    ) -> Response:
+        return self.rest_api.perform_assets_updates(async_query, up_to_version, conflicts)
 
 
 class BlockchainBalancesResource(BaseResource):

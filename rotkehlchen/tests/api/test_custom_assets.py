@@ -35,7 +35,7 @@ def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
     result = assert_proper_response_with_result(response)
     custom1_id = result['identifier']
 
-    data = globaldb.get_asset_data(identifier=custom1_id)
+    data = globaldb.get_asset_data(identifier=custom1_id, form_with_incomplete_data=False)
     assert data.identifier == custom1_id
     assert data.asset_type == AssetType.OWN_CHAIN
     assert data.name == custom1['name']
@@ -62,7 +62,7 @@ def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
     result = assert_proper_response_with_result(response)
     custom2_id = result['identifier']
 
-    data = globaldb.get_asset_data(identifier=custom2_id)
+    data = globaldb.get_asset_data(identifier=custom2_id, form_with_incomplete_data=False)
     assert data.identifier == custom2_id
     assert data.asset_type == AssetType.STELLAR_TOKEN
     assert data.name == custom2['name']
@@ -155,7 +155,7 @@ def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
     result = assert_proper_response_with_result(response)
     custom1_id = result['identifier']
 
-    data = globaldb.get_asset_data(identifier=custom1_id)
+    data = globaldb.get_asset_data(identifier=custom1_id, form_with_incomplete_data=False)
     assert data.identifier == custom1_id
     assert data.asset_type == AssetType.OWN_CHAIN
     assert data.name == custom1['name']
@@ -183,7 +183,7 @@ def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
     result = assert_proper_response_with_result(response)
     assert result is True
 
-    data = globaldb.get_asset_data(identifier=custom1_id)
+    data = globaldb.get_asset_data(identifier=custom1_id, form_with_incomplete_data=False)
     assert data.identifier == custom1_id
     assert data.asset_type == AssetType.STELLAR_TOKEN
     assert data.name == custom1_v2['name']
@@ -324,7 +324,7 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
     )
     result = assert_proper_response_with_result(response)
     assert result is True
-    assert globaldb.get_asset_data(identifier=custom3_id) is None
+    assert globaldb.get_asset_data(identifier=custom3_id, form_with_incomplete_data=False) is None
 
     # Try to delete custom1 but make sure it fails. It's used by custom2
     response = requests.delete(
@@ -351,7 +351,7 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
     )
     result = assert_proper_response_with_result(response)
     assert result is True
-    assert globaldb.get_asset_data(identifier=custom2_id) is None
+    assert globaldb.get_asset_data(identifier=custom2_id, form_with_incomplete_data=False) is None
 
     # now custom 1 should be deletable
     response = requests.delete(
@@ -363,7 +363,7 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
     )
     result = assert_proper_response_with_result(response)
     assert result is True
-    assert globaldb.get_asset_data(identifier=custom1_id) is None
+    assert globaldb.get_asset_data(identifier=custom1_id, form_with_incomplete_data=False) is None
 
     # Make sure that deleting unknown asset is detected
     response = requests.delete(
