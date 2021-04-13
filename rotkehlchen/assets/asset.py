@@ -390,6 +390,7 @@ class HasEthereumToken(Asset):
     """ Marker to denote assets having an Ethereum token address """
     ethereum_address: ChecksumEthAddress = field(init=False)
     decimals: int = field(init=False)
+    protocol: str = field(init=False)
 
     def __post_init__(self, form_with_incomplete_data: bool = False) -> None:
         object.__setattr__(self, 'identifier', ETHEREUM_DIRECTIVE + self.identifier)
@@ -406,6 +407,7 @@ class HasEthereumToken(Asset):
 
         object.__setattr__(self, 'ethereum_address', data.ethereum_address)
         object.__setattr__(self, 'decimals', data.decimals)
+        object.__setattr__(self, 'protocol', data.protocol)
 
 
 # Create a generic variable that can be 'EthereumToken', or any subclass.

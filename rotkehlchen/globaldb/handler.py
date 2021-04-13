@@ -128,7 +128,7 @@ class GlobalDBHandler():
         return _get_setting_value(cursor, name, default_value)
 
     @staticmethod
-    def add_setting_value(name: str, value: Any) -> None:
+    def add_setting_value(name: str, value: Any, commit: bool = True) -> None:
         """Add the value of a setting"""
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
@@ -136,7 +136,8 @@ class GlobalDBHandler():
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             (name, str(value)),
         )
-        connection.commit()
+        if commit:
+            connection.commit()
 
     @staticmethod
     def add_asset(
