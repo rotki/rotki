@@ -73,12 +73,16 @@ def assert_simple_ok_response(response: requests.Response) -> None:
 
 def assert_proper_response_with_result(
         response: Optional[requests.Response],
-        status_code=HTTPStatus.OK,
+        message: Optional[str] = None,
+        status_code: HTTPStatus = HTTPStatus.OK,
 ) -> Any:
     assert_proper_response(response, status_code)
     data = response.json()  # type: ignore
     assert data['result'] is not None
-    assert data['message'] == ''
+    if message:
+        assert message in data['message']
+    else:
+        assert data['message'] == ''
     return data['result']
 
 
@@ -131,6 +135,14 @@ def wait_for_async_task(
                 api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
             )
             json_data = response.json()
+            data = json_data['result']
+            if data is None:
+                error_msg = json_data.get('message')
+                if error_msg:
+                    error_msg = f'Error message: {error_msg}'
+                raise AssertionError(
+                    f'Tried to wait for task id {task_id} but got no result. {error_msg}',
+                )
             status = json_data['result']['status']
             if status == 'completed':
                 return json_data['result']['outcome']
