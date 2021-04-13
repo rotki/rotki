@@ -130,7 +130,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
     assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in errors[0]
     assert 'kraken trade with unprocessable pair IDONTEXISTZEUR' in errors[1]
     assert 'kraken trade with unprocessable pair %$#%$#%$#%$#%$#%' in errors[2]
-    assert 'No documented acquisition found for Raiden Network Token before' in errors[3]  # noqa: E501
+    assert 'No documented acquisition found for RDN(Raiden Network Token) before' in errors[3]  # noqa: E501
 
 
 @pytest.mark.parametrize(

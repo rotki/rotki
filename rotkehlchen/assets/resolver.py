@@ -25,14 +25,14 @@ class AssetResolver():
         return AssetResolver.__instance
 
     @staticmethod
-    def clean_memory_cache(identifier: Optional[str]) -> None:
+    def clean_memory_cache(identifier: Optional[str] = None) -> None:
         """Clean the memory cache of either a single or all assets"""
         assert AssetResolver.__instance is not None, 'when cleaning the cache instance should be set'  # noqa: E501
 
         if identifier is None:  # clean all
             AssetResolver.__instance.assets_cache.clear()
         else:
-            AssetResolver.__instance.assets_cache.pop(identifier, None)
+            AssetResolver.__instance.assets_cache.pop(identifier.lower(), None)
 
     @staticmethod
     def get_asset_data(

@@ -281,7 +281,7 @@ class GlobalDBHandler():
         """
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT type, name, symbol, started, swapped_for, coingecko, '
+            'SELECT identifier, type, name, symbol, started, swapped_for, coingecko, '
             'cryptocompare, details_reference from assets WHERE identifier=?;',
             (identifier,),
         )
@@ -289,14 +289,16 @@ class GlobalDBHandler():
         if result is None:
             return None
 
-        db_serialized_type = result[0]
-        name = result[1]
-        symbol = result[2]
-        started = result[3]
-        swapped_for = result[4]
-        coingecko = result[5]
-        cryptocompare = result[6]
-        details_reference = result[7]
+        # Since comparison is case insensitive let's return original identifier
+        saved_identifier = result[0]  # get the identifier as saved in the DB.
+        db_serialized_type = result[1]
+        name = result[2]
+        symbol = result[3]
+        started = result[4]
+        swapped_for = result[5]
+        coingecko = result[6]
+        cryptocompare = result[7]
+        details_reference = result[8]
         forked = None
         decimals = None
         protocol = None
@@ -320,7 +322,7 @@ class GlobalDBHandler():
             result = query.fetchone()
             if result is None:
                 log.error(
-                    f'Found token {identifier} in the DB assets table but not '
+                    f'Found token {saved_identifier} in the DB assets table but not '
                     f'in the token details table.',
                 )
                 return None
@@ -343,14 +345,14 @@ class GlobalDBHandler():
             result = query.fetchone()
             if result is None:
                 log.error(
-                    f'Found asset {identifier} in the DB assets table but not '
+                    f'Found asset {saved_identifier} in the DB assets table but not '
                     f'in the common asset details table.',
                 )
                 return None
             forked = result[0]
 
         return AssetData(
-            identifier=identifier,
+            identifier=saved_identifier,
             name=name,
             symbol=symbol,
             asset_type=asset_type,

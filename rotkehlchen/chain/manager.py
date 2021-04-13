@@ -1189,9 +1189,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
             eth_balances = self.balances.eth
             if entry.balance_type == 'Asset':
+                log.debug(f'Adding DeFi asset balance for {token} {entry.base_balance.balance}')
                 eth_balances[account].assets[token] += entry.base_balance.balance
                 self.totals.assets[token] += entry.base_balance.balance
             elif entry.balance_type == 'Debt':
+                log.debug(f'Adding DeFi debt balance for {token} {entry.base_balance.balance}')
                 eth_balances[account].liabilities[token] += entry.base_balance.balance
                 self.totals.liabilities[token] += entry.base_balance.balance
             else:
