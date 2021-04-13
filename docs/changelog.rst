@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2564` Users can now easily access the documentation and other helpful links directly from the application.
 * :feature:`-` Users will now get an error message if during the PnL report an acquisition date for a sold asset can't be found. Also if an action with an unknown token is processed. This way users will know that they need to manually add more data to rotki.
 * :feature:`-` The users can now optionally add a rate and rate asset when adding a ledger action.
 * :feature:`-` The external trade fee and fee currency are now optional and the users can skip them when adding a trade.
