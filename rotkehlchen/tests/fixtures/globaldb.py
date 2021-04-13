@@ -6,6 +6,7 @@ import pytest
 
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.assets.resolver import AssetResolver
 
 
 @pytest.fixture(name='custom_ethereum_tokens')
@@ -28,6 +29,9 @@ def create_globaldb(
 
 @pytest.fixture(name='globaldb')
 def fixture_globaldb(globaldb_version, tmpdir_factory):
+    # clean the previous resolver memory cache, as it
+    # may have cached results from a discarded database
+    AssetResolver().clean_memory_cache()
     root_dir = Path(__file__).resolve().parent.parent.parent
     if globaldb_version is None:  # no specific version -- normal test
         source_db_path = root_dir / 'data' / 'global.db'
