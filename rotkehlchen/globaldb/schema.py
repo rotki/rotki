@@ -70,6 +70,10 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('U', 21);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('V', 22);
 /* OTHER */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('W', 23);
+/* AVALANCHE TOKEN */
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('X', 24);
+/* SOLANA TOKEN */
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Y', 25);
 """
 
 # Using asset_id as a primary key here since nothing else is guaranteed to be unique

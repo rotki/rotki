@@ -74,6 +74,7 @@ from rotkehlchen.typing import (
     ApiSecret,
     AssetAmount,
     AssetMovementCategory,
+    AssetType,
     BlockchainAccountData,
     EthereumTransaction,
     ExternalService,
@@ -1347,8 +1348,22 @@ def test_values_are_present_in_db(database, enum_class, table_name):
     in the class definition as in the database
     """
     cursor = database.conn.cursor()
-    query = 'SELECT COUNT(*) FROM {} WHERE seq=?'.format(table_name)
+    query = f'SELECT COUNT(*) FROM {table_name} WHERE seq=?'
 
     for enum_class_entry in enum_class:
         r = cursor.execute(query, (enum_class_entry.value,))
         assert r.fetchone() == (1,)
+
+
+@pytest.mark.parametrize('enum_class, table_name', [(AssetType, 'asset_types')])
+def test_values_are_present_in_global_db(globaldb, enum_class, table_name):
+    """
+    Check that all enum classes have the same number of possible values
+    in the class definition as in the database
+    """
+    cursor = globaldb._conn.cursor()
+    query = f'SELECT COUNT(*) FROM {table_name} WHERE seq=?'
+
+    for enum_class_entry in enum_class:
+        r = cursor.execute(query, (enum_class_entry.value,))
+        assert r.fetchone() == (1,), f'Did not find {table_name} entry for value {enum_class_entry.value}'  # noqa: E501
