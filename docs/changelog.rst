@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2551`: Users will now be prompted with asset database updates if changes have happened to the supported rotki assets.
 * :feature:`2520` Users can now properly clean cached data for Eth2 daily stats and deposits.
 * :feature:`2564` Users can now easily access the documentation and other helpful links directly from the application.
 * :feature:`-` Users will now get an error message if during the PnL report an acquisition date for a sold asset can't be found. Also if an action with an unknown token is processed. This way users will know that they need to manually add more data to rotki.
