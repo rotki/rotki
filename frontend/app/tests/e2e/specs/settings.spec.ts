@@ -180,6 +180,8 @@ describe('Settings', () => {
   describe('Verify settings persist after re-login', () => {
     it('Log in with new password', () => {
       app.logout();
+      // If we don't visit the logout doesn't persist the skip_update parameter
+      app.visit();
       app.login(username, newPassword);
       app.closePremiumOverlay();
     });

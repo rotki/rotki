@@ -3,7 +3,7 @@ import { ActionResult } from '@/services/types-api';
 
 export class RotkiApp {
   visit() {
-    cy.visit('/');
+    cy.visit('/?skip_update=1');
   }
 
   createAccount(username: string, password: string = '1234') {

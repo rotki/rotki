@@ -25,6 +25,11 @@ export interface AssetIdResponse {
 
 export type ConflictResolutionStrategy = typeof CONFLICT_RESOLUTION[number];
 
+export interface AssetUpdatePayload {
+  readonly resolution?: ConflictResolution;
+  readonly version: number;
+}
+
 export interface ConflictResolution {
   readonly [assetId: string]: ConflictResolutionStrategy;
 }

@@ -3,8 +3,9 @@ import { SupportedAsset } from '@/services/types-model';
 export interface AssetState {}
 
 export interface AssetDBVersion {
-  readonly localVersion: number;
-  readonly remoteVersion: number;
+  readonly local: number;
+  readonly remote: number;
+  readonly newChanges: number;
 }
 
 export interface AssetUpdateCheckResult {

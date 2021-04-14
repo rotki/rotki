@@ -147,8 +147,18 @@ export default class ConflictDialog extends Vue {
   }
 
   getConflictFields(conflict: AssetUpdateConflictResult): string[] {
-    const remote = Object.keys(conflict.remote);
-    const local = Object.keys(conflict.local);
+    function nonNull(
+      key: keyof SupportedAsset,
+      asset: SupportedAsset
+    ): boolean {
+      return asset[key] !== null;
+    }
+    const remote = Object.keys(conflict.remote).filter(value =>
+      nonNull(value as keyof SupportedAsset, conflict.remote)
+    );
+    const local = Object.keys(conflict.local).filter(value =>
+      nonNull(value as keyof SupportedAsset, conflict.local)
+    );
     return [...remote, ...local].filter(uniqueStrings);
   }
 

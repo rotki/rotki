@@ -58,6 +58,7 @@
     "underlying_tokens": "Underlying Tokens"
   },
   "asset_update": {
+    "advanced": "Advanced",
     "buttons": {
       "skip": "Skip",
       "update":"Update"
@@ -69,12 +70,15 @@
       "subtitle": "Perform a check for an updated version of the asset database",
       "title": "Check for asset db updates"
     },
+    "partially_update": "Partially update",
     "skip_notification": "Don't notify me until the next update",
     "success": {
       "description": "The asset database has been successfully updated to version {remoteVersion}",
       "title": "Asset database update"
     },
-    "title": "A supported asset update is available"
+    "title": "A supported asset update is available",
+    "total_changes": "This update contains {changes} asset changes.",
+    "up_to_version": "Only update up to version"
   },
   "assets": {
     "amount": "Total Owned",

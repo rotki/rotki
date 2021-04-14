@@ -207,14 +207,14 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  performUpdate(resolution?: ConflictResolution): Promise<PendingTask> {
+  performUpdate(
+    version: number,
+    conflicts?: ConflictResolution
+  ): Promise<PendingTask> {
     const data = {
       async_query: true,
-      ...(resolution
-        ? {
-            resolution
-          }
-        : {})
+      up_to_version: version,
+      conflicts
     };
 
     return this.axios

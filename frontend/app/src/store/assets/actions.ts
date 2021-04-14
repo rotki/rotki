@@ -2,7 +2,7 @@ import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
-import { ConflictResolution } from '@/services/assets/types';
+import { AssetUpdatePayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import {
   ApplyUpdateResult,
@@ -31,7 +31,7 @@ export const actions: ActionTree<AssetState, RotkehlchenState> = {
         taskType
       );
       return {
-        updateAvailable: result.localVersion < result.remoteVersion,
+        updateAvailable: result.local < result.remote,
         versions: result
       };
     } catch (e) {
@@ -48,11 +48,11 @@ export const actions: ActionTree<AssetState, RotkehlchenState> = {
 
   async applyUpdates(
     { commit },
-    resolution?: ConflictResolution
+    { version, resolution }: AssetUpdatePayload
   ): Promise<ApplyUpdateResult> {
     try {
       const taskType = TaskType.ASSET_UPDATE_PERFORM;
-      const { taskId } = await api.assets.performUpdate(resolution);
+      const { taskId } = await api.assets.performUpdate(version, resolution);
       const task = createTask(taskId, taskType, {
         title: i18n.t('actions.assets.update.task.title').toString(),
         ignoreResult: false,
