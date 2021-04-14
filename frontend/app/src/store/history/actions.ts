@@ -20,6 +20,7 @@ import {
   TradeUpdate
 } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
+import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
 import { EntryWithMeta, LimitedResponse } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
@@ -27,6 +28,10 @@ import {
   ACTION_DELETE_LEDGER_ACTION,
   ACTION_EDIT_LEDGER_ACTION,
   ACTION_FETCH_LEDGER_ACTIONS,
+  ACTION_PURGE_EXCHANGE,
+  ACTION_PURGE_TRANSACTIONS,
+  ACTION_REMOVE_EXCHANGE_MOVEMENTS,
+  ACTION_REMOVE_EXCHANGE_TRADES,
   FETCH_FROM_CACHE,
   FETCH_FROM_SOURCE,
   FETCH_REFRESH,
@@ -37,6 +42,7 @@ import {
   MUTATION_ADD_LEDGER_ACTION,
   MUTATION_SET_LEDGER_ACTIONS
 } from '@/store/history/consts';
+import { defaultHistoricState } from '@/store/history/state';
 import {
   AccountRequestMeta,
   AssetMovementEntry,
@@ -63,6 +69,7 @@ import {
   RotkehlchenState,
   StatusPayload
 } from '@/store/types';
+import { setStatus } from '@/store/utils';
 import { Writeable } from '@/types';
 import { assert } from '@/utils/assertions';
 
@@ -787,7 +794,10 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     return { success: true };
   },
 
-  async removeExchangeTrades({ commit, state }, location: SupportedExchange) {
+  async [ACTION_REMOVE_EXCHANGE_TRADES](
+    { commit, state },
+    location: SupportedExchange
+  ) {
     const data = state.trades.data;
     const withoutLocation = data.filter(entry => entry.location !== location);
     const trades: HistoricData<TradeEntry> = {
@@ -797,5 +807,35 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     };
 
     commit('setTrades', trades);
+  },
+  async [ACTION_REMOVE_EXCHANGE_MOVEMENTS](
+    { commit, state: { assetMovements } },
+    location: SupportedExchange
+  ) {
+    const data = assetMovements.data;
+    const withoutLocation = data.filter(entry => entry.location !== location);
+    const trades: HistoricData<AssetMovementEntry> = {
+      data: withoutLocation,
+      found: assetMovements.found - withoutLocation.length,
+      limit: assetMovements.limit
+    };
+
+    commit('setMovements', trades);
+  },
+  async [ACTION_PURGE_TRANSACTIONS]({ commit, rootGetters: { status } }) {
+    commit('setTransactions', defaultHistoricState<EthTransactions>());
+    setStatus(Status.NONE, Section.TX, status, commit);
+  },
+  async [ACTION_PURGE_EXCHANGE](
+    { commit, dispatch },
+    exchange: SupportedExchange | typeof ALL_CENTRALIZED_EXCHANGES
+  ) {
+    if (exchange === ALL_CENTRALIZED_EXCHANGES) {
+      commit('setTrades', defaultHistoricState());
+      commit('setMovements', defaultHistoricState());
+    } else {
+      await dispatch(ACTION_REMOVE_EXCHANGE_TRADES, exchange);
+      await dispatch(ACTION_REMOVE_EXCHANGE_MOVEMENTS, exchange);
+    }
   }
 };

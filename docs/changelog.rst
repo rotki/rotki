@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :feature:`2520` Users can now properly clean cached data for Eth2 daily stats and deposits.
 * :feature:`2564` Users can now easily access the documentation and other helpful links directly from the application.
 * :feature:`-` Users will now get an error message if during the PnL report an acquisition date for a sold asset can't be found. Also if an action with an unknown token is processed. This way users will know that they need to manually add more data to rotki.
 * :feature:`2338` The users can now optionally add a rate and rate asset when adding a ledger action.
@@ -22,6 +22,7 @@ Changelog
 * :feature:`1334` FTX users will now be able to see their balances and have their deposit/withdrawal/trade history taken into account during profit/loss calculation.
 * :feature:`2332` Binance users will now be able to see their Binance Pool's assets in rotki.
 * :feature:`2713` Support the ETH-C MakerDAO vault collateral type.
+* :bug:`2699` Users will see that the frontend state will properly be cleared when purging data.
 * :bug:`2626` Users will now properly see their specified date format when viewing various DeFi protocols and statistics.
 * :bug:`2479` Users will now see a < (less than) symbol in front of any amount with trailing decimals when rounding upwards is used.
 * :bug:`2610` Macos users will now be able to properly update every time using the auto-updater.

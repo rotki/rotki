@@ -3,21 +3,42 @@ import {
   convertToAccountingSettings,
   convertToGeneralSettings
 } from '@/data/converters';
+import { EXCHANGE_CRYPTOCOM, SUPPORTED_EXCHANGES } from '@/data/defaults';
 import i18n from '@/i18n';
 import { DBSettings } from '@/model/action-result';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
+import { SupportedExchange } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
 import {
+  ALL_CENTRALIZED_EXCHANGES,
+  ALL_DECENTRALIZED_EXCHANGES,
+  ALL_MODULES,
+  ALL_TRANSACTIONS,
+  MODULE_ADEX,
+  MODULE_BALANCER,
+  MODULE_ETH2,
+  MODULE_UNISWAP,
+  MODULES
+} from '@/services/session/consts';
+import {
+  Purgeable,
   QueriedAddressPayload,
+  SupportedModules,
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
+import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
+import {
+  ACTION_PURGE_EXCHANGE,
+  ACTION_PURGE_TRANSACTIONS
+} from '@/store/history/consts';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
+import { ACTION_PURGE_CACHED_DATA } from '@/store/session/const';
 import {
   ChangePasswordPayload,
   PremiumCredentialsPayload,
@@ -29,6 +50,7 @@ import {
   TIMEFRAME_SETTING
 } from '@/store/settings/consts';
 import { loadFrontendSettings } from '@/store/settings/utils';
+import { ACTION_PURGE_DATA } from '@/store/staking/consts';
 import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
 import { showError, showMessage } from '@/store/utils';
 import {
@@ -510,6 +532,35 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         error: e.message
       });
       notify(message, title, Severity.ERROR, true);
+    }
+  },
+  async [ACTION_PURGE_CACHED_DATA]({ dispatch }, purgable: Purgeable) {
+    const opts = { root: true };
+    if (purgable === ALL_CENTRALIZED_EXCHANGES) {
+      await dispatch(
+        `history/${ACTION_PURGE_EXCHANGE}`,
+        ALL_CENTRALIZED_EXCHANGES,
+        opts
+      );
+    } else if (purgable === ALL_DECENTRALIZED_EXCHANGES) {
+      await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, MODULE_UNISWAP, opts);
+      await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, MODULE_BALANCER, opts);
+    } else if (purgable === ALL_TRANSACTIONS) {
+      await dispatch(`history/${ACTION_PURGE_TRANSACTIONS}`, undefined, opts);
+    } else if (purgable === ALL_MODULES) {
+      await dispatch(`staking/${ACTION_PURGE_DATA}`, ALL_MODULES, opts);
+      await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, ALL_MODULES, opts);
+    } else if (
+      SUPPORTED_EXCHANGES.includes(purgable as SupportedExchange) ||
+      purgable === EXCHANGE_CRYPTOCOM
+    ) {
+      await dispatch(`history/${ACTION_PURGE_EXCHANGE}`, purgable, opts);
+    } else if (MODULES.includes(purgable as SupportedModules)) {
+      if ([MODULE_ETH2, MODULE_ADEX].includes(purgable)) {
+        await dispatch(`staking/${ACTION_PURGE_DATA}`, purgable, opts);
+      } else {
+        await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, purgable, opts);
+      }
     }
   }
 };

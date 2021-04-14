@@ -1,5 +1,7 @@
-export const ADEX_HISTORY = 'adexHistory' as 'adexHistory';
-export const ADEX_BALANCES = 'adexBalances' as 'adexBalances';
-export const ETH2_DETAILS = 'eth2Details' as 'eth2Details';
-export const ETH2_DEPOSITS = 'eth2Deposits' as 'eth2Deposits';
-export const RESET = 'reset' as 'reset';
+export const ADEX_HISTORY = 'adexHistory' as const;
+export const ADEX_BALANCES = 'adexBalances' as const;
+export const ETH2_DETAILS = 'eth2Details' as const;
+export const ETH2_DEPOSITS = 'eth2Deposits' as const;
+export const RESET = 'reset' as const;
+
+export const ACTION_PURGE_DATA = 'purgeData' as const;

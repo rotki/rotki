@@ -1,4 +1,4 @@
-import { MODULES } from '@/services/session/consts';
+import { MODULES, PURGABLE } from '@/services/session/consts';
 
 export type WatcherType = 'makervault_collateralization_ratio';
 export type WatcherTypes = WatcherType;
@@ -30,3 +30,5 @@ export interface QueriedAddressPayload {
   readonly module: SupportedModules;
   readonly address: string;
 }
+
+export type Purgeable = typeof PURGABLE[number];

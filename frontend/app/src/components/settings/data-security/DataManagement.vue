@@ -39,32 +39,38 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import PurgeSelector, {
-  ALL_TRANSACTIONS,
-  ALL_MODULES,
-  ALL_EXCHANGES,
-  Purgable,
   PurgeParams
 } from '@/components/settings/data-security/PurgeSelector.vue';
 import StatusButton from '@/components/settings/data-security/StatusButton.vue';
 import { EXCHANGE_CRYPTOCOM, SUPPORTED_EXCHANGES } from '@/data/defaults';
 import { SupportedExchange } from '@/services/balances/types';
-import { MODULES } from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import {
+  ALL_DECENTRALIZED_EXCHANGES,
+  ALL_CENTRALIZED_EXCHANGES,
+  ALL_MODULES,
+  ALL_TRANSACTIONS,
+  MODULE_BALANCER,
+  MODULE_UNISWAP,
+  MODULES
+} from '@/services/session/consts';
+import { Purgeable, SupportedModules } from '@/services/session/types';
+import { ACTION_PURGE_CACHED_DATA } from '@/store/session/const';
 import { ActionStatus } from '@/store/types';
 
 @Component({
   components: { PurgeSelector, StatusButton, ConfirmDialog },
   methods: {
-    ...mapActions('history', ['removeExchangeTrades'])
+    ...mapActions('session', [ACTION_PURGE_CACHED_DATA])
   }
 })
 export default class DataManagement extends Vue {
-  source: Purgable = ALL_TRANSACTIONS;
+  source: Purgeable = ALL_TRANSACTIONS;
   status: ActionStatus | null = null;
   confirm: boolean = false;
   pending: boolean = false;
   sourceLabel: string = '';
   removeExchangeTrades!: (location: SupportedExchange) => Promise<void>;
+  [ACTION_PURGE_CACHED_DATA]: (purgeable: Purgeable) => Promise<void>;
 
   showConfirmation(source: PurgeParams) {
     this.sourceLabel = source.text;
@@ -95,13 +101,18 @@ export default class DataManagement extends Vue {
     }
   }
 
-  private async purgeSource(source: string) {
+  private async purgeSource(source: Purgeable) {
     if (source === ALL_TRANSACTIONS) {
       await this.$api.balances.deleteEthereumTransactions();
     } else if (source === ALL_MODULES) {
       await this.$api.balances.deleteModuleData();
-    } else if (source === ALL_EXCHANGES) {
+    } else if (source === ALL_CENTRALIZED_EXCHANGES) {
       await this.$api.balances.deleteExchangeData();
+    } else if (source === ALL_DECENTRALIZED_EXCHANGES) {
+      await Promise.all([
+        this.$api.balances.deleteModuleData(MODULE_UNISWAP),
+        this.$api.balances.deleteModuleData(MODULE_BALANCER)
+      ]);
     } else {
       if (
         SUPPORTED_EXCHANGES.includes(source as any) ||
@@ -110,11 +121,11 @@ export default class DataManagement extends Vue {
         await this.$api.balances.deleteExchangeData(
           source as SupportedExchange
         );
-        await this.removeExchangeTrades(source as SupportedExchange);
       } else if (MODULES.includes(source as any)) {
         await this.$api.balances.deleteModuleData(source as SupportedModules);
       }
     }
+    await this[ACTION_PURGE_CACHED_DATA](source);
   }
 }
 </script>

@@ -4,6 +4,7 @@ import {
   MODULE_ADEX,
   MODULE_BALANCER,
   MODULE_COMPOUND,
+  MODULE_ETH2,
   MODULE_LOOPRING,
   MODULE_MAKERDAO_DSR,
   MODULE_MAKERDAO_VAULTS,
@@ -56,5 +57,10 @@ export const DEFI_MODULES: Module[] = [
     identifier: MODULE_BALANCER,
     name: 'Balancer',
     icon: require('@/assets/images/defi/balancer.svg')
+  },
+  {
+    identifier: MODULE_ETH2,
+    name: 'Eth2',
+    icon: require('@/assets/images/modules/eth.svg')
   }
 ];
