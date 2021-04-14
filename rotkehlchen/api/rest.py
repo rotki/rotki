@@ -335,15 +335,21 @@ class RestAPI():
                         result = function_response['result']
                         # The message of the original request
                         message = function_response['message']
-                        status_code = function_response.get('status_code', HTTPStatus.OK)
+                        status_code = function_response.get('status_code')
                         ret = {'result': result, 'message': message}
+                        returned_task_result = {
+                            'status': 'completed',
+                            'outcome': process_result(ret),
+                        }
+                        if status_code:
+                            returned_task_result['status_code'] = status_code
                         result_dict = {
-                            'result': {'status': 'completed', 'outcome': process_result(ret)},
+                            'result': returned_task_result,
                             'message': '',
                         }
                         # Also remove the greenlet from the api tasks
                         self.rotkehlchen.api_task_greenlets.pop(idx)
-                        return api_response(result=result_dict, status_code=status_code)
+                        return api_response(result=result_dict, status_code=HTTPStatus.OK)
                     # else task is still pending and the greenlet is running
                     result_dict = {
                         'result': {'status': 'pending', 'outcome': None},

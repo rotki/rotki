@@ -28,7 +28,7 @@ All endpoints have their response wrapped in the following JSON object
     }
 
 
-In the case of a succesful response the ``"result"`` attribute is populated and is not ``null`` and the ``"message"`` is empty.
+In the case of a succesful response the ``"result"`` attribute is populated and is not ``null``. The message is almost always going to be empty but may at some cases also contain some informational message.
 
 ::
 
@@ -764,7 +764,8 @@ Query the result of an ongoing backend task
                               "usd_value": "70500.15"
                           }}
                   }},
-                  "totals": {"BTC": {"amount": "10", "usd_value": "70500.15"}}
+                  "totals": {"BTC": {"amount": "10", "usd_value": "70500.15"}},
+		  "status_code": 200
               }
           },
           "message": ""
@@ -805,7 +806,7 @@ Query the result of an ongoing backend task
       }
 
    :resjson string status: The status of the given task id. Can be one of ``"completed"``, ``"pending"`` and ``"not-found"``.
-   :resjson any outcome: IF the result of the task id is not yet ready this should be ``null``. If the task has finished then this would contain the original task response.
+   :resjson any outcome: IF the result of the task id is not yet ready this should be ``null``. If the task has finished then this would contain the original task response. Inside the response can also be an optional status_code entry which would have been the status code of the original endpoint query had it not been made async.
 
    :statuscode 200: The task's outcome is succesfully returned or pending
    :statuscode 400: Provided JSON is in some way malformed
