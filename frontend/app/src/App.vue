@@ -2,6 +2,7 @@
   <v-app v-if="!isPlayground" id="rotki">
     <update-popup />
     <div v-if="logged" class="app__content rotki-light-grey">
+      <asset-update auto />
       <notification-popup />
       <v-navigation-drawer
         v-if="loginComplete"
@@ -100,6 +101,7 @@ import NotificationSidebar from '@/components/status/notifications/NotificationS
 import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 import '@/services/task-manager';
+import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
 import UpdatePopup from '@/components/status/update/UpdatePopup.vue';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
@@ -109,6 +111,7 @@ import { Message } from '@/store/types';
 
 @Component({
   components: {
+    AssetUpdate,
     HelpIndicator,
     HelpSidebar,
     BackButton,

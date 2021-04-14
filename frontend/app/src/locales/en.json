@@ -57,6 +57,29 @@
     "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts",
     "underlying_tokens": "Underlying Tokens"
   },
+  "asset_update": {
+    "advanced": "Advanced",
+    "buttons": {
+      "skip": "Skip",
+      "update":"Update"
+    },
+    "description": "Version {remote} of the asset database is available. Would you like to update from version {local}?",
+    "manual": {
+      "check": "Check For Update",
+      "skipped": "Update notifications are disabled for version {skipped}",
+      "subtitle": "Perform a check for an updated version of the asset database",
+      "title": "Check for asset db updates"
+    },
+    "partially_update": "Partially update",
+    "skip_notification": "Don't notify me until the next update",
+    "success": {
+      "description": "The asset database has been successfully updated to version {remoteVersion}",
+      "title": "Asset database update"
+    },
+    "title": "A supported asset update is available",
+    "total_changes": "This update contains {changes} asset changes.",
+    "up_to_version": "Only update up to version"
+  },
   "assets": {
     "amount": "Total Owned",
     "price": "Price",
@@ -88,6 +111,29 @@
       "empty_password": "Please provide a password",
       "password_missmatch": "The password confirmation does not match the provided password"
     }
+  },
+  "conflict_dialog": {
+    "action": {
+      "local": "Local",
+      "remote": "Remote"
+    },
+    "all_buttons_description": "For All conflicts",
+    "buttons": {
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "subtitle": "Local changes have been detected to the following assets. Select if you would like to keep the local version or overwrite it with the remote one.",
+    "table": {
+      "headers": {
+        "local": "Local",
+        "remote": "Remote",
+        "keep": "Keep"
+      }
+    },
+    "title": "Conflicts detected",
+    "keep_local": "Keep Local",
+    "keep_remote": "Keep Remote",
+    "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input."
   },
   "cost_basis_table": {
     "complete": "(Complete)",
@@ -1174,6 +1220,22 @@
         },
         "task": {
           "title": "Retrieving token details for {address}"
+        }
+      },
+      "update": {
+        "error": {
+          "description": "The asset database update failed: {message}"
+        },
+        "task": {
+          "title": "Updating assets database"
+        }
+      },
+      "versions": {
+        "error": {
+          "description": "The asset database update check failed: {message}"
+        },
+        "task": {
+          "title": "Checking for asset database updates"
         }
       }
     },

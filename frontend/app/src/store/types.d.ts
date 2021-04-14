@@ -1,3 +1,4 @@
+import { AssetState } from '@/store/assets/types';
 import { BalanceState } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { DefiState } from '@/store/defi/types';
@@ -41,6 +42,7 @@ export interface RotkehlchenState {
   defi?: DefiState;
   statistics?: StatisticsState;
   history?: HistoryState;
+  assets?: AssetState;
 }
 
 export interface Message {

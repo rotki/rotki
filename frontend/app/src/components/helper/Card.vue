@@ -18,11 +18,20 @@
       <v-sheet v-if="$slots.actions" outlined rounded class="pa-3 mb-4">
         <slot name="actions" />
       </v-sheet>
+      <div v-if="$slots.hint" class="pb-4">
+        <slot name="hint" />
+      </div>
       <v-sheet v-if="outlinedBody" outlined rounded>
         <slot />
       </v-sheet>
       <slot v-else />
+      <div v-if="$slots.options" class="card__options">
+        <slot name="options" />
+      </div>
     </v-card-text>
+    <v-card-actions v-if="$slots.buttons">
+      <slot name="buttons" />
+    </v-card-actions>
   </v-card>
 </template>
 
@@ -48,6 +57,10 @@ export default class Card extends Vue {
 
   &__subtitle {
     margin-top: -40px;
+  }
+
+  &__options {
+    margin-bottom: -36px;
   }
 }
 </style>

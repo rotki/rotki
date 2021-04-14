@@ -43,7 +43,7 @@ export function taskCompletion<R, M extends TaskMeta>(
       (actionResult, meta) => {
         taskManager.unregisterHandler(task, taskId);
         const { result, message } = actionResult;
-        if (message) {
+        if (message && result === null) {
           reject(new Error(message));
         } else {
           resolve({ result, meta });

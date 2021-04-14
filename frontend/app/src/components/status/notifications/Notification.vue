@@ -85,7 +85,7 @@ export default class Notification extends Vue {
       case Severity.ERROR:
         return 'mdi-alert-circle';
       case Severity.INFO:
-        return 'mdi-help-circle';
+        return 'mdi-information-outline';
       case Severity.WARNING:
         return 'mdi-alert';
     }
