@@ -45,9 +45,12 @@ import StatusButton from '@/components/settings/data-security/StatusButton.vue';
 import { EXCHANGE_CRYPTOCOM, SUPPORTED_EXCHANGES } from '@/data/defaults';
 import { SupportedExchange } from '@/services/balances/types';
 import {
-  ALL_EXCHANGES,
+  ALL_DECENTRALIZED_EXCHANGES,
+  ALL_CENTRALIZED_EXCHANGES,
   ALL_MODULES,
   ALL_TRANSACTIONS,
+  MODULE_BALANCER,
+  MODULE_UNISWAP,
   MODULES
 } from '@/services/session/consts';
 import { Purgeable, SupportedModules } from '@/services/session/types';
@@ -103,8 +106,13 @@ export default class DataManagement extends Vue {
       await this.$api.balances.deleteEthereumTransactions();
     } else if (source === ALL_MODULES) {
       await this.$api.balances.deleteModuleData();
-    } else if (source === ALL_EXCHANGES) {
+    } else if (source === ALL_CENTRALIZED_EXCHANGES) {
       await this.$api.balances.deleteExchangeData();
+    } else if (source === ALL_DECENTRALIZED_EXCHANGES) {
+      await Promise.all([
+        this.$api.balances.deleteModuleData(MODULE_UNISWAP),
+        this.$api.balances.deleteModuleData(MODULE_BALANCER)
+      ]);
     } else {
       if (
         SUPPORTED_EXCHANGES.includes(source as any) ||

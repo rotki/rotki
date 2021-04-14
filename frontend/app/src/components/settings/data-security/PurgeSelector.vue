@@ -48,7 +48,8 @@ import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue'
 import Fragment from '@/components/helper/Fragment';
 import { tradeLocations } from '@/components/history/consts';
 import {
-  ALL_EXCHANGES,
+  ALL_DECENTRALIZED_EXCHANGES,
+  ALL_CENTRALIZED_EXCHANGES,
   ALL_MODULES,
   ALL_TRANSACTIONS,
   PURGABLE
@@ -65,7 +66,7 @@ export default class PurgeSelector extends Vue {
   readonly purgable = PURGABLE.map(id => ({
     id: id,
     text: this.text(id)
-  }));
+  })).sort((a, b) => (a.text < b.text ? -1 : 1));
 
   @Prop({ required: true })
   value!: Purgeable;
@@ -99,10 +100,12 @@ export default class PurgeSelector extends Vue {
 
     if (source === ALL_TRANSACTIONS) {
       return this.$t('purge_selector.ethereum_transactions').toString();
-    } else if (source === ALL_EXCHANGES) {
+    } else if (source === ALL_CENTRALIZED_EXCHANGES) {
       return this.$t('purge_selector.all_exchanges').toString();
     } else if (source === ALL_MODULES) {
       return this.$t('purge_selector.all_modules').toString();
+    } else if (source === ALL_DECENTRALIZED_EXCHANGES) {
+      return this.$t('purge_selector.all_decentralized_exchanges').toString();
     }
     return source;
   }

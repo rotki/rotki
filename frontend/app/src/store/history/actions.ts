@@ -20,7 +20,7 @@ import {
   TradeUpdate
 } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
-import { ALL_EXCHANGES } from '@/services/session/consts';
+import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
 import { EntryWithMeta, LimitedResponse } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
@@ -828,9 +828,9 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   },
   async [ACTION_PURGE_EXCHANGE](
     { commit, dispatch },
-    exchange: SupportedExchange | typeof ALL_EXCHANGES
+    exchange: SupportedExchange | typeof ALL_CENTRALIZED_EXCHANGES
   ) {
-    if (exchange === ALL_EXCHANGES) {
+    if (exchange === ALL_CENTRALIZED_EXCHANGES) {
       commit('setTrades', defaultHistoricState());
       commit('setMovements', defaultHistoricState());
     } else {

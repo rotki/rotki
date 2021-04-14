@@ -13,11 +13,14 @@ import { balanceKeys } from '@/services/consts';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
 import {
-  ALL_EXCHANGES,
+  ALL_CENTRALIZED_EXCHANGES,
+  ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES,
   ALL_TRANSACTIONS,
   MODULE_ADEX,
+  MODULE_BALANCER,
   MODULE_ETH2,
+  MODULE_UNISWAP,
   MODULES
 } from '@/services/session/consts';
 import {
@@ -533,8 +536,15 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   },
   async [ACTION_PURGE_CACHED_DATA]({ dispatch }, purgable: Purgeable) {
     const opts = { root: true };
-    if (purgable === ALL_EXCHANGES) {
-      await dispatch(`history/${ACTION_PURGE_EXCHANGE}`, ALL_EXCHANGES, opts);
+    if (purgable === ALL_CENTRALIZED_EXCHANGES) {
+      await dispatch(
+        `history/${ACTION_PURGE_EXCHANGE}`,
+        ALL_CENTRALIZED_EXCHANGES,
+        opts
+      );
+    } else if (purgable === ALL_DECENTRALIZED_EXCHANGES) {
+      await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, MODULE_UNISWAP, opts);
+      await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, MODULE_BALANCER, opts);
     } else if (purgable === ALL_TRANSACTIONS) {
       await dispatch(`history/${ACTION_PURGE_TRANSACTIONS}`, undefined, opts);
     } else if (purgable === ALL_MODULES) {
