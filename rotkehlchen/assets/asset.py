@@ -45,6 +45,10 @@ WORLD_TO_BITTREX = {
     strethaddress_to_identifier('0xF411903cbC70a74d22900a5DE66A2dda66507255'): 'VRA',
 }
 
+WORLD_TO_FTX = {
+    strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
+}
+
 WORLD_TO_POLONIEX = {
     # AIR-2 is aircoin for us and AIR is airtoken. Poloniex has only aircoin
     'AIR-2': 'AIR',

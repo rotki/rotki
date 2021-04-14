@@ -4,6 +4,7 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_BINANCE,
     WORLD_TO_BITFINEX,
     WORLD_TO_BITTREX,
+    WORLD_TO_FTX,
     WORLD_TO_ICONOMI,
     WORLD_TO_KRAKEN,
     WORLD_TO_KUCOIN,
@@ -496,8 +497,28 @@ UNSUPPORTED_FTX_ASSETS = (
     'NOK',
     'NVDA',
     'PFE',
+    'PYPL',
     'SLV',  # iShares Silver Trust
+    'SPY',
+    'SQ',
+    'TLRY',
+    'TSM',
     'TSLA',
+    'TWTR',
+    'UBER',
+    'USO',
+    'ZM',
+    'ETHE',  # no cryptocompare/coingecko data
+    'GBTC',  # no cryptocompare/coingecko data
+    'GDX',  # no cryptocompare/coingecko data
+    'GDXJ',  # no cryptocompare/coingecko data
+    'GLD',  # no cryptocompare/coingecko data
+    'GLXY',  # no cryptocompare/coingecko data
+    'HOOD',  # no cryptocompare/coingecko data
+    'HUM'  # no cryptocompare/coingecko data
+    'MRNA',  # no cryptocompare/coingecko data
+    'PENN',  # no cryptocompare/coingecko data
+    'SECO',  # pool in bonfida
 )
 
 # https://api.kucoin.com/api/v1/currencies
@@ -550,6 +571,7 @@ POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
 BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
 BITFINEX_TO_WORLD = {v: k for k, v in WORLD_TO_BITFINEX.items()}
+FTX_TO_WORLD = {v: k for k, v in WORLD_TO_FTX.items()}
 KRAKEN_TO_WORLD = {v: k for k, v in WORLD_TO_KRAKEN.items()}
 KUCOIN_TO_WORLD = {v: k for k, v, in WORLD_TO_KUCOIN.items()}
 ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
@@ -741,7 +763,8 @@ def asset_from_ftx(ftx_name: str) -> Asset:
     if ftx_name in UNSUPPORTED_FTX_ASSETS:
         raise UnsupportedAsset(ftx_name)
 
-    return symbol_to_asset_or_token(ftx_name)
+    name = FTX_TO_WORLD.get(ftx_name, ftx_name)
+    return symbol_to_asset_or_token(name)
 
 
 def asset_from_kucoin(kucoin_name: str) -> Asset:
