@@ -109,52 +109,132 @@ Customizing the application settings
 By choosing the "General" settings button you can customize some general application settings.
 
 
-.. image:: images/sc_settings.png
-   :alt: Customizing the app settings
+.. image:: images/sc_general_settings.png
+   :alt: Customizing the general app settings
    :align: center
 
-Floating precision
---------------------
-
-Set how many decimal points should be shown in the UI for floating point numbers.
+General Settings
+----------------------
 
 Anonymized logs
-------------------
+^^^^^^^^^^^^^^^^^^^
 
-Specify whether logging functionality should be anonymized. That has a small cost in performance but makes sure that all logs that would otherwise contain sensitive tradeinformation have them anonymized with random values.
+Specify whether logging functionality should be anonymized. That has a small cost in performance but makes sure that all logs that would otherwise contain sensitive trade information have them anonymized with random values. Note: This setting does its best to anonymize as many log entries as it can but it does not do so everywhere. It's on a best effort basis.
 
 Anonymous usage analytics
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Specify whether the application is allowed to submit anonymous usage analytics. As a local application Rotki has no other way to measure how many active users it has other than submitting some form of analytics. The data that are submitted are completely anonymized and contain no sensitive information.
 
-Date from when to count historical data
------------------------------------------
+Balance data saving frequency
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A date before which historical data is not counted.
+Set how often (in hours) the data of all balances will be saved. This data is used to calculate statistics and other historical data to show to the user.
+
+Date display format
+^^^^^^^^^^^^^^^^^^^^
+
+Set the display format of the dates in the Rotki user interface. One such format is ``%m/%d/%Y %H:%M:%S``. That means month/day/year hour:minutes:seconds. For possible valid formats check `here <https://exchange.https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes/>`__.
+
+Display in local time
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Choose whether local time or UTC should be shown in the CSV exports, user logs in the backend and other locations.
+
+BTC Derivation gap limit
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is the derivation gap limit that will be used when trying to derive addresses from a bitcoin xpub. For more information check `here <https://blog.blockonomics.co/bitcoin-what-is-this-gap-limit-4f098e52d7e1>`__.
+
+
+Amount Settings
+-----------------
+
+.. image:: images/sc_amount_settings.png
+   :alt: Customizing the app's amount settings
+   :align: center
+
+Floating precision
+^^^^^^^^^^^^^^^^^^^^
+
+Set how many decimal points should be shown in the UI for floating point numbers.
 
 Main currency
-----------------
+^^^^^^^^^^^^^^^^
 
 Same as `changing the profit currency <change_profit_currency_>`_.
 
+Thousands separator
+^^^^^^^^^^^^^^^^^^^^^^
+
+This is the symbol that will be separating the numbers every 3 digits for big numbers. For example in 1,000,000, the symbol is ``,``.
+
+Decimal separator
+^^^^^^^^^^^^^^^^^^^^^^
+
+This is the symbol that will be separating the floating part of the number. For example in 5.42 the symbol is ``.``.
+
+Currency location
+^^^^^^^^^^^^^^^^^^^^
+
+This setting chooses if the currency symbol will be shown before ($1,000) or after(1,000$) the number.
+
+
+Local nodes
+------------
+
+.. image:: images/sc_localnode_settings.png
+   :alt: Customizing the app's connection to local nodes
+   :align: center
 
 Connecting to an Ethereum Client
-------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When Rotki begins it tries to connect to a local ethereum node running with an rpc port set at the default port ``8545``. If no client is running then all blockchain queries will use an external service such as etherscan and this will be rather slower.
 
 If you want to connect to another ethereum client you can set the URL and port through the settings. Click the person icon on the top right menu and select "Settings" from the drop down menu. This will take you to the settings page. Write the desired url/port in the ETH RPC endpoing textbox.
 
-Balance data saving frequency
----------------------------------
+Connecting to a Kusama Client
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Set how often (in hours) the data of all balances will be saved. This data is used to calculate statistics and other historical data to show to the user.
+Just like with ethereum you can set the rpc endpoint of a kusama node you would like to connect to here.
 
-Date display format
+Price Oracle settings
 ---------------------
 
-Set the display format of the dates in the Rotki user interface.
+.. image:: images/sc_priceoracle_settings.png
+   :alt: Customizing the app's price oracle settings
+   :align: center
+
+Here you can customize the precedence of querying that price oracles will have. That means which price source to check first, which second and so on and so forth both for current but also for historical prices.
+
+Frontend only settings
+-----------------------
+
+.. image:: images/sc_frontendonly_settings.png
+   :alt: Customizing the app's frontend only settings
+   :align: center
+
+Data scrambling
+^^^^^^^^^^^^^^^
+
+When turned on this setting allows you to randomize a lot of amount numbers, dates and other data in the app so that you can share screenshots without leaking real data. This setting does not persist across sessions!
+
+Dashboard graph default timeframe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Set the default time frame for the dashboard graph. This timeframe will be pre-selected upon login. By default it will remember the previous session's selection.
+
+Automatic balance refresh
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This enables/disables automatic refresh of balances. Also sets the distance in time between each refresh. Automatic balance refresh is disabled by default because balance querying can get really slow and also get you rate limited.
+
+Periodic status query
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The rotki frontend continuously queries the backend for various data and updates. This is an inexpensive operation that is set by default to 5 seconds. You can customize the frequency of that query here.
+
 
 Customizing the accounting settings
 ====================================
