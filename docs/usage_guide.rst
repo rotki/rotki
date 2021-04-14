@@ -245,29 +245,61 @@ You should understand what each setting does, consult with a tax accountant for 
 
 The default settings are at the moment set for the German tax jurisdiction. For example all profit/loss calculation is done for trades on a first-in/first-out basis and profits from selling crypto assets after 1 year are non taxable. These settings can be adjusted.
 
+Trade settings
+----------------
+
 .. image:: images/sc_accounting_settings.png
-   :alt: Customizing the accounting settings
+   :alt: Customizing the accounting trade settings
    :align: center
 
 Crypto to crypto trades
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Specify whether crypto to crypto trades are taxable and should be taken into account. If yes then each crypto to crypto trade also creates a "virtual" trade that sells or buys the crypto asset for fiat and then sells or buys the fiat for the other crypto asset.
 
 Ethereum gas costs
----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 Specify whether ethereum transaction gas costs should be counted as loss. If this is set then all ETH spent on gas will be deducted from your profits and count as an expense.
 
 Tax free period
--------------------
+^^^^^^^^^^^^^^^^^^^^
 
 Specify whether there is a period of time and if yes how many days, after which holding a crypto asset is considered not taxable.
 
-Ignored assets
------------------
+Asset movements fees
+^^^^^^^^^^^^^^^^^^^^^^^
 
-Specify which assets you own and would like to completely ignore from all calculations. Any actions that involve these assets are ignored.
+Specify whether deposit/withdrawal fees should count as expenses during the profit/loss report.
+
+Calculate past cost basis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When creating a profit/loss report we also need to figure out where and when all of the assets that the user is using were acquired from. Which is why we also go through all past events, even before the start of the period.
+
+This behavior can be disabled by turning this setting off.
+
+Asset settings
+--------------
+
+.. image:: images/sc_accountingasset_settings.png
+   :alt: Customizing the accounting asset settings
+   :align: center
+
+
+Ignored assets
+^^^^^^^^^^^^^^^
+
+Specify which assets you own and would like to completely ignore from all calculations and balance queries. Any actions that involve these assets are ignored.
+
+Ledger action settings
+-----------------------
+
+.. image:: images/sc_accountingledgeraction_settings.png
+   :alt: Customizing the accounting ledger action settings
+   :align: center
+
+Here you can choose which types of historical actions should be considered taxable and which not. For example in Germany airdrops are considered windfall profits and are not taxed, so you can specify that here.
 
 Customizing data & security settings
 ====================================
