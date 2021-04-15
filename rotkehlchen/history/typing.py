@@ -1,7 +1,7 @@
-from enum import Enum
 from typing import TYPE_CHECKING, Union
 
 from rotkehlchen.errors import DeserializationError
+from rotkehlchen.utils.mixins import DBEnumMixIn
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -11,17 +11,11 @@ if TYPE_CHECKING:
 HistoricalPriceOracleInstance = Union['Coingecko', 'Cryptocompare']
 
 
-class HistoricalPriceOracle(Enum):
+class HistoricalPriceOracle(DBEnumMixIn):
     """Supported oracles for querying historical prices"""
-    COINGECKO = 1
-    CRYPTOCOMPARE = 2
-
-    def __str__(self) -> str:
-        if self == HistoricalPriceOracle.COINGECKO:
-            return 'coingecko'
-        if self == HistoricalPriceOracle.CRYPTOCOMPARE:
-            return 'cryptocompare'
-        raise AssertionError(f'Unexpected HistoricalPriceOracle: {self}')
+    MANUAL = 1
+    COINGECKO = 2
+    CRYPTOCOMPARE = 3
 
     def serialize(self) -> str:
         return str(self)

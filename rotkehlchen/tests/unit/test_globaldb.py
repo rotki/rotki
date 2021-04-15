@@ -3,13 +3,14 @@ import itertools
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, string_to_ethereum_address
 from rotkehlchen.constants.assets import A_BAT
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError
+from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import INITIAL_TOKENS
-from rotkehlchen.typing import AssetData, AssetType
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -220,3 +221,20 @@ def test_get_asset_with_symbol(globaldb):
     )]
     for x in itertools.product(('ReNbTc', 'renbtc', 'RENBTC', 'rEnBTc'), (None, AssetType.ETHEREUM_TOKEN)):  # noqa: E501
         assert globaldb.get_assets_with_symbol(*x) == expected_renbtc
+
+
+@pytest.mark.parametrize('enum_class, table_name', [
+    (AssetType, 'asset_types'),
+    (HistoricalPriceOracle, 'price_history_source_types'),
+])
+def test_enum_values_are_present_in_global_db(globaldb, enum_class, table_name):
+    """
+    Check that all enum classes have the same number of possible values
+    in the class definition as in the database
+    """
+    cursor = globaldb._conn.cursor()
+    query = f'SELECT COUNT(*) FROM {table_name} WHERE seq=?'
+
+    for enum_class_entry in enum_class:
+        r = cursor.execute(query, (enum_class_entry.value,))
+        assert r.fetchone() == (1,), f'Did not find {table_name} entry for value {enum_class_entry.value}'  # noqa: E501
