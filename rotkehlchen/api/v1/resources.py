@@ -84,6 +84,7 @@ from rotkehlchen.api.v1.encoding import (
 )
 from rotkehlchen.api.v1.parser import resource_parser
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -92,7 +93,6 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetType,
     BlockchainAccountData,
     ChecksumEthAddress,
     ExternalService,

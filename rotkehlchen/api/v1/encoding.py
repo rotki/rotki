@@ -14,6 +14,7 @@ from werkzeug.datastructures import FileStorage
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import (
@@ -52,7 +53,6 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetType,
     BTCAddress,
     ChecksumEthAddress,
     ExternalService,

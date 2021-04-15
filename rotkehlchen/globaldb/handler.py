@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast,
 
 from typing_extensions import Literal
 
+from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.chain.ethereum.typing import (
     CustomEthereumToken,
     CustomEthereumTokenWithIdentifier,
@@ -16,7 +17,7 @@ from rotkehlchen.chain.ethereum.typing import (
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
-from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress
+from rotkehlchen.typing import ChecksumEthAddress
 
 from .schema import DB_SCRIPT_CREATE_TABLES
 

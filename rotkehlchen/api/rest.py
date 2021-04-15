@@ -33,6 +33,7 @@ from rotkehlchen.accounting.structures import ActionType, BalanceType
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
     add_manually_tracked_balances,
@@ -84,7 +85,6 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetType,
     BlockchainAccountData,
     ChecksumEthAddress,
     EthereumTransaction,

@@ -219,7 +219,7 @@ class CachedPriceEntry(NamedTuple):
 class Inquirer():
     __instance: Optional['Inquirer'] = None
     _cached_forex_data: Dict
-    _cached_current_price: Dict  # Can't use CacheableObject due to Singleton
+    _cached_current_price: Dict  # Can't use CacheableMixIn due to Singleton
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'

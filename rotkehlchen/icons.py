@@ -9,12 +9,12 @@ import requests
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
-from rotkehlchen.typing import AssetType
-from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.utils.hashing import file_md5
 
 log = logging.getLogger(__name__)
 

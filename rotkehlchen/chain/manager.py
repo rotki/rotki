@@ -46,12 +46,12 @@ from rotkehlchen.chain.ethereum.modules import (
     Adex,
     Balancer,
     Compound,
+    Eth2,
     Loopring,
     MakerdaoDsr,
     MakerdaoVaults,
     Uniswap,
     YearnVaults,
-    Eth2,
 )
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
@@ -84,14 +84,14 @@ from rotkehlchen.typing import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.interfaces import (
-    CacheableObject,
-    EthereumModule,
-    LockableQueryObject,
+from rotkehlchen.utils.interfaces import EthereumModule
+from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.mixins import (
+    CacheableMixIn,
+    LockableQueryMixIn,
     cache_response_timewise,
     protect_with_lock,
 )
-from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -255,7 +255,7 @@ class BlockchainBalancesUpdate:
         }
 
 
-class ChainManager(CacheableObject, LockableQueryObject):
+class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     def __init__(
             self,

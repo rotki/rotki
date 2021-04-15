@@ -18,6 +18,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_coinbasepro
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
@@ -41,17 +42,9 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import (
-    ApiKey,
-    ApiSecret,
-    AssetMovementCategory,
-    AssetType,
-    Fee,
-    Location,
-    Timestamp,
-)
+from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.mixins import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:

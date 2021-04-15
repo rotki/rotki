@@ -58,7 +58,8 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.interfaces import EthereumModule, LockableQueryObject, protect_with_lock
+from rotkehlchen.utils.interfaces import EthereumModule
+from rotkehlchen.utils.mixins import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -281,7 +282,7 @@ class LoopringUserNotFound(Exception):
     pass
 
 
-class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryObject):
+class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
 
     def __init__(
             self,

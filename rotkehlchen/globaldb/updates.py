@@ -10,9 +10,10 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 from .handler import GlobalDBHandler

@@ -7,6 +7,7 @@ from eth_utils import is_checksum_address
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_ethereum_token, symbol_to_ethereum_token
 from rotkehlchen.constants.assets import A_DAI
@@ -14,7 +15,6 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError, UnknownAsset
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.typing import AssetType
 from rotkehlchen.utils.hashing import file_md5
 
 

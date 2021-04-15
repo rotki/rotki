@@ -9,6 +9,7 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
@@ -20,7 +21,6 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_GLM
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetType
 
 
 def mock_asset_updates(original_requests_get, latest: int, updates: Dict[str, int], sql_actions: Dict[str, str]):  # noqa: E501

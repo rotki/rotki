@@ -1,9 +1,10 @@
 import pytest
 
+from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.globaldb.updates import AssetsUpdater
-from rotkehlchen.typing import AssetData, AssetType, Timestamp
+from rotkehlchen.typing import Timestamp
 
 
 @pytest.fixture(name='assets_updater')
