@@ -212,7 +212,7 @@ jobs:
             ${{ steps.packaging.outputs.binary }}
             ${{ steps.packaging.outputs.binary_checksum }}
 
-  build-osx:
+  build-macos:
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -335,6 +335,7 @@ jobs:
 
   build-docker:
     runs-on: ubuntu-18.04
+    environment: docker
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -352,6 +353,15 @@ jobs:
           POSTFIX=$(if git describe --tags --exact-match "$REVISION" &>/dev/null; then echo ''; else echo '-dev'; fi)
           ROTKI_VERSION=${ROTKI_VERSION}${POSTFIX}-$(date +'%Y.%m.%d')
           echo "::set-output name=version::${ROTKI_VERSION}"
+      - name: Docker Tag
+        id: docker_tag
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == 'schedule' ]]; then
+            TAG=nightly
+          else
+            TAG=dev
+          fi
+          echo "::set-output name=tag::$TAG"
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v2
@@ -359,7 +369,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: rotki/rotki:nightly
+          tags: rotki/rotki:${{ steps.docker_tag.outputs.tag }}
           build-args: |
             REVISION=${{ github.sha }}
             ROTKI_VERSION=${{ steps.rotki_version.outputs.version }}

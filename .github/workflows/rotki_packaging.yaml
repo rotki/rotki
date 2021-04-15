@@ -344,6 +344,7 @@ jobs:
 
   docker:
     runs-on: ubuntu-18.04
+    environment: docker
     steps:
       - name: Checkout
         uses: actions/checkout@v2
