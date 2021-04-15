@@ -19,6 +19,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
       - name: Setup SQLCipher
         run: |
           if [ ${{ matrix.os }} == 'ubuntu-18.04' ];
@@ -84,6 +86,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
       - name: Set up python
         uses: actions/setup-python@v1
         with:
