@@ -164,10 +164,11 @@ jobs:
           asset_name: ${{ steps.packaging.outputs.backend_binary_checksum_name }}
           asset_content_type: text/plain
 
-  osx:
+  macos:
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    environment: macos_sign
     strategy:
       matrix:
         os: [macos-latest]
