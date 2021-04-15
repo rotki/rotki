@@ -201,7 +201,7 @@ jobs:
       - name: Setup SQLCipher
         run: |
           cd "$(brew --repo homebrew/core)"
-          git checkout 2731bfdc785e85de8242b164acbf4fcb627a91e2 Formula/sqlcipher.rb #This formula installs 4.4.0 of sqlcipher
+          git checkout 31f4d9cef46b1c39cdbe2f72ab682b5d0b02cf67 Formula/sqlcipher.rb #This formula installs 4.4.3 of sqlcipher
           brew install sqlcipher
       - name: Package
         id: packaging
@@ -258,7 +258,7 @@ jobs:
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SQLCIPHER_VERSION: 'v4.4.0'
+      SQLCIPHER_VERSION: 'v4.4.3'
       PYSQLCIPHER3_VERSION: 'fd1b547407bcb7198107fe3c458105286a060b0d'
       BUILD_DEPENDENCIES: "build-dependencies"
     strategy:
