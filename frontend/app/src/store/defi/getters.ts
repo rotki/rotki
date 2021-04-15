@@ -1482,7 +1482,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     return balances;
   },
   balancerAddresses: ({ balancerBalances }) => Object.keys(balancerBalances),
-  balancerEvents: ({ balancerEvents }) => (addresses): BalancerEvent[] => {
+  balancerEvents: (
+    { balancerEvents },
+    _dg,
+    _rs,
+    { 'balances/assetSymbol': assetSymbol }
+  ) => (addresses): BalancerEvent[] => {
     const events: BalancerEvent[] = [];
     filterAddresses(balancerEvents, addresses, item => {
       for (let i = 0; i < item.length; i++) {
@@ -1492,7 +1497,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
             ...value,
             pool: {
               name: poolDetail.poolTokens
-                .map(pool => assetIdentifier(pool.token))
+                .map(pool => assetSymbol(pool.token))
                 .join('/'),
               address: poolDetail.poolAddress
             }
