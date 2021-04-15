@@ -68,7 +68,7 @@ jobs:
           fi
           python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
       - name: Upload coverage
-        run: bash <(curl -s https://codecov.io/bash) -F backend
+        run: bash ./.github/.codecov -F backend
 
   test-integration:
     if: ${{ github.event_name == 'schedule' }}
@@ -137,7 +137,7 @@ jobs:
           npm run test:integration-ci
       - name: Upload coverage
         working-directory: ./frontend/app
-        run: cd .. && bash <(curl -s https://codecov.io/bash) -F frontend_integration
+        run: cd ../.. && ./.github/.codecov -F frontend_integration
       - uses: actions/upload-artifact@v2
         if: failure()
         with:
