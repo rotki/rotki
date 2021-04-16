@@ -145,7 +145,14 @@ def deserialize_adex_event_from_db(
             )
 
         try:
-            token = EthereumToken(event_tuple[13])   # type: ignore # type already checked
+            token = EthereumToken.from_identifier(
+                event_tuple[13],   # type: ignore # type already checked
+            )
+            if token is None:
+                raise DeserializationError(
+                    f'Unknown {event_tuple[13]} found while processing adex event. '
+                    f'Unexpected data: {event_tuple}',
+                )
         except (UnknownAsset, UnsupportedAsset) as e:
             asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
             raise DeserializationError(
