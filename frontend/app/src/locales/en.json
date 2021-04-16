@@ -382,6 +382,10 @@
     "loading": "Please wait while your eth2 staking details are getting loaded..."
   },
   "asset_management": {
+    "confirm_delete": {
+      "message": "Are you sure you want to delete {asset} from the asset database?",
+      "title": "Delete asset"
+    },
     "delete_error": "Could not delete {address}: {message}",
     "title": "Asset Management",
     "add_title": "Add a new asset",
