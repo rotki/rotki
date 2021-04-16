@@ -3,7 +3,7 @@ from typing import Union
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
-from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
@@ -143,22 +143,12 @@ def deserialize_adex_event_from_db(
             raise DeserializationError(
                 f'Failed to deserialize channel withdraw event. Unexpected data: {event_tuple}.',
             )
-
-        try:
-            token = EthereumToken.from_identifier(
-                event_tuple[13],   # type: ignore # type already checked
-            )
-            if token is None:
-                raise DeserializationError(
-                    f'Unknown {event_tuple[13]} found while processing adex event. '
-                    f'Unexpected data: {event_tuple}',
-                )
-        except (UnknownAsset, UnsupportedAsset) as e:
-            asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
+        token = EthereumToken.from_identifier(event_tuple[13])   # type: ignore
+        if token is None:
             raise DeserializationError(
-                f'{asset_tag} {e.asset_name} found while processing adex event. '
+                f'Unknown token {event_tuple[13]} found while processing adex event. '
                 f'Unexpected data: {event_tuple}',
-            ) from e
+            )
 
         return ChannelWithdraw(
             tx_hash=tx_hash,
