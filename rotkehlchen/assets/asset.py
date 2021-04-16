@@ -45,6 +45,10 @@ WORLD_TO_BITTREX = {
     strethaddress_to_identifier('0xF411903cbC70a74d22900a5DE66A2dda66507255'): 'VRA',
 }
 
+WORLD_TO_FTX = {
+    strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
+}
+
 WORLD_TO_POLONIEX = {
     # AIR-2 is aircoin for us and AIR is airtoken. Poloniex has only aircoin
     'AIR-2': 'AIR',
@@ -201,6 +205,8 @@ WORLD_TO_BITFINEX = {
     'BCH': 'BCHABC',
     'CNY': 'CNH',
     'DOGE': 'DOG',
+    'LUNA-2': 'LUNA',
+    strethaddress_to_identifier('0xb1f871Ae9462F1b2C6826E88A7827e76f86751d4'): 'GNY',
     # make sure REP maps to latest one in bitfinex
     strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REP',
     # TRIO is TRI in bitfinex
