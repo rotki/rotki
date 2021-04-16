@@ -7,14 +7,13 @@ import platform
 import re
 import sys
 import time
-from pathlib import Path
 from typing import Any, Callable, DefaultDict, Dict, Iterator, List, TypeVar, Union, overload
 
 import pkg_resources
 from eth_utils.address import to_checksum_address
 from rlp.sedes import big_endian_int
 
-from rotkehlchen.constants import PRICE_HISTORY_DIR, ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -35,6 +34,12 @@ def ts_now_in_ms() -> TimestampMS:
 def create_timestamp(datestr: str, formatstr: str = '%Y-%m-%d %H:%M:%S') -> Timestamp:
     """Can throw ValueError due to strptime"""
     return Timestamp(calendar.timegm(time.strptime(datestr, formatstr)))
+
+
+def timestamp_to_daystart_timestamp(timestamp: Timestamp) -> Timestamp:
+    """Turns the given timestamp to the timestamp of the start of the day"""
+    date = timestamp_to_date(timestamp, formatstr='%Y-%m-%d')
+    return create_timestamp(date, formatstr='%Y-%m-%d')
 
 
 FRACTION_SECS_RE = re.compile(r'.*\.(\d+).*')
@@ -328,9 +333,3 @@ def rgetattr(obj: Any, attr: str, *args: Any) -> Any:
     def _getattr(obj: Any, attr: str) -> Any:
         return getattr(obj, attr, *args)
     return functools.reduce(_getattr, [obj] + attr.split('.'))
-
-
-def get_or_make_price_history_dir(data_directory: Path) -> Path:
-    price_history_dir = data_directory / PRICE_HISTORY_DIR
-    price_history_dir.mkdir(parents=True, exist_ok=True)
-    return price_history_dir

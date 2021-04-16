@@ -20,18 +20,23 @@ class HistoricalPriceOracle(DBEnumMixIn):
     MANUAL = 1
     COINGECKO = 2
     CRYPTOCOMPARE = 3
+    XRATESCOM = 4
 
     def serialize(self) -> str:
         return str(self)
 
     @classmethod
     def deserialize(cls, name: str) -> 'HistoricalPriceOracle':
-        if name == 'coingecko':
-            return cls.COINGECKO
-        if name == 'cryptocompare':
-            return cls.CRYPTOCOMPARE
-        raise DeserializationError(f'Failed to deserialize historical price oracle: {name}')
+        try:
+            return getattr(cls, name)
+        except AttributeError as e:
+            raise DeserializationError(f'Failed to deserialize historical price oracle: {name}') from e  # noqa: E501
 
+
+NOT_EXPOSED_SOURCES = (
+    HistoricalPriceOracle.MANUAL,
+    HistoricalPriceOracle.XRATESCOM,
+)
 
 DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER = [
     HistoricalPriceOracle.CRYPTOCOMPARE,

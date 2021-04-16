@@ -74,7 +74,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -2806,7 +2806,8 @@ class RestAPI():
     @staticmethod
     def get_supported_oracles() -> Response:
         data = {
-            'history': [{'id': str(x), 'name': str(x).capitalize()} for x in HistoricalPriceOracle],  # noqa: E501
+            # don't expose some sources in the api
+            'history': [{'id': str(x), 'name': str(x).capitalize()} for x in HistoricalPriceOracle if x not in NOT_EXPOSED_SOURCES],  # noqa: E501
             'current': [{'id': str(x), 'name': str(x).capitalize()} for x in CurrentPriceOracle],  # noqa: E501
         }
         result_dict = _wrap_in_ok_result(data)

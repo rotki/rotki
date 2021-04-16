@@ -131,6 +131,8 @@ INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('A', 1);
 INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('B', 2);
 /* CRYPTOCOMPARE */
 INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('C', 3);
+/* XRATESCOM */
+INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('D', 4);
 """
 
 DB_CREATE_PRICE_HISTORY = """
