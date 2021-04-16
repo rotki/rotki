@@ -205,6 +205,8 @@ WORLD_TO_BITFINEX = {
     'BCH': 'BCHABC',
     'CNY': 'CNH',
     'DOGE': 'DOG',
+    'LUNA-2': 'LUNA',
+    strethaddress_to_identifier('0xb1f871Ae9462F1b2C6826E88A7827e76f86751d4'): 'GNY',
     # make sure REP maps to latest one in bitfinex
     strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REP',
     # TRIO is TRI in bitfinex

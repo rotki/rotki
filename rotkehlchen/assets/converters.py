@@ -427,6 +427,8 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'BNTX',
     'BYND',
     'FB',
+    'FOL',  # neither in coingecko nor cryptocompare
+    'GET',  # couldn't find any reference
     'GME',
     'GOOGL',
     'MSTR',
@@ -439,6 +441,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'SQ',
     'TSLA',
     'UPCO2',  # neither in coingecko nor cryptocompare
+    'VIC',  # neither in coingecko nor cryptocompare (VICDeal)
     'WXBTC',  # neither in coingecko nor cryptocompare
     'MTC',  # need to add support for it
 )
@@ -454,6 +457,8 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'NGN',  # https://www.binance.com/en/support/articles/360035511611
     '123',  # https://twitter.com/rotkiapp/status/1161977327078838272
     '456',  # https://twitter.com/rotkiapp/status/1161977327078838272
+    '1INCHDOWN',  # no cryptocompare/coingecko data
+    '1INCHUP',  # no cryptocompare/coingecko data
     'UNIDOWN',  # no cryptocompare/coingecko data
     'UNIUP',  # no cryptocompare/coingecko data
     'SXPDOWN',  # no cryptocompare/coingecko data
@@ -473,6 +478,7 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'B21X',  # no cryptocompare/coingecko data
     'GTX',  # no cryptocompare/coingecko data (GT, Gate.io token)
     'IQX',  # no cryptocompare/coingecko data (EOS token)
+    'BOSON',  # no cryptocompare/coingecko data
 )
 
 UNSUPPORTED_FTX_ASSETS = (
