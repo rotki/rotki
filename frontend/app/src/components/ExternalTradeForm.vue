@@ -291,7 +291,7 @@ export default class ExternalTradeForm extends Vue {
     const trade: Trade = this.edit;
     assert(typeof trade.baseAsset === 'string');
     assert(typeof trade.quoteAsset === 'string');
-    assert(typeof trade.feeCurrency === 'string');
+
     this.base = trade.baseAsset;
     this.quote = trade.quoteAsset;
     this.datetime = moment(trade.timestamp * 1000).format(
@@ -300,7 +300,10 @@ export default class ExternalTradeForm extends Vue {
     this.amount = trade.amount.toString();
     this.rate = trade.rate.toString();
     this.fee = trade.fee?.toString() ?? '';
-    this.feeCurrency = trade.feeCurrency ?? '';
+    this.feeCurrency =
+      trade.feeCurrency && typeof trade.feeCurrency === 'string'
+        ? trade.feeCurrency
+        : '';
     this.link = trade.link ?? '';
     this.notes = trade.notes ?? '';
     this.type = trade.tradeType;
