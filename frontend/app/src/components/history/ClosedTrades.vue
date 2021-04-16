@@ -235,6 +235,7 @@ import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import AssetMixin from '@/mixins/asset-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
 import { IGNORE_TRADES } from '@/store/history/consts';
@@ -269,7 +270,7 @@ import { ActionStatus, Message } from '@/store/types';
     ...mapMutations(['setMessage'])
   }
 })
-export default class ClosedTrades extends Mixins(StatusMixin) {
+export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
   readonly headersClosed: DataTableHeader[] = [
     { text: '', value: 'selection', width: '34px', sortable: false },
     {
@@ -449,8 +450,14 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   }
 
   promptForDelete(trade: TradeEntry) {
+    const prep = (trade.tradeType === 'buy'
+      ? this.$t('closed_trades.description.with').toString()
+      : this.$t('closed_trades.description.for').toString()
+    ).toLocaleLowerCase();
     this.confirmationMessage = this.$t('closed_trades.confirmation.message', {
-      pair: `${trade.baseAsset} ${trade.quoteAsset}`,
+      pair: `${this.getSymbol(trade.baseAsset)} ${prep} ${this.getSymbol(
+        trade.quoteAsset
+      )}`,
       action: trade.tradeType,
       amount: trade.amount
     }).toString();
