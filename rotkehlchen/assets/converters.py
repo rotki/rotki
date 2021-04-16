@@ -498,6 +498,8 @@ UNSUPPORTED_FTX_ASSETS = (
     'FB',
     'GME',
     'GOOGL',
+    'GRTBEAR',  # no cryptocompare/coingecko data
+    'GRTBULL',  # no cryptocompare/coingecko data
     'MSTR',
     'NFLX',
     'NOK',
@@ -525,14 +527,22 @@ UNSUPPORTED_FTX_ASSETS = (
     'MRNA',  # no cryptocompare/coingecko data
     'PENN',  # no cryptocompare/coingecko data
     'SECO',  # pool in bonfida
+    'ZECBULL',  # no cryptocompare/coingecko data
+    'ZECBEAR',  # no cryptocompare/coingecko data
 )
 
 # https://api.kucoin.com/api/v1/currencies
 UNSUPPORTED_KUCOIN_ASSETS = (
+    'ANC',  # Quantity no cryptocompare/coingecko data
     'AXE',  # delisted
+    'BOSON',  # no cryptocompare/coingecko data
+    'BTC3L',  # no cryptocompare/coingecko data
+    'BTC3S',  # no cryptocompare/coingecko data
     'BTCP',  # delisted
     'CADH',  # no cryptocompare/coingecko data
     'EPRX',  # delisted and no cryptocompare/coingecko data
+    'ETH3L',  # no cryptocompare/coingecko data
+    'ETH3S',  # no cryptocompare/coingecko data
     'ETF',  # delisted and no cryptocompare/coingecko data
     'GGC',  # delisted and no cryptocompare/coingecko data
     'GMB',  # delisted
@@ -542,6 +552,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'LOL',  # delisted
     'MAP2',  # delisted
     'MHC',  # delisted
+    'PDEX',  # Polkadex no cryptocompare/coingecko data
     'SATT',  # delisted
     'SERO',  # delisted
     'SPRK',  # delisted
