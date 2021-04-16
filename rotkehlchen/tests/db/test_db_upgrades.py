@@ -7,8 +7,8 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.accounting.structures import BalanceType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
@@ -1451,6 +1451,17 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
         copyfile(test_icondata_dir / name, icons_dir / name)
     icon_files = list(icons_dir.glob('*.*'))
     assert len(icon_files) == 3
+    # create some fake history cache files
+    price_history_dir = user_data_dir.parent / 'price_history'
+    price_history_dir.mkdir(parents=True, exist_ok=True)
+    history_cache_files = [
+        price_history_dir / 'cc_price_history_BTC_EUR.json',
+        price_history_dir / 'price_history_forex.json',
+        price_history_dir / 'gecko_price_history_XMR_USD.json',
+    ]
+    for price_file in history_cache_files:
+        price_file.touch(mode=0o666, exist_ok=True)
+        assert price_file.is_file()
 
     cursor = db_v24.conn.cursor()
     # Checks before migration
@@ -1707,6 +1718,11 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     # Check that cached icons were purged but custom icons were not
     assert (custom_icons_dir / custom_icon_filename).is_file()
     assert not any(x.is_file() for x in icons_dir.glob('*.*'))
+
+    # Check that the cache history files no longer exist
+    for price_file in history_cache_files:
+        assert not price_file.is_file()
+    assert not price_history_dir.is_dir()
 
     # Check errors/warnings
     warnings = msg_aggregator.consume_warnings()
