@@ -797,7 +797,8 @@ class Rotkehlchen():
                 force_token_detection=ignore_cache,
                 ignore_cache=ignore_cache,
             )
-            balances[str(Location.BLOCKCHAIN)] = blockchain_result.totals.assets
+            if len(blockchain_result.totals.assets) != 0:
+                balances[str(Location.BLOCKCHAIN)] = blockchain_result.totals.assets
             liabilities = blockchain_result.totals.liabilities
         except (RemoteError, EthSyncError) as e:
             problem_free = False
@@ -806,7 +807,9 @@ class Rotkehlchen():
 
         # retrieve loopring balances if module is activated
         if self.chain_manager.get_module('loopring'):
-            balances[str(Location.LOOPRING)] = self.chain_manager.get_loopring_balances()
+            loopring_balances = self.chain_manager.get_loopring_balances()
+            if len(loopring_balances) != 0:
+                balances[str(Location.LOOPRING)] = loopring_balances
 
         balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)
 

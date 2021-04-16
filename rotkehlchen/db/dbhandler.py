@@ -3133,7 +3133,7 @@ class DBHandler:
         cursor = self.conn.cursor()
         results = cursor.execute(
             'SELECT time, location, usd_value FROM timed_location_data WHERE '
-            'time=(SELECT MAX(time) FROM timed_location_data);',
+            'time=(SELECT MAX(time) FROM timed_location_data) AND usd_value!=0;',
         )
         results = results.fetchall()
 
