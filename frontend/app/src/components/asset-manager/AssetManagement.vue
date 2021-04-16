@@ -13,8 +13,7 @@
       :change="!loading"
       @add="add()"
       @edit="edit($event)"
-      @delete-token="deleteToken($event)"
-      @delete-asset="deleteAsset($event)"
+      @delete-asset="toDeleteAsset = $event"
     />
     <big-dialog
       :display="showForm"
@@ -33,6 +32,17 @@
         :saving="saving"
       />
     </big-dialog>
+    <confirm-dialog
+      :title="$t('asset_management.confirm_delete.title')"
+      :message="
+        $t('asset_management.confirm_delete.message', {
+          asset: deleteAssetSymbol
+        })
+      "
+      :display="!!toDeleteAsset"
+      @confirm="confirmDelete"
+      @cancel="toDeleteAsset = null"
+    />
   </v-container>
 </template>
 
@@ -43,12 +53,15 @@ import AssetForm from '@/components/asset-manager/AssetForm.vue';
 import AssetTable from '@/components/asset-manager/AssetTable.vue';
 import { ManagedAsset } from '@/components/asset-manager/types';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { EthereumToken } from '@/services/assets/types';
 import { SupportedAsset } from '@/services/types-model';
 import { showError } from '@/store/utils';
+import { Nullable } from '@/types';
+import { assert } from '@/utils/assertions';
 
 @Component({
-  components: { AssetForm, BigDialog, AssetTable },
+  components: { ConfirmDialog, AssetForm, BigDialog, AssetTable },
   computed: {
     ...mapState('balances', ['supportedAssets'])
   }
@@ -59,8 +72,13 @@ export default class AssetManagement extends Vue {
   validForm: boolean = false;
   showForm: boolean = false;
   saving: boolean = false;
-  token: ManagedAsset | null = null;
+  token: Nullable<ManagedAsset> = null;
   supportedAssets!: SupportedAsset[];
+  toDeleteAsset: Nullable<ManagedAsset> = null;
+
+  get deleteAssetSymbol(): string {
+    return this.toDeleteAsset?.symbol ?? '';
+  }
 
   get dialogTitle(): string {
     return this.token
@@ -105,6 +123,17 @@ export default class AssetManagement extends Vue {
       this.token = null;
     }
     this.saving = false;
+  }
+
+  async confirmDelete() {
+    const asset = this.toDeleteAsset;
+    this.toDeleteAsset = null;
+    assert(asset !== null);
+    if ('assetType' in asset) {
+      await this.deleteAsset(asset.identifier);
+    } else {
+      await this.deleteToken(asset.address);
+    }
   }
 
   async deleteToken(address: string) {
