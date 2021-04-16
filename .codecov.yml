@@ -10,9 +10,11 @@ coverage:
 
 flags:
   backend:
+    carryforward: true
     paths:
       - rotkehlchen
   frontend_unit:
+    carryforward: true
     paths:
       - frontend/app
   frontend_integration:
