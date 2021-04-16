@@ -11,8 +11,7 @@ from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
-from rotkehlchen.history import PriceHistorian
-from rotkehlchen.history.price import get_balance_asset_rate_at_time_zero_if_error
+from rotkehlchen.history.price import PriceHistorian, get_balance_asset_rate_at_time_zero_if_error
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator

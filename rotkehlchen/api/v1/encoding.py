@@ -35,6 +35,7 @@ from rotkehlchen.errors import DeserializationError, EncodingError, UnknownAsset
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
@@ -44,7 +45,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_hex_color_code,
     deserialize_location,
-    deserialize_price,
     deserialize_timestamp,
     deserialize_trade_type,
 )

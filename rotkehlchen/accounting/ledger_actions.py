@@ -4,11 +4,11 @@ from typing import Any, Dict, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import DeserializationError
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_location_from_db,
     deserialize_optional,
-    deserialize_price,
     deserialize_timestamp,
 )
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, Tuple

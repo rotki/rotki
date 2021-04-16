@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup, SoupStrainer
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
-from rotkehlchen.serialization.deserialize import deserialize_price
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 

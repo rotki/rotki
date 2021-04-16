@@ -4,9 +4,14 @@ from typing import List, Optional
 
 import pytest
 
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
-from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
+from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.tests.utils.constants import A_EUR
+from rotkehlchen.typing import Price, Timestamp
 
 
 @pytest.fixture(name='custom_ethereum_tokens')
@@ -47,3 +52,81 @@ def fixture_globaldb(globaldb_version, tmpdir_factory):
 @pytest.fixture(name='globaldb_version')
 def fixture_globaldb_version() -> Optional[int]:
     return None
+
+
+@pytest.fixture(name='historical_price_test_data')
+def fixture_historical_price_test_data(globaldb):
+    data = [HistoricalPrice(
+        from_asset=A_BTC,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        timestamp=Timestamp(1428994442),
+        price=Price(FVal(210.865)),
+    ), HistoricalPrice(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        timestamp=Timestamp(1439048640),
+        price=Price(FVal(1.13)),
+    ), HistoricalPrice(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        timestamp=Timestamp(1511626623),
+        price=Price(FVal(396.56)),
+    ), HistoricalPrice(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.COINGECKO,
+        timestamp=Timestamp(1511626622),
+        price=Price(FVal(394.56)),
+    ), HistoricalPrice(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        timestamp=Timestamp(1539713117),
+        price=Price(FVal(178.615)),
+    ), HistoricalPrice(
+        from_asset=A_BTC,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        timestamp=Timestamp(1539713117),
+        price=Price(FVal(5626.17)),
+    ), HistoricalPrice(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.COINGECKO,
+        timestamp=Timestamp(1618481088),
+        price=Price(FVal(2044.76)),
+    ), HistoricalPrice(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.COINGECKO,
+        timestamp=Timestamp(1618481095),
+        price=Price(FVal(2045.76)),
+    ), HistoricalPrice(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.COINGECKO,
+        timestamp=Timestamp(1618481101),
+        price=Price(FVal(2049.76)),
+    ), HistoricalPrice(
+        from_asset=A_BTC,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.COINGECKO,
+        timestamp=Timestamp(1618481102),
+        price=Price(FVal(52342.5)),
+    ), HistoricalPrice(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.COINGECKO,
+        timestamp=Timestamp(1618481103),
+        price=Price(FVal(2049.96)),
+    ), HistoricalPrice(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.COINGECKO,
+        timestamp=Timestamp(1618481196),
+        price=Price(FVal(2085.76)),
+    )]
+    globaldb.add_historical_prices(data)

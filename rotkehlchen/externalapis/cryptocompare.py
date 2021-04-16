@@ -1,22 +1,9 @@
 import logging
 import os
-import re
 from collections import deque
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Deque,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    NamedTuple,
-    NewType,
-    Optional,
-    Tuple,
-)
+from typing import TYPE_CHECKING, Any, Deque, Dict, Iterable, Iterator, List, NamedTuple, Optional
 
 import gevent
 import requests
@@ -52,6 +39,7 @@ from rotkehlchen.constants.assets import (
     A_ZRX,
 )
 from rotkehlchen.errors import (
+    DeserializationError,
     NoPriceForGivenTimestamp,
     PriceQueryUnsupportedAsset,
     RemoteError,
@@ -59,14 +47,12 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ExternalService, Price, Timestamp
-from rotkehlchen.utils.misc import (
-    convert_to_int,
-    get_or_make_price_history_dir,
-    timestamp_to_date,
-    ts_now,
-)
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 if TYPE_CHECKING:
@@ -75,11 +61,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-PRICE_HISTORY_FILE_PREFIX = 'cc_price_history_'
-
-
-T_PairCacheKey = str
-PairCacheKey = NewType('PairCacheKey', T_PairCacheKey)
 
 RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 CRYPTOCOMPARE_QUERY_RETRY_TIMES = 3
@@ -179,8 +160,6 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 CRYPTOCOMPARE_HOURQUERYLIMIT = 2000
 
-METADATA_RE = re.compile('.*"start_time": *(.*), *"end_time": *(.*), "data".*')
-
 
 class PriceHistoryEntry(NamedTuple):
     time: Timestamp
@@ -263,61 +242,14 @@ def _check_hourly_data_sanity(
         index += 2
 
 
-def _get_cache_key(from_asset: Asset, to_asset: Asset) -> Optional[PairCacheKey]:
-    try:  # first see if they both support cryptocompare
-        from_asset.to_cryptocompare()
-        to_asset.to_cryptocompare()
-    except UnsupportedAsset:
-        return None
-
-    return PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
-
-
-def _write_history_data_in_file(
-        data: List[Dict[str, Any]],
-        filepath: Path,
-        start_ts: Timestamp,
-        end_ts: Timestamp,
-) -> None:
-    log.info(
-        'Writing history file',
-        filepath=filepath,
-        start_time=start_ts,
-        end_time=end_ts,
-    )
-    with open(filepath, 'w') as outfile:
-        history_dict: Dict[str, Any] = {}
-        # From python 3.5 dict order should be preserved so we can expect
-        # start and end time to come before the data in the file
-        history_dict['start_time'] = start_ts
-        history_dict['end_time'] = end_ts
-        history_dict['data'] = data
-        outfile.write(rlk_jsondumps(history_dict))
-
-
 class Cryptocompare(ExternalServiceWithApiKey):
     def __init__(self, data_directory: Path, database: Optional['DBHandler']) -> None:
         super().__init__(database=database, service_name=ExternalService.CRYPTOCOMPARE)
         self.data_directory = data_directory
-        self.price_history: Dict[PairCacheKey, PriceHistoryData] = {}
-        self.price_history_file: Dict[PairCacheKey, Path] = {}
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.last_histohour_query_ts = 0
         self.last_rate_limit = 0
-
-        price_history_dir = get_or_make_price_history_dir(data_directory)
-        # Check the data folder and remember the filenames of any cached history
-        prefix = os.path.join(str(price_history_dir), PRICE_HISTORY_FILE_PREFIX)
-        prefix = prefix.replace('\\', '\\\\')
-        regex = re.compile(prefix + r'(.*)\.json')
-
-        for file_ in price_history_dir.rglob(PRICE_HISTORY_FILE_PREFIX + '*.json'):
-            file_str = str(file_).replace('\\\\', '\\')
-            match = regex.match(file_str)
-            assert match
-            cache_key = PairCacheKey(match.group(1))
-            self.price_history_file[cache_key] = file_
 
     def can_query_history(
             self,
@@ -331,17 +263,18 @@ class Cryptocompare(ExternalServiceWithApiKey):
         - Existence of a cached price
         - Last rate limit
         """
-        cached_data = self._got_cached_data_at_timestamp(
+        data_range = GlobalDBHandler().get_historical_price_range(
             from_asset=from_asset,
             to_asset=to_asset,
-            timestamp=timestamp,
+            source=HistoricalPriceOracle.CRYPTOCOMPARE,
         )
+        got_cached_data = data_range is not None and data_range[0] <= timestamp <= data_range[1]
         rate_limited = self.rate_limited_in_last(seconds)
-        can_query = cached_data is not None or not rate_limited
+        can_query = got_cached_data or not rate_limited
         logger.debug(
             f'{"Will" if can_query else "Will not"} query '
             f'Cryptocompare history for {from_asset.identifier} -> '
-            f'{to_asset.identifier} @ {timestamp}. Cached data: {cached_data is not None}'
+            f'{to_asset.identifier} @ {timestamp}. Cached data: {got_cached_data}'
             f' rate_limited in last {seconds} seconds: {rate_limited}',
         )
         return can_query
@@ -626,144 +559,6 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         return Price(FVal(result[cc_from_asset_symbol][cc_to_asset_symbol]))
 
-    def get_cached_data(self, from_asset: Asset, to_asset: Asset) -> Optional[PriceHistoryData]:
-        """Get the cached data for a pair if they exist. This reads the entire file,
-        gets the metadata, and the data itself, and loops through it to convert it
-        to our own data structure.
-
-        It can be rather slow for big files.
-        """
-        cache_key = _get_cache_key(from_asset=from_asset, to_asset=to_asset)
-        if cache_key is None or cache_key not in self.price_history_file:
-            return None
-
-        if cache_key not in self.price_history:
-            try:
-                with open(self.price_history_file[cache_key], 'r') as f:
-                    data = jsonloads_dict(f.read())
-                    self.price_history[cache_key] = _dict_history_to_data(data)
-            except (OSError, JSONDecodeError):
-                return None
-
-        return self.price_history[cache_key]
-
-    def _read_cachefile_metadata(
-            self,
-            cache_key: PairCacheKey,
-    ) -> Optional[Tuple[Timestamp, Timestamp]]:
-        """Read only the start of the json file and get start/end time
-
-        MUCH faster than reading the entire file, since these files can become hundreds of MBs
-        """
-        try:
-            with open(self.price_history_file[cache_key], 'r') as f:
-                f.seek(0)
-                data = f.read(100)  # first 100 bytes, should contain the data
-        except OSError:
-            return None
-
-        match = METADATA_RE.match(data)
-        if not match:
-            return None
-        result = match.group(1, 2)
-        if any(x is None for x in result):
-            return None
-
-        try:
-            start_ts = Timestamp(int(result[0]))
-            end_ts = Timestamp(int(result[1]))
-        except ValueError:
-            return None
-
-        return start_ts, end_ts
-
-    def get_cached_data_metadata(
-            self,
-            from_asset: Asset,
-            to_asset: Asset,
-    ) -> Optional[Tuple[Timestamp, Timestamp]]:
-        """Get the cached data metadata for a pair if they exist.
-        This reads only the start of the json file to get the metadata.
-
-        Should be a faster way that get_cached_data to check if a cache exists and
-        get only its metadata. start and end time.
-        """
-        cache_key = _get_cache_key(from_asset=from_asset, to_asset=to_asset)
-        if cache_key is None or cache_key not in self.price_history_file:
-            return None
-
-        memcache = self.price_history.get(cache_key, None)
-        if memcache is not None:
-            return memcache.start_time, memcache.end_time
-
-        return self._read_cachefile_metadata(cache_key)
-
-    def _got_cached_data_at_timestamp(
-            self,
-            from_asset: Asset,
-            to_asset: Asset,
-            timestamp: Timestamp,
-    ) -> Optional[PriceHistoryData]:
-        """Check if we got a price history for the timestamp cached"""
-        data = self.get_cached_data(from_asset, to_asset)
-        if data is not None and data.start_time <= timestamp < data.end_time:
-            return data
-
-        return None
-
-    @staticmethod
-    def _retrieve_price_from_data(
-            data: Optional[List[PriceHistoryEntry]],
-            from_asset: Asset,
-            to_asset: Asset,
-            timestamp: Timestamp,
-    ) -> Price:
-        """Reads historical price data list returned from cryptocompare histohour
-        or cache and returns a price.
-
-        If nothing is found it returns Price(0). This can also happen if cryptocompare
-        returns a list of 0s for the timerange.
-        """
-        price = Price(ZERO)
-        if data is None or len(data) == 0:
-            return price
-
-        # all data are sorted and timestamps are always increasing by 1 hour
-        # find the closest entry to the provided timestamp
-        if timestamp >= data[0].time:
-            index_in_bounds = True
-            # convert_to_int can't raise here due to its input
-            index = convert_to_int((timestamp - data[0].time) / 3600, accept_only_exact=False)
-            if index > len(data) - 1:  # index out of bounds
-                # Try to see if index - 1 is there and if yes take it
-                if index > len(data):
-                    index = index - 1
-                else:  # give up. This happened: https://github.com/rotki/rotki/issues/1534
-                    log.error(
-                        f'Expected data index in cryptocompare historical hour price '
-                        f'not found. Queried price of: {from_asset.identifier} in '
-                        f'{to_asset.identifier} at {timestamp}. Data '
-                        f'index: {index}. Length of returned data: {len(data)}. '
-                        f'https://github.com/rotki/rotki/issues/1534. Attempting other methods...',
-                    )
-                    index_in_bounds = False
-
-            if index_in_bounds:
-                diff = abs(data[index].time - timestamp)
-                if index + 1 <= len(data) - 1:
-                    diff_p1 = abs(data[index + 1].time - timestamp)
-                    if diff_p1 < diff:
-                        index = index + 1
-
-                if data[index].high is not None and data[index].low is not None:
-                    price = Price((data[index].high + data[index].low) / 2)
-
-        else:
-            # no price found in the historical data from/to asset, try alternatives
-            price = Price(ZERO)
-
-        return price
-
     def _get_histohour_data_for_range(
             self,
             from_asset: Asset,
@@ -844,48 +639,6 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         return calculated_history
 
-    def get_all_cache_data(self) -> List[Dict[str, Any]]:
-        """Returns all current cryptocompare cache data
-
-        Each list entry contains from/to asset ids and from to timestamps
-        """
-        cache_data = []
-        for cache_key in self.price_history_file:
-            memcache = self.price_history.get(cache_key, None)
-            if memcache:
-                from_timestamp = memcache.start_time
-                to_timestamp = memcache.end_time
-            else:
-                metadata = self._read_cachefile_metadata(cache_key)
-                if metadata is None:
-                    continue
-                from_timestamp, to_timestamp = metadata
-
-            # cache key has to be valid here. Also note that the assets are
-            from_asset, to_asset = cache_key.split('_')
-            cache_data.append({
-                'from_asset': from_asset,
-                'to_asset': to_asset,
-                'from_timestamp': from_timestamp,
-                'to_timestamp': to_timestamp,
-            })
-
-        return cache_data
-
-    def delete_cache(self, from_asset: Asset, to_asset: Asset) -> None:
-        """Deletes a cache if it exists. Does nothing if it does not"""
-        cache_key = _get_cache_key(from_asset=from_asset, to_asset=to_asset)
-        if cache_key is None:
-            return
-
-        self.price_history.pop(cache_key, None)
-        filename = self.price_history_file.get(cache_key, None)
-        if filename:
-            try:
-                filename.unlink()
-            except FileNotFoundError:  # TODO: In python 3.8 we can add missing_ok=True to unlink  # noqa: E501
-                pass
-
     def create_cache(
             self,
             from_asset: Asset,
@@ -904,12 +657,12 @@ class Cryptocompare(ExternalServiceWithApiKey):
         now = ts_now()
 
         # If we got cached data for up to 1 hour ago there is no point doing anything
-        cached_data = self._got_cached_data_at_timestamp(
+        data_range = GlobalDBHandler().get_historical_price_range(
             from_asset=from_asset,
             to_asset=to_asset,
-            timestamp=Timestamp(now - 3600),
+            source=HistoricalPriceOracle.CRYPTOCOMPARE,
         )
-        if cached_data and not purge_old:
+        if data_range and now - data_range[1] < 3600 and not purge_old:
             log.debug(
                 'Did not create new cache since we got cache until 1 hour ago',
                 from_asset=from_asset,
@@ -918,141 +671,106 @@ class Cryptocompare(ExternalServiceWithApiKey):
             return
 
         if purge_old:
-            cache_key = _get_cache_key(from_asset=from_asset, to_asset=to_asset)
-            if cache_key and cache_key in self.price_history_file:
-                filename = self.price_history_file[cache_key]
-                self.price_history.pop(cache_key, None)
-                try:
-                    filename.unlink()
-                except FileNotFoundError:  # TODO: In python 3.8 we can add missing_ok=True to unlink  # noqa: E501
-                    pass
-
-        self.get_historical_data(
+            GlobalDBHandler().delete_historical_prices(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                source=HistoricalPriceOracle.CRYPTOCOMPARE,
+            )
+        self.query_and_store_historical_data(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=now,
-            only_check_cache=False,
         )
 
-    def get_historical_data(
+    def query_and_store_historical_data(
             self,
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
-            only_check_cache: bool,
-    ) -> Optional[List[PriceHistoryEntry]]:
+    ) -> None:
         """
-        Get historical hour price data from cryptocompare
-
-        Returns a sorted list of price entries.
-
-        If only_check_cache is True then if the data is not cached locally this will return None
+        Get historical hour price data from cryptocompare and populate the global DB
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
         - May raise UnsupportedAsset if from/to asset is not supported by cryptocompare
         """
         log.debug(
-            'Retrieving historical price data from cryptocompare',
+            'Retrieving historical hour price data from cryptocompare',
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
         )
-        cached_data = self._got_cached_data_at_timestamp(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            timestamp=timestamp,
-        )
-        if cached_data is not None:
-            return cached_data.data
-
-        if only_check_cache:
-            return None
-
-        cache_key = _get_cache_key(from_asset=from_asset, to_asset=to_asset)
-        if cache_key is None:
-            return None
 
         now_ts = ts_now()
         # save time at start of the query, in case the query does not complete due to rate limit
         self.last_histohour_query_ts = now_ts
-        if cache_key in self.price_history:
-            old_data = self.price_history[cache_key].data
-            transformed_old_data = deque([x._asdict() for x in old_data])
-            if timestamp > self.price_history[cache_key].end_time:
+        range_result = GlobalDBHandler().get_historical_price_range(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        )
+
+        if range_result is not None:
+            first_cached_ts, last_cached_ts = range_result
+            if timestamp > last_cached_ts:
                 # We have a cache but the requested timestamp does not hit it
                 new_data = self._get_histohour_data_for_range(
                     from_asset=from_asset,
                     to_asset=to_asset,
                     from_timestamp=now_ts,
-                    to_timestamp=self.price_history[cache_key].end_time,
+                    to_timestamp=last_cached_ts,
                 )
-                if len(new_data) == 0:
-                    new_history = transformed_old_data
-                else:
-                    if len(old_data) != 0 and old_data[-1].time == new_data[0]['time']:
-                        transformed_old_data.pop()
-                    new_history = transformed_old_data + new_data
-
             else:
                 # only other possibility, timestamp < cached start_time
-                # Get all available data, even before to_timestamp
                 new_data = self._get_histohour_data_for_range(
                     from_asset=from_asset,
                     to_asset=to_asset,
-                    from_timestamp=self.price_history[cache_key].start_time,
+                    from_timestamp=first_cached_ts,
                     to_timestamp=Timestamp(0),
                 )
-                if len(new_data) == 0:
-                    new_history = transformed_old_data
-                else:
-                    if len(old_data) != 0 and new_data[-1]['time'] == old_data[0].time:
-                        new_data.pop()
-                    new_history = new_data + transformed_old_data
-
-            calculated_history = list(new_history)
 
         else:
-            calculated_history = list(self._get_histohour_data_for_range(
+            new_data = self._get_histohour_data_for_range(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 from_timestamp=now_ts,
                 to_timestamp=Timestamp(0),
-            ))
+            )
+
+        calculated_history = list(new_data)
 
         if len(calculated_history) == 0:
-            return []  # empty list means we found nothing
+            return
 
         # Let's always check for data sanity for the hourly prices.
         _check_hourly_data_sanity(calculated_history, from_asset, to_asset)
-        # and now since we actually queried the data let's also cache them
-        filename = (
-            get_or_make_price_history_dir(self.data_directory) /
-            (PRICE_HISTORY_FILE_PREFIX + cache_key + '.json')
-        )
-        log.info(
-            'Updating price history cache',
-            filename=filename,
-            from_asset=from_asset,
-            to_asset=to_asset,
-        )
-        _write_history_data_in_file(
-            data=calculated_history,
-            filepath=filename,
-            start_ts=calculated_history[0]['time'],
-            end_ts=now_ts,
-        )
+        # Turn them into the format we will enter in the DB
+        prices = []
+        for entry in calculated_history:
+            try:
+                price = Price((deserialize_price(entry['high']) + deserialize_price(entry['low'])) / 2)  # noqa: E501
+                if price == Price(ZERO):
+                    continue  # don't write zero prices
+                prices.append(HistoricalPrice(
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                    source=HistoricalPriceOracle.CRYPTOCOMPARE,
+                    timestamp=Timestamp(entry['time']),
+                    price=price,
+                ))
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                log.error(
+                    f'{str(e)}. Error getting price entry from cryptocompare histohour '
+                    f'price results. Skipping entry.',
+                )
+                continue
 
-        # Finally save the objects in memory and return them
-        data_including_time = {
-            'data': calculated_history,
-            'start_time': calculated_history[0]['time'],
-            'end_time': now_ts,
-        }
-        self.price_history_file[cache_key] = filename
-        self.price_history[cache_key] = _dict_history_to_data(data_including_time)
+        GlobalDBHandler().add_historical_prices(prices)
         self.last_histohour_query_ts = ts_now()  # also save when last query finished
-        return self.price_history[cache_key].data
 
     @staticmethod
     def _check_and_get_special_histohour_price(
@@ -1112,6 +830,9 @@ class Cryptocompare(ExternalServiceWithApiKey):
         - RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
         """
+        # TODO: Figure out a better way to log and return. Only thing I can imagine
+        # is nested ifs (ugly af) or a different function (meh + performance).
+
         # NB: check if the from..to asset price (or viceversa) is a special
         # histohour API case.
         price = self._check_and_get_special_histohour_price(
@@ -1120,32 +841,28 @@ class Cryptocompare(ExternalServiceWithApiKey):
             timestamp=timestamp,
         )
         if price != Price(ZERO):
+            log.debug('Got historical price from cryptocompare', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp, price=price)  # noqa: E501
             return price
 
-        try:
-            data = self.get_historical_data(
-                from_asset=from_asset,
-                to_asset=to_asset,
-                timestamp=timestamp,
-                only_check_cache=True,
-            )
-        except UnsupportedAsset as e:
-            raise PriceQueryUnsupportedAsset(e.asset_name) from e
-
-        price = self._retrieve_price_from_data(
-            data=data,
+        # check DB cache
+        price_cache_entry = GlobalDBHandler().get_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
+            max_seconds_distance=3600,
+            source=HistoricalPriceOracle.CRYPTOCOMPARE,
         )
-        if price == Price(ZERO):
-            log.debug(
-                f"Couldn't find historical price from {from_asset} to "
-                f"{to_asset} at timestamp {timestamp} through cryptocompare."
-                f" Attempting to get daily price...",
-            )
-            price = self.query_endpoint_pricehistorical(from_asset, to_asset, timestamp)
+        if price_cache_entry and price_cache_entry.price != Price(ZERO):
+            log.debug('Got historical price from cryptocompare', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp, price=price)  # noqa: E501
+            return price_cache_entry.price
 
+        # else
+        log.debug(
+            f"Couldn't find historical price from {from_asset} to "
+            f"{to_asset} at timestamp {timestamp} through cryptocompare."
+            f" Attempting to get daily price...",
+        )
+        price = self.query_endpoint_pricehistorical(from_asset, to_asset, timestamp)
         if price == Price(ZERO):
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
@@ -1157,14 +874,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 ),
             )
 
-        log.debug(
-            'Got historical price from cryptocompare',
-            from_asset=from_asset,
-            to_asset=to_asset,
-            timestamp=timestamp,
-            price=price,
-        )
-
+        log.debug('Got historical price from cryptocompare', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp, price=price)  # noqa: E501
         return price
 
     def all_coins(self) -> Dict[str, Any]:

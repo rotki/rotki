@@ -135,11 +135,11 @@ INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('C', 3);
 
 DB_CREATE_PRICE_HISTORY = """
 CREATE TABLE IF NOT EXISTS price_history (
-    from_asset TEXT NOT NULL,
-    to_asset TEXT NOT NULL,
+    from_asset TEXT NOT NULL COLLATE NOCASE,
+    to_asset TEXT NOT NULL COLLATE NOCASE,
     source_type CHAR(1) NOT NULL DEFAULT('A') REFERENCES price_history_source_types(type),
-    price TEXT NOT NULL,
     timestamp INTEGER NOT NULL,
+    price TEXT NOT NULL,
     FOREIGN KEY(from_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY(from_asset, to_asset, source_type, timestamp)

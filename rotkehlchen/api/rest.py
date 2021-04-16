@@ -2770,22 +2770,22 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
-    @require_loggedin_user()
+    @staticmethod
     def delete_oracle_cache(
-            self,
             oracle: HistoricalPriceOracle,
             from_asset: Asset,
             to_asset: Asset,
     ) -> Response:
-        self.rotkehlchen.delete_oracle_cache(
-            oracle=oracle,
+        GlobalDBHandler.delete_historical_prices(
             from_asset=from_asset,
             to_asset=to_asset,
+            source=oracle,
         )
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
-    def _get_oracle_cache(self, oracle: HistoricalPriceOracle) -> Dict[str, Any]:
-        cache_data = self.rotkehlchen.get_oracle_cache(oracle)
+    @staticmethod
+    def _get_oracle_cache(oracle: HistoricalPriceOracle) -> Dict[str, Any]:
+        cache_data = GlobalDBHandler().get_historical_price_data(oracle)
         result = _wrap_in_ok_result(cache_data)
         result['status_code'] = HTTPStatus.OK
         return result

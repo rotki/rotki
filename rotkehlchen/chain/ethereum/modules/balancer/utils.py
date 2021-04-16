@@ -8,11 +8,11 @@ from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ethereum_address,
-    deserialize_price,
     deserialize_timestamp,
 )
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Location, Price, TradeType
