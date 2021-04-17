@@ -764,7 +764,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
                 log.error(
-                    f'{str(e)}. Error getting price entry from cryptocompare histohour '
+                    f'{msg}. Error getting price entry from cryptocompare histohour '
                     f'price results. Skipping entry.',
                 )
                 continue

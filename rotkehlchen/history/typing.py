@@ -28,7 +28,7 @@ class HistoricalPriceOracle(DBEnumMixIn):
     @classmethod
     def deserialize(cls, name: str) -> 'HistoricalPriceOracle':
         try:
-            return getattr(cls, name)
+            return getattr(cls, name.upper())
         except AttributeError as e:
             raise DeserializationError(f'Failed to deserialize historical price oracle: {name}') from e  # noqa: E501
 
