@@ -125,6 +125,12 @@ class GlobalDBHandler():
         return GlobalDBHandler.__instance
 
     @staticmethod
+    def get_schema_version() -> int:
+        """Get the version of the DB Schema"""
+        cursor = GlobalDBHandler()._conn.cursor()
+        return _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+
+    @staticmethod
     def get_setting_value(name: str, default_value: int) -> int:
         """Get the value of a setting or default. Typing is always int for now"""
         cursor = GlobalDBHandler()._conn.cursor()
