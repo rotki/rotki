@@ -4,6 +4,7 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -11,7 +12,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response_with_result,
 )
-from rotkehlchen.typing import AssetType, Location
+from rotkehlchen.typing import Location
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

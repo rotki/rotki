@@ -1,6 +1,5 @@
 import json
 import logging
-from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Union, overload
 from urllib.parse import urlencode
@@ -11,18 +10,18 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors import DeserializationError, RemoteError, UnsupportedAsset
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_price
 from rotkehlchen.typing import Price, Timestamp
-from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date
-from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
+from rotkehlchen.utils.misc import create_timestamp, timestamp_to_date
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-PRICE_HISTORY_FILE_PREFIX = 'gecko_price_history_'
 COINGECKO_QUERY_RETRY_TIMES = 4
 
 
@@ -441,60 +440,6 @@ class Coingecko():
     ) -> bool:
         return False  # noop for coingecko
 
-    def _get_cached_price(self, from_asset: Asset, to_asset: Asset, date: str) -> Optional[Price]:
-        price_history_dir = get_or_make_price_history_dir(self.data_directory)
-        filename = (
-            price_history_dir /
-            f'{PRICE_HISTORY_FILE_PREFIX }{from_asset.identifier}_{to_asset.identifier}.json'
-        )
-        if not filename.is_file():
-            return None
-
-        with open(filename, 'r') as f:
-            try:
-                data: Dict[str, Price] = jsonloads_dict(f.read())
-            except JSONDecodeError:
-                return None
-
-        if not isinstance(data, dict):
-            return None
-
-        price_str = data.get(date, None)
-        if price_str is None:
-            return None
-
-        try:
-            return deserialize_price(price_str)
-        except DeserializationError:
-            return None
-
-    def _save_cached_price(
-            self,
-            from_asset: Asset,
-            to_asset: Asset,
-            date: str,
-            price: Price,
-    ) -> None:
-        price_history_dir = get_or_make_price_history_dir(self.data_directory)
-        filename = (
-            price_history_dir /
-            f'{PRICE_HISTORY_FILE_PREFIX }{from_asset.identifier}_{to_asset.identifier}.json'
-        )
-        data: Dict[str, Price] = {}
-        if filename.is_file():
-            with open(filename, 'r') as f:
-                try:
-                    data = jsonloads_dict(f.read())
-                except JSONDecodeError:
-                    data = {}
-
-        if not isinstance(data, dict):
-            data = {}
-
-        data[date] = price
-        with open(filename, 'w') as outfile:
-            outfile.write(rlk_jsondumps(data))
-
     def query_historical_price(
             self,
             from_asset: Asset,
@@ -518,11 +463,19 @@ class Coingecko():
             )
             return Price(ZERO)
 
-        date = timestamp_to_date(timestamp, formatstr='%d-%m-%Y')
-        cached_price = self._get_cached_price(from_asset=from_asset, to_asset=to_asset, date=date)
-        if cached_price is not None:
-            return cached_price
+        # check DB cache
+        price_cache_entry = GlobalDBHandler().get_historical_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+            max_seconds_distance=DAY_IN_SECONDS,
+            source=HistoricalPriceOracle.COINGECKO,
+        )
+        if price_cache_entry:
+            return price_cache_entry.price
 
+        # no cache, query coingecko for daily price
+        date = timestamp_to_date(timestamp, formatstr='%d-%m-%Y')
         result = self._query(
             module='coins',
             subpath=f'{from_coingecko_id}/history',
@@ -542,5 +495,13 @@ class Coingecko():
             )
             return Price(ZERO)
 
-        self._save_cached_price(from_asset, to_asset, date, price)
+        # save result in the DB and return
+        date_timestamp = create_timestamp(date, formatstr='%d-%m-%Y')
+        GlobalDBHandler().add_historical_prices(entries=[HistoricalPrice(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            source=HistoricalPriceOracle.COINGECKO,
+            timestamp=date_timestamp,
+            price=price,
+        )])
         return price

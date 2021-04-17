@@ -5,11 +5,11 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.crypto import sha3
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_location,
-    deserialize_price,
     deserialize_timestamp,
     deserialize_trade_type,
 )

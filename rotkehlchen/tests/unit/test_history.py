@@ -1,9 +1,12 @@
+import pytest
+
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events import limit_trade_list_to_period
+from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.typing import Location, Timestamp, TradeType
 
 
@@ -125,3 +128,13 @@ def test_query_ledger_actions(events_historian, function_scope_messages_aggregat
 
     assert any((action.timestamp < selected_timestamp for action in actions))
     assert length == 2
+
+
+@pytest.mark.parametrize('value,result', [
+    ('manual', HistoricalPriceOracle.MANUAL),
+    ('coingecko', HistoricalPriceOracle.COINGECKO),
+    ('cryptocompare', HistoricalPriceOracle.CRYPTOCOMPARE),
+    ('xratescom', HistoricalPriceOracle.XRATESCOM),
+])
+def test_historical_price_oracle_deserialize(value, result):
+    assert HistoricalPriceOracle.deserialize(value) == result

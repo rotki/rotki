@@ -60,8 +60,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.globaldb.updates import AssetsUpdater
 from rotkehlchen.greenlets import GreenletManager
-from rotkehlchen.history import EventsHistorian, PriceHistorian
-from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT, EventsHistorian
+from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
@@ -1088,20 +1088,3 @@ class Rotkehlchen():
             return  # only for cryptocompare for now
 
         self.cryptocompare.create_cache(from_asset, to_asset, purge_old)
-
-    def delete_oracle_cache(
-            self,
-            oracle: HistoricalPriceOracle,
-            from_asset: Asset,
-            to_asset: Asset,
-    ) -> None:
-        if oracle != HistoricalPriceOracle.CRYPTOCOMPARE:
-            return  # only for cryptocompare for now
-
-        self.cryptocompare.delete_cache(from_asset, to_asset)
-
-    def get_oracle_cache(self, oracle: HistoricalPriceOracle) -> List[Dict[str, Any]]:
-        if oracle != HistoricalPriceOracle.CRYPTOCOMPARE:
-            return []  # only for cryptocompare for now
-
-        return self.cryptocompare.get_all_cache_data()

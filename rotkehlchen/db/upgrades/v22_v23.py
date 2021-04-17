@@ -1,13 +1,18 @@
-import json
-from typing import TYPE_CHECKING
-from rotkehlchen.utils.misc import get_or_make_price_history_dir
-import os
-from pathlib import Path
 import glob
+import json
+import os
 import shutil
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+
+
+def get_or_make_price_history_dir(data_directory: Path) -> Path:
+    price_history_dir = data_directory / 'price_history'
+    price_history_dir.mkdir(parents=True, exist_ok=True)
+    return price_history_dir
 
 
 def upgrade_v22_to_v23(db: 'DBHandler') -> None:

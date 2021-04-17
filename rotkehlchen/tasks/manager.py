@@ -11,7 +11,9 @@ from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets import GreenletManager
+from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.utils.misc import ts_now
@@ -112,11 +114,12 @@ class TaskManager():
             if asset.cryptocompare is None and asset.symbol is None:
                 continue  # type: ignore  # asset.symbol may be None for auto generated underlying tokens # noqa: E501
 
-            data = self.cryptocompare.get_cached_data_metadata(
+            data_range = GlobalDBHandler().get_historical_price_range(
                 from_asset=asset,
                 to_asset=main_currency,
+                source=HistoricalPriceOracle.CRYPTOCOMPARE,
             )
-            if data is not None and now_ts - data[1] < CRYPTOCOMPARE_QUERY_AFTER_SECS:
+            if data_range is not None and now_ts - data_range[1] < CRYPTOCOMPARE_QUERY_AFTER_SECS:
                 continue
 
             self.cryptocompare_queries.add(CCHistoQuery(from_asset=asset, to_asset=main_currency))
@@ -151,11 +154,10 @@ class TaskManager():
             after_seconds=None,
             task_name=task_name,
             exception_is_error=False,
-            method=self.cryptocompare.get_historical_data,
+            method=self.cryptocompare.query_and_store_historical_data,
             from_asset=query.from_asset,
             to_asset=query.to_asset,
             timestamp=now_ts,
-            only_check_cache=False,
         )
         return True
 

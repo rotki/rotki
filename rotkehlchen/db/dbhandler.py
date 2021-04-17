@@ -89,6 +89,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition,
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
@@ -100,7 +101,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_location,
     deserialize_location_from_db,
     deserialize_optional,
-    deserialize_price,
     deserialize_timestamp,
     deserialize_trade_type_from_db,
 )

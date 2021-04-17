@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast,
 
 from typing_extensions import Literal
 
+from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.chain.ethereum.typing import (
     CustomEthereumToken,
     CustomEthereumTokenWithIdentifier,
@@ -16,12 +17,14 @@ from rotkehlchen.chain.ethereum.typing import (
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
-from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress
+from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 from .schema import DB_SCRIPT_CREATE_TABLES
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
+
 
 log = logging.getLogger(__name__)
 
@@ -240,7 +243,7 @@ class GlobalDBHandler():
         SELECT A.identifier, A.type, null, null, A.name, A.symbol, A.started, B.forked, A.swapped_for, A.coingecko, A.cryptocompare, null from assets as A LEFT OUTER JOIN common_asset_details as B
         ON B.asset_id = A.identifier WHERE A.type!=?;
         """  # noqa: E501
-        eth_token_type = AssetType.ETHEREUM_TOKEN.serialize_for_db()
+        eth_token_type = AssetType.ETHEREUM_TOKEN.serialize_for_db()    # pylint: disable=no-member
         query = cursor.execute(querystr, (eth_token_type, eth_token_type))
         for entry in query:
             asset_type = AssetType.deserialize_from_db(entry[1])
@@ -850,7 +853,7 @@ class GlobalDBHandler():
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
         query_tuples: Union[Tuple[str, str, str, str], Tuple[str, str, str, str, str]]
-        eth_token_type = AssetType.ETHEREUM_TOKEN.serialize_for_db()
+        eth_token_type = AssetType.ETHEREUM_TOKEN.serialize_for_db()    # pylint: disable=no-member
         if asset_type is not None:
             asset_type_check = ' AND A.type=?'
             query_tuples = (symbol, eth_token_type, symbol, eth_token_type, asset_type.serialize_for_db())  # noqa: E501
@@ -889,3 +892,136 @@ class GlobalDBHandler():
             ))
 
         return assets
+
+    @staticmethod
+    def get_historical_price(
+            from_asset: 'Asset',
+            to_asset: 'Asset',
+            timestamp: Timestamp,
+            max_seconds_distance: int,
+            source: Optional[HistoricalPriceOracle] = None,
+    ) -> Optional['HistoricalPrice']:
+        """Gets the price around a particular timestamp
+
+        If no price can be found returns None
+        """
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        querystr = (
+            'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history '
+            'WHERE from_asset=? AND to_asset=? AND ABS(timestamp - ?) <= ? '
+        )
+        querylist = [from_asset.identifier, to_asset.identifier, timestamp, max_seconds_distance]
+        if source is not None:
+            querystr += ' AND source_type=?'
+            querylist.append(source.serialize_for_db())
+
+        querystr += 'ORDER BY ABS(timestamp - ?) ASC LIMIT 1'
+        querylist.append(timestamp)
+
+        query = cursor.execute(querystr, tuple(querylist))
+        result = query.fetchone()
+        if result is None:
+            return None
+
+        return HistoricalPrice.deserialize_from_db(result)
+
+    @staticmethod
+    def add_historical_prices(entries: List['HistoricalPrice']) -> None:
+        """Adds the given historical price entries in the DB
+
+        If any addition causes a DB error it's skipped and an error is logged
+        """
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        try:
+            cursor.executemany(
+                """INSERT OR IGNORE INTO price_history(
+                from_asset, to_asset, source_type, timestamp, price
+                ) VALUES (?, ?, ?, ?, ?)
+                """, [x.serialize_for_db() for x in entries],
+            )
+        except sqlite3.IntegrityError as e:
+            connection.rollback()  # roll back any of the executemany that may have gone in
+            log.error(
+                f'One of the given historical price entries caused a DB error. {str(e)}. '
+                f'Will attempt to input them one by one',
+            )
+            for entry in entries:
+                try:
+                    cursor.execute(
+                        """INSERT OR IGNORE INTO price_history(
+                        from_asset, to_asset, source_type, timestamp, price
+                        ) VALUES (?, ?, ?, ?, ?)
+                        """, entry.serialize_for_db(),
+                    )
+                except sqlite3.IntegrityError as e:
+                    log.error(
+                        f'Failed to add {str(entry)} due to {str(e)}. Skipping entry addition',
+                    )
+
+        connection.commit()
+
+    @staticmethod
+    def delete_historical_prices(
+            from_asset: 'Asset',
+            to_asset: 'Asset',
+            source: Optional[HistoricalPriceOracle] = None,
+    ) -> None:
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        querystr = 'DELETE FROM price_history WHERE from_asset=? AND to_asset=?'
+        query_list = [from_asset.identifier, to_asset.identifier]
+        if source is not None:
+            querystr += ' AND source_type=?'
+            query_list.append(source.serialize_for_db())
+
+        try:
+            cursor.execute(querystr, tuple(query_list))
+        except sqlite3.IntegrityError as e:
+            connection.rollback()
+            log.error(
+                f'Failed to delete historical prices from {from_asset} to {to_asset} '
+                f'and source: {str(source)} due to {str(e)}',
+            )
+
+        connection.commit()
+
+    @staticmethod
+    def get_historical_price_range(
+            from_asset: 'Asset',
+            to_asset: 'Asset',
+            source: Optional[HistoricalPriceOracle] = None,
+    ) -> Optional[Tuple[Timestamp, Timestamp]]:
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        querystr = 'SELECT MIN(timestamp), MAX(timestamp) FROM price_history WHERE from_asset=? AND to_asset=?'  # noqa: E501
+        query_list = [from_asset.identifier, to_asset.identifier]
+        if source is not None:
+            querystr += ' AND source_type=?'
+            query_list.append(source.serialize_for_db())
+
+        query = cursor.execute(querystr, tuple(query_list))
+        result = query.fetchone()
+        if result is None or None in (result[0], result[1]):
+            return None
+        return result[0], result[1]
+
+    @staticmethod
+    def get_historical_price_data(source: HistoricalPriceOracle) -> List[Dict[str, Any]]:
+        """Return a list of assets and first/last ts
+
+        Only used by the API so just returning it as List of dicts from here"""
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        query = cursor.execute(
+            'SELECT from_asset, to_asset, MIN(timestamp), MAX(timestamp) FROM '
+            'price_history WHERE source_type=? GROUP BY from_asset, to_asset',
+            (source.serialize_for_db(),),
+        )
+        return [
+            {'from_asset': entry[0],
+             'to_asset': entry[1],
+             'from_timestamp': entry[2],
+             'to_timestamp': entry[3],
+             } for entry in query]

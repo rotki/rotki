@@ -8,7 +8,9 @@ from rotkehlchen.constants.resolver import (
     strethaddress_to_identifier,
 )
 from rotkehlchen.errors import DeserializationError, UnsupportedAsset
-from rotkehlchen.typing import AssetType, ChecksumEthAddress, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, Timestamp
+
+from .typing import AssetType
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.typing import CustomEthereumTokenWithIdentifier

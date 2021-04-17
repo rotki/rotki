@@ -2,7 +2,6 @@ from __future__ import unicode_literals  # isort:skip
 
 import logging
 from enum import Enum
-from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
@@ -49,6 +48,7 @@ from rotkehlchen.constants.assets import (
     A_YV1_WETH,
     A_YV1_YFI,
 )
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors import (
     DeserializationError,
     PriceQueryUnsupportedAsset,
@@ -60,12 +60,13 @@ from rotkehlchen.externalapis.xratescom import (
     get_historical_xratescom_exchange_rates,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_price
 from rotkehlchen.typing import Price, Timestamp
-from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.network import request_get_dict
-from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -219,7 +220,7 @@ class CachedPriceEntry(NamedTuple):
 class Inquirer():
     __instance: Optional['Inquirer'] = None
     _cached_forex_data: Dict
-    _cached_current_price: Dict  # Can't use CacheableObject due to Singleton
+    _cached_current_price: Dict  # Can't use CacheableMixIn due to Singleton
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
@@ -246,16 +247,6 @@ class Inquirer():
         Inquirer._cryptocompare = cryptocompare
         Inquirer._coingecko = coingecko
         Inquirer._cached_current_price = {}
-        # Make price history directory if it does not exist
-        price_history_dir = get_or_make_price_history_dir(data_dir)
-        filename = price_history_dir / 'price_history_forex.json'
-        try:
-            with open(filename, 'r') as f:
-                # we know price_history_forex contains a dict
-                data = jsonloads_dict(f.read())
-                Inquirer.__instance._cached_forex_data = data
-        except (OSError, JSONDecodeError):
-            Inquirer.__instance._cached_forex_data = {}
 
         return Inquirer.__instance
 
@@ -264,7 +255,7 @@ class Inquirer():
         Inquirer()._ethereum = ethereum
 
     @staticmethod
-    def get_cached_price_entry(cache_key: Tuple[Asset, Asset]) -> Optional[CachedPriceEntry]:
+    def get_cached_current_price_entry(cache_key: Tuple[Asset, Asset]) -> Optional[CachedPriceEntry]:  # noqa: E501
         cache = Inquirer()._cached_current_price.get(cache_key, None)
         if cache is None or ts_now() - cache.time > CURRENT_PRICE_CACHE_SECS:
             return None
@@ -340,7 +331,7 @@ class Inquirer():
             return instance.find_usd_price(asset=from_asset, ignore_cache=ignore_cache)
 
         if ignore_cache is False:
-            cache = instance.get_cached_price_entry(cache_key=(from_asset, to_asset))
+            cache = instance.get_cached_current_price_entry(cache_key=(from_asset, to_asset))
             if cache is not None:
                 return cache.price
 
@@ -361,7 +352,7 @@ class Inquirer():
         instance = Inquirer()
         cache_key = (asset, A_USD)
         if ignore_cache is False:
-            cache = instance.get_cached_price_entry(cache_key=cache_key)
+            cache = instance.get_cached_current_price_entry(cache_key=cache_key)
             if cache is not None:
                 return cache.price
 
@@ -414,11 +405,15 @@ class Inquirer():
     ) -> Optional[Price]:
         assert from_fiat_currency.is_fiat(), 'fiat currency should have been provided'
         assert to_fiat_currency.is_fiat(), 'fiat currency should have been provided'
-        date = timestamp_to_date(timestamp, formatstr='%Y-%m-%d')
-        instance = Inquirer()
-        rate = instance._get_cached_forex_data(date, from_fiat_currency, to_fiat_currency)
-        if rate:
-            return rate
+        # Check cache
+        price_cache_entry = GlobalDBHandler().get_historical_price(
+            from_asset=from_fiat_currency,
+            to_asset=to_fiat_currency,
+            timestamp=timestamp,
+            max_seconds_distance=DAY_IN_SECONDS,
+        )
+        if price_cache_entry:
+            return price_cache_entry.price
 
         try:
             prices_map = get_historical_xratescom_exchange_rates(
@@ -428,40 +423,20 @@ class Inquirer():
         except RemoteError:
             return None
 
-        # save all prices in cache
-        if date not in instance._cached_forex_data:
-            instance._cached_forex_data[date] = {}
-
-        if from_fiat_currency not in instance._cached_forex_data[date]:
-            instance._cached_forex_data[date][from_fiat_currency] = {}
-
-        rate = None
+        # Since xratecoms has daily rates let's save at timestamp of UTC day start
         for asset, asset_price in prices_map.items():
-            instance._cached_forex_data[date][from_fiat_currency][asset] = asset_price
+            GlobalDBHandler().add_historical_prices(entries=[HistoricalPrice(
+                from_asset=from_fiat_currency,
+                to_asset=asset,
+                source=HistoricalPriceOracle.XRATESCOM,
+                timestamp=timestamp_to_daystart_timestamp(timestamp),
+                price=asset_price,
+            )])
             if asset == to_fiat_currency:
                 rate = asset_price
 
         log.debug('Historical fiat exchange rate query succesful', rate=rate)
         return rate
-
-    @staticmethod
-    def _save_forex_rate(
-            date: str,
-            from_currency: Asset,
-            to_currency: Asset,
-            price: FVal,
-    ) -> None:
-        assert from_currency.is_fiat(), 'fiat currency should have been provided'
-        assert to_currency.is_fiat(), 'fiat currency should have been provided'
-        instance = Inquirer()
-        if date not in instance._cached_forex_data:
-            instance._cached_forex_data[date] = {}
-
-        if from_currency not in instance._cached_forex_data[date]:
-            instance._cached_forex_data[date][from_currency] = {}
-
-        instance._cached_forex_data[date][from_currency][to_currency] = price
-        instance.save_historical_forex_data()
 
     @staticmethod
     def _get_cached_forex_data(
@@ -489,15 +464,6 @@ class Inquirer():
         return rate
 
     @staticmethod
-    def save_historical_forex_data() -> None:
-        instance = Inquirer()
-        # Make price history directory if it does not exist
-        price_history_dir = get_or_make_price_history_dir(instance._data_directory)
-        filename = price_history_dir / 'price_history_forex.json'
-        with open(filename, 'w') as outfile:
-            outfile.write(rlk_jsondumps(instance._cached_forex_data))
-
-    @staticmethod
     def _query_fiat_pair(base: Asset, quote: Asset) -> Price:
         """Queries the current price between two fiat assets
 
@@ -509,12 +475,16 @@ class Inquirer():
         if base == quote:
             return Price(FVal('1'))
 
-        instance = Inquirer()
         now = ts_now()
-        date = timestamp_to_date(ts_now(), formatstr='%Y-%m-%d')
-        price = instance._get_cached_forex_data(date, base, quote)
-        if price:
-            return price
+        # Check cache for a price within the last 24 hrs
+        price_cache_entry = GlobalDBHandler().get_historical_price(
+            from_asset=base,
+            to_asset=quote,
+            timestamp=now,
+            max_seconds_distance=DAY_IN_SECONDS,
+        )
+        if price_cache_entry:
+            return price_cache_entry.price
 
         # Use the xratescom query and save all prices in the cache
         price = None
@@ -524,33 +494,44 @@ class Inquirer():
                 if quote_asset == quote:
                     # if the quote asset price is found return it
                     price = quote_price
-                    continue  # dont save cache here. Will be saved at the end
-                instance._save_forex_rate(date, base, quote_asset, quote_price)
+
+                GlobalDBHandler().add_historical_prices(entries=[HistoricalPrice(
+                    from_asset=base,
+                    to_asset=quote_asset,
+                    source=HistoricalPriceOracle.XRATESCOM,
+                    timestamp=timestamp_to_daystart_timestamp(now),
+                    price=quote_price,
+                )])
+
+            if price:  # the quote asset may not be found
+                return price
         except RemoteError:
             pass  # price remains None
 
-        if price is None:
-            price = _query_currency_converterapi(base, quote)
+        # query backup api
+        price = _query_currency_converterapi(base, quote)
+        if price is not None:
+            return price
 
-        if price is None:
-            # Search the cache for any price in the last month
-            for i in range(1, 31):
-                now = Timestamp(now - Timestamp(86401))
-                date = timestamp_to_date(now, formatstr='%Y-%m-%d')
-                price = instance._get_cached_forex_data(date, base, quote)
-                if price:
-                    log.debug(
-                        f'Could not query online apis for a fiat price. '
-                        f'Used cached value from {i} days ago.',
-                        base_currency=base.identifier,
-                        quote_currency=quote.identifier,
-                        price=price,
-                    )
-                    return price
-
-            raise RemoteError(
-                f'Could not find a current {base.identifier} price for {quote.identifier}',
+        # Check cache
+        price_cache_entry = GlobalDBHandler().get_historical_price(
+            from_asset=base,
+            to_asset=quote,
+            timestamp=now,
+            max_seconds_distance=MONTH_IN_SECONDS,
+        )
+        if price_cache_entry:
+            log.debug(
+                f'Could not query online apis for a fiat price. '
+                f'Used cached value from '
+                f'{(now - price_cache_entry.timestamp) / DAY_IN_SECONDS} days ago.',
+                base_currency=base.identifier,
+                quote_currency=quote.identifier,
+                price=price_cache_entry.price,
             )
+            return price_cache_entry.price
 
-        instance._save_forex_rate(date, base, quote, price)
-        return price
+        # else
+        raise RemoteError(
+            f'Could not find a current {base.identifier} price for {quote.identifier}',
+        )

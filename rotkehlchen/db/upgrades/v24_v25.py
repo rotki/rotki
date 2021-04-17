@@ -1,4 +1,5 @@
 import json
+import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Tuple
 
@@ -388,6 +389,7 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
         * https://github.com/rotki/rotki/pull/2660
         * https://github.com/rotki/rotki/pull/2615
     - Deletes custom icon cache so it can be requeried making sure identifiers are correct.
+    - Deletes all price history cache from json files since they are now moved to the global DB.
 
     Tables containing asset identifiers. [X] -> should not be deleted and repulled
     - amm_swaps
@@ -461,6 +463,7 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     helper.update_trades(cursor)
 
     delete_icons_cache(db.user_data_dir.parent / 'icons')
+    shutil.rmtree(db.user_data_dir.parent / 'price_history', ignore_errors=True)
 
     del helper
     db.conn.commit()

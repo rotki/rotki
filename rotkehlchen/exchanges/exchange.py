@@ -11,7 +11,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition,
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.typing import ApiKey, ApiSecret, T_ApiKey, T_ApiSecret, Timestamp
-from rotkehlchen.utils.interfaces import CacheableObject, LockableQueryObject, protect_with_lock
+from rotkehlchen.utils.mixins import CacheableMixIn, LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -29,7 +29,7 @@ ExchangeHistorySuccessCallback = Callable[
 ExchangeHistoryFailCallback = Callable[[str], None]
 
 
-class ExchangeInterface(CacheableObject, LockableQueryObject):
+class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
     def __init__(
             self,

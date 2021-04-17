@@ -119,10 +119,39 @@ CREATE TABLE IF NOT EXISTS user_owned_assets (
 );
 """
 
+# Custom enum table for price history source
+DB_CREATE_PRICE_HISTORY_SOURCE_TYPES = """
+CREATE TABLE IF NOT EXISTS price_history_source_types (
+  type    CHAR(1)       PRIMARY KEY NOT NULL,
+  seq     INTEGER UNIQUE
+);
+/* MANUAL */
+INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('A', 1);
+/* COINGECKO */
+INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('B', 2);
+/* CRYPTOCOMPARE */
+INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('C', 3);
+/* XRATESCOM */
+INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('D', 4);
+"""
+
+DB_CREATE_PRICE_HISTORY = """
+CREATE TABLE IF NOT EXISTS price_history (
+    from_asset TEXT NOT NULL COLLATE NOCASE,
+    to_asset TEXT NOT NULL COLLATE NOCASE,
+    source_type CHAR(1) NOT NULL DEFAULT('A') REFERENCES price_history_source_types(type),
+    timestamp INTEGER NOT NULL,
+    price TEXT NOT NULL,
+    FOREIGN KEY(from_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY(from_asset, to_asset, source_type, timestamp)
+);
+"""
+
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -133,4 +162,6 @@ PRAGMA foreign_keys=on;
     DB_CREATE_ASSETS,
     DB_CREATE_COMMON_ASSET_DETAILS,
     DB_CREATE_USER_OWNED_ASSETS,
+    DB_CREATE_PRICE_HISTORY_SOURCE_TYPES,
+    DB_CREATE_PRICE_HISTORY,
 )

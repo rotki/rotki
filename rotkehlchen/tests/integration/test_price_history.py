@@ -1,10 +1,12 @@
 import pytest
 
 from rotkehlchen.constants.assets import A_BTC, A_CORN, A_USD
-from rotkehlchen.externalapis.cryptocompare import PRICE_HISTORY_FILE_PREFIX, Cryptocompare
+from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.constants import A_DASH, A_EUR, A_XMR
-from rotkehlchen.utils.misc import get_or_make_price_history_dir
+from rotkehlchen.typing import Price, Timestamp
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -17,13 +19,20 @@ def test_price_queries(price_historian, data_dir, database):
     assert price_historian.query_historical_price(A_BTC, A_EUR, 1479200704) == FVal('663.66')
     assert price_historian.query_historical_price(A_XMR, A_BTC, 1579200704) == FVal('0.007526')
     # this should hit the cryptocompare cache we are creating here
-    contents = """{"start_time": 0, "end_time": 1439390800,
-    "data": [{"time": 1438387200, "close": 10, "high": 10, "low": 10, "open": 10,
-    "volumefrom": 10, "volumeto": 10}, {"time": 1438390800, "close": 20, "high": 20,
-    "low": 20, "open": 20, "volumefrom": 20, "volumeto": 20}]}"""
-    price_history_dir = get_or_make_price_history_dir(data_dir)
-    with open(price_history_dir / f'{PRICE_HISTORY_FILE_PREFIX}DASH_USD.json', 'w') as f:
-        f.write(contents)
+    cache_data = [HistoricalPrice(
+        from_asset=A_DASH,
+        to_asset=A_USD,
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        timestamp=Timestamp(1438387200),
+        price=Price(FVal('10')),
+    ), HistoricalPrice(
+        from_asset=A_DASH,
+        to_asset=A_USD,
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        timestamp=Timestamp(1438390800),
+        price=Price(FVal('20')),
+    )]
+    GlobalDBHandler().add_historical_prices(cache_data)
     price_historian._PriceHistorian__instance._cryptocompare = Cryptocompare(
         data_directory=data_dir,
         database=database,

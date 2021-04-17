@@ -1,4 +1,3 @@
-import json
 import os
 from datetime import datetime
 from unittest.mock import MagicMock, patch
@@ -13,17 +12,18 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import (
     CURRENT_PRICE_CACHE_SECS,
     DEFAULT_CURRENT_PRICE_ORACLES_ORDER,
     CurrentPriceOracle,
     _query_currency_converterapi,
 )
-from rotkehlchen.tests.fixtures.accounting import create_inquirer
 from rotkehlchen.tests.utils.constants import A_CNY, A_EUR, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Price
-from rotkehlchen.utils.misc import get_or_make_price_history_dir, timestamp_to_date, ts_now
+from rotkehlchen.typing import Price, Timestamp
+from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.mark.skipif(
@@ -52,7 +52,7 @@ def test_switching_to_backup_api(inquirer):
     count = 0
     original_get = requests.get
 
-    def mock_xratescom_fail(url):  # pylint: disable=unused-argument
+    def mock_xratescom_fail(url, timeout):  # pylint: disable=unused-argument
         nonlocal count
         count += 1
         if 'www.x-rates.com' in url:
@@ -86,13 +86,23 @@ def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=
         return MockResponse(500, '{"msg": "shit hit the fan"')
 
     # Get a date 15 days ago and insert a cached entry for EUR JPY then
-    now = ts_now()
-    eurjpy_val = FVal('124.123')
-    date = timestamp_to_date(now - 86400 * 15, formatstr='%Y-%m-%d')
-    inquirer._save_forex_rate(date, A_EUR, A_JPY, eurjpy_val)
     # Get a date 31 days ago and insert a cache entry for EUR CNY then
-    date = timestamp_to_date(now - 86400 * 31, formatstr='%Y-%m-%d')
-    inquirer._save_forex_rate(date, A_EUR, A_CNY, FVal('7.719'))
+    now = ts_now()
+    eurjpy_val = Price(FVal('124.123'))
+    cache_data = [HistoricalPrice(
+        from_asset=A_EUR,
+        to_asset=A_JPY,
+        source=HistoricalPriceOracle.XRATESCOM,
+        timestamp=Timestamp(now - 86400 * 15),
+        price=eurjpy_val,
+    ), HistoricalPrice(
+        from_asset=A_EUR,
+        to_asset=A_CNY,
+        source=HistoricalPriceOracle.XRATESCOM,
+        timestamp=Timestamp(now - 86400 * 31),
+        price=Price(FVal('7.719')),
+    )]
+    GlobalDBHandler().add_historical_prices(cache_data)
 
     with patch('requests.get', side_effect=mock_api_remote_fail):
         # We fail to find a response but then go back 15 days and find the cached response
@@ -111,22 +121,17 @@ def test_parsing_forex_cache_works(
         mocked_current_prices,
         current_price_oracles_order,
 ):  # pylint: disable=unused-argument
-    filename = get_or_make_price_history_dir(data_dir) / 'price_history_forex.json'
-    date = timestamp_to_date(ts_now(), formatstr='%Y-%m-%d')
-    price = '124.123'
-    with open(filename, 'w') as f:
-        f.write(json.dumps({date: {'EUR': {'JPY': price}}}))
-
-    inquirer = create_inquirer(
-        data_directory=data_dir,
-        should_mock_current_price_queries=False,
-        mocked_prices=mocked_current_prices,
-        current_price_oracles_order=current_price_oracles_order,
-    )
-
-    # Now we need to reset the inquirer to pick the cache from the file
-    eurjpy_val = FVal(price)
-    assert inquirer._query_fiat_pair(A_EUR, A_JPY) == eurjpy_val
+    price = Price(FVal('124.123'))
+    now = ts_now()
+    cache_data = [HistoricalPrice(
+        from_asset=A_EUR,
+        to_asset=A_JPY,
+        source=HistoricalPriceOracle.XRATESCOM,
+        timestamp=Timestamp(now - 2000),
+        price=price,
+    )]
+    GlobalDBHandler().add_historical_prices(cache_data)
+    assert inquirer._query_fiat_pair(A_EUR, A_JPY) == price
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

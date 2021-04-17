@@ -5,7 +5,11 @@ from typing import TYPE_CHECKING, List, Optional
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset, RemoteError
+from rotkehlchen.errors import (
+    NoPriceForGivenTimestamp,
+    PriceQueryUnsupportedAsset,
+    RemoteError,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter

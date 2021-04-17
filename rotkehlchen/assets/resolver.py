@@ -3,7 +3,8 @@ from typing import Dict, Optional
 
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.globaldb import GlobalDBHandler
-from rotkehlchen.typing import AssetData
+
+from .typing import AssetData
 
 log = logging.getLogger(__name__)
 

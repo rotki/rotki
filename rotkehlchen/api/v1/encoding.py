@@ -14,6 +14,7 @@ from werkzeug.datastructures import FileStorage
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import (
@@ -34,6 +35,7 @@ from rotkehlchen.errors import DeserializationError, EncodingError, UnknownAsset
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
@@ -43,7 +45,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_hex_color_code,
     deserialize_location,
-    deserialize_price,
     deserialize_timestamp,
     deserialize_trade_type,
 )
@@ -52,7 +53,6 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetType,
     BTCAddress,
     ChecksumEthAddress,
     ExternalService,

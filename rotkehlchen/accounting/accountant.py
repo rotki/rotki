@@ -29,8 +29,7 @@ from rotkehlchen.exchanges.data_structures import (
     TradeType,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.history import PriceHistorian
-from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import EthereumTransaction, Fee, Timestamp
@@ -410,8 +409,6 @@ class Accountant():
                     f'take into account subsequent events.',
                 )
                 break
-
-        Inquirer().save_historical_forex_data()
 
         sum_other_actions = (
             self.events.margin_positions_profit_loss +

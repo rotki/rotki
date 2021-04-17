@@ -14,11 +14,6 @@ YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 # How many times to retry an external query before giving up
 QUERY_RETRY_TIMES = 5
 
-# Seconds for which cached api queries will be cached
-# By default 10 minutes.
-# TODO: Make configurable!
-CACHE_RESPONSE_FOR_SECS = 600
-
 DEFAULT_CONNECT_TIMEOUT = 5
 DEFAULT_READ_TIMEOUT = 30
 DEFAULT_TIMEOUT_TUPLE = (DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT)

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2210`: All price history caches are now moved to the global database. The price history sub-directory of the rotki data directory is now deleted. This should optimize price history querying and save disk space.
 * :feature:`2551`: Users will now be prompted with asset database updates if changes have happened to the supported rotki assets.
 * :feature:`2520` Users can now properly clean cached data for Eth2 daily stats and deposits.
 * :feature:`2564` Users can now easily access the documentation and other helpful links directly from the application.

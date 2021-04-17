@@ -12,7 +12,6 @@ from rotkehlchen.errors import ConversionError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.utils.interfaces import CacheableObject, cache_response_timewise
 from rotkehlchen.utils.misc import (
     combine_dicts,
     combine_stat_dicts,
@@ -20,6 +19,7 @@ from rotkehlchen.utils.misc import (
     iso8601ts_to_timestamp,
     timestamp_to_date,
 )
+from rotkehlchen.utils.mixins import CacheableMixIn, cache_response_timewise
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 
@@ -170,7 +170,7 @@ def test_check_if_version_up_to_date():
         assert not result.latest_version
 
 
-class Foo(CacheableObject):
+class Foo(CacheableMixIn):
     def __init__(self):
         super().__init__()
 

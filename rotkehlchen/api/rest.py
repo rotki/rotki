@@ -33,6 +33,7 @@ from rotkehlchen.accounting.structures import ActionType, BalanceType
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
     add_manually_tracked_balances,
@@ -73,7 +74,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -84,7 +85,6 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetType,
     BlockchainAccountData,
     ChecksumEthAddress,
     EthereumTransaction,
@@ -2770,22 +2770,22 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
-    @require_loggedin_user()
+    @staticmethod
     def delete_oracle_cache(
-            self,
             oracle: HistoricalPriceOracle,
             from_asset: Asset,
             to_asset: Asset,
     ) -> Response:
-        self.rotkehlchen.delete_oracle_cache(
-            oracle=oracle,
+        GlobalDBHandler.delete_historical_prices(
             from_asset=from_asset,
             to_asset=to_asset,
+            source=oracle,
         )
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
-    def _get_oracle_cache(self, oracle: HistoricalPriceOracle) -> Dict[str, Any]:
-        cache_data = self.rotkehlchen.get_oracle_cache(oracle)
+    @staticmethod
+    def _get_oracle_cache(oracle: HistoricalPriceOracle) -> Dict[str, Any]:
+        cache_data = GlobalDBHandler().get_historical_price_data(oracle)
         result = _wrap_in_ok_result(cache_data)
         result['status_code'] = HTTPStatus.OK
         return result
@@ -2806,7 +2806,8 @@ class RestAPI():
     @staticmethod
     def get_supported_oracles() -> Response:
         data = {
-            'history': [{'id': str(x), 'name': str(x).capitalize()} for x in HistoricalPriceOracle],  # noqa: E501
+            # don't expose some sources in the api
+            'history': [{'id': str(x), 'name': str(x).capitalize()} for x in HistoricalPriceOracle if x not in NOT_EXPOSED_SOURCES],  # noqa: E501
             'current': [{'id': str(x), 'name': str(x).capitalize()} for x in CurrentPriceOracle],  # noqa: E501
         }
         result_dict = _wrap_in_ok_result(data)
