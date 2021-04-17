@@ -2,7 +2,7 @@ import json
 import random
 import re
 from http import HTTPStatus
-from typing import Dict
+from typing import Any, Dict
 from unittest.mock import patch
 
 import pytest
@@ -12,6 +12,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -23,7 +24,7 @@ from rotkehlchen.tests.utils.constants import A_GLM
 from rotkehlchen.tests.utils.mock import MockResponse
 
 
-def mock_asset_updates(original_requests_get, latest: int, updates: Dict[str, int], sql_actions: Dict[str, str]):  # noqa: E501
+def mock_asset_updates(original_requests_get, latest: int, updates: Dict[str, Any], sql_actions: Dict[str, str]):  # noqa: E501
 
     def mock_requests_get(url, *args, **kwargs):  # pylint: disable=unused-argument
         if 'github' not in url:
@@ -36,7 +37,7 @@ def mock_asset_updates(original_requests_get, latest: int, updates: Dict[str, in
             assert match, f'Couldnt extract version from {url}'
             version = match.group(1)
             action = sql_actions.get(version)
-            assert action, f'Could not find SQL action for version {version}'
+            assert action is not None, f'Could not find SQL action for version {version}'
             response = action
         else:
             raise AssertionError(f'Unrecognized argument url for assets update mock in tests: {url}')  # noqa: E501
@@ -52,6 +53,7 @@ def test_simple_update(rotkehlchen_api_server, globaldb):
 
     - Test that up_to_version argument works
     - Test that only versions above current local are applied
+    - Test that versions with min/max schema mismatch are skipped
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -64,9 +66,40 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
     """  # noqa: E501
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
-        latest=999999994,
-        updates={"999999991": 1, "999999992": 1, "999999993": 3, "999999994": 4},
-        sql_actions={"999999991": "", "999999992": "", "999999993": update_3},
+        latest=999999996,
+        updates={
+            "999999991": {
+                "changes": 1,
+                "min_schema_version": GLOBAL_DB_VERSION,
+                "max_schema_version": GLOBAL_DB_VERSION,
+            },
+            "999999992": {
+                "changes": 1,
+                "min_schema_version": GLOBAL_DB_VERSION,
+                "max_schema_version": GLOBAL_DB_VERSION,
+            },
+            "999999993": {
+                "changes": 3,
+                "min_schema_version": GLOBAL_DB_VERSION,
+                "max_schema_version": GLOBAL_DB_VERSION,
+            },
+            "999999994": {
+                "changes": 5,
+                "min_schema_version": GLOBAL_DB_VERSION + 1,
+                "max_schema_version": GLOBAL_DB_VERSION - 1,
+            },
+            "999999995": {
+                "changes": 5,
+                "min_schema_version": GLOBAL_DB_VERSION,
+                "max_schema_version": GLOBAL_DB_VERSION,
+            },
+            "999999996": {
+                "changes": 5,
+                "min_schema_version": GLOBAL_DB_VERSION,
+                "max_schema_version": GLOBAL_DB_VERSION,
+            },
+        },
+        sql_actions={"999999991": "", "999999992": "", "999999993": update_3, "999999994": "", "999999995": ""},  # noqa: E501
     )
     globaldb.add_setting_value(ASSETS_VERSION_KEY, 999999992)
     with update_patch:
@@ -88,15 +121,15 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
         else:
             result = assert_proper_response_with_result(response)
         assert result['local'] == 999999992
-        assert result['remote'] == 999999994
-        assert result['new_changes'] == 7
+        assert result['remote'] == 999999996
+        assert result['new_changes'] == 13  # changes from 99[3 + 4 + 6], skipping 5
 
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
                 'assetupdatesresource',
             ),
-            json={'async_query': async_query, 'up_to_version': 999999993},
+            json={'async_query': async_query, 'up_to_version': 999999995},
         )
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -112,10 +145,11 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
         errors = rotki.msg_aggregator.consume_errors()
         warnings = rotki.msg_aggregator.consume_warnings()
         assert len(errors) == 0, f'Found errors: {errors}'
-        assert len(warnings) == 0, f'Found warnings: {warnings}'
+        assert len(warnings) == 1
+        assert 'Skipping assets update 999999994 since it requires a min schema of' in warnings[0]
 
         assert result is True
-        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999993
+        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999995
         new_token = EthereumToken('0xC2FEC534c461c45533e142f724d0e3930650929c')
         assert new_token.identifier == strethaddress_to_identifier('0xC2FEC534c461c45533e142f724d0e3930650929c')  # noqa: E501
         assert new_token.name == 'AKB token'
@@ -159,7 +193,11 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
         latest=999999991,
-        updates={"999999991": 3},
+        updates={"999999991": {
+            "changes": 3,
+            "min_schema_version": GLOBAL_DB_VERSION,
+            "max_schema_version": GLOBAL_DB_VERSION,
+        }},
         sql_actions={"999999991": update_1},
     )
     globaldb.add_setting_value(ASSETS_VERSION_KEY, 999999990)
@@ -360,7 +398,11 @@ INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES("0xa74476443119A
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
         latest=999999991,
-        updates={"999999991": 2},
+        updates={"999999991": {
+            "changes": 2,
+            "min_schema_version": GLOBAL_DB_VERSION,
+            "max_schema_version": GLOBAL_DB_VERSION,
+        }},
         sql_actions={"999999991": update_1},
     )
     globaldb.add_setting_value(ASSETS_VERSION_KEY, 999999990)

@@ -78,32 +78,25 @@ class AssetsUpdater():
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
         self.msg_aggregator = msg_aggregator
-        self.local_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
+        self.local_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
         self.last_remote_checked_version = None
         self.conflicts: List[Tuple[AssetData, AssetData]] = []
         self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *type *, *name *, *symbol *, *started *, *swapped_for *, *coingecko *, *cryptocompare *, *details_reference *\) +VALUES\((.*?),(.*?),(.*?),(.*?),(.*?),(.*?),(.*?),(.*?),(.*?)\).*?')  # noqa: E501
         self.ethereum_tokens_re = re.compile(r'.*INSERT +INTO +ethereum_tokens\( *address *, *decimals *, *protocol *\) +VALUES\((.*?),(.*?),(.*?)\).*')  # noqa: E501
         self.common_asset_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *asset_id *, *forked *\) +VALUES\((.*?),(.*?)\).*')  # noqa: E501
         self.string_re = re.compile(r'.*"(.*?)".*')
-
         self.branch = 'master'
         if not getattr(sys, 'frozen', False):
             # not packaged -- must be in develop mode
             self.branch = 'develop'
 
-    def check_for_updates(self) -> Tuple[int, int, int]:
-        """
-        Checks the remote to see if there is new assets to get
-        May raise:
-           - RemoteError if there is a problem querying Github
-        """
+    def _get_remote_info_json(self) -> Dict[str, Any]:
         url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/info.json'
         try:
             response = requests.get(url)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to query Github {url} during assets update: {str(e)}') from e  # noqa: E501
 
-        self.local_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
         try:
             json_data = response.json()
         except json.decoder.JSONDecodeError as e:
@@ -111,19 +104,34 @@ class AssetsUpdater():
                 f'Could not parse assets update info as json from Github: {response.text}',
             ) from e
 
+        return json_data
+
+    def check_for_updates(self) -> Tuple[int, int, int]:
+        """
+        Checks the remote to see if there is new assets to get
+        May raise:
+           - RemoteError if there is a problem querying Github
+        """
+        self.local_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
+        json_data = self._get_remote_info_json()
+        local_schema_version = GlobalDBHandler().get_schema_version()
         new_asset_changes = 0
         try:
             remote_version = json_data['latest']
-            for string_version, asset_changes in json_data['updates'].items():
-                if int(string_version) > self.local_version:
-                    new_asset_changes += asset_changes
+            for string_version, entry in json_data['updates'].items():
+                applicable_update = (
+                    int(string_version) > self.local_assets_version and
+                    entry['min_schema_version'] <= local_schema_version <= entry['max_schema_version']  # noqa: E501
+                )
+                if applicable_update:
+                    new_asset_changes += entry['changes']
         except KeyError as e:
             raise RemoteError(f'Didnt find expected key {str(e)} in github assets json during update') from e  # noqa: E501
         except ValueError as e:
             raise RemoteError(f'{str(e)} in github assets json during update') from e
 
         self.last_remote_checked_version = remote_version
-        return self.local_version, remote_version, new_asset_changes
+        return self.local_assets_version, remote_version, new_asset_changes
 
     def _parse_value(self, value: str) -> Optional[Union[str, int]]:
         match = self.string_re.match(value)
@@ -326,16 +334,38 @@ class AssetsUpdater():
         if self.last_remote_checked_version is None:
             self.check_for_updates()
 
-        # if conflicts is None:
         self.conflicts = []  # reset the stored conflicts
-
-        version = self.local_version + 1
+        infojson = self._get_remote_info_json()
+        local_schema_version = GlobalDBHandler().get_schema_version()
+        version = self.local_assets_version + 1
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
         target_version = min(up_to_version, self.last_remote_checked_version) if up_to_version else self.last_remote_checked_version   # type: ignore # noqa: E501
         # type ignore since due to check_for_updates we know last_remote_checked_version exists
 
         while version <= target_version:
+            try:
+                min_schema_version = infojson['updates'][str(version)]['min_schema_version']
+                max_schema_version = infojson['updates'][str(version)]['max_schema_version']
+                if local_schema_version < min_schema_version or local_schema_version > max_schema_version:  # noqa: E501
+                    self.msg_aggregator.add_warning(
+                        f'Skipping assets update {version} since it requires a min '
+                        f'schema of {min_schema_version} and max schema of {max_schema_version} '
+                        f'while the local DB schema version is {local_schema_version}. '
+                        f'You will have to follow an alternative method to '
+                        f'obtain the assets of this update.',
+                    )
+                    GlobalDBHandler().add_setting_value(ASSETS_VERSION_KEY, version, commit=False)
+                    version += 1
+                    continue
+            except KeyError as e:
+                log.error(
+                    f'Remote info.json for version {version} did not contain '
+                    f'key "{str(e)}". Skipping update.',
+                )
+                version += 1
+                continue
+
             try:
                 url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/{version}/updates.sql'  # noqa: E501
                 response = requests.get(url)  # noqa: E501
