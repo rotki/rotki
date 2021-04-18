@@ -368,7 +368,7 @@ class AssetsUpdater():
 
             try:
                 url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/{version}/updates.sql'  # noqa: E501
-                response = requests.get(url)  # noqa: E501
+                response = requests.get(url)
             except requests.exceptions.RequestException as e:
                 connection.rollback()
                 raise RemoteError(f'Failed to query Github for {url} during assets update: {str(e)}') from e  # noqa: E501

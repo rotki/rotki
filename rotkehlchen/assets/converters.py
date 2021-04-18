@@ -334,7 +334,6 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'BTCTRON',  # neither in coingecko nor cryptocompare
     'FCT2',  # neither in coingecko nor cryptocompare
     'XFLR',  # neither in coingecko nor cryptocompare (is an iou for FLR - SPARK)
-    'WIN',  # add support for it first: https://www.coingecko.com/en/coins/wink
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
@@ -441,9 +440,8 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'SQ',
     'TSLA',
     'UPCO2',  # neither in coingecko nor cryptocompare
-    'VIC',  # neither in coingecko nor cryptocompare (VICDeal)
+    'VIL',  # neither in coingecko nor cryptocompare (VICDeal)
     'WXBTC',  # neither in coingecko nor cryptocompare
-    'MTC',  # need to add support for it
 )
 
 
@@ -470,7 +468,6 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'XLMDOWN',  # no cryptocompare/coingecko data
     'XLMUP',  # no cryptocompare/coingecko data
     'UAH',  # no cryptocompare/coingecko data
-    'WIN',  # had wrong mapping. Need to add it to: https://www.coingecko.com/en/coins/wink
 )
 
 UNSUPPORTED_BITFINEX_ASSETS = (
@@ -529,6 +526,9 @@ UNSUPPORTED_FTX_ASSETS = (
     'SECO',  # pool in bonfida
     'ZECBULL',  # no cryptocompare/coingecko data
     'ZECBEAR',  # no cryptocompare/coingecko data
+    'BYND',  # Beyond Meat Tokenized stock
+    'CGC',  # Trade Canopy Growth Corp Tokenized stock
+    'MRNA',  # Moderna Tokenized stock
 )
 
 # https://api.kucoin.com/api/v1/currencies
@@ -560,7 +560,6 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'TT',  # delisted
     'VNX',  # delisted and no cryptocompare/coingecko data
     'VOL',  # delisted
-    'WINK',  # need to add it -> https://www.coingecko.com/en/coins/wink
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets

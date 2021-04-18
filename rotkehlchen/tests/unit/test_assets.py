@@ -78,7 +78,6 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0x499A6B77bc25C26bCf8265E2102B1B3dd1617024'),  # noqa: E501 # Bitether but Bither in CC
         'CBC-2',   # Cashbery coin but Casino Betting Coin in CC
         ethaddress_to_identifier('0x17B26400621695c2D8C2D8869f6259E82D7544c4'),  # noqa: E501 #  CustomContractnetwork but CannaCoin in CC
-        'CMCT-2',  # Cyber Movie Chain but Crowd Machine in CC
         ethaddress_to_identifier('0xa456b515303B2Ce344E9d2601f91270f8c2Fea5E'),  # noqa: E501 # Cornichon but Corn in CC
         'CTX',     # Centauri coin but CarTaxi in CC
         ethaddress_to_identifier('0xf14922001A2FB8541a433905437ae954419C2439'),  # noqa: E501 # Direct insurance token but DitCoin in CC
@@ -114,6 +113,12 @@ def test_cryptocompare_asset_support(cryptocompare):
         'TFC',     # TheFutbolCoin but The Freedom Coin in CC
         ethaddress_to_identifier('0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074'),  # noqa: E501 # Mask Network but NFTX Hashmask Index in CC
         ethaddress_to_identifier('0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14'),  # noqa: E501 # balanced crypto pie but 0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14 in CC
+        ethaddress_to_identifier('0x7aBc60B3290F68c85f495fD2e0c3Bd278837a313'),  # noqa: E501 # Cyber Movie Chain but Crowdmachine in CC
+        ethaddress_to_identifier('0xBAE235823D7255D9D48635cEd4735227244Cd583'),  # noqa: E501 # Staker Token but Gateio Stater in CC
+        ethaddress_to_identifier('0xe2DA716381d7E0032CECaA5046b34223fC3f218D'),  # noqa: E501 # Carbon Utility Token but CUTCoin in CC
+        ethaddress_to_identifier('0x1FA3bc860bF823d792f04F662f3AA3a500a68814'),  # noqa: E501 # 1X Short Bitcoin Token but Hedgecoin in CC
+        ethaddress_to_identifier('0xc7283b66Eb1EB5FB86327f08e1B5816b0720212B'),  # noqa: E501 # Tribe Token (FEI) but another TribeToken in CC
+        'DON',     # Donnie Finance but Donation Coin in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -171,7 +176,72 @@ def test_coingecko_identifiers_are_reachable(data_dir):
     """
     coingecko = Coingecko(data_directory=data_dir)
     all_coins = coingecko.all_coins()
-
+    # If coingecko identifier is missing test is trying to suggest possible assets.
+    symbol_checked_exceptions = (  # This is the list of already checked assets
+        # only 300 in coingecko is spartan coin: https://www.coingecko.com/en/coins/spartan
+        ethaddress_to_identifier('0xaEc98A708810414878c3BCDF46Aad31dEd4a4557'),
+        # no arcade city in coingeko. Got other ARC symbol tokens
+        ethaddress_to_identifier('0xAc709FcB44a43c35F0DA4e3163b117A17F3770f5'),
+        # no avalon in coingecko. Got travalala.com
+        ethaddress_to_identifier('0xeD247980396B10169BB1d36f6e278eD16700a60f'),
+        # no Bionic in coingecko. Got Bnoincoin
+        ethaddress_to_identifier('0xEf51c9377FeB29856E61625cAf9390bD0B67eA18'),
+        # no Bitair in coingecko. Got other BTCA symbol tokens
+        ethaddress_to_identifier('0x02725836ebF3eCDb1cDf1c7b02FcbBfaa2736AF8'),
+        # no Bither in coingecko. Got other BTR symbol tokens
+        ethaddress_to_identifier('0xcbf15FB8246F679F9Df0135881CB29a3746f734b'),
+        # no Content and Ad Network in coingecko. Got other CAN symbol tokens
+        ethaddress_to_identifier('0x5f3789907b35DCe5605b00C0bE0a7eCDBFa8A841'),
+        # no DICE money in coingecko. Got other CET symbol tokens
+        ethaddress_to_identifier('0xF660cA1e228e7BE1fA8B4f5583145E31147FB577'),
+        # no Cyberfi in coingecko. Got other CFI symbol tokens
+        ethaddress_to_identifier('0x12FEF5e57bF45873Cd9B62E9DBd7BFb99e32D73e'),
+        # The DAO is not in coingecko. Got other DAO symbol tokens
+        ethaddress_to_identifier('0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413'),
+        # no Earth Token in coingecko. Got other EARTH symbol token and in BSC
+        ethaddress_to_identifier('0x900b4449236a7bb26b286601dD14d2bDe7a6aC6c'),
+        # no iDice in coingecko. Got other ICE symbol token
+        ethaddress_to_identifier('0x5a84969bb663fb64F6d015DcF9F622Aedc796750'),
+        # no InvestFeed token in coingecko. Got other IFT symbol token
+        ethaddress_to_identifier('0x7654915A1b82D6D2D0AFc37c52Af556eA8983c7E'),
+        # no Invacio token in coingecko. Got other INV symbol token
+        ethaddress_to_identifier('0xEcE83617Db208Ad255Ad4f45Daf81E25137535bb'),
+        # no Live Start token in coingecko. Got other LIVE symbol token
+        ethaddress_to_identifier('0x24A77c1F17C547105E14813e517be06b0040aa76'),
+        # no Musiconomi in coingecko. Got other MCI symbol token
+        ethaddress_to_identifier('0x138A8752093F4f9a79AaeDF48d4B9248fab93c9C'),
+        # no Remicoin in coingecko. Got other RMC symbol token
+        ethaddress_to_identifier('0x7Dc4f41294697a7903C4027f6Ac528C5d14cd7eB'),
+        # no Sola token in coingecko. Got other SOL symbol token
+        ethaddress_to_identifier('0x1F54638b7737193FFd86c19Ec51907A7c41755D8'),
+        # no Bitcoin card token in coingecko. Got other VD symbol token
+        ethaddress_to_identifier('0x9a9bB9b4b11BF8eccff84B58a6CCCCD4058A7f0D'),
+        # no Venus Energy token in coingecko. Got other VENUS symbol token
+        ethaddress_to_identifier('0xEbeD4fF9fe34413db8fC8294556BBD1528a4DAca'),
+        # no WinToken in coingecko. Got other WIN symbol token
+        ethaddress_to_identifier('0xBfaA8cF522136C6FAfC1D53Fe4b85b4603c765b8'),
+        # no Snowball in coingecko. Got other SNBL symbol token
+        ethaddress_to_identifier('0x198A87b3114143913d4229Fb0f6D4BCb44aa8AFF'),
+        'ACC',  # no Adcoin in Coingecko. Got other ACC symbol token
+        'APH',  # no Aphelion in Coingecko. Got other APH symbol token
+        'ARCH',  # no ARCH in Coingecko. Got other ARCH symbol token
+        'BET-2',  # no BetaCoin in Coingecko. Got other BET symbol token
+        'CCN-2',  # no CannaCoin in Coingecko. Got other CCN symbol token
+        'CHAT',  # no ChatCoin in Coingecko. Got other CHAT symbol token
+        'CMT-2',  # no Comet in Coingecko. Got other CMT symbol token
+        'CRC-2',  # no CrownCoin in Coingecko. Got other CRC symbol token
+        'CYC',  # no ConspiracyCoin in Coingecko. Got other CYC symbol token
+        'EDR-2',  # no E-Dinar coin in Coingecko. Got other EDR symbol token
+        'FLAP',  # no FlappyCoin coin in Coingecko. Got other FLAP symbol token
+        'HC-2',  # no Harvest Masternode Coin in Coingecko. Got other HC symbol token
+        'KEY-3',  # no KeyCoin Coin in Coingecko. Got other KEY symbol token
+        'OCC',  # no Octoin Coin in Coingecko. Got other OCC symbol token
+        'SPA',  # no SpainCoin Coin in Coingecko. Got other SPA symbol token
+        'WEB-2',  # no Webchain in Coingecko. Got other WEB symbol token
+        'WOLF',  # no Insanity Coin in Coingecko. Got other WOLF symbol token
+        'XPB',  # no Pebble Coin in Coingecko. Got other XPB symbol token
+        'XNS',  # no Insolar in Coingecko. Got other XNS symbol token
+    )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
         if identifier in DELISTED_ASSETS:
@@ -183,9 +253,9 @@ def test_coingecko_identifiers_are_reachable(data_dir):
 
         found = True
         coingecko_str = asset_data.coingecko
-        msg = f'Asset {identifier} does not have a coingecko entry'
-        assert coingecko_str is not None, msg
-        if coingecko_str != '':
+        have_id = True
+        if coingecko_str is not None or coingecko_str != '':
+            have_id = False
             found = False
             for entry in all_coins:
                 if coingecko_str == entry['id']:
@@ -202,6 +272,9 @@ def test_coingecko_identifiers_are_reachable(data_dir):
                 if entry['name'].upper() == asset_data.symbol.upper():
                     suggestions.append((entry['id'], entry['name'], entry['symbol']))
                     continue
+
+        if have_id is False and (len(suggestions) == 0 or identifier in symbol_checked_exceptions):
+            continue  # no coingecko identifier and no suggestion or is in known exception
 
         msg = f'Asset {identifier} with symbol {asset_data.symbol} coingecko mapping does not exist.'  # noqa: E501
         if len(suggestions) != 0:

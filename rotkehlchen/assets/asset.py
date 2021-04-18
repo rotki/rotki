@@ -45,6 +45,12 @@ WORLD_TO_BITTREX = {
     strethaddress_to_identifier('0x2ef52Ed7De8c5ce03a4eF0efbe9B7450F2D7Edc9'): 'REV',
     # make sure bittrex matches latest VRA contract
     strethaddress_to_identifier('0xF411903cbC70a74d22900a5DE66A2dda66507255'): 'VRA',
+    # FET is Fetch AI in bittrex
+    strethaddress_to_identifier('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'): 'FET',
+    # make sure GNY maps to the appropriate token for bittrex
+    strethaddress_to_identifier('0xb1f871Ae9462F1b2C6826E88A7827e76f86751d4'): 'GNY',
+    # MTC is Metacoin in Bittrex
+    'MTC-3': 'MTC',
 }
 
 WORLD_TO_FTX = {
@@ -90,6 +96,10 @@ WORLD_TO_POLONIEX = {
     '1INCH': 'ONEINCH',
     # FTT is FTX token in poloniex
     strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
+    # TRB is Tellor Tributes in poloniex
+    strethaddress_to_identifier('0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0'): 'TRB',
+    # WINK is WIN in poloniex
+    'WIN-3': 'WIN',
 }
 
 WORLD_TO_KRAKEN = {
@@ -201,6 +211,12 @@ WORLD_TO_BINANCE = {
     strethaddress_to_identifier('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7'): 'KEY',
     # PNT is pNetwork in Binance
     strethaddress_to_identifier('0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD'): 'PNT',
+    # FET is Fetch AI in Binance
+    strethaddress_to_identifier('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'): 'FET',
+    # TRB is Tellor Tributes in Binance
+    strethaddress_to_identifier('0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0'): 'TRB',
+    # WIN is WINk in Binance
+    'WIN-3': 'WIN',
 }
 
 WORLD_TO_BITFINEX = {
@@ -208,6 +224,7 @@ WORLD_TO_BITFINEX = {
     'CNY': 'CNH',
     'DOGE': 'DOG',
     'LUNA-2': 'LUNA',
+    # make sure GNY maps to the appropriate token for bitfinex
     strethaddress_to_identifier('0xb1f871Ae9462F1b2C6826E88A7827e76f86751d4'): 'GNY',
     # make sure REP maps to latest one in bitfinex
     strethaddress_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB'): 'REP',
@@ -225,6 +242,8 @@ WORLD_TO_BITFINEX = {
     strethaddress_to_identifier('0xac2e58A06E6265F1Cf5084EE58da68e5d75b49CA'): 'ORS',
     # FTT is ftx in bitfinex
     strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
+    # FET is Fetch AI in bitfinex
+    strethaddress_to_identifier('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'): 'FET',
 }
 
 WORLD_TO_KUCOIN = {
@@ -238,6 +257,10 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0x905E337c6c8645263D3521205Aa37bf4d034e745'): 'MTC',
     # R is revain in kucoin
     strethaddress_to_identifier('0x2ef52Ed7De8c5ce03a4eF0efbe9B7450F2D7Edc9'): 'R',
+    # FET is Fetch AI in Kucoin
+    strethaddress_to_identifier('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'): 'FET',
+    # WINK is WINk in KUCOIN
+    'WIN-3': 'WINK',
 }
 
 WORLD_TO_ICONOMI = {
@@ -255,6 +278,10 @@ WORLD_TO_ICONOMI = {
     strethaddress_to_identifier('0x6c6EE5e31d828De241282B9606C8e98Ea48526E2'): 'HOT',
     # PNT is pNetwork in iconomi
     strethaddress_to_identifier('0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD'): 'PNT',
+    # FET is Fetch AI in iconomi
+    strethaddress_to_identifier('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'): 'FET',
+    # TRB is Tellor Tributes in iconomi
+    strethaddress_to_identifier('0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0'): 'TRB',
 }
 
 
