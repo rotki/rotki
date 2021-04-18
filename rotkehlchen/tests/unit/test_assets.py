@@ -242,7 +242,6 @@ def test_coingecko_identifiers_are_reachable(data_dir):
         'XPB',  # no Pebble Coin in Coingecko. Got other XPB symbol token
         'XNS',  # no Insolar in Coingecko. Got other XNS symbol token
     )
-
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
         if identifier in DELISTED_ASSETS:
