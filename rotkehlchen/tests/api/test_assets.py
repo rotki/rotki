@@ -1,5 +1,3 @@
-import json
-import os
 from contextlib import ExitStack
 from http import HTTPStatus
 
@@ -7,7 +5,6 @@ import pytest
 import requests
 
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
 from rotkehlchen.tests.utils.constants import A_EUR, A_GNO, A_RDN
@@ -220,38 +217,3 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
     )
     # Check that assets did not get modified
     assert set(rotki.data.db.get_ignored_assets()) == set(ignored_assets)
-
-
-@pytest.mark.parametrize('start_with_logged_in_user', [False])
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_query_all_assets(rotkehlchen_api_server):
-    """Test that using the query all owned assets endpoint works
-
-    Compare with the contents of all_assets.json. Essentially tests that moving
-    assets from all_assets.json to the DB was fine.
-    """
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'allassetsresource',
-        ),
-    )
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-
-    dir_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    with open(os.path.join(dir_path, 'data', 'all_assets.json'), 'r') as f:
-        expected_assets = json.loads(f.read())
-
-    returned_ids = set(data['result'].keys())
-    expected_ids = set()
-    for key, entry in expected_assets.items():
-        if entry['type'] == 'ethereum token':
-            expected_ids.add(strethaddress_to_identifier(entry['ethereum_address']))
-        else:
-            expected_ids.add(key)
-
-    assert expected_ids == returned_ids
-    # not going into more details in this test as all_assets.json is deprecated and
-    # will be removed
