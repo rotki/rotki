@@ -1,6 +1,6 @@
 <template>
   <menu-tooltip-button
-    :tooltip="$t('notification_indicator.tooltip')"
+    :tooltip="$t('help_sidebar.tooltip')"
     class-name="secondary--text text--lighten-2"
     @click="visibleUpdate(!visible)"
   >
