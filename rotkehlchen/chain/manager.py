@@ -1146,7 +1146,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     self.totals.assets[A_DAI] += pool_balance.dai_unclaimed_balance
 
         # Count ETH staked in Eth2 beacon chain
-        self.account_for_staked_eth2_balances(addresses=self.accounts.eth, at_addition=False)
+        self.account_for_staked_eth2_balances(
+            addresses=self.queried_addresses_for_module('eth2'),
+            at_addition=False,
+        )
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_token_and_totals()
 
@@ -1255,7 +1258,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     def get_eth2_staking_details(self) -> List['ValidatorDetails']:
         return get_eth2_details(
             beaconchain=self.beaconchain,
-            addresses=self.accounts.eth,
+            addresses=self.queried_addresses_for_module('eth2'),
         )
 
     @protect_with_lock()
@@ -1271,7 +1274,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         defi_events = []
         eth2_details = get_eth2_details(
             beaconchain=self.beaconchain,
-            addresses=self.accounts.eth,
+            addresses=self.queried_addresses_for_module('eth2'),
         )
         for entry in eth2_details:
             if entry.validator_index is None:
