@@ -1161,6 +1161,24 @@ class Adex(EthereumModule):
 
         return staking_balances
 
+    def get_balances_dont_break_frontend(
+            self,
+            addresses: List[ChecksumAddress],
+    ) -> Dict:
+        """This exists only until the frontend switches to the v5 Adex balance querying"""
+        real_balances = self.get_balances(addresses)
+        expected_frontend_balances = {}
+        for address, entry in real_balances.items():
+            expected_frontend_balances[address] = {
+                'adx_balance': entry.serialize(),
+                'contract_address': '0xB6456b57f03352bE48Bf101B46c1752a0813491a',
+                'dai_unclaimed_balance': {'amount': '0', 'usd_value': '0'},
+                'pool_id': '0xB6456b57f03352bE48Bf101B46c1752a0813491a',
+                'pool_name': 'Tom',
+            }
+
+        return expected_frontend_balances
+
     def get_history(
             self,
             addresses: List[ChecksumEthAddress],
