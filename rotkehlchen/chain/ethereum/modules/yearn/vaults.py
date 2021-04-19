@@ -46,7 +46,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
-from rotkehlchen.inquirer import SPECIAL_TOKENS, Inquirer
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -173,8 +173,9 @@ def get_usd_price_zero_if_error(
     TODO: MAke an issue about this
     This can be solved when we have an archive node.
     """
-    if asset in SPECIAL_TOKENS:
-        return Inquirer().find_usd_price(asset)
+    inquirer = Inquirer()
+    if asset in inquirer.special_tokens:
+        return inquirer.find_usd_price(asset)
 
     return query_usd_price_zero_if_error(
         asset=asset,

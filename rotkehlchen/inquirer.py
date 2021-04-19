@@ -54,6 +54,7 @@ from rotkehlchen.errors import (
     PriceQueryUnsupportedAsset,
     RemoteError,
     UnableToDecryptRemoteData,
+    UnknownAsset,
 )
 from rotkehlchen.externalapis.xratescom import (
     get_current_xratescom_exchange_rates,
@@ -78,38 +79,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 CURRENT_PRICE_CACHE_SECS = 300  # 5 mins
-
-SPECIAL_TOKENS = (
-    A_YV1_DAIUSDCTBUSD,
-    A_CRVP_DAIUSDCTBUSD,
-    A_CRVP_DAIUSDCTTUSD,
-    A_YV1_DAIUSDCTTUSD,
-    A_YV1_DAIUSDCTTUSD,
-    A_CRVP_RENWSBTC,
-    A_YV1_RENWSBTC,
-    A_CRV_RENWBTC,
-    A_CRV_YPAX,
-    A_CRV_GUSD,
-    A_CRV_3CRV,
-    A_YV1_3CRV,
-    A_CRV_3CRVSUSD,
-    A_YV1_ALINK,
-    A_YV1_DAI,
-    A_YV1_WETH,
-    A_YV1_YFI,
-    A_YV1_USDT,
-    A_YV1_USDC,
-    A_YV1_TUSD,
-    A_YV1_GUSD,
-    A_FARM_USDC,
-    A_FARM_USDT,
-    A_FARM_DAI,
-    A_FARM_TUSD,
-    A_FARM_WETH,
-    A_FARM_WBTC,
-    A_FARM_RENBTC,
-    A_FARM_CRVRENWBTC,
-)
 
 ASSETS_UNDERLYING_BTC = (
     A_YV1_RENWSBTC,
@@ -227,6 +196,7 @@ class Inquirer():
     _ethereum: Optional['EthereumManager'] = None
     _oracles: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
+    special_tokens: List[EthereumToken]
 
     def __new__(
             cls,
@@ -247,6 +217,43 @@ class Inquirer():
         Inquirer._cryptocompare = cryptocompare
         Inquirer._coingecko = coingecko
         Inquirer._cached_current_price = {}
+        Inquirer.special_tokens = [
+            A_YV1_DAIUSDCTBUSD,
+            A_CRVP_DAIUSDCTBUSD,
+            A_CRVP_DAIUSDCTTUSD,
+            A_YV1_DAIUSDCTTUSD,
+            A_YV1_DAIUSDCTTUSD,
+            A_CRVP_RENWSBTC,
+            A_YV1_RENWSBTC,
+            A_CRV_RENWBTC,
+            A_CRV_YPAX,
+            A_CRV_GUSD,
+            A_CRV_3CRV,
+            A_YV1_3CRV,
+            A_CRV_3CRVSUSD,
+            A_YV1_ALINK,
+            A_YV1_DAI,
+            A_YV1_WETH,
+            A_YV1_YFI,
+            A_YV1_USDT,
+            A_YV1_USDC,
+            A_YV1_TUSD,
+            A_YV1_GUSD,
+            A_FARM_USDC,
+            A_FARM_USDT,
+            A_FARM_DAI,
+            A_FARM_TUSD,
+            A_FARM_WETH,
+            A_FARM_WBTC,
+            A_FARM_RENBTC,
+            A_FARM_CRVRENWBTC,
+        ]
+        # This asset may be missing if user has not yet updated their DB
+        try:
+            a3crv = EthereumToken('0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900')
+            Inquirer.special_tokens.append(a3crv)
+        except UnknownAsset:
+            pass
 
         return Inquirer.__instance
 
@@ -362,7 +369,7 @@ class Inquirer():
             except RemoteError:
                 pass  # continue, a price can be found by one of the oracles (CC for example)
 
-        if asset in SPECIAL_TOKENS:
+        if asset in instance.special_tokens:
             ethereum = instance._ethereum
             assert ethereum, 'Inquirer should never be called before the injection of ethereum'
             token = EthereumToken.from_asset(asset)
