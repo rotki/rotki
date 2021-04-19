@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.accounting.accountant import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.constants import (
     EV_ASSET_MOVE,
     EV_DEFI,
@@ -19,7 +19,6 @@ from rotkehlchen.constants import (
     EV_SELL,
     EV_TX_GAS_COST,
 )
-from rotkehlchen.accounting.accountant import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.csv_exporter import (
     FILENAME_ALL_CSV,
@@ -130,7 +129,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
     assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in errors[0]
     assert 'kraken trade with unprocessable pair IDONTEXISTZEUR' in errors[1]
     assert 'kraken trade with unprocessable pair %$#%$#%$#%$#%$#%' in errors[2]
-    assert 'No documented acquisition found for RDN(Raiden Network Token) before' in errors[3]  # noqa: E501
+    assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[3]  # noqa: E501
 
 
 @pytest.mark.parametrize(
@@ -377,14 +376,14 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
             assert len(row) == 17
             assert row['location'] in ('kraken', 'bittrex', 'binance', 'poloniex')
             assert row['type'] in ('buy', 'sell')
-            assert Asset(row['asset']).identifier is not None
+            assert row['asset'] is not None
             assert FVal(row[f'fee_in_{profit_currency.identifier}']) >= ZERO
             assert FVal(row[f'price_in_{profit_currency.identifier}']) >= ZERO
             assert FVal(row[f'fee_in_{profit_currency.identifier}']) is not None
             assert FVal(row[f'gained_or_invested_{profit_currency.identifier}']) is not None
             assert FVal(row['amount']) > ZERO
             assert row['taxable_amount'] is not None
-            assert Asset(row['exchanged_for']).identifier is not None
+            assert row['exchanged_for'] is not None
             key = f'exchanged_asset_{profit_currency.identifier}_exchange_rate'
             assert FVal(row[key]) >= ZERO
             key = f'taxable_bought_cost_in_{profit_currency.identifier}'
@@ -408,7 +407,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
             assert row['location'] == 'poloniex'
             assert create_timestamp(row['open_time'], '%d/%m/%Y %H:%M:%S') > 0
             assert create_timestamp(row['close_time'], '%d/%m/%Y %H:%M:%S') > 0
-            assert Asset(row['gained_asset']).identifier is not None
+            assert row['gained_asset'] is not None
             assert FVal(row['gained_amount']) > ZERO
             assert FVal(row['lent_amount']) > ZERO
             assert FVal(row[f'profit_in_{profit_currency.identifier}']) > ZERO
@@ -424,7 +423,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
             assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
             assert row['exchange'] in SUPPORTED_EXCHANGES
             assert row['type'] in ('deposit', 'withdrawal')
-            assert Asset(row['moving_asset']).identifier is not None
+            assert row['moving_asset'] is not None
             assert FVal(row['fee_in_asset']) >= ZERO
             assert FVal(row[f'fee_in_{profit_currency.identifier}']) >= ZERO
             count += 1
@@ -452,7 +451,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
             assert row['location'] == 'bitmex'
             assert row['name'] is not None
             assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
-            assert Asset(row['gain_loss_asset']).identifier is not None
+            assert row['gain_loss_asset'] is not None
             assert FVal(row['gain_loss_amount']) is not None
             assert FVal(row[f'profit_loss_in_{profit_currency.identifier}']) is not None
             count += 1
@@ -497,14 +496,10 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
                 'interest_rate_payment',
                 'margin_position_close',
             )
-            paid_asset = row['paid_asset']
-            if paid_asset != '':
-                assert Asset(paid_asset).identifier is not None
+            assert row['paid_asset'] is not None
             assert FVal(row['paid_in_asset']) >= ZERO
             assert row['taxable_amount'] is not None
-            received_asset = row['received_asset']
-            if received_asset != '':
-                assert Asset(received_asset).identifier is not None
+            assert row['received_asset'] is not None
             assert FVal(row['received_in_asset']) >= ZERO
             assert row['net_profit_or_loss'] is not None
             assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
