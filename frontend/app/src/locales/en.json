@@ -496,7 +496,8 @@
       "label": "Date"
     },
     "link": {
-      "label": "Link"
+      "label": "Link",
+      "hint": "[Optional] A link form the action. e.g. in an explorer"
     },
     "location": {
       "label": "Location",
@@ -505,13 +506,16 @@
       }
     },
     "notes": {
-      "label": "Notes"
+      "label": "Notes",
+      "hint": "[Optional] Additional notes to store for the action"
     },
     "rate": {
+      "hint": "[Optional] Custom rate of the action. If not given the rate for the asset at the given time will be used.",
       "label": "Rate"
     },
     "rate_asset": {
-      "label": "Rate asset"
+      "label": "Rate asset",
+      "hint": "[Optional] The asset used for the rate"
     },
     "type": {
       "label": "Type"
@@ -541,6 +545,8 @@
       "link_data": "No link found.",
       "note_data": "No notes found.",
       "notes": "Notes",
+      "rate_asset": "Rate",
+      "rate_data": "No custom rate used",
       "title": "Details"
     },
     "dialog": {

@@ -132,6 +132,21 @@
                     }}
                   </v-col>
                 </v-row>
+                <v-row>
+                  <v-col cols="auto" class="font-weight-medium">
+                    {{ $t('ledger_actions.details.rate_asset') }}
+                  </v-col>
+                  <v-col>
+                    <amount-display
+                      v-if="!!item.rate"
+                      :value="item.rate"
+                      :asset="item.rateAsset"
+                    />
+                    <span v-else>
+                      {{ $t('ledger_actions.details.rate_data') }}
+                    </span>
+                  </v-col>
+                </v-row>
               </table-expand-container>
             </template>
           </data-table>
