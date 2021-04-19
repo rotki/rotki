@@ -63,6 +63,7 @@ def attempt_connect_test_nodes(
             node_interface = SubstrateInterface(
                 url=node.endpoint(),
                 type_registry_preset=si_attributes.type_registry_preset,
+                use_remote_preset=True,
             )
         except (requests.exceptions.RequestException, SubstrateRequestException) as e:
             message = (
