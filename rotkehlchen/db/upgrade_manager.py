@@ -29,6 +29,7 @@ from rotkehlchen.db.upgrades.v23_v24 import upgrade_v23_to_v24
 from rotkehlchen.db.upgrades.v24_v25 import upgrade_v24_to_v25
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -232,10 +233,11 @@ class DBUpgradeManager():
 
         # First make a backup of the DB
         with TemporaryDirectory() as tmpdirname:
-            tmp_db_filename = os.path.join(tmpdirname, 'rotkehlchen_db.backup')
+            tmp_db_filename = f'{ts_now()}_rotkehlchen_db_v{upgrade.from_version}.backup'
+            tmp_db_path = os.path.join(tmpdirname, tmp_db_filename)
             shutil.copyfile(
                 os.path.join(self.db.user_data_dir, 'rotkehlchen.db'),
-                tmp_db_filename,
+                tmp_db_path,
             )
 
             try:
@@ -249,10 +251,17 @@ class DBUpgradeManager():
                 )
                 log.error(error_message)
                 shutil.copyfile(
-                    tmp_db_filename,
+                    tmp_db_path,
                     os.path.join(self.db.user_data_dir, 'rotkehlchen.db'),
                 )
                 raise DBUpgradeError(error_message) from e
+
+            # for some upgrades even for success keep the backup of the previous db
+            if upgrade.from_version == 24:
+                shutil.copyfile(
+                    tmp_db_path,
+                    os.path.join(self.db.user_data_dir, tmp_db_filename),
+                )
 
         # Upgrade success all is good
         self.db.set_version(to_version)
