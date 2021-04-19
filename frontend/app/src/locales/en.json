@@ -229,7 +229,8 @@
     "user_guide": {
       "subtitle": "Get started here",
       "title": "Usage Guide"
-    }
+    },
+    "tooltip": "Help"
   },
   "rounding_settings": {
     "amount_rounding": "Amount Rounding",
