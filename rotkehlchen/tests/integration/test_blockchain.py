@@ -41,7 +41,8 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         eth_map={addr1: {A_ETH: 1, A_DAI: 1 * 10**18}, addr2: {A_ETH: 2}},
         etherscan=blockchain.ethereum.etherscan,
         original_requests_get=requests.get,
-        original_queries=[],
+        original_queries=None,
+        extra_flags=None,
     )
     ethtokens_max_chunks_patch = patch(
         'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH',

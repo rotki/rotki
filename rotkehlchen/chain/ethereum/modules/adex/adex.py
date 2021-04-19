@@ -22,9 +22,14 @@ from web3 import Web3
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
-from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
+from rotkehlchen.chain.ethereum.utils import (
+    generate_address_via_create2,
+    multicall_specific,
+    token_normalized_value_decimals,
+)
 from rotkehlchen.constants import YEAR_IN_SECONDS, ZERO
 from rotkehlchen.constants.assets import A_ADX, A_DAI, A_USD
+from rotkehlchen.constants.ethereum import EthereumConstants
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
@@ -103,6 +108,8 @@ class Adex(EthereumModule):
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        self.staking_pool = EthereumConstants().contract('ADEX_STAKING_POOL')
+
         try:
             self.graph = Graph(
                 'https://api.thegraph.com/subgraphs/name/adexnetwork/adex-protocol-v2',
@@ -1119,55 +1126,39 @@ class Adex(EthereumModule):
     def get_balances(
             self,
             addresses: List[ChecksumAddress],
-    ) -> Dict[ChecksumAddress, List[ADXStakingBalance]]:
+    ) -> Dict[ChecksumAddress, Balance]:
         """Return the addresses' balances (staked amount per pool) in the AdEx
         protocol.
 
         May raise:
-        - RemoteError: when there is a problem either querying the subgraph or
-        deserializing the events.
-
-        TODO: route non-premium users through on-chain query.
+        - RemoteError: Problem querying the chain
         """
-        staking_balances: Dict[ChecksumAddress, List[ADXStakingBalance]] = {}
-        fee_rewards: FeeRewards
-        try:
-            fee_rewards = self._get_tom_pool_fee_rewards_from_api()
-        except RemoteError:
-            fee_rewards = []
-            self.msg_aggregator.add_error(
-                'There was an error requesting the AdEx fee rewards API. '
-                'The AdEx balances won\'t include the unclaimed amounts of ADX and DAI. '
-                'Check logs for more details',
+        if len(addresses) == 0:
+            return {}
+
+        result = multicall_specific(
+            ethereum=self.ethereum,
+            contract=self.staking_pool,
+            method_name='balanceOf',
+            arguments=[[x] for x in addresses],
+        )
+        if all(x[0] == 0 for x in result):
+            return {}  # no balances found
+
+        staking_balances = {}
+        usd_price = Inquirer().find_usd_price(A_ADX)
+        share_price = self.staking_pool.call(self.ethereum, 'shareValue')
+        for idx, address in enumerate(addresses):
+            balance = result[idx][0]
+            if balance == 0:
+                continue
+            # else the address has staked adex
+            amount = token_normalized_value_decimals(
+                token_amount=balance * share_price / (FVal(10) ** 18),
+                token_decimals=18,
             )
+            staking_balances[address] = Balance(amount=amount, usd_value=amount * usd_price)
 
-        identity_address_map = self._get_identity_address_map(addresses)
-        all_events: List[Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]] = []
-        try:
-            for event_type_ in AdexEventType:
-                # TODO: fix. type -> overload does not work well with enum in this case
-                events = self._get_staking_events_graph(  # type: ignore
-                    addresses=addresses,
-                    identity_address_map=identity_address_map,
-                    event_type=event_type_,
-                )
-                all_events.extend(events)
-        except DeserializationError as e:
-            raise RemoteError(e) from e
-
-        staking_events = self._get_addresses_staking_events_grouped_by_type(
-            events=all_events,
-            addresses=set(addresses),
-        )
-        adx_usd_price = Inquirer().find_usd_price(A_ADX)
-        dai_usd_price = Inquirer().find_usd_price(A_DAI)
-        staking_balances = self._calculate_staking_balances(
-            staking_events=staking_events,
-            identity_address_map=identity_address_map,
-            fee_rewards=fee_rewards,
-            adx_usd_price=adx_usd_price,
-            dai_usd_price=dai_usd_price,
-        )
         return staking_balances
 
     def get_history(

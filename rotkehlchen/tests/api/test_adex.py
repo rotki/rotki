@@ -67,7 +67,8 @@ def test_get_balances_premium(
         rotki,
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
-        original_queries=['zerion', 'logs', 'blocknobytime'],
+        # original_queries=['adex_staking'],
+        extra_flags=['mocked_adex_staking_balance'],
     )
     with ExitStack() as stack:
         # patch ethereum/etherscan to not autodetect tokens
@@ -90,14 +91,8 @@ def test_get_balances_premium(
         )
         return
 
-    for staking_balance in result[ADEX_TEST_ADDR]:
-        assert staking_balance['pool_id'] is not None
-        assert 'pool_name' in staking_balance
-        assert staking_balance['contract_address'] is not None
-        assert staking_balance['adx_balance']['amount']
-        assert staking_balance['adx_balance']['usd_value']
-        assert staking_balance['dai_unclaimed_balance']['amount']
-        assert staking_balance['dai_unclaimed_balance']['usd_value']
+    assert FVal(result[ADEX_TEST_ADDR]['amount']) == FVal('113547.9817118382760270384899')
+    assert result[ADEX_TEST_ADDR]['usd_value'] is not None
 
 
 @pytest.mark.skip('Needs to be fixed by Victor after the changes to the subgraph')
