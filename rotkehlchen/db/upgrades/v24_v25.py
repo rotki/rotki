@@ -69,7 +69,7 @@ class V24V25UpgradeHelper():
             self.msg_aggregator.add_warning(
                 f'During v24 -> v25 DB upgrade could not find key {str(e)} at asset with '
                 f'id {old_id} lookup in the all_assets json mapping. '
-                f'Should happen only for custom ethereum token. Assuming same id.',
+                f'Probably a custom ethereum token. Assuming same id and not modifying it.',
             )
 
         return None
@@ -77,6 +77,24 @@ class V24V25UpgradeHelper():
     def get_new_asset_identifier_if_existing(self, identifier: str) -> str:
         new_id = self.get_new_asset_identifier(identifier)
         return new_id if new_id else identifier
+
+    def update_multisettings(self, cursor: 'Cursor') -> None:
+        query = cursor.execute(
+            'SELECT name, value FROM multisettings;',
+        )
+        old_tuples = query.fetchall()
+        cursor.execute('DELETE from multisettings;')
+        new_tuples = []
+        for entry in old_tuples:
+            value = entry[1]
+            if entry[0] == 'ignored_asset':
+                value = self.get_new_asset_identifier_if_existing(entry[1])
+            new_tuples.append((entry[0], value))
+
+        cursor.executemany(
+            'INSERT INTO multisettings(name, value) VALUES(?, ?);',
+            new_tuples,
+        )
 
     def update_timed_balances(self, cursor: 'Cursor') -> None:
         query = cursor.execute(
@@ -466,6 +484,7 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     cursor.execute('DELETE from used_query_ranges where name LIKE "coinbase%";')
 
     # Update tables that need updating
+    helper.update_multisettings(cursor)
     helper.update_timed_balances(cursor)
     helper.update_manually_tracked_balances(cursor)
     helper.update_margin_positions(cursor)
