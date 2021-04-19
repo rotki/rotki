@@ -1336,6 +1336,9 @@ class Balancer(EthereumModule):
             to_timestamp: Timestamp,
             only_cache: bool,
     ) -> List[AMMTrade]:
+        if len(addresses) == 0:
+            return []
+
         with self.trades_lock:
             all_trades = []
             address_to_trades = self._get_address_to_trades(

@@ -157,10 +157,10 @@ class CSVExporter():
             raise ValueError('Illegal event type "{}" at add_to_allevents'.format(event_type))
 
         exported_paid_asset = (
-            paid_asset if isinstance(paid_asset, str) else paid_asset.identifier
+            paid_asset if isinstance(paid_asset, str) else str(paid_asset)
         )
         exported_received_asset = (
-            received_asset if isinstance(received_asset, str) else received_asset.identifier
+            received_asset if isinstance(received_asset, str) else str(received_asset)
         )
         entry = {
             'type': event_type,
@@ -183,16 +183,16 @@ class CSVExporter():
         new_entry = entry.copy()
         new_entry['net_profit_or_loss'] = net_profit_or_loss_csv
         new_entry['time'] = self.timestamp_to_date(timestamp)
-        new_entry[f'paid_in_{self.profit_currency.identifier}'] = paid_in_profit_currency
-        key = f'taxable_received_in_{self.profit_currency.identifier}'
+        new_entry[f'paid_in_{self.profit_currency.symbol}'] = paid_in_profit_currency
+        key = f'taxable_received_in_{self.profit_currency.symbol}'
         new_entry[key] = taxable_received_in_profit_currency
-        key = f'taxable_bought_cost_in_{self.profit_currency.identifier}'
+        key = f'taxable_bought_cost_in_{self.profit_currency.symbol}'
         new_entry[key] = taxable_bought_cost
         del new_entry['cost_basis']  # deleting and re-adding is for appending it to end of dict
         new_entry['cost_basis'] = cost_basis_info.to_string(self.timestamp_to_date) if cost_basis_info else ''  # noqa: E501
-        key = f'total_bought_cost_in_{self.profit_currency.identifier}'
+        key = f'total_bought_cost_in_{self.profit_currency.symbol}'
         new_entry[key] = total_bought_cost
-        key = f'total_received_in_{self.profit_currency.identifier}'
+        key = f'total_received_in_{self.profit_currency.symbol}'
         new_entry[key] = total_received_in_profit_currency
         del new_entry['paid_in_profit_currency']
         del new_entry['taxable_received_in_profit_currency']
@@ -216,25 +216,25 @@ class CSVExporter():
         if not self.create_csv:
             return
 
-        exchange_rate_key = f'exchanged_asset_{self.profit_currency.identifier}_exchange_rate'
+        exchange_rate_key = f'exchanged_asset_{self.profit_currency.symbol}_exchange_rate'
         self.trades_csv.append({
             'type': 'buy',
             'location': str(location),
-            'asset': bought_asset.identifier,
-            'price_in_{}'.format(self.profit_currency.identifier): rate_in_profit_currency,
-            'fee_in_{}'.format(self.profit_currency.identifier): fee_cost,
-            'gained_or_invested_{}'.format(self.profit_currency.identifier): cost_in_profit_currency,  # noqa: E501
+            'asset': str(bought_asset),
+            'price_in_{}'.format(self.profit_currency.symbol): rate_in_profit_currency,
+            'fee_in_{}'.format(self.profit_currency.symbol): fee_cost,
+            'gained_or_invested_{}'.format(self.profit_currency.symbol): cost_in_profit_currency,  # noqa: E501
             'amount': amount,
             'taxable_amount': 'N/A',  # makes no difference for buying
-            'exchanged_for': paid_with_asset.identifier,
+            'exchanged_for': str(paid_with_asset),
             exchange_rate_key: paid_with_asset_rate,
-            'taxable_bought_cost_in_{}'.format(self.profit_currency.identifier): 'N/A',
-            'taxable_gain_in_{}'.format(self.profit_currency.identifier): ZERO,
-            'taxable_profit_loss_in_{}'.format(self.profit_currency.identifier): ZERO,
+            'taxable_bought_cost_in_{}'.format(self.profit_currency.symbol): 'N/A',
+            'taxable_gain_in_{}'.format(self.profit_currency.symbol): ZERO,
+            'taxable_profit_loss_in_{}'.format(self.profit_currency.symbol): ZERO,
             'time': self.timestamp_to_date(timestamp),
             'cost_basis': 'N/A',
             'is_virtual': is_virtual,
-            f'total_bought_cost_in_{self.profit_currency.identifier}': ZERO,
+            f'total_bought_cost_in_{self.profit_currency.symbol}': ZERO,
         })
         self.add_to_allevents(
             event_type=EV_BUY,
@@ -274,9 +274,9 @@ class CSVExporter():
         processed_receiving_asset: Union[EmptyStr, Asset] = (
             EmptyStr('') if receiving_asset is None else receiving_asset
         )
-        exported_receiving_asset = '' if receiving_asset is None else receiving_asset.identifier
+        exported_receiving_asset = '' if receiving_asset is None else str(receiving_asset)
         processed_receiving_amount = ZERO if not receiving_amount else receiving_amount
-        exchange_rate_key = f'exchanged_asset_{self.profit_currency.identifier}_exchange_rate'
+        exchange_rate_key = f'exchanged_asset_{self.profit_currency.symbol}_exchange_rate'
         taxable_profit_received = taxable_gain_for_sell(
             taxable_amount=taxable_amount,
             rate_in_profit_currency=rate_in_profit_currency,
@@ -288,21 +288,21 @@ class CSVExporter():
         self.trades_csv.append({
             'type': 'sell',
             'location': str(location),
-            'asset': selling_asset.identifier,
-            f'price_in_{self.profit_currency.identifier}': rate_in_profit_currency,
-            f'fee_in_{self.profit_currency.identifier}': total_fee_in_profit_currency,
-            f'gained_or_invested_{self.profit_currency.identifier}': gain_in_profit_currency,
+            'asset': str(selling_asset),
+            f'price_in_{self.profit_currency.symbol}': rate_in_profit_currency,
+            f'fee_in_{self.profit_currency.symbol}': total_fee_in_profit_currency,
+            f'gained_or_invested_{self.profit_currency.symbol}': gain_in_profit_currency,
             'amount': selling_amount,
             'taxable_amount': taxable_amount,
             'exchanged_for': exported_receiving_asset,
             exchange_rate_key: receiving_asset_rate_in_profit_currency,
-            f'taxable_bought_cost_in_{self.profit_currency.identifier}': taxable_bought_cost,
-            f'taxable_gain_in_{self.profit_currency.identifier}': taxable_profit_received,
-            f'taxable_profit_loss_in_{self.profit_currency.identifier}': taxable_profit_formula,
+            f'taxable_bought_cost_in_{self.profit_currency.symbol}': taxable_bought_cost,
+            f'taxable_gain_in_{self.profit_currency.symbol}': taxable_profit_received,
+            f'taxable_profit_loss_in_{self.profit_currency.symbol}': taxable_profit_formula,
             'time': self.timestamp_to_date(timestamp),
             'cost_basis': cost_basis_info.to_string(self.timestamp_to_date),
             'is_virtual': is_virtual,
-            f'total_bought_cost_in_{self.profit_currency.identifier}': total_bought_cost,
+            f'total_bought_cost_in_{self.profit_currency.symbol}': total_bought_cost,
         })
         paid_in_profit_currency = ZERO
         self.add_to_allevents(
@@ -339,12 +339,12 @@ class CSVExporter():
         row = len(self.loan_settlements_csv) + 2
         loss_formula = f'=C{row}*D{row}+E{row}'
         self.loan_settlements_csv.append({
-            'asset': asset.identifier,
+            'asset': str(asset),
             'location': str(location),
             'amount': amount,
-            f'price_in_{self.profit_currency.identifier}': rate_in_profit_currency,
-            f'fee_in_{self.profit_currency.identifier}': total_fee_in_profit_currency,
-            f'loss_in_{self.profit_currency.identifier}': loss_formula,
+            f'price_in_{self.profit_currency.symbol}': rate_in_profit_currency,
+            f'fee_in_{self.profit_currency.symbol}': total_fee_in_profit_currency,
+            f'loss_in_{self.profit_currency.symbol}': loss_formula,
             'cost_basis': cost_basis_info.to_string(self.timestamp_to_date),
             'time': self.timestamp_to_date(timestamp),
         })
@@ -380,10 +380,10 @@ class CSVExporter():
             'location': str(location),
             'open_time': self.timestamp_to_date(open_time),
             'close_time': self.timestamp_to_date(close_time),
-            'gained_asset': gained_asset.identifier,
+            'gained_asset': str(gained_asset),
             'gained_amount': gained_amount,
             'lent_amount': lent_amount,
-            f'profit_in_{self.profit_currency.identifier}': gain_in_profit_currency,
+            f'profit_in_{self.profit_currency.symbol}': gain_in_profit_currency,
         })
         self.add_to_allevents(
             location=location,
@@ -417,9 +417,9 @@ class CSVExporter():
             'name': margin_notes,
             'location': str(location),
             'time': self.timestamp_to_date(timestamp),
-            'gain_loss_asset': gain_loss_asset.identifier,
+            'gain_loss_asset': str(gain_loss_asset),
             'gain_loss_amount': gain_loss_amount,
-            f'profit_loss_in_{self.profit_currency.identifier}': gain_loss_in_profit_currency,
+            f'profit_loss_in_{self.profit_currency.symbol}': gain_loss_in_profit_currency,
         })
         self.add_to_allevents(
             event_type=EV_MARGIN_CLOSE,
@@ -450,9 +450,9 @@ class CSVExporter():
             'time': self.timestamp_to_date(timestamp),
             'exchange': str(exchange),
             'type': str(category),
-            'moving_asset': asset.identifier,
+            'moving_asset': str(asset),
             'fee_in_asset': fee,
-            f'fee_in_{self.profit_currency.identifier}': fee * rate,
+            f'fee_in_{self.profit_currency.symbol}': fee * rate,
         })
         self.add_to_allevents(
             event_type=EV_ASSET_MOVE,
@@ -481,7 +481,7 @@ class CSVExporter():
             'time': self.timestamp_to_date(timestamp),
             'transaction_hash': transaction_hash.hex(),
             'eth_burned_as_gas': eth_burned_as_gas,
-            f'cost_in_{self.profit_currency.identifier}': eth_burned_as_gas * rate,
+            f'cost_in_{self.profit_currency.symbol}': eth_burned_as_gas * rate,
         })
         self.add_to_allevents(
             location=Location.BLOCKCHAIN,
@@ -512,7 +512,7 @@ class CSVExporter():
             'got_amount': str(event.got_balance.amount) if event.got_balance else '',
             'spent_asset': str(event.spent_asset) if event.spent_asset else '',
             'spent_amount': str(event.spent_balance.amount) if event.spent_balance else '',
-            f'profit_loss_in_{self.profit_currency.identifier}': profit_loss_sum,
+            f'profit_loss_in_{self.profit_currency.symbol}': profit_loss_sum,
             'tx_hash': event.tx_hash if event.tx_hash else '',
             'description': event.to_string(timestamp_converter=self.timestamp_to_date),
         })
@@ -565,9 +565,9 @@ class CSVExporter():
             'time': self.timestamp_to_date(action.timestamp),
             'type': str(action.action_type),
             'location': str(action.location),
-            'asset': action.asset.identifier,
+            'asset': str(action.asset),
             'amount': str(action.amount),
-            f'profit_loss_in_{self.profit_currency.identifier}': profit_loss_in_profit_currency,
+            f'profit_loss_in_{self.profit_currency.symbol}': profit_loss_in_profit_currency,
         })
 
         paid_asset: Union[EmptyStr, Asset]

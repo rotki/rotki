@@ -1079,6 +1079,9 @@ class Uniswap(EthereumModule):
             to_timestamp: Timestamp,
             only_cache: bool,
     ) -> List[AMMTrade]:
+        if len(addresses) == 0:
+            return []
+
         with self.trades_lock:
             all_trades = []
             trade_mapping = self._get_trades(

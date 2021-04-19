@@ -41,6 +41,7 @@ Changelog
 * :bug:`2690` Eth2 stakers that have very recently deposited and don't have a validator index yet will now be handled properly and their balance should be shown.
 * :bug:`2716` Users will now get a correct exported CSV file when a sell is matched with multiple acquisitions.
 * :bug:`2738` Premium users won't see locations that have no balances in the statistics for value distribution by location.
+* :bug:`2647` Disabling the tax-free period setting for a Profit/Loss report will now be reflected in the same rotki run without needing a restart.
 
 * :release:`1.15.2 <2021-03-21>`
 * :bug:`1996` Querying coinbasepro deposits and withdrawals should now be much faster thanks to using their new API endpoints.

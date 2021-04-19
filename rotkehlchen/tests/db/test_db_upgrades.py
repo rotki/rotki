@@ -1550,6 +1550,14 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
         (1, 1611260690, 'A', 'A', '1', 'ABYSS', '', ''),
         (2, 1610483475, 'A', 'A', '1', '0xBTC', 'sad', 'asdsad'),
     ]
+    query = cursor.execute('SELECT name, value from multisettings;')
+    assert query.fetchall() == [
+        ('ignored_asset', 'DAO'),
+        ('ignored_asset', 'OMG'),
+        ('ignored_asset', 'XMR'),
+        ('queried_address_makerdao_vaults', '0x7e57fBBb05A0557c133bAcB8a66a1955F0D66B1D'),
+        ('queried_address_aave', '0x7e57fBBb05A0557c133bAcB8a66a1955F0D66B1D'),
+    ]
 
     with mock_dbhandler_update_owned_assets():
         del db_v24  # explicit delete the db so update_owned_assets still runs mocked
@@ -1686,6 +1694,16 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
         ('_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94', 'test custom token balance', '65', 'A'),  # noqa: E501
         ('_ceth_0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9', 'test_asset_with_same_symbol', '85', 'A'),  # noqa: E501
         ('_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e', 'test_custom_token', '25', 'A'),
+    ]
+
+    # test that the ignored assets were properly upgraded
+    query = cursor.execute('SELECT name, value from multisettings;')
+    assert query.fetchall() == [
+        ('ignored_asset', '_ceth_0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413'),
+        ('ignored_asset', '_ceth_0xd26114cd6EE289AccF82350c8d8487fedB8A0C07'),
+        ('ignored_asset', 'XMR'),
+        ('queried_address_makerdao_vaults', '0x7e57fBBb05A0557c133bAcB8a66a1955F0D66B1D'),
+        ('queried_address_aave', '0x7e57fBBb05A0557c133bAcB8a66a1955F0D66B1D'),
     ]
 
     # test that the trades were properly upgraded

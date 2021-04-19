@@ -1,3 +1,4 @@
+import os
 import random
 from contextlib import ExitStack
 
@@ -16,6 +17,10 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
 
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='SLOW TEST -- run locally from time to time',
+)
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397',
 ]])
@@ -64,7 +69,7 @@ def test_query_eth2_info(rotkehlchen_api_server, ethereum_accounts):
             outcome = wait_for_async_task(
                 rotkehlchen_api_server,
                 task_id,
-                timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
+                timeout=ASYNC_TASK_WAIT_TIMEOUT * 10,
             )
             assert outcome['message'] == ''
             deposits = outcome['result']

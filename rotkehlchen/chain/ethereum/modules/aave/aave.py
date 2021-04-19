@@ -214,6 +214,9 @@ class Aave(EthereumModule):
             to_timestamp: Timestamp,
             addresses: List[ChecksumEthAddress],
     ) -> List[DefiEvent]:
+        if len(addresses) == 0:
+            return []
+
         mapping = self.get_history(
             addresses=addresses,
             reset_db_data=False,

@@ -591,6 +591,9 @@ class YearnVaults(EthereumModule):
 
             This is a premium only call. Check happens only in the API level.
         """
+        if len(addresses) == 0:
+            return []
+
         from_block = self.ethereum.get_blocknumber_by_time(from_timestamp)
         to_block = self.ethereum.get_blocknumber_by_time(to_timestamp)
 

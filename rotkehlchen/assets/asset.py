@@ -348,6 +348,10 @@ class Asset():
         return self.asset_type == AssetType.ETHEREUM_TOKEN
 
     def __str__(self) -> str:
+        if self.is_eth_token():
+            token = EthereumToken.from_asset(self)
+            assert token, 'Token should exist here'
+            return str(token)
         return f'{self.symbol}({self.name})'
 
     def __repr__(self) -> str:

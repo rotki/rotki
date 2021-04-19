@@ -69,7 +69,7 @@ class V24V25UpgradeHelper():
             self.msg_aggregator.add_warning(
                 f'During v24 -> v25 DB upgrade could not find key {str(e)} at asset with '
                 f'id {old_id} lookup in the all_assets json mapping. '
-                f'Should happen only for custom ethereum token. Assuming same id.',
+                f'Probably a custom ethereum token. Assuming same id and not modifying it.',
             )
 
         return None
@@ -78,20 +78,57 @@ class V24V25UpgradeHelper():
         new_id = self.get_new_asset_identifier(identifier)
         return new_id if new_id else identifier
 
-    def update_table(
-            self,
-            cursor: 'Cursor',
-            select_str: str,
-            update_str: str,
-    ) -> None:
-        query = cursor.execute(select_str)
-        cursor_tuples = []
-        for entry in query:
-            old_id = entry[0]
-            new_id = self.get_new_asset_identifier(old_id)
-            if new_id is not None:
-                cursor_tuples.append((new_id, old_id))
-        cursor.executemany(update_str, cursor_tuples)
+    def update_multisettings(self, cursor: 'Cursor') -> None:
+        query = cursor.execute(
+            'SELECT name, value FROM multisettings;',
+        )
+        old_tuples = query.fetchall()
+        cursor.execute('DELETE from multisettings;')
+        new_tuples = []
+        for entry in old_tuples:
+            value = entry[1]
+            if entry[0] == 'ignored_asset':
+                value = self.get_new_asset_identifier_if_existing(entry[1])
+            new_tuples.append((entry[0], value))
+
+        cursor.executemany(
+            'INSERT INTO multisettings(name, value) VALUES(?, ?);',
+            new_tuples,
+        )
+
+    def update_timed_balances(self, cursor: 'Cursor') -> None:
+        query = cursor.execute(
+            'SELECT category, time, currency, amount, usd_value FROM timed_balances;',
+        )
+        old_tuples = query.fetchall()
+        cursor.execute('DELETE from timed_balances;')
+        new_tuples = []
+        for entry in old_tuples:
+            new_id = self.get_new_asset_identifier_if_existing(entry[2])
+            new_tuples.append((entry[0], entry[1], new_id, entry[3], entry[4]))
+
+        cursor.executemany(
+            'INSERT INTO timed_balances(category, time, currency, amount, usd_value) '
+            'VALUES(?, ?, ?, ?, ?);',
+            new_tuples,
+        )
+
+    def update_manually_tracked_balances(self, cursor: 'Cursor') -> None:
+        query = cursor.execute(
+            'SELECT asset, label, amount, location FROM manually_tracked_balances;',
+        )
+        old_tuples = query.fetchall()
+        cursor.execute('DELETE from manually_tracked_balances;')
+        new_tuples = []
+        for entry in old_tuples:
+            new_id = self.get_new_asset_identifier_if_existing(entry[0])
+            new_tuples.append((new_id, entry[1], entry[2], entry[3]))
+
+        cursor.executemany(
+            'INSERT INTO manually_tracked_balances(asset, label, amount, location) '
+            'VALUES(?, ?, ?, ?);',
+            new_tuples,
+        )
 
     def update_margin_positions(self, cursor: 'Cursor') -> None:
         """Upgrades the margin positions table to use the new asset ids if they are ethereum tokens
@@ -447,16 +484,9 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     cursor.execute('DELETE from used_query_ranges where name LIKE "coinbase%";')
 
     # Update tables that need updating
-    helper.update_table(
-        cursor=cursor,
-        select_str='SELECT currency from timed_balances;',
-        update_str='UPDATE timed_balances SET currency=? WHERE currency=?;',
-    )
-    helper.update_table(
-        cursor=cursor,
-        select_str='SELECT asset from manually_tracked_balances;',
-        update_str='UPDATE manually_tracked_balances SET asset=? WHERE asset=?;',
-    )
+    helper.update_multisettings(cursor)
+    helper.update_timed_balances(cursor)
+    helper.update_manually_tracked_balances(cursor)
     helper.update_margin_positions(cursor)
     helper.update_asset_movements(cursor)
     helper.update_ledger_actions(cursor)
