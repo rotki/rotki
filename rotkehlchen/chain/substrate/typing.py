@@ -13,15 +13,24 @@ BlockNumber = NewType('BlockNumber', int)
 
 class KusamaNodeName(Enum):
     """Public nodes for Kusama.
-    """
+
+    Taken from: https://github.com/polkadot-js/apps/blob/master/packages/apps-config/src/endpoints/production.ts#L34
+    """  # noqa: E501
     OWN = 0
     PARITY = 1
+    ONFINALITY = 2
+    ELARA = 3
 
     def __str__(self) -> str:
         if self == KusamaNodeName.OWN:
             return 'own node'
         if self == KusamaNodeName.PARITY:
             return 'parity'
+        if self == KusamaNodeName.ONFINALITY:
+            return 'onfinality'
+        if self == KusamaNodeName.ELARA:
+            return 'elara'
+
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
     def endpoint(self) -> str:
@@ -32,6 +41,10 @@ class KusamaNodeName(Enum):
             )
         if self == KusamaNodeName.PARITY:
             return 'https://kusama-rpc.polkadot.io/'
+        if self == KusamaNodeName.ONFINALITY:
+            return 'https://kusama.api.onfinality.io/public-https'
+        if self == KusamaNodeName.ELARA:
+            return 'https://kusama.elara.patract.io'
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
 
