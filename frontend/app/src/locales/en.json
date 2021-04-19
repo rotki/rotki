@@ -1861,9 +1861,7 @@
   },
   "labeled_address_display": {
     "label": "{label}",
-    "divider": "|",
-    "copy": "Copy address to clipboard",
-    "open_link": "Open in external block explorer"
+    "divider": "|"
   },
   "defi_selector_item": {
     "vault": "Maker Vault"
