@@ -47,9 +47,9 @@
           @click="notifications = !notifications"
         />
         <progress-indicator class="app__app-bar__button" />
-        <help-indicator :visible="help" @visible:update="help = $event" />
         <currency-drop-down class="red--text app__app-bar__button" />
         <user-dropdown class="app__app-bar__button" />
+        <help-indicator :visible="help" @visible:update="help = $event" />
       </v-app-bar>
       <notification-sidebar
         :visible="notifications"
