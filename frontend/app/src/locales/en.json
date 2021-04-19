@@ -1193,10 +1193,11 @@
     },
     "fee": {
       "label": "Fee",
-      "hint": "Fee if any of the trade that occurred"
+      "hint": "[Optional] Fee if any of the trade that occurred"
     },
     "fee_currency": {
-      "label": "Fee Currency"
+      "label": "Fee Currency",
+      "hint": "[Optional] The currency used for the fee"
     },
     "link": {
       "label": "Link",

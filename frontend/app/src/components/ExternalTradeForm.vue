@@ -1,11 +1,19 @@
 ﻿<template>
-  <v-form :value="value" data-cy="trade-form" @input="input">
+  <v-form
+    :value="value"
+    data-cy="trade-form"
+    class="external-trade-form"
+    @input="input"
+  >
     <v-row>
       <v-col>
         <v-row>
           <v-col cols="12" sm="3">
             <date-time-picker
               v-model="datetime"
+              required
+              outlined
+              class="pt-1"
               seconds
               data-cy="date"
               :label="$t('external_trade_form.date.label')"
@@ -17,6 +25,7 @@
             <div data-cy="type">
               <v-radio-group
                 v-model="type"
+                required
                 :label="$t('external_trade_form.trade_type.label')"
               >
                 <v-radio
@@ -33,13 +42,13 @@
           <v-col cols="12" sm="9" class="d-flex flex-column">
             <v-row>
               <v-col cols="12" md="6" class="d-flex flex-row align-center">
-                <div
-                  class="text--secondary pa-3 external-trade-form__action-hint"
-                >
+                <div class="text--secondary external-trade-form__action-hint">
                   {{ baseHint }}
                 </div>
                 <asset-select
                   v-model="base"
+                  outlined
+                  required
                   data-cy="base_asset"
                   :rules="baseRules"
                   :hint="$t('external_trade_form.base_asset.hint')"
@@ -49,13 +58,13 @@
                 />
               </v-col>
               <v-col cols="12" md="6" class="d-flex flex-row align-center">
-                <div
-                  class="text--secondary pa-3 external-trade-form__action-hint"
-                >
+                <div class="text--secondary external-trade-form__action-hint">
                   {{ quoteHint }}
                 </div>
                 <asset-select
                   v-model="quote"
+                  required
+                  outlined
                   data-cy="quote_asset"
                   :rules="quoteRules"
                   :hint="$t('external_trade_form.quote_asset.hint')"
@@ -68,6 +77,7 @@
             <v-text-field
               v-model="amount"
               required
+              outlined
               :rules="amountRules"
               data-cy="amount"
               :label="$t('external_trade_form.amount.label')"
@@ -79,6 +89,7 @@
             <v-text-field
               v-model="rate"
               :rules="rateRules"
+              outlined
               data-cy="rate"
               :loading="fetching"
               :label="$t('external_trade_form.rate.label')"
@@ -87,8 +98,17 @@
               :error-messages="errorMessages['rate']"
               @focus="delete errorMessages['rate']"
             />
+          </v-col>
+        </v-row>
+
+        <v-divider class="mb-6 mt-2" />
+
+        <v-row>
+          <v-col cols="12" md="6">
             <v-text-field
               v-model="fee"
+              class="external-trade-form__fee"
+              outlined
               data-cy="fee"
               :label="$t('external_trade_form.fee.label')"
               persistent-hint
@@ -96,9 +116,14 @@
               :error-messages="errorMessages['fee']"
               @focus="delete errorMessages['fee']"
             />
+          </v-col>
+          <v-col cols="12" md="6">
             <asset-select
               v-model="feeCurrency"
+              outlined
+              persistent-hint
               :label="$t('external_trade_form.fee_currency.label')"
+              :hint="$t('external_trade_form.fee_currency.hint')"
               data-cy="fee-currency"
               :error-messages="errorMessages['feeCurrency']"
               @focus="delete errorMessages['feeCurrency']"
@@ -108,6 +133,7 @@
         <v-text-field
           v-model="link"
           data-cy="link"
+          outlined
           prepend-inner-icon="mdi-link"
           :label="$t('external_trade_form.link.label')"
           persistent-hint
@@ -117,6 +143,7 @@
         />
         <v-textarea
           v-model="notes"
+          prepend-inner-icon="mdi-text-box-outline"
           outlined
           data-cy="notes"
           class="mt-4"
@@ -367,6 +394,22 @@ export default class ExternalTradeForm extends Vue {
 .external-trade-form {
   &__action-hint {
     width: 60px;
+    margin-top: -24px;
+  }
+
+  ::v-deep {
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators,rule-empty-line-before */
+    .v-select.v-text-field--outlined:not(.v-text-field--single-line) {
+      .v-select__selections {
+        padding: 0 !important;
+      }
+    }
+
+    /* stylelint-enable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators,rule-empty-line-before */
+  }
+
+  &__fee {
+    height: 60px;
   }
 }
 </style>
