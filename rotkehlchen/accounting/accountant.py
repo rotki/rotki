@@ -98,7 +98,9 @@ class Accountant():
         if settings.include_crypto2crypto is not None:
             self.events.include_crypto2crypto = settings.include_crypto2crypto
 
-        if settings.taxfree_after_period is not None:
+        if settings.taxfree_after_period is None:
+            self.events.taxfree_after_period = None
+        else:
             given_taxfree_after_period: Optional[int] = settings.taxfree_after_period
             if given_taxfree_after_period == -1:
                 # That means user requested to disable taxfree_after_period
