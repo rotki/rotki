@@ -83,6 +83,7 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -1380,7 +1381,7 @@ class Balancer(EthereumModule):
     def on_startup(self) -> None:
         pass
 
-    def on_account_addition(self, address: ChecksumEthAddress) -> None:
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
         pass
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:

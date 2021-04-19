@@ -893,7 +893,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     # For each module run the corresponding callback for the address
                     for _, module in self.iterate_modules():
                         if append_or_remove == 'append':
-                            module.on_account_addition(address)
+                            new_module_balances = module.on_account_addition(address)
+                            if new_module_balances:
+                                for entry in new_module_balances:
+                                    self.balances.eth[address].assets[entry.asset] += entry.balance
+                                    self.totals.assets[entry.asset] += entry.balance
                         else:  # remove
                             module.on_account_removal(address)
 

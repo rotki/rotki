@@ -1277,8 +1277,19 @@ class Adex(EthereumModule):
     def on_startup(self) -> None:
         pass
 
-    def on_account_addition(self, address: ChecksumEthAddress) -> None:
-        pass
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:
+        """When an account is added for adex check its balances"""
+        balance = self.staking_pool.call(self.ethereum, 'balanceOf', arguments=[address])
+        if balance == 0:
+            return None
+        # else the address has staked adex
+        usd_price = Inquirer().find_usd_price(A_ADX)
+        share_price = self.staking_pool.call(self.ethereum, 'shareValue')
+        amount = token_normalized_value_decimals(
+            token_amount=balance * share_price / (FVal(10) ** 18),
+            token_decimals=18,
+        )
+        return [AssetBalance(asset=A_ADX, balance=Balance(amount=amount, usd_value=amount * usd_price))]  # noqa: E501
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         pass

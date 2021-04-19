@@ -780,7 +780,7 @@ class Compound(EthereumModule):
     def on_startup(self) -> None:
         pass
 
-    def on_account_addition(self, address: ChecksumEthAddress) -> None:
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:
         pass
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
