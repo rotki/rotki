@@ -1,6 +1,6 @@
 ﻿<template>
   <div class="d-flex flex-row shrink align-center">
-    <span v-if="!linkOnly">
+    <span v-if="!linkOnly & !buttons">
       <span v-if="fullAddress" :class="privacyMode ? 'blur-content' : null">
         {{ displayText }}
       </span>
@@ -17,31 +17,33 @@
         <span> {{ displayText }} </span>
       </v-tooltip>
     </span>
-    <v-tooltip v-if="!linkOnly" top open-delay="600">
+    <v-tooltip v-if="!linkOnly || buttons" top open-delay="600">
       <template #activator="{ on, attrs }">
         <v-btn
-          x-small
+          :x-small="!small"
+          :small="small"
           icon
           v-bind="attrs"
-          width="20px"
+          :width="!small ? '20px' : null"
           color="primary"
           class="grey lighten-4 ml-2"
           v-on="on"
           @click="copyText(text)"
         >
-          <v-icon x-small> mdi-content-copy </v-icon>
+          <v-icon :x-small="!small" :small="small"> mdi-content-copy </v-icon>
         </v-btn>
       </template>
       <span>{{ $t('hash_link.copy') }}</span>
     </v-tooltip>
-    <v-tooltip v-if="!noLink" top open-delay="600" max-width="400">
+    <v-tooltip v-if="!noLink || buttons" top open-delay="600" max-width="400">
       <template #activator="{ on, attrs }">
         <v-btn
           v-if="!!base"
-          x-small
+          :x-small="!small"
+          :small="small"
           icon
           v-bind="attrs"
-          width="20px"
+          :width="!small ? '20px' : null"
           color="primary"
           class="grey lighten-4 ml-1"
           :href="href"
@@ -49,7 +51,7 @@
           v-on="on"
           @click="openLink()"
         >
-          <v-icon x-small> mdi-launch </v-icon>
+          <v-icon :x-small="!small" :small="small"> mdi-launch </v-icon>
         </v-btn>
       </template>
       <span>{{ $t('hash_link.open_link', { url }) }}</span>
@@ -87,6 +89,10 @@ export default class HashLink extends Mixins(ScrambleMixin) {
   chain!: Blockchain | 'ETC';
   @Prop({ required: false, type: Boolean, default: false })
   tx!: Boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  buttons!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  small!: boolean;
 
   get displayText(): string {
     if (!this.scrambleData) {
