@@ -108,10 +108,12 @@
             </template>
             <template #item.fee="{ item }">
               <amount-display
+                v-if="!!item.fee"
                 class="closed-trades__trade__fee"
                 :asset="item.feeCurrency"
                 :value="item.fee"
               />
+              <span v-else>-</span>
             </template>
             <template #item.ignoredInAccounting="{ item }">
               <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
