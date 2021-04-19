@@ -529,6 +529,8 @@ UNSUPPORTED_FTX_ASSETS = (
     'BYND',  # Beyond Meat Tokenized stock
     'CGC',  # Trade Canopy Growth Corp Tokenized stock
     'MRNA',  # Moderna Tokenized stock
+    'XRPMOON',  # no cryptocompare/coingecko data
+    'SRM_LOCKED',  # no cryptocompare/coingecko data
 )
 
 # https://api.kucoin.com/api/v1/currencies
