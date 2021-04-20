@@ -146,7 +146,7 @@ export default class AssetDetailsBase extends Vue {
   }
 
   @media (min-width: 700px) and (max-width: 1500px) {
-    width: 150px;
+    width: 100px;
   }
 }
 </style>

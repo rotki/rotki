@@ -106,15 +106,6 @@
                 :value="item.amount"
               />
             </template>
-            <template #item.fee="{ item }">
-              <amount-display
-                v-if="!!item.fee"
-                class="closed-trades__trade__fee"
-                :asset="item.feeCurrency"
-                :value="item.fee"
-              />
-              <span v-else>-</span>
-            </template>
             <template #item.ignoredInAccounting="{ item }">
               <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
             </template>
@@ -151,22 +142,20 @@
                   {{ $t('closed_trades.details.title') }}
                 </template>
                 <v-row>
+                  <v-col cols="auto" class="font-weight-medium">
+                    {{ $t('closed_trades.details.fee') }}
+                  </v-col>
                   <v-col>
-                    <v-card outlined>
-                      <v-card-title class="text-subtitle-2">
-                        {{ $t('closed_trades.details.notes') }}
-                      </v-card-title>
-                      <v-card-text>
-                        {{
-                          item.notes
-                            ? item.notes
-                            : $t('closed_trades.details.note_data')
-                        }}
-                      </v-card-text>
-                    </v-card>
+                    <amount-display
+                      v-if="!!item.fee"
+                      class="closed-trades__trade__fee"
+                      :asset="item.feeCurrency"
+                      :value="item.fee"
+                    />
+                    <span v-else>-</span>
                   </v-col>
                 </v-row>
-                <v-row class="mt-2">
+                <v-row>
                   <v-col cols="auto" class="font-weight-medium">
                     {{ $t('closed_trades.details.link') }}
                   </v-col>
@@ -178,6 +167,7 @@
                     }}
                   </v-col>
                 </v-row>
+                <notes-display :notes="item.notes" />
               </table-expand-container>
             </template>
             <template
@@ -232,6 +222,7 @@ import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
@@ -246,6 +237,7 @@ import { ActionStatus, Message } from '@/store/types';
 
 @Component({
   components: {
+    NotesDisplay,
     AssetDetailsBase,
     DataTable,
     TableExpandContainer,
@@ -308,11 +300,6 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
     {
       text: this.$tc('closed_trades.headers.amount'),
       value: 'amount',
-      align: 'end'
-    },
-    {
-      text: this.$tc('closed_trades.headers.fee'),
-      value: 'fee',
       align: 'end'
     },
     {

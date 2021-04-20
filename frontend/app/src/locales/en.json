@@ -232,6 +232,10 @@
     },
     "tooltip": "Help"
   },
+  "notes_display": {
+    "empty_notes": "No notes found for this entry",
+    "notes": "Notes"
+  },
   "rounding_settings": {
     "amount_rounding": "Amount Rounding",
     "round": {
@@ -1016,7 +1020,6 @@
       "quote": "Quote",
       "rate": "Rate",
       "amount": "Amount",
-      "fee": "Fee",
       "timestamp": "Date",
       "ignored": "Ignored"
     },
@@ -1028,8 +1031,7 @@
     },
     "details": {
       "title": "Trade Details",
-      "notes": "Notes",
-      "note_data": "Trade has no notes",
+      "fee": "Fee",
       "link_data": "Trade has no link",
       "link": "Link"
     },
