@@ -91,8 +91,8 @@ def test_get_balances_premium(
         )
         return
 
-    assert FVal(result[ADEX_TEST_ADDR]['amount']) == FVal('113547.9817118382760270384899')
-    assert result[ADEX_TEST_ADDR]['usd_value'] is not None
+    assert FVal(result[ADEX_TEST_ADDR][0]['adx_balance']['amount']) == FVal('113547.9817118382760270384899')  # noqa: E501
+    assert result[ADEX_TEST_ADDR][0]['adx_balance']['usd_value'] is not None
 
 
 @pytest.mark.skip('Needs to be fixed by Victor after the changes to the subgraph')

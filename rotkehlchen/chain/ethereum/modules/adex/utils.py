@@ -30,12 +30,6 @@ CREATE2_SALT = f'0x{bytearray(32).hex()}'
 ADX_AMOUNT_MANTISSA = FVal(10**18)
 DAI_AMOUNT_MANTISSA = FVal(10**18)
 
-# Tom pool fee rewards API constants
-TOM_POOL_FEE_REWARDS_API_URL = 'https://tom.adex.network/fee-rewards'
-TOM_POOL_FEE_REWARDS_ADX_LEGACY_CHANNEL = '0x30d87bab0ef1e7f8b4c3b894ca2beed41bbd54c481f31e5791c1e855c9dbf4ba'  # noqa: E501
-TOM_POOL_PERIOD_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
-
-OUTSTANDING_REWARD_THRESHOLD = FVal('0.2')
 ADEX_EVENTS_PREFIX = 'adex_events'
 
 # Defines the expected order of the events given the same timestamp and sorting
