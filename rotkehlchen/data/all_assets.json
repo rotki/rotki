@@ -9273,6 +9273,16 @@
         "symbol": "pBTC",
         "type": "ethereum token"
     },
+    "PCDAI": {
+      "coingecko": "",
+      "cryptocompare": "",
+      "ethereum_address": "0x334cBb5858417Aee161B53Ee0D5349cCF54514CF",
+      "ethereum_token_decimals": 18,
+      "name": "Pooltogether Dai Ticket (Compound)",
+      "started": 11104392,
+      "symbol": "PCDAI",
+      "type": "ethereum token",
+    }
     "PCH": {
         "coingecko": "popchain",
         "ethereum_address": "0xE3F4b4A5d91e5cB9435B947F090A319737036312",

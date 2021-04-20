@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.defi.structures import (
 )
 from rotkehlchen.chain.ethereum.typing import NodeName, string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.constants.assets import A_DAI, A_USDC
+from rotkehlchen.constants.assets import A_COMP, A_DAI, A_UNI, A_USDC
 from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
@@ -151,6 +151,56 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
             token_address=string_to_ethereum_address('0xBD87447F48ad729C5c4b8bcb503e1395F62e8B98'),
             token_name='Pool Together USDC token',
             token_symbol='plUSDC',
+            balance=Balance(
+                amount=normalized_balance,
+                usd_value=normalized_balance * usdc_price,
+            ),
+        )
+    # else
+    return None
+
+
+def _handle_pooltogether_v3(normalized_balance: FVal, token_name: str) -> Optional[DefiBalance]:
+    """Special handling for pooltogether v3"""
+    if 'COMP' in token_name:
+        comp_price = Inquirer.find_usd_price(A_COMP)
+        return DefiBalance(
+            token_address=string_to_ethereum_address('0x27B85f596feB14e4B5fAA9671720a556a7608C69'),
+            token_name='PoolTogether Compound cCOMP Ticket',
+            token_symbol='PCcCOMP',
+            balance=Balance(
+                amount=normalized_balance,
+                usd_value=normalized_balance * comp_price,
+            ),
+        )
+    if 'DAI' in token_name:
+        dai_price = Inquirer.find_usd_price(A_DAI)
+        return DefiBalance(
+            token_address=string_to_ethereum_address('0x334cBb5858417Aee161B53Ee0D5349cCF54514CF'),
+            token_name='PoolTogether DAI Ticket (Compound)',
+            token_symbol='PcDAI',
+            balance=Balance(
+                amount=normalized_balance,
+                usd_value=normalized_balance * dai_price,
+            ),
+        )
+    if 'UNI' in token_name:
+        uni_price = Inquirer.find_usd_price(A_UNI)
+        return DefiBalance(
+            token_address=string_to_ethereum_address('0xA92a861FC11b99b24296aF880011B47F9cAFb5ab'),
+            token_name='PoolTogether UNI Ticket (Compound)',
+            token_symbol='PcUNI',
+            balance=Balance(
+                amount=normalized_balance,
+                usd_value=normalized_balance * uni_price,
+            ),
+        )
+    if 'USDC' in token_name:
+        usdc_price = Inquirer.find_usd_price(A_USDC)
+        return DefiBalance(
+            token_address=string_to_ethereum_address('0xD81b1A8B1AD00Baa2D6609E0BAE28A38713872f7'),
+            token_name='PoolTogether USDC Ticket (Compound)',
+            token_symbol='PcUSDC',
             balance=Balance(
                 amount=normalized_balance,
                 usd_value=normalized_balance * usdc_price,
@@ -356,6 +406,10 @@ class ZerionSDK():
         """
         if protocol_name == 'PoolTogether':
             result = _handle_pooltogether(normalized_balance, token_name)
+            if result is not None:
+                return result
+        if protocol_name == 'PoolTogether v3':
+            result = _handle_pooltogether_v3(normalized_balance, token_name)
             if result is not None:
                 return result
 
