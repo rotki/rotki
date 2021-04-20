@@ -9,6 +9,7 @@
     :label="label"
     :rules="rules"
     :clearable="clearable"
+    :persistent-hint="persistentHint"
     :success-messages="successMessages"
     :error-messages="errorMessages"
     item-value="identifier"
@@ -84,6 +85,9 @@ export default class AssetSelect extends Vue {
 
   @Prop({ default: false, required: false, type: Boolean })
   clearable!: boolean;
+
+  @Prop({ default: false, required: false, type: Boolean })
+  persistentHint!: boolean;
 
   @Emit()
   input(_value: string) {}

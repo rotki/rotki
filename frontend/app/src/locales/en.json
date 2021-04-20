@@ -232,6 +232,10 @@
     },
     "tooltip": "Help"
   },
+  "notes_display": {
+    "empty_notes": "No notes found for this entry",
+    "notes": "Notes"
+  },
   "rounding_settings": {
     "amount_rounding": "Amount Rounding",
     "round": {
@@ -496,7 +500,8 @@
       "label": "Date"
     },
     "link": {
-      "label": "Link"
+      "label": "Link",
+      "hint": "[Optional] A link for the action. e.g. in an explorer"
     },
     "location": {
       "label": "Location",
@@ -505,13 +510,16 @@
       }
     },
     "notes": {
-      "label": "Notes"
+      "label": "Notes",
+      "hint": "[Optional] Additional notes to store for the action"
     },
     "rate": {
+      "hint": "[Optional] Custom rate of the action. If not given the rate for the asset at the given time will be used.",
       "label": "Rate"
     },
     "rate_asset": {
-      "label": "Rate asset"
+      "label": "Rate asset",
+      "hint": "[Optional] The asset used for the rate"
     },
     "type": {
       "label": "Type"
@@ -539,8 +547,8 @@
     "details": {
       "link": "Link",
       "link_data": "No link found.",
-      "note_data": "No notes found.",
-      "notes": "Notes",
+      "rate_asset": "Rate",
+      "rate_data": "No custom rate used",
       "title": "Details"
     },
     "dialog": {
@@ -1010,7 +1018,6 @@
       "quote": "Quote",
       "rate": "Rate",
       "amount": "Amount",
-      "fee": "Fee",
       "timestamp": "Date",
       "ignored": "Ignored"
     },
@@ -1022,8 +1029,7 @@
     },
     "details": {
       "title": "Trade Details",
-      "notes": "Notes",
-      "note_data": "Trade has no notes",
+      "fee": "Fee",
       "link_data": "Trade has no link",
       "link": "Link"
     },
@@ -1187,10 +1193,11 @@
     },
     "fee": {
       "label": "Fee",
-      "hint": "Fee if any of the trade that occurred"
+      "hint": "[Optional] Fee if any of the trade that occurred"
     },
     "fee_currency": {
-      "label": "Fee Currency"
+      "label": "Fee Currency",
+      "hint": "[Optional] The currency used for the fee"
     },
     "link": {
       "label": "Link",
