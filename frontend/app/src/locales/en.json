@@ -501,7 +501,7 @@
     },
     "link": {
       "label": "Link",
-      "hint": "[Optional] A link form the action. e.g. in an explorer"
+      "hint": "[Optional] A link for the action. e.g. in an explorer"
     },
     "location": {
       "label": "Location",
