@@ -21,8 +21,8 @@ def test_set_own_rpc_endpoint(rotkehlchen_api_server):
     assert len(kusama_manager.available_node_attributes_map) == 0
     assert len(kusama_manager.available_nodes_call_order) == 0
 
-    # Set ksm_rpc_endpoint with a reliable endpoint (e.g. Parity)
-    test_node_endpoint = KUSAMA_TEST_NODES[0].endpoint()
+    # Set ksm_rpc_endpoint with a reliable endpoint (e.g. NOT Parity)
+    test_node_endpoint = KUSAMA_TEST_NODES[1].endpoint()
     response = requests.put(
         api_url_for(rotkehlchen_api_server, "settingsresource"),
         json={'settings': {'ksm_rpc_endpoint': test_node_endpoint}},
@@ -43,7 +43,7 @@ def test_set_own_rpc_endpoint(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR]])
-@pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_NODES[0].endpoint()])
+@pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_NODES[1].endpoint()])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [[KusamaNodeName.OWN]])
 def test_unset_own_rpc_endpoint(ksm_rpc_endpoint, rotkehlchen_api_server):
     """Test that unsetting the own node (via `ksm_rpc_endpoint` setting) removes

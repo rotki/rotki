@@ -35,25 +35,6 @@ def fixture_kusama_available_node_attributes_map():
     return available_node_attributes_map
 
 
-def test_get_account_balance_invalid_account(kusama_manager):
-    """Test querying KSM balance with invalid address adds the specific error
-    in `msg_aggregator` but also that the request is done for each available
-    node. RemoteError is raised by `request_available_nodes()`.
-    """
-    with pytest.raises(RemoteError) as e:
-        kusama_manager.get_account_balance(SUBSTRATE_ACC1_DOT_ADDR)
-
-    errors = kusama_manager.msg_aggregator.consume_errors()
-    user_error_msg = (
-        f'Got remote error while querying Kusama KSM balance for account {SUBSTRATE_ACC1_DOT_ADDR}'
-    )
-    account_balance_errors = [error for error in errors if error.startswith(user_error_msg)]
-    for error in account_balance_errors:
-        assert 'Invalid SS58 format' in error
-
-    assert 'Kusama request failed after trying the following nodes' in str(e.value)
-
-
 def test_get_account_balance(kusama_manager):
     balance = kusama_manager.get_account_balance(SUBSTRATE_ACC1_KSM_ADDR)
     assert balance >= ZERO
@@ -66,14 +47,6 @@ def test_get_accounts_balance_invalid_account(kusama_manager):
     """
     with pytest.raises(RemoteError) as e:
         kusama_manager.get_accounts_balance([SUBSTRATE_ACC1_KSM_ADDR, SUBSTRATE_ACC1_DOT_ADDR])
-
-    errors = kusama_manager.msg_aggregator.consume_errors()
-    user_error_msg = (
-        f'Got remote error while querying Kusama KSM balance for account {SUBSTRATE_ACC1_DOT_ADDR}'
-    )
-    account_balance_errors = [error for error in errors if error.startswith(user_error_msg)]
-    for error in account_balance_errors:
-        assert 'Invalid SS58 format' in error
 
     assert 'Kusama request failed after trying the following nodes' in str(e.value)
 

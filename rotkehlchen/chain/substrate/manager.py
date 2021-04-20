@@ -33,6 +33,7 @@ from .typing import (
     SubstrateChain,
     SubstrateChainId,
 )
+from .utils import KUSAMA_NODE_CONNECTION_TIMEOUT
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -284,20 +285,25 @@ class SubstrateManager():
             account=account,
         )
         try:
-            result = node_interface.query(
-                module='System',
-                storage_function='Account',
-                params=[account],
-            )
+            with gevent.Timeout(KUSAMA_NODE_CONNECTION_TIMEOUT):
+                result = node_interface.query(
+                    module='System',
+                    storage_function='Account',
+                    params=[account],
+                )
         except (
-            requests.exceptions.RequestException,
-            SubstrateRequestException,
-            ValueError,
-            WebSocketException,
+                requests.exceptions.RequestException,
+                SubstrateRequestException,
+                ValueError,
+                WebSocketException,
+                gevent.Timeout,
         ) as e:
+            msg = str(e)
+            if isinstance(e, gevent.Timeout):
+                msg = f'a timeout of {msg}'
             message = (
                 f'{self.chain} failed to request {self.chain_properties.token.identifier} account '
-                f'balance at endpoint {node_interface.url} due to: {str(e)}'
+                f'balance at endpoint {node_interface.url} due to: {msg}'
             )
             log.error(message, account=account)
             raise RemoteError(message) from e
