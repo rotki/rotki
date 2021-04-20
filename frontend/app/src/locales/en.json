@@ -547,8 +547,6 @@
     "details": {
       "link": "Link",
       "link_data": "No link found.",
-      "note_data": "No notes found.",
-      "notes": "Notes",
       "rate_asset": "Rate",
       "rate_data": "No custom rate used",
       "title": "Details"

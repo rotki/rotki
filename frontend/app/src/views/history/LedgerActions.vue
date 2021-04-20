@@ -105,34 +105,6 @@
                   {{ $t('ledger_actions.details.title') }}
                 </template>
                 <v-row>
-                  <v-col>
-                    <v-card outlined>
-                      <v-card-title class="text-subtitle-2">
-                        {{ $t('ledger_actions.details.notes') }}
-                      </v-card-title>
-                      <v-card-text>
-                        {{
-                          item.notes
-                            ? item.notes
-                            : $t('ledger_actions.details.note_data')
-                        }}
-                      </v-card-text>
-                    </v-card>
-                  </v-col>
-                </v-row>
-                <v-row class="mt-2">
-                  <v-col cols="auto" class="font-weight-medium">
-                    {{ $t('ledger_actions.details.link') }}
-                  </v-col>
-                  <v-col>
-                    {{
-                      item.link
-                        ? item.link
-                        : $t('ledger_actions.details.link_data')
-                    }}
-                  </v-col>
-                </v-row>
-                <v-row>
                   <v-col cols="auto" class="font-weight-medium">
                     {{ $t('ledger_actions.details.rate_asset') }}
                   </v-col>
@@ -147,6 +119,19 @@
                     </span>
                   </v-col>
                 </v-row>
+                <v-row class="mt-2">
+                  <v-col cols="auto" class="font-weight-medium">
+                    {{ $t('ledger_actions.details.link') }}
+                  </v-col>
+                  <v-col>
+                    {{
+                      item.link
+                        ? item.link
+                        : $t('ledger_actions.details.link_data')
+                    }}
+                  </v-col>
+                </v-row>
+                <notes-display :notes="item.notes" />
               </table-expand-container>
             </template>
           </data-table>
@@ -192,6 +177,7 @@ import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
+import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
@@ -230,6 +216,7 @@ const emptyAction: () => UnsavedAction = () => ({
 
 @Component({
   components: {
+    NotesDisplay,
     TableExpandContainer,
     DataTable,
     CardTitle,
