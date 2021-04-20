@@ -2331,7 +2331,7 @@ class RestAPI():
         return self._api_query_for_eth_module(
             async_query=async_query,
             module_name='adex',
-            method='get_balances',
+            method='get_balances_dont_break_frontend',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('adex'),
         )

@@ -1,12 +1,12 @@
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
-
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -29,7 +29,7 @@ class Eth2(EthereumModule):
     def on_startup(self) -> None:
         pass
 
-    def on_account_addition(self, address: ChecksumEthAddress) -> None:
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
         pass
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:

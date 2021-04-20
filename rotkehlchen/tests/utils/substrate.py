@@ -10,11 +10,11 @@ from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.typing import (
     BlockNumber,
     DictNodeNameNodeAttributes,
+    KusamaNodeName,
     NodeName,
     NodeNameAttributes,
     SubstrateChain,
 )
-from rotkehlchen.chain.substrate.utils import KUSAMA_NODES_TO_CONNECT_AT_START
 from rotkehlchen.constants.assets import A_KSM
 from rotkehlchen.fval import FVal
 
@@ -40,8 +40,11 @@ SUBSTRATE_ACC5_PUBLIC_KEY = '0x1e24a0ae488fe10725b59887a63d5a7f82cf9f43401363a81
 SUBSTRATE_ACC5_DOT_ADDR = '1gXKQA8JDTjetR759QGGXX98siY4AvaCdp35bswUiuGormc'
 SUBSTRATE_ACC5_KSM_ADDR = 'DFqqPEw4oDBy1E2tDAK2L3zRr18AYBcaWvJJyAYQS6FNFzG'
 
-# Using all nodes takes a bit more time for startup but should provide for more fail-proof tests
-KUSAMA_TEST_NODES = list(KUSAMA_NODES_TO_CONNECT_AT_START)[1:]
+# Use 2 nodes for tests
+KUSAMA_TEST_NODES = (
+    KusamaNodeName.PARITY,
+    KusamaNodeName.ONFINALITY,
+)
 
 KUSAMA_SS58_FORMAT = 2
 KUSAMA_TOKEN = A_KSM

@@ -820,10 +820,11 @@ class MakerdaoVaults(MakerdaoCommon):
         return balances
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEthAddress) -> None:
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:  # pylint: disable=useless-return  # noqa: E501
         super().on_account_addition(address)
         # Check if it has been added to the mapping
         proxy_address = self.proxy_mappings.get(address)
         if proxy_address:
             # get any vaults the proxy owns
             self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)
+        return None

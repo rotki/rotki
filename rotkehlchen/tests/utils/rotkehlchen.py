@@ -64,6 +64,7 @@ def setup_balances(
         btc_balances: Optional[List[str]] = None,
         manually_tracked_balances: Optional[List[ManuallyTrackedBalance]] = None,
         original_queries: Optional[List[str]] = None,
+        extra_flags: Optional[List[str]] = None,
 ) -> BalancesTestSetup:
     """Setup the blockchain, exchange and fiat balances for some tests
 
@@ -135,6 +136,7 @@ def setup_balances(
         etherscan=rotki.etherscan,
         original_queries=original_queries,
         original_requests_get=requests.get,
+        extra_flags=extra_flags,
     )
     beaconchain_patch = mock_beaconchain(
         beaconchain=rotki.chain_manager.beaconchain,

@@ -893,7 +893,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     # For each module run the corresponding callback for the address
                     for _, module in self.iterate_modules():
                         if append_or_remove == 'append':
-                            module.on_account_addition(address)
+                            new_module_balances = module.on_account_addition(address)
+                            if new_module_balances:
+                                for entry in new_module_balances:
+                                    self.balances.eth[address].assets[entry.asset] += entry.balance
+                                    self.totals.assets[entry.asset] += entry.balance
                         else:  # remove
                             module.on_account_removal(address)
 
@@ -1137,13 +1141,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
         adex_module = self.get_module('adex')
         if adex_module is not None and self.premium is not None:
-            adex_balances = adex_module.get_balances(addresses=self.accounts.eth)
-            for address, pool_balances in adex_balances.items():
-                for pool_balance in pool_balances:
-                    eth_balances[address].assets[A_ADX] += pool_balance.adx_balance
-                    self.totals.assets[A_ADX] += pool_balance.adx_balance
-                    eth_balances[address].assets[A_DAI] += pool_balance.dai_unclaimed_balance
-                    self.totals.assets[A_DAI] += pool_balance.dai_unclaimed_balance
+            adex_balances = adex_module.get_balances(addresses=self.queried_addresses_for_module('adex'))  # noqa: E501
+            for address, balance in adex_balances.items():
+                eth_balances[address].assets[A_ADX] += balance
+                self.totals.assets[A_ADX] += balance
 
         # Count ETH staked in Eth2 beacon chain
         self.account_for_staked_eth2_balances(

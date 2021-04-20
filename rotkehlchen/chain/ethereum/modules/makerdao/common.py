@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from rotkehlchen.constants.ethereum import MAKERDAO_PROXY_REGISTRY
 from rotkehlchen.errors import DeserializationError, RemoteError
@@ -14,6 +14,7 @@ from rotkehlchen.utils.misc import ts_now
 from .constants import MAKERDAO_REQUERY_PERIOD
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -93,15 +94,16 @@ class MakerdaoCommon(EthereumModule):
     def on_startup(self) -> None:
         pass
 
-    def on_account_addition(self, address: ChecksumEthAddress) -> None:
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
         self.reset_last_query_ts()
         # Get the proxy of the account
         proxy_result = self._get_account_proxy(address)
         if proxy_result is None:
-            return
+            return None
 
         # add it to the mapping
         self.proxy_mappings[address] = proxy_result
+        return None
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         self.reset_last_query_ts()

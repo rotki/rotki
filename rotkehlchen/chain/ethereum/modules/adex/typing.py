@@ -254,34 +254,6 @@ class ADXStakingEvents(NamedTuple):
         )
 
 
-class UnclaimedReward(NamedTuple):
-    adx_amount: FVal
-    dai_amount: FVal
-
-
-class ADXStakingBalance(NamedTuple):
-    pool_id: str
-    pool_name: Optional[str]
-    adx_balance: Balance
-    adx_unclaimed_balance: Balance
-    dai_unclaimed_balance: Balance
-    contract_address: ChecksumAddress  # From staking contract
-
-    def serialize(self) -> Dict[str, Any]:
-        return {
-            'pool_id': self.pool_id,
-            'pool_name': self.pool_name,
-            'adx_balance': self.adx_balance.serialize(),
-            'dai_unclaimed_balance': self.dai_unclaimed_balance.serialize(),
-            'contract_address': self.contract_address,
-        }
-
-
-class TomPoolIncentive(NamedTuple):
-    total_staked_amount: FVal  # from sum(currentTotalActiveStake)
-    apr: FVal  # from AdEx APY
-
-
 class ADXStakingDetail(NamedTuple):
     contract_address: ChecksumAddress  # From staking contract
     pool_id: str
@@ -321,4 +293,3 @@ class ADXStakingHistory(NamedTuple):
 
 
 DeserializationMethod = Callable[..., Union[Bond, Unbond, UnbondRequest, ChannelWithdraw]]
-FeeRewards = List[Dict[str, Any]]
