@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.16.0 <2021-04-21>`
 * :feature:`2671` Rotki will now detect Adex V5 staked balances
 * :feature:`2714` Add support for a3CRV Curve pool
 * :feature:`2210` All price history caches are now moved to the global database. The price history sub-directory of the rotki data directory is now deleted. This should optimize price history querying and save disk space.
