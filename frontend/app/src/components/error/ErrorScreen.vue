@@ -11,7 +11,7 @@
 
     <slot />
 
-    <v-card outlined class="error-screen__message mt-3">
+    <v-card v-if="!alternative" outlined class="error-screen__message mt-3">
       <v-card-title>
         {{ title }}
         <v-spacer />
@@ -42,6 +42,7 @@
         />
       </v-card-text>
     </v-card>
+    <div v-else class="text-h5 mt-12">{{ alternative }}</div>
   </div>
 </template>
 
@@ -52,14 +53,16 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 export default class ErrorScreen extends Vue {
   @Prop({ required: false, type: String, default: '' })
   header!: string;
-  @Prop({ required: true, type: String })
+  @Prop({ required: false, type: String, default: '' })
   title!: string;
-  @Prop({ required: true, type: String })
+  @Prop({ required: false, type: String, default: '' })
   subtitle!: string;
-  @Prop({ required: true, type: String })
+  @Prop({ required: false, type: String, default: '' })
   message!: string;
   @Prop({ required: false, type: String, default: '' })
   error!: string;
+  @Prop({ required: false, type: String, default: '' })
+  alternative!: string;
 
   get errorText(): string {
     if (!this.error) {

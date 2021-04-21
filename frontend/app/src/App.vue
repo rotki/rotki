@@ -71,6 +71,7 @@
       :message="startupError"
       fatal
     />
+    <mac-os-version-unsupported v-if="macosUnsupported" />
     <v-fade-transition>
       <account-management
         v-if="startupError.length === 0 && !loginIn"
@@ -89,6 +90,7 @@ import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
+import MacOsVersionUnsupported from '@/components/error/MacOsVersionUnsupported.vue';
 import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
 import HelpIndicator from '@/components/help/HelpIndicator.vue';
 import HelpSidebar from '@/components/help/HelpSidebar.vue';
@@ -106,11 +108,13 @@ import UpdatePopup from '@/components/status/update/UpdatePopup.vue';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import DevApp from '@/DevApp.vue';
+import { BackendCode } from '@/electron-main/backend-code';
 import { monitor } from '@/services/monitoring';
 import { Message } from '@/store/types';
 
 @Component({
   components: {
+    MacOsVersionUnsupported,
     AssetUpdate,
     HelpIndicator,
     HelpSidebar,
@@ -178,6 +182,7 @@ export default class App extends Vue {
   mini = false;
 
   startupError: string = '';
+  macosUnsupported: boolean = false;
 
   openSite() {
     this.$interop.navigateToRotki();
@@ -197,11 +202,16 @@ export default class App extends Vue {
   }
 
   async created(): Promise<void> {
+    this.$interop.onError((backendOutput: string, code: BackendCode) => {
+      if (code === BackendCode.TERMINATED) {
+        this.startupError = backendOutput;
+      } else {
+        this.macosUnsupported = true;
+      }
+    });
+
     await this.$store.dispatch('connect');
     await this.$store.dispatch('version');
-    this.$interop.onError((backendOutput: string) => {
-      this.startupError = backendOutput;
-    });
 
     if (process.env.NODE_ENV === 'development' && this.logged) {
       monitor.start();

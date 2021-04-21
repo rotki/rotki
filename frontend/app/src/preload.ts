@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import { BackendCode } from '@/electron-main/backend-code';
 import {
   Interop,
   IPC_CHECK_FOR_UPDATES,
@@ -36,9 +37,11 @@ contextBridge.exposeInMainWorld('interop', {
   openDirectory: (title: string) => ipcAction('OPEN_DIRECTORY', title),
   premiumUserLoggedIn: (premiumUser: boolean) =>
     ipcRenderer.send('PREMIUM_USER_LOGGED_IN', premiumUser),
-  listenForErrors: (callback: (backendOutput: string) => void) => {
-    ipcRenderer.on('failed', (event, args) => {
-      callback(args);
+  listenForErrors: (
+    callback: (backendOutput: string, code: BackendCode) => void
+  ) => {
+    ipcRenderer.on('failed', (event, error, code) => {
+      callback(error, code);
       ipcRenderer.send('ack', 1);
     });
   },

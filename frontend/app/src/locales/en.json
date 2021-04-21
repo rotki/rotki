@@ -232,6 +232,11 @@
     },
     "tooltip": "Help"
   },
+  "macos_unsupported": {
+    "header": "Unsupported macOS Version",
+    "terminate": "Terminate",
+    "message": "rotki requires at least macOS Mojave."
+  },
   "notes_display": {
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
