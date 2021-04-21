@@ -551,20 +551,7 @@ class SubstrateManager():
         - RemoteError: `request_available_nodes()` fails to request after
         trying with all the available nodes.
         """
-        try:
-            balance = self._get_account_balance(
-                account=account,
-                node_interface=node_interface,
-            )
-        except RemoteError as e:
-            self.msg_aggregator.add_error(
-                f'Got remote error while querying {self.chain} '
-                f'{self.chain_properties.token.identifier} balance for account '
-                f'{account}: {str(e)}.',
-            )
-            raise
-
-        return balance
+        return self._get_account_balance(account=account, node_interface=node_interface)
 
     def get_accounts_balance(
             self,
