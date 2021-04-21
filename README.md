@@ -53,7 +53,7 @@ The best way to contribute financially and all the while help with the developme
 
 #### Github sponsor
 
-You can sponsor us through Github [here](https://github.com/users/LefterisJP/sponsorship) and Github will match all sponsorships you make within the first year!!
+You can sponsor us through Github [here](https://github.com/sponsors/rotki/) and get some nice badges in return.
 
 #### Donations
 
