@@ -235,7 +235,7 @@
   "macos_unsupported": {
     "header": "Unsupported macOS Version",
     "terminate": "Terminate",
-    "message": "rotki requires at least macOS Mojave."
+    "message": "rotki's minimum supported macOs version is Mojave(10.14)"
   },
   "notes_display": {
     "empty_notes": "No notes found for this entry",
