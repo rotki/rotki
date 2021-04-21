@@ -1,3 +1,4 @@
+import { BackendCode } from '@/electron-main/backend-code';
 import { Level } from '@/utils/log-level';
 
 export const IPC_RESTART_BACKEND = 'RESTART_BACKEND' as const;
@@ -21,7 +22,9 @@ type MetamaskImport = MetamaskImportError | MetamaskImportSupport;
 export interface Interop {
   openUrl(url: string): Promise<void>;
   closeApp(): void;
-  listenForErrors(callback: (backendOutput: string) => void): void;
+  listenForErrors(
+    callback: (backendOutput: string, code: BackendCode) => void
+  ): void;
   openDirectory(title: string): Promise<undefined | string>;
   premiumUserLoggedIn(premiumUser: boolean): Promise<undefined | boolean>;
   monitorDebugSettings(): void;

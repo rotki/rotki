@@ -1,3 +1,4 @@
+import { BackendCode } from '@/electron-main/backend-code';
 import { assert } from '@/utils/assertions';
 import { Level } from '@/utils/log-level';
 
@@ -25,7 +26,7 @@ export class ElectronInterop {
     window.interop?.openUrl(this.baseUrl);
   }
 
-  onError(callback: (backendOutput: string) => void) {
+  onError(callback: (backendOutput: string, code: BackendCode) => void) {
     window.interop?.listenForErrors(callback);
   }
 
