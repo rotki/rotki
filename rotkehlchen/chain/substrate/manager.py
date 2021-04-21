@@ -381,16 +381,24 @@ class SubstrateManager():
 
     def _get_last_block(self, node_interface: SubstrateInterface) -> BlockNumber:
         """Return the chain height.
+
+        May raise:
+        - RemoteError if there is an error
         """
         log.debug(f'{self.chain} querying last block', url=node_interface.url)
         try:
             last_block = node_interface.get_block_number(
                 block_hash=node_interface.get_chain_head(),
             )
+            if last_block is None:  # For some reason a node can rarely return None as last block
+                raise SubstrateRequestException(
+                    f'{self.chain} node failed to request last block. Returned None',
+                )
         except (
-            requests.exceptions.RequestException,
-            SubstrateRequestException,
-            WebSocketException,
+                requests.exceptions.RequestException,
+                SubstrateRequestException,
+                WebSocketException,
+                ValueError,
         ) as e:
             message = (
                 f'{self.chain} failed to request last block '
