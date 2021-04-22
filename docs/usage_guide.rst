@@ -593,25 +593,45 @@ The list of currently supported airdrops is:
 Manually adding trades or other events
 **************************************
 
+Adding historical events
+========================
+
 Rotki will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
 
-On the left sidebar click on the trades button and select "OTC Trades" from the dropdown menu. This will take you to the OTC Trades page.
+On the left sidebar click on History and then the Trade button from the dropdown menu. This will take you to the Trades page. Clicking on the + symbol will open you a menu as the following one
 
-.. image:: images/sc_add_external_trade.png
+.. image:: images/external_trade.png
    :alt: Add an external trade
    :align: center
 
-To add a new trade or taxable event, fill in all the fields and press the "Add Trade" button.
+To add a new trade or taxable event, fill in all the fields and press the "Save" button.
 
-Some very important things to note. All pairs should be in the form of ``BASECURRENCY_QUOTECURRENCY``. For a ``buy`` this means you are buying ``amount`` of the ``BASE`` currency at a price of ``rate`` ``QUOTE`` currency per ``BASE``. For a ``sell`` this means you are selling ``amount`` of the ``BASE`` currency at a price of ``rate`` ``QUOTE`` currency per ``BASE``.
+If there was a fee for the trade you should input it in the corresponding box and also enter the currency the fee was paid in. This field is optional so if the Fee was 0 you can leave this field empty. You can optionally provide additional notes or even links to blockchain explorers for each trade.
 
-If there was a fee for the trade you should input it in the corresponding box and also enter the currency the fee was paid in. Fee can also be 0.
-
-You can optionally provide additional notes or even links to blockchain explorers for each trade.
-
-At the bottom of this page you can see a table of all your OTC trades. You can edit or delete a trade by clicking on the appropriate icon at the rightmost part of each trade under the "Actions" column.
+In the Trade page you can see a table of all your OTC trades. You can edit or delete a trade by clicking on the appropriate icon at the rightmost part of each trade under the "Actions" column.
 
 Currently rotki tracks your balance querying the different supported protocols, exchanges and blockchains. If you manually add information about a trade your balances won't be updated since trades are not consulted when updating the accounts' balances. If after adding a trade you want to update the accounts balances please refer to the :ref:`manual balances section <track_balances>`.
+
+Adding ledger actions
+=====================
+
+With ledger actions you can add events that represent incomes, losses, expenses, etc. On the left sidebar click on History and then the Ledger Actions button from the dropdown menu.
+You can provide a location, for example an exchange, a bank, a blockchain or others. For the action type you can select from:
+
+* Income
+* Loss
+* Donation Received
+* Expense
+* Dividends Income
+* Airdrop
+* Gift
+* Grant
+
+.. image:: images/ledger_action.png
+   :alt: Add a ledger action
+   :align: center
+
+For ledger actions you can specify a rate and a asset for the rate. This is the rate linked to the asset for this action. If no rate is provided, the historical price at the date of the action is used.
 
 Customization of the list of supported assets
 *********************************************
