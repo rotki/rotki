@@ -11,6 +11,7 @@ from rotkehlchen.errors import DeserializationError, UnknownAsset, Unprocessable
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken, kraken_to_world_pair
 from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_kraken
 from rotkehlchen.tests.utils.constants import (
     A_ADA,
     A_AUD,
@@ -358,6 +359,11 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE'
     query_kraken_and_test(test_trades, expected_warnings_num=0, expected_errors_num=0)
 
+    # Kraken also uses floats for timestamps, this should also work
+    input_trades = test_trades
+    input_trades = input_trades.replace('"time": "1458994442.2353"', '"time": 1458994442.2353')
+    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=0)
+
     # From here and on let's check trades with unexpected data
     input_trades = test_trades
     input_trades = input_trades.replace('"pair": "XXBTZEUR"', '"pair": "aadda"')
@@ -407,3 +413,15 @@ def test_emptry_kraken_balance_response():
         result, msg = kraken.query_balances()
         assert msg == ''
         assert result == {}
+
+
+def test_timestamp_deserialization():
+    """Test the function that allows to deserialize timestamp from different types"""
+    assert deserialize_timestamp_from_kraken("1458994442.2353") == 1458994442
+    assert deserialize_timestamp_from_kraken(1458994442.2353) == 1458994442
+    assert deserialize_timestamp_from_kraken(1458994442) == 1458994442
+    assert deserialize_timestamp_from_kraken(FVal(1458994442.2353)) == 1458994442
+    with pytest.raises(DeserializationError):
+        deserialize_timestamp_from_kraken("234a")
+    with pytest.raises(DeserializationError):
+        deserialize_timestamp_from_kraken("")
