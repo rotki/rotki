@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`2775` FTX assets will now be correctly read if they are in the known asset's list.
+
 * :release:`1.16.0 <2021-04-21>`
 * :feature:`2671` Rotki will now detect Adex V5 staked balances
 * :feature:`2714` Add support for a3CRV Curve pool

@@ -14,7 +14,6 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_ftx
-from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -308,7 +307,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 if amount == ZERO:
                     continue
 
-                asset = symbol_to_asset_or_token(balance_info['coin'])
+                asset = asset_from_ftx(balance_info['coin'])
                 try:
                     usd_price = Inquirer().find_usd_price(asset=asset)
                 except RemoteError as e:
