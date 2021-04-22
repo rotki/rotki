@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :bug:`2775` FTX assets will now be correctly read if they are in the known asset's list.
+* :bug:`2773` Timestamps will be correctly read for trades in the Kraken exchange.
+* :bug:`2775` Ambiguous FTX assets will now be properly recognized by rotki.
 
 * :release:`1.16.0 <2021-04-21>`
 * :feature:`2671` Rotki will now detect Adex V5 staked balances
