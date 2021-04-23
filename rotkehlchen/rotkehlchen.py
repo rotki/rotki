@@ -73,7 +73,6 @@ from rotkehlchen.logging import (
 )
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.typing import (
     ApiKey,
@@ -677,7 +676,7 @@ class Rotkehlchen():
                 )
                 if self.premium is None:
                     trades = self._apply_actions_limit(
-                        location=deserialize_location(name),
+                        location=Location.deserialize(name),
                         action_type='trade',
                         location_actions=exchange_trades,
                         all_actions=trades,
@@ -885,7 +884,7 @@ class Rotkehlchen():
             only_cache: bool,
     ) -> List[AssetMovement]:
         if isinstance(exchange, ExchangeInterface):
-            location = deserialize_location(exchange.name)
+            location = Location.deserialize(exchange.name)
             # clear the asset movements queried for this exchange
             self.actions_per_location['asset_movement'][location] = 0
             location_movements = exchange.query_deposits_withdrawals(

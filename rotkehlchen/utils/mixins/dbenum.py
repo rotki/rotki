@@ -21,7 +21,7 @@ class DBEnumMixIn(Enum):
             raise DeserializationError(
                 f'Failed to deserialize {cls.__name__} DB value from non string value: {value}'
             )
-        
+
         number = ord(value)
         if number < 65 or number > list(cls)[-1].value + 64:  # type: ignore
             raise DeserializationError(f'Failed to deserialize {cls.__name__} DB value {value}')

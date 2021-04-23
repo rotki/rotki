@@ -98,8 +98,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_category_from_db,
     deserialize_fee,
     deserialize_hex_color_code,
-    deserialize_location,
-    deserialize_location_from_db,
     deserialize_optional,
     deserialize_timestamp,
     deserialize_trade_type_from_db,
@@ -177,18 +175,18 @@ def db_tuple_to_str(
     if tuple_type == 'trade':
         return (
             f'{deserialize_trade_type_from_db(data[5])} trade with id {data[0]} '
-            f'in {deserialize_location_from_db(data[2])} and base/quote asset {data[3]} / '
+            f'in {Location.deserialize_from_db(data[2])} and base/quote asset {data[3]} / '
             f'{data[4]} at timestamp {data[1]}'
         )
     if tuple_type == 'asset_movement':
         return (
             f'{deserialize_asset_movement_category_from_db(data[2])} of '
             f'{data[4]} with id {data[0]} '
-            f'in {deserialize_location_from_db(data[1])} at timestamp {data[3]}'
+            f'in {Location.deserialize__db(data[1])} at timestamp {data[3]}'
         )
     if tuple_type == 'margin_position':
         return (
-            f'Margin position with id {data[0]} in  {deserialize_location_from_db(data[1])} '
+            f'Margin position with id {data[0]} in  {Location.deserialize_from_db(data[1])} '
             f'for {data[5]} closed at timestamp {data[3]}'
         )
     if tuple_type == 'ethereum_transaction':
@@ -196,7 +194,7 @@ def db_tuple_to_str(
     if tuple_type == 'amm_swap':
         return (
             f'AMM swap with id {data[0]}-{data[1]} '
-            f'in {deserialize_location_from_db(data[6])} '
+            f'in {Location.deserialize_from_db(data[6])} '
         )
 
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
@@ -1594,11 +1592,11 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute(
             'DELETE FROM trades WHERE location = ?;',
-            (deserialize_location(exchange_name).serialize_for_db(),),
+            (Location.deserialize(exchange_name).serialize_for_db(),),
         )
         cursor.execute(
             'DELETE FROM asset_movements WHERE location = ?;',
-            (deserialize_location(exchange_name).serialize_for_db(),),
+            (Location.deserialize(exchange_name).serialize_for_db(),),
         )
         self.conn.commit()
         self.update_last_write()
@@ -1651,7 +1649,7 @@ class DBHandler:
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 self.msg_aggregator.add_warning(
                     f'Tried to add a timed_location_data for '
-                    f'{str(deserialize_location_from_db(entry.location))} at'
+                    f'{str(Location.deserialize_from_db(entry.location))} at'
                     f' already existing timestamp {entry.time}. Skipping.',
                 )
                 continue
@@ -2006,7 +2004,7 @@ class DBHandler:
                     asset=Asset(entry[0]),
                     label=entry[1],
                     amount=FVal(entry[2]),
-                    location=deserialize_location_from_db(entry[3]),
+                    location=Location.deserialize_from_db(entry[3]),
                     tags=tags,
                 ))
             except (DeserializationError, UnknownAsset, UnsupportedAsset, ValueError) as e:
@@ -2153,7 +2151,7 @@ class DBHandler:
         for key2, val2 in data['location'].items():
             # Here we know val2 is just a Dict since the key to data is 'location'
             val2 = cast(Dict, val2)
-            location = deserialize_location(key2).serialize_for_db()
+            location = Location.deserialize(key2).serialize_for_db()
             locations.append(LocationData(
                 time=timestamp, location=location, usd_value=str(val2['usd_value']),
             ))
@@ -2358,7 +2356,7 @@ class DBHandler:
             '  notes FROM margin_positions '
         )
         if location is not None:
-            query += f'WHERE location="{deserialize_location(location).serialize_for_db()}" '
+            query += f'WHERE location="{Location.deserialize(location).serialize_for_db()}" '
         query, bindings = form_query_to_filter_timestamps(query, 'close_time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
@@ -2370,7 +2368,7 @@ class DBHandler:
                 else:
                     open_time = deserialize_timestamp(result[2])
                 margin = MarginPosition(
-                    location=deserialize_location_from_db(result[1]),
+                    location=Location.deserialize_from_db(result[1]),
                     open_time=open_time,
                     close_time=deserialize_timestamp(result[3]),
                     profit_loss=deserialize_asset_amount(result[4]),
@@ -2464,7 +2462,7 @@ class DBHandler:
         for result in results:
             try:
                 movement = AssetMovement(
-                    location=deserialize_location_from_db(result[1]),
+                    location=Location.deserialize_from_db(result[1]),
                     category=deserialize_asset_movement_category_from_db(result[2]),
                     timestamp=result[3],
                     asset=Asset(result[4]),
@@ -2796,7 +2794,7 @@ class DBHandler:
             try:
                 trade = Trade(
                     timestamp=deserialize_timestamp(result[1]),
-                    location=deserialize_location_from_db(result[2]),
+                    location=Location.deserialize_from_db(result[2]),
                     base_asset=Asset(result[3]),
                     quote_asset=Asset(result[4]),
                     trade_type=deserialize_trade_type_from_db(result[5]),

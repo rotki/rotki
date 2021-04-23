@@ -19,7 +19,7 @@ from rotkehlchen.utils.misc import (
     iso8601ts_to_timestamp,
     timestamp_to_date,
 )
-from rotkehlchen.utils.mixins import CacheableMixIn, cache_response_timewise
+from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 

@@ -47,8 +47,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_action_type_from_db,
     deserialize_asset_movement_category,
     deserialize_asset_movement_category_from_db,
-    deserialize_location,
-    deserialize_location_from_db,
     deserialize_trade_type,
     deserialize_trade_type_from_db,
 )
@@ -1288,7 +1286,7 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
 
 @pytest.mark.parametrize('enum_class, query, deserialize_from_db, deserialize', [
     (Location, 'SELECT location, seq from location',
-        deserialize_location_from_db, deserialize_location),
+        Location.deserialize_from_db, Location.deserialize),
     (TradeType, 'SELECT type, seq from trade_type',
         deserialize_trade_type_from_db, deserialize_trade_type),
     (ActionType, 'SELECT type, seq from action_type',

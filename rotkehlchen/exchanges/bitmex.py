@@ -33,7 +33,8 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc
-from rotkehlchen.utils.mixins import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
+from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

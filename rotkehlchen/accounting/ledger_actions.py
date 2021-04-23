@@ -7,7 +7,6 @@ from rotkehlchen.errors import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_location_from_db,
     deserialize_optional,
     deserialize_timestamp,
 )
@@ -215,7 +214,7 @@ class LedgerAction:
             identifier=data[0],
             timestamp=deserialize_timestamp(data[1]),
             action_type=LedgerActionType.deserialize_from_db(data[2]),
-            location=deserialize_location_from_db(data[3]),
+            location=Location.deserialize(data[3]),
             amount=deserialize_asset_amount(data[4]),
             asset=Asset(data[5]),
             rate=deserialize_optional(data[6], deserialize_price),

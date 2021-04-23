@@ -9,7 +9,7 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.mixins import LockableQueryMixIn, protect_with_lock
+from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

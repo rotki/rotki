@@ -44,7 +44,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_hex_color_code,
-    deserialize_location,
     deserialize_timestamp,
     deserialize_trade_type,
 )
@@ -531,7 +530,7 @@ class LocationField(fields.Field):
             **_kwargs: Any,
     ) -> Location:
         try:
-            location = deserialize_location(value)
+            location = Location.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 

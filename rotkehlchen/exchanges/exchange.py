@@ -9,9 +9,9 @@ from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_location
-from rotkehlchen.typing import ApiKey, ApiSecret, T_ApiKey, T_ApiSecret, Timestamp
-from rotkehlchen.utils.mixins import CacheableMixIn, LockableQueryMixIn, protect_with_lock
+from rotkehlchen.typing import ApiKey, ApiSecret, Location, T_ApiKey, T_ApiSecret, Timestamp
+from rotkehlchen.utils.mixins.cacheable import CacheableMixIn
+from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -155,7 +155,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         trades = self.db.get_trades(
             from_ts=start_ts,
             to_ts=end_ts,
-            location=deserialize_location(self.name),
+            location=Location.deserialize(self.name),
         )
         if only_cache:
             return trades
@@ -246,7 +246,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         asset_movements = self.db.get_asset_movements(
             from_ts=start_ts,
             to_ts=end_ts,
-            location=deserialize_location(self.name),
+            location=Location.deserialize(self.name),
         )
         if only_cache:
             return asset_movements

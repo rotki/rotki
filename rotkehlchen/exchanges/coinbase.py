@@ -38,7 +38,8 @@ from rotkehlchen.typing import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.mixins import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
+from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:

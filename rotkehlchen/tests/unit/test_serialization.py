@@ -6,7 +6,6 @@ from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_hex_or_int,
-    deserialize_location,
     deserialize_trade_type,
 )
 from rotkehlchen.typing import Location, TradeType
@@ -60,7 +59,7 @@ def test_deserialize_trade_type():
 def test_deserialize_location(database):
     balances = []
     for idx, data in enumerate(Location):
-        assert deserialize_location(str(data)) == data
+        assert Location.deserialize(str(data)) == data
         balances.append(ManuallyTrackedBalance(
             asset=A_BTC,
             label='Test' + str(idx),
@@ -70,10 +69,10 @@ def test_deserialize_location(database):
         ))
 
     with pytest.raises(DeserializationError):
-        deserialize_location('dsadsad')
+        Location.deserialize('dsadsad')
 
     with pytest.raises(DeserializationError):
-        deserialize_location(15)
+        Location.deserialize(15)
 
     # Also write and read each location to DB to make sure that
     # location.serialize_for_db() and deserialize_location_from_db work fine
@@ -86,7 +85,7 @@ def test_deserialize_location(database):
 def test_deserialize_int_from_hex_or_int():
     # Etherscan can return logIndex 0x if it's the 0th log in the hash
     # https://etherscan.io/tx/0x6f1370cd9fa19d550031a30290b062dd3b56f44caf6344c05545ef15428de7ef
-    assert deserialize_int_from_hex_or_int("0x", 'whatever') == 0
-    assert deserialize_int_from_hex_or_int("0x1", 'whatever') == 1
-    assert deserialize_int_from_hex_or_int("0x33", 'whatever') == 51
+    assert deserialize_int_from_hex_or_int('0x', 'whatever') == 0
+    assert deserialize_int_from_hex_or_int('0x1', 'whatever') == 1
+    assert deserialize_int_from_hex_or_int('0x33', 'whatever') == 51
     assert deserialize_int_from_hex_or_int(66, 'whatever') == 66

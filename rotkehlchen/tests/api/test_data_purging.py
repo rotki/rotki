@@ -5,10 +5,17 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.tests.utils.api import api_url_for, assert_simple_ok_response
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import AssetAmount, EthereumTransaction, Fee, Price, Timestamp, TradeType
+from rotkehlchen.typing import (
+    AssetAmount,
+    EthereumTransaction,
+    Fee,
+    Location,
+    Price,
+    Timestamp,
+    TradeType,
+)
 
 
 def mock_exchange_data_in_db(exchanges, rotki) -> None:
@@ -16,7 +23,7 @@ def mock_exchange_data_in_db(exchanges, rotki) -> None:
     for exchange_name in exchanges:
         db.add_trades([Trade(
             timestamp=Timestamp(1),
-            location=deserialize_location(exchange_name),
+            location=Location.deserialize(exchange_name),
             base_asset=A_BTC,
             quote_asset=A_ETH,
             trade_type=TradeType.BUY,
@@ -37,7 +44,7 @@ def check_saved_events_for_exchange(
         db: DBHandler,
         should_exist: bool,
 ) -> None:
-    trades = db.get_trades(location=deserialize_location(exchange_name))
+    trades = db.get_trades(location=Location.deserialize(exchange_name))
     trades_range = db.get_used_query_range(f'{exchange_name}_trades')
     margins_range = db.get_used_query_range(f'{exchange_name}_margins')
     movements_range = db.get_used_query_range(f'{exchange_name}_asset_movements')
