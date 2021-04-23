@@ -5,9 +5,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, AssetMovementCategory, Trade
 from rotkehlchen.fval import FVal
@@ -32,6 +34,10 @@ class UnsupportedCointrackingEntry(Exception):
 
 
 class UnsupportedCryptocomEntry(Exception):
+    """Thrown for Cryptocom CSV export entries we can't support to import"""
+
+
+class UnsupportedBlockFiEntry(Exception):
     """Thrown for Cryptocom CSV export entries we can't support to import"""
 
 
@@ -85,6 +91,7 @@ class DataImporter():
 
     def __init__(self, db: DBHandler) -> None:
         self.db = db
+        self.db_ledger = DBLedgerActions(self.db, self.db.msg_aggregator)
 
     def _consume_cointracking_entry(self, csv_row: Dict[str, Any]) -> None:
         """Consumes a cointracking entry row from the CSV and adds it into the database
@@ -464,6 +471,111 @@ class DataImporter():
                     )
                     continue
                 except UnsupportedCryptocomEntry as e:
+                    self.db.msg_aggregator.add_warning(str(e))
+                    continue
+                except KeyError as e:
+                    return False, str(e)
+        return True, ''
+
+    def _consume_blockfi_entry(self, csv_row: Dict[str, Any]):
+
+        if len(csv_row['Confirmed At']) != 0:
+            timestamp = deserialize_timestamp_from_date(
+                date=csv_row['Confirmed At'],
+                formatstr='%Y-%m-%d %H:%M:%S',
+                location='BlockFi',
+            )
+        else:
+            raise DeserializationError('Action not confirmed yet')
+
+        asset = symbol_to_asset_or_token(csv_row['Cryptocurrency'])
+        amount = deserialize_asset_amount(csv_row['Amount'])
+        entry_type = csv_row['Transaction Type']
+
+        if entry_type in ('Deposit', 'Wire Deposit', 'ACH Deposit'):
+            asset_movement = AssetMovement(
+                location=Location.BLOCKFI,
+                category=AssetMovementCategory.DEPOSIT,
+                address=None,
+                transaction_id=None,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee=None,
+                fee_asset=None,
+                link='',
+            )
+            self.db.add_asset_movements([asset_movement])
+        elif entry_type in ('Withdrawal', 'Wire Withdrawal', 'ACH Withdrawal'):
+            asset_movement = AssetMovement(
+                location=Location.BLOCKFI,
+                category=AssetMovementCategory.WITHDRAWAL,
+                address=None,
+                transaction_id=None,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee=None,
+                fee_asset=None,
+                link='',
+            )
+            self.db.add_asset_movements([asset_movement])
+        elif entry_type == 'Withdrawal Fee':
+            action = LedgerAction(
+                identifier=0,  # whatever is not used at insertion
+                timestamp=timestamp,
+                action_type=LedgerActionType.EXPENSE,
+                location=Location.BLOCKFI,
+                amount=amount,
+                asset=asset,
+                rate=None,
+                rate_asset=None,
+                link=None,
+                notes=f'{entry_type} from BlockFi',
+            )
+            self.db_ledger.add_ledger_action(action)
+        elif entry_type in ('Interest Payment', 'Bonus Payment'):
+            action = LedgerAction(
+                identifier=0,  # whatever is not used at insertion
+                timestamp=timestamp,
+                action_type=LedgerActionType.GIFT,
+                location=Location.BLOCKFI,
+                amount=amount,
+                asset=asset,
+                rate=None,
+                rate_asset=None,
+                link=None,
+                notes=f'{entry_type} from BlockFi',
+            )
+            self.db_ledger.add_ledger_action(action)
+        elif entry_type == 'Trade':
+            pass
+        else:
+            raise UnsupportedBlockFiEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
+
+    def import_blockfi_transactions_csv(self, filepath: Path) -> Tuple[bool, str]:
+        """
+        Information for the values that the columns can have has been obtained from 
+        https://github.com/BittyTax/BittyTax/blob/06794f51223398759852d6853bc7112ffb96129a/bittytax/conv/parsers/blockfi.py#L67
+        """
+        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+            data = csv.DictReader(csvfile)
+            for row in data:
+                try:
+                    self._consume_blockfi_entry(row)
+                except UnknownAsset as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'During BlockFi CSV import found action with unknown '
+                        f'asset {e.asset_name}. Ignoring entry',
+                    )
+                    continue
+                except DeserializationError as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'Error during BlockFi CSV import deserialization. '
+                        f'Error was {str(e)}. Ignoring entry',
+                    )
+                    continue
+                except UnsupportedBlockFiEntry as e:
                     self.db.msg_aggregator.add_warning(str(e))
                     continue
                 except KeyError as e:
