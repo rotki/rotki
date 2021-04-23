@@ -1926,7 +1926,7 @@ class RestAPI():
     @require_loggedin_user()
     def import_data(
             self,
-            source: Literal['cointracking.info', 'crypto.com'],
+            source: Literal['cointracking.info', 'cryptocom'],
             filepath: Path,
     ) -> Response:
         if source == 'cointracking.info':
@@ -1934,7 +1934,7 @@ class RestAPI():
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
-        elif source == 'crypto.com':
+        elif source == 'cryptocom':
             success, msg = self.rotkehlchen.data_importer.import_cryptocom_csv(filepath)
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')

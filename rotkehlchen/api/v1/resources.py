@@ -1059,13 +1059,13 @@ class DataImportResource(BaseResource):
     upload_schema = DataImportSchema()
 
     @use_kwargs(upload_schema, location='json')  # type: ignore
-    def put(self, source: Literal['cointracking.info', 'crypto.com'], file: Path) -> Response:
+    def put(self, source: Literal['cointracking.info', 'cryptocom'], file: Path) -> Response:
         return self.rest_api.import_data(source=source, filepath=file)
 
     @use_kwargs(upload_schema, location='form_and_file')  # type: ignore
     def post(
             self,
-            source: Literal['cointracking.info', 'crypto.com'],
+            source: Literal['cointracking.info', 'cryptocom'],
             file: FileStorage,
     ) -> Response:
         with TemporaryDirectory() as temp_directory:

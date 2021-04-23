@@ -789,7 +789,7 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
         api_url_for(
             server,
             'named_exchanges_data_resource',
-            name='crypto.com',
+            name='cryptocom',
         ),
     )
     result = assert_proper_response_with_result(response)  # just check no validation error happens

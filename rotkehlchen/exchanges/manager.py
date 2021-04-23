@@ -35,7 +35,7 @@ SUPPORTED_EXCHANGES = [
     'ftx',
 ]
 # Exchanges for which we allow import via CSV
-EXTERNAL_EXCHANGES = ['crypto.com']
+EXTERNAL_EXCHANGES = ['cryptocom']
 ALL_SUPPORTED_EXCHANGES = SUPPORTED_EXCHANGES + EXTERNAL_EXCHANGES
 
 

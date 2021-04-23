@@ -213,7 +213,7 @@ class DataImporter():
         timestamp = deserialize_timestamp_from_date(
             date=csv_row['Timestamp (UTC)'],
             formatstr='%Y-%m-%d %H:%M:%S',
-            location='crypto.com',
+            location='cryptocom',
         )
         description = csv_row['Transaction Description']
         notes = f'{description}\nSource: crypto.com (CSV import)'
@@ -349,7 +349,7 @@ class DataImporter():
                 timestamp = deserialize_timestamp_from_date(
                     date=row['Timestamp (UTC)'],
                     formatstr='%Y-%m-%d %H:%M:%S',
-                    location='crypto.com',
+                    location='cryptocom',
                 )
                 if timestamp not in multiple_rows:
                     multiple_rows[timestamp] = {}
@@ -361,7 +361,7 @@ class DataImporter():
                 timestamp = deserialize_timestamp_from_date(
                     date=row['Timestamp (UTC)'],
                     formatstr='%Y-%m-%d %H:%M:%S',
-                    location='crypto.com',
+                    location='cryptocom',
                 )
                 if timestamp not in multiple_rows:
                     multiple_rows[timestamp] = {}
