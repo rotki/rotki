@@ -26,7 +26,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.constants import BINANCE_BASE_URL, BINANCE_US_BASE_URL
+from rotkehlchen.constants import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade, TradeType
@@ -205,7 +205,7 @@ def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, B
 class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """This class supports:
       - Binance: when instantiated with default uri, equals BINANCE_BASE_URL.
-      - Binance US: when instantiated with uri equals BINANCE_US_BASE_URL.
+      - Binance US: when instantiated with uri equals BINANCEUS_BASE_URL.
 
     Binance exchange api docs:
     https://github.com/binance-exchange/binance-official-api-docs/
@@ -225,8 +225,8 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             uri: str = BINANCE_BASE_URL,
     ):
         exchange_name = str(Location.BINANCE)
-        if uri == BINANCE_US_BASE_URL:
-            exchange_name = str(Location.BINANCE_US)
+        if uri == BINANCEUS_BASE_URL:
+            exchange_name = str(Location.BINANCEUS)
 
         super().__init__(exchange_name, api_key, secret, database)
         self.uri = uri
@@ -783,7 +783,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self.first_connection()
             returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
             returned_balances = self._query_spot_balances(returned_balances)
-            if self.name != str(Location.BINANCE_US):
+            if self.name != str(Location.BINANCEUS):
                 returned_balances = self._query_lending_balances(returned_balances)
                 returned_balances = self._query_cross_collateral_futures_balances(returned_balances)  # noqa: E501
                 returned_balances = self._query_margined_futures_balances('fapi', returned_balances)  # noqa: E501

@@ -220,7 +220,7 @@ class TaskManager():
         now = ts_now()
         queriable_exchanges = []
         for name, exchange in self.exchange_manager.connected_exchanges.items():
-            if name in ('binance', 'binance_us'):
+            if name in ('binance', 'binanceus'):
                 continue  # skip binance due to the way their history is queried and rate limiting
             queried_range = self.database.get_used_query_range(f'{name}_trades')
             end_ts = queried_range[1] if queried_range else 0

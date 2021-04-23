@@ -287,7 +287,7 @@ class Location(DBEnumMixIn):
     CRYPTOCOM = 16
     UNISWAP = 17
     BITSTAMP = 18
-    BINANCE_US = 19
+    BINANCEUS = 19
     BITFINEX = 20
     BITCOINDE = 21
     ICONOMI = 22

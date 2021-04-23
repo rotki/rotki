@@ -2,7 +2,7 @@ import logging
 from importlib import import_module
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from rotkehlchen.constants.misc import BINANCE_BASE_URL, BINANCE_US_BASE_URL
+from rotkehlchen.constants.misc import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -27,7 +27,7 @@ SUPPORTED_EXCHANGES = [
     'coinbasepro',
     'gemini',
     'bitstamp',
-    'binance_us',
+    'binanceus',
     'bitfinex',
     'bitcoinde',
     'iconomi',
@@ -47,7 +47,7 @@ class ExchangeManager():
 
     @staticmethod
     def _get_exchange_module_name(name: str) -> str:
-        if name == str(Location.BINANCE_US):
+        if name == str(Location.BINANCEUS):
             return str(Location.BINANCE)
         return name
 
@@ -155,8 +155,8 @@ class ExchangeManager():
                     extra_args['account_type'] = settings.kraken_account_type
                 elif name == str(Location.BINANCE):
                     extra_args['uri'] = BINANCE_BASE_URL
-                elif name == str(Location.BINANCE_US):
-                    extra_args['uri'] = BINANCE_US_BASE_URL
+                elif name == str(Location.BINANCEUS):
+                    extra_args['uri'] = BINANCEUS_BASE_URL
                 exchange_obj = exchange_ctor(
                     api_key=credentials.api_key,
                     secret=credentials.api_secret,
