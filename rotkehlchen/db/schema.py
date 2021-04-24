@@ -72,6 +72,10 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('X', 24);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('Y', 25);
 /* FTX */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('Z', 26);
+/* NEXO */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('[', 27);
+/* BlockFI */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('\\', 28);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

@@ -93,6 +93,7 @@ from rotkehlchen.typing import (
     ExternalServiceApiCredentials,
     Fee,
     HexColorCode,
+    IMPORTABLE_LOCATIONS,
     ListOfBlockchainAddresses,
     Location,
     ModuleName,
@@ -1987,7 +1988,7 @@ class RestAPI():
     @require_loggedin_user()
     def import_data(
             self,
-            source: Literal['cointracking.info', 'cryptocom'],
+            source: IMPORTABLE_LOCATIONS,
             filepath: Path,
     ) -> Response:
         if source == 'cointracking.info':
@@ -2000,6 +2001,22 @@ class RestAPI():
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+        elif source == 'blockfi-transactions':
+            success, msg = self.rotkehlchen.data_importer.import_blockfi_transactions_csv(filepath)
+            if not success:
+                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
+                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+        elif source == 'blockfi-trades':
+            success, msg = self.rotkehlchen.data_importer.import_blockfi_trades_csv(filepath)
+            if not success:
+                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
+                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+        elif source == 'nexo':
+            success, msg = self.rotkehlchen.data_importer.import_nexo_csv(filepath)
+            if not success:
+                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
+                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _get_eth2_stake_deposits(self) -> Dict[str, Any]:

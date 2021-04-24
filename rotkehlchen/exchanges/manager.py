@@ -7,7 +7,13 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 from rotkehlchen.constants.misc import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiKey, ApiSecret, ExchangeApiCredentials, Location
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    ExchangeApiCredentials,
+    Location,
+    EXTERNAL_EXCHANGES,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -38,7 +44,6 @@ SUPPORTED_EXCHANGES = [
 ]
 EXCHANGES_WITH_PASSPHRASE = (Location.COINBASEPRO, Location.KUCOIN)
 # Exchanges for which we allow import via CSV
-EXTERNAL_EXCHANGES = [Location.CRYPTOCOM]
 ALL_SUPPORTED_EXCHANGES = SUPPORTED_EXCHANGES + EXTERNAL_EXCHANGES
 
 

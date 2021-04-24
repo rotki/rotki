@@ -1629,7 +1629,15 @@ class QueriedAddressesSchema(Schema):
 class DataImportSchema(Schema):
     source = fields.String(
         required=True,
-        validate=webargs.validate.OneOf(choices=('cointracking.info', 'cryptocom')),
+        validate=webargs.validate.OneOf(
+            choices=(
+                'cointracking.info',
+                'cryptocom',
+                'blockfi-transactions',
+                'blockfi-trades',
+                'nexo',
+            ),
+        ),
     )
     file = FileField(required=True, allowed_extensions=('.csv',))
 

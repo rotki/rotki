@@ -77,6 +77,8 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
+    EXTERNAL_EXCHANGES,
+    EXTERNAL_LOCATION,
     ListOfBlockchainAddresses,
     Location,
     SupportedBlockchain,
@@ -659,13 +661,14 @@ class Rotkehlchen():
             trades = self.query_location_trades(from_ts, to_ts, location, only_cache)
         else:
             trades = self.query_location_trades(from_ts, to_ts, Location.EXTERNAL, only_cache)
-            # crypto.com is not an API key supported exchange but user can import from CSV
-            trades.extend(self.query_location_trades(
-                from_ts=from_ts,
-                to_ts=to_ts,
-                location=Location.CRYPTOCOM,
-                only_cache=only_cache,
-            ))
+            # Look for trades that might be imported from CSV files
+            for csv_location in EXTERNAL_EXCHANGES:
+                trades.extend(self.query_location_trades(
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                    location=csv_location,
+                    only_cache=only_cache,
+                ))
             for exchange in self.exchange_manager.iterate_exchanges():
                 exchange_trades = exchange.query_trade_history(
                     start_ts=from_ts,
@@ -711,7 +714,7 @@ class Rotkehlchen():
         self.actions_per_location['trade'][location] = 0
 
         location_trades: TRADES_LIST
-        if location in (Location.EXTERNAL, Location.CRYPTOCOM):
+        if location in EXTERNAL_LOCATION:
             location_trades = self.data.db.get_trades(  # type: ignore  # list invariance
                 from_ts=from_ts,
                 to_ts=to_ts,
@@ -902,9 +905,9 @@ class Rotkehlchen():
             )
         else:
             assert isinstance(exchange, Location), 'only a location should make it here'
-            assert exchange == Location.CRYPTOCOM, 'only cryptocom should make it here'
+            assert exchange in EXTERNAL_EXCHANGES, 'only csv supported exchanges should get here'  # noqa : E501
             location = exchange
-            # cryptocom has no exchange integration but we may have DB entries
+            # We might have no exchange information but CSV imported information
             self.actions_per_location['asset_movement'][location] = 0
             location_movements = self.data.db.get_asset_movements(
                 from_ts=from_ts,
@@ -943,12 +946,12 @@ class Rotkehlchen():
         """
         movements: List[AssetMovement] = []
         if location is not None:
-            if location == Location.CRYPTOCOM:
+            if location in EXTERNAL_EXCHANGES:
                 movements = self._query_and_populate_exchange_asset_movements(
                     from_ts=from_ts,
                     to_ts=to_ts,
                     all_movements=movements,
-                    exchange=Location.CRYPTOCOM,
+                    exchange=location,
                     only_cache=only_cache,
                 )
             else:
@@ -969,14 +972,15 @@ class Rotkehlchen():
                         only_cache=only_cache,
                     )
         else:
-            # cryptocom has no exchange integration but we may have DB entries due to csv import
-            movements = self._query_and_populate_exchange_asset_movements(
-                from_ts=from_ts,
-                to_ts=to_ts,
-                all_movements=movements,
-                exchange=Location.CRYPTOCOM,
-                only_cache=only_cache,
-            )
+            # we may have DB entries due to csv import from supported locations
+            for external_location in EXTERNAL_EXCHANGES:
+                movements = self._query_and_populate_exchange_asset_movements(
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                    all_movements=movements,
+                    exchange=external_location,
+                    only_cache=only_cache,
+                )
             for exchange in self.exchange_manager.iterate_exchanges():
                 self._query_and_populate_exchange_asset_movements(
                     from_ts=from_ts,

@@ -59,7 +59,14 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 
-const SOURCES = ['cointracking.info', 'cryptocom', 'icon'];
+const SOURCES = [
+  'cointracking.info',
+  'cryptocom',
+  'icon',
+  'nexo',
+  'blockfi-transactions',
+  'blockfi-trades'
+];
 
 @Component({})
 export default class FileUpload extends Vue {

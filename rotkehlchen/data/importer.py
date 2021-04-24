@@ -1,5 +1,6 @@
 import csv
 import functools
+import logging
 from itertools import count
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -22,6 +23,8 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import AssetAmount, Fee, Location, Price, TradeType
 
+log = logging.getLogger(__name__)
+
 
 def remap_header(fieldnames: List[str]) -> List[str]:
     cur_count = count(1)
@@ -29,16 +32,8 @@ def remap_header(fieldnames: List[str]) -> List[str]:
     return [f'Cur.{mapping[next(cur_count)]}' if f.startswith('Cur.') else f for f in fieldnames]
 
 
-class UnsupportedCointrackingEntry(Exception):
-    """Thrown for Cointracking CSV export entries we can't support to import"""
-
-
-class UnsupportedCryptocomEntry(Exception):
-    """Thrown for Cryptocom CSV export entries we can't support to import"""
-
-
-class UnsupportedBlockFiEntry(Exception):
-    """Thrown for Cryptocom CSV export entries we can't support to import"""
+class UnsupportedCSVEntry(Exception):
+    """Thrown for external exchange exported entries we can't import"""
 
 
 def exchange_row_to_location(entry: str) -> Location:
@@ -70,19 +65,19 @@ def exchange_row_to_location(entry: str) -> Location:
     if entry == 'KuCoin':
         return Location.KUCOIN
     if entry == 'ETH Transaction':
-        raise UnsupportedCointrackingEntry(
+        raise UnsupportedCSVEntry(
             'Not importing ETH Transactions from Cointracking. Cointracking does not '
             'export enough data for them. Simply enter your ethereum accounts and all '
             'your transactions will be auto imported directly from the chain',
         )
     if entry == 'BTC Transaction':
-        raise UnsupportedCointrackingEntry(
+        raise UnsupportedCSVEntry(
             'Not importing BTC Transactions from Cointracking. Cointracking does not '
             'export enough data for them. Simply enter your BTC accounts and all '
             'your transactions will be auto imported directly from the chain',
         )
 
-    raise UnsupportedCointrackingEntry(
+    raise UnsupportedCSVEntry(
         f'Unknown Exchange "{entry}" encountered during a cointracking import. Ignoring it',
     )
 
@@ -170,7 +165,7 @@ class DataImporter():
             )
             self.db.add_asset_movements([asset_movement])
         else:
-            raise UnsupportedCointrackingEntry(
+            raise UnsupportedCSVEntry(
                 f'Unknown entrype type "{row_type}" encountered during cointracking '
                 f'data import. Ignoring entry',
             )
@@ -200,7 +195,7 @@ class DataImporter():
                         f'Error was {str(e)}. Ignoring entry',
                     )
                     continue
-                except UnsupportedCointrackingEntry as e:
+                except UnsupportedCSVEntry as e:
                     self.db.msg_aggregator.add_warning(str(e))
                     continue
                 except KeyError as e:
@@ -331,7 +326,7 @@ class DataImporter():
             # or are not handled here
             return
         else:
-            raise UnsupportedCryptocomEntry(
+            raise UnsupportedCSVEntry(
                 f'Unknown entrype type "{row_type}" encountered during '
                 f'cryptocom data import. Ignoring entry',
             )
@@ -470,15 +465,22 @@ class DataImporter():
                         f'Error was {str(e)}. Ignoring entry',
                     )
                     continue
-                except UnsupportedCryptocomEntry as e:
+                except UnsupportedCSVEntry as e:
                     self.db.msg_aggregator.add_warning(str(e))
                     continue
                 except KeyError as e:
                     return False, str(e)
         return True, ''
 
-    def _consume_blockfi_entry(self, csv_row: Dict[str, Any]):
-
+    def _consume_blockfi_entry(self, csv_row: Dict[str, Any]) -> None:
+        """
+        Process entry for BlockFi transaction history. Trades for this file are ignored
+        and istead should be extracted from the file containing only trades.
+        This method can raise:
+        - UnsupportedBlockFiEntry
+        - UnknownAsset
+        - DeserializationError
+        """
         if len(csv_row['Confirmed At']) != 0:
             timestamp = deserialize_timestamp_from_date(
                 date=csv_row['Confirmed At'],
@@ -486,11 +488,15 @@ class DataImporter():
                 location='BlockFi',
             )
         else:
-            raise DeserializationError('Action not confirmed yet')
+            log.debug(f'Ignoring unconfirmed BlockFi entry {csv_row}')
+            return
 
         asset = symbol_to_asset_or_token(csv_row['Cryptocurrency'])
-        amount = deserialize_asset_amount(csv_row['Amount'])
+        amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
         entry_type = csv_row['Transaction Type']
+        # BlockFI doesn't provide information about fees
+        fee = Fee(ZERO)
+        fee_asset = A_USD  # Can be whatever
 
         if entry_type in ('Deposit', 'Wire Deposit', 'ACH Deposit'):
             asset_movement = AssetMovement(
@@ -501,8 +507,8 @@ class DataImporter():
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
-                fee=None,
-                fee_asset=None,
+                fee=fee,
+                fee_asset=fee_asset,
                 link='',
             )
             self.db.add_asset_movements([asset_movement])
@@ -515,8 +521,8 @@ class DataImporter():
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
-                fee=None,
-                fee_asset=None,
+                fee=fee,
+                fee_asset=fee_asset,
                 link='',
             )
             self.db.add_asset_movements([asset_movement])
@@ -534,11 +540,11 @@ class DataImporter():
                 notes=f'{entry_type} from BlockFi',
             )
             self.db_ledger.add_ledger_action(action)
-        elif entry_type in ('Interest Payment', 'Bonus Payment'):
+        elif entry_type in ('Interest Payment', 'Bonus Payment', 'Referral Bonus'):
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
                 timestamp=timestamp,
-                action_type=LedgerActionType.GIFT,
+                action_type=LedgerActionType.INCOME,
                 location=Location.BLOCKFI,
                 amount=amount,
                 asset=asset,
@@ -551,11 +557,11 @@ class DataImporter():
         elif entry_type == 'Trade':
             pass
         else:
-            raise UnsupportedBlockFiEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
+            raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
 
     def import_blockfi_transactions_csv(self, filepath: Path) -> Tuple[bool, str]:
         """
-        Information for the values that the columns can have has been obtained from 
+        Information for the values that the columns can have has been obtained from
         https://github.com/BittyTax/BittyTax/blob/06794f51223398759852d6853bc7112ffb96129a/bittytax/conv/parsers/blockfi.py#L67
         """
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
@@ -571,11 +577,186 @@ class DataImporter():
                     continue
                 except DeserializationError as e:
                     self.db.msg_aggregator.add_warning(
-                        f'Error during BlockFi CSV import deserialization. '
-                        f'Error was {str(e)}. Ignoring entry',
+                        f'Deserialization error during BlockFi CSV import. '
+                        f'{str(e)}. Ignoring entry',
                     )
                     continue
-                except UnsupportedBlockFiEntry as e:
+                except UnsupportedCSVEntry as e:
+                    self.db.msg_aggregator.add_warning(str(e))
+                    continue
+                except KeyError as e:
+                    return False, str(e)
+        return True, ''
+
+    def _consume_blockfi_trade(self, csv_row: Dict[str, Any]) -> None:
+        """
+        Consume the file containing only trades from BlockFi. As per my investigations
+        (@yabirgb) this file can only contain confirmed trades.
+        - UnknownAsset
+        - DeserializationError
+        """
+        timestamp = deserialize_timestamp_from_date(
+            date=csv_row['Date'],
+            formatstr='%Y-%m-%d %H:%M:%S',
+            location='BlockFi',
+        )
+
+        buy_asset = symbol_to_asset_or_token(csv_row['Buy Currency'])
+        buy_amount = deserialize_asset_amount(csv_row['Buy Quantity'])
+        sold_asset = symbol_to_asset_or_token(csv_row['Sold Currency'])
+        sold_amount = deserialize_asset_amount(csv_row['Sold Quantity'])
+        if sold_amount == ZERO:
+            log.debug(f'Ignoring BlockFi trade with sold_amount equal to zero. {csv_row}')
+            return
+        rate = Price(buy_amount / sold_amount)
+        trade = Trade(
+            timestamp=timestamp,
+            location=Location.BLOCKFI,
+            base_asset=buy_asset,
+            quote_asset=sold_asset,
+            trade_type=TradeType.BUY,
+            amount=buy_amount,
+            rate=rate,
+            fee=None,  # BlockFI doesn't provide this information
+            fee_currency=None,
+            link='',
+            notes=csv_row['Type'],
+        )
+        self.db.add_trades([trade])
+
+    def import_blockfi_trades_csv(self, filepath: Path) -> Tuple[bool, str]:
+        """
+        Information for the values that the columns can have has been obtained from
+        the issue in github #1674
+        """
+        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+            data = csv.DictReader(csvfile)
+            for row in data:
+                try:
+                    self._consume_blockfi_trade(row)
+                except UnknownAsset as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'During BlockFi CSV import found action with unknown '
+                        f'asset {e.asset_name}. Ignoring entry',
+                    )
+                    continue
+                except DeserializationError as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'Deserialization error during BlockFi CSV import. '
+                        f'{str(e)}. Ignoring entry',
+                    )
+                    continue
+                except UnsupportedCSVEntry as e:
+                    self.db.msg_aggregator.add_warning(str(e))
+                    continue
+                except KeyError as e:
+                    return False, str(e)
+        return True, ''
+
+    def _consume_nexo(self, csv_row: Dict[str, Any]) -> None:
+        """
+        Consume CSV file from NEXO.
+        This method can raise:
+        - UnsupportedNexoEntry
+        - UnknownAsset
+        - DeserializationError
+        """
+        if 'rejected' not in csv_row['Description']:
+            timestamp = deserialize_timestamp_from_date(
+                date=csv_row['DateTime'],
+                formatstr='%Y-%m-%d %H:%M:%S',
+                location='NEXO',
+            )
+        else:
+            log.debug(f'Ignoring rejected nexo entry {csv_row}')
+            return
+
+        asset = symbol_to_asset_or_token(csv_row['Currency'])
+        amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
+        entry_type = csv_row['Type']
+
+        if entry_type in ('Deposit', 'ExchangeDepositedOn'):
+            asset_movement = AssetMovement(
+                location=Location.NEXO,
+                category=AssetMovementCategory.DEPOSIT,
+                address=None,
+                transaction_id=None,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee=Fee(ZERO),
+                fee_asset=A_USD,
+                link='',
+            )
+            self.db.add_asset_movements([asset_movement])
+        elif entry_type in ('Withdrawal', 'WithdrawExchanged'):
+            asset_movement = AssetMovement(
+                location=Location.NEXO,
+                category=AssetMovementCategory.WITHDRAWAL,
+                address=None,
+                transaction_id=None,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee=Fee(ZERO),
+                fee_asset=A_USD,
+                link='',
+            )
+            self.db.add_asset_movements([asset_movement])
+        elif entry_type == 'Withdrawal Fee':
+            action = LedgerAction(
+                identifier=0,  # whatever is not used at insertion
+                timestamp=timestamp,
+                action_type=LedgerActionType.EXPENSE,
+                location=Location.NEXO,
+                amount=amount,
+                asset=asset,
+                rate=None,
+                rate_asset=None,
+                link=None,
+                notes=f'{entry_type} from Nexo',
+            )
+            self.db_ledger.add_ledger_action(action)
+        elif entry_type in ('Interest', 'Bonus'):
+            action = LedgerAction(
+                identifier=0,  # whatever is not used at insertion
+                timestamp=timestamp,
+                action_type=LedgerActionType.INCOME,
+                location=Location.NEXO,
+                amount=amount,
+                asset=asset,
+                rate=None,
+                rate_asset=None,
+                link=None,
+                notes=f'{entry_type} from Nexo',
+            )
+            self.db_ledger.add_ledger_action(action)
+        else:
+            raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
+
+    def import_nexo_csv(self, filepath: Path) -> Tuple[bool, str]:
+        """
+        Information for the values that the columns can have has been obtained from
+        https://github.com/BittyTax/BittyTax/blob/06794f51223398759852d6853bc7112ffb96129a/bittytax/conv/parsers/nexo.py
+        """
+        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+            data = csv.DictReader(csvfile)
+            for row in data:
+                try:
+                    self._consume_nexo(row)
+                except UnknownAsset as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'During Nexo CSV import found action with unknown '
+                        f'asset {e.asset_name}. Ignoring entry',
+                    )
+                    continue
+                except DeserializationError as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'Deserialization error during Nexo CSV import. '
+                        f'{str(e)}. Ignoring entry',
+                    )
+                    continue
+                except UnsupportedCSVEntry as e:
                     self.db.msg_aggregator.add_warning(str(e))
                     continue
                 except KeyError as e:
