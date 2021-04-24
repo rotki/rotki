@@ -56,6 +56,12 @@ def _initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
     cursor = connection.cursor()
     db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+    if db_version > GLOBAL_DB_VERSION:
+        raise ValueError(
+            f'Tried to open a rotki version intended to work with GlobalDB v{GLOBAL_DB_VERSION} '
+            f'but the GlobalDB found in the system is v{db_version}. Bailing ...',
+        )
+
     if db_version == 1:
         upgrade_ethereum_asset_ids(connection)
     cursor.execute(
