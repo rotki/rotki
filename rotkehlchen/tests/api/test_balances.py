@@ -118,15 +118,15 @@ def assert_all_balances(
         assert len(location_data) == 0
     else:
         expected_locations = {
-            Location.POLONIEX.serialize_for_db(),
-            Location.BINANCE.serialize_for_db(),
-            Location.TOTAL.serialize_for_db(),
-            Location.BLOCKCHAIN.serialize_for_db(),
+            Location.POLONIEX.serialize_for_db(),  # pylint: disable=no-member
+            Location.BINANCE.serialize_for_db(),  # pylint: disable=no-member
+            Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            Location.BLOCKCHAIN.serialize_for_db(),  # pylint: disable=no-member
         }
         if got_external:
-            expected_locations.add(Location.EXTERNAL.serialize_for_db())
+            expected_locations.add(Location.EXTERNAL.serialize_for_db())  # pylint: disable=no-member  # noqa: E501
         if total_eur != ZERO:
-            expected_locations.add(Location.BANKS.serialize_for_db())
+            expected_locations.add(Location.BANKS.serialize_for_db())  # pylint: disable=no-member
         locations = {x.location for x in location_data}
         assert locations == expected_locations
 

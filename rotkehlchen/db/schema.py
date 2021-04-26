@@ -168,10 +168,12 @@ CREATE TABLE IF NOT EXISTS timed_location_data (
 
 DB_CREATE_USER_CREDENTIALS = """
 CREATE TABLE IF NOT EXISTS user_credentials (
-    name VARCHAR[24] NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     api_key TEXT,
     api_secret TEXT,
-    passphrase TEXT
+    passphrase TEXT,
+    PRIMARY KEY (name, location)
 );
 """
 

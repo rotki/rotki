@@ -85,6 +85,7 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import combine_dicts
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -668,7 +669,7 @@ class Rotkehlchen():
                 location=Location.CRYPTOCOM,
                 only_cache=only_cache,
             ))
-            for name, exchange in self.exchange_manager.connected_exchanges.items():
+            for exchange in self.exchange_manager.iterate_exchanges():
                 exchange_trades = exchange.query_trade_history(
                     start_ts=from_ts,
                     end_ts=to_ts,
@@ -676,7 +677,7 @@ class Rotkehlchen():
                 )
                 if self.premium is None:
                     trades = self._apply_actions_limit(
-                        location=Location.deserialize(name),
+                        location=exchange.location,
                         action_type='trade',
                         location_actions=exchange_trades,
                         all_actions=trades,
@@ -732,19 +733,21 @@ class Rotkehlchen():
                     )
         else:
             # should only be an exchange
-            exchange = self.exchange_manager.get(str(location))
-            if not exchange:
+            exchanges_list = self.exchange_manager.connected_exchanges.get(location)
+            if exchanges_list is None:
                 logger.warning(
-                    f'Tried to query trades from {location} which is either not an '
+                    f'Tried to query trades from {str(location)} which is either not an '
                     f'exchange or not an exchange the user has connected to',
                 )
                 return []
 
-            location_trades = exchange.query_trade_history(
-                start_ts=from_ts,
-                end_ts=to_ts,
-                only_cache=only_cache,
-            )
+            location_trades = []
+            for exchange in exchanges_list:
+                location_trades.extend(exchange.query_trade_history(
+                    start_ts=from_ts,
+                    end_ts=to_ts,
+                    only_cache=only_cache,
+                ))
 
         trades: TRADES_LIST = []
         if self.premium is None:
@@ -781,13 +784,20 @@ class Rotkehlchen():
 
         balances: Dict[str, Dict[Asset, Balance]] = {}
         problem_free = True
-        for _, exchange in self.exchange_manager.connected_exchanges.items():
+        for exchange in self.exchange_manager.iterate_exchanges():
             exchange_balances, _ = exchange.query_balances(ignore_cache=ignore_cache)
             # If we got an error, disregard that exchange but make sure we don't save data
             if not isinstance(exchange_balances, dict):
                 problem_free = False
             else:
-                balances[exchange.name] = exchange_balances
+                location_str = str(exchange.location)
+                if location_str not in balances:
+                    balances[location_str] = exchange_balances
+                else:  # multiple exchange of same type. Combine balances
+                    balances[location_str] = combine_dicts(
+                        balances[location_str],
+                        exchange_balances,
+                    )
 
         liabilities: Dict[Asset, Balance]
         try:
@@ -875,7 +885,7 @@ class Rotkehlchen():
 
         return result_dict
 
-    def _query_exchange_asset_movements(
+    def _query_and_populate_exchange_asset_movements(
             self,
             from_ts: Timestamp,
             to_ts: Timestamp,
@@ -883,6 +893,7 @@ class Rotkehlchen():
             exchange: Union[ExchangeInterface, Location],
             only_cache: bool,
     ) -> List[AssetMovement]:
+        """Queryies exchange for asset movements and adds it to all_movements"""
         if isinstance(exchange, ExchangeInterface):
             location = Location.deserialize(exchange.name)
             # clear the asset movements queried for this exchange
@@ -936,7 +947,7 @@ class Rotkehlchen():
         movements: List[AssetMovement] = []
         if location is not None:
             if location == Location.CRYPTOCOM:
-                movements = self._query_exchange_asset_movements(
+                movements = self._query_and_populate_exchange_asset_movements(
                     from_ts=from_ts,
                     to_ts=to_ts,
                     all_movements=movements,
@@ -944,31 +955,33 @@ class Rotkehlchen():
                     only_cache=only_cache,
                 )
             else:
-                exchange = self.exchange_manager.get(str(location))
-                if not exchange:
+                exchanges_list = self.exchange_manager.connected_exchanges.get(location)
+                if exchanges_list is None:
                     logger.warning(
-                        f'Tried to query deposits/withdrawals from {location} which is either '
-                        f'not at exchange or not an exchange the user has connected to',
+                        f'Tried to query deposits/withdrawals from {str(location)} which is '
+                        f'either not an exchange or not an exchange the user has connected to',
                     )
                     return []
-                movements = self._query_exchange_asset_movements(
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                    all_movements=movements,
-                    exchange=exchange,
-                    only_cache=only_cache,
-                )
+
+                for exchange in exchanges_list:
+                    self._query_and_populate_exchange_asset_movements(
+                        from_ts=from_ts,
+                        to_ts=to_ts,
+                        all_movements=movements,
+                        exchange=exchange,
+                        only_cache=only_cache,
+                    )
         else:
             # cryptocom has no exchange integration but we may have DB entries due to csv import
-            movements = self._query_exchange_asset_movements(
+            movements = self._query_and_populate_exchange_asset_movements(
                 from_ts=from_ts,
                 to_ts=to_ts,
                 all_movements=movements,
                 exchange=Location.CRYPTOCOM,
                 only_cache=only_cache,
             )
-            for _, exchange in self.exchange_manager.connected_exchanges.items():
-                self._query_exchange_asset_movements(
+            for exchange in self.exchange_manager.iterate_exchanges():
+                self._query_and_populate_exchange_asset_movements(
                     from_ts=from_ts,
                     to_ts=to_ts,
                     all_movements=movements,
@@ -994,9 +1007,10 @@ class Rotkehlchen():
                     return False, msg
 
             if settings.kraken_account_type is not None:
-                kraken = self.exchange_manager.get('kraken')
-                if kraken:
-                    kraken.set_account_type(settings.kraken_account_type)  # type: ignore
+                kraken_exchanges = self.exchange_manager.connected_exchanges.get(Location.KRAKEN)
+                if kraken_exchanges is not None:
+                    for exchange in kraken_exchanges:
+                        exchange.set_account_type(settings.kraken_account_type)  # type: ignore
 
             if settings.btc_derivation_gap_limit is not None:
                 self.chain_manager.btc_derivation_gap_limit = settings.btc_derivation_gap_limit
@@ -1020,6 +1034,7 @@ class Rotkehlchen():
     def setup_exchange(
             self,
             name: str,
+            location: Location,
             api_key: ApiKey,
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
@@ -1029,6 +1044,7 @@ class Rotkehlchen():
         """
         is_success, msg = self.exchange_manager.setup_exchange(
             name=name,
+            location=location,
             api_key=api_key,
             api_secret=api_secret,
             database=self.data.db,
@@ -1037,17 +1053,25 @@ class Rotkehlchen():
 
         if is_success:
             # Success, save the result in the DB
-            self.data.db.add_exchange(name, api_key, api_secret, passphrase=passphrase)
+            self.data.db.add_exchange(
+                name=name,
+                location=location,
+                api_key=api_key,
+                api_secret=api_secret,
+                passphrase=passphrase,
+            )
         return is_success, msg
 
-    def remove_exchange(self, name: str) -> Tuple[bool, str]:
-        if not self.exchange_manager.has_exchange(name):
-            return False, 'Exchange {} is not registered'.format(name)
+    def remove_exchange(self, name: str, location: Location) -> Tuple[bool, str]:
+        if self.exchange_manager.get_exchange(name=name, location=location):
+            return False, f'{str(location)} exchange {name} is not registered'
 
-        self.exchange_manager.delete_exchange(name)
+        self.exchange_manager.delete_exchange(name=name, location=location)
         # Success, remove it also from the DB
-        self.data.db.remove_exchange(name)
-        self.data.db.delete_used_query_range_for_exchange(name)
+        self.data.db.remove_exchange(name=name, location=location)
+        if self.exchange_manager.connected_exchanges.get(location) is None:
+            # was last exchange of the location type. Delete used query ranges
+            self.data.db.delete_used_query_range_for_exchange(location)
         return True, ''
 
     def query_periodic_data(self) -> Dict[str, Union[bool, Timestamp]]:

@@ -103,13 +103,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_trade_type_from_db,
 )
 from rotkehlchen.typing import (
-    ApiCredentials,
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
     BTCAddress,
     ChecksumEthAddress,
     EthereumTransaction,
+    ExchangeApiCredentials,
     ExternalService,
     ExternalServiceApiCredentials,
     HexColorCode,
@@ -182,7 +182,7 @@ def db_tuple_to_str(
         return (
             f'{deserialize_asset_movement_category_from_db(data[2])} of '
             f'{data[4]} with id {data[0]} '
-            f'in {Location.deserialize__db(data[1])} at timestamp {data[3]}'
+            f'in {Location.deserialize_from_db(data[1])} at timestamp {data[3]}'
         )
     if tuple_type == 'margin_position':
         return (
@@ -1239,7 +1239,7 @@ class DBHandler:
         """Delete all historical Balancer trades data"""
         cursor = self.conn.cursor()
         cursor.execute(
-            f'DELETE FROM amm_swaps WHERE location="{Location.BALANCER.serialize_for_db()}";',
+            f'DELETE FROM amm_swaps WHERE location="{Location.BALANCER.serialize_for_db()}";',  # pylint: disable=no-member  # noqa: E501
         )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_TRADES_PREFIX}%";',
@@ -1424,7 +1424,7 @@ class DBHandler:
         """Delete all historical Uniswap trades data"""
         cursor = self.conn.cursor()
         cursor.execute(
-            f'DELETE FROM amm_swaps WHERE location="{Location.UNISWAP.serialize_for_db()}";',
+            f'DELETE FROM amm_swaps WHERE location="{Location.UNISWAP.serialize_for_db()}";',  # pylint: disable=no-member  # noqa: E501
         )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_TRADES_PREFIX}%";',
@@ -1577,26 +1577,26 @@ class DBHandler:
 
         return Timestamp(int(query[0][0])), Timestamp(int(query[0][1]))
 
-    def delete_used_query_range_for_exchange(self, exchange_name: str) -> None:
+    def delete_used_query_range_for_exchange(self, location: Location) -> None:
         """Delete the query ranges for the given exchange name"""
         cursor = self.conn.cursor()
         cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            (f'{exchange_name}\\_%', '\\'),
+            (f'{str(location)}\\_%', '\\'),
         )
         self.conn.commit()
         self.update_last_write()
 
-    def purge_exchange_data(self, exchange_name: str) -> None:
-        self.delete_used_query_range_for_exchange(exchange_name)
+    def purge_exchange_data(self, location: Location) -> None:
+        self.delete_used_query_range_for_exchange(location)
         cursor = self.conn.cursor()
         cursor.execute(
             'DELETE FROM trades WHERE location = ?;',
-            (Location.deserialize(exchange_name).serialize_for_db(),),
+            (location.serialize_for_db(),),
         )
         cursor.execute(
             'DELETE FROM asset_movements WHERE location = ?;',
-            (Location.deserialize(exchange_name).serialize_for_db(),),
+            (location.serialize_for_db(),),
         )
         self.conn.commit()
         self.update_last_write()
@@ -2157,7 +2157,7 @@ class DBHandler:
             ))
         locations.append(LocationData(
             time=timestamp,
-            location=Location.TOTAL.serialize_for_db(),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
             usd_value=str(data['net_usd']),
         ))
 
@@ -2167,6 +2167,7 @@ class DBHandler:
     def add_exchange(
             self,
             name: str,
+            location: Location,
             api_key: ApiKey,
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
@@ -2177,38 +2178,40 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT INTO user_credentials '
-            '(name, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?)',
-            (name, api_key, api_secret.decode(), passphrase),
+            '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
+            (name, location.serialize_for_db(), api_key, api_secret.decode(), passphrase),
         )
         self.conn.commit()
         self.update_last_write()
 
-    def remove_exchange(self, name: str) -> None:
+    def remove_exchange(self, name: str, location: Location) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
-            'DELETE FROM user_credentials WHERE name =?', (name,),
+            'DELETE FROM user_credentials WHERE name=? AND location=?',
+            (name, location.serialize_for_db()),
         )
         self.conn.commit()
         self.update_last_write()
 
-    def get_exchange_credentials(self) -> Dict[str, ApiCredentials]:
+    def get_exchange_credentials(self) -> Dict[Location, List[ExchangeApiCredentials]]:
         cursor = self.conn.cursor()
         result = cursor.execute(
-            'SELECT name, api_key, api_secret, passphrase FROM user_credentials;',
+            'SELECT name, location, api_key, api_secret, passphrase FROM user_credentials;',
         )
-        result = result.fetchall()
-        credentials = {}
-
+        credentials = defaultdict(list)
         for entry in result:
             if entry[0] == 'rotkehlchen':
                 continue
-            name = entry[0]
-            passphrase = None if entry[3] is None else str(entry[3])
-            credentials[name] = ApiCredentials.serialize(
-                api_key=str(entry[1]),
-                api_secret=str(entry[2]),
+
+            passphrase = None if entry[4] is None else entry[4]
+            location = Location.deserialize_from_db(entry[1])
+            credentials[location].append(ExchangeApiCredentials(
+                name=entry[0],
+                location=location,
+                api_key=ApiKey(entry[2]),
+                api_secret=ApiSecret(str.encode(entry[3])),
                 passphrase=passphrase,
-            )
+            ))
 
         return credentials
 
@@ -2336,7 +2339,7 @@ class DBHandler:
             self,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            location: Optional[str] = None,
+            location: Optional[Location] = None,
     ) -> List[MarginPosition]:
         """Returns a list of margin positions optionally filtered by time and location
 
@@ -2356,7 +2359,7 @@ class DBHandler:
             '  notes FROM margin_positions '
         )
         if location is not None:
-            query += f'WHERE location="{Location.deserialize(location).serialize_for_db()}" '
+            query += f'WHERE location="{location.serialize_for_db()}" '
         query, bindings = form_query_to_filter_timestamps(query, 'close_time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 

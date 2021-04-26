@@ -21,7 +21,6 @@ from rotkehlchen.typing import (
     ChecksumEthAddress,
     Fee,
     HexColorCode,
-    Location,
     Optional,
     Timestamp,
     TradePair,

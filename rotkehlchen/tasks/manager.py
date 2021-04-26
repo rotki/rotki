@@ -1,7 +1,7 @@
 import logging
 import random
 from collections import defaultdict
-from typing import DefaultDict, List, NamedTuple, Set
+from typing import DefaultDict, List, NamedTuple, Set, Tuple
 
 import gevent
 
@@ -15,7 +15,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.typing import ChecksumEthAddress, Location
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ class TaskManager():
         self.chain_manager = chain_manager
         self.last_xpub_derivation_ts = 0
         self.last_eth_tx_query_ts: DefaultDict[ChecksumEthAddress, int] = defaultdict(int)
-        self.last_exchange_query_ts: DefaultDict[str, int] = defaultdict(int)
+        self.last_exchange_query_ts: DefaultDict[Tuple[str, Location], int] = defaultdict(int)
         self.prepared_cryptocompare_query = False
         self.greenlet_manager.spawn_and_track(  # Needs to run in greenlet, is slow
             after_seconds=None,
@@ -219,12 +219,12 @@ class TaskManager():
 
         now = ts_now()
         queriable_exchanges = []
-        for name, exchange in self.exchange_manager.connected_exchanges.items():
-            if name in ('binance', 'binanceus'):
+        for exchange in self.exchange_manager.iterate_exchanges():
+            if exchange.location in (Location.BINANCE, Location.BINANCEUS):
                 continue  # skip binance due to the way their history is queried and rate limiting
-            queried_range = self.database.get_used_query_range(f'{name}_trades')
+            queried_range = self.database.get_used_query_range(f'{str(exchange.location)}_trades')
             end_ts = queried_range[1] if queried_range else 0
-            if now - max(self.last_exchange_query_ts[name], end_ts) > EXCHANGE_QUERY_FREQUENCY:
+            if now - max(self.last_exchange_query_ts[exchange.location_id()], end_ts) > EXCHANGE_QUERY_FREQUENCY:  # noqa: E501
                 queriable_exchanges.append(exchange)
 
         if len(queriable_exchanges) == 0:
@@ -243,7 +243,7 @@ class TaskManager():
             success_callback=noop_exchange_succes_cb,
             fail_callback=exchange_fail_cb,
         )
-        self.last_exchange_query_ts[exchange.name] = now
+        self.last_exchange_query_ts[exchange.location_id()] = now
 
     def schedule(self) -> None:
         """Schedules background tasks"""

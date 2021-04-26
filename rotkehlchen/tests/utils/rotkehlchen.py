@@ -221,62 +221,62 @@ def add_starting_balances(datahandler) -> List[DBAssetBalance]:
     location_data = [
         LocationData(
             time=Timestamp(1451606400),
-            location=Location.KRAKEN.serialize_for_db(),
+            location=Location.KRAKEN.serialize_for_db(),  # pylint: disable=no-member
             usd_value='100',
         ),
         LocationData(
             time=Timestamp(1451606400),
-            location=Location.BANKS.serialize_for_db(),
+            location=Location.BANKS.serialize_for_db(),  # pylint: disable=no-member
             usd_value='1000',
         ),
         LocationData(
             time=Timestamp(1461606500),
-            location=Location.POLONIEX.serialize_for_db(),
+            location=Location.POLONIEX.serialize_for_db(),  # pylint: disable=no-member
             usd_value='50',
         ),
         LocationData(
             time=Timestamp(1461606500),
-            location=Location.KRAKEN.serialize_for_db(),
+            location=Location.KRAKEN.serialize_for_db(),  # pylint: disable=no-member
             usd_value='200',
         ),
         LocationData(
             time=Timestamp(1461606500),
-            location=Location.BANKS.serialize_for_db(),
+            location=Location.BANKS.serialize_for_db(),  # pylint: disable=no-member
             usd_value='50000',
         ),
         LocationData(
             time=Timestamp(1491607800),
-            location=Location.POLONIEX.serialize_for_db(),
+            location=Location.POLONIEX.serialize_for_db(),  # pylint: disable=no-member
             usd_value='100',
         ),
         LocationData(
             time=Timestamp(1491607800),
-            location=Location.KRAKEN.serialize_for_db(),
+            location=Location.KRAKEN.serialize_for_db(),  # pylint: disable=no-member
             usd_value='2000',
         ),
         LocationData(
             time=Timestamp(1491607800),
-            location=Location.BANKS.serialize_for_db(),
+            location=Location.BANKS.serialize_for_db(),  # pylint: disable=no-member
             usd_value='10000',
         ),
         LocationData(
             time=Timestamp(1491607800),
-            location=Location.BLOCKCHAIN.serialize_for_db(),
+            location=Location.BLOCKCHAIN.serialize_for_db(),  # pylint: disable=no-member
             usd_value='200000',
         ),
         LocationData(
             time=Timestamp(1451606400),
-            location=Location.TOTAL.serialize_for_db(),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
             usd_value='1500',
         ),
         LocationData(
             time=Timestamp(1461606500),
-            location=Location.TOTAL.serialize_for_db(),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
             usd_value='4500',
         ),
         LocationData(
             time=Timestamp(1491607800),
-            location=Location.TOTAL.serialize_for_db(),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
             usd_value='10700.5',
         ),
     ]

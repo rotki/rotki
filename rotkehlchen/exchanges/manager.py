@@ -1,12 +1,13 @@
 import logging
+from collections import defaultdict
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 from rotkehlchen.constants.misc import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiCredentials, ApiKey, ApiSecret, Location
+from rotkehlchen.typing import ApiKey, ApiSecret, ExchangeApiCredentials, Location
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -18,74 +19,86 @@ log = RotkehlchenLogsAdapter(logger)
 
 # Exchanges for which we have supported modules
 SUPPORTED_EXCHANGES = [
-    'kraken',
-    'poloniex',
-    'bittrex',
-    'bitmex',
-    'binance',
-    'coinbase',
-    'coinbasepro',
-    'gemini',
-    'bitstamp',
-    'binanceus',
-    'bitfinex',
-    'bitcoinde',
-    'iconomi',
-    'kucoin',
-    'ftx',
+    Location.KRAKEN,
+    Location.POLONIEX,
+    Location.BITTREX,
+    Location.BITMEX,
+    Location.BINANCE,
+    Location.COINBASE,
+    Location.COINBASEPRO,
+    Location.GEMINI,
+    Location.BITSTAMP,
+    Location.BINANCEUS,
+    Location.BITFINEX,
+    Location.BITCOINDE,
+    Location.ICONOMI,
+    Location.KUCOIN,
+    Location.FTX,
 ]
 # Exchanges for which we allow import via CSV
-EXTERNAL_EXCHANGES = ['cryptocom']
+EXTERNAL_EXCHANGES = [Location.CRYPTOCOM]
 ALL_SUPPORTED_EXCHANGES = SUPPORTED_EXCHANGES + EXTERNAL_EXCHANGES
 
 
 class ExchangeManager():
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
-        self.connected_exchanges: Dict[str, ExchangeInterface] = {}
+        self.connected_exchanges: Dict[Location, List[ExchangeInterface]] = defaultdict(list)
         self.msg_aggregator = msg_aggregator
 
     @staticmethod
-    def _get_exchange_module_name(name: str) -> str:
-        if name == str(Location.BINANCEUS):
+    def _get_exchange_module_name(location: Location) -> str:
+        if location == Location.BINANCEUS:
             return str(Location.BINANCE)
-        return name
 
-    def has_exchange(self, name: str, database: Optional['DBHandler'] = None) -> bool:
-        """Check if an exchange is registered.
+        return str(location)
 
-        If the exchange manager can access the database (given as argument)
-        then it checks for credentials there. If not just relies on the mapping
+    def get_exchange(self, name: str, location: Location) -> Optional[ExchangeInterface]:
+        """Get the exchange object for an exchange with a given name and location
+
+        Returns None if it can not be found
         """
-        credentials = database.get_exchange_credentials() if database else None
-        # pylint false positive here. Probably: https://github.com/PyCQA/pylint/issues/3045
-        if credentials is not None and name not in credentials:  # pylint: disable=unsupported-membership-test  # noqa: E501
-            if name in self.connected_exchanges:
-                log.warning(
-                    f'{name} exchange had no credentials in the DB but was in the '
-                    f'connected exchanges mapping. Removing stale exchange from '
-                    f'mapping. This should not happen.',
-                )
-                self.connected_exchanges.pop(name)
-            return False
+        exchanges_list = self.connected_exchanges.get(location)
+        if exchanges_list is None:
+            return None
 
-        return name in self.connected_exchanges
+        for exchange in exchanges_list:
+            if exchange.name == name:
+                return exchange
 
-    def delete_exchange(self, name: str) -> None:
-        self.connected_exchanges.pop(name)
+        return None
+
+    def iterate_exchanges(self) -> Iterator[ExchangeInterface]:
+        """Iterate all connected exchanges"""
+        for _, exchanges in self.connected_exchanges.items():
+            for exchange in exchanges:
+                yield exchange
+
+    def delete_exchange(self, name: str, location: Location) -> None:
+        """Deletes exchange only from the manager. Not from the DB"""
+        exchanges_list = self.connected_exchanges.get(location)
+        if exchanges_list is None:
+            return
+
+        if len(exchanges_list) == 1:
+            self.connected_exchanges.pop(location)
+            return
+
+        self.connected_exchanges[location] = [x for x in exchanges_list if x.name != name]
 
     def delete_all_exchanges(self) -> None:
         self.connected_exchanges.clear()
 
-    def get_connected_exchange_names(self) -> List[str]:
-        return [e.name for _, e in self.connected_exchanges.items()]
-
-    def get(self, name: str) -> Optional[ExchangeInterface]:
-        return self.connected_exchanges.get(name, None)
+    def get_connected_exchange_names(self) -> List[Dict[str, Any]]:
+        return [
+            {"location": str(location), "name": e.name}
+            for location, exchanges in self.connected_exchanges.items() for e in exchanges
+        ]
 
     def setup_exchange(
             self,
             name: str,
+            location: Location,
             api_key: ApiKey,
             api_secret: ApiSecret,
             database: 'DBHandler',
@@ -95,22 +108,26 @@ class ExchangeManager():
         Setup a new exchange with an api key, an api secret and for some exchanges a passphrase.
 
         """
-        if name not in SUPPORTED_EXCHANGES:
+        if location not in SUPPORTED_EXCHANGES:  # also checked via marshmallow
             return False, 'Attempted to register unsupported exchange {}'.format(name)
 
-        if self.has_exchange(name, database=database):
-            return False, 'Exchange {} is already registered'.format(name)
+        if self.get_exchange(name=name, location=location) is not None:
+            return False, f'{str(location)} exchange {name} is already registered'
 
         credentials_dict = {}
-        api_credentials = ApiCredentials(
+        api_credentials = ExchangeApiCredentials(
+            name=name,
+            location=location,
             api_key=api_key,
             api_secret=api_secret,
             passphrase=passphrase,
         )
-        credentials_dict[name] = api_credentials
+        credentials_dict[location] = [api_credentials]
         self.initialize_exchanges(credentials_dict, database)
 
-        exchange = self.connected_exchanges[name]
+        exchange = self.get_exchange(name=name, location=location)
+        if exchange is None:
+            return False, 'Should never happen. Exchange is None after initialization'
         try:
             result, message = exchange.validate_api_key()
         except RemoteError as e:
@@ -119,49 +136,52 @@ class ExchangeManager():
 
         if not result:
             log.error(
-                'Failed to validate API key for exchange',
-                name=name,
-                error=message,
+                f'Failed to validate API key for {str(location)} exchange {name}'
+                f'due to {message}',
             )
-            self.delete_exchange(name)
+            self.delete_exchange(name=name, location=location)
             return False, message
 
         return True, ''
 
     def initialize_exchanges(
             self,
-            exchange_credentials: Dict[str, ApiCredentials],
+            exchange_credentials: Dict[Location, List[ExchangeApiCredentials]],
             database: 'DBHandler',
     ) -> None:
         log.debug('Initializing exchanges')
         # initialize exchanges for which we have keys and are not already initialized
-        for name, credentials in exchange_credentials.items():
-            module_name = self._get_exchange_module_name(name)
-            if name not in self.connected_exchanges:
-                try:
-                    module = import_module(f'rotkehlchen.exchanges.{module_name}')
-                except ModuleNotFoundError:
-                    # This should never happen
-                    raise AssertionError(
-                        f'Tried to initialize unknown exchange {name}. Should never happen.',
-                    ) from None
+        for location, credentials_list in exchange_credentials.items():
+            module_name = self._get_exchange_module_name(location)
+            try:
+                module = import_module(f'rotkehlchen.exchanges.{module_name}')
+            except ModuleNotFoundError:
+                # This should never happen
+                raise AssertionError(
+                    f'Tried to initialize unknown exchange {str(location)}. Should not happen',
+                ) from None
+
+            for credentials in credentials_list:
+                if self.get_exchange(name=credentials.name, location=credentials.location):
+                    continue  # already initialized
 
                 exchange_ctor = getattr(module, module_name.capitalize())
                 extra_args: Dict[str, Any] = {}
                 if credentials.passphrase is not None:
                     extra_args['passphrase'] = credentials.passphrase
-                if name == str(Location.KRAKEN):
+                if location == Location.KRAKEN:
                     settings = database.get_settings()
                     extra_args['account_type'] = settings.kraken_account_type
-                elif name == str(Location.BINANCE):
+                elif location == Location.BINANCE:
                     extra_args['uri'] = BINANCE_BASE_URL
-                elif name == str(Location.BINANCEUS):
+                elif location == Location.BINANCEUS:
                     extra_args['uri'] = BINANCEUS_BASE_URL
                 exchange_obj = exchange_ctor(
+                    name=credentials.name,
                     api_key=credentials.api_key,
                     secret=credentials.api_secret,
                     database=database,
                     msg_aggregator=self.msg_aggregator,
                     **extra_args,
                 )
-                self.connected_exchanges[name] = exchange_obj
+                self.connected_exchanges[location].append(exchange_obj)

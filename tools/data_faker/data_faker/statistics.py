@@ -108,7 +108,7 @@ class StatisticsFaker():
         # add the location data + total to the DB
         self.db.add_multiple_location_data(location_data + [LocationData(
             time=from_ts,
-            location=Location.TOTAL.serialize_for_db(),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
             usd_value=str(total_amount),
         )])
 
@@ -162,7 +162,7 @@ class StatisticsFaker():
             # add the location data + total to the DB
             self.db.add_multiple_location_data(new_location_data + [LocationData(
                 time=from_ts,
-                location=Location.TOTAL.serialize_for_db(),
+                location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
                 usd_value=str(total_amount),
             )])
 
