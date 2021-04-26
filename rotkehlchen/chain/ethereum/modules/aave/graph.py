@@ -241,9 +241,9 @@ def _parse_atoken_balance_history(
 
         entry_id = entry['id']
         pairs = entry_id.split('0x')
-        if len(pairs) != 4:
+        if len(pairs) not in (4, 5):
             log.error(
-                f'Expected to find 3 hashes in graps\'s aTokenBalanceHistory '
+                f'Expected to find 3-4 hashes in graph\'s aTokenBalanceHistory '
                 f'id but the encountered id does not match: {entry_id}. Skipping entry...',
             )
             continue
@@ -257,7 +257,7 @@ def _parse_atoken_balance_history(
             )
             continue
 
-        tx_hash = '0x' + pairs[3]
+        tx_hash = '0x' + pairs[4]
         asset = aave_reserve_to_asset(reserve_address)
         if asset is None:
             log.error(
@@ -283,7 +283,8 @@ def _get_reserve_asset_and_decimals(
         reserve_key: str,
 ) -> Optional[Tuple[Asset, int]]:
     try:
-        reserve_address = deserialize_ethereum_address(entry[reserve_key]['id'])
+        # The ID of reserve is the address of the asset and the address of the market's LendingPoolAddressProvider, in lower case  # noqa: E501
+        reserve_address = deserialize_ethereum_address(entry[reserve_key]['id'][:42])
     except DeserializationError:
         log.error(f'Failed to Deserialize reserve address {entry[reserve_key]["id"]}')
         return None
@@ -317,7 +318,7 @@ class AaveGraphInquirer(AaveInquirer):
             premium=premium,
             msg_aggregator=msg_aggregator,
         )
-        self.graph = Graph('https://api.thegraph.com/subgraphs/name/aave/protocol-raw')
+        self.graph = Graph('https://api.thegraph.com/subgraphs/name/aave/protocol-multy-raw')
 
     def get_history_for_addresses(
             self,
@@ -356,12 +357,13 @@ class AaveGraphInquirer(AaveInquirer):
             reserve = entry['reserve']
             try:
                 result.append(AaveUserReserve(
-                    address=deserialize_ethereum_address(reserve['id']),
+                    # The ID of reserve is the address of the asset and the address of the market's LendingPoolAddressProvider, in lower case  # noqa: E501
+                    address=deserialize_ethereum_address(reserve['id'][:42]),
                     symbol=reserve['symbol'],
                 ))
             except DeserializationError:
                 log.error(
-                    f'Failed to deserialize reserve address {reserve["id"]}'
+                    f'Failed to deserialize reserve address {reserve["id"]} '
                     f'Skipping reserve address {reserve["id"]} for user address {address}',
                 )
                 continue
@@ -381,9 +383,9 @@ class AaveGraphInquirer(AaveInquirer):
         reserve_history = {}
         for reserve in user_result['reserves']:
             pairs = reserve['id'].split('0x')
-            if len(pairs) != 3:
+            if len(pairs) != 4:
                 log.error(
-                    f'Expected to find 2 hashes in graph\'s reserve history id '
+                    f'Expected to find 3 addresses in graph\'s reserve history id '
                     f'but the encountered id does not match: {reserve["id"]}. Skipping entry...',
                 )
                 continue
@@ -393,7 +395,7 @@ class AaveGraphInquirer(AaveInquirer):
                 reserve_address = deserialize_ethereum_address(address_s)
             except DeserializationError:
                 log.error(
-                    f'Failed to deserialize reserve address {address_s}'
+                    f'Failed to deserialize reserve address {address_s} '
                     f'Skipping reserve address {address_s} for user address {user_address}',
                 )
                 continue
