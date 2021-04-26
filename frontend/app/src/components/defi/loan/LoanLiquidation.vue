@@ -10,10 +10,9 @@
       </loan-row>
     </div>
     <div>
-      <span
-        class="liquidation__liquidation-events__header"
-        v-text="$t('loan_liquidation.liquidation_events')"
-      />
+      <span class="liquidation__liquidation-events__header" :style="fontStyle">
+        {{ $t('loan_liquidation.liquidation_events') }}
+      </span>
       <v-skeleton-loader
         v-if="premium"
         :loading="typeof loan.totalLiquidated === 'undefined'"
@@ -76,6 +75,7 @@ import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
+import ThemeMixin from '@/mixins/theme-mixin';
 
 @Component({
   components: {
@@ -88,7 +88,8 @@ import PremiumMixin from '@/mixins/premium-mixin';
 })
 export default class LoanLiquidation extends Mixins(
   PremiumMixin,
-  LoanDisplayMixin
+  LoanDisplayMixin,
+  ThemeMixin
 ) {
   readonly assetPadding: number = 3;
 }
@@ -118,7 +119,6 @@ export default class LoanLiquidation extends Mixins(
     &__header {
       font-size: 20px;
       font-weight: 500;
-      color: rgba(0, 0, 0, 0.87);
     }
   }
 }

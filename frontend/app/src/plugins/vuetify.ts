@@ -34,6 +34,11 @@ export default new Vuetify({
         'rotki-loss': '#d32f2f',
         error: '#f03a47',
         success: '#06D6A0'
+      },
+      dark: {
+        primary: '#ff5722',
+        accent: '#e45325',
+        dark: '#1e1e1e'
       }
     }
   }

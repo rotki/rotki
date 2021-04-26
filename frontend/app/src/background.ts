@@ -7,6 +7,7 @@ import {
   Menu,
   MenuItem,
   MenuItemConstructorOptions,
+  nativeTheme,
   protocol,
   shell
 } from 'electron';
@@ -18,6 +19,7 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import { startHttp, stopHttp } from '@/electron-main/http';
 import {
   IPC_CHECK_FOR_UPDATES,
+  IPC_DARK_MODE,
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_INSTALL_UPDATE,
@@ -253,6 +255,15 @@ function setupUpdaterInterop() {
       pyHandler.logToFile(e);
       event.sender.send(IPC_INSTALL_UPDATE, e);
     }
+  });
+
+  ipcMain.on(IPC_DARK_MODE, async (event, enabled) => {
+    if (enabled) {
+      nativeTheme.themeSource = 'dark';
+    } else {
+      nativeTheme.themeSource = 'light';
+    }
+    event.sender.send(IPC_DARK_MODE, nativeTheme.shouldUseDarkColors);
   });
 }
 

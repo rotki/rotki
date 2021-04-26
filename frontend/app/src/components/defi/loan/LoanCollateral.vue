@@ -71,7 +71,7 @@
       rounded
       block
       depressed
-      color="grey lighten-3 grey--text text--darken-2"
+      :color="dark ? null : 'grey lighten-3 grey--text text--darken-2'"
       class="loan-collateral__watcher-button"
       @click="openWatcherDialog"
     >
@@ -113,6 +113,7 @@ import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/helper/PremiumLock.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
+import ThemeMixin from '@/mixins/theme-mixin';
 import { Watcher, WatcherType } from '@/services/session/types';
 import { Collateral, MakerDAOVaultModel } from '@/store/defi/types';
 import { Zero } from '@/utils/bignumbers';
@@ -132,7 +133,8 @@ import { Zero } from '@/utils/bignumbers';
 })
 export default class LoanCollateral extends Mixins(
   PremiumMixin,
-  LoanDisplayMixin
+  LoanDisplayMixin,
+  ThemeMixin
 ) {
   showWatcherDialog: boolean = false;
   watcherMessage: string = '';

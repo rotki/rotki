@@ -120,6 +120,10 @@ export const BalancerBalances = (): Promise<VueConstructor> => {
   return load('BalancerBalances');
 };
 
+export const DarkModeSwitch = (): Promise<VueConstructor> => {
+  return load('DarkModeSwitch');
+};
+
 declare global {
   interface Window {
     Vue: any;

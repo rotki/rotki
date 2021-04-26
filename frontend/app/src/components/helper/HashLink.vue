@@ -26,7 +26,8 @@
           v-bind="attrs"
           :width="!small ? '20px' : null"
           color="primary"
-          class="grey lighten-4 ml-2"
+          class="ml-2"
+          :class="dark ? null : 'grey lighten-4'"
           v-on="on"
           @click="copyText(text)"
         >
@@ -45,7 +46,8 @@
           v-bind="attrs"
           :width="!small ? '20px' : null"
           color="primary"
-          class="grey lighten-4 ml-1"
+          class="ml-1"
+          :class="dark ? null : 'grey lighten-4'"
           :href="href"
           :target="target"
           v-on="on"
@@ -64,6 +66,7 @@ import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import { explorerUrls } from '@/components/helper/asset-urls';
 import ScrambleMixin from '@/mixins/scramble-mixin';
+import ThemeMixin from '@/mixins/theme-mixin';
 import { ExplorersSettings } from '@/store/settings/types';
 import { Blockchain, ETH } from '@/typing/types';
 import { randomHex } from '@/typing/utils';
@@ -74,7 +77,7 @@ import { randomHex } from '@/typing/utils';
     ...mapState('settings', ['explorers'])
   }
 })
-export default class HashLink extends Mixins(ScrambleMixin) {
+export default class HashLink extends Mixins(ScrambleMixin, ThemeMixin) {
   @Prop({ required: true, type: String })
   text!: string;
   @Prop({ required: false, type: Boolean, default: false })

@@ -16,7 +16,7 @@
           <v-icon> mdi-content-save </v-icon>
         </menu-tooltip-button>
       </template>
-      <v-container class="balance-saved-indicator__container">
+      <v-container :style="backgroundStyle">
         <div class="balance-saved-indicator__content">
           <v-row v-if="premium">
             <v-col>
@@ -124,6 +124,7 @@ import Fragment from '@/components/helper/Fragment';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
+import ThemeMixin from '@/mixins/theme-mixin';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
 import { AllBalancePayload } from '@/store/balances/types';
 
@@ -143,7 +144,7 @@ import { AllBalancePayload } from '@/store/balances/types';
     ...mapActions('session', ['forceSync'])
   }
 })
-export default class SyncIndicator extends Mixins(PremiumMixin) {
+export default class SyncIndicator extends Mixins(PremiumMixin, ThemeMixin) {
   pending: boolean = false;
   confirmChecked: boolean = false;
   syncAction: SyncAction = SYNC_UPLOAD;
@@ -195,10 +196,6 @@ export default class SyncIndicator extends Mixins(PremiumMixin) {
 
 <style lang="scss" scoped>
 .balance-saved-indicator {
-  &__container {
-    background: white;
-  }
-
   &__content {
     width: 280px;
     padding: 16px 16px;
