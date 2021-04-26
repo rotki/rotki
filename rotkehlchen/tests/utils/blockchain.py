@@ -9,7 +9,7 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_SCAN, VOTE_ESCROWED_CRV, ZERION_ABI
+from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -299,9 +299,6 @@ def mock_etherscan_query(
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
-        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={VOTE_ESCROWED_CRV.address}' in url:  # noqa: E501
-            # always
-            pass
         elif 'api.etherscan.io/api?module=proxy&action=eth_call&to=0xB6456b57f03352bE48Bf101B46c1752a0813491a' in url:  # noqa: E501  # ADEX Staking contract
             if 'adex_staking' in original_queries:
                 return original_requests_get(url, *args, **kwargs)
