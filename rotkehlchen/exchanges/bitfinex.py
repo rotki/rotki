@@ -123,12 +123,19 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super().__init__(str(Location.BITFINEX), api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.BITFINEX,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.base_uri = 'https://api.bitfinex.com'
         self.msg_aggregator = msg_aggregator
         self.nonce_lock = Semaphore()

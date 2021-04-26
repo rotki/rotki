@@ -5,12 +5,14 @@ from rotkehlchen.constants.misc import BINANCEUS_BASE_URL
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import Binance
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
+from rotkehlchen.typing import Location
 from rotkehlchen.user_messages import MessagesAggregator
 
 
 def test_name():
-    exchange = Binance('a', b'a', object(), object(), uri=BINANCEUS_BASE_URL)
-    assert exchange.name == 'binanceus'
+    exchange = Binance('binanceus1', 'a', b'a', object(), object(), uri=BINANCEUS_BASE_URL)
+    assert exchange.location == Location.BINANCEUS
+    assert exchange.name == 'binanceus1'
 
 
 def test_binance_assets_are_known(
@@ -19,6 +21,7 @@ def test_binance_assets_are_known(
 ):
     # use a real binance instance so that we always get the latest data
     binance = Binance(
+        name='binance1',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,

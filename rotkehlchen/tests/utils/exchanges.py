@@ -344,6 +344,7 @@ def create_test_coinbase(
         msg_aggregator: MessagesAggregator,
 ) -> Coinbase:
     mock = Coinbase(
+        name='coinbase',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -357,6 +358,7 @@ def create_test_binance(
         msg_aggregator: MessagesAggregator,
 ) -> Binance:
     binance = Binance(
+        name='binance',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -384,6 +386,7 @@ def create_test_bitfinex(
         secret = make_api_secret()
 
     return Bitfinex(
+        name='bitfinex',
         api_key=api_key,
         secret=secret,
         database=database,
@@ -397,6 +400,7 @@ def create_test_bitmex(
 ) -> Bitmex:
     # API key/secret from tests cases here: https://www.bitmex.com/app/apiKeysUsage
     bitmex = Bitmex(
+        name='bitmex',
         api_key=ApiKey('LAqUlngMIQkIUjXMUreyu3qn'),
         secret=ApiSecret(b'chNOOS4KvNXR_Xq4k4c9qsfoKWvnDecLATCRlcBwyKDYnWgO'),
         database=database,
@@ -418,6 +422,7 @@ def create_test_bitstamp(
         secret = make_api_secret()
 
     return Bitstamp(
+        name='bitstamp',
         api_key=api_key,
         secret=secret,
         database=database,
@@ -430,6 +435,7 @@ def create_test_bittrex(
         msg_aggregator: MessagesAggregator,
 ) -> Bittrex:
     bittrex = Bittrex(
+        name='bittrex',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -444,6 +450,7 @@ def create_test_coinbasepro(
         passphrase: str,
 ) -> Coinbasepro:
     coinbasepro = Coinbasepro(
+        name='coinbasepro',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -458,6 +465,7 @@ def create_test_ftx(
         msg_aggregator: MessagesAggregator,
 ) -> Ftx:
     mock = Ftx(
+        name='ftx',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -474,6 +482,7 @@ def create_test_gemini(
         base_uri,
 ):
     return Gemini(
+        name='gemini',
         api_key=api_key,
         secret=api_secret,
         database=database,
@@ -487,6 +496,7 @@ def create_test_kraken(
         msg_aggregator: MessagesAggregator,
 ) -> MockKraken:
     return MockKraken(
+        name='mockkraken',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -509,6 +519,7 @@ def create_test_kucoin(
         passphrase = make_random_uppercasenumeric_string(size=6)
 
     return Kucoin(
+        name='kucoin',
         api_key=api_key,
         secret=secret,
         database=database,
@@ -522,6 +533,7 @@ def create_test_iconomi(
         msg_aggregator: MessagesAggregator,
 ) -> Iconomi:
     return Iconomi(
+        name='iconomi',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -534,6 +546,7 @@ def create_test_bitcoinde(
         msg_aggregator: MessagesAggregator,
 ) -> Bitcoinde:
     return Bitcoinde(
+        name='bitcoinde',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -546,6 +559,7 @@ def create_test_poloniex(
         msg_aggregator: MessagesAggregator,
 ) -> Poloniex:
     return Poloniex(
+        name='poloniex',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,

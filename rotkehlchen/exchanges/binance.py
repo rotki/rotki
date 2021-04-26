@@ -218,17 +218,24 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             uri: str = BINANCE_BASE_URL,
     ):
-        exchange_name = str(Location.BINANCE)
+        exchange_location = Location.BINANCE
         if uri == BINANCEUS_BASE_URL:
-            exchange_name = str(Location.BINANCEUS)
+            exchange_location = Location.BINANCEUS
 
-        super().__init__(exchange_name, api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=exchange_location,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.uri = uri
         self.session.headers.update({
             'Accept': 'application/json',

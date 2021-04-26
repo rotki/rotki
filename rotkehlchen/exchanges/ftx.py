@@ -85,12 +85,19 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super().__init__('ftx', api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.FTX,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.apiversion = 'v2'
         self.base_uri = 'https://ftx.com'
         self.msg_aggregator = msg_aggregator

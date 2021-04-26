@@ -9,7 +9,7 @@ import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.converters import UNSUPPORTED_KUCOIN_ASSETS, asset_from_kucoin
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT, A_LINK
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USDT
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
@@ -22,13 +22,15 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 
 def test_name():
     exchange = Kucoin(
+        name='kucoin1',
         api_key='a',
         secret=b'a',
         database=object(),
         msg_aggregator=object(),
         passphrase='a',
     )
-    assert exchange.name == str(Location.KUCOIN)
+    assert exchange.location == Location.KUCOIN
+    assert exchange.name == 'kucoin1'
 
 
 def test_kucoin_exchange_assets_are_known(mock_kucoin):

@@ -158,6 +158,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
@@ -165,7 +166,13 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             passphrase: str,
             base_uri: str = 'https://api.kucoin.com',
     ):
-        super().__init__(str(Location.KUCOIN), api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.KUCOIN,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.base_uri = base_uri
         self.api_passphrase = passphrase
         self.session.headers.update({

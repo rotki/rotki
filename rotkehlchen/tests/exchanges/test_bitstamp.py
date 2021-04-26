@@ -34,8 +34,9 @@ from rotkehlchen.utils.serialization import jsonloads_list
 
 
 def test_name():
-    exchange = Bitstamp('a', b'a', object(), object())
-    assert exchange.name == str(Location.BITSTAMP)
+    exchange = Bitstamp('bitstamp1', 'a', b'a', object(), object())
+    assert exchange.location == Location.BITSTAMP
+    assert exchange.name == 'bitstamp1'
 
 
 def test_bitstamp_exchange_assets_are_known(mock_bitstamp):

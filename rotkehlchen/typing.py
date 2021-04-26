@@ -61,28 +61,6 @@ T_HexColorCode = str
 HexColorCode = NewType('HexColorCode', T_HexColorCode)
 
 
-class ApiCredentials(NamedTuple):
-    """Represents Credentials for various APIs. Exchanges, Premium e.t.c.
-
-    The Api in question must at least have an API key and an API secret.
-    """
-    api_key: ApiKey
-    api_secret: ApiSecret
-    passphrase: Optional[str] = None
-
-    @staticmethod
-    def serialize(
-            api_key: str,
-            api_secret: str,
-            passphrase: Optional[str] = None,
-    ) -> 'ApiCredentials':
-        return ApiCredentials(
-            api_key=ApiKey(api_key),
-            api_secret=ApiSecret(str.encode(api_secret)),
-            passphrase=passphrase,
-        )
-
-
 class ExternalService(Enum):
     ETHERSCAN = 0
     CRYPTOCOMPARE = 1
@@ -327,3 +305,15 @@ class BlockchainAccountData(NamedTuple):
     address: BlockchainAddress
     label: Optional[str] = None
     tags: Optional[List[str]] = None
+
+
+class ExchangeApiCredentials(NamedTuple):
+    """Represents Credentials for Exchanges
+
+    The Api in question must at least have an API key and an API secret.
+    """
+    name: str  # A unique name to identify this particular Location credentials
+    location: Location
+    api_key: ApiKey
+    api_secret: ApiSecret
+    passphrase: Optional[str] = None

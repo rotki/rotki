@@ -32,12 +32,13 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory
+from rotkehlchen.typing import AssetMovementCategory, Location
 from rotkehlchen.utils.misc import ts_now
 
 
 def test_name():
-    exchange = Kraken('a', b'a', object(), object())
+    exchange = Kraken('kraken1', 'a', b'a', object(), object())
+    assert exchange.location == Location.KRAKEN
     assert exchange.name == 'kraken'
 
 
@@ -404,7 +405,7 @@ def test_emptry_kraken_balance_response():
 
     Regression test for: https://github.com/rotki/rotki/issues/2443
     """
-    kraken = Kraken('a', b'YW55IGNhcm5hbCBwbGVhc3VyZS4=', object(), object())
+    kraken = Kraken('kraken1', 'a', b'YW55IGNhcm5hbCBwbGVhc3VyZS4=', object(), object())
 
     def mock_post(url, data):  # pylint: disable=unused-argument
         return MockResponse(200, '{"error":[]}')

@@ -96,12 +96,19 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
 class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super().__init__('bitmex', api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.BITMEX,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.uri = 'https://bitmex.com'
         self.session.headers.update({'api-key': api_key})
         self.msg_aggregator = msg_aggregator

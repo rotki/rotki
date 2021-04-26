@@ -123,12 +123,19 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super().__init__('bitstamp', api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.BITSTAMP,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.base_uri = 'https://www.bitstamp.net/api'
         self.msg_aggregator = msg_aggregator
         # NB: X-Auth-Signature, X-Auth-Nonce, X-Auth-Timestamp & Content-Type change per request

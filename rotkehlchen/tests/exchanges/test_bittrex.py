@@ -29,8 +29,9 @@ def test_deserialize_timestamp_from_bittrex_date():
 
 
 def test_name():
-    exchange = Bittrex('a', b'a', object(), object())
-    assert exchange.name == 'bittrex'
+    exchange = Bittrex('bittrex1', 'a', b'a', object(), object())
+    assert exchange.location == Location.BITTREX
+    assert exchange.name == 'bittrex1'
 
 
 def test_bittrex_assets_are_known(bittrex):

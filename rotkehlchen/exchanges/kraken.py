@@ -253,13 +253,20 @@ class KrakenAccountType(Enum):
 class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             account_type: KrakenAccountType = KrakenAccountType.STARTER,
     ):
-        super().__init__('kraken', api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.KRAKEN,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.msg_aggregator = msg_aggregator
         self.session.headers.update({
             'API-Key': self.api_key,

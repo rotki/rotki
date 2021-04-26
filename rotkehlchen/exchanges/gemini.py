@@ -89,13 +89,20 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             base_uri: str = 'https://api.gemini.com',
     ):
-        super().__init__('gemini', api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.GEMINI,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.base_uri = base_uri
         self.msg_aggregator = msg_aggregator
 

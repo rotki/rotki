@@ -23,8 +23,9 @@ ICONOMI_TRADES_EMPTY_RESPONSE = """{"transactions":[]}"""
 
 
 def test_name():
-    exchange = Iconomi('a', b'a', object(), object())
-    assert exchange.name == 'iconomi'
+    exchange = Iconomi('iconomi1', 'a', b'a', object(), object())
+    assert exchange.location == Location.ICONOMI
+    assert exchange.name == 'iconomi1'
 
 
 def test_iconomi_query_balances_unknown_asset(function_scope_iconomi):
@@ -98,6 +99,7 @@ def test_iconomi_assets_are_known(
 ):
     # use a real Iconomi instance so that we always get the latest data
     iconomi = Iconomi(
+        name='iconomi1',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,

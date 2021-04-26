@@ -96,13 +96,20 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             passphrase: str,
     ):
-        super().__init__('coinbasepro', api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.COINBASEPRO,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.base_uri = 'https://api.pro.coinbase.com'
         self.msg_aggregator = msg_aggregator
         self.account_to_currency: Optional[Dict[str, Asset]] = None

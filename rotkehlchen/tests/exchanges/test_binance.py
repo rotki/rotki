@@ -35,8 +35,9 @@ from rotkehlchen.utils.misc import ts_now_in_ms
 
 
 def test_name():
-    exchange = Binance('a', b'a', object(), object())
-    assert exchange.name == 'binance'
+    exchange = Binance('binance1', 'a', b'a', object(), object())
+    assert exchange.location == Location.BINANCE
+    assert exchange.name == 'binance1'
 
 
 def test_trade_from_binance(function_scope_binance):
@@ -170,6 +171,7 @@ def test_binance_assets_are_known(
 ):
     # use a real binance instance so that we always get the latest data
     binance = Binance(
+        name='binance1',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,

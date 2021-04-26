@@ -19,6 +19,7 @@ from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro, coinbasepro_to_worldpair
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.typing import Location
 
 PRODUCTS_RESPONSE = """[{
 "id": "BAT-ETH",
@@ -115,13 +116,14 @@ def create_coinbasepro_query_mock(
 
 
 def test_name():
-    exchange = Coinbasepro('a', b'a', object(), object(), '')
-    assert exchange.name == 'coinbasepro'
+    exchange = Coinbasepro('coinbasepro1', 'a', b'a', object(), object(), '')
+    assert exchange.location == Location.COINBASEPRO
+    assert exchange.name == 'coinbasepro1'
 
 
 def test_coverage_of_products():
     """Test that we can process all pairs and assets of the offered coinbasepro products"""
-    exchange = Coinbasepro('a', b'a', object(), object(), '')
+    exchange = Coinbasepro('coinbasepro1', 'a', b'a', object(), object(), '')
     products, _ = exchange._api_query('products', request_method='GET')
     for product in products:
         try:
