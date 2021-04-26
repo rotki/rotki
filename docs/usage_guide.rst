@@ -635,7 +635,7 @@ You can provide a location, for example an exchange, a bank, a blockchain or oth
 
 For ledger actions you can optionally specify a rate and a asset for the rate. This is the rate linked to the asset for this action. If no rate is provided, the historical price at the date of the action is used.
 
-When generating a profit and loss report some ledger actions might be taxable in your country or not. To customize the list of taxable actions refer to the :ref:`ledger actions settings <ledger_action_settings>` section.
+When generating a profit and loss report some ledger actions might be taxable in your jurisdiction and some not. To customize the list of taxable actions refer to the :ref:`ledger actions settings <ledger_action_settings>` section.
 
 Customization of the list of supported assets
 *********************************************
