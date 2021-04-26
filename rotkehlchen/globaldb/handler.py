@@ -517,15 +517,26 @@ class GlobalDBHandler():
             return None
 
     @staticmethod
-    def get_ethereum_tokens() -> List[CustomEthereumTokenWithIdentifier]:
-        """Gets all ethereum tokens from the DB"""
+    def get_ethereum_tokens(exceptions: Optional[List[ChecksumEthAddress]] = None) -> List[CustomEthereumTokenWithIdentifier]:  # noqa: E501
+        """Gets all ethereum tokens from the DB
+
+        Can also accept a list of addresses to ignore
+        """
         cursor = GlobalDBHandler()._conn.cursor()
-        query = cursor.execute(
+        querystr = (
             'SELECT A.identifier, B.address, B.decimals, A.name, A.symbol, A.started, '
             'A.swapped_for, A.coingecko, A.cryptocompare, B.protocol '
             'FROM ethereum_tokens as B LEFT OUTER JOIN '
-            'assets AS A on B.address = A.details_reference;',
+            'assets AS A on B.address = A.details_reference '
         )
+        if exceptions is not None:
+            questionmarks = '?' * len(exceptions)
+            querystr += f'WHERE B.address NOT IN ({",".join(questionmarks)});'
+            bindings = tuple(exceptions)
+        else:
+            querystr += ';'
+            bindings = ()
+        query = cursor.execute(querystr, bindings)
         tokens = []
         for entry in query:
             underlying_tokens = GlobalDBHandler()._fetch_underlying_tokens(entry[1])
