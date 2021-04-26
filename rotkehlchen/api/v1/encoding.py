@@ -513,6 +513,10 @@ class ActionTypeField(fields.Field):
 
 class LocationField(fields.Field):
 
+    def __init__(self, *, limit_to: Optional[List[Location]] = None, **kwargs: Any) -> None:  # noqa: E501
+        self.limit_to = limit_to
+        super().__init__(**kwargs)
+
     @staticmethod
     def _serialize(
             value: Location,
@@ -534,6 +538,12 @@ class LocationField(fields.Field):
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
+        if self.limit_to is not None and location not in self.limit_to:
+            raise ValidationError(
+                f'Given location {value} is not one of '
+                f'{",".join([str(x) for x in self.limit_to])} as needed by the endpoint',
+            )
+
         return location
 
 
@@ -553,28 +563,6 @@ class ExternalServiceNameField(fields.Field):
             raise ValidationError(f'External service {value} is not known')
 
         return service
-
-
-class ExchangeNameField(fields.Field):
-
-    def __init__(self, *, allow_external: Optional[bool] = False, **kwargs: Any) -> None:  # noqa: E501
-        self.allow_external = allow_external
-        super().__init__(**kwargs)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        if not isinstance(value, str):
-            raise ValidationError('Exchange name should be a string')
-        valid_names = ALL_SUPPORTED_EXCHANGES if self.allow_external else SUPPORTED_EXCHANGES
-        if value not in valid_names:
-            raise ValidationError(f'Exchange {value} is not supported')
-
-        return value
 
 
 class ApiKeyField(fields.Field):
@@ -1152,22 +1140,24 @@ class ExternalServicesResourceDeleteSchema(Schema):
 
 
 class ExchangesResourceAddSchema(Schema):
-    name = ExchangeNameField(required=True)
+    name = fields.String(required=True)
+    location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
     api_key = ApiKeyField(required=True)
     api_secret = ApiSecretField(required=True)
     passphrase = fields.String(missing=None)
 
 
 class ExchangesDataResourceSchema(Schema):
-    name = ExchangeNameField(allow_external=True, missing=None)
+    location = LocationField(limit_to=ALL_SUPPORTED_EXCHANGES, missing=None)
 
 
 class ExchangesResourceRemoveSchema(Schema):
-    name = ExchangeNameField(required=True)
+    name = fields.String(required=True)
+    location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
 
 
 class ExchangeBalanceQuerySchema(Schema):
-    name = ExchangeNameField(missing=None)
+    location = LocationField(limit_to=SUPPORTED_EXCHANGES, missing=None)
     async_query = fields.Boolean(missing=False)
     ignore_cache = fields.Boolean(missing=False)
 

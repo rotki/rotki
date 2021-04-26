@@ -126,7 +126,11 @@ Handling user creation, sign-in, log-out and querying
 
       {
           "result": {
-              "exchanges": ["kraken", "poloniex", "binance"],
+              "exchanges": [
+                   {"location": "kraken", "name": "kraken1"},
+                   {"location": "poloniex", "name": "poloniex1"},
+                   {"location": "binance", "name": "binance1"}
+               ],
               "settings": {
                   "have_premium": true,
                   "version": "6",
@@ -192,7 +196,11 @@ Handling user creation, sign-in, log-out and querying
 
       {
           "result": {
-              "exchanges": ["kraken", "poloniex", "binance"],
+              "exchanges": [
+                   {"location": "kraken", "name": "kraken1"},
+                   {"location": "poloniex", "name": "poloniex1"},
+                   {"location": "binance", "name": "binance1"}
+               ],
               "settings": {
                   "have_premium": true,
                   "version": "6",
@@ -981,7 +989,7 @@ Get a list of setup exchanges
 
 .. http:get:: /api/(version)/exchanges
 
-   Doing a GET on this endpoint will return a list of which exchanges are currently setup for the logged in user.
+   Doing a GET on this endpoint will return a list of which exchanges are currently setup for the logged in user and with which names.
 
    **Example Request**:
 
@@ -998,11 +1006,15 @@ Get a list of setup exchanges
       Content-Type: application/json
 
       {
-          "result": ["kraken", "binance"]
+          "result": [
+               {"location": "kraken", "name": "kraken1"},
+               {"location": "poloniex", "name": "poloniex1"},
+               {"location": "binance", "name": "binance1"}
+           ],
           "message": ""
       }
 
-   :resjson list result: A list of exchange names that have been setup for the logged in user.
+   :resjson list result: A list of exchange location/name pairs that have been setup for the logged in user.
    :statuscode 200: The exchanges list has been sucesfully setup
    :statuscode 409: No user is logged in.
    :statuscode 500: Internal Rotki error
@@ -1022,9 +1034,10 @@ Setup or remove an exchange
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret"}
+      {"name": "my kraken key", "location": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret"}
 
-   :reqjson string name: The name of the exchange to setup
+   :reqjson string name: A name to give to this exchange's key
+   :reqjson string location: The location of the exchange to setup
    :reqjson string api_key: The api key with which to setup the exchange
    :reqjson string api_secret: The api secret with which to setup the exchange
    :reqjson string passphrase: An optional passphrase, only for exchanges, like coinbase pro, which need a passphrase.
@@ -1059,9 +1072,10 @@ Setup or remove an exchange
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "kraken"}
+      {"name": "my kraken key", "location": "kraken"}
 
-   :reqjson string name: The name of the exchange to delete
+   :reqjson string name: The name of the exchange whose key to delete
+   :reqjson string location: The location of the exchange to delete
 
    **Example Response**:
 
@@ -1084,7 +1098,7 @@ Setup or remove an exchange
 Querying the balances of exchanges
 ====================================
 
-.. http:get:: /api/(version)/exchanges/balances/(name)
+.. http:get:: /api/(version)/exchanges/balances/(location)
 
    Doing a GET on the appropriate exchanges balances endpoint will return the balances of all assets currently held in that exchange. If no name is provided then the balance of all exchanges is returned.
 
@@ -1176,7 +1190,7 @@ Querying the balances of exchanges
 Purging locally saved data for exchanges
 =========================================
 
-.. http:delete:: /api/(version)/exchanges/data/(name)
+.. http:delete:: /api/(version)/exchanges/data/(location)
 
    Doing a DELETE on the appropriate exchanges trades endpoint will delete the cached trades, deposits and withdrawals for that exchange. If no exchange is given then all exchanges will be affected. Next time exchange history is queried, everything will be queried again, and may take some time.
 

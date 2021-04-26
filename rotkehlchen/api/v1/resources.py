@@ -242,11 +242,12 @@ class ExchangesResource(BaseResource):
     def put(
             self,
             name: str,
+            location: Location,
             api_key: ApiKey,
             api_secret: ApiSecret,
             passphrase: Optional[str],
     ) -> Response:
-        return self.rest_api.setup_exchange(name, api_key, api_secret, passphrase)
+        return self.rest_api.setup_exchange(name, location, api_key, api_secret, passphrase)
 
     @use_kwargs(delete_schema, location='json')  # type: ignore
     def delete(self, name: str) -> Response:
@@ -258,8 +259,8 @@ class ExchangesDataResource(BaseResource):
     delete_schema = ExchangesDataResourceSchema()
 
     @use_kwargs(delete_schema, location='view_args')  # type: ignore
-    def delete(self, name: Optional[str]) -> Response:
-        return self.rest_api.purge_exchange_data(name=name)
+    def delete(self, location: Optional[Location]) -> Response:
+        return self.rest_api.purge_exchange_data(location=location)
 
 
 class EthereumTransactionsResource(BaseResource):
@@ -333,9 +334,9 @@ class ExchangeBalancesResource(BaseResource):
     get_schema = ExchangeBalanceQuerySchema()
 
     @use_kwargs(get_schema, location='json_and_query_and_view_args')  # type: ignore
-    def get(self, name: Optional[str], async_query: bool, ignore_cache: bool) -> Response:
+    def get(self, location: Optional[Location], async_query: bool, ignore_cache: bool) -> Response:
         return self.rest_api.query_exchange_balances(
-            name=name,
+            location=location,
             async_query=async_query,
             ignore_cache=ignore_cache,
         )
