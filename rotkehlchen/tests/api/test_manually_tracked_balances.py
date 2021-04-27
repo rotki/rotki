@@ -328,12 +328,12 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=[1, 2, 3],
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Invalid input type",
+        contained_in_msg='Invalid input type',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -498,12 +498,12 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=data,
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to deserialize location symbol from',
+        contained_in_msg='Failed to deserialize Location value from non string value',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # invalid location
@@ -513,12 +513,12 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=data,
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to deserialize location symbol. Unknown symbol foo for location',
+        contained_in_msg='Failed to deserialize Location value foo',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -529,7 +529,7 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=data,
     )
     assert_error_response(
@@ -544,7 +544,7 @@ def test_add_edit_manually_tracked_balances_errors(
         verb,
         api_url_for(
             rotkehlchen_api_server,
-            "manuallytrackedbalancesresource",
+            'manuallytrackedbalancesresource',
         ), json=data,
     )
     assert_error_response(

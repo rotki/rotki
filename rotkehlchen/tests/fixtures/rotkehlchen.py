@@ -22,6 +22,7 @@ from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
+from rotkehlchen.typing import Location
 
 
 @pytest.fixture(name='max_tasks_num')
@@ -319,17 +320,17 @@ def rotkehlchen_api_server_with_exchanges(
     """Adds mock exchange objects to the rotkehlchen_server fixture"""
     exchanges = rotkehlchen_api_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    for exchange_name in added_exchanges:
+    for exchange_location in added_exchanges:
 
-        if exchange_name in ('coinbasepro', 'coinbase', 'gemini'):
+        if exchange_location in (Location.COINBASEPRO, Location.COINBASE, Location.GEMINI):
             # TODO: Add support for the above exchanges in tests too
             continue
 
-        create_fn = getattr(exchange_tests, f'create_test_{exchange_name}')
-        exchanges[exchange_name] = create_fn(
+        create_fn = getattr(exchange_tests, f'create_test_{str(exchange_location)}')
+        exchanges[exchange_location] = [create_fn(
             database=rotki.data.db,
             msg_aggregator=rotki.msg_aggregator,
-        )
+        )]
 
     yield rotkehlchen_api_server
     rotkehlchen_api_server.stop()

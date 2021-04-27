@@ -40,12 +40,13 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
+from rotkehlchen.typing import Location
 from rotkehlchen.utils.misc import create_timestamp
 
 
 @pytest.mark.parametrize(
     'added_exchanges',
-    [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
+    [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -67,7 +68,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
                 continue
             stack.enter_context(manager)
         response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
+            api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
             json={'from_timestamp': start_ts, 'to_timestamp': end_ts, 'async_query': async_query},
         )
         if async_query:
@@ -134,7 +135,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
 
 @pytest.mark.parametrize(
     'added_exchanges',
-    [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
+    [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -154,7 +155,7 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
                 continue
             stack.enter_context(manager)
         response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
+            api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
         )
 
     assert_proper_response(response)
@@ -180,7 +181,7 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
 
 @pytest.mark.parametrize(
     'added_exchanges',
-    [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
+    [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -203,7 +204,7 @@ def test_query_history_timerange(rotkehlchen_api_server_with_exchanges):
                 continue
             stack.enter_context(manager)
         response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
+            api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
             json={'from_timestamp': start_ts, 'to_timestamp': end_ts},
         )
 
@@ -218,17 +219,17 @@ def test_query_history_timerange(rotkehlchen_api_server_with_exchanges):
     assert data['result']['first_processed_timestamp'] == 1428994442
     overview = data['result']['overview']
     assert len(overview) == 11
-    assert overview["loan_profit"] is not None
-    assert overview["margin_positions_profit_loss"] is not None
-    assert overview["settlement_losses"] is not None
-    assert overview["ethereum_transaction_gas_costs"] is not None
-    assert overview["asset_movement_fees"] is not None
-    assert overview["general_trade_profit_loss"] is not None
-    assert overview["taxable_trade_profit_loss"] is not None
-    assert overview["total_taxable_profit_loss"] is not None
-    assert overview["total_profit_loss"] is not None
-    assert overview["defi_profit_loss"] is not None
-    assert overview["ledger_actions_profit_loss"] is not None
+    assert overview['loan_profit'] is not None
+    assert overview['margin_positions_profit_loss'] is not None
+    assert overview['settlement_losses'] is not None
+    assert overview['ethereum_transaction_gas_costs'] is not None
+    assert overview['asset_movement_fees'] is not None
+    assert overview['general_trade_profit_loss'] is not None
+    assert overview['taxable_trade_profit_loss'] is not None
+    assert overview['total_taxable_profit_loss'] is not None
+    assert overview['total_profit_loss'] is not None
+    assert overview['defi_profit_loss'] is not None
+    assert overview['ledger_actions_profit_loss'] is not None
     all_events = data['result']['all_events']
     assert isinstance(all_events, list)
     assert len(all_events) == 4
@@ -246,7 +247,7 @@ def test_query_history_errors(rotkehlchen_api_server):
     """Test that errors in the history query REST API endpoint are handled properly"""
     # invalid from timestamp value
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, "historyprocessingresource"),
+        api_url_for(rotkehlchen_api_server, 'historyprocessingresource'),
         json={'from_timestamp': -1},
     )
     assert_error_response(
@@ -258,7 +259,7 @@ def test_query_history_errors(rotkehlchen_api_server):
     )
     # invalid to timestamp value
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, "historyprocessingresource"),
+        api_url_for(rotkehlchen_api_server, 'historyprocessingresource'),
         json={'from_timestamp': 0, 'to_timestamp': 'foo'},
     )
     assert_error_response(
@@ -270,7 +271,7 @@ def test_query_history_errors(rotkehlchen_api_server):
     )
     # invalid async_query type
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, "historyprocessingresource"),
+        api_url_for(rotkehlchen_api_server, 'historyprocessingresource'),
         json={'from_timestamp': 0, 'to_timestamp': 1, 'async_query': 'boo'},
     )
     assert_error_response(
@@ -421,7 +422,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         for row in reader:
             assert len(row) == 6
             assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
-            assert row['exchange'] in SUPPORTED_EXCHANGES
+            assert row['exchange'] in [str(x) for x in SUPPORTED_EXCHANGES]
             assert row['type'] in ('deposit', 'withdrawal')
             assert row['moving_asset'] is not None
             assert FVal(row['fee_in_asset']) >= ZERO
@@ -518,7 +519,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
 
 @pytest.mark.parametrize(
     'added_exchanges',
-    [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
+    [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -563,7 +564,7 @@ def test_history_export_csv(
 
 @pytest.mark.parametrize(
     'added_exchanges',
-    [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
+    [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -581,7 +582,7 @@ def test_history_export_csv_errors(
 
     # Query the export endpoint without first having queried the history
     response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource'),
         json={'directory_path': csv_dir},
     )
     assert_error_response(
@@ -597,13 +598,13 @@ def test_history_export_csv_errors(
                 continue
             stack.enter_context(manager)
         response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
+            api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
         )
     assert_proper_response(response)
 
     # And now provide non-existing path for directory
     response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource'),
         json={'directory_path': '/idont/exist/for/sure/'},
     )
     assert_error_response(

@@ -19,6 +19,7 @@ from rotkehlchen.tests.utils.constants import A_EUR, A_RDN, A_XMR
 from rotkehlchen.tests.utils.exchanges import (
     patch_binance_balances_query,
     patch_poloniex_balances_query,
+    try_get_first_exchange,
 )
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, Location, Timestamp
 
@@ -127,10 +128,10 @@ def setup_balances(
     for idx, btc_acc in enumerate(btc_accounts):
         btc_map[btc_acc] = btc_balances[idx]
 
-    binance = rotki.exchange_manager.connected_exchanges.get('binance', None)
-    binance_patch = patch_binance_balances_query(binance) if binance else None
-    poloniex = rotki.exchange_manager.connected_exchanges.get('poloniex', None)
-    poloniex_patch = patch_poloniex_balances_query(poloniex) if poloniex else None
+    binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
+    binance_patch = patch_binance_balances_query(binance) if binance else None  # type: ignore
+    poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
+    poloniex_patch = patch_poloniex_balances_query(poloniex) if poloniex else None  # type: ignore
     etherscan_patch = mock_etherscan_query(
         eth_map=eth_map,
         etherscan=rotki.etherscan,

@@ -15,9 +15,10 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.constants import A_JPY
+from rotkehlchen.tests.utils.exchanges import try_get_first_exchange
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockWeb3
-from rotkehlchen.typing import ChecksumEthAddress, ModuleName
+from rotkehlchen.typing import ChecksumEthAddress, Location, ModuleName
 
 
 def test_querying_settings(rotkehlchen_api_server, username):
@@ -199,21 +200,18 @@ def test_unset_rpc_endpoint(rotkehlchen_api_server, rpc_setting):
     assert result[rpc_setting] == ''
 
 
-@pytest.mark.parametrize('added_exchanges', [('kraken',)])
+@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 def test_set_kraken_account_type(rotkehlchen_api_server_with_exchanges):
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    kraken = rotki.exchange_manager.get('kraken')
+    kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
     assert kraken.account_type == DEFAULT_KRAKEN_ACCOUNT_TYPE
     assert kraken.call_limit == 15
     assert kraken.reduction_every_secs == 3
 
     data = {'settings': {'kraken_account_type': 'intermediate'}}
-    response = requests.put(api_url_for(server, "settingsresource"), json=data)
-    assert_proper_response(response)
-    json_data = response.json()
-    result = json_data['result']
-    assert json_data['message'] == ''
+    response = requests.put(api_url_for(server, 'settingsresource'), json=data)
+    result = assert_proper_response_with_result(response)
     assert result['kraken_account_type'] == 'intermediate'
     assert kraken.account_type == KrakenAccountType.INTERMEDIATE
     assert kraken.call_limit == 20

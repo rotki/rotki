@@ -4,7 +4,6 @@ from importlib import import_module
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 from rotkehlchen.constants.misc import BINANCE_BASE_URL, BINANCEUS_BASE_URL
-from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ApiKey, ApiSecret, ExchangeApiCredentials, Location
@@ -130,14 +129,14 @@ class ExchangeManager():
             return False, 'Should never happen. Exchange is None after initialization'
         try:
             result, message = exchange.validate_api_key()
-        except RemoteError as e:
+        except Exception as e:  # pylint: disable=broad-except
             result = False
             message = str(e)
 
         if not result:
             log.error(
                 f'Failed to validate API key for {str(location)} exchange {name}'
-                f'due to {message}',
+                f' due to {message}',
             )
             self.delete_exchange(name=name, location=location)
             return False, message

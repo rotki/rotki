@@ -54,7 +54,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         self.first_connection_made = False
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
-        log.info(f'Initialized {name} exchange')
+        log.info(f'Initialized {str(location)} exchange {name}')
 
     def location_id(self) -> Tuple[str, Location]:
         """Returns unique location identifier for this exchange object (name + location)"""

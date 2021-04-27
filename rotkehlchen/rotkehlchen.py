@@ -895,7 +895,7 @@ class Rotkehlchen():
     ) -> List[AssetMovement]:
         """Queryies exchange for asset movements and adds it to all_movements"""
         if isinstance(exchange, ExchangeInterface):
-            location = Location.deserialize(exchange.name)
+            location = exchange.location
             # clear the asset movements queried for this exchange
             self.actions_per_location['asset_movement'][location] = 0
             location_movements = exchange.query_deposits_withdrawals(
@@ -1063,7 +1063,7 @@ class Rotkehlchen():
         return is_success, msg
 
     def remove_exchange(self, name: str, location: Location) -> Tuple[bool, str]:
-        if self.exchange_manager.get_exchange(name=name, location=location):
+        if self.exchange_manager.get_exchange(name=name, location=location) is None:
             return False, f'{str(location)} exchange {name} is not registered'
 
         self.exchange_manager.delete_exchange(name=name, location=location)

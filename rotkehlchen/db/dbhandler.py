@@ -2172,8 +2172,8 @@ class DBHandler:
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
     ) -> None:
-        if name not in SUPPORTED_EXCHANGES:
-            raise InputError('Unsupported exchange {}'.format(name))
+        if location not in SUPPORTED_EXCHANGES:
+            raise InputError(f'Unsupported exchange {str(location)}')
 
         cursor = self.conn.cursor()
         cursor.execute(

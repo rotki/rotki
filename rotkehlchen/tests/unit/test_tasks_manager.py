@@ -9,6 +9,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.typing import Location
 
 
 class MockPremiumSyncManager():
@@ -132,7 +133,7 @@ def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex)
         assert end_ts >= now
         assert only_cache is False
 
-    exchange_manager.connected_exchanges['poloniex'] = poloniex
+    exchange_manager.connected_exchanges[Location.POLONIEX] = [poloniex]
     poloniex_patch = patch.object(poloniex, 'query_trade_history', wraps=mock_query_history)
 
     timeout = 5

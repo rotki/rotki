@@ -35,7 +35,7 @@ class DBEnumMixIn(Enum):
         """May raise DeserializationError if the given value can't be deserialized"""
         if not isinstance(value, str):
             raise DeserializationError(
-                f'Failed to deserialize {cls.__name__} DB value from non string value: {value}',
+                f'Failed to deserialize {cls.__name__} value from non string value: {value}',
             )
 
         upper_value = value.replace(' ', '_').upper()

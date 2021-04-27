@@ -39,7 +39,7 @@ from rotkehlchen.utils.misc import ts_now
 def test_name():
     exchange = Kraken('kraken1', 'a', b'a', object(), object())
     assert exchange.location == Location.KRAKEN
-    assert exchange.name == 'kraken'
+    assert exchange.name == 'kraken1'
 
 
 def test_coverage_of_kraken_balances(kraken):

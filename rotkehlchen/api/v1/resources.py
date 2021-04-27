@@ -250,8 +250,8 @@ class ExchangesResource(BaseResource):
         return self.rest_api.setup_exchange(name, location, api_key, api_secret, passphrase)
 
     @use_kwargs(delete_schema, location='json')  # type: ignore
-    def delete(self, name: str) -> Response:
-        return self.rest_api.remove_exchange(name=name)
+    def delete(self, name: str, location: Location) -> Response:
+        return self.rest_api.remove_exchange(name=name, location=location)
 
 
 class ExchangesDataResource(BaseResource):

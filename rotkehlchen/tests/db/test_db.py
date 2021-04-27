@@ -187,28 +187,45 @@ def test_add_remove_exchange(user_data_dir):
     # and check the credentials can be retrieved
     credentials = db.get_exchange_credentials()
     assert len(credentials) == 2
-    assert credentials[Location.KRAKEN]['kraken1'].api_key == kraken_api_key1
-    assert credentials[Location.KRAKEN]['kraken1'].api_secret == kraken_api_secret1
-    assert credentials[Location.KRAKEN]['kraken2'].api_key == kraken_api_key2
-    assert credentials[Location.KRAKEN]['kraken2'].api_secret == kraken_api_secret2
-    assert credentials[Location.BINANCE]['binance'].api_key == binance_api_key
-    assert credentials[Location.BINANCE]['binance'].api_secret == binance_api_secret
+    assert len(credentials[Location.KRAKEN]) == 2
+    kraken1 = credentials[Location.KRAKEN][0]
+    assert kraken1.name == 'kraken1'
+    assert kraken1.api_key == kraken_api_key1
+    assert kraken1.api_secret == kraken_api_secret1
+    kraken2 = credentials[Location.KRAKEN][1]
+    assert kraken2.name == 'kraken2'
+    assert kraken2.api_key == kraken_api_key2
+    assert kraken2.api_secret == kraken_api_secret2
+    assert len(credentials[Location.BINANCE]) == 1
+    binance = credentials[Location.BINANCE][0]
+    assert binance.name == 'binance'
+    assert binance.api_key == binance_api_key
+    assert binance.api_secret == binance_api_secret
 
     # remove an exchange and see it works
     db.remove_exchange('kraken1', Location.KRAKEN)
     credentials = db.get_exchange_credentials()
     assert len(credentials) == 2
-    assert credentials[Location.KRAKEN]['kraken2'].api_key == kraken_api_key2
-    assert credentials[Location.KRAKEN]['kraken2'].api_secret == kraken_api_secret2
-    assert credentials[Location.BINANCE]['binance'].api_key == binance_api_key
-    assert credentials[Location.BINANCE]['binance'].api_secret == binance_api_secret
+    assert len(credentials[Location.KRAKEN]) == 1
+    kraken2 = credentials[Location.KRAKEN][0]
+    assert kraken2.name == 'kraken2'
+    assert kraken2.api_key == kraken_api_key2
+    assert kraken2.api_secret == kraken_api_secret2
+    assert len(credentials[Location.BINANCE]) == 1
+    binance = credentials[Location.BINANCE][0]
+    assert binance.name == 'binance'
+    assert binance.api_key == binance_api_key
+    assert binance.api_secret == binance_api_secret
 
-    # remove last exchange of a locaiton and see nothing is returned
+    # remove last exchange of a location and see nothing is returned
     db.remove_exchange('kraken2', Location.KRAKEN)
     credentials = db.get_exchange_credentials()
     assert len(credentials) == 1
-    assert credentials[Location.BINANCE]['binance'].api_key == binance_api_key
-    assert credentials[Location.BINANCE]['binance'].api_secret == binance_api_secret
+    assert len(credentials[Location.BINANCE]) == 1
+    binance = credentials[Location.BINANCE][0]
+    assert binance.name == 'binance'
+    assert binance.api_key == binance_api_key
+    assert binance.api_secret == binance_api_secret
 
 
 def test_export_import_db(data_dir, username):

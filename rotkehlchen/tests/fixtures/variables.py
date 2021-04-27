@@ -1,6 +1,9 @@
+from typing import Sequence
+
 import pytest
 
 from rotkehlchen.tests.utils.ports import get_free_port
+from rotkehlchen.typing import Location
 
 
 @pytest.fixture(scope='session', name='port_generator')
@@ -26,17 +29,17 @@ def api_port(port_generator):
 
 
 @pytest.fixture
-def added_exchanges():
+def added_exchanges() -> Sequence[Location]:
     """A fixture determining which exchanges to add to a test rotkehlchen api server"""
     return (
-        'kraken',
-        'poloniex',
-        'bittrex',
-        'binance',
-        'bitmex',
-        'coinbase',
-        'coinbasepro',
-        'gemini',
-        'bitstamp',
-        'bitfinex',
+        Location.KRAKEN,
+        Location.POLONIEX,
+        Location.BITTREX,
+        Location.BINANCE,
+        Location.BITMEX,
+        Location.COINBASE,
+        Location.COINBASEPRO,
+        Location.GEMINI,
+        Location.BITSTAMP,
+        Location.BITFINEX,
     )

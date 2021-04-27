@@ -58,7 +58,7 @@ def _add_ledger_actions(server) -> List[Dict]:
 
     for action in actions:
         response = requests.put(
-            api_url_for(server, "ledgeractionsresource"),
+            api_url_for(server, 'ledgeractionsresource'),
             json=action,
         )
         result = assert_proper_response_with_result(response)
@@ -70,14 +70,13 @@ def _add_ledger_actions(server) -> List[Dict]:
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_add_and_query_ledger_actions(rotkehlchen_api_server):
-    """Test that querying the ledger actions endpoint works as expected
-    """
+    """Test that querying the ledger actions endpoint works as expected"""
     actions = _add_ledger_actions(rotkehlchen_api_server)
 
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "ledgeractionsresource",
+            'ledgeractionsresource',
         ),
     )
     result = assert_proper_response_with_result(response)
@@ -91,7 +90,7 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "ignoredactionsresource",
+            'ignoredactionsresource',
         ), json={'action_type': 'ledger action', 'action_ids': ['3', '4']},  # external ones
     )
     result = assert_proper_response_with_result(response)

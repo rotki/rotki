@@ -18,12 +18,12 @@ from rotkehlchen.typing import (
 )
 
 
-def mock_exchange_data_in_db(exchanges, rotki) -> None:
+def mock_exchange_data_in_db(exchange_locations, rotki) -> None:
     db = rotki.data.db
-    for exchange_name in exchanges:
+    for exchange_location in exchange_locations:
         db.add_trades([Trade(
             timestamp=Timestamp(1),
-            location=Location.deserialize(exchange_name),
+            location=exchange_location,
             base_asset=A_BTC,
             quote_asset=A_ETH,
             trade_type=TradeType.BUY,
@@ -34,20 +34,20 @@ def mock_exchange_data_in_db(exchanges, rotki) -> None:
             link='foo',
             notes='boo',
         )])
-        db.update_used_query_range(name=f'{exchange_name}_trades', start_ts=0, end_ts=9999)
-        db.update_used_query_range(name=f'{exchange_name}_margins', start_ts=0, end_ts=9999)
-        db.update_used_query_range(name=f'{exchange_name}_asset_movements', start_ts=0, end_ts=9999)  # noqa: E501
+        db.update_used_query_range(name=f'{str(exchange_location)}_trades', start_ts=0, end_ts=9999)  # noqa: E501
+        db.update_used_query_range(name=f'{str(exchange_location)}_margins', start_ts=0, end_ts=9999)  # noqa: E501
+        db.update_used_query_range(name=f'{str(exchange_location)}_asset_movements', start_ts=0, end_ts=9999)  # noqa: E501
 
 
 def check_saved_events_for_exchange(
-        exchange_name: str,
+        exchange_location: Location,
         db: DBHandler,
         should_exist: bool,
 ) -> None:
-    trades = db.get_trades(location=Location.deserialize(exchange_name))
-    trades_range = db.get_used_query_range(f'{exchange_name}_trades')
-    margins_range = db.get_used_query_range(f'{exchange_name}_margins')
-    movements_range = db.get_used_query_range(f'{exchange_name}_asset_movements')
+    trades = db.get_trades(location=exchange_location)
+    trades_range = db.get_used_query_range(f'{str(exchange_location)}_trades')
+    margins_range = db.get_used_query_range(f'{str(exchange_location)}_margins')
+    movements_range = db.get_used_query_range(f'{str(exchange_location)}_asset_movements')
     if should_exist:
         assert trades_range is not None
         assert margins_range is not None
@@ -60,12 +60,12 @@ def check_saved_events_for_exchange(
         assert len(trades) == 0
 
 
-@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_purge_all_exchange_data(rotkehlchen_api_server_with_exchanges, added_exchanges):
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     mock_exchange_data_in_db(added_exchanges, rotki)
-    for exchange_name in added_exchanges:
-        check_saved_events_for_exchange(exchange_name, rotki.data.db, should_exist=True)
+    for exchange_location in added_exchanges:
+        check_saved_events_for_exchange(exchange_location, rotki.data.db, should_exist=True)
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
@@ -73,25 +73,25 @@ def test_purge_all_exchange_data(rotkehlchen_api_server_with_exchanges, added_ex
         ),
     )
     assert_simple_ok_response(response)
-    for exchange_name in added_exchanges:
-        check_saved_events_for_exchange(exchange_name, rotki.data.db, should_exist=False)
+    for exchange_location in added_exchanges:
+        check_saved_events_for_exchange(exchange_location, rotki.data.db, should_exist=False)
 
 
-@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_purge_single_exchange_data(rotkehlchen_api_server_with_exchanges, added_exchanges):
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    target_exchange = 'poloniex'
+    target_exchange = Location.POLONIEX
     mock_exchange_data_in_db(added_exchanges, rotki)
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
             "named_exchanges_data_resource",
-            name=target_exchange,
+            location=target_exchange,
         ),
     )
     assert_simple_ok_response(response)
     check_saved_events_for_exchange(target_exchange, rotki.data.db, should_exist=False)
-    check_saved_events_for_exchange('binance', rotki.data.db, should_exist=True)
+    check_saved_events_for_exchange(Location.BINANCE, rotki.data.db, should_exist=True)
 
 
 def test_purge_ethereum_transaction_data(rotkehlchen_api_server):

@@ -3,9 +3,10 @@ import requests
 
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
 from rotkehlchen.tests.utils.history import mock_history_processing_and_exchanges
+from rotkehlchen.typing import Location
 
 
-@pytest.mark.parametrize('added_exchanges', [('poloniex',)])
+@pytest.mark.parametrize('added_exchanges', [(Location.POLONIEX,)])
 def test_query_messages(rotkehlchen_api_server_with_exchanges):
     """Test that querying the messages endpoint returns notifications for the user"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen

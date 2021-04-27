@@ -13,10 +13,12 @@ from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro
+from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.exchanges.kucoin import Kucoin
+from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.tests.utils.factories import (
     make_api_key,
@@ -25,7 +27,7 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import ApiKey, ApiSecret
+from rotkehlchen.typing import ApiKey, ApiSecret, Location
 from rotkehlchen.user_messages import MessagesAggregator
 
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
@@ -565,3 +567,21 @@ def create_test_poloniex(
         database=database,
         msg_aggregator=msg_aggregator,
     )
+
+
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Location,
+) -> Optional[ExchangeInterface]:
+    """Tries to get the first exchange of a given type from the exchange manager
+
+    If no such exchange exists returns None.
+
+    It's not part of exchange manager itself since it's not used in production but only in tests.
+    If this changes we should move this to the exchange manager
+    """
+    exchanges_list = exchange_manager.connected_exchanges.get(location)
+    if exchanges_list is None:
+        return None
+
+    return exchanges_list[0]
