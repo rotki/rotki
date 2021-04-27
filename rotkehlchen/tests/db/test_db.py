@@ -96,6 +96,7 @@ TABLES_AT_INIT = [
     'balance_category',
     'external_service_credentials',
     'user_credentials',
+    'user_credentials_mappings',
     'blockchain_accounts',
     'ethereum_accounts_details',
     'multisettings',

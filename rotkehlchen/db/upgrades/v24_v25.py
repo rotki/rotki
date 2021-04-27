@@ -24,7 +24,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from sqlite3 import Cursor
-
     from rotkehlchen.db.dbhandler import DBHandler
 
 

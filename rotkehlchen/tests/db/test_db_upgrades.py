@@ -6,6 +6,7 @@ from shutil import copyfile
 from unittest.mock import patch
 
 import pytest
+from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
@@ -85,6 +86,15 @@ def _use_prepared_db(user_data_dir: Path, filename: str) -> None:
         os.path.join(os.path.dirname(dir_path), 'data', filename),
         user_data_dir / 'rotkehlchen.db',
     )
+
+
+def _init_prepared_db(user_data_dir: Path, filename: str):
+    _use_prepared_db(user_data_dir, filename)
+    password = '123'
+    conn = sqlcipher.connect(str(user_data_dir / 'rotkehlchen.db'))  # pylint: disable=no-member
+    conn.executescript(f'PRAGMA key={password};')
+    conn.execute('PRAGMA foreign_keys=ON;')
+    return conn
 
 
 def populate_db_and_check_for_asset_renaming(
@@ -1757,6 +1767,74 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     assert len(errors) == 0
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 25
+
+
+def test_upgrade_db_25_to_26(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 25 to version 26.
+
+    Upgrades the user credentials database to contain both name and location
+    """
+    msg_aggregator = MessagesAggregator()
+    v25_conn = _init_prepared_db(user_data_dir, 'v25_rotkehlchen.db')
+    cursor = v25_conn.cursor()
+
+    # Checks before migration
+    credentials = cursor.execute(
+        'SELECT name, api_key, api_secret, passphrase from user_credentials',
+    ).fetchall()
+    assert credentials == [
+        ('rotkehlchen', 'key', 'secret', ''),
+        ('kraken', 'key', 'secret', ''),
+        ('poloniex', 'key', 'secret', ''),
+        ('bittrex', 'key', 'secret', ''),
+        ('bitmex', 'key', 'secret', ''),
+        ('binance', 'key', 'secret', ''),
+        ('coinbase', 'key', 'secret', ''),
+        ('coinbasepro', 'key', 'secret', 'phrase'),
+        ('gemini', 'key', 'secret', ''),
+        ('bitstamp', 'key', 'secret', ''),
+        ('binance_us', 'key', 'secret', ''),
+        ('bitfinex', 'key', 'secret', ''),
+        ('bitcoinde', 'key', 'secret', ''),
+        ('iconomi', 'key', 'secret', ''),
+        ('kucoin', 'key', 'secret', ''),
+        ('ftx', 'key', 'secret', ''),
+    ]
+    v25_conn.close()
+
+    # Migrate to v26
+    db = _init_db_with_target_version(
+        target_version=26,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    # Make sure that the user credentials have been upgraded
+    credentials = cursor.execute(
+        'SELECT name, location, api_key, api_secret, passphrase from user_credentials',
+    ).fetchall()
+    assert credentials == [
+        ('rotkehlchen', 'A', 'key', 'secret', ''),
+        ('kraken', 'B', 'key', 'secret', ''),
+        ('poloniex', 'C', 'key', 'secret', ''),
+        ('bittrex', 'D', 'key', 'secret', ''),
+        ('bitmex', 'F', 'key', 'secret', ''),
+        ('binance', 'E', 'key', 'secret', ''),
+        ('coinbase', 'G', 'key', 'secret', ''),
+        ('coinbasepro', 'K', 'key', 'secret', 'phrase'),
+        ('gemini', 'L', 'key', 'secret', ''),
+        ('bitstamp', 'R', 'key', 'secret', ''),
+        ('binance_us', 'S', 'key', 'secret', ''),
+        ('bitfinex', 'T', 'key', 'secret', ''),
+        ('bitcoinde', 'U', 'key', 'secret', ''),
+        ('iconomi', 'V', 'key', 'secret', ''),
+        ('kucoin', 'W', 'key', 'secret', ''),
+        ('ftx', 'Z', 'key', 'secret', ''),
+    ]
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 26
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):
