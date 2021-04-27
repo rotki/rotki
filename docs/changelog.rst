@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`1549` Rotki premium users will now be able to switch to a dark mode and change the theme colors.
+
 * :release:`1.16.1 <2021-04-30>`
 * :bug:`2811` ETH and WETH are now considered equivalent for cost basis and accounting purposes.
 * :bug:`2794` Aave v1 data after block 12,152,920 should be now available. Rotki switched to the new Aave v1 subgraph.
