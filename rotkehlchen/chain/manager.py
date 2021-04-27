@@ -126,6 +126,8 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'Aave V2': True,  # True means all
     # cTokens are already detected at token balance queries
     'Compound': True,  # True means all
+    # Curve balances are detected by our scan for ERC20 tokens
+    'Curve': True,  # True means all
     # Chitoken is in our all_assets.json
     'Chi Gastoken by 1inch': True,  # True means all
     # yearn vault balances are detected by the yTokens

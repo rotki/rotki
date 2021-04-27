@@ -128,8 +128,6 @@ YEARN_GUSD_VAULT = EthereumConstants().contract('YEARN_GUSD_VAULT')
 YEARN_BCURVE_VAULT = EthereumConstants().contract('YEARN_BCURVE_VAULT')
 YEARN_SRENCURVE_VAULT = EthereumConstants().contract('YEARN_SRENCURVE_VAULT')
 
-VOTE_ESCROWED_CRV = EthereumConstants().contract('VOTE_ESCROWED_CRV')
-
 ETH_SCAN = EthereumConstants().contract('ETH_SCAN')
 ETH_MULTICALL = EthereumConstants().contract('ETH_MULTICALL')
 ETH_MULTICALL_2 = EthereumConstants().contract('ETH_MULTICALL_2')
