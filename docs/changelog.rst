@@ -2,6 +2,12 @@
 Changelog
 =========
 
+* :bug:`2794` Aave v1 data after block 12,152,920 should be now available. Rotki switched to the new Aave v1 subgraph.
+* :bug:`2781` From this version and on, attempting to open a new global DB with an older rotki version will not be allowed and the app will crash with an error message.
+* :bug:`2773` Timestamps will be correctly read for trades in the Kraken exchange.
+* :bug:`2775` Ambiguous FTX assets will now be properly recognized by rotki.
+* :bug:`2767` Curve pool tokens will not be double counted in the dashboard balances.
+
 * :release:`1.16.0 <2021-04-21>`
 * :feature:`2671` Rotki will now detect Adex V5 staked balances
 * :feature:`2714` Add support for a3CRV Curve pool

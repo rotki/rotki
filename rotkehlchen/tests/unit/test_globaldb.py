@@ -11,6 +11,11 @@ from rotkehlchen.errors import InputError
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import INITIAL_TOKENS
+from pathlib import Path
+from rotkehlchen.assets.resolver import AssetResolver
+from shutil import copyfile
+from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
+from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -19,6 +24,28 @@ def test_get_ethereum_token_identifier(globaldb):
     assert globaldb.get_ethereum_token_identifier('0xnotexistingaddress') is None
     token_0_id = globaldb.get_ethereum_token_identifier(INITIAL_TOKENS[0].address)
     assert token_0_id == ethaddress_to_identifier(INITIAL_TOKENS[0].address)
+
+
+def test_open_new_globaldb_with_old_rotki(tmpdir_factory):
+    """Test for https://github.com/rotki/rotki/issues/2781"""
+    # clean the previous resolver memory cache, as it
+    # may have cached results from a discarded database
+    AssetResolver().clean_memory_cache()
+    version = 9999999999
+    root_dir = Path(__file__).resolve().parent.parent.parent
+    source_db_path = root_dir / 'tests' / 'data' / f'v{version}_global.db'
+    new_data_dir = Path(tmpdir_factory.mktemp('test_data_dir'))
+    new_global_dir = new_data_dir / 'global_data'
+    new_global_dir.mkdir(parents=True, exist_ok=True)
+    copyfile(source_db_path, new_global_dir / 'global.db')
+    with pytest.raises(ValueError) as excinfo:
+        create_globaldb(new_data_dir)
+
+    msg = (
+        f'Tried to open a rotki version intended to work with GlobalDB v{GLOBAL_DB_VERSION} '
+        f'but the GlobalDB found in the system is v{version}. Bailing ...'
+    )
+    assert msg in str(excinfo.value)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
