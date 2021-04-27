@@ -120,8 +120,12 @@ export const BalancerBalances = (): Promise<VueConstructor> => {
   return load('BalancerBalances');
 };
 
-export const DarkModeSwitch = (): Promise<VueConstructor> => {
-  return load('DarkModeSwitch');
+export const ThemeSwitch = (): Promise<VueConstructor> => {
+  return load('ThemeSwitch');
+};
+
+export const ThemeManager = (): Promise<VueConstructor> => {
+  return load('ThemeManager');
 };
 
 declare global {

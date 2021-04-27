@@ -71,6 +71,7 @@
     </v-row>
 
     <explorers />
+    <theme-manager v-if="premium" />
   </setting-category>
 </template>
 
@@ -84,7 +85,9 @@ import {
   makeMessage,
   settingsMessages
 } from '@/components/settings/utils';
+import PremiumMixin from '@/mixins/premium-mixin';
 import SettingsMixin from '@/mixins/settings-mixin';
+import { ThemeManager } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import {
   QUERY_PERIOD,
@@ -113,14 +116,15 @@ type SettingsEntries = typeof SETTINGS[number];
 
 @Component({
   components: {
+    ThemeManager,
     Explorers,
     TimeFrameSettings,
     SettingCategory
   }
 })
 export default class FrontendSettings extends Mixins<
-  SettingsMixin<SettingsEntries>
->(SettingsMixin) {
+  SettingsMixin<SettingsEntries> & PremiumMixin
+>(SettingsMixin, PremiumMixin) {
   queryPeriod: string = '5';
   scrambleData: boolean = false;
   defaultGraphTimeframe: TimeFrameSetting = TIMEFRAME_ALL;

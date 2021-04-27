@@ -1,14 +1,15 @@
 <template>
-  <div class="card-title">
+  <div class="card-title" :class="dark ? 'theme--dark' : null">
     <slot />
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Mixins } from 'vue-property-decorator';
+import ThemeMixin from '@/mixins/theme-mixin';
 
 @Component({})
-export default class CardTitle extends Vue {}
+export default class CardTitle extends Mixins(ThemeMixin) {}
 </script>
 
 <style scoped lang="scss">
@@ -24,5 +25,13 @@ export default class CardTitle extends Vue {}
   display: flex;
   flex-direction: row;
   align-items: center;
+}
+
+.theme {
+  &--dark {
+    .card-title {
+      color: #62a4af;
+    }
+  }
 }
 </style>

@@ -49,7 +49,7 @@
         <back-button :can-navigate-back="canNavigateBack" />
         <v-spacer />
         <update-indicator />
-        <dark-mode-switch v-if="premium" />
+        <theme-switch v-if="premium" />
         <notification-indicator
           :visible="notifications"
           class="app__app-bar__button"
@@ -120,7 +120,7 @@ import DevApp from '@/DevApp.vue';
 import { BackendCode } from '@/electron-main/backend-code';
 import PremiumMixin from '@/mixins/premium-mixin';
 import ThemeMixin from '@/mixins/theme-mixin';
-import { DarkModeSwitch } from '@/premium/premium';
+import { ThemeSwitch } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import { Message } from '@/store/types';
 
@@ -133,7 +133,7 @@ import { Message } from '@/store/types';
     BackButton,
     UpdatePopup,
     StartupErrorScreen,
-    DarkModeSwitch,
+    ThemeSwitch,
     DevApp,
     NotificationPopup,
     NotificationSidebar,
