@@ -13,10 +13,10 @@ from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ethereum_token_from_db,
-    deserialize_price,
     deserialize_timestamp,
     deserialize_unknown_ethereum_token_from_db,
 )

@@ -47,37 +47,29 @@ import { DEFI_MODULES } from '@/components/defi/wizard/consts';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import Fragment from '@/components/helper/Fragment';
 import { tradeLocations } from '@/components/history/consts';
-import { EXCHANGE_CRYPTOCOM, SUPPORTED_EXCHANGES } from '@/data/defaults';
-import { MODULES } from '@/services/session/consts';
-import { ActionStatus } from '@/store/types';
-
-export const ALL_EXCHANGES = 'all_exchanges';
-export const ALL_MODULES = 'all_modules';
-export const ALL_TRANSACTIONS = 'ethereum_transactions';
-
-const purgable = [
-  ALL_EXCHANGES,
+import {
+  ALL_DECENTRALIZED_EXCHANGES,
+  ALL_CENTRALIZED_EXCHANGES,
   ALL_MODULES,
   ALL_TRANSACTIONS,
-  ...SUPPORTED_EXCHANGES,
-  EXCHANGE_CRYPTOCOM,
-  ...MODULES
-];
+  PURGABLE
+} from '@/services/session/consts';
+import { Purgeable } from '@/services/session/types';
+import { ActionStatus } from '@/store/types';
 
-export type Purgable = typeof purgable[number];
-export type PurgeParams = { readonly source: Purgable; readonly text: string };
+export type PurgeParams = { readonly source: Purgeable; readonly text: string };
 
 @Component({
   components: { ActionStatusIndicator, Fragment }
 })
 export default class PurgeSelector extends Vue {
-  readonly purgable = purgable.map(id => ({
+  readonly purgable = PURGABLE.map(id => ({
     id: id,
     text: this.text(id)
-  }));
+  })).sort((a, b) => (a.text < b.text ? -1 : 1));
 
   @Prop({ required: true })
-  value!: Purgable;
+  value!: Purgeable;
 
   @Prop({ required: false })
   status!: ActionStatus | null;
@@ -86,12 +78,12 @@ export default class PurgeSelector extends Vue {
   pending!: boolean;
 
   @Emit()
-  input(_value: Purgable) {}
+  input(_value: Purgeable) {}
 
   @Emit()
   purge(_payload: PurgeParams) {}
 
-  text(source: Purgable) {
+  text(source: Purgeable) {
     const location = tradeLocations.find(
       ({ identifier }) => identifier === source
     );
@@ -108,10 +100,12 @@ export default class PurgeSelector extends Vue {
 
     if (source === ALL_TRANSACTIONS) {
       return this.$t('purge_selector.ethereum_transactions').toString();
-    } else if (source === ALL_EXCHANGES) {
+    } else if (source === ALL_CENTRALIZED_EXCHANGES) {
       return this.$t('purge_selector.all_exchanges').toString();
     } else if (source === ALL_MODULES) {
       return this.$t('purge_selector.all_modules').toString();
+    } else if (source === ALL_DECENTRALIZED_EXCHANGES) {
+      return this.$t('purge_selector.all_decentralized_exchanges').toString();
     }
     return source;
   }

@@ -7,8 +7,8 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.accounting.structures import BalanceType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
@@ -1422,9 +1422,11 @@ def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
         del db, db_v23  # explicit delete the db so update_owned_assets still runs mocked
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     """Test upgrading the DB from version 24 to version 25.
 
+    - deletes the icon cache of all icons (they will be repulled with new ids)
     - Upgrades to the new eth token identifier schema
     - trade pairs are now replaced by base/quote asset
     - purges some tables
@@ -1435,15 +1437,47 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
         target_version=24,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
-    )
-    cursor = db_v24.conn.cursor()
 
+    )
+    # copy some test icons in the test directory
+    icons_dir = user_data_dir.parent / 'icons'
+    custom_icons_dir = icons_dir / 'custom'
+    custom_icons_dir.mkdir(parents=True, exist_ok=True)
+    test_icondata_dir = Path(os.path.realpath(__file__)).parent.parent / 'data' / 'icons'
+    custom_icon_filename = '_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94.webp'
+    copyfile(test_icondata_dir / custom_icon_filename, custom_icons_dir / custom_icon_filename)
+    for size in ('small', 'thumb', 'large'):
+        name = f'USDT_{size}.png'
+        copyfile(test_icondata_dir / name, icons_dir / name)
+    icon_files = list(icons_dir.glob('*.*'))
+    assert len(icon_files) == 3
+    # create some fake history cache files
+    price_history_dir = user_data_dir.parent / 'price_history'
+    price_history_dir.mkdir(parents=True, exist_ok=True)
+    history_cache_files = [
+        price_history_dir / 'cc_price_history_BTC_EUR.json',
+        price_history_dir / 'price_history_forex.json',
+        price_history_dir / 'gecko_price_history_XMR_USD.json',
+    ]
+    for price_file in history_cache_files:
+        price_file.touch(mode=0o666, exist_ok=True)
+        assert price_file.is_file()
+
+    cursor = db_v24.conn.cursor()
     # Checks before migration
     assert cursor.execute(
         'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "uniswap%";',
     ).fetchone()[0] == 4
     assert cursor.execute('SELECT COUNT(*) from amm_swaps;').fetchone()[0] == 2
     assert cursor.execute('SELECT COUNT(*) from uniswap_events;').fetchone()[0] == 1
+    assert cursor.execute('SELECT COUNT(*) from balancer_events;').fetchone()[0] == 1
+    assert cursor.execute('SELECT COUNT(*) from balancer_pools;').fetchone()[0] == 1
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "balancer_events%";',
+    ).fetchone()[0] == 1
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "balancer_trades%";',
+    ).fetchone()[0] == 3
     assert cursor.execute('SELECT COUNT(*) from yearn_vaults_events;').fetchone()[0] == 1
     assert cursor.execute(
         'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "yearn_vaults_events%";',
@@ -1513,8 +1547,16 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     asset_movements_count = cursor.execute('SELECT COUNT(*) from asset_movements;').fetchone()[0]
     query = cursor.execute('SELECT identifier, timestamp, type, location, amount, asset, link, notes from ledger_actions;')  # noqa: E501
     assert query.fetchall() == [
-        (1, 1611260690, 'A', 'A', '1', 'ABYSS', 'dsad', 'sd'),
+        (1, 1611260690, 'A', 'A', '1', 'ABYSS', '', ''),
         (2, 1610483475, 'A', 'A', '1', '0xBTC', 'sad', 'asdsad'),
+    ]
+    query = cursor.execute('SELECT name, value from multisettings;')
+    assert query.fetchall() == [
+        ('ignored_asset', 'DAO'),
+        ('ignored_asset', 'OMG'),
+        ('ignored_asset', 'XMR'),
+        ('queried_address_makerdao_vaults', '0x7e57fBBb05A0557c133bAcB8a66a1955F0D66B1D'),
+        ('queried_address_aave', '0x7e57fBBb05A0557c133bAcB8a66a1955F0D66B1D'),
     ]
 
     with mock_dbhandler_update_owned_assets():
@@ -1531,7 +1573,15 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute(
         'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "uniswap%";',
     ).fetchone()[0] == 0
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "balancer_events%";',
+    ).fetchone()[0] == 0
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE "balancer_trades%";',
+    ).fetchone()[0] == 0
     assert cursor.execute('SELECT COUNT(*) from uniswap_events;').fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) from balancer_events;').fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) from balancer_pools;').fetchone()[0] == 0
     assert cursor.execute('SELECT COUNT(*) from amm_swaps;').fetchone()[0] == 0
     assert cursor.execute('SELECT COUNT(*) from yearn_vaults_events;').fetchone()[0] == 0
     assert cursor.execute(
@@ -1548,10 +1598,10 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) from timed_balances;').fetchone()[0] == 392
 
     # check the ledger actions were upgraded
-    query = cursor.execute('SELECT identifier, timestamp, type, location, amount, asset, link, notes from ledger_actions;')  # noqa: E501
+    query = cursor.execute('SELECT identifier, timestamp, type, location, amount, asset, rate, rate_asset, link, notes from ledger_actions;')  # noqa: E501
     assert query.fetchall() == [
-        (1, 1611260690, 'A', 'A', '1', '_ceth_0x0E8d6b471e332F140e7d9dbB99E5E3822F728DA6', 'dsad', 'sd'),  # noqa: E501
-        (2, 1610483475, 'A', 'A', '1', '_ceth_0xB6eD7644C69416d67B522e20bC294A9a9B405B31', 'sad', 'asdsad'),  # noqa: E501
+        (1, 1611260690, 'A', 'A', '1', '_ceth_0x0E8d6b471e332F140e7d9dbB99E5E3822F728DA6', None, None, None, None),  # noqa: E501
+        (2, 1610483475, 'A', 'A', '1', '_ceth_0xB6eD7644C69416d67B522e20bC294A9a9B405B31', None, None, 'sad', 'asdsad'),  # noqa: E501
     ]
     # check that margin positions were upgraded
     query = cursor.execute('SELECT id, location, open_time, close_time, profit_loss, pl_currency, fee, fee_currency, link, notes from margin_positions;')  # noqa: E501
@@ -1646,32 +1696,51 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
         ('_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e', 'test_custom_token', '25', 'A'),
     ]
 
+    # test that the ignored assets were properly upgraded
+    query = cursor.execute('SELECT name, value from multisettings;')
+    assert query.fetchall() == [
+        ('ignored_asset', '_ceth_0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413'),
+        ('ignored_asset', '_ceth_0xd26114cd6EE289AccF82350c8d8487fedB8A0C07'),
+        ('ignored_asset', 'XMR'),
+        ('queried_address_makerdao_vaults', '0x7e57fBBb05A0557c133bAcB8a66a1955F0D66B1D'),
+        ('queried_address_aave', '0x7e57fBBb05A0557c133bAcB8a66a1955F0D66B1D'),
+    ]
+
     # test that the trades were properly upgraded
     trades_query = cursor.execute(
         'SELECT id, time, location, base_asset, quote_asset, type, amount, rate, fee,'
         'fee_currency, link, notes from trades ORDER BY time ASC;',
     ).fetchall()
     assert trades_query == [
-        ('fac279d109466a908119816d2ee7af90fba28f1ae60437bcbfab10e40a62bbc7', 1493227049, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '867.46673624', '0.00114990', '0.00249374', 'BTC', 'l1', ''),  # noqa: E501
-        ('56775b4b80f46d1dfc1b53fc0f6b61573c14142499bfe3a62e3371f7afc166db', 1493228252, 'D', '_ceth_0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c', 'BTC', 'A', '11348.12286689', '0.00008790', '0.00249374', 'BTC', 'l2', ''),  # noqa: E501
-        ('d38687c92fd4b56f7241b38653390a72022709ef8835c289f6d49cc436b8e05a', 1498949799, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '150.00000000', '0.00091705', '0.00034389', 'BTC', 'l3', ''),  # noqa: E501
-        ('cc31283b6e723f4a7364496b349869564b06b4320da3a14d95dcda1801369361', 1498966605, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '1000.00000000', '0.00091409', '0.00228521', 'BTC', 'l4', ''),  # noqa: E501
-        ('c76a42bc8b32407b7444da89cc9f73c22fd6a1bc0055b7d4112e3e59709b2b5b', 1499011364, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '200.00000000', '0.00092401', '0.00046200', 'BTC', 'l5', ''),  # noqa: E501
-        ('18810df423b24bb438360b23b50bd0fc11ed2d3701420651ef716f4840367894', 1499051024, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '120.00000000', '0.00091603', '0.00027480', 'BTC', 'l6', ''),  # noqa: E501
-        ('27bb15dfc1a008c2efa2c5510b30808d8246ab903cf9f950ea7a175f0779925d', 1499675187, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '200.00000000', '0.00091747', '0.00045869', 'BTC', 'l7', ''),  # noqa: E501
-        ('b0c4d1d816fa3448ba1ab1a285a35d71a42ff27d68438626eacecc4bf927ab07', 1499677638, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '1135.00000000', '0.00088101', '0.00249985', 'BTC', 'l8', ''),  # noqa: E501
-        ('6b91fc81d40c121af7397c5f3351547de4bd3f288fe483ace14b7b7922cfcd36', 1500494329, 'D', '_ceth_0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c', 'BTC', 'B', '10490.34064784', '0.00024385', '0.00639521', 'BTC', 'l9', ''),  # noqa: E501
-        ('59ea4f98a815467122d201d737b97f910c8918cfe8f476a74d51a4006ef1aaa8', 1500501003, 'D', '_ceth_0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c', 'BTC', 'B', '857.78221905', '0.00018099', '0.00038812', 'BTC', 'l10', ''),  # noqa: E501
-        ('dc4a8a1dd3ef78b6eae5ee69f24bed73196ba3677150015f80d28a70b963253c', 1501194075, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '510.21713000', '0.00039101', '0.00049875', 'BTC', 'l11', ''),  # noqa: E501
-        ('8ba98869f1398d9d64d974a13bc1e686746c7068b765223a46f886ef9c100722', 1501585385, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '731.28354007', '0.00034101', '0.00062343', 'BTC', 'l12', ''),  # noqa: E501
-        ('6f583c1297a86beadb46e8876db9589bb2ca60c603a4eca77b331611a49cd482', 1599751485, 'A', 'ETH', 'EUR', 'A', '150', '210.15', '0.2', 'EUR', '', ''),  # noqa: E501
-        ('3fc94b6b91de61d98b21bdba9a6e449b3ff25756f34a14d17dcf3979d08c4ee3', 1607172606, 'D', 'MAID', 'BTC', 'B', '15515.00000000', '0.00001299', '0.00040305', 'BTC', 'l13', ''),  # noqa: E501
-        ('ecd64dba4367a42292988abb34ed46b3dda0d48728c629f9727706d198023d6c', 1610915040, 'A', 'ETH', 'EUR', 'A', '5', '0.1', '0.001', '_ceth_0x111111111117dC0aa78b770fA6A738034120C302', 'dsad', 'ads'),  # noqa: E501
-        ('7aae102d9240f7d5f7f0669d6eefb47f2d1cf5bba462b0cee267719e9272ffde', 1612302374, 'A', '_ceth_0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', 'ETH', 'A', '1', '0.01241', '0', '_ceth_0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', '', ''),  # noqa: E501
+        ('fac279d109466a908119816d2ee7af90fba28f1ae60437bcbfab10e40a62bbc7', 1493227049, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '867.46673624', '0.00114990', '0.00249374', 'BTC', 'l1', None),  # noqa: E501
+        ('56775b4b80f46d1dfc1b53fc0f6b61573c14142499bfe3a62e3371f7afc166db', 1493228252, 'D', '_ceth_0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c', 'BTC', 'A', '11348.12286689', '0.00008790', '0.00249374', 'BTC', 'l2', None),  # noqa: E501
+        ('d38687c92fd4b56f7241b38653390a72022709ef8835c289f6d49cc436b8e05a', 1498949799, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '150.00000000', '0.00091705', '0.00034389', 'BTC', 'l3', None),  # noqa: E501
+        ('cc31283b6e723f4a7364496b349869564b06b4320da3a14d95dcda1801369361', 1498966605, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '1000.00000000', '0.00091409', '0.00228521', 'BTC', 'l4', None),  # noqa: E501
+        ('c76a42bc8b32407b7444da89cc9f73c22fd6a1bc0055b7d4112e3e59709b2b5b', 1499011364, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '200.00000000', '0.00092401', '0.00046200', 'BTC', 'l5', None),  # noqa: E501
+        ('18810df423b24bb438360b23b50bd0fc11ed2d3701420651ef716f4840367894', 1499051024, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '120.00000000', '0.00091603', '0.00027480', 'BTC', 'l6', None),  # noqa: E501
+        ('27bb15dfc1a008c2efa2c5510b30808d8246ab903cf9f950ea7a175f0779925d', 1499675187, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '200.00000000', '0.00091747', '0.00045869', 'BTC', 'l7', None),  # noqa: E501
+        ('b0c4d1d816fa3448ba1ab1a285a35d71a42ff27d68438626eacecc4bf927ab07', 1499677638, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '1135.00000000', '0.00088101', '0.00249985', 'BTC', 'l8', None),  # noqa: E501
+        ('6b91fc81d40c121af7397c5f3351547de4bd3f288fe483ace14b7b7922cfcd36', 1500494329, 'D', '_ceth_0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c', 'BTC', 'B', '10490.34064784', '0.00024385', '0.00639521', 'BTC', 'l9', None),  # noqa: E501
+        ('59ea4f98a815467122d201d737b97f910c8918cfe8f476a74d51a4006ef1aaa8', 1500501003, 'D', '_ceth_0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c', 'BTC', 'B', '857.78221905', '0.00018099', '0.00038812', 'BTC', 'l10', None),  # noqa: E501
+        ('dc4a8a1dd3ef78b6eae5ee69f24bed73196ba3677150015f80d28a70b963253c', 1501194075, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '510.21713000', '0.00039101', '0.00049875', 'BTC', 'l11', None),  # noqa: E501
+        ('8ba98869f1398d9d64d974a13bc1e686746c7068b765223a46f886ef9c100722', 1501585385, 'D', '_ceth_0xB9e7F8568e08d5659f5D29C4997173d84CdF2607', 'BTC', 'A', '731.28354007', '0.00034101', '0.00062343', 'BTC', 'l12', None),  # noqa: E501
+        ('6f583c1297a86beadb46e8876db9589bb2ca60c603a4eca77b331611a49cd482', 1599751485, 'A', 'ETH', 'EUR', 'A', '150', '210.15', '0.2', 'EUR', None, None),  # noqa: E501
+        ('3fc94b6b91de61d98b21bdba9a6e449b3ff25756f34a14d17dcf3979d08c4ee3', 1607172606, 'D', 'MAID', 'BTC', 'B', '15515.00000000', '0.00001299', '0.00040305', 'BTC', 'l13', None),  # noqa: E501
+        ('ecd64dba4367a42292988abb34ed46b3dda0d48728c629f9727706d198023d6c', 1610915040, 'A', 'ETH', 'EUR', 'A', '5', '0.1', '0.001', '_ceth_0x111111111117dC0aa78b770fA6A738034120C302', 'dsad', 'ads'),  # noqa: E501c
+        ('7aae102d9240f7d5f7f0669d6eefb47f2d1cf5bba462b0cee267719e9272ffde', 1612302374, 'A', '_ceth_0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', 'ETH', 'A', '1', '0.01241', '0', '_ceth_0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', None, None),  # noqa: E501
     ]
     # Check that identifiers match with what is expected. This may need amendment if the upgrade test stays around while the code changes.  # noqa: E501
     trades = db.get_trades()
     assert all(x.identifier == trades_query[idx][0] for idx, x in enumerate(trades))
+
+    # Check that cached icons were purged but custom icons were not
+    assert (custom_icons_dir / custom_icon_filename).is_file()
+    assert not any(x.is_file() for x in icons_dir.glob('*.*'))
+
+    # Check that the cache history files no longer exist
+    for price_file in history_cache_files:
+        assert not price_file.is_file()
+    assert not price_history_dir.is_dir()
 
     # Check errors/warnings
     warnings = msg_aggregator.consume_warnings()

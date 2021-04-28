@@ -556,7 +556,6 @@ def test_add_blockchain_accounts_concurrent(
         # if this happens. Can't think of a better way to do this at the moment
         task_ids = {idx: account for idx, account in enumerate(query_accounts)}
 
-        # for task_id, account in task_ids.items():
         with gevent.Timeout(ASYNC_TASK_WAIT_TIMEOUT):
             while len(task_ids) != 0:
                 task_id, account = random.choice(list(task_ids.items()))
@@ -571,7 +570,7 @@ def test_add_blockchain_accounts_concurrent(
                     gevent.sleep(.1)  # not started yet
                     continue
 
-                assert_proper_response(response)
+                assert_proper_response(response, status_code=None)  # do not check status code here
                 result = response.json()['result']
                 status = result['status']
                 if status == 'pending':

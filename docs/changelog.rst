@@ -2,6 +2,22 @@
 Changelog
 =========
 
+* :bug:`2794` Aave v1 data after block 12,152,920 should be now available. Rotki switched to the new Aave v1 subgraph.
+* :bug:`2781` From this version and on, attempting to open a new global DB with an older rotki version will not be allowed and the app will crash with an error message.
+* :bug:`2773` Timestamps will be correctly read for trades in the Kraken exchange.
+* :bug:`2775` Ambiguous FTX assets will now be properly recognized by rotki.
+* :bug:`2767` Curve pool tokens will not be double counted in the dashboard balances.
+
+* :release:`1.16.0 <2021-04-21>`
+* :feature:`2671` Rotki will now detect Adex V5 staked balances
+* :feature:`2714` Add support for a3CRV Curve pool
+* :feature:`2210` All price history caches are now moved to the global database. The price history sub-directory of the rotki data directory is now deleted. This should optimize price history querying and save disk space.
+* :feature:`2551` Users will now be prompted with asset database updates if changes have happened to the supported rotki assets.
+* :feature:`2520` Users can now properly clean cached data for Eth2 daily stats and deposits.
+* :feature:`2564` Users can now easily access the documentation and other helpful links directly from the application.
+* :feature:`-` Users will now get an error message if during the PnL report an acquisition date for a sold asset can't be found. Also if an action with an unknown token is processed. This way users will know that they need to manually add more data to rotki.
+* :feature:`2338` The users can now optionally add a rate and rate asset when adding a ledger action.
+* :feature:`-` The external trade fee and fee currency are now optional and the users can skip them when adding a trade.
 * :feature:`929` Users can now select which rounding mode is used for displayed amounts via the frontend settings.
 * :feature:`2620` Users will now be able to disable oracles per asset using the asset editor.
 * :feature:`2602` Users will now have the erc20 token details (name, symbol, decimals) automatically filled when possible when they add new ethereum token assets.
@@ -14,6 +30,11 @@ Changelog
 * :feature:`2424` Users will now see a progress bar while the automatic update is downloading, and proper notification messages in case of failure.
 * :feature:`2515` Users will now be able to navigate back from the assets page using a button.
 * :feature:`1007` Coinbase exchange users will now be able to see asset conversions in their trade history.
+* :feature:`1334` FTX users will now be able to see their balances and have their deposit/withdrawal/trade history taken into account during profit/loss calculation.
+* :feature:`2332` Binance users will now be able to see their Binance Pool's assets in rotki.
+* :feature:`2713` Support the ETH-C MakerDAO vault collateral type.
+* :bug:`2699` Users will see that the frontend state will properly be cleared when purging data.
+* :bug:`2626` Users will now properly see their specified date format when viewing various DeFi protocols and statistics.
 * :bug:`2479` Users will now see a < (less than) symbol in front of any amount with trailing decimals when rounding upwards is used.
 * :bug:`2610` Macos users will now be able to properly update every time using the auto-updater.
 * :bug:`2628` Users will now see the correct total asset value when visiting an asset's detail page for a second time.
@@ -25,6 +46,10 @@ Changelog
 * :bug:`2614` Uniswap users should no longer have missing trades in their uniswap history.
 * :bug:`2674` Coinbasepro should now also properly parse historical market trades and not only limit ones. Also all fills will be separately shown and not just the executed orders.
 * :bug:`2656` Users of coinbase with a lot of assets or trades should now see all of them again. There should be no missing balances or trades thanks to a fix at query pagination.
+* :bug:`2690` Eth2 stakers that have very recently deposited and don't have a validator index yet will now be handled properly and their balance should be shown.
+* :bug:`2716` Users will now get a correct exported CSV file when a sell is matched with multiple acquisitions.
+* :bug:`2738` Premium users won't see locations that have no balances in the statistics for value distribution by location.
+* :bug:`2647` Disabling the tax-free period setting for a Profit/Loss report will now be reflected in the same rotki run without needing a restart.
 
 * :release:`1.15.2 <2021-03-21>`
 * :bug:`1996` Querying coinbasepro deposits and withdrawals should now be much faster thanks to using their new API endpoints.

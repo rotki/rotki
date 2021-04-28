@@ -1,8 +1,8 @@
 import hashlib
 import hmac
+import json
 import logging
 import time
-import json
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
@@ -19,9 +19,9 @@ from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
+    deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
     deserialize_fee,
-    deserialize_asset_amount,
 )
 from rotkehlchen.typing import (
     ApiKey,
@@ -32,8 +32,8 @@ from rotkehlchen.typing import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc
+from rotkehlchen.utils.mixins import cache_response_timewise, protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

@@ -89,6 +89,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition,
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
@@ -99,7 +100,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_hex_color_code,
     deserialize_location,
     deserialize_location_from_db,
-    deserialize_price,
+    deserialize_optional,
     deserialize_timestamp,
     deserialize_trade_type_from_db,
 )
@@ -1259,6 +1260,21 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
+    def delete_eth2_deposits(self) -> None:
+        """Delete all historical ETH2 eth2_deposits data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM eth2_deposits;')
+        cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{ETH2_DEPOSITS_PREFIX}%";')
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_eth2_daily_stats(self) -> None:
+        """Delete all historical ETH2 eth2_daily_staking_details data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM eth2_daily_staking_details;')
+        self.conn.commit()
+        self.update_last_write()
+
     def add_uniswap_events(self, events: Sequence[UniswapPoolEvent]) -> None:
         query = (
             """
@@ -1378,6 +1394,8 @@ class DBHandler:
             self.delete_adex_events_data()
             self.delete_yearn_vaults_data()
             self.delete_loopring_data()
+            self.delete_eth2_deposits()
+            self.delete_eth2_daily_stats()
             logger.debug('Purged all module data from the DB')
             return
 
@@ -1395,6 +1413,9 @@ class DBHandler:
             self.delete_yearn_vaults_data()
         elif module_name == 'loopring':
             self.delete_loopring_data()
+        elif module_name == 'eth2':
+            self.delete_eth2_deposits()
+            self.delete_eth2_daily_stats()
         else:
             logger.debug(f'Requested to purge {module_name} data from the DB but nothing to do')
             return
@@ -2673,8 +2694,8 @@ class DBHandler:
                 trade.trade_type.serialize_for_db(),
                 str(trade.amount),
                 str(trade.rate),
-                str(trade.fee),
-                trade.fee_currency.identifier,
+                str(trade.fee) if trade.fee else None,
+                trade.fee_currency.identifier if trade.fee_currency else None,
                 trade.link,
                 trade.notes,
             ))
@@ -2727,8 +2748,8 @@ class DBHandler:
                 trade.trade_type.serialize_for_db(),
                 str(trade.amount),
                 str(trade.rate),
-                str(trade.fee),
-                trade.fee_currency.identifier,
+                str(trade.fee) if trade.fee else None,
+                trade.fee_currency.identifier if trade.fee_currency else None,
                 trade.link,
                 trade.notes,
                 old_trade_id,
@@ -2781,8 +2802,8 @@ class DBHandler:
                     trade_type=deserialize_trade_type_from_db(result[5]),
                     amount=deserialize_asset_amount(result[6]),
                     rate=deserialize_price(result[7]),
-                    fee=deserialize_fee(result[8]),
-                    fee_currency=Asset(result[9]),
+                    fee=deserialize_optional(result[8], deserialize_fee),
+                    fee_currency=deserialize_optional(result[9], Asset),
                     link=result[10],
                     notes=result[11],
                 )
@@ -3112,7 +3133,7 @@ class DBHandler:
         cursor = self.conn.cursor()
         results = cursor.execute(
             'SELECT time, location, usd_value FROM timed_location_data WHERE '
-            'time=(SELECT MAX(time) FROM timed_location_data);',
+            'time=(SELECT MAX(time) FROM timed_location_data) AND usd_value!=0;',
         )
         results = results.fetchall()
 

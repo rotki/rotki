@@ -7,14 +7,20 @@
       'balance-display--loss': mode === 'loss'
     }"
   >
-    <crypto-icon v-if="!noIcon" :symbol="asset" size="24px" class="mr-1" />
+    <asset-icon
+      v-if="!noIcon"
+      :identifier="asset"
+      :symbol="getSymbol(asset)"
+      size="24px"
+      class="mr-1"
+    />
     <div
       class="ml-1 d-flex flex-column align-end"
       :style="{ 'min-width': `${minWidth}ch` }"
     >
       <amount-display
         :loading-="!!!value"
-        :asset="asset"
+        :asset="getSymbol(asset)"
         :asset-padding="assetPadding"
         :value="value.amount"
         class="d-block font-weight-medium"
@@ -31,13 +37,15 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
+import AssetMixin from '@/mixins/asset-mixin';
+import { TokenDetails } from '@/services/defi/types';
 import { Balance } from '@/services/types-api';
 
 @Component({})
-export default class BalanceDisplay extends Vue {
+export default class BalanceDisplay extends Mixins(AssetMixin) {
   @Prop({ required: true })
-  asset!: string;
+  asset!: TokenDetails;
   @Prop({ required: true })
   value!: Balance | null;
   @Prop({ required: false, type: Boolean, default: false })

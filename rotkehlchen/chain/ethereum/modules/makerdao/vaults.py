@@ -47,6 +47,7 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_DAI_JOIN,
     MAKERDAO_ETH_A_JOIN,
     MAKERDAO_ETH_B_JOIN,
+    MAKERDAO_ETH_C_JOIN,
     MAKERDAO_GET_CDPS,
     MAKERDAO_GUSD_A_JOIN,
     MAKERDAO_JUG,
@@ -92,6 +93,7 @@ GEMJOIN_MAPPING = {
     'BAT-A': MAKERDAO_BAT_A_JOIN,
     'ETH-A': MAKERDAO_ETH_A_JOIN,
     'ETH-B': MAKERDAO_ETH_B_JOIN,
+    'ETH-C': MAKERDAO_ETH_C_JOIN,
     'KNC-A': MAKERDAO_KNC_A_JOIN,
     'TUSD-A': MAKERDAO_TUSD_A_JOIN,
     'USDC-A': MAKERDAO_USDC_A_JOIN,
@@ -115,6 +117,7 @@ COLLATERAL_TYPE_MAPPING = {
     'BAT-A': A_BAT,
     'ETH-A': A_ETH,
     'ETH-B': A_ETH,
+    'ETH-C': A_ETH,
     'KNC-A': A_KNC,
     'TUSD-A': A_TUSD,
     'USDC-A': A_USDC,
@@ -817,10 +820,11 @@ class MakerdaoVaults(MakerdaoCommon):
         return balances
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEthAddress) -> None:
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:  # pylint: disable=useless-return  # noqa: E501
         super().on_account_addition(address)
         # Check if it has been added to the mapping
         proxy_address = self.proxy_mappings.get(address)
         if proxy_address:
             # get any vaults the proxy owns
             self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)
+        return None

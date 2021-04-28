@@ -56,6 +56,7 @@ def test_detected_tokens_cache(ethtokens, inquirer):  # pylint: disable=unused-a
         etherscan=ethtokens.ethereum.etherscan,
         original_queries=None,
         original_requests_get=requests.get,
+        extra_flags=None,
     )
     ethtokens_max_chunks_patch = patch(
         'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH',

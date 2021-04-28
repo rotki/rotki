@@ -1,22 +1,20 @@
 <template>
-  <asset-details-base :asset="currentAsset" :opens-details="opensDetails" />
+  <asset-details-base
+    :hide-name="hideName"
+    :asset="currentAsset"
+    :opens-details="opensDetails"
+  />
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
-import CryptoIcon from '@/components/CryptoIcon.vue';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-
-import { SupportedAsset } from '@/services/types-model';
+import AssetMixin from '@/mixins/asset-mixin';
 
 @Component({
-  components: { AssetDetailsBase, CryptoIcon },
-  computed: {
-    ...mapGetters('balances', ['assetInfo'])
-  }
+  components: { AssetDetailsBase }
 })
-export default class AssetDetails extends Vue {
+export default class AssetDetails extends Mixins(AssetMixin) {
   @Prop({
     required: true,
     validator(value: string): boolean {
@@ -26,8 +24,8 @@ export default class AssetDetails extends Vue {
   asset!: string;
   @Prop({ required: false, type: Boolean, default: false })
   opensDetails!: boolean;
-
-  assetInfo!: (identifier: string) => SupportedAsset;
+  @Prop({ required: false, type: Boolean, default: false })
+  hideName!: boolean;
 
   get currentAsset() {
     const details = this.assetInfo(this.asset);

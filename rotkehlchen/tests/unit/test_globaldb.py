@@ -3,13 +3,19 @@ import itertools
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, string_to_ethereum_address
 from rotkehlchen.constants.assets import A_BAT
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError
+from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import INITIAL_TOKENS
-from rotkehlchen.typing import AssetData, AssetType
+from pathlib import Path
+from rotkehlchen.assets.resolver import AssetResolver
+from shutil import copyfile
+from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
+from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -18,6 +24,28 @@ def test_get_ethereum_token_identifier(globaldb):
     assert globaldb.get_ethereum_token_identifier('0xnotexistingaddress') is None
     token_0_id = globaldb.get_ethereum_token_identifier(INITIAL_TOKENS[0].address)
     assert token_0_id == ethaddress_to_identifier(INITIAL_TOKENS[0].address)
+
+
+def test_open_new_globaldb_with_old_rotki(tmpdir_factory):
+    """Test for https://github.com/rotki/rotki/issues/2781"""
+    # clean the previous resolver memory cache, as it
+    # may have cached results from a discarded database
+    AssetResolver().clean_memory_cache()
+    version = 9999999999
+    root_dir = Path(__file__).resolve().parent.parent.parent
+    source_db_path = root_dir / 'tests' / 'data' / f'v{version}_global.db'
+    new_data_dir = Path(tmpdir_factory.mktemp('test_data_dir'))
+    new_global_dir = new_data_dir / 'global_data'
+    new_global_dir.mkdir(parents=True, exist_ok=True)
+    copyfile(source_db_path, new_global_dir / 'global.db')
+    with pytest.raises(ValueError) as excinfo:
+        create_globaldb(new_data_dir)
+
+    msg = (
+        f'Tried to open a rotki version intended to work with GlobalDB v{GLOBAL_DB_VERSION} '
+        f'but the GlobalDB found in the system is v{version}. Bailing ...'
+    )
+    assert msg in str(excinfo.value)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -220,3 +248,20 @@ def test_get_asset_with_symbol(globaldb):
     )]
     for x in itertools.product(('ReNbTc', 'renbtc', 'RENBTC', 'rEnBTc'), (None, AssetType.ETHEREUM_TOKEN)):  # noqa: E501
         assert globaldb.get_assets_with_symbol(*x) == expected_renbtc
+
+
+@pytest.mark.parametrize('enum_class, table_name', [
+    (AssetType, 'asset_types'),
+    (HistoricalPriceOracle, 'price_history_source_types'),
+])
+def test_enum_values_are_present_in_global_db(globaldb, enum_class, table_name):
+    """
+    Check that all enum classes have the same number of possible values
+    in the class definition as in the database
+    """
+    cursor = globaldb._conn.cursor()
+    query = f'SELECT COUNT(*) FROM {table_name} WHERE seq=?'
+
+    for enum_class_entry in enum_class:
+        r = cursor.execute(query, (enum_class_entry.value,))
+        assert r.fetchone() == (1,), f'Did not find {table_name} entry for value {enum_class_entry.value}'  # noqa: E501

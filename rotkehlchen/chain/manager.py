@@ -46,6 +46,7 @@ from rotkehlchen.chain.ethereum.modules import (
     Adex,
     Balancer,
     Compound,
+    Eth2,
     Loopring,
     MakerdaoDsr,
     MakerdaoVaults,
@@ -83,14 +84,14 @@ from rotkehlchen.typing import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.interfaces import (
-    CacheableObject,
-    EthereumModule,
-    LockableQueryObject,
+from rotkehlchen.utils.interfaces import EthereumModule
+from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.mixins import (
+    CacheableMixIn,
+    LockableQueryMixIn,
     cache_response_timewise,
     protect_with_lock,
 )
-from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -125,6 +126,8 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'Aave V2': True,  # True means all
     # cTokens are already detected at token balance queries
     'Compound': True,  # True means all
+    # Curve balances are detected by our scan for ERC20 tokens
+    'Curve': True,  # True means all
     # Chitoken is in our all_assets.json
     'Chi Gastoken by 1inch': True,  # True means all
     # yearn vault balances are detected by the yTokens
@@ -254,7 +257,7 @@ class BlockchainBalancesUpdate:
         }
 
 
-class ChainManager(CacheableObject, LockableQueryObject):
+class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     def __init__(
             self,
@@ -402,6 +405,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
     @overload
     def get_module(self, module_name: Literal['compound']) -> Optional[Compound]:
+        ...
+
+    @overload
+    def get_module(self, module_name: Literal['eth2']) -> Optional[Eth2]:
         ...
 
     @overload
@@ -888,7 +895,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     # For each module run the corresponding callback for the address
                     for _, module in self.iterate_modules():
                         if append_or_remove == 'append':
-                            module.on_account_addition(address)
+                            new_module_balances = module.on_account_addition(address)
+                            if new_module_balances:
+                                for entry in new_module_balances:
+                                    self.balances.eth[address].assets[entry.asset] += entry.balance
+                                    self.totals.assets[entry.asset] += entry.balance
                         else:  # remove
                             module.on_account_removal(address)
 
@@ -1132,16 +1143,16 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         adex_module = self.get_module('adex')
         if adex_module is not None and self.premium is not None:
-            adex_balances = adex_module.get_balances(addresses=self.accounts.eth)
-            for address, pool_balances in adex_balances.items():
-                for pool_balance in pool_balances:
-                    eth_balances[address].assets[A_ADX] += pool_balance.adx_balance
-                    self.totals.assets[A_ADX] += pool_balance.adx_balance
-                    eth_balances[address].assets[A_DAI] += pool_balance.dai_unclaimed_balance
-                    self.totals.assets[A_DAI] += pool_balance.dai_unclaimed_balance
+            adex_balances = adex_module.get_balances(addresses=self.queried_addresses_for_module('adex'))  # noqa: E501
+            for address, balance in adex_balances.items():
+                eth_balances[address].assets[A_ADX] += balance
+                self.totals.assets[A_ADX] += balance
 
         # Count ETH staked in Eth2 beacon chain
-        self.account_for_staked_eth2_balances(addresses=self.accounts.eth, at_addition=False)
+        self.account_for_staked_eth2_balances(
+            addresses=self.queried_addresses_for_module('eth2'),
+            at_addition=False,
+        )
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_token_and_totals()
 
@@ -1184,9 +1195,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
             eth_balances = self.balances.eth
             if entry.balance_type == 'Asset':
+                log.debug(f'Adding DeFi asset balance for {token} {entry.base_balance.balance}')
                 eth_balances[account].assets[token] += entry.base_balance.balance
                 self.totals.assets[token] += entry.base_balance.balance
             elif entry.balance_type == 'Debt':
+                log.debug(f'Adding DeFi debt balance for {token} {entry.base_balance.balance}')
                 eth_balances[account].liabilities[token] += entry.base_balance.balance
                 self.totals.liabilities[token] += entry.base_balance.balance
             else:
@@ -1248,7 +1261,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
     def get_eth2_staking_details(self) -> List['ValidatorDetails']:
         return get_eth2_details(
             beaconchain=self.beaconchain,
-            addresses=self.accounts.eth,
+            addresses=self.queried_addresses_for_module('eth2'),
         )
 
     @protect_with_lock()
@@ -1264,9 +1277,12 @@ class ChainManager(CacheableObject, LockableQueryObject):
         defi_events = []
         eth2_details = get_eth2_details(
             beaconchain=self.beaconchain,
-            addresses=self.accounts.eth,
+            addresses=self.queried_addresses_for_module('eth2'),
         )
         for entry in eth2_details:
+            if entry.validator_index is None:
+                continue  # don't query stats for validators without an index yet
+
             stats = get_validator_daily_stats(
                 db=self.database,
                 validator_index=entry.validator_index,

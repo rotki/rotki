@@ -1,8 +1,8 @@
-from typing import Tuple, Union
+from typing import Callable, Tuple, TypeVar, Union
 
 from eth_utils import to_checksum_address
 
-from rotkehlchen.accounting.structures import ActionType, LedgerActionType
+from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
@@ -23,7 +23,6 @@ from rotkehlchen.typing import (
     HexColorCode,
     Location,
     Optional,
-    Price,
     Timestamp,
     TradePair,
     TradeType,
@@ -165,7 +164,7 @@ def deserialize_timestamp_from_bitstamp_date(date: str) -> Timestamp:
     )
 
 
-def deserialize_timestamp_from_kraken(time: Union[str, FVal, int]) -> Timestamp:
+def deserialize_timestamp_from_kraken(time: Union[str, FVal, int, float]) -> Timestamp:
     """Deserializes a timestamp from a kraken api query result entry
     Kraken has timestamps in floating point strings. Example: '1561161486.3056'.
 
@@ -180,12 +179,12 @@ def deserialize_timestamp_from_kraken(time: Union[str, FVal, int]) -> Timestamp:
 
     if isinstance(time, int):
         return Timestamp(time)
-    if isinstance(time, str):
+    if isinstance(time, (float, str)):
         try:
             return Timestamp(convert_to_int(time, accept_only_exact=False))
         except ConversionError as e:
             raise DeserializationError(
-                f'Failed to deserialize {time} kraken timestamp entry',
+                f'Failed to deserialize {time} kraken timestamp entry from {type(time)}',
             ) from e
     if isinstance(time, FVal):
         try:
@@ -257,15 +256,6 @@ def deserialize_asset_amount_force_positive(amount: AcceptableFValInitInput) -> 
     return result
 
 
-def deserialize_price(amount: AcceptableFValInitInput) -> Price:
-    try:
-        result = Price(FVal(amount))
-    except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize a price/rate entry: {str(e)}') from e
-
-    return result
-
-
 def deserialize_trade_type(symbol: str) -> TradeType:
     """Takes a string and attempts to turn it into a TradeType
 
@@ -315,62 +305,6 @@ def deserialize_trade_type_from_db(symbol: str) -> TradeType:
     )
 
 
-LEDGER_ACTION_TYPE_MAPPING = {str(x): x for x in LedgerActionType}
-
-
-def deserialize_ledger_action_type(symbol: str) -> LedgerActionType:
-    """Takes a string and attempts to turn it into a LedgerActionType
-
-    Can throw DeserializationError if the symbol is not as expected
-    """
-    if not isinstance(symbol, str):
-        raise DeserializationError(
-            f'Failed to deserialize ledger action type symbol from {type(symbol)} entry',
-        )
-
-    value = LEDGER_ACTION_TYPE_MAPPING.get(symbol, None)
-    if value is None:
-        raise DeserializationError(
-            f'Failed to deserialize ledger action symbol. Unknown symbol '
-            f'{symbol} for ledger action',
-        )
-
-    return value
-
-
-def deserialize_ledger_action_type_from_db(symbol: str) -> LedgerActionType:
-    """Takes a string from the DB and attempts to turn it into a LedgerActionType
-
-    Can throw DeserializationError if the symbol is not as expected
-    """
-    if not isinstance(symbol, str):
-        raise DeserializationError(
-            f'Failed to deserialize ledger action type symbol from {type(symbol)} entry',
-        )
-
-    if symbol == 'A':
-        return LedgerActionType.INCOME
-    if symbol == 'B':
-        return LedgerActionType.EXPENSE
-    if symbol == 'C':
-        return LedgerActionType.LOSS
-    if symbol == 'D':
-        return LedgerActionType.DIVIDENDS_INCOME
-    if symbol == 'E':
-        return LedgerActionType.DONATION_RECEIVED
-    if symbol == 'F':
-        return LedgerActionType.AIRDROP
-    if symbol == 'G':
-        return LedgerActionType.GIFT
-    if symbol == 'H':
-        return LedgerActionType.GRANT
-    # else
-    raise DeserializationError(
-        f'Failed to deserialize ledger action type symbol. Unknown DB '
-        f'symbol {symbol} for trade type',
-    )
-
-
 ACTION_TYPE_MAPPING = {str(x): x for x in ActionType}
 
 
@@ -388,7 +322,7 @@ def deserialize_action_type(symbol: str) -> ActionType:
     if value is None:
         raise DeserializationError(
             f'Failed to deserialize action symbol. Unknown symbol '
-            f'{symbol} for ledger action',
+            f'{symbol} for an action',
         )
 
     return value
@@ -481,6 +415,8 @@ def deserialize_location(symbol: str) -> Location:
         return Location.BALANCER
     if symbol == 'loopring':
         return Location.LOOPRING
+    if symbol == 'ftx':
+        return Location.FTX
     # else
     raise DeserializationError(
         f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
@@ -599,6 +535,8 @@ def deserialize_location_from_db(symbol: str) -> Location:
         return Location.BALANCER
     if symbol == 'Y':
         return Location.LOOPRING
+    if symbol == 'Z':
+        return Location.FTX
     # else
     raise DeserializationError(
         f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
@@ -795,3 +733,15 @@ def deserialize_unknown_ethereum_token_from_db(
         ) from e
 
     return unknown_ethereum_token
+
+
+X = TypeVar('X')
+Y = TypeVar('Y')
+
+
+def deserialize_optional(input_val: Optional[X], fn: Callable[[X], Y]) -> Optional[Y]:
+    """An optional deserialization wrapper for any deserialize function"""
+    if input_val is None:
+        return None
+
+    return fn(input_val)

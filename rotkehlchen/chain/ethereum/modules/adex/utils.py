@@ -3,7 +3,7 @@ from typing import Union
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
-from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
@@ -30,12 +30,6 @@ CREATE2_SALT = f'0x{bytearray(32).hex()}'
 ADX_AMOUNT_MANTISSA = FVal(10**18)
 DAI_AMOUNT_MANTISSA = FVal(10**18)
 
-# Tom pool fee rewards API constants
-TOM_POOL_FEE_REWARDS_API_URL = 'https://tom.adex.network/fee-rewards'
-TOM_POOL_FEE_REWARDS_ADX_LEGACY_CHANNEL = '0x30d87bab0ef1e7f8b4c3b894ca2beed41bbd54c481f31e5791c1e855c9dbf4ba'  # noqa: E501
-TOM_POOL_PERIOD_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
-
-OUTSTANDING_REWARD_THRESHOLD = FVal('0.2')
 ADEX_EVENTS_PREFIX = 'adex_events'
 
 # Defines the expected order of the events given the same timestamp and sorting
@@ -143,15 +137,12 @@ def deserialize_adex_event_from_db(
             raise DeserializationError(
                 f'Failed to deserialize channel withdraw event. Unexpected data: {event_tuple}.',
             )
-
-        try:
-            token = EthereumToken(event_tuple[13])   # type: ignore # type already checked
-        except (UnknownAsset, UnsupportedAsset) as e:
-            asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
+        token = EthereumToken.from_identifier(event_tuple[13])   # type: ignore
+        if token is None:
             raise DeserializationError(
-                f'{asset_tag} {e.asset_name} found while processing adex event. '
+                f'Unknown token {event_tuple[13]} found while processing adex event. '
                 f'Unexpected data: {event_tuple}',
-            ) from e
+            )
 
         return ChannelWithdraw(
             tx_hash=tx_hash,

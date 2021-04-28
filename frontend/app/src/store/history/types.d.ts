@@ -11,6 +11,7 @@ import {
   IGNORE_ACTION_TYPE,
   LEDGER_ACTION_TYPES
 } from '@/store/history/consts';
+import { Nullable } from '@/types';
 
 export interface HistoricData<T> {
   readonly limit: number;
@@ -62,8 +63,10 @@ export interface LedgerAction {
   readonly location: TradeLocation;
   readonly amount: BigNumber;
   readonly asset: string;
-  readonly link: string;
-  readonly notes: string;
+  readonly rate?: Nullable<BigNumber>;
+  readonly rateAsset?: Nullable<string>;
+  readonly link?: Nullable<string>;
+  readonly notes?: Nullable<string>;
 }
 
 export type UnsavedAction = Omit<LedgerAction, 'identifier'>;

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import * as http from 'http';
+import * as querystring from 'querystring';
 import { Request, Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { bodyParser, default as jsonServer } from 'json-server';
@@ -53,6 +54,8 @@ function manipulateResponse(res: Response, callback: (original: any) => any) {
     try {
       const payload = JSON.stringify(callback(JSON.parse(response)));
       res.header('content-length', payload.length.toString());
+      res.status(200);
+      res.statusMessage = 'OK';
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       _write.call(res, payload);
@@ -97,6 +100,11 @@ setInterval(() => {
   }
 }, 8000);
 
+const createResult = (result: unknown): Record<string, unknown> => ({
+  result,
+  message: '',
+});
+
 function handleTasksStatus(res: Response) {
   manipulateResponse(res, (data) => {
     const result = data.result;
@@ -125,18 +133,22 @@ function handleTaskRequest(url: string, tasks: string, res: Response) {
     }
     if (mockAsync.completed.includes(taskId)) {
       const outcome = mockAsync.taskResponses[taskId];
-      manipulateResponse(res, () => ({
-        outcome: outcome,
-        status: 'completed',
-      }));
+      manipulateResponse(res, () =>
+        createResult({
+          outcome: outcome,
+          status: 'completed',
+        })
+      );
       delete mockAsync.taskResponses[taskId];
       const index = mockAsync.completed.indexOf(taskId);
       mockAsync.completed.splice(index, 1);
     } else if (mockAsync.pending.includes(taskId)) {
-      manipulateResponse(res, () => ({
-        outcome: null,
-        status: 'pending',
-      }));
+      manipulateResponse(res, () =>
+        createResult({
+          outcome: null,
+          status: 'pending',
+        })
+      );
     }
   } catch (e) {
     console.error(e);
@@ -198,7 +210,10 @@ function handleAsyncQuery(url: string, req: Request, res: Response) {
   mockAsync.pending.push(taskId);
   mockAsync.taskResponses[taskId] = pendingResponse;
   manipulateResponse(res, () => ({
-    task_id: taskId,
+    result: {
+      task_id: taskId,
+    },
+    message: '',
   }));
 }
 
@@ -211,6 +226,65 @@ function isAsyncQuery(req: Request) {
     req.body &&
     req.body['async_query'] === true
   );
+}
+
+function isPreflight(req: Request) {
+  const mockedUrls = Object.keys(mockedAsyncCalls);
+  const baseUrl = req.url.split('?')[0];
+  const index = mockedUrls.findIndex((value) => value.indexOf(baseUrl) >= 0);
+  return req.method === 'OPTIONS' && index >= 0;
+}
+
+function onProxyReq(
+  proxyReq: http.ClientRequest,
+  req: Request,
+  _res: Response
+) {
+  if (!req.body || !Object.keys(req.body).length) {
+    return;
+  }
+
+  const contentType = proxyReq.getHeader('Content-Type') ?? '';
+  const writeBody = (bodyData: string) => {
+    proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+    proxyReq.write(bodyData);
+  };
+
+  const ct = contentType.toString().toLocaleLowerCase();
+  if (ct.startsWith('application/json')) {
+    writeBody(JSON.stringify(req.body));
+  }
+
+  if (ct.startsWith('application/x-www-form-urlencoded')) {
+    writeBody(querystring.stringify(req.body));
+  }
+}
+
+function mockPreflight(res: Response) {
+  const _write = res.write;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  res.write = (chunk: any) => {
+    try {
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header(
+        'Access-Control-Allow-Headers',
+        'X-Requested-With,content-type'
+      );
+      res.header(
+        'Access-Control-Allow-Methods',
+        'GET, POST, OPTIONS, PUT, PATCH, DELETE'
+      );
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.status(200);
+      res.statusMessage = 'OK';
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      _write.call(res, chunk);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
 }
 
 function onProxyRes(
@@ -233,6 +307,9 @@ function onProxyRes(
   } else if (isAsyncQuery(req)) {
     handleAsyncQuery(url, req, res);
     handled = true;
+  } else if (isPreflight(req)) {
+    mockPreflight(res);
+    handled = true;
   }
 
   if (handled) {
@@ -245,6 +322,7 @@ server.use(
   createProxyMiddleware({
     target: backend,
     onProxyRes,
+    onProxyReq,
   })
 );
 server.use(middlewares);

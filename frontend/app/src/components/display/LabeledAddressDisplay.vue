@@ -40,40 +40,7 @@
       <span> {{ address }} </span>
     </v-tooltip>
     <div class="labeled-address-display__actions">
-      <div class="labeled-address-display__copy">
-        <v-tooltip top open-delay="400">
-          <template #activator="{ on, attrs }">
-            <v-btn
-              small
-              v-bind="attrs"
-              tile
-              icon
-              v-on="on"
-              @click="copy(address)"
-            >
-              <v-icon small>mdi-content-copy</v-icon>
-            </v-btn>
-          </template>
-          <span>{{ $t('labeled_address_display.copy') }}</span>
-        </v-tooltip>
-        <v-tooltip top open-delay="600">
-          <template #activator="{ on, attrs }">
-            <v-btn
-              small
-              icon
-              tile
-              v-bind="attrs"
-              target="_blank"
-              :href="$interop.isPackaged ? undefined : url"
-              v-on="on"
-              @click="openLink"
-            >
-              <v-icon small> mdi-launch</v-icon>
-            </v-btn>
-          </template>
-          <span>{{ $t('labeled_address_display.open_link') }}</span>
-        </v-tooltip>
-      </div>
+      <hash-link :text="account.address" buttons small :chain="account.chain" />
     </div>
   </div>
 </template>
@@ -81,12 +48,10 @@
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
-import { explorerUrls } from '@/components/helper/asset-urls';
 import { truncateAddress, truncationPoints } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 import { GeneralAccount } from '@/typing/types';
 import { randomHex } from '@/typing/utils';
-import { assert } from '@/utils/assertions';
 
 @Component({
   computed: { ...mapState('session', ['privacyMode']) }
@@ -148,17 +113,6 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
   copy(address: string) {
     navigator.clipboard.writeText(address);
   }
-
-  get url(): string {
-    const { chain, address } = this.account;
-    const explorerUrl = explorerUrls[chain];
-    assert(explorerUrl);
-    return explorerUrl.address + address;
-  }
-
-  openLink() {
-    this.$interop.openUrl(this.url);
-  }
 }
 </script>
 
@@ -187,22 +141,15 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
     }
   }
 
-  &__copy {
-    display: inline-block;
+  &__actions {
+    height: 32px;
+    width: 70px;
+    max-width: 75px;
     background-color: var(--v-rotki-light-grey-base);
     border: 1px solid rgba(0, 0, 0, 0.12);
     border-left-width: 0;
     border-radius: 0 4px 4px 0;
-
-    button {
-      height: 30px;
-      width: 30px;
-    }
-  }
-
-  &__actions {
-    width: 61px;
-    max-width: 65px;
+    display: inline-block;
   }
 }
 

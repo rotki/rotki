@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, NamedTuple, Optional, Union
 
-from rotkehlchen.accounting.structures import LedgerActionType
+from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
@@ -13,7 +13,6 @@ from rotkehlchen.history.typing import (
     HistoricalPriceOracle,
 )
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
-from rotkehlchen.serialization.deserialize import deserialize_ledger_action_type
 from rotkehlchen.typing import AVAILABLE_MODULES_MAP, ModuleName, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -209,7 +208,7 @@ def db_settings_from_dict(
             specified_args[key] = [HistoricalPriceOracle.deserialize(oracle) for oracle in oracles]
         elif key == 'taxable_ledger_actions':
             values = json.loads(value)
-            specified_args[key] = [deserialize_ledger_action_type(x) for x in values]
+            specified_args[key] = [LedgerActionType.deserialize(x) for x in values]
         else:
             msg_aggregator.add_warning(
                 f'Unknown DB setting {key} given. Ignoring it. Should not '

@@ -15,13 +15,13 @@ from websocket import WebSocketException
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import RemoteError, UnknownAsset, DeserializationError
+from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 
 from .typing import (
     BlockNumber,
@@ -33,6 +33,7 @@ from .typing import (
     SubstrateChain,
     SubstrateChainId,
 )
+from .utils import KUSAMA_NODE_CONNECTION_TIMEOUT
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -284,20 +285,25 @@ class SubstrateManager():
             account=account,
         )
         try:
-            result = node_interface.query(
-                module='System',
-                storage_function='Account',
-                params=[account],
-            )
+            with gevent.Timeout(KUSAMA_NODE_CONNECTION_TIMEOUT):
+                result = node_interface.query(
+                    module='System',
+                    storage_function='Account',
+                    params=[account],
+                )
         except (
-            requests.exceptions.RequestException,
-            SubstrateRequestException,
-            ValueError,
-            WebSocketException,
+                requests.exceptions.RequestException,
+                SubstrateRequestException,
+                ValueError,
+                WebSocketException,
+                gevent.Timeout,
         ) as e:
+            msg = str(e)
+            if isinstance(e, gevent.Timeout):
+                msg = f'a timeout of {msg}'
             message = (
                 f'{self.chain} failed to request {self.chain_properties.token.identifier} account '
-                f'balance at endpoint {node_interface.url} due to: {str(e)}'
+                f'balance at endpoint {node_interface.url} due to: {msg}'
             )
             log.error(message, account=account)
             raise RemoteError(message) from e
@@ -375,16 +381,24 @@ class SubstrateManager():
 
     def _get_last_block(self, node_interface: SubstrateInterface) -> BlockNumber:
         """Return the chain height.
+
+        May raise:
+        - RemoteError if there is an error
         """
         log.debug(f'{self.chain} querying last block', url=node_interface.url)
         try:
             last_block = node_interface.get_block_number(
                 block_hash=node_interface.get_chain_head(),
             )
+            if last_block is None:  # For some reason a node can rarely return None as last block
+                raise SubstrateRequestException(
+                    f'{self.chain} node failed to request last block. Returned None',
+                )
         except (
-            requests.exceptions.RequestException,
-            SubstrateRequestException,
-            WebSocketException,
+                requests.exceptions.RequestException,
+                SubstrateRequestException,
+                WebSocketException,
+                ValueError,
         ) as e:
             message = (
                 f'{self.chain} failed to request last block '
@@ -537,20 +551,7 @@ class SubstrateManager():
         - RemoteError: `request_available_nodes()` fails to request after
         trying with all the available nodes.
         """
-        try:
-            balance = self._get_account_balance(
-                account=account,
-                node_interface=node_interface,
-            )
-        except RemoteError as e:
-            self.msg_aggregator.add_error(
-                f'Got remote error while querying {self.chain} '
-                f'{self.chain_properties.token.identifier} balance for account '
-                f'{account}: {str(e)}.',
-            )
-            raise
-
-        return balance
+        return self._get_account_balance(account=account, node_interface=node_interface)
 
     def get_accounts_balance(
             self,

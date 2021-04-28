@@ -63,6 +63,7 @@ CURVEFI_RENSWAP = EthereumConstants().contract('CURVEFI_RENSWAP')
 CURVEFI_SRENSWAP = EthereumConstants().contract('CURVEFI_SRENSWAP')
 CURVEFI_SUSDV2SWAP = EthereumConstants().contract('CURVEFI_SUSDV2SWAP')
 CURVEFI_3POOLSWAP = EthereumConstants().contract('CURVEFI_3POOLSWAP')
+CURVEFI_A3CRVSWAP = EthereumConstants().contract('CURVEFI_A3CRVSWAP')
 CURVEFI_GUSDC3CRVSWAP = EthereumConstants().contract('CURVEFI_GUSDC3CRVSWAP')
 YEARN_CONTROLLER = EthereumConstants().contract('YEARN_CONTROLLER')
 
@@ -233,6 +234,9 @@ def handle_defi_price_query(
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_SUSDV2SWAP, token.decimals, ONE)
     elif token == A_CRV_3CRV:
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_3POOLSWAP, token.decimals, ONE)
+    # a3CRV: Comparing address since constant won't be found if user has not updated their DB
+    elif token.ethereum_address == '0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900':
+        usd_value = _handle_curvepool_price(ethereum, CURVEFI_A3CRVSWAP, token.decimals, ONE)
     elif token == A_CRV_GUSD:
         usd_value = _handle_curvepool_price(ethereum, CURVEFI_GUSDC3CRVSWAP, token.decimals, ONE)
     elif token == A_CRVP_DAIUSDCTBUSD:

@@ -28,7 +28,7 @@ All endpoints have their response wrapped in the following JSON object
     }
 
 
-In the case of a succesful response the ``"result"`` attribute is populated and is not ``null`` and the ``"message"`` is empty.
+In the case of a succesful response the ``"result"`` attribute is populated and is not ``null``. The message is almost always going to be empty but may at some cases also contain some informational message.
 
 ::
 
@@ -764,7 +764,8 @@ Query the result of an ongoing backend task
                               "usd_value": "70500.15"
                           }}
                   }},
-                  "totals": {"BTC": {"amount": "10", "usd_value": "70500.15"}}
+                  "totals": {"BTC": {"amount": "10", "usd_value": "70500.15"}},
+		  "status_code": 200
               }
           },
           "message": ""
@@ -805,7 +806,7 @@ Query the result of an ongoing backend task
       }
 
    :resjson string status: The status of the given task id. Can be one of ``"completed"``, ``"pending"`` and ``"not-found"``.
-   :resjson any outcome: IF the result of the task id is not yet ready this should be ``null``. If the task has finished then this would contain the original task response.
+   :resjson any outcome: IF the result of the task id is not yet ready this should be ``null``. If the task has finished then this would contain the original task response. Inside the response can also be an optional status_code entry which would have been the status code of the original endpoint query had it not been made async.
 
    :statuscode 200: The task's outcome is succesfully returned or pending
    :statuscode 400: Provided JSON is in some way malformed
@@ -2517,6 +2518,152 @@ Deleting custom assets
    :statuscode 409: Some conflict at deleting. For example identifier does not exist in the DB. Or deleting the asset would break a constraint since it's used by other assets.
    :statuscode 500: Internal Rotki error
 
+
+Checking for pending asset updates
+=====================================
+
+.. http:get:: /api/(version)/assets/updates
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on this endpoint will prompt a query on the remote github server and return how many updates (if any) exists for the local asset database.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/updates HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": true}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "local": 1,
+	      "remote": 4,
+	      "new_changes": 121
+          "message": ""
+      }
+
+   :resjson int local: The version of the local assets database
+   :resjson int remote: The latest assets update version on the remote
+   :resjson int new_changes: The number of changes (additions, edits and deletions) that would be applied to reach the remote version.
+   :statuscode 200: Pending asset updates information is succesfully queried
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: Error while trying to reach the remote for asset updates.
+
+Performing an asset update
+=====================================
+
+.. http:post:: /api/(version)/assets/updates
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+
+   Doing a POST on this endpoint will attempt an update of the assets database.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/assets/updates HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "async_query": true,
+	  "up_to_version": 5,
+	  "conflicts": {
+	      "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015": "local",
+	      "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015": "remote",
+	      "Fas-23-da20": "local"
+	  }
+      }
+
+   :reqjson bool async_query: Optional. If given and true then the query becomes an asynchronous query.
+   :reqjson int up_to_version: Optional. If given then the asset updates up to and including this version will be pulled and applied
+   :reqjson object conflicts: Optional. Should only be given if at the previous run there were conflicts returned. This is a mapping of asset identifiers to either ``"local"`` or ``"remote"`` specifying which of the two to keep in a conflict.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true
+          "message": ""
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+      	"result": [{
+      	    "identifier":  "assetid1",
+      	    "local": {
+      		"coingecko": "2give",
+      		"name": "2GIVE",
+      		"started": 1460937600,
+      		"symbol": "2GIVE",
+      		"type": "own chain"
+      	    },
+      	    "remote": {
+      		"coingecko": "TWOgive",
+      		"name": "TWOGIVE",
+      		"started": 1460937600,
+      		"symbol": "2GIVEORNOTTOGIVE",
+      		"type": "own chain"
+      	   }}, {
+      	   "identifier": "asset_id2",
+      	   "local": {
+      		   "coingecko": "aave",
+      		   "ethereum_address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+      		   "ethereum_token_decimals": 18,
+      		   "name": "Aave Token",
+      		   "started": 1600970788,
+      		   "symbol": "AAVE",
+      		   "type": "ethereum token"
+      	   },
+      	   "remote": {
+      		   "coingecko": "aaveNGORZ",
+      		   "ethereum_address": "0x1Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+      		   "ethereum_token_decimals": 15,
+      		   "name": "Aave Token FOR REALZ",
+      		   "started": 1600970789,
+      		   "symbol": "AAVE_YO!",
+      		   "type": "binance token"
+      	   }
+      	}],
+      	"message": ""
+      }
+
+   :resjson object result: Either ``true`` if all went fine or a a list of conflicts, containing the identifier of the asset in question and the local and remote versions.
+   :statuscode 200: Update was succesfully applied (if any).
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: Conflicts were found during update. The conflicts should also be returned.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: Error while trying to reach the remote for asset updates.
+
 Querying asset icons
 ======================
 
@@ -2905,10 +3052,10 @@ Dealing with trades
    :resjsonarr string trade_type: The type of the trade. e.g. ``"buy"`` or ``"sell"``
    :resjsonarr string amount: The amount that was bought or sold
    :resjsonarr string rate: The rate at which 1 unit of ``base_asset`` was exchanges for 1 unit of ``quote_asset``
-   :resjsonarr string fee: The fee that was paid, if anything, for this trade
-   :resjsonarr string fee_currency: The currency in which ``fee`` is denominated in
-   :resjsonarr string link: Optional unique trade identifier or link to the trade. Can be an empty string
-   :resjsonarr string notes: Optional notes about the trade. Can be an empty string
+   :resjsonarr string fee: Optional. The fee that was paid, if anything, for this trade
+   :resjsonarr string fee_currency: Optional. The currency in which ``fee`` is denominated in.
+   :resjsonarr string link: Optional unique trade identifier or link to the trade.
+   :resjsonarr string notes: Optional notes about the trade.
    :resjson int entries_found: The amount of trades found for the user. That disregards the filter and shows all trades found.
    :resjson int entries_limit: The trades limit for the account tier of the user. If unlimited then -1 is returned.
    :statuscode 200: Trades are succesfully returned
@@ -2950,10 +3097,10 @@ Dealing with trades
    :reqjson string trade_type: The type of the trade. e.g. ``"buy"`` or ``"sell"``
    :reqjson string amount: The amount that was bought or sold
    :reqjson string rate: The rate at which 1 unit of ``base_asset`` was exchanges for 1 unit of ``quote_asset``
-   :reqjson string fee: The fee that was paid, if anything, for this trade
-   :reqjson string fee_currency: The currency in which ``fee`` is denominated in
-   :reqjson string link: Optional unique trade identifier or link to the trade. Can be an empty string
-   :reqjson string notes: Optional notes about the trade. Can be an empty string
+   :reqjson string fee: Optional. The fee that was paid, if anything, for this trade
+   :reqjson string fee_currency: Optional. The currency in which ``fee`` is denominated in
+   :reqjson string link: Optional unique trade identifier or link to the trade.
+   :reqjson string notes: Optional notes about the trade.
 
    **Example Response**:
 
@@ -3020,10 +3167,10 @@ Dealing with trades
    :reqjson string quote_asset: The new quote_asset
    :reqjson string trade_type: The new trade type
    :reqjson string rate: The new trade rate
-   :reqjson string fee: The new fee
-   :reqjson string fee_currency: The new fee currency
-   :reqjson string link: The new link attribute
-   :reqjson string notes: The new notes attribute
+   :reqjson string fee: The new fee. Can be set to null.
+   :reqjson string fee_currency: The new fee currency. Can be set to null.
+   :reqjson string link: The new link attribute. Can be set to null.
+   :reqjson string notes: The new notes attribute. Can be set to null.
 
    **Example Response**:
 
@@ -3216,6 +3363,8 @@ Dealing with ledger actions
                       "location": "blockchain",
                       "amount": "1550",
                       "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+		      "rate": "0.85",
+		      "rate_asset": "EUR",
                       "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
                       "notes": "The DAI I lost in the pickle finance hack"
                   },
@@ -3233,6 +3382,8 @@ Dealing with ledger actions
    :resjsonarr string location: A valid location at which the action happened.
    :resjsonarr string amount: The amount of asset for the action
    :resjsonarr string asset: The asset for the action
+   :resjsonarr string rate: Optional. If given then this is the rate in ``rate_asset`` for the ``asset`` of the action.
+   :resjsonarr string rate_asset: Optional. If given then this is the asset for which ``rate`` is given.
    :resjsonarr string link: Optional unique identifier or link to the action. Can be an empty string
    :resjsonarr string notes: Optional notes about the action. Can be an empty string
    :resjson int entries_found: The amount of actions found for the user. That disregards the filter and shows all actions found.
@@ -3261,6 +3412,8 @@ Dealing with ledger actions
               "location": "external",
               "amount": "1",
               "asset": "ETH",
+	      "rate": "650",
+	      "rate_asset": "EUR",
               "link": "Optional unique identifier",
               "notes": "Eth I received for being pretty"
       }}
@@ -3304,6 +3457,8 @@ Dealing with ledger actions
           "location": "external",
           "amount": "2",
           "asset": "ETH",
+          "rate": "650",
+          "rate_asset": "EUR",
           "link": "Optional unique identifier",
           "notes": "Eth I received for being pretty"
       }
@@ -3327,6 +3482,8 @@ Dealing with ledger actions
                       "location": "external",
                       "amount": "2",
                       "asset": "ETH",
+                      "rate": "650",
+                      "rate_asset": "EUR",
                       "link": "Optional unique identifier",
                       "notes": "Eth I received for being pretty"
                   },
@@ -3378,6 +3535,8 @@ Dealing with ledger actions
                       "location": "external",
                       "amount": "2",
                       "asset": "ETH",
+                      "rate": "650",
+                      "rate_asset": "EUR",
                       "link": "Optional unique identifier",
                       "notes": "Eth I received for being pretty"
                   },
@@ -4458,6 +4617,7 @@ Getting Aave historical data
                   "events": [{
                       "event_type": "deposit",
                       "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "atoken": "_ceth_0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
                       "value": {
                           "amount": "350.0",
                           "usd_value": "351.21"
@@ -4468,7 +4628,7 @@ Getting Aave historical data
                       "log_index": 1
                   }, {
                       "event_type": "interest",
-                      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "asset": "_ceth_0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
                       "value": {
                           "amount": "0.5323",
                           "usd_value": "0.5482"
@@ -4480,6 +4640,7 @@ Getting Aave historical data
                   }, {
                       "event_type": "withdrawal",
                       "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "atoken": "_ceth_0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d",
                       "value": {
                           "amount": "150",
                           "usd_value": "150.87"
@@ -4491,6 +4652,7 @@ Getting Aave historical data
                   }, {
                       "event_type": "deposit",
                       "asset": "_ceth_0xE41d2489571d322189246DaFA5ebDe1F4699F498",
+                      "atoken": "_ceth_0x6Fb0855c404E09c47C3fBCA25f08d4E41f9F062f",
                       "value": {
                           "amount": "150",
                           "usd_value": "60.995"
@@ -4551,6 +4713,7 @@ Getting Aave historical data
    :resjsonarr string tx_hash: The transaction hash of the event.
    :resjsonarr int log_index: The log_index of the event. For the graph this is indeed a unique number in combination with the transaction hash, but it's unfortunately not the log index.
    :resjsonarr string asset: This attribute appears in all event types except for ``"liquidation"``. It shows the asset that this event is about. This can only be an underlying asset of an aToken.
+   :resjsonarr string atoken: This attribute appears in ``"deposit"`` and ``"withdrawals"``. It shows the aToken involved in the event.
    :resjsonarr object value: This attribute appears in all event types except for ``"liquidation"``. The value (amount and usd_value mapping) of the asset for the event. The rate is the asset/USD rate at the events's timestamp.
    :resjsonarr string borrow_rate_mode: This attribute appears only in ``"borrow"`` events. Signifies the type of borrow. Can be either ``"stable"`` or ``"variable"``.
    :resjsonarr string borrow_rate: This attribute appears only in ``"borrow"`` events. Shows the rate at which the asset was borrowed. It's a floating point number. For example ``"0.155434"`` would means 15.5434% interest rate for this borrowing.
@@ -7808,7 +7971,7 @@ Data imports
    :statuscode 500: Internal Rotki error
 
 ERC20 token info
-=============
+====================
 
 .. http:get:: /api/(version)/blockchains/ETH/erc20details/
 

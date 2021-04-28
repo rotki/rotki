@@ -58,9 +58,10 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.updates import AssetsUpdater
 from rotkehlchen.greenlets import GreenletManager
-from rotkehlchen.history import EventsHistorian, PriceHistorian
-from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT, EventsHistorian
+from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
@@ -148,6 +149,7 @@ class Rotkehlchen():
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
         self.coingecko = Coingecko(data_directory=self.data_dir)
         self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
+        self.assets_updater = AssetsUpdater(self.msg_aggregator)
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='periodically_query_icons_until_all_cached',
@@ -795,7 +797,8 @@ class Rotkehlchen():
                 force_token_detection=ignore_cache,
                 ignore_cache=ignore_cache,
             )
-            balances[str(Location.BLOCKCHAIN)] = blockchain_result.totals.assets
+            if len(blockchain_result.totals.assets) != 0:
+                balances[str(Location.BLOCKCHAIN)] = blockchain_result.totals.assets
             liabilities = blockchain_result.totals.liabilities
         except (RemoteError, EthSyncError) as e:
             problem_free = False
@@ -804,7 +807,9 @@ class Rotkehlchen():
 
         # retrieve loopring balances if module is activated
         if self.chain_manager.get_module('loopring'):
-            balances[str(Location.LOOPRING)] = self.chain_manager.get_loopring_balances()
+            loopring_balances = self.chain_manager.get_loopring_balances()
+            if len(loopring_balances) != 0:
+                balances[str(Location.LOOPRING)] = loopring_balances
 
         balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)
 
@@ -1083,20 +1088,3 @@ class Rotkehlchen():
             return  # only for cryptocompare for now
 
         self.cryptocompare.create_cache(from_asset, to_asset, purge_old)
-
-    def delete_oracle_cache(
-            self,
-            oracle: HistoricalPriceOracle,
-            from_asset: Asset,
-            to_asset: Asset,
-    ) -> None:
-        if oracle != HistoricalPriceOracle.CRYPTOCOMPARE:
-            return  # only for cryptocompare for now
-
-        self.cryptocompare.delete_cache(from_asset, to_asset)
-
-    def get_oracle_cache(self, oracle: HistoricalPriceOracle) -> List[Dict[str, Any]]:
-        if oracle != HistoricalPriceOracle.CRYPTOCOMPARE:
-            return []  # only for cryptocompare for now
-
-        return self.cryptocompare.get_all_cache_data()

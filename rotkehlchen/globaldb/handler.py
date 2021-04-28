@@ -7,21 +7,24 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast,
 
 from typing_extensions import Literal
 
+from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.chain.ethereum.typing import (
     CustomEthereumToken,
     CustomEthereumTokenWithIdentifier,
     UnderlyingToken,
     string_to_ethereum_address,
 )
-from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
-from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress
+from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 from .schema import DB_SCRIPT_CREATE_TABLES
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
+
 
 log = logging.getLogger(__name__)
 
@@ -53,6 +56,12 @@ def _initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
     cursor = connection.cursor()
     db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+    if db_version > GLOBAL_DB_VERSION:
+        raise ValueError(
+            f'Tried to open a rotki version intended to work with GlobalDB v{GLOBAL_DB_VERSION} '
+            f'but the GlobalDB found in the system is v{db_version}. Bailing ...',
+        )
+
     if db_version == 1:
         upgrade_ethereum_asset_ids(connection)
     cursor.execute(
@@ -122,13 +131,19 @@ class GlobalDBHandler():
         return GlobalDBHandler.__instance
 
     @staticmethod
+    def get_schema_version() -> int:
+        """Get the version of the DB Schema"""
+        cursor = GlobalDBHandler()._conn.cursor()
+        return _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+
+    @staticmethod
     def get_setting_value(name: str, default_value: int) -> int:
         """Get the value of a setting or default. Typing is always int for now"""
         cursor = GlobalDBHandler()._conn.cursor()
         return _get_setting_value(cursor, name, default_value)
 
     @staticmethod
-    def add_setting_value(name: str, value: Any) -> None:
+    def add_setting_value(name: str, value: Any, commit: bool = True) -> None:
         """Add the value of a setting"""
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
@@ -136,7 +151,8 @@ class GlobalDBHandler():
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             (name, str(value)),
         )
-        connection.commit()
+        if commit:
+            connection.commit()
 
     @staticmethod
     def add_asset(
@@ -156,16 +172,42 @@ class GlobalDBHandler():
         details_id: Union[str, ChecksumEthAddress]
         if asset_type == AssetType.ETHEREUM_TOKEN:
             token = cast(CustomEthereumToken, data)
-            GlobalDBHandler().add_ethereum_token(token)
+            GlobalDBHandler().add_ethereum_token_data(token)
             details_id = token.address
+            name = token.name
+            symbol = token.symbol
+            started = token.started
+            swapped_for = token.swapped_for.identifier if token.swapped_for else None
+            coingecko = token.coingecko
+            cryptocompare = token.cryptocompare
         else:
             details_id = asset_id
+            data = cast(Dict[str, Any], data)
+            # The data should already be typed (as given in by marshmallow)
+            name = data.get('name', None)
+            symbol = data.get('symbol', None)
+            started = data.get('started', None)
+            swapped_for_asset = data.get('swapped_for', None)
+            swapped_for = swapped_for_asset.identifier if swapped_for_asset else None
+            coingecko = data.get('coingecko', None)
+            cryptocompare = data.get('cryptocompare', None)
 
         try:
             cursor.execute(
-                'INSERT INTO assets(identifier, type, details_reference) '
-                'VALUES(?, ?, ?)',
-                (asset_id, asset_type.serialize_for_db(), details_id),
+                'INSERT INTO assets('
+                'identifier, type, name, symbol, started, swapped_for, '
+                'coingecko, cryptocompare, details_reference) '
+                'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                (
+                    asset_id,
+                    asset_type.serialize_for_db(),
+                    name,
+                    symbol,
+                    started,
+                    swapped_for,
+                    coingecko,
+                    cryptocompare,
+                    details_id),
             )
         except sqlite3.IntegrityError as e:
             connection.rollback()
@@ -180,137 +222,6 @@ class GlobalDBHandler():
             GlobalDBHandler().add_common_asset_details(asset_data)
 
         connection.commit()  # success
-
-    @staticmethod
-    def add_all_assets_from_json(
-            ethereum_tokens: List[Dict[str, Any]],
-            other_assets: List[Dict[str, Any]],
-    ) -> None:
-        """Attempts to add all assets from the lists to the all assets.json
-
-        If an integrity error occurs then log it as an error and make sure nothing
-        is inserted so we don't end up with a DB with incomplete state
-        """
-        connection = GlobalDBHandler()._conn
-        cursor = connection.cursor()
-
-        # first add ethereum tokens to the assets table
-        try:
-            cursor.executemany(
-                'INSERT OR IGNORE INTO assets(identifier, type, details_reference) '
-                'VALUES(?, ?, ?)',
-                [(x['identifier'], 'C', x['ethereum_address']) for x in ethereum_tokens],
-            )
-        except sqlite3.IntegrityError as e:
-            log.error(
-                f'Attempting to insert into assets table for tokens during global DB priming '
-                f'encountered integrity error {str(e)}. Global DB is left unchanged',
-            )
-            connection.rollback()
-            return
-
-        # now other assets. First see which ones are already in the DB
-        query = cursor.execute(
-            f'SELECT identifier from assets WHERE identifier IN '
-            f'({",".join("?" * len(other_assets))}) ',
-            [x['identifier'] for x in other_assets],
-        )
-        result = query.fetchall()
-        existing_ids = [x[0] for x in result]
-        new_other_assets = [x for x in other_assets if x['identifier'] not in existing_ids]
-
-        # and then add the new ones
-        try:
-            cursor.executemany(
-                'INSERT OR IGNORE INTO assets(identifier, type, details_reference) '
-                'VALUES(?, ?, ?)',
-                [(
-                    x['identifier'],
-                    x['type'].serialize_for_db(),
-                    x['identifier'],
-                ) for idx, x in enumerate(new_other_assets)],
-            )
-        except sqlite3.IntegrityError as e:
-            log.error(
-                f'Attempting to insert into assets table for common assets during global DB '
-                f'priming encountered integrity error {str(e)}. Global DB is left unchanged',
-            )
-            connection.rollback()
-            return
-
-        # At this point the assets DB table is populated for all assets. Time to add the details
-        # First add the token details for all
-        try:
-            cursor.executemany(
-                'INSERT OR IGNORE INTO ethereum_tokens(address, decimals, name, symbol, '
-                'started, swapped_for, coingecko, cryptocompare, protocol) '
-                'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [(
-                    x['ethereum_address'],
-                    x['ethereum_token_decimals'],
-                    x['name'],
-                    x['symbol'],
-                    x.get('started', None),
-                    x.get('swapped_for', None),
-                    x.get('coingecko', None),
-                    x.get('cryptocompare', None),
-                    None,  # all_assets entries do not have a protocol as of yet
-                ) for x in ethereum_tokens],
-            )
-        except sqlite3.IntegrityError as e:
-            log.error(
-                f'Attempting to insert into ethereum tokens table during global DB priming '
-                f'encountered integrity error {str(e)}. Global DB is left unchanged',
-            )
-            connection.rollback()
-            return
-
-        # and finally add the common asset details for all
-        try:
-            cursor.executemany(
-                'INSERT OR IGNORE INTO common_asset_details(asset_id, name, symbol, started, forked, '  # noqa: E501
-                'swapped_for, coingecko, cryptocompare) '
-                'VALUES(?, ?, ?, ?, ?, ?, ?, ?)',
-                [(
-                    x['identifier'],
-                    x['name'],
-                    x['symbol'],
-                    x.get('started', None),
-                    x.get('forked', None),
-                    x.get('swapped_for', None),
-                    x.get('coingecko', None),
-                    x.get('cryptocompare', None),
-                ) for x in new_other_assets],
-            )
-        except sqlite3.IntegrityError as e:
-            log.error(
-                f'Attempting to insert into common asset details table during global DB '
-                f'priming encountered integrity error {str(e)}. Global DB is left unchanged',
-            )
-            connection.rollback()
-            return
-
-        connection.commit()
-
-    @staticmethod
-    def get_asset_data(identifier: str, form_with_incomplete_data: bool = False) -> Optional[AssetData]:  # noqa: E501
-        if identifier == 'XD':
-            identifier = 'SCRL'  # https://github.com/rotki/rotki/issues/2503
-        cursor = GlobalDBHandler()._conn.cursor()
-        query = cursor.execute(
-            'SELECT identifier, type, details_reference from assets WHERE identifier=?;',
-            (identifier,),
-        )
-        results = query.fetchall()
-        if len(results) == 0:
-            return None
-
-        return GlobalDBHandler().get_asset_details(
-            identifier=results[0][0],  # get the identifier in the exact case it's saved in the DB
-            db_serialized_type=results[0][1],
-            details_reference=results[0][2],
-            form_with_incomplete_data=form_with_incomplete_data,
-        )
 
     @overload
     @staticmethod
@@ -337,18 +248,36 @@ class GlobalDBHandler():
         else:
             result = []
         cursor = GlobalDBHandler()._conn.cursor()
-        query = cursor.execute(
-            'SELECT identifier, type, details_reference from assets;',
-        )
+        querystr = """
+        SELECT A.identifier, A.type, B.address, B.decimals, A.name, A.symbol, A.started, null, A.swapped_for, A.coingecko, A.cryptocompare, B.protocol from assets as A LEFT OUTER JOIN ethereum_tokens as B
+        ON B.address = A.details_reference WHERE A.type=?
+        UNION ALL
+        SELECT A.identifier, A.type, null, null, A.name, A.symbol, A.started, B.forked, A.swapped_for, A.coingecko, A.cryptocompare, null from assets as A LEFT OUTER JOIN common_asset_details as B
+        ON B.asset_id = A.identifier WHERE A.type!=?;
+        """  # noqa: E501
+        eth_token_type = AssetType.ETHEREUM_TOKEN.serialize_for_db()    # pylint: disable=no-member
+        query = cursor.execute(querystr, (eth_token_type, eth_token_type))
         for entry in query:
-            data = GlobalDBHandler().get_asset_details(
+            asset_type = AssetType.deserialize_from_db(entry[1])
+            ethereum_address: Optional[ChecksumEthAddress]
+            if asset_type == AssetType.ETHEREUM_TOKEN:
+                ethereum_address = string_to_ethereum_address(entry[2])
+            else:
+                ethereum_address = None
+            data = AssetData(
                 identifier=entry[0],
-                db_serialized_type=entry[1],
-                details_reference=entry[2],
-                form_with_incomplete_data=False,
+                asset_type=asset_type,
+                ethereum_address=ethereum_address,
+                decimals=entry[3],
+                name=entry[4],
+                symbol=entry[5],
+                started=entry[6],
+                forked=entry[7],
+                swapped_for=entry[8],
+                coingecko=entry[9],
+                cryptocompare=entry[10],
+                protocol=entry[11],
             )
-            if data is None:
-                continue
             if mapping:
                 result[entry[0]] = data.serialize()  # type: ignore
             else:
@@ -357,12 +286,39 @@ class GlobalDBHandler():
         return result
 
     @staticmethod
-    def get_asset_details(
+    def get_asset_data(
             identifier: str,
-            db_serialized_type: str,
-            details_reference: str,
             form_with_incomplete_data: bool,
     ) -> Optional[AssetData]:
+        """Get all details of a single asset by identifier
+
+        Returns None if identifier can't be matched to an asset
+        """
+        cursor = GlobalDBHandler()._conn.cursor()
+        query = cursor.execute(
+            'SELECT identifier, type, name, symbol, started, swapped_for, coingecko, '
+            'cryptocompare, details_reference from assets WHERE identifier=?;',
+            (identifier,),
+        )
+        result = query.fetchone()
+        if result is None:
+            return None
+
+        # Since comparison is case insensitive let's return original identifier
+        saved_identifier = result[0]  # get the identifier as saved in the DB.
+        db_serialized_type = result[1]
+        name = result[2]
+        symbol = result[3]
+        started = result[4]
+        swapped_for = result[5]
+        coingecko = result[6]
+        cryptocompare = result[7]
+        details_reference = result[8]
+        forked = None
+        decimals = None
+        protocol = None
+        ethereum_address = None
+
         try:
             asset_type = AssetType.deserialize_from_db(db_serialized_type)
         except DeserializationError as e:
@@ -373,66 +329,56 @@ class GlobalDBHandler():
             return None
 
         if asset_type == AssetType.ETHEREUM_TOKEN:
-            address = cast(ChecksumEthAddress, details_reference)  # reference is an address
-            token = GlobalDBHandler().get_ethereum_token(address)
-            if token is None:
+            ethereum_address = details_reference
+            cursor.execute(
+                'SELECT decimals, protocol from ethereum_tokens '
+                'WHERE address=?', (ethereum_address,),
+            )
+            result = query.fetchone()
+            if result is None:
                 log.error(
-                    f'Found token {identifier} in the DB assets table but not '
+                    f'Found token {saved_identifier} in the DB assets table but not '
                     f'in the token details table.',
                 )
                 return None
 
-            if token.missing_basic_data() and form_with_incomplete_data is False:
+            decimals = result[0]
+            protocol = result[1]
+            missing_basic_data = name is None or symbol is None or decimals is None
+            if missing_basic_data and form_with_incomplete_data is False:
                 log.debug(
-                    f'Considering ethereum token with address {address} '
+                    f'Considering ethereum token with address {details_reference} '
                     f'as unknown since its missing either decimals or name or symbol',
                 )
                 return None
-
-            return AssetData(
-                identifier=identifier,
-                name=token.name,  # type: ignore # check from missing_basic_data()
-                symbol=token.symbol,  # type: ignore # check from missing_basic_data()
-                asset_type=asset_type,
-                started=token.started,
-                forked=None,
-                swapped_for=token.swapped_for.identifier if token.swapped_for else None,
-                ethereum_address=token.address,
-                decimals=token.decimals,
-                cryptocompare=token.cryptocompare,
-                coingecko=token.coingecko,
-                protocol=token.protocol,
+        else:
+            cursor = GlobalDBHandler()._conn.cursor()
+            query = cursor.execute(
+                'SELECT forked FROM common_asset_details WHERE asset_id = ?;',
+                (details_reference,),
             )
+            result = query.fetchone()
+            if result is None:
+                log.error(
+                    f'Found asset {saved_identifier} in the DB assets table but not '
+                    f'in the common asset details table.',
+                )
+                return None
+            forked = result[0]
 
-        # else
-        cursor = GlobalDBHandler()._conn.cursor()
-        query = cursor.execute(
-            'SELECT name, symbol, started, forked, swapped_for, coingecko, cryptocompare '
-            'FROM common_asset_details WHERE asset_id = ?;',
-            (details_reference,),
-        )
-        result = query.fetchall()
-        if len(result) == 0:
-            log.error(
-                f'Found asset {identifier} in the DB assets table but not '
-                f'in the common asset details table.',
-            )
-            return None
-
-        result = result[0]
         return AssetData(
-            identifier=identifier,
-            name=result[0],
-            symbol=result[1],
+            identifier=saved_identifier,
+            name=name,
+            symbol=symbol,
             asset_type=asset_type,
-            started=result[2],
-            forked=result[3],
-            swapped_for=result[4],
-            ethereum_address=None,
-            decimals=None,
-            coingecko=result[5],
-            cryptocompare=result[6],
-            protocol=None,
+            started=started,
+            forked=forked,
+            swapped_for=swapped_for,
+            ethereum_address=ethereum_address,
+            decimals=decimals,
+            coingecko=coingecko,
+            cryptocompare=cryptocompare,
+            protocol=protocol,
         )
 
     @staticmethod
@@ -472,11 +418,13 @@ class GlobalDBHandler():
                         'INSERT INTO ethereum_tokens(address) VALUES(?)',
                         (underlying_token.address,),
                     )
-                    asset_id = ETHEREUM_DIRECTIVE + underlying_token.address
+                    asset_id = ethaddress_to_identifier(underlying_token.address)
                     cursor.execute(
-                        'INSERT INTO assets(identifier, type, details_reference) '
-                        'VALUES(?, ?, ?) ',
-                        (asset_id, 'C', underlying_token.address),
+                        """INSERT INTO assets(identifier, type, name, symbol,
+                        started, swapped_for, coingecko, cryptocompare, details_reference)
+                        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (asset_id, 'C', None, None, None,
+                         None, None, None, underlying_token.address),
                     )
                 except sqlite3.IntegrityError as e:
                     connection.rollback()
@@ -526,8 +474,7 @@ class GlobalDBHandler():
         """
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT A.identifier from assets AS A LEFT OUTER JOIN common_asset_details as B '
-            ' ON B.asset_id = A.identifier WHERE A.type=? AND B.name=? AND B.symbol=?;',
+            'SELECT identifier from assets WHERE type=? AND name=? AND symbol=?;',
             (asset_type.serialize_for_db(), name, symbol),
         )
         result = query.fetchall()
@@ -538,10 +485,14 @@ class GlobalDBHandler():
 
     @staticmethod
     def get_ethereum_token(address: ChecksumEthAddress) -> Optional[CustomEthereumTokenWithIdentifier]:  # noqa: E501
+        """Gets all details for an ethereum token by its address
+
+        If no token for the given address can be found None is returned.
+        """
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT A.identifier, B.address, B.decimals, B.name, B.symbol, B.started, '
-            'B.swapped_for, B.coingecko, B.cryptocompare, B.protocol '
+            'SELECT A.identifier, B.address, B.decimals, A.name, A.symbol, A.started, '
+            'A.swapped_for, A.coingecko, A.cryptocompare, B.protocol '
             'FROM ethereum_tokens AS B LEFT OUTER JOIN '
             'assets AS A ON B.address = A.details_reference WHERE address=?;',
             (address,),
@@ -566,14 +517,26 @@ class GlobalDBHandler():
             return None
 
     @staticmethod
-    def get_ethereum_tokens() -> List[CustomEthereumTokenWithIdentifier]:
+    def get_ethereum_tokens(exceptions: Optional[List[ChecksumEthAddress]] = None) -> List[CustomEthereumTokenWithIdentifier]:  # noqa: E501
+        """Gets all ethereum tokens from the DB
+
+        Can also accept a list of addresses to ignore
+        """
         cursor = GlobalDBHandler()._conn.cursor()
-        query = cursor.execute(
-            'SELECT A.identifier, B.address, B.decimals, B.name, B.symbol, B.started, '
-            'B.swapped_for, B.coingecko, B.cryptocompare, B.protocol '
+        querystr = (
+            'SELECT A.identifier, B.address, B.decimals, A.name, A.symbol, A.started, '
+            'A.swapped_for, A.coingecko, A.cryptocompare, B.protocol '
             'FROM ethereum_tokens as B LEFT OUTER JOIN '
-            'assets AS A on B.address = A.details_reference;',
+            'assets AS A on B.address = A.details_reference '
         )
+        if exceptions is not None:
+            questionmarks = '?' * len(exceptions)
+            querystr += f'WHERE B.address NOT IN ({",".join(questionmarks)});'
+            bindings = tuple(exceptions)
+        else:
+            querystr += ';'
+            bindings = ()
+        query = cursor.execute(querystr, bindings)
         tokens = []
         for entry in query:
             underlying_tokens = GlobalDBHandler()._fetch_underlying_tokens(entry[1])
@@ -589,22 +552,19 @@ class GlobalDBHandler():
         return tokens
 
     @staticmethod
-    def add_ethereum_token(entry: CustomEthereumToken) -> None:
-        """Adds a new ethereum token into the global DB
+    def add_ethereum_token_data(entry: CustomEthereumToken) -> None:
+        """Adds ethereum token specific information into the global DB
 
         May raise InputError if the token already exists
-
-        Returns the token's rotki identifier
         """
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
         try:
             cursor.execute(
                 'INSERT INTO '
-                'ethereum_tokens(address, decimals, name, symbol, started, '
-                'swapped_for, coingecko, cryptocompare, protocol) '
-                'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                entry.to_db_tuple(),
+                'ethereum_tokens(address, decimals, protocol) '
+                'VALUES(?, ?, ?)',
+                (entry.address, entry.decimals, entry.protocol),
             )
         except sqlite3.IntegrityError as e:
             exception_msg = str(e)
@@ -629,26 +589,36 @@ class GlobalDBHandler():
     def edit_ethereum_token(
             entry: CustomEthereumToken,
     ) -> str:
-        """Adds a new ethereum token into the global DB
+        """Edits an ethereum token entry in the DB
 
-        May raise InputError if the token already exists or other error
+        May raise InputError if there is an error during updating
 
         Returns the token's rotki identifier
         """
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
-        db_tuple = entry.to_db_tuple()
-        swapped_tuple = (*db_tuple[1:], db_tuple[0])
         try:
             cursor.execute(
-                'UPDATE ethereum_tokens SET decimals=?, name=?, symbol=?, started=?, swapped_for=?, '  # noqa: E501
-                'coingecko=?, cryptocompare=?, protocol=? WHERE address = ?',
-                swapped_tuple,
+                'UPDATE assets SET name=?, symbol=?, started=?, swapped_for=?, '
+                'coingecko=?, cryptocompare=? WHERE identifier=?;',
+                (
+                    entry.name,
+                    entry.symbol,
+                    entry.started,
+                    entry.swapped_for.identifier if entry.swapped_for else None,
+                    entry.coingecko,
+                    entry.cryptocompare,
+                    ethaddress_to_identifier(entry.address),
+                ),
+            )
+            cursor.execute(
+                'UPDATE ethereum_tokens SET decimals=?, protocol=? WHERE address = ?',
+                (entry.decimals, entry.protocol, entry.address),
             )
         except sqlite3.IntegrityError as e:
             raise InputError(
                 f'Failed to update DB entry for ethereum token with address {entry.address} '
-                f'due to a consraint being hit. Make sure the new values are valid ',
+                f'due to a constraint being hit. Make sure the new values are valid ',
             ) from e
 
         if cursor.rowcount != 1:
@@ -769,26 +739,25 @@ class GlobalDBHandler():
         forked = forked_asset.identifier if forked_asset else None
         swapped_for_asset = data.get('swapped_for', None)
         swapped_for = swapped_for_asset.identifier if swapped_for_asset else None
-        entry_tuple = (
-            data['name'],
-            data['symbol'],
-            data.get('started', None),
-            forked,
-            swapped_for,
-            data.get('coingecko', None),
-            data.get('cryptocompare', None),
-            identifier,
-        )
         try:
             cursor.execute(
-                'UPDATE common_asset_details SET name=?, symbol=?, started=?, forked=?, '
-                'swapped_for=?, coingecko=?, cryptocompare=? WHERE asset_id = ?',
-                entry_tuple,
+                'UPDATE assets SET type=?, name=?, symbol=?, started=?, swapped_for=?, '
+                'coingecko=?, cryptocompare=? WHERE identifier = ?',
+                (
+                    data['asset_type'].serialize_for_db(),
+                    data.get('name'),
+                    data.get('symbol'),
+                    data.get('started'),
+                    swapped_for,
+                    data.get('coingecko'),
+                    data.get('cryptocompare'),
+                    identifier,
+                ),
             )
         except sqlite3.IntegrityError as e:
             raise InputError(
                 f'Failed to update DB entry for asset with identifier {identifier} '
-                f'due to a consraint being hit. Make sure the new values are valid ',
+                f'due to a constraint being hit. Make sure the new values are valid ',
             ) from e
 
         if cursor.rowcount != 1:
@@ -796,16 +765,16 @@ class GlobalDBHandler():
                 f'Tried to edit non existing asset with identifier {identifier}',
             )
 
-        # Finally edit the main asset table's type
+        # Edit the common asset details
         try:
             cursor.execute(
-                'UPDATE assets SET type=? WHERE identifier=?',
-                (data['asset_type'].serialize_for_db(), identifier),
+                'UPDATE common_asset_details SET forked=? WHERE asset_id=?',
+                (forked, identifier),
             )
         except sqlite3.IntegrityError as e:
             connection.rollback()
             raise InputError(
-                f'Failure at editing custom asset {identifier} type',
+                f'Failure at editing custom asset {identifier} common asset details',
             ) from e
 
         connection.commit()
@@ -816,7 +785,7 @@ class GlobalDBHandler():
 
         The data should already be typed (as given in by marshmallow).
 
-        May raise InputError if the token already exists
+        May raise InputError if the asset already exists
 
         Does not commit to the DB. Commit must be called from the caller.
         """
@@ -826,28 +795,14 @@ class GlobalDBHandler():
         asset_id = data['identifier']
         forked_asset = data.get('forked', None)
         forked = forked_asset.identifier if forked_asset else None
-        swapped_for_asset = data.get('swapped_for', None)
-        swapped_for = swapped_for_asset.identifier if swapped_for_asset else None
-        entry_tuple = (
-            asset_id,
-            data['name'],
-            data['symbol'],
-            data.get('started', None),
-            forked,
-            swapped_for,
-            data.get('coingecko', None),
-            data.get('cryptocompare', None),
-        )
         try:
             cursor.execute(
-                'INSERT INTO common_asset_details('
-                'asset_id, name, symbol, started, forked, '
-                'swapped_for, coingecko, cryptocompare) '
-                'VALUES(?, ?, ?, ?, ?, ?, ?, ?)',
-                entry_tuple,
+                'INSERT INTO common_asset_details(asset_id, forked)'
+                'VALUES(?, ?)',
+                (asset_id, forked),
             )
         except sqlite3.IntegrityError as e:
-            raise InputError(  # should not really happen
+            raise InputError(  # should not really happen, marshmallow should check forked for
                 f'Adding common asset details for {asset_id} failed',
             ) from e
 
@@ -855,7 +810,7 @@ class GlobalDBHandler():
     def delete_custom_asset(identifier: str) -> None:
         """Deletes an asset (non-ethereum token) from the global DB
 
-        May raise InputError if the assets does not exist in the DB or
+        May raise InputError if the asset does not exist in the DB or
         some other constraint is hit. Such as for example trying to delete
         an asset that is in another asset's forked or swapped attribute
         """
@@ -920,19 +875,20 @@ class GlobalDBHandler():
         """Find all asset entries that have the given symbol"""
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
-        query_tuples: Union[Tuple[str, str], Tuple[str, str, str, str]]
+        query_tuples: Union[Tuple[str, str, str, str], Tuple[str, str, str, str, str]]
+        eth_token_type = AssetType.ETHEREUM_TOKEN.serialize_for_db()    # pylint: disable=no-member
         if asset_type is not None:
             asset_type_check = ' AND A.type=?'
-            query_tuples = (symbol, asset_type.serialize_for_db(), symbol, asset_type.serialize_for_db())  # noqa: E501
+            query_tuples = (symbol, eth_token_type, symbol, eth_token_type, asset_type.serialize_for_db())  # noqa: E501
         else:
             asset_type_check = ''
-            query_tuples = (symbol, symbol)
+            query_tuples = (symbol, eth_token_type, symbol, eth_token_type)
         querystr = f"""
-        SELECT A.identifier, A.type, B.address, B.decimals, B.name, B.symbol, B.started, null, B.swapped_for, B.coingecko, B.cryptocompare, B.protocol from assets as A LEFT OUTER JOIN ethereum_tokens as B
-        ON B.address = A.details_reference WHERE B.symbol=? COLLATE NOCASE{asset_type_check}
+        SELECT A.identifier, A.type, B.address, B.decimals, A.name, A.symbol, A.started, null, A.swapped_for, A.coingecko, A.cryptocompare, B.protocol from assets as A LEFT OUTER JOIN ethereum_tokens as B
+        ON B.address = A.details_reference WHERE A.symbol=? COLLATE NOCASE AND A.type=?
         UNION ALL
-        SELECT A.identifier, A.type, null, null, B.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null from assets as A LEFT OUTER JOIN common_asset_details as B
-        ON B.asset_id = A.identifier WHERE B.symbol=? COLLATE NOCASE{asset_type_check};
+        SELECT A.identifier, A.type, null, null, A.name, A.symbol, A.started, B.forked, A.swapped_for, A.coingecko, A.cryptocompare, null from assets as A LEFT OUTER JOIN common_asset_details as B
+        ON B.asset_id = A.identifier WHERE A.symbol=? COLLATE NOCASE AND A.type!=?{asset_type_check};
         """  # noqa: E501
         query = cursor.execute(querystr, query_tuples)
         assets = []
@@ -959,3 +915,136 @@ class GlobalDBHandler():
             ))
 
         return assets
+
+    @staticmethod
+    def get_historical_price(
+            from_asset: 'Asset',
+            to_asset: 'Asset',
+            timestamp: Timestamp,
+            max_seconds_distance: int,
+            source: Optional[HistoricalPriceOracle] = None,
+    ) -> Optional['HistoricalPrice']:
+        """Gets the price around a particular timestamp
+
+        If no price can be found returns None
+        """
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        querystr = (
+            'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history '
+            'WHERE from_asset=? AND to_asset=? AND ABS(timestamp - ?) <= ? '
+        )
+        querylist = [from_asset.identifier, to_asset.identifier, timestamp, max_seconds_distance]
+        if source is not None:
+            querystr += ' AND source_type=?'
+            querylist.append(source.serialize_for_db())
+
+        querystr += 'ORDER BY ABS(timestamp - ?) ASC LIMIT 1'
+        querylist.append(timestamp)
+
+        query = cursor.execute(querystr, tuple(querylist))
+        result = query.fetchone()
+        if result is None:
+            return None
+
+        return HistoricalPrice.deserialize_from_db(result)
+
+    @staticmethod
+    def add_historical_prices(entries: List['HistoricalPrice']) -> None:
+        """Adds the given historical price entries in the DB
+
+        If any addition causes a DB error it's skipped and an error is logged
+        """
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        try:
+            cursor.executemany(
+                """INSERT OR IGNORE INTO price_history(
+                from_asset, to_asset, source_type, timestamp, price
+                ) VALUES (?, ?, ?, ?, ?)
+                """, [x.serialize_for_db() for x in entries],
+            )
+        except sqlite3.IntegrityError as e:
+            connection.rollback()  # roll back any of the executemany that may have gone in
+            log.error(
+                f'One of the given historical price entries caused a DB error. {str(e)}. '
+                f'Will attempt to input them one by one',
+            )
+            for entry in entries:
+                try:
+                    cursor.execute(
+                        """INSERT OR IGNORE INTO price_history(
+                        from_asset, to_asset, source_type, timestamp, price
+                        ) VALUES (?, ?, ?, ?, ?)
+                        """, entry.serialize_for_db(),
+                    )
+                except sqlite3.IntegrityError as e:
+                    log.error(
+                        f'Failed to add {str(entry)} due to {str(e)}. Skipping entry addition',
+                    )
+
+        connection.commit()
+
+    @staticmethod
+    def delete_historical_prices(
+            from_asset: 'Asset',
+            to_asset: 'Asset',
+            source: Optional[HistoricalPriceOracle] = None,
+    ) -> None:
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        querystr = 'DELETE FROM price_history WHERE from_asset=? AND to_asset=?'
+        query_list = [from_asset.identifier, to_asset.identifier]
+        if source is not None:
+            querystr += ' AND source_type=?'
+            query_list.append(source.serialize_for_db())
+
+        try:
+            cursor.execute(querystr, tuple(query_list))
+        except sqlite3.IntegrityError as e:
+            connection.rollback()
+            log.error(
+                f'Failed to delete historical prices from {from_asset} to {to_asset} '
+                f'and source: {str(source)} due to {str(e)}',
+            )
+
+        connection.commit()
+
+    @staticmethod
+    def get_historical_price_range(
+            from_asset: 'Asset',
+            to_asset: 'Asset',
+            source: Optional[HistoricalPriceOracle] = None,
+    ) -> Optional[Tuple[Timestamp, Timestamp]]:
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        querystr = 'SELECT MIN(timestamp), MAX(timestamp) FROM price_history WHERE from_asset=? AND to_asset=?'  # noqa: E501
+        query_list = [from_asset.identifier, to_asset.identifier]
+        if source is not None:
+            querystr += ' AND source_type=?'
+            query_list.append(source.serialize_for_db())
+
+        query = cursor.execute(querystr, tuple(query_list))
+        result = query.fetchone()
+        if result is None or None in (result[0], result[1]):
+            return None
+        return result[0], result[1]
+
+    @staticmethod
+    def get_historical_price_data(source: HistoricalPriceOracle) -> List[Dict[str, Any]]:
+        """Return a list of assets and first/last ts
+
+        Only used by the API so just returning it as List of dicts from here"""
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        query = cursor.execute(
+            'SELECT from_asset, to_asset, MIN(timestamp), MAX(timestamp) FROM '
+            'price_history WHERE source_type=? GROUP BY from_asset, to_asset',
+            (source.serialize_for_db(),),
+        )
+        return [
+            {'from_asset': entry[0],
+             'to_asset': entry[1],
+             'from_timestamp': entry[2],
+             'to_timestamp': entry[3],
+             } for entry in query]

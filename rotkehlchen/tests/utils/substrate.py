@@ -40,7 +40,12 @@ SUBSTRATE_ACC5_PUBLIC_KEY = '0x1e24a0ae488fe10725b59887a63d5a7f82cf9f43401363a81
 SUBSTRATE_ACC5_DOT_ADDR = '1gXKQA8JDTjetR759QGGXX98siY4AvaCdp35bswUiuGormc'
 SUBSTRATE_ACC5_KSM_ADDR = 'DFqqPEw4oDBy1E2tDAK2L3zRr18AYBcaWvJJyAYQS6FNFzG'
 
-KUSAMA_TEST_NODES = (KusamaNodeName.PARITY, )
+# Use 2 nodes for tests
+KUSAMA_TEST_NODES = (
+    KusamaNodeName.PARITY,
+    KusamaNodeName.ONFINALITY,
+)
+
 KUSAMA_SS58_FORMAT = 2
 KUSAMA_TOKEN = A_KSM
 KUSAMA_TOKEN_DECIMALS = FVal(12)
@@ -63,6 +68,7 @@ def attempt_connect_test_nodes(
             node_interface = SubstrateInterface(
                 url=node.endpoint(),
                 type_registry_preset=si_attributes.type_registry_preset,
+                use_remote_preset=True,
             )
         except (requests.exceptions.RequestException, SubstrateRequestException) as e:
             message = (

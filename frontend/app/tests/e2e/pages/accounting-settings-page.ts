@@ -63,6 +63,7 @@ export class AccountingSettingsPage {
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {
+    cy.get(`${target} .v-messages__message`).should('be.visible');
     cy.get(`${target} .v-messages__message`).should(
       'include.text',
       'Setting saved'
@@ -77,6 +78,7 @@ export class AccountingSettingsPage {
   }
 
   confirmInlineFailure(target: string, messageContains?: string) {
+    cy.get(`${target} .v-messages__message`).should('be.visible');
     cy.get(`${target} .v-messages__message`).should(
       'include.text',
       'Setting not saved'

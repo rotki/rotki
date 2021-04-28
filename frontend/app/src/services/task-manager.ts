@@ -52,7 +52,7 @@ class TaskManager {
     const locked = this.locked();
     const tasks = this.tasks();
     return taskIds.filter(
-      id => !locked.includes(id) || !tasks[id] || tasks[id].id === null
+      id => !locked.includes(id) && tasks[id] && tasks[id].id !== null
     );
   }
 

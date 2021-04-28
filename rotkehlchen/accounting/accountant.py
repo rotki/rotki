@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 import gevent
 
 from rotkehlchen.accounting.events import TaxableEvents
-from rotkehlchen.accounting.structures import ActionType, DefiEvent, LedgerAction
+from rotkehlchen.accounting.ledger_actions import LedgerAction
+from rotkehlchen.accounting.structures import ActionType, DefiEvent
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -28,8 +29,7 @@ from rotkehlchen.exchanges.data_structures import (
     TradeType,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.history import PriceHistorian
-from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import EthereumTransaction, Fee, Timestamp
@@ -98,7 +98,9 @@ class Accountant():
         if settings.include_crypto2crypto is not None:
             self.events.include_crypto2crypto = settings.include_crypto2crypto
 
-        if settings.taxfree_after_period is not None:
+        if settings.taxfree_after_period is None:
+            self.events.taxfree_after_period = None
+        else:
             given_taxfree_after_period: Optional[int] = settings.taxfree_after_period
             if given_taxfree_after_period == -1:
                 # That means user requested to disable taxfree_after_period
@@ -124,6 +126,9 @@ class Accountant():
         - RemoteError if there is a problem reaching the price oracle server
         or with reading the response returned by the server
         """
+        if trade.fee_currency is None or trade.fee is None:
+            return Fee(ZERO)
+
         fee_rate = PriceHistorian().query_historical_price(
             from_asset=trade.fee_currency,
             to_asset=self.profit_currency,
@@ -407,8 +412,6 @@ class Accountant():
                 )
                 break
 
-        Inquirer().save_historical_forex_data()
-
         sum_other_actions = (
             self.events.margin_positions_profit_loss +
             self.events.defi_profit_loss +
@@ -541,13 +544,13 @@ class Accountant():
             )
             return True, prev_time
 
-        if any(isinstance(x, UnknownEthereumToken) for x in action_assets):
-            log.debug(
-                'Ignoring action with unknown token',
-                action_type=action_type,
-                assets=[x.identifier for x in action_assets],
-            )
-            return True, prev_time
+        for x in action_assets:
+            if isinstance(x, UnknownEthereumToken):
+                self.msg_aggregator.add_error(
+                    f'Ignoring action {action_type} with unknown token asset {x}. '
+                    f'Add it as a token in rotki manually with a working price oracle to fix this',
+                )
+                return True, prev_time
 
         if any(x in ignored_assets for x in action_assets):
             log.debug(
@@ -625,7 +628,6 @@ class Accountant():
                 paid_with_asset=trade.quote_asset,
                 trade_rate=trade.rate,
                 fee_in_profit_currency=self.get_fee_in_profit_currency(trade),
-                fee_currency=trade.fee_currency,
                 timestamp=trade.timestamp,
             )
         elif trade.trade_type == TradeType.SELL:

@@ -3,14 +3,18 @@
     <v-tooltip v-if="showTooltips" right>
       <template #activator="{ on }">
         <v-list-item-icon v-on="on">
-          <crypto-icon v-if="!!cryptoIcon" :symbol="cryptoIcon" size="24px" />
+          <asset-icon
+            v-if="!!cryptoIcon"
+            :identifier="identifier"
+            size="24px"
+          />
           <v-icon v-else>{{ icon }}</v-icon>
         </v-list-item-icon>
       </template>
       <span>{{ text }}</span>
     </v-tooltip>
     <v-list-item-icon v-else>
-      <crypto-icon v-if="!!cryptoIcon" :symbol="cryptoIcon" size="24px" />
+      <asset-icon v-if="!!cryptoIcon" :identifier="identifier" size="24px" />
       <v-icon v-else>{{ icon }}</v-icon>
     </v-list-item-icon>
     <v-list-item-content class="d-flex flex-grow-1">
@@ -21,8 +25,14 @@
 
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator';
+import { mapGetters } from 'vuex';
+import { IdentifierForSymbolGetter } from '@/store/balances/types';
 
-@Component({})
+@Component({
+  computed: {
+    ...mapGetters('balances', ['getIdentifierForSymbol'])
+  }
+})
 export default class NavigationMenuItem extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
   showTooltips!: boolean;
@@ -32,6 +42,12 @@ export default class NavigationMenuItem extends Vue {
   cryptoIcon!: string;
   @Prop({ required: true, type: String })
   text!: string;
+
+  getIdentifierForSymbol!: IdentifierForSymbolGetter;
+
+  get identifier(): string {
+    return this.getIdentifierForSymbol(this.cryptoIcon) ?? this.cryptoIcon;
+  }
 }
 </script>
 

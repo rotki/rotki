@@ -192,12 +192,12 @@
     <v-row class="mt-4">
       <v-col cols="auto">
         <v-sheet outlined rounded class="asset-form__icon">
-          <crypto-icon
+          <asset-icon
             v-if="preview"
-            :symbol="preview"
+            :identifier="preview"
+            :symbol="symbol"
             size="72px"
             changeable
-            @status-change="forceSymbol = $event"
           />
         </v-sheet>
       </v-col>
@@ -279,7 +279,6 @@ export default class AssetForm extends Vue {
   icon: File | null = null;
 
   errors: { [key: string]: string[] } = {};
-  forceSymbol = false;
 
   @Prop({ required: true, type: Boolean })
   value!: boolean;
@@ -318,9 +317,6 @@ export default class AssetForm extends Vue {
   }
 
   get preview(): string | null {
-    if (this.forceSymbol) {
-      return this.symbol ?? null;
-    }
     return this.identifier ?? this.symbol ?? null;
   }
 

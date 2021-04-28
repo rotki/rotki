@@ -11,7 +11,8 @@ from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.structures import ActionType, LedgerAction, LedgerActionType
+from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
@@ -19,6 +20,7 @@ from rotkehlchen.api.v1.encoding import (
     AssetIconUploadSchema,
     AssetSchema,
     AssetSchemaWithIdentifier,
+    AssetUpdatesRequestSchema,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
@@ -82,6 +84,7 @@ from rotkehlchen.api.v1.encoding import (
 )
 from rotkehlchen.api.v1.parser import resource_parser
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -90,7 +93,6 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetType,
     BlockchainAccountData,
     ChecksumEthAddress,
     ExternalService,
@@ -396,6 +398,25 @@ class EthereumAssetsResource(BaseResource):
         return self.rest_api.delete_custom_ethereum_token(address)
 
 
+class AssetUpdatesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+    post_schema = AssetUpdatesRequestSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_assets_updates(async_query)
+
+    @use_kwargs(post_schema, location='json')  # type: ignore
+    def post(
+            self,
+            async_query: bool,
+            up_to_version: Optional[int],
+            conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
+    ) -> Response:
+        return self.rest_api.perform_assets_updates(async_query, up_to_version, conflicts)
+
+
 class BlockchainBalancesResource(BaseResource):
 
     get_schema = BlockchainBalanceQuerySchema()
@@ -474,10 +495,10 @@ class TradesResource(BaseResource):
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
-            fee: Fee,
-            fee_currency: Asset,
-            link: str,
-            notes: str,
+            fee: Optional[Fee],
+            fee_currency: Optional[Asset],
+            link: Optional[str],
+            notes: Optional[str],
     ) -> Response:
         return self.rest_api.add_trade(
             timestamp=timestamp,
@@ -504,10 +525,10 @@ class TradesResource(BaseResource):
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
-            fee: Fee,
-            fee_currency: Asset,
-            link: str,
-            notes: str,
+            fee: Optional[Fee],
+            fee_currency: Optional[Asset],
+            link: Optional[str],
+            notes: Optional[str],
     ) -> Response:
         return self.rest_api.edit_trade(
             trade_id=trade_id,
@@ -625,18 +646,24 @@ class LedgerActionsResource(BaseResource):
             location: Location,
             amount: AssetAmount,
             asset: Asset,
-            link: str,
-            notes: str,
+            rate: Optional[Price],
+            rate_asset: Optional[Asset],
+            link: Optional[str],
+            notes: Optional[str],
     ) -> Response:
-        return self.rest_api.add_ledger_action(
+        action = LedgerAction(
+            identifier=0,  # whatever -- is not used at insertion
             timestamp=timestamp,
             action_type=action_type,
             location=location,
             amount=amount,
             asset=asset,
+            rate=rate,
+            rate_asset=rate_asset,
             link=link,
             notes=notes,
         )
+        return self.rest_api.add_ledger_action(action)
 
     @use_kwargs(patch_schema, location='json')  # type: ignore
     def patch(self, action: LedgerAction) -> Response:

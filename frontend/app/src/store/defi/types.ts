@@ -6,8 +6,7 @@ import {
   EventType,
   MakerDAOVaultEventType,
   SupportedDefiProtocols,
-  TokenDetails,
-  UnknownToken
+  TokenDetails
 } from '@/services/defi/types';
 import {
   AaveBalances,
@@ -224,6 +223,7 @@ export interface DefiLendingHistory<T extends SupportedDefiProtocols> {
   protocol: T;
   address: string;
   asset: string;
+  atoken?: string;
   value: Balance;
   extras: LendingHistoryExtras[T];
   blockNumber: number;
@@ -315,9 +315,8 @@ export interface DexTrade {
   readonly amount: BigNumber;
   readonly baseAsset: TokenDetails;
   readonly fee: BigNumber;
-  readonly feeCurrency: string;
+  readonly feeCurrency: TokenDetails;
   readonly location: 'uniswap' | 'balancer';
-  readonly pair: string;
   readonly quoteAsset: TokenDetails;
   readonly rate: BigNumber;
   readonly swaps: DexSwap[];
@@ -393,7 +392,7 @@ export interface BalancerBalances {
 }
 
 interface PoolToken {
-  readonly token: UnknownToken | string;
+  readonly token: TokenDetails;
   readonly weight: string;
 }
 
@@ -430,6 +429,7 @@ export interface BalancerEvents {
 
 export interface BalancerProfitLoss {
   readonly pool: Pool;
+  readonly tokens: string[];
   readonly usdProfitLoss: BigNumber;
   readonly profitLossAmount: PoolAmounts;
 }

@@ -3,9 +3,9 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetType
 
 
 @pytest.fixture(name='mock_asset_meta_github_response')

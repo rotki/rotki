@@ -157,10 +157,6 @@ describe('Settings', () => {
           '.accounting-settings__asset-to-ignore',
           '1SG'
         );
-        pageAccounting.confirmInlineFailure(
-          '.accounting-settings__asset-to-ignore',
-          '1SG'
-        );
       });
       it('remove an ignored asset, validate UI message, and confirm count is 2', () => {
         pageAccounting.remIgnoredAsset('1SG');
@@ -184,6 +180,8 @@ describe('Settings', () => {
   describe('Verify settings persist after re-login', () => {
     it('Log in with new password', () => {
       app.logout();
+      // If we don't visit the logout doesn't persist the skip_update parameter
+      app.visit();
       app.login(username, newPassword);
       app.closePremiumOverlay();
     });

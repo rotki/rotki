@@ -1,11 +1,19 @@
 ﻿<template>
-  <v-form :value="value" data-cy="trade-form" @input="input">
+  <v-form
+    :value="value"
+    data-cy="trade-form"
+    class="external-trade-form"
+    @input="input"
+  >
     <v-row>
       <v-col>
         <v-row>
           <v-col cols="12" sm="3">
             <date-time-picker
               v-model="datetime"
+              required
+              outlined
+              class="pt-1"
               seconds
               data-cy="date"
               :label="$t('external_trade_form.date.label')"
@@ -17,6 +25,7 @@
             <div data-cy="type">
               <v-radio-group
                 v-model="type"
+                required
                 :label="$t('external_trade_form.trade_type.label')"
               >
                 <v-radio
@@ -33,38 +42,43 @@
           <v-col cols="12" sm="9" class="d-flex flex-column">
             <v-row>
               <v-col cols="12" md="6" class="d-flex flex-row align-center">
-                <div
-                  class="text--secondary pa-3 external-trade-form__action-hint"
-                >
+                <div class="text--secondary external-trade-form__action-hint">
                   {{ baseHint }}
                 </div>
                 <asset-select
                   v-model="base"
+                  outlined
+                  required
                   data-cy="base_asset"
+                  :rules="baseRules"
                   :hint="$t('external_trade_form.base_asset.hint')"
                   :label="$t('external_trade_form.base_asset.label')"
-                  :error-messages="errorMessages['pair']"
-                  @focus="delete errorMessages['pair']"
+                  :error-messages="errorMessages['baseAsset']"
+                  @focus="delete errorMessages['baseAsset']"
                 />
               </v-col>
               <v-col cols="12" md="6" class="d-flex flex-row align-center">
-                <div
-                  class="text--secondary pa-3 external-trade-form__action-hint"
-                >
+                <div class="text--secondary external-trade-form__action-hint">
                   {{ quoteHint }}
                 </div>
                 <asset-select
                   v-model="quote"
+                  required
+                  outlined
                   data-cy="quote_asset"
+                  :rules="quoteRules"
                   :hint="$t('external_trade_form.quote_asset.hint')"
                   :label="$t('external_trade_form.quote_asset.label')"
-                  :error-messages="errorMessages['pair']"
-                  @focus="delete errorMessages['pair']"
+                  :error-messages="errorMessages['quoteAsset']"
+                  @focus="delete errorMessages['quoteAsset']"
                 />
               </v-col>
             </v-row>
             <v-text-field
               v-model="amount"
+              required
+              outlined
+              :rules="amountRules"
               data-cy="amount"
               :label="$t('external_trade_form.amount.label')"
               persistent-hint
@@ -74,6 +88,8 @@
             />
             <v-text-field
               v-model="rate"
+              :rules="rateRules"
+              outlined
               data-cy="rate"
               :loading="fetching"
               :label="$t('external_trade_form.rate.label')"
@@ -82,8 +98,17 @@
               :error-messages="errorMessages['rate']"
               @focus="delete errorMessages['rate']"
             />
+          </v-col>
+        </v-row>
+
+        <v-divider class="mb-6 mt-2" />
+
+        <v-row>
+          <v-col cols="12" md="6">
             <v-text-field
               v-model="fee"
+              class="external-trade-form__fee"
+              outlined
               data-cy="fee"
               :label="$t('external_trade_form.fee.label')"
               persistent-hint
@@ -91,11 +116,15 @@
               :error-messages="errorMessages['fee']"
               @focus="delete errorMessages['fee']"
             />
+          </v-col>
+          <v-col cols="12" md="6">
             <asset-select
               v-model="feeCurrency"
+              outlined
+              persistent-hint
               :label="$t('external_trade_form.fee_currency.label')"
+              :hint="$t('external_trade_form.fee_currency.hint')"
               data-cy="fee-currency"
-              :rules="assetRules"
               :error-messages="errorMessages['feeCurrency']"
               @focus="delete errorMessages['feeCurrency']"
             />
@@ -104,6 +133,7 @@
         <v-text-field
           v-model="link"
           data-cy="link"
+          outlined
           prepend-inner-icon="mdi-link"
           :label="$t('external_trade_form.link.label')"
           persistent-hint
@@ -113,6 +143,7 @@
         />
         <v-textarea
           v-model="notes"
+          prepend-inner-icon="mdi-text-box-outline"
           outlined
           data-cy="notes"
           class="mt-4"
@@ -141,6 +172,7 @@ import { NewTrade, Trade, TradeType } from '@/services/history/types';
 import { HistoricPricePayload } from '@/store/balances/types';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
+import { assert } from '@/utils/assertions';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
 @Component({
@@ -174,9 +206,21 @@ export default class ExternalTradeForm extends Vue {
   fetchHistoricPrice!: (payload: HistoricPricePayload) => Promise<BigNumber>;
 
   private static format = 'DD/MM/YYYY HH:mm:ss';
-  readonly assetRules = [
+  readonly baseRules = [
     (v: string) =>
-      !!v || this.$t('external_trade_form.validation.non_empty_fee')
+      !!v || this.$t('external_trade_form.validation.non_empty_base')
+  ];
+  readonly quoteRules = [
+    (v: string) =>
+      !!v || this.$t('external_trade_form.validation.non_empty_quote')
+  ];
+  readonly amountRules = [
+    (v: string) =>
+      !!v || this.$t('external_trade_form.validation.non_empty_amount')
+  ];
+  readonly rateRules = [
+    (v: string) =>
+      !!v || this.$t('external_trade_form.validation.non_empty_rate')
   ];
 
   base: string = '';
@@ -208,21 +252,6 @@ export default class ExternalTradeForm extends Vue {
 
   get fetching(): boolean {
     return this.isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
-  }
-
-  get pair(): string {
-    return `${this.base}_${this.quote}`;
-  }
-
-  set pair(pair: string) {
-    if (pair.includes('_')) {
-      const [base, quote] = pair.split('_');
-      this.base = base;
-      this.quote = quote;
-    } else {
-      this.base = '';
-      this.quote = '';
-    }
   }
 
   mounted() {
@@ -287,23 +316,29 @@ export default class ExternalTradeForm extends Vue {
     }
 
     const trade: Trade = this.edit;
-    this.pair = trade.pair;
+    assert(typeof trade.baseAsset === 'string');
+    assert(typeof trade.quoteAsset === 'string');
+
+    this.base = trade.baseAsset;
+    this.quote = trade.quoteAsset;
     this.datetime = moment(trade.timestamp * 1000).format(
       ExternalTradeForm.format
     );
     this.amount = trade.amount.toString();
     this.rate = trade.rate.toString();
-    this.fee = trade.fee.toString();
-    this.feeCurrency = trade.feeCurrency;
-    this.link = trade.link;
-    this.notes = trade.notes;
+    this.fee = trade.fee?.toString() ?? '';
+    this.feeCurrency =
+      trade.feeCurrency && typeof trade.feeCurrency === 'string'
+        ? trade.feeCurrency
+        : '';
+    this.link = trade.link ?? '';
+    this.notes = trade.notes ?? '';
     this.type = trade.tradeType;
     this.id = trade.tradeId;
   }
 
   reset() {
     this.id = '';
-    this.pair = '';
     this.datetime = moment().format(ExternalTradeForm.format);
     this.amount = '';
     this.rate = '';
@@ -322,11 +357,12 @@ export default class ExternalTradeForm extends Vue {
 
     const tradePayload: Writeable<NewTrade> = {
       amount: amount.isNaN() ? Zero : amount,
-      fee: fee.isNaN() ? Zero : fee,
-      feeCurrency: this.feeCurrency,
-      link: this.link,
-      notes: this.notes,
-      pair: this.pair,
+      fee: fee.isNaN() ? undefined : fee,
+      feeCurrency: this.feeCurrency ? this.feeCurrency : undefined,
+      link: this.link ? this.link : undefined,
+      notes: this.notes ? this.notes : undefined,
+      baseAsset: this.base,
+      quoteAsset: this.quote,
       rate: rate.isNaN() ? Zero : rate,
       location: 'external',
       timestamp: moment(this.datetime, ExternalTradeForm.format).unix(),
@@ -358,6 +394,22 @@ export default class ExternalTradeForm extends Vue {
 .external-trade-form {
   &__action-hint {
     width: 60px;
+    margin-top: -24px;
+  }
+
+  ::v-deep {
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators,rule-empty-line-before */
+    .v-select.v-text-field--outlined:not(.v-text-field--single-line) {
+      .v-select__selections {
+        padding: 0 !important;
+      }
+    }
+
+    /* stylelint-enable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators,rule-empty-line-before */
+  }
+
+  &__fee {
+    height: 60px;
   }
 }
 </style>

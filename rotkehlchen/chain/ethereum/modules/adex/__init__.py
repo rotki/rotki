@@ -2,7 +2,6 @@ from .adex import Adex  # noqa: F401
 from .typing import (  # noqa: F401
     AdexEventDBTuple,
     AdexEventType,
-    ADXStakingBalance,
     ADXStakingHistory,
     Bond,
     ChannelWithdraw,
@@ -16,7 +15,6 @@ __all__ = [
     'Adex',
     'AdexEventDBTuple',
     'AdexEventType',
-    'ADXStakingBalance',
     'ADXStakingHistory',
     'Bond',
     'ChannelWithdraw',

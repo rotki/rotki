@@ -28,15 +28,12 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
-from rotkehlchen.accounting.structures import (
-    ActionType,
-    BalanceType,
-    LedgerAction,
-    LedgerActionType,
-)
+from rotkehlchen.accounting.ledger_actions import LedgerAction
+from rotkehlchen.accounting.structures import ActionType, BalanceType
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
     add_manually_tracked_balances,
@@ -77,7 +74,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -88,7 +85,6 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetType,
     BlockchainAccountData,
     ChecksumEthAddress,
     EthereumTransaction,
@@ -339,9 +335,16 @@ class RestAPI():
                         result = function_response['result']
                         # The message of the original request
                         message = function_response['message']
+                        status_code = function_response.get('status_code')
                         ret = {'result': result, 'message': message}
+                        returned_task_result = {
+                            'status': 'completed',
+                            'outcome': process_result(ret),
+                        }
+                        if status_code:
+                            returned_task_result['status_code'] = status_code
                         result_dict = {
-                            'result': {'status': 'completed', 'outcome': process_result(ret)},
+                            'result': returned_task_result,
                             'message': '',
                         }
                         # Also remove the greenlet from the api tasks
@@ -709,10 +712,10 @@ class RestAPI():
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
-            fee: Fee,
-            fee_currency: Asset,
-            link: str,
-            notes: str,
+            fee: Optional[Fee],
+            fee_currency: Optional[Asset],
+            link: Optional[str],
+            notes: Optional[str],
     ) -> Response:
         trade = Trade(
             timestamp=timestamp,
@@ -745,10 +748,10 @@ class RestAPI():
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
-            fee: Fee,
-            fee_currency: Asset,
-            link: str,
-            notes: str,
+            fee: Optional[Fee],
+            fee_currency: Optional[Asset],
+            link: Optional[str],
+            notes: Optional[str],
     ) -> Response:
         trade = Trade(
             timestamp=timestamp,
@@ -905,26 +908,9 @@ class RestAPI():
         return api_response(process_result(result_dict), status_code=status_code)
 
     @require_loggedin_user()
-    def add_ledger_action(
-            self,
-            timestamp: Timestamp,
-            action_type: LedgerActionType,
-            location: Location,
-            amount: AssetAmount,
-            asset: Asset,
-            link: str,
-            notes: str,
-    ) -> Response:
+    def add_ledger_action(self, action: LedgerAction) -> Response:
         db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
-        identifier = db.add_ledger_action(
-            timestamp=timestamp,
-            action_type=action_type,
-            location=location,
-            amount=amount,
-            asset=asset,
-            link=link,
-            notes=notes,
-        )
+        identifier = db.add_ledger_action(action)
         result_dict = _wrap_in_ok_result({'identifier': identifier})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
@@ -2345,7 +2331,7 @@ class RestAPI():
         return self._api_query_for_eth_module(
             async_query=async_query,
             module_name='adex',
-            method='get_balances',
+            method='get_balances_dont_break_frontend',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('adex'),
         )
@@ -2784,22 +2770,22 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
-    @require_loggedin_user()
+    @staticmethod
     def delete_oracle_cache(
-            self,
             oracle: HistoricalPriceOracle,
             from_asset: Asset,
             to_asset: Asset,
     ) -> Response:
-        self.rotkehlchen.delete_oracle_cache(
-            oracle=oracle,
+        GlobalDBHandler.delete_historical_prices(
             from_asset=from_asset,
             to_asset=to_asset,
+            source=oracle,
         )
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
-    def _get_oracle_cache(self, oracle: HistoricalPriceOracle) -> Dict[str, Any]:
-        cache_data = self.rotkehlchen.get_oracle_cache(oracle)
+    @staticmethod
+    def _get_oracle_cache(oracle: HistoricalPriceOracle) -> Dict[str, Any]:
+        cache_data = GlobalDBHandler().get_historical_price_data(oracle)
         result = _wrap_in_ok_result(cache_data)
         result['status_code'] = HTTPStatus.OK
         return result
@@ -2820,7 +2806,8 @@ class RestAPI():
     @staticmethod
     def get_supported_oracles() -> Response:
         data = {
-            'history': [{'id': str(x), 'name': str(x).capitalize()} for x in HistoricalPriceOracle],  # noqa: E501
+            # don't expose some sources in the api
+            'history': [{'id': str(x), 'name': str(x).capitalize()} for x in HistoricalPriceOracle if x not in NOT_EXPOSED_SOURCES],  # noqa: E501
             'current': [{'id': str(x), 'name': str(x).capitalize()} for x in CurrentPriceOracle],  # noqa: E501
         }
         result_dict = _wrap_in_ok_result(data)
@@ -2858,3 +2845,59 @@ class RestAPI():
         # Success
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
+
+    def _get_assets_updates(self) -> Dict[str, Any]:
+        try:
+            local, remote, new_changes = self.rotkehlchen.assets_updater.check_for_updates()
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        return _wrap_in_ok_result({'local': local, 'remote': remote, 'new_changes': new_changes})
+
+    def get_assets_updates(self, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_get_assets_updates')
+
+        response = self._get_assets_updates()
+        return api_response(
+            result={'result': response['result'], 'message': response['message']},
+            status_code=response.get('status_code', HTTPStatus.OK),
+        )
+
+    def _perform_assets_updates(
+            self,
+            up_to_version: Optional[int],
+            conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
+    ) -> Dict[str, Any]:
+        try:
+            result = self.rotkehlchen.assets_updater.perform_update(up_to_version, conflicts)
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        if result is None:
+            return OK_RESULT
+
+        return {
+            'result': result,
+            'message': 'Found conflicts during assets upgrade',
+            'status_code': HTTPStatus.CONFLICT,
+        }
+
+    def perform_assets_updates(
+            self,
+            async_query: bool,
+            up_to_version: Optional[int],
+            conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_perform_assets_updates',
+                up_to_version=up_to_version,
+                conflicts=conflicts,
+            )
+
+        response = self._perform_assets_updates(up_to_version, conflicts)
+        return api_response(
+            result={'result': response['result'], 'message': response['message']},
+            status_code=response.get('status_code', HTTPStatus.OK),
+        )

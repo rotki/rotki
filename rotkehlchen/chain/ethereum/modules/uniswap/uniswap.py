@@ -12,11 +12,11 @@ from rotkehlchen.assets.utils import get_ethereum_token
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors import ModuleInitializationFailure, RemoteError, DeserializationError
+from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
     AssetAmount,
     ChecksumEthAddress,
@@ -56,6 +56,7 @@ from .typing import (
 from .utils import SUBGRAPH_REMOTE_ERROR_MSG, get_latest_lp_addresses, uniswap_lp_token_balances
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -1079,6 +1080,9 @@ class Uniswap(EthereumModule):
             to_timestamp: Timestamp,
             only_cache: bool,
     ) -> List[AMMTrade]:
+        if len(addresses) == 0:
+            return []
+
         with self.trades_lock:
             all_trades = []
             trade_mapping = self._get_trades(
@@ -1118,7 +1122,7 @@ class Uniswap(EthereumModule):
     def on_startup(self) -> None:
         pass
 
-    def on_account_addition(self, address: ChecksumEthAddress) -> None:
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
         pass
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:

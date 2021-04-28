@@ -192,8 +192,15 @@ def get_eth2_balances(
 
         address_to_validators[address] = validators
         for validator in validators:
-            validator_indices.append(validator.validator_index)
-            index_to_address[validator.validator_index] = address
+            if validator.validator_index is not None:
+                validator_indices.append(validator.validator_index)
+                index_to_address[validator.validator_index] = address
+            else:
+                # Validator is early in depositing, and no index is known yet.
+                # Simply count 32 ETH balance for them
+                balance_mapping[address] += Balance(
+                    amount=FVal('32'), usd_value=FVal('32') * usd_price,
+                )
 
     # Get current balance of all validator indices
     performance = beaconchain.get_performance(validator_indices)
@@ -202,6 +209,7 @@ def get_eth2_balances(
         balance_mapping[index_to_address[validator_index]] += Balance(amount, amount * usd_price)
 
     # The performance call does not return validators that are not active and are still depositing
+    # So for them let's just count 32 ETH
     depositing_indices = set(index_to_address.keys()) - set(performance.keys())
     for index in depositing_indices:
         balance_mapping[index_to_address[index]] += Balance(
@@ -222,17 +230,29 @@ def get_eth2_details(
     indices = []
     index_to_address = {}
     index_to_pubkey = {}
+    result = []
     assert beaconchain.db is not None, 'Beaconchain db should be populated'
-    # and for each address get the validator info (to get the index) -- this could be avoided
+
     for address in addresses:
         validators = beaconchain.get_eth1_address_validators(address)
         for validator in validators:
+            if validator.validator_index is None:
+                # for validators that are so early in the depositing queue that no
+                # validator index is confirmed yet let's return only the most basic info
+                result.append(ValidatorDetails(
+                    validator_index=None,
+                    public_key=validator.public_key,
+                    eth1_depositor=address,
+                    performance=DEPOSITING_VALIDATOR_PERFORMANCE,
+                    daily_stats=[],
+                ))
+                continue
+
             index_to_address[validator.validator_index] = address
             index_to_pubkey[validator.validator_index] = validator.public_key
             indices.append(validator.validator_index)
 
     # Get current balance of all validator indices
-    result = []
     performance_result = beaconchain.get_performance(list(indices))
     for validator_index, entry in performance_result.items():
         stats = get_validator_daily_stats(

@@ -4,6 +4,7 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_BINANCE,
     WORLD_TO_BITFINEX,
     WORLD_TO_BITTREX,
+    WORLD_TO_FTX,
     WORLD_TO_ICONOMI,
     WORLD_TO_KRAKEN,
     WORLD_TO_KUCOIN,
@@ -333,7 +334,6 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'BTCTRON',  # neither in coingecko nor cryptocompare
     'FCT2',  # neither in coingecko nor cryptocompare
     'XFLR',  # neither in coingecko nor cryptocompare (is an iou for FLR - SPARK)
-    'WIN',  # add support for it first: https://www.coingecko.com/en/coins/wink
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
@@ -426,6 +426,8 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'BNTX',
     'BYND',
     'FB',
+    'FOL',  # neither in coingecko nor cryptocompare
+    'GET',  # couldn't find any reference
     'GME',
     'GOOGL',
     'MSTR',
@@ -438,8 +440,8 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'SQ',
     'TSLA',
     'UPCO2',  # neither in coingecko nor cryptocompare
+    'VIL',  # neither in coingecko nor cryptocompare (VICDeal)
     'WXBTC',  # neither in coingecko nor cryptocompare
-    'MTC',  # need to add support for it
 )
 
 
@@ -453,6 +455,8 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'NGN',  # https://www.binance.com/en/support/articles/360035511611
     '123',  # https://twitter.com/rotkiapp/status/1161977327078838272
     '456',  # https://twitter.com/rotkiapp/status/1161977327078838272
+    '1INCHDOWN',  # no cryptocompare/coingecko data
+    '1INCHUP',  # no cryptocompare/coingecko data
     'UNIDOWN',  # no cryptocompare/coingecko data
     'UNIUP',  # no cryptocompare/coingecko data
     'SXPDOWN',  # no cryptocompare/coingecko data
@@ -464,7 +468,6 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'XLMDOWN',  # no cryptocompare/coingecko data
     'XLMUP',  # no cryptocompare/coingecko data
     'UAH',  # no cryptocompare/coingecko data
-    'WIN',  # had wrong mapping. Need to add it to: https://www.coingecko.com/en/coins/wink
 )
 
 UNSUPPORTED_BITFINEX_ASSETS = (
@@ -472,14 +475,76 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'B21X',  # no cryptocompare/coingecko data
     'GTX',  # no cryptocompare/coingecko data (GT, Gate.io token)
     'IQX',  # no cryptocompare/coingecko data (EOS token)
+    'BOSON',  # no cryptocompare/coingecko data
+)
+
+UNSUPPORTED_FTX_ASSETS = (
+    'AAPL',
+    'ABNB',
+    'ACB',
+    'AMC',
+    'AMD',
+    'AMZN',
+    'APHA',
+    'ARKK',
+    'BABA',
+    'BB',
+    'BILI',
+    'BITW',
+    'BNTX',
+    'FB',
+    'GME',
+    'GOOGL',
+    'GRTBEAR',  # no cryptocompare/coingecko data
+    'GRTBULL',  # no cryptocompare/coingecko data
+    'MSTR',
+    'NFLX',
+    'NOK',
+    'NVDA',
+    'PFE',
+    'PYPL',
+    'SLV',  # iShares Silver Trust
+    'SPY',
+    'SQ',
+    'TLRY',
+    'TSM',
+    'TSLA',
+    'TWTR',
+    'UBER',
+    'USO',
+    'ZM',
+    'ETHE',  # no cryptocompare/coingecko data
+    'GBTC',  # no cryptocompare/coingecko data
+    'GDX',  # no cryptocompare/coingecko data
+    'GDXJ',  # no cryptocompare/coingecko data
+    'GLD',  # no cryptocompare/coingecko data
+    'GLXY',  # no cryptocompare/coingecko data
+    'HOOD',  # no cryptocompare/coingecko data
+    'HUM'  # no cryptocompare/coingecko data
+    'MRNA',  # no cryptocompare/coingecko data
+    'PENN',  # no cryptocompare/coingecko data
+    'SECO',  # pool in bonfida
+    'ZECBULL',  # no cryptocompare/coingecko data
+    'ZECBEAR',  # no cryptocompare/coingecko data
+    'BYND',  # Beyond Meat Tokenized stock
+    'CGC',  # Trade Canopy Growth Corp Tokenized stock
+    'MRNA',  # Moderna Tokenized stock
+    'XRPMOON',  # no cryptocompare/coingecko data
+    'SRM_LOCKED',  # no cryptocompare/coingecko data
 )
 
 # https://api.kucoin.com/api/v1/currencies
 UNSUPPORTED_KUCOIN_ASSETS = (
+    'ANC',  # Quantity no cryptocompare/coingecko data
     'AXE',  # delisted
+    'BOSON',  # no cryptocompare/coingecko data
+    'BTC3L',  # no cryptocompare/coingecko data
+    'BTC3S',  # no cryptocompare/coingecko data
     'BTCP',  # delisted
     'CADH',  # no cryptocompare/coingecko data
     'EPRX',  # delisted and no cryptocompare/coingecko data
+    'ETH3L',  # no cryptocompare/coingecko data
+    'ETH3S',  # no cryptocompare/coingecko data
     'ETF',  # delisted and no cryptocompare/coingecko data
     'GGC',  # delisted and no cryptocompare/coingecko data
     'GMB',  # delisted
@@ -489,6 +554,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'LOL',  # delisted
     'MAP2',  # delisted
     'MHC',  # delisted
+    'PDEX',  # Polkadex no cryptocompare/coingecko data
     'SATT',  # delisted
     'SERO',  # delisted
     'SPRK',  # delisted
@@ -496,7 +562,6 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'TT',  # delisted
     'VNX',  # delisted and no cryptocompare/coingecko data
     'VOL',  # delisted
-    'WINK',  # need to add it -> https://www.coingecko.com/en/coins/wink
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
@@ -524,6 +589,7 @@ POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
 BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
 BITFINEX_TO_WORLD = {v: k for k, v in WORLD_TO_BITFINEX.items()}
+FTX_TO_WORLD = {v: k for k, v in WORLD_TO_FTX.items()}
 KRAKEN_TO_WORLD = {v: k for k, v in WORLD_TO_KRAKEN.items()}
 KUCOIN_TO_WORLD = {v: k for k, v, in WORLD_TO_KUCOIN.items()}
 ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
@@ -701,6 +767,22 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
 
     # else
     return symbol_to_asset_or_token(cb_name)
+
+
+def asset_from_ftx(ftx_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(ftx_name, str):
+        raise DeserializationError(f'Got non-string type {type(ftx_name)} for ftx asset')
+
+    if ftx_name in UNSUPPORTED_FTX_ASSETS:
+        raise UnsupportedAsset(ftx_name)
+
+    name = FTX_TO_WORLD.get(ftx_name, ftx_name)
+    return symbol_to_asset_or_token(name)
 
 
 def asset_from_kucoin(kucoin_name: str) -> Asset:

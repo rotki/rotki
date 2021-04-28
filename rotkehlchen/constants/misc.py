@@ -19,8 +19,6 @@ CURRENCYCONVERTER_API_KEY = '7ad371210f296db27c19'
 ZERO = FVal(0)
 ONE = FVal(1)
 
-PRICE_HISTORY_DIR = 'price_history'
-
 # API URLS
 KRAKEN_BASE_URL = 'https://api.kraken.com'
 KRAKEN_API_VERSION = '0'

@@ -1,9 +1,12 @@
-from rotkehlchen.accounting.structures import LedgerActionType
+import pytest
+
+from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events import limit_trade_list_to_period
+from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.typing import Location, Timestamp, TradeType
 
 
@@ -75,35 +78,47 @@ def test_query_ledger_actions(events_historian, function_scope_messages_aggregat
     selected_timestamp = 10
     db = DBLedgerActions(events_historian.db, function_scope_messages_aggregator)
 
-    db.add_ledger_action(
+    action = LedgerAction(
+        identifier=0,  # whatever
         timestamp=selected_timestamp - 2,
         action_type=LedgerActionType.INCOME,
         location=Location.EXTERNAL,
         amount=FVal(1),
         asset=A_ETH,
-        link='',
-        notes='',
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes=None,
     )
+    db.add_ledger_action(action)
 
-    db.add_ledger_action(
+    action = LedgerAction(
+        identifier=0,  # whatever
         timestamp=selected_timestamp + 3,
         action_type=LedgerActionType.EXPENSE,
         location=Location.EXTERNAL,
         amount=FVal(0.5),
         asset=A_ETH,
-        link='',
-        notes='',
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes=None,
     )
+    db.add_ledger_action(action)
 
-    db.add_ledger_action(
+    action = LedgerAction(
+        identifier=0,  # whatever
         timestamp=selected_timestamp + 5,
         action_type=LedgerActionType.INCOME,
         location=Location.EXTERNAL,
         amount=FVal(10),
         asset=A_USDC,
-        link='',
-        notes='',
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes=None,
     )
+    db.add_ledger_action(action)
 
     actions, length = events_historian.query_ledger_actions(
         has_premium=True,
@@ -113,3 +128,13 @@ def test_query_ledger_actions(events_historian, function_scope_messages_aggregat
 
     assert any((action.timestamp < selected_timestamp for action in actions))
     assert length == 2
+
+
+@pytest.mark.parametrize('value,result', [
+    ('manual', HistoricalPriceOracle.MANUAL),
+    ('coingecko', HistoricalPriceOracle.COINGECKO),
+    ('cryptocompare', HistoricalPriceOracle.CRYPTOCOMPARE),
+    ('xratescom', HistoricalPriceOracle.XRATESCOM),
+])
+def test_historical_price_oracle_deserialize(value, result):
+    assert HistoricalPriceOracle.deserialize(value) == result

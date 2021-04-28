@@ -3,7 +3,8 @@ from typing import Any, Dict, List, Union
 from hexbytes import HexBytes
 from web3.datastructures import AttributeDict
 
-from rotkehlchen.accounting.structures import Balance, LedgerActionType
+from rotkehlchen.accounting.ledger_actions import LedgerActionType
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
@@ -19,7 +20,7 @@ from rotkehlchen.chain.ethereum.modules.aave.aave import (
     AaveHistory,
     AaveLendingBalance,
 )
-from rotkehlchen.chain.ethereum.modules.adex import ADXStakingBalance, ADXStakingHistory
+from rotkehlchen.chain.ethereum.modules.adex import ADXStakingHistory
 from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerBPTEventPoolToken,
     BalancerEvent,
@@ -127,7 +128,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             UnknownEthereumToken,
             AMMTrade,
             UniswapPoolEventsBalance,
-            ADXStakingBalance,
             ADXStakingHistory,
             BalancerBPTEventPoolToken,
             BalancerEvent,

@@ -1,4 +1,3 @@
-
 from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tuple, Union
 
@@ -6,7 +5,6 @@ from eth_typing import ChecksumAddress
 from typing_extensions import Literal
 
 from rotkehlchen.chain.substrate.typing import KusamaAddress
-from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 
 ModuleName = Literal[
@@ -19,6 +17,7 @@ ModuleName = Literal[
     'adex',
     'loopring',
     'balancer',
+    'eth2',
 ]
 # TODO: Turn this into some kind of light data structure and not just a mapping
 # This is a mapping of module ids to human readable names
@@ -32,6 +31,7 @@ AVAILABLE_MODULES_MAP = {
     'adex': 'AdEx',
     'loopring': 'Loopring',
     'balancer': 'Balancer',
+    'eth2': 'Eth2',
 }
 
 T_BinaryEthAddress = bytes
@@ -155,12 +155,6 @@ T_TradeID = str
 TradeID = NewType('TradeID', T_TradeID)
 
 
-class ResultCache(NamedTuple):
-    """Represents a time-cached result of some API query"""
-    result: Dict
-    timestamp: Timestamp
-
-
 T_EventType = str
 EventType = NewType('EventType', T_EventType)
 
@@ -241,84 +235,6 @@ class SupportedBlockchain(Enum):
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
 
-class AssetType(Enum):
-    FIAT = 1
-    OWN_CHAIN = 2
-    ETHEREUM_TOKEN = 3
-    OMNI_TOKEN = 4
-    NEO_TOKEN = 5
-    COUNTERPARTY_TOKEN = 6
-    BITSHARES_TOKEN = 7
-    ARDOR_TOKEN = 8
-    NXT_TOKEN = 9
-    UBIQ_TOKEN = 10
-    NUBITS_TOKEN = 11
-    BURST_TOKEN = 12
-    WAVES_TOKEN = 13
-    QTUM_TOKEN = 14
-    STELLAR_TOKEN = 15
-    TRON_TOKEN = 16
-    ONTOLOGY_TOKEN = 17
-    VECHAIN_TOKEN = 18
-    BINANCE_TOKEN = 19
-    EOS_TOKEN = 20
-    FUSION_TOKEN = 21
-    LUNIVERSE_TOKEN = 22
-    OTHER = 23
-
-    def __str__(self) -> str:
-        return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member
-
-    def serialize_for_db(self) -> str:
-        return chr(self.value + 64)
-
-    @staticmethod
-    def deserialize_from_db(value: str) -> 'AssetType':
-        """May raise a DeserializationError if something is wrong with the DB data"""
-        number = ord(value)
-        if number < 65 or number > list(AssetType)[-1].value + 64:
-            raise DeserializationError(f'Failed to deserialize AssetType DB value {value}')
-        return AssetType(number - 64)
-
-    @staticmethod
-    def deserialize(value: str) -> 'AssetType':
-        """Deserializes an asset type from a string. Probably sent via the API
-
-        May raise DeserializationError if the value does not match an asset type
-        """
-        upper_str = value.replace(' ', '_').upper()
-        asset_type = AssetType.__members__.get(upper_str, None)  # pylint: disable=no-member
-        if asset_type is None:
-            raise DeserializationError(f'Could not deserialize {value} as an asset type')
-
-        return asset_type
-
-
-class AssetData(NamedTuple):
-    """Data of an asset. Keep in sync with assets/asset.py"""
-    identifier: str
-    name: str
-    symbol: str
-    asset_type: AssetType
-    # Every asset should have a started timestamp except for FIAT which are
-    # most of the times older than epoch
-    started: Optional[Timestamp]
-    forked: Optional[str]
-    swapped_for: Optional[str]
-    ethereum_address: Optional[ChecksumEthAddress]
-    decimals: Optional[int]
-    # None means, no special mapping. '' means not supported
-    cryptocompare: Optional[str]
-    coingecko: Optional[str]
-    protocol: Optional[str]
-
-    def serialize(self) -> Dict[str, Any]:
-        result = self._asdict()  # pylint: disable=no-member
-        result.pop('identifier')
-        result['asset_type'] = str(self.asset_type)
-        return result
-
-
 class TradeType(Enum):
     BUY = 1
     SELL = 2
@@ -377,6 +293,7 @@ class Location(Enum):
     KUCOIN = 23
     BALANCER = 24
     LOOPRING = 25
+    FTX = 26
 
     def __str__(self) -> str:
         if self == Location.EXTERNAL:
@@ -429,6 +346,8 @@ class Location(Enum):
             return 'balancer'
         if self == Location.LOOPRING:
             return 'loopring'
+        if self == Location.FTX:
+            return 'ftx'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 
@@ -483,6 +402,8 @@ class Location(Enum):
             return 'X'
         if self == Location.LOOPRING:
             return 'Y'
+        if self == Location.FTX:
+            return 'Z'
         # else
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 

@@ -105,19 +105,18 @@
                   {{ $t('ledger_actions.details.title') }}
                 </template>
                 <v-row>
+                  <v-col cols="auto" class="font-weight-medium">
+                    {{ $t('ledger_actions.details.rate_asset') }}
+                  </v-col>
                   <v-col>
-                    <v-card outlined>
-                      <v-card-title class="text-subtitle-2">
-                        {{ $t('ledger_actions.details.notes') }}
-                      </v-card-title>
-                      <v-card-text>
-                        {{
-                          item.notes
-                            ? item.notes
-                            : $t('ledger_actions.details.note_data')
-                        }}
-                      </v-card-text>
-                    </v-card>
+                    <amount-display
+                      v-if="!!item.rate"
+                      :value="item.rate"
+                      :asset="item.rateAsset"
+                    />
+                    <span v-else>
+                      {{ $t('ledger_actions.details.rate_data') }}
+                    </span>
                   </v-col>
                 </v-row>
                 <v-row class="mt-2">
@@ -132,6 +131,7 @@
                     }}
                   </v-col>
                 </v-row>
+                <notes-display :notes="item.notes" />
               </table-expand-container>
             </template>
           </data-table>
@@ -177,6 +177,7 @@ import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
+import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
@@ -202,7 +203,7 @@ import {
   UnsavedAction
 } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
-import { Properties } from '@/types';
+import { Writeable } from '@/types';
 import { Zero } from '@/utils/bignumbers';
 
 const emptyAction: () => UnsavedAction = () => ({
@@ -210,13 +211,12 @@ const emptyAction: () => UnsavedAction = () => ({
   actionType: ACTION_INCOME,
   location: TRADE_LOCATION_EXTERNAL,
   amount: Zero,
-  asset: '',
-  link: '',
-  notes: ''
+  asset: ''
 });
 
 @Component({
   components: {
+    NotesDisplay,
     TableExpandContainer,
     DataTable,
     CardTitle,
@@ -295,7 +295,7 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   saving: boolean = false;
   deleteIdentifier: number = 0;
   action: LedgerActionEntry | UnsavedAction = emptyAction();
-  errors: { [key in Properties<UnsavedAction, any>]?: string } = {};
+  errors: { [key in keyof UnsavedAction]?: string } = {};
 
   selected: number[] = [];
 
@@ -394,14 +394,22 @@ export default class LedgerActions extends Mixins(StatusMixin) {
 
   async save() {
     this.saving = true;
+    const action: Writeable<LedgerActionEntry | UnsavedAction> = this.action;
     let success: boolean;
     let message: string | undefined;
-    if ('identifier' in this.action) {
-      const { ignoredInAccounting, ...payload } = this
-        .action as LedgerActionEntry;
+
+    let prop: keyof typeof action;
+    for (prop in action) {
+      if (!action[prop]) {
+        delete action[prop];
+      }
+    }
+
+    if ('identifier' in action) {
+      const { ignoredInAccounting, ...payload } = action as LedgerActionEntry;
       ({ success, message } = await this[ACTION_EDIT_LEDGER_ACTION](payload));
     } else {
-      const payload = { ...this.action };
+      const payload = { ...action };
       ({ success, message } = await this[ACTION_ADD_LEDGER_ACTION](payload));
     }
 

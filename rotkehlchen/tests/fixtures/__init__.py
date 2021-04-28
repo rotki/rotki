@@ -14,6 +14,7 @@ from rotkehlchen.tests.fixtures.exchanges.bitstamp import *
 from rotkehlchen.tests.fixtures.exchanges.bittrex import *
 from rotkehlchen.tests.fixtures.exchanges.coinbase import *
 from rotkehlchen.tests.fixtures.exchanges.coinbasepro import *
+from rotkehlchen.tests.fixtures.exchanges.ftx import *
 from rotkehlchen.tests.fixtures.exchanges.gemini import *
 from rotkehlchen.tests.fixtures.exchanges.iconomi import *
 from rotkehlchen.tests.fixtures.exchanges.kraken import *

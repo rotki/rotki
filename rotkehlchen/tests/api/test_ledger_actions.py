@@ -20,6 +20,8 @@ def _add_ledger_actions(server) -> List[Dict]:
         'location': 'blockchain',
         'amount': '1.5',
         'asset': 'ETH',
+        'rate': '100',
+        'rate_asset': 'USD',
         'link': 'explorer link',
         'notes': 'donation for something',
     }, {
@@ -28,6 +30,8 @@ def _add_ledger_actions(server) -> List[Dict]:
         'location': 'blockchain',
         'amount': '5',
         'asset': A_DAI.identifier,
+        'rate': None,
+        'rate_asset': None,
         'link': 'explorer link',
         'notes': 'Spent 5 DAI for something',
     }, {
@@ -36,7 +40,9 @@ def _add_ledger_actions(server) -> List[Dict]:
         'location': 'external',
         'amount': '100',
         'asset': 'EUR',
-        'link': '',
+        'rate': None,
+        'rate_asset': None,
+        'link': None,
         'notes': 'Got robbed',
     }, {
         'timestamp': 4,
@@ -44,8 +50,10 @@ def _add_ledger_actions(server) -> List[Dict]:
         'location': 'external',
         'amount': '75',
         'asset': 'EUR',
-        'link': '',
-        'notes': 'Income from APPL dividends',
+        'rate': None,
+        'rate_asset': None,
+        'link': 'APPL_dividens_income_id',
+        'notes': None,
     }]
 
     for action in actions:
@@ -159,6 +167,8 @@ def test_edit_ledger_actions(rotkehlchen_api_server):
     new_action['action_type'] = 'airdrop'
     new_action['amount'] = '10'
     new_action['asset'] = 'ETH'
+    new_action['rate'] = '85'
+    new_action['rate_asset'] = 'GBP'
     new_action['link'] = 'a link'
     new_action['notes'] = 'new notes'
 

@@ -35,11 +35,14 @@ jobs:
               - [AppImage](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage)
               - [Tar with executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz)
               - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-${{ env.RELEASE_VERSION }}-linux)
             - **OSX**
               - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.dmg)
               - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.zip)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-backend-${{ env.RELEASE_VERSION }}-macos.zip)
             - **Windows**
               - [Windows executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32-${{ env.RELEASE_VERSION }}.exe)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-${{ env.RELEASE_VERSION }}-windows.exe)
             
             Optionally, you can also [verify the integrity](https://rotki.readthedocs.io/en/latest/installation_guide.html#verifying-integrity) of the aforementioned binaries using the following checksums:
             
@@ -47,11 +50,14 @@ jobs:
               - [AppImage checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage.sha512)
               - [Tar with executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz.sha512)
               - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb.sha512)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-${{ env.RELEASE_VERSION }}-linux.sha512)
             - **OSX**
               - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.dmg.sha512)
               - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.zip.sha512)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-backend-${{ env.RELEASE_VERSION }}-macos.zip.sha512)
             - **Windows**
               - [Windows executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32-${{ env.RELEASE_VERSION }}.exe.sha512)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-${{ env.RELEASE_VERSION }}-windows.exe.sha512)
 
             # Release Highlights
             ----
@@ -139,11 +145,30 @@ jobs:
           asset_path: ${{ steps.packaging.outputs.deb_checksum }}
           asset_name: ${{ steps.packaging.outputs.deb_checksum_name }}
           asset_content_type: text/plain
+      - name: Upload backend binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.backend_binary }}
+          asset_name: ${{ steps.packaging.outputs.backend_binary_name }}
+          asset_content_type: application/octet-stream
+      - name: Upload backend binary checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.backend_binary_checksum }}
+          asset_name: ${{ steps.packaging.outputs.backend_binary_checksum_name }}
+          asset_content_type: text/plain
 
-  osx:
+  macos:
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    environment: macos_sign
     strategy:
       matrix:
         os: [macos-latest]
@@ -176,7 +201,7 @@ jobs:
       - name: Setup SQLCipher
         run: |
           cd "$(brew --repo homebrew/core)"
-          git checkout 2731bfdc785e85de8242b164acbf4fcb627a91e2 Formula/sqlcipher.rb #This formula installs 4.4.0 of sqlcipher
+          git checkout 31f4d9cef46b1c39cdbe2f72ab682b5d0b02cf67 Formula/sqlcipher.rb #This formula installs 4.4.3 of sqlcipher
           brew install sqlcipher
       - name: Package
         id: packaging
@@ -210,12 +235,30 @@ jobs:
           asset_path: ${{ steps.packaging.outputs.archive_checksum }}
           asset_name: ${{ steps.packaging.outputs.archive_checksum_name }}
           asset_content_type: text/plain
+      - name: Upload backend binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.backend_binary }}
+          asset_name: ${{ steps.packaging.outputs.backend_binary_name }}
+          asset_content_type: application/zip
+      - name: Upload backend binary checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.backend_binary_checksum }}
+          asset_name: ${{ steps.packaging.outputs.backend_binary_checksum_name }}
+          asset_content_type: text/plain
 
   windows:
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      SQLCIPHER_VERSION: 'v4.4.0'
+      SQLCIPHER_VERSION: 'v4.4.3'
       PYSQLCIPHER3_VERSION: 'fd1b547407bcb7198107fe3c458105286a060b0d'
       BUILD_DEPENDENCIES: "build-dependencies"
     strategy:
@@ -267,7 +310,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
       - name: Build rotki
-        id: build
+        id: packaging
         run: |
           npm install -g npm@7
           .\package.ps1
@@ -278,12 +321,31 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_draft.outputs.upload_url }}
-          asset_path: ${{ steps.build.outputs.binary_checksum }}
-          asset_name: ${{ steps.build.outputs.binary_checksum_name }}
+          asset_path: ${{ steps.packaging.outputs.binary_checksum }}
+          asset_name: ${{ steps.packaging.outputs.binary_checksum_name }}
+          asset_content_type: text/plain
+      - name: Upload backend binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.backend_binary }}
+          asset_name: ${{ steps.packaging.outputs.backend_binary_name }}
+          asset_content_type: application/octet-stream
+      - name: Upload backend binary checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_draft.outputs.upload_url }}
+          asset_path: ${{ steps.packaging.outputs.backend_binary_checksum }}
+          asset_name: ${{ steps.packaging.outputs.backend_binary_checksum_name }}
           asset_content_type: text/plain
 
   docker:
     runs-on: ubuntu-18.04
+    environment: docker
     steps:
       - name: Checkout
         uses: actions/checkout@v2

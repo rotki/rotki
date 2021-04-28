@@ -19,7 +19,7 @@
         class="mr-1 ml-1"
         :show-currency="shownCurrency"
         :currency="currency"
-        :asset="asset"
+        :asset="symbol"
       />
       <span>
         <v-tooltip
@@ -34,6 +34,7 @@
         >
           <template #activator="{ on, attrs }">
             <span
+              data-cy="display-amount"
               class="amount-display__value text-no-wrap"
               v-bind="attrs"
               v-on="on"
@@ -52,7 +53,7 @@
         :asset-padding="assetPadding"
         :show-currency="shownCurrency"
         :currency="currency"
-        :asset="asset"
+        :asset="symbol"
       />
     </v-skeleton-loader>
   </div>
@@ -60,10 +61,11 @@
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
+import AssetMixin from '@/mixins/asset-mixin';
 import { Currency } from '@/model/currency';
 import { ExchangeRateGetter } from '@/store/balances/types';
 import {
@@ -92,7 +94,7 @@ type ShownCurrency = 'none' | 'ticker' | 'symbol' | 'name';
     ...mapGetters('balances', ['exchangeRate'])
   }
 })
-export default class AmountDisplay extends Vue {
+export default class AmountDisplay extends Mixins(AssetMixin) {
   @Prop({ required: true })
   value!: BigNumber;
   @Prop({ required: false, type: Boolean, default: false })
@@ -137,6 +139,13 @@ export default class AmountDisplay extends Vue {
   exchangeRate!: ExchangeRateGetter;
   amountRoundingMode!: RoundingMode;
   valueRoundingMode!: RoundingMode;
+
+  get symbol(): string {
+    if (!this.asset) {
+      return '';
+    }
+    return this.getSymbol(this.asset);
+  }
 
   get shownCurrency(): ShownCurrency {
     return this.showCurrency === 'none' && !!this.fiatCurrency

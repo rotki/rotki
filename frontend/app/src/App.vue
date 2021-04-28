@@ -2,6 +2,7 @@
   <v-app v-if="!isPlayground" id="rotki">
     <update-popup />
     <div v-if="logged" class="app__content rotki-light-grey">
+      <asset-update auto />
       <notification-popup />
       <v-navigation-drawer
         v-if="loginComplete"
@@ -48,11 +49,13 @@
         <progress-indicator class="app__app-bar__button" />
         <currency-drop-down class="red--text app__app-bar__button" />
         <user-dropdown class="app__app-bar__button" />
+        <help-indicator :visible="help" @visible:update="help = $event" />
       </v-app-bar>
       <notification-sidebar
         :visible="notifications"
         @close="notifications = false"
       />
+      <help-sidebar :visible="help" @visible:update="help = $event" />
       <v-main v-if="logged" class="fill-height">
         <router-view />
       </v-main>
@@ -68,6 +71,7 @@
       :message="startupError"
       fatal
     />
+    <mac-os-version-unsupported v-if="macosUnsupported" />
     <v-fade-transition>
       <account-management
         v-if="startupError.length === 0 && !loginIn"
@@ -86,7 +90,10 @@ import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
+import MacOsVersionUnsupported from '@/components/error/MacOsVersionUnsupported.vue';
 import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
+import HelpIndicator from '@/components/help/HelpIndicator.vue';
+import HelpSidebar from '@/components/help/HelpSidebar.vue';
 import BackButton from '@/components/helper/BackButton.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
@@ -96,15 +103,21 @@ import NotificationSidebar from '@/components/status/notifications/NotificationS
 import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 import '@/services/task-manager';
+import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
 import UpdatePopup from '@/components/status/update/UpdatePopup.vue';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import DevApp from '@/DevApp.vue';
+import { BackendCode } from '@/electron-main/backend-code';
 import { monitor } from '@/services/monitoring';
 import { Message } from '@/store/types';
 
 @Component({
   components: {
+    MacOsVersionUnsupported,
+    AssetUpdate,
+    HelpIndicator,
+    HelpSidebar,
     BackButton,
     UpdatePopup,
     StartupErrorScreen,
@@ -141,6 +154,7 @@ export default class App extends Vue {
   completeLogin!: (complete: boolean) => void;
 
   notifications: boolean = false;
+  help: boolean = false;
 
   get canNavigateBack(): boolean {
     const canNavigateBack = this.$route.meta?.canNavigateBack ?? false;
@@ -168,6 +182,7 @@ export default class App extends Vue {
   mini = false;
 
   startupError: string = '';
+  macosUnsupported: boolean = false;
 
   openSite() {
     this.$interop.navigateToRotki();
@@ -187,11 +202,16 @@ export default class App extends Vue {
   }
 
   async created(): Promise<void> {
+    this.$interop.onError((backendOutput: string, code: BackendCode) => {
+      if (code === BackendCode.TERMINATED) {
+        this.startupError = backendOutput;
+      } else {
+        this.macosUnsupported = true;
+      }
+    });
+
     await this.$store.dispatch('connect');
     await this.$store.dispatch('version');
-    this.$interop.onError((backendOutput: string) => {
-      this.startupError = backendOutput;
-    });
 
     if (process.env.NODE_ENV === 'development' && this.logged) {
       monitor.start();

@@ -4,9 +4,10 @@ from typing import Any, Dict, Optional, Union, overload
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.typing import AssetType, ChecksumEthAddress
+from rotkehlchen.typing import ChecksumEthAddress
 
 from .asset import Asset, EthereumToken
+from .typing import AssetType
 from .unknown_asset import UNKNOWN_TOKEN_KEYS, SerializeAsDictKeys, UnknownEthereumToken
 
 log = logging.getLogger(__name__)

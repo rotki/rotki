@@ -38,5 +38,7 @@ export enum TaskType {
   BALANCER_TRADES = 'balancer_trades',
   BALANCER_EVENT = 'BALANCER_EVENT',
   EXCHANGE_RATES = 'exchange_rates',
-  ERC20_DETAILS = 'erc20_details'
+  ERC20_DETAILS = 'erc20_details',
+  ASSET_UPDATE = 'asset_update',
+  ASSET_UPDATE_PERFORM = 'asset_update_perform'
 }

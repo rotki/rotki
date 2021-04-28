@@ -2,11 +2,7 @@
   <v-container>
     <v-row align="center" class="mt-12">
       <v-col cols="auto">
-        <crypto-icon
-          :symbol="icon"
-          size="48px"
-          @status-change="forceSymbol = $event"
-        />
+        <asset-icon :identifier="icon" size="48px" :symbol="symbol" />
       </v-col>
       <v-col class="d-flex flex-column">
         <span class="text-h5 font-weight-medium">{{ symbol }}</span>
@@ -28,42 +24,29 @@
 
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
+import AssetMixin from '@/mixins/asset-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
-import { SupportedAsset } from '@/services/types-model';
-import { AssetAmountAndValueOverTime } from '@/utils/premium';
+import { AssetAmountAndValueOverTime } from '@/premium/premium';
 
 @Component({
-  components: { AssetLocations, AssetValueRow, AssetAmountAndValueOverTime },
-  computed: {
-    ...mapGetters('balances', ['assetInfo'])
-  }
+  components: { AssetLocations, AssetValueRow, AssetAmountAndValueOverTime }
 })
-export default class Assets extends Mixins(PremiumMixin) {
+export default class Assets extends Mixins(PremiumMixin, AssetMixin) {
   @Prop({ required: true, type: String })
   identifier!: string;
 
-  assetInfo!: (asset: string) => SupportedAsset | undefined;
-  forceSymbol: boolean = false;
-
   get assetName(): string {
-    const asset = this.assetInfo(this.identifier);
-    return asset ? (asset.name ? asset.name : '') : '';
+    return this.getAssetName(this.identifier);
   }
 
   get icon(): string {
-    return this.forceSymbol ? this.symbol : this.identifier;
+    return this.identifier;
   }
 
   get symbol(): string {
-    const asset = this.assetInfo(this.identifier);
-    return asset
-      ? asset.symbol
-        ? asset.symbol
-        : this.identifier
-      : this.identifier;
+    return this.getSymbol(this.identifier);
   }
 }
 </script>

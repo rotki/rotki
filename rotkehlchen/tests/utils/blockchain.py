@@ -9,7 +9,7 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_SCAN, VOTE_ESCROWED_CRV, ZERION_ABI
+from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_SCAN, ZERION_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -181,9 +181,11 @@ def mock_etherscan_query(
         eth_map: Dict[ChecksumEthAddress, Dict[Union[str, EthereumToken], Any]],
         etherscan: Etherscan,
         original_queries: Optional[List[str]],
+        extra_flags: Optional[List[str]],
         original_requests_get,
 ):
     original_queries = [] if original_queries is None else original_queries
+    extra_flags = [] if extra_flags is None else extra_flags
 
     def mock_requests_get(url, *args, **kwargs):
         if 'etherscan.io/api?module=account&action=balance&address' in url:
@@ -297,13 +299,33 @@ def mock_etherscan_query(
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
-        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={VOTE_ESCROWED_CRV.address}' in url:  # noqa: E501
-            # always
-            pass
+        elif 'api.etherscan.io/api?module=proxy&action=eth_call&to=0xB6456b57f03352bE48Bf101B46c1752a0813491a' in url:  # noqa: E501  # ADEX Staking contract
+            if 'adex_staking' in original_queries:
+                return original_requests_get(url, *args, **kwargs)
+
+            if 'data=0x447b15f4' in url:  # a mocked share value
+                response = '{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000fc4a48782d85b51"}'  # noqa: E501
+            else:
+                raise AssertionError(f'Unknown call to Adex Staking pool during tests: {url}')
         elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ETH_MULTICALL.address}' in url:  # noqa: E501
             web3 = Web3()
             contract = web3.eth.contract(address=ETH_MULTICALL.address, abi=ETH_MULTICALL.abi)
+            if 'b6456b57f03352be48bf101b46c1752a0813491a' in url:
+                multicall_purpose = 'adex_staking'
+            elif '5f3b5dfeb7b28cdbd7faba78963ee202a494e2a2' in url:
+                multicall_purpose = 'vecrv'
+            else:
+                raise AssertionError('Unknown multicall in mocked tests')
             if 'data=0x252dba42' in url:  # aggregate
+                if multicall_purpose == 'adex_staking':
+                    if 'adex_staking' in original_queries:
+                        return original_requests_get(url, *args, **kwargs)
+
+                    if 'mocked_adex_staking_balance' in extra_flags:
+                        # mock adex staking balance for a single account
+                        response = '{"jsonrpc": "2.0", "id": 1, "result": "0x0000000000000000000000000000000000000000000000000000000000bb45aa000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000152982285d2e4d5aeaa9"}'  # noqa: E501
+                        return MockResponse(200, response)
+
                 data = url.split('data=')[1]
                 if '&apikey' in data:
                     data = data.split('&apikey')[0]
@@ -313,7 +335,8 @@ def mock_etherscan_query(
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode_abi(input_types, bytes.fromhex(data[10:]))
-                # For now the only mocked multicall is 32 bytes for the locked CRV in escrow
+                # For now the only mocked multicall is 32 bytes for multicall balance
+                # of both veCRV and adex staking pool.
                 # When there is more we have to figure out a way to differentiate
                 # between them in mocking. Just return empty response here
                 # all pylint ignores below due to https://github.com/PyCQA/pylint/issues/4114

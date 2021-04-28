@@ -8,10 +8,11 @@ from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
 from rotkehlchen.chain.ethereum.structures import (
     AaveBorrowEvent,
+    AaveDepositWithdrawalEvent,
     AaveEvent,
+    AaveInterestEvent,
     AaveLiquidationEvent,
     AaveRepayEvent,
-    AaveSimpleEvent,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.ethereum import ATOKEN_ABI
@@ -156,7 +157,7 @@ class AaveUserReserve(NamedTuple):
 
 
 class AaveEventProcessingResult(NamedTuple):
-    interest_events: List[AaveSimpleEvent]
+    interest_events: List[AaveInterestEvent]
     total_earned_interest: Dict[Asset, Balance]
     total_lost: Dict[Asset, Balance]
     total_earned_liquidations: Dict[Asset, Balance]
@@ -240,9 +241,9 @@ def _parse_atoken_balance_history(
 
         entry_id = entry['id']
         pairs = entry_id.split('0x')
-        if len(pairs) != 4:
+        if len(pairs) not in (4, 5):
             log.error(
-                f'Expected to find 3 hashes in graps\'s aTokenBalanceHistory '
+                f'Expected to find 3-4 hashes in graph\'s aTokenBalanceHistory '
                 f'id but the encountered id does not match: {entry_id}. Skipping entry...',
             )
             continue
@@ -256,7 +257,7 @@ def _parse_atoken_balance_history(
             )
             continue
 
-        tx_hash = '0x' + pairs[3]
+        tx_hash = '0x' + pairs[4]
         asset = aave_reserve_to_asset(reserve_address)
         if asset is None:
             log.error(
@@ -282,7 +283,8 @@ def _get_reserve_asset_and_decimals(
         reserve_key: str,
 ) -> Optional[Tuple[Asset, int]]:
     try:
-        reserve_address = deserialize_ethereum_address(entry[reserve_key]['id'])
+        # The ID of reserve is the address of the asset and the address of the market's LendingPoolAddressProvider, in lower case  # noqa: E501
+        reserve_address = deserialize_ethereum_address(entry[reserve_key]['id'][:42])
     except DeserializationError:
         log.error(f'Failed to Deserialize reserve address {entry[reserve_key]["id"]}')
         return None
@@ -316,7 +318,7 @@ class AaveGraphInquirer(AaveInquirer):
             premium=premium,
             msg_aggregator=msg_aggregator,
         )
-        self.graph = Graph('https://api.thegraph.com/subgraphs/name/aave/protocol-raw')
+        self.graph = Graph('https://api.thegraph.com/subgraphs/name/aave/protocol-multy-raw')
 
     def get_history_for_addresses(
             self,
@@ -355,12 +357,13 @@ class AaveGraphInquirer(AaveInquirer):
             reserve = entry['reserve']
             try:
                 result.append(AaveUserReserve(
-                    address=deserialize_ethereum_address(reserve['id']),
+                    # The ID of reserve is the address of the asset and the address of the market's LendingPoolAddressProvider, in lower case  # noqa: E501
+                    address=deserialize_ethereum_address(reserve['id'][:42]),
                     symbol=reserve['symbol'],
                 ))
             except DeserializationError:
                 log.error(
-                    f'Failed to deserialize reserve address {reserve["id"]}'
+                    f'Failed to deserialize reserve address {reserve["id"]} '
                     f'Skipping reserve address {reserve["id"]} for user address {address}',
                 )
                 continue
@@ -371,18 +374,18 @@ class AaveGraphInquirer(AaveInquirer):
             self,
             user_address: ChecksumEthAddress,
             user_result: Dict[str, Any],
-            actions: List[AaveSimpleEvent],
+            actions: List[AaveDepositWithdrawalEvent],
             balances: AaveBalances,
-            db_interest_events: Set[AaveSimpleEvent],
+            db_interest_events: Set[AaveInterestEvent],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> Tuple[List[AaveSimpleEvent], Dict[Asset, Balance]]:
+    ) -> Tuple[List[AaveInterestEvent], Dict[Asset, Balance]]:
         reserve_history = {}
         for reserve in user_result['reserves']:
             pairs = reserve['id'].split('0x')
-            if len(pairs) != 3:
+            if len(pairs) != 4:
                 log.error(
-                    f'Expected to find 2 hashes in graph\'s reserve history id '
+                    f'Expected to find 3 addresses in graph\'s reserve history id '
                     f'but the encountered id does not match: {reserve["id"]}. Skipping entry...',
                 )
                 continue
@@ -392,7 +395,7 @@ class AaveGraphInquirer(AaveInquirer):
                 reserve_address = deserialize_ethereum_address(address_s)
             except DeserializationError:
                 log.error(
-                    f'Failed to deserialize reserve address {address_s}'
+                    f'Failed to deserialize reserve address {address_s} '
                     f'Skipping reserve address {address_s} for user address {user_address}',
                 )
                 continue
@@ -404,7 +407,7 @@ class AaveGraphInquirer(AaveInquirer):
             )
             reserve_history[reserve_address] = atoken_history
 
-        interest_events: List[AaveSimpleEvent] = []
+        interest_events: List[AaveInterestEvent] = []
         atoken_balances: Dict[Asset, FVal] = defaultdict(FVal)
         used_history_indices = set()
         total_earned: Dict[Asset, Balance] = defaultdict(Balance)
@@ -464,7 +467,7 @@ class AaveGraphInquirer(AaveInquirer):
                             msg_aggregator=self.msg_aggregator,
                         )
                         earned_balance = Balance(amount=diff, usd_value=diff * usd_price)
-                        interest_event = AaveSimpleEvent(
+                        interest_event = AaveInterestEvent(
                             event_type='interest',
                             asset=asset,
                             value=earned_balance,
@@ -529,8 +532,8 @@ class AaveGraphInquirer(AaveInquirer):
             user_result: Dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
-            deposits: List[AaveSimpleEvent],
-            withdrawals: List[AaveSimpleEvent],
+            deposits: List[AaveDepositWithdrawalEvent],
+            withdrawals: List[AaveDepositWithdrawalEvent],
             borrows: List[AaveBorrowEvent],
             repays: List[AaveRepayEvent],
             liquidations: List[AaveLiquidationEvent],
@@ -542,9 +545,9 @@ class AaveGraphInquirer(AaveInquirer):
 
         Also returns the edited DB events
         """
-        actions: List[AaveSimpleEvent] = []
+        actions: List[AaveDepositWithdrawalEvent] = []
         borrow_actions: List[AaveEvent] = []
-        db_interest_events: Set[AaveSimpleEvent] = set()
+        db_interest_events: Set[AaveInterestEvent] = set()
         for db_event in db_events:
             if db_event.event_type == 'deposit':
                 actions.append(db_event)  # type: ignore
@@ -662,8 +665,8 @@ class AaveGraphInquirer(AaveInquirer):
             deposits: List[Dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[AaveSimpleEvent]:
-        events: List[AaveSimpleEvent] = []
+    ) -> List[AaveDepositWithdrawalEvent]:
+        events: List[AaveDepositWithdrawalEvent] = []
         for entry in deposits:
             common = _parse_common_event_data(entry, from_ts, to_ts)
             if common is None:
@@ -679,9 +682,15 @@ class AaveGraphInquirer(AaveInquirer):
             if result is None:
                 continue  # problem parsing, error already logged
             asset, balance = result
-            events.append(AaveSimpleEvent(
+            atoken = ASSET_TO_ATOKENV1.get(asset, None)
+            if atoken is None:
+                log.error(f'Could not find an aToken for asset {asset} during aave deposit')
+                continue
+
+            events.append(AaveDepositWithdrawalEvent(
                 event_type='deposit',
                 asset=asset,
+                atoken=atoken,
                 value=balance,
                 block_number=0,  # can't get from graph query
                 timestamp=timestamp,
@@ -696,7 +705,7 @@ class AaveGraphInquirer(AaveInquirer):
             withdrawals: List[Dict[str, Any]],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> List[AaveSimpleEvent]:
+    ) -> List[AaveDepositWithdrawalEvent]:
         events = []
         for entry in withdrawals:
             common = _parse_common_event_data(entry, from_ts, to_ts)
@@ -713,9 +722,15 @@ class AaveGraphInquirer(AaveInquirer):
             if result is None:
                 continue  # problem parsing, error already logged
             asset, balance = result
-            events.append(AaveSimpleEvent(
+            atoken = ASSET_TO_ATOKENV1.get(asset, None)
+            if atoken is None:
+                log.error(f'Could not find an aToken for asset {asset} during aave withdraw')
+                continue
+
+            events.append(AaveDepositWithdrawalEvent(
                 event_type='withdrawal',
                 asset=asset,
+                atoken=atoken,
                 value=balance,
                 block_number=0,  # can't get from graph query
                 timestamp=timestamp,

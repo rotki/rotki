@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Sequence, Union
 
-from rotkehlchen.accounting.structures import DefiEvent, LedgerAction
+from rotkehlchen.accounting.ledger_actions import LedgerAction
+from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     MarginPosition,

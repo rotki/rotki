@@ -7,11 +7,14 @@ import webargs
 from eth_utils import to_checksum_address
 from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
+from typing_extensions import Literal
 from webargs.compat import MARSHMALLOW_VERSION_INFO
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.structures import ActionType, LedgerAction, LedgerActionType
+from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import (
@@ -32,6 +35,7 @@ from rotkehlchen.errors import DeserializationError, EncodingError, UnknownAsset
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
@@ -40,9 +44,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_hex_color_code,
-    deserialize_ledger_action_type,
     deserialize_location,
-    deserialize_price,
     deserialize_timestamp,
     deserialize_trade_type,
 )
@@ -51,7 +53,6 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetType,
     BTCAddress,
     ChecksumEthAddress,
     ExternalService,
@@ -271,8 +272,9 @@ class FeeField(fields.Field):
             attr: str,  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> str:
-        return str(value)
+    ) -> Optional[str]:
+        # Fee can be missing so we need to handle None when serializing from schema
+        return str(value) if value else None
 
     def _deserialize(
             self,
@@ -350,8 +352,9 @@ class AssetField(fields.Field):
             attr: str,  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> str:
-        return str(value.identifier)
+    ) -> Optional[str]:
+        # Asset can be missing so we need to handle None when serializing from schema
+        return str(value.identifier) if value else None
 
     def _deserialize(
             self,
@@ -476,7 +479,7 @@ class LedgerActionTypeField(fields.Field):
             **_kwargs: Any,
     ) -> LedgerActionType:
         try:
-            action_type = deserialize_ledger_action_type(value)
+            action_type = LedgerActionType.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
@@ -629,6 +632,50 @@ class DirectoryField(fields.Field):
             raise ValidationError(f'Given path {value} is not a directory')
 
         return path
+
+
+class AssetConflictsField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: Dict[str, Any],
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        # TODO: If this ever gets used we probably need to change
+        # the dict keys to identifiers from assets
+        return value
+
+    def _deserialize(
+            self,
+            value: Dict[str, str],
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Dict[Asset, Literal['remote', 'local']]:
+        if not isinstance(value, dict):
+            raise ValidationError('A dict object should be given for the conflictss')
+
+        if len(value) == 0:
+            raise ValidationError('An empty dict object should not be given. Provide null instead')
+
+        deserialized_dict = {}
+        for asset_id, choice in value.items():
+            try:
+                asset = Asset(asset_id)
+            except UnknownAsset as e:
+                raise ValidationError(f'Unknown asset identifier {asset_id}') from e
+
+            if choice not in ('remote', 'local'):
+                raise ValidationError(
+                    f'Unknown asset update choice: {choice}. Valid values '
+                    f'are "remote" or "local"',
+                )
+
+            deserialized_dict[asset] = choice
+
+        return deserialized_dict  # type: ignore
 
 
 class FileField(fields.Field):
@@ -788,10 +835,10 @@ class TradeSchema(Schema):
     trade_type = TradeTypeField(required=True)
     amount = PositiveAmountField(required=True)
     rate = PriceField(required=True)
-    fee = FeeField(required=True)
-    fee_currency = AssetField(required=True)
-    link = fields.String(missing='')
-    notes = fields.String(missing='')
+    fee = FeeField(missing=None)
+    fee_currency = AssetField(missing=None)
+    link = fields.String(missing=None)
+    notes = fields.String(missing=None)
 
 
 class LedgerActionSchema(Schema):
@@ -800,8 +847,10 @@ class LedgerActionSchema(Schema):
     location = LocationField(required=True)
     amount = AmountField(required=True)
     asset = AssetField(required=True)
-    link = fields.String(missing='')
-    notes = fields.String(missing='')
+    rate = PriceField(missing=None)
+    rate_asset = AssetField(missing=None)
+    link = fields.String(missing=None)
+    notes = fields.String(missing=None)
 
 
 class LedgerActionWithIdentifierSchema(LedgerActionSchema):
@@ -1668,6 +1717,19 @@ class HistoricalAssetsPriceSchema(Schema):
     )
     target_asset = AssetField(required=True)
     async_query = fields.Boolean(missing=False)
+
+
+class AssetUpdatesRequestSchema(Schema):
+    async_query = fields.Boolean(missing=False)
+    up_to_version = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=0,
+            error='Asset update target version should be >= 0',
+        ),
+        missing=None,
+    )
+    conflicts = AssetConflictsField(missing=None)
 
 
 class NamedEthereumModuleDataSchema(Schema):

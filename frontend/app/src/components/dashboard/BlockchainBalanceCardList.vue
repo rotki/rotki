@@ -6,7 +6,7 @@
       to="/accounts-balances/blockchain-balances"
     >
       <v-list-item-avatar tile class="blockchain-balance-box__icon">
-        <crypto-icon size="24px" :symbol="chain" />
+        <asset-icon size="24px" :identifier="chain" />
       </v-list-item-avatar>
       <v-list-item-content>
         <div class="d-flex flex-row">
@@ -36,7 +36,10 @@
           tile
           class="blockchain-balance-box__icon shrink ps-14"
         >
-          <crypto-icon size="24px" :symbol="l2.protocol" />
+          <asset-icon
+            size="24px"
+            :identifier="getIdentifierForSymbol(l2.protocol)"
+          />
         </v-list-item-avatar>
         <v-list-item-content>
           <div class="d-flex flex-row ps-2">
@@ -60,10 +63,11 @@
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import CryptoIcon from '@/components/CryptoIcon.vue';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import Fragment from '@/components/helper/Fragment';
+import AssetMixin from '@/mixins/asset-mixin';
 import { BlockchainTotal } from '@/store/balances/types';
 import {
   Blockchain,
@@ -76,9 +80,9 @@ import {
 import { Zero } from '@/utils/bignumbers';
 
 @Component({
-  components: { Fragment, AmountDisplay, CryptoIcon }
+  components: { Fragment, AmountDisplay, AssetIcon }
 })
-export default class BlockchainBalanceCardList extends Vue {
+export default class BlockchainBalanceCardList extends Mixins(AssetMixin) {
   @Prop({ required: true, type: Object })
   total!: BlockchainTotal;
 

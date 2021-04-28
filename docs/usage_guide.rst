@@ -15,7 +15,7 @@ First time sign-up
 
 When you start Rotki you are greeted with a sign-in/signup prompt.
 
-.. image:: images/sc_newacc1.png
+.. image:: images/rotki_login_screen.png
    :alt: Creating a new account
    :align: center
 
@@ -28,7 +28,7 @@ For creating an account press "Create New Account" and provide a username and a 
 
 If you have purchased a premium subscription you can also add the **API Key** and the **secret** here. See the section :ref:`sync-data-with-rotki-server` to know how to sync your data with Roki Server (this option is disabled by default).
 
-.. image:: images/sc_newacc2.png
+.. image:: images/rotki_create_account.png
    :alt: Creating a new account with a premium Rotki API key/secret pair
    :align: center
 
@@ -109,52 +109,132 @@ Customizing the application settings
 By choosing the "General" settings button you can customize some general application settings.
 
 
-.. image:: images/sc_settings.png
-   :alt: Customizing the app settings
+.. image:: images/sc_general_settings.png
+   :alt: Customizing the general app settings
    :align: center
 
-Floating precision
---------------------
-
-Set how many decimal points should be shown in the UI for floating point numbers.
+General Settings
+----------------------
 
 Anonymized logs
-------------------
+^^^^^^^^^^^^^^^^^^^
 
-Specify whether logging functionality should be anonymized. That has a small cost in performance but makes sure that all logs that would otherwise contain sensitive tradeinformation have them anonymized with random values.
+Specify whether logging functionality should be anonymized. That has a small cost in performance but makes sure that all logs that would otherwise contain sensitive trade information have them anonymized with random values. Note: This setting does its best to anonymize as many log entries as it can but it does not do so everywhere. It's on a best effort basis.
 
 Anonymous usage analytics
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Specify whether the application is allowed to submit anonymous usage analytics. As a local application Rotki has no other way to measure how many active users it has other than submitting some form of analytics. The data that are submitted are completely anonymized and contain no sensitive information.
 
-Date from when to count historical data
------------------------------------------
+Balance data saving frequency
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A date before which historical data is not counted.
+Set how often (in hours) the data of all balances will be saved. This data is used to calculate statistics and other historical data to show to the user.
+
+Date display format
+^^^^^^^^^^^^^^^^^^^^
+
+Set the display format of the dates in the Rotki user interface. One such format is ``%m/%d/%Y %H:%M:%S``. That means month/day/year hour:minutes:seconds. For possible valid formats check `here <https://exchange.https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes/>`__.
+
+Display in local time
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Choose whether local time or UTC should be shown in the CSV exports, user logs in the backend and other locations.
+
+BTC Derivation gap limit
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is the derivation gap limit that will be used when trying to derive addresses from a bitcoin xpub. For more information check `here <https://blog.blockonomics.co/bitcoin-what-is-this-gap-limit-4f098e52d7e1>`__.
+
+
+Amount Settings
+-----------------
+
+.. image:: images/sc_amount_settings.png
+   :alt: Customizing the app's amount settings
+   :align: center
+
+Floating precision
+^^^^^^^^^^^^^^^^^^^^
+
+Set how many decimal points should be shown in the UI for floating point numbers.
 
 Main currency
-----------------
+^^^^^^^^^^^^^^^^
 
 Same as `changing the profit currency <change_profit_currency_>`_.
 
+Thousands separator
+^^^^^^^^^^^^^^^^^^^^^^
+
+This is the symbol that will be separating the numbers every 3 digits for big numbers. For example in 1,000,000, the symbol is ``,``.
+
+Decimal separator
+^^^^^^^^^^^^^^^^^^^^^^
+
+This is the symbol that will be separating the floating part of the number. For example in 5.42 the symbol is ``.``.
+
+Currency location
+^^^^^^^^^^^^^^^^^^^^
+
+This setting chooses if the currency symbol will be shown before ($1,000) or after(1,000$) the number.
+
+
+Local nodes
+------------
+
+.. image:: images/sc_localnode_settings.png
+   :alt: Customizing the app's connection to local nodes
+   :align: center
 
 Connecting to an Ethereum Client
-------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When Rotki begins it tries to connect to a local ethereum node running with an rpc port set at the default port ``8545``. If no client is running then all blockchain queries will use an external service such as etherscan and this will be rather slower.
 
 If you want to connect to another ethereum client you can set the URL and port through the settings. Click the person icon on the top right menu and select "Settings" from the drop down menu. This will take you to the settings page. Write the desired url/port in the ETH RPC endpoing textbox.
 
-Balance data saving frequency
----------------------------------
+Connecting to a Kusama Client
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Set how often (in hours) the data of all balances will be saved. This data is used to calculate statistics and other historical data to show to the user.
+Just like with ethereum you can set the rpc endpoint of a kusama node you would like to connect to here.
 
-Date display format
+Price Oracle settings
 ---------------------
 
-Set the display format of the dates in the Rotki user interface.
+.. image:: images/sc_priceoracle_settings.png
+   :alt: Customizing the app's price oracle settings
+   :align: center
+
+Here you can customize the precedence of querying that price oracles will have. That means which price source to check first, which second and so on and so forth both for current but also for historical prices.
+
+Frontend only settings
+-----------------------
+
+.. image:: images/sc_frontendonly_settings.png
+   :alt: Customizing the app's frontend only settings
+   :align: center
+
+Data scrambling
+^^^^^^^^^^^^^^^
+
+When turned on this setting allows you to randomize a lot of amount numbers, dates and other data in the app so that you can share screenshots without leaking real data. This setting does not persist across sessions!
+
+Dashboard graph default timeframe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Set the default time frame for the dashboard graph. This timeframe will be pre-selected upon login. By default it will remember the previous session's selection.
+
+Automatic balance refresh
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This enables/disables automatic refresh of balances. Also sets the distance in time between each refresh. Automatic balance refresh is disabled by default because balance querying can get really slow and also get you rate limited.
+
+Periodic status query
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The rotki frontend continuously queries the backend for various data and updates. This is an inexpensive operation that is set by default to 5 seconds. You can customize the frequency of that query here.
+
 
 Customizing the accounting settings
 ====================================
@@ -165,29 +245,63 @@ You should understand what each setting does, consult with a tax accountant for 
 
 The default settings are at the moment set for the German tax jurisdiction. For example all profit/loss calculation is done for trades on a first-in/first-out basis and profits from selling crypto assets after 1 year are non taxable. These settings can be adjusted.
 
+Trade settings
+----------------
+
 .. image:: images/sc_accounting_settings.png
-   :alt: Customizing the accounting settings
+   :alt: Customizing the accounting trade settings
    :align: center
 
 Crypto to crypto trades
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Specify whether crypto to crypto trades are taxable and should be taken into account. If yes then each crypto to crypto trade also creates a "virtual" trade that sells or buys the crypto asset for fiat and then sells or buys the fiat for the other crypto asset.
 
 Ethereum gas costs
----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 Specify whether ethereum transaction gas costs should be counted as loss. If this is set then all ETH spent on gas will be deducted from your profits and count as an expense.
 
 Tax free period
--------------------
+^^^^^^^^^^^^^^^^^^^^
 
 Specify whether there is a period of time and if yes how many days, after which holding a crypto asset is considered not taxable.
 
-Ignored assets
------------------
+Asset movements fees
+^^^^^^^^^^^^^^^^^^^^^^^
 
-Specify which assets you own and would like to completely ignore from all calculations. Any actions that involve these assets are ignored.
+Specify whether deposit/withdrawal fees should count as expenses during the profit/loss report.
+
+Calculate past cost basis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When creating a profit/loss report we also need to figure out where and when all of the assets that the user is using were acquired from. Which is why we also go through all past events, even before the start of the period.
+
+This behavior can be disabled by turning this setting off.
+
+Asset settings
+--------------
+
+.. image:: images/sc_accountingasset_settings.png
+   :alt: Customizing the accounting asset settings
+   :align: center
+
+
+Ignored assets
+^^^^^^^^^^^^^^^
+
+Specify which assets you own and would like to completely ignore from all calculations and balance queries. Any actions that involve these assets are ignored.
+
+.. _ledger_action_settings:
+
+Ledger action settings
+-----------------------
+
+.. image:: images/sc_accountingledgeraction_settings.png
+   :alt: Customizing the accounting ledger action settings
+   :align: center
+
+Here you can choose which types of historical actions should be considered taxable and which not. For example in Germany airdrops are considered windfall profits and are not taxed, so you can specify that here.
 
 Customizing data & security settings
 ====================================
@@ -329,6 +443,34 @@ Rotki can import any trade CSV data exported from cointracking.info. But in gene
    :alt: Importing data from cointracking.info
    :align: center
 
+Loopring balances
+===================
+
+To have your loopring balances detected you will need an API Key from loopring. To get one visit `https://exchange.loopring.io/ <https://exchange.loopring.io/>`_ and unlock your account. In the right panel you need to click in **Export Account**
+
+.. image:: images/get_loopring_keys.png
+   :alt: Get loopring keys
+   :align: center
+
+Then in rotki you need to add the API key. Go to API Keys > External Services > Loopring and paste the key that you obtained in the loopring website.
+
+.. image:: images/loopring_add_key.png
+   :alt: Add loopring key
+   :align: center
+
+After following this steps your balances in the dashboard will be updated including the loopring information
+
+.. image:: images/loopring_balances.png
+   :alt: Loopring balances in the UI
+   :align: center
+
+The loopring account balances are also visible in the blockchain accounts view.
+
+.. image:: images/loopring_balances_account.gif
+   :alt: Loopring balances for an account
+   :align: center
+
+.. _track_balances: 
 
 Tracking accounts and balances
 **********************************
@@ -367,6 +509,14 @@ To stop tracking a particular account scroll down to the accounts tables and cli
 
 If an ethereum account also contains tracked tokens you can click on the arrow under "Actions" in order to expand its view and show the balance breakdown for the account over all assets it holds.
 
+For Bitcoin you can add addresses manually or let rotki discover them using an xpub. From this key rotki can generate your addresses and query the Bitcoin blockchain for each one of them until it finds unused addresses.
+There are also different types of xpubs. P2PKH xpubs generate addresses that have "1" as a prefix, P2SH_P2WPKH xpubs generate addresses that start with a "3" and WPKH xpubs generate addresses that start with "bc1". You will need to know what type of xpub your bitcoin wallet generates in order to choose the correct type at the dropdown menu. If your wallet generates an xpub prefixed with ``ypub`` or an xpub prefix with ``zpub`` rotki can deduce the type for you automatically.
+An xpub does not allow spending your coins but provides information about your wallet. In rotki this information is stored safely encrypted in your local database.
+
+.. image:: images/add_xpub_key.png
+   :alt: Add a bitcoin account using XPUB
+   :align: center
+
 
 Checking Exchange Balances
 ===========================
@@ -401,27 +551,139 @@ You can filter the tables by a combination of tags.
 
 Simply add the tags you wish to filter by in the filter textbox above the tables.
 
+ETH2 Staking
+=====================
 
-Manually adding trades or other events
-*******************************************
+If you are an ETH2 staker you can see the total value earned both in the current ETH price (2) but also counting the price of the daily payouts of ETH2 staking (3).
+
+.. image:: images/rotki_eth2_staking.png
+   :alt: See ETH2 value earned
+   :align: center
+
+Moreover you can see a breakout of daily stats of validating. How much ETH was earned per day, attestation stats, block proposing stats and more.
+
+.. image:: images/rotki_eth2_daily_stats.png
+   :alt: See ETH2 value earned
+   :align: center
+
+Finally this can also be taken into account in the profit/loss report for any given period of time and also exported via CSV to a spreadsheet.
+
+.. image:: images/rotki_eth2_pnl.png
+   :alt: See ETH2 value earned
+   :align: center
+
+Airdrops
+==========
+
+rotki can detect some airdrops for you
+
+.. image:: images/rotki_airdrops.png
+   :alt: rotki airdrops detection
+   :align: center
+
+The list of currently supported airdrops is:
+
+- Uniswap
+- 1INCH
+- Tornado
+- Cornichon
+- Grain
+- Furocombo
+- Lido
+- Curve
+
+Adding historical events
+************************
+
+Adding manual trades
+====================
 
 Rotki will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
 
-On the left sidebar click on the trades button and select "OTC Trades" from the dropdown menu. This will take you to the OTC Trades page.
+On the left sidebar click on History and then the Trade button from the dropdown menu. This will take you to the Trades page. Clicking on the ``+`` symbol will open a menu like the following.
 
-.. image:: images/sc_add_external_trade.png
+.. image:: images/external_trade.png
    :alt: Add an external trade
    :align: center
 
-To add a new trade or taxable event, fill in all the fields and press the "Add Trade" button.
+To add a new trade, fill in all the fields and press the "Save" button.
 
-Some very important things to note. All pairs should be in the form of ``BASECURRENCY_QUOTECURRENCY``. For a ``buy`` this means you are buying ``amount`` of the ``BASE`` currency at a price of ``rate`` ``QUOTE`` currency per ``BASE``. For a ``sell`` this means you are selling ``amount`` of the ``BASE`` currency at a price of ``rate`` ``QUOTE`` currency per ``BASE``.
+In the ``amount`` field you can register the amount of the base asset bought or sold. The ``rate`` field represents the rate of quote asset per base asset that was bought or sold. If there was a fee for the trade you should input it in the corresponding box and also enter the currency the fee was paid in. This field is optional so if the Fee was 0 you can leave this field empty.  You can optionally provide additional notes or even links to blockchain explorers for each trade.
 
-If there was a fee for the trade you should input it in the corresponding box and also enter the currency the fee was paid in. Fee can also be 0.
+In the Trades page you can see a table of all your external trades. You can edit or delete a trade by clicking on the appropriate icon at the rightmost part of each trade under the "Actions" column.
 
-You can optionally provide additional notes or even links to blockchain explorers for each trade.
+Currently rotki tracks your balance by querying the different supported protocols, exchanges and blockchains. If you manually add information about a trade your balances will not be updated since trades are not consulted when updating the accounts' balances. If you want to manually update your balance for an asset please refer to the :ref:`manual balances section <track_balances>`.
 
-At the bottom of this page you can see a table of all your OTC trades. You can edit or delete a trade by clicking on the appropriate icon at the rightmost part of each trade under the "Actions" column.
+Adding ledger actions
+=====================
+
+With ledger actions you can add events that represent incomes, losses, expenses, etc. On the left sidebar click on History and then the Ledger Actions button from the dropdown menu.
+You can provide a location, for example an exchange, a bank, a blockchain or others. For the action type you can select from:
+
+* Income
+* Loss
+* Donation Received
+* Expense
+* Dividends Income
+* Airdrop
+* Gift
+* Grant
+
+.. image:: images/ledger_action.png
+   :alt: Add a ledger action
+   :align: center
+
+For ledger actions you can optionally specify a rate and a asset for the rate. This is the rate linked to the asset for this action. If no rate is provided, the historical price at the date of the action is used.
+
+When generating a profit and loss report some ledger actions might be taxable in your jurisdiction and some not. To customize the list of taxable actions refer to the :ref:`ledger actions settings <ledger_action_settings>` section.
+
+Customization of the list of supported assets
+*********************************************
+
+Inspecting list of assets
+=========================
+
+You can now manage the list of supported assets by your local rotki instance. At the moment only ethereum tokens are modifiable but from next releases you will be able to add all kind of assets.
+
+You can inspect the list of all supported assets, edit them, delete them or add new ones.
+
+.. image:: images/rotki_manage_assets.png
+   :alt: Manage the list of assets
+   :align: center
+
+Adding/editing an asset
+=======================
+
+.. image:: images/rotki_add_edit_token.png
+   :alt: Add or edit a custom token
+   :align: center
+
+When you press the + button on the top right, or edit an existing token you can see the Asset form.
+
+You can fill in the following fields:
+
+1. The token address. This is required.
+2. The token name. This is required.
+3. The token symbol. This is required.
+4. The token decimals. This is required.
+5. Coingecko identifier. This is optional, but highly recommended. If the asset is supported by coingecko you should get its coingecko identifier. Information on how to do this here. This will allow the usage of coingecko as a price oracle and also will automatically pull the asset icon from coingecko.
+6. Cryptocompare identifier. This is optional but recommended. At least one of coingecko or cryptocompare should be given so that prices can be queried. If not given, the symbol of the asset will be used. If that fails, then cryptocompare is not used. To get the cryptocompare identifier check the docs.
+7. You can upload an icon for the asset. Any of the common image extensions is accepted (png, jpg, jpeg, webp). The custom icon always takes precedence over the one auto-detected by coingecko.
+
+When you input the address of the token rotki will try to fetch its name, symbol and decimals and use them if they are available.
+
+There is also some other fields that are completely optional and expand if you press the (7) Optional Fields section.
+
+.. image:: images/rotki_add_edit_token_optionals.png
+   :alt: Optional information when adding a custom token
+   :align: center
+
+1. You can specify a timestamp at which the asset started to exist. This should be the token deployment timestamp for tokens.
+2. If the asset is part of a protocol, specify it here. For example 'uniswap' for uniswap pool tokens, 'aave' for aTokens etc.
+3. If the token is swapped for another token, specify it here. For example LEND was swapped for AAVE.
+4. A token can have underlying tokens. Like a pool, or a token set. Here add the underlying token's address.
+5. And here add the underlying token's weight.
+6. Here you can edit or delete underlying token address/weights. Note: The weight of the underlying tokens should add up to 100%.
 
 Decentralized Finance
 **********************
@@ -542,6 +804,9 @@ Analytics
 
 If you have a premium subscription you can get analytics on your all your assets and trades.
 
+.. note::
+    The starting point of the for these analytics will be when you started using the application as rotki takes balance snapshots daily. We also plan to provide analytics on data before that in a best effort basis as detailed in `this <https://github.com/rotki/rotki/issues/1379>`_ issue.
+
 Click on the analytics page on the left sidebar to go to your analytics page.
 
 Since Rotki is tracking all your assets over time the first thing you can see is a value/time graph of your entire net value.
@@ -650,4 +915,3 @@ Timeout or price not found for timestamp
 -------------------------------------------------
 
 Figure out which asset caused the price not found. Then check the historical price caches and make sure you have the historical price cache for that asset pair created. For example if you are creating a GBP profit/loss report and the asset is GNO then make sure to create the GNO -> GBP historical price cache. See :ref:`manage-historical-price-cache` on how to do it.
-

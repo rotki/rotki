@@ -18,6 +18,7 @@ export class DefiPage {
     cy.get('#defi-module-adex').find('button').click();
     cy.get('#defi-module-loopring').find('button').click();
     cy.get('#defi-module-balancer').find('button').click();
+    cy.get('#defi-module-eth2').find('button').click();
     cy.get('#defi-module-aave').should('be.visible');
     cy.get('#defi-module-makerdao_dsr').should('not.be.visible');
     cy.get('#defi-module-makerdao_vaults').should('not.be.visible');
@@ -27,6 +28,7 @@ export class DefiPage {
     cy.get('#defi-module-adex').should('not.be.visible');
     cy.get('#defi-module-loopring').should('not.be.visible');
     cy.get('#defi-module-balancer').should('not.be.visible');
+    cy.get('#defi-module-eth2').should('not.be.visible');
     cy.get('.defi-wizard__select-accounts').click();
   }
 

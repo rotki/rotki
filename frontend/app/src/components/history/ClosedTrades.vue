@@ -48,6 +48,41 @@
                 @input="setSelected($event)"
               />
             </template>
+            <template #item.baseAsset="{ item }">
+              <asset-details
+                v-if="typeof item.baseAsset === 'string'"
+                data-cy="trade_base"
+                hide-name
+                :asset="item.baseAsset"
+              />
+              <asset-details-base
+                v-else
+                data-cy="trade_base"
+                hide-name
+                :asset="item.baseAsset"
+              />
+            </template>
+            <template #item.quoteAsset="{ item }">
+              <asset-details
+                v-if="typeof item.quoteAsset === 'string'"
+                data-cy="trade_quote"
+                hide-name
+                :asset="item.quoteAsset"
+              />
+              <asset-details-base
+                v-else
+                hide-name
+                :asset="item.quoteAsset"
+                data-cy="trade_quote"
+              />
+            </template>
+            <template #item.description="{ item }">
+              {{
+                item.tradeType === 'buy'
+                  ? $t('closed_trades.description.with')
+                  : $t('closed_trades.description.for')
+              }}
+            </template>
             <template #item.selection="{ item }">
               <v-simple-checkbox
                 :ripple="false"
@@ -69,13 +104,6 @@
               <amount-display
                 class="closed-trades__trade__amount"
                 :value="item.amount"
-              />
-            </template>
-            <template #item.fee="{ item }">
-              <amount-display
-                class="closed-trades__trade__fee"
-                :asset="item.feeCurrency"
-                :value="item.fee"
               />
             </template>
             <template #item.ignoredInAccounting="{ item }">
@@ -114,22 +142,20 @@
                   {{ $t('closed_trades.details.title') }}
                 </template>
                 <v-row>
+                  <v-col cols="auto" class="font-weight-medium">
+                    {{ $t('closed_trades.details.fee') }}
+                  </v-col>
                   <v-col>
-                    <v-card outlined>
-                      <v-card-title class="text-subtitle-2">
-                        {{ $t('closed_trades.details.notes') }}
-                      </v-card-title>
-                      <v-card-text>
-                        {{
-                          item.notes
-                            ? item.notes
-                            : $t('closed_trades.details.note_data')
-                        }}
-                      </v-card-text>
-                    </v-card>
+                    <amount-display
+                      v-if="!!item.fee"
+                      class="closed-trades__trade__fee"
+                      :asset="item.feeCurrency"
+                      :value="item.fee"
+                    />
+                    <span v-else>-</span>
                   </v-col>
                 </v-row>
-                <v-row class="mt-2">
+                <v-row>
                   <v-col cols="auto" class="font-weight-medium">
                     {{ $t('closed_trades.details.link') }}
                   </v-col>
@@ -141,6 +167,7 @@
                     }}
                   </v-col>
                 </v-row>
+                <notes-display :notes="item.notes" />
               </table-expand-container>
             </template>
             <template
@@ -191,14 +218,17 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import ExternalTradeForm from '@/components/ExternalTradeForm.vue';
+import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import AssetMixin from '@/mixins/asset-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
 import { IGNORE_TRADES } from '@/store/history/consts';
@@ -207,6 +237,8 @@ import { ActionStatus, Message } from '@/store/types';
 
 @Component({
   components: {
+    NotesDisplay,
+    AssetDetailsBase,
     DataTable,
     TableExpandContainer,
     Fragment,
@@ -232,7 +264,7 @@ import { ActionStatus, Message } from '@/store/types';
     ...mapMutations(['setMessage'])
   }
 })
-export default class ClosedTrades extends Mixins(StatusMixin) {
+export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
   readonly headersClosed: DataTableHeader[] = [
     { text: '', value: 'selection', width: '34px', sortable: false },
     {
@@ -246,7 +278,20 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
       value: 'tradeType',
       width: '90px'
     },
-    { text: this.$tc('closed_trades.headers.pair'), value: 'pair' },
+    {
+      text: this.$t('closed_trades.headers.base').toString(),
+      value: 'baseAsset'
+    },
+    {
+      text: '',
+      value: 'description',
+      sortable: false,
+      width: '40px'
+    },
+    {
+      text: this.$t('closed_trades.headers.quote').toString(),
+      value: 'quoteAsset'
+    },
     {
       text: this.$tc('closed_trades.headers.rate'),
       value: 'rate',
@@ -255,11 +300,6 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
     {
       text: this.$tc('closed_trades.headers.amount'),
       value: 'amount',
-      align: 'end'
-    },
-    {
-      text: this.$tc('closed_trades.headers.fee'),
-      value: 'fee',
       align: 'end'
     },
     {
@@ -399,8 +439,14 @@ export default class ClosedTrades extends Mixins(StatusMixin) {
   }
 
   promptForDelete(trade: TradeEntry) {
+    const prep = (trade.tradeType === 'buy'
+      ? this.$t('closed_trades.description.with').toString()
+      : this.$t('closed_trades.description.for').toString()
+    ).toLocaleLowerCase();
     this.confirmationMessage = this.$t('closed_trades.confirmation.message', {
-      pair: trade.pair,
+      pair: `${this.getSymbol(trade.baseAsset)} ${prep} ${this.getSymbol(
+        trade.quoteAsset
+      )}`,
       action: trade.tradeType,
       amount: trade.amount
     }).toString();

@@ -159,6 +159,7 @@ import { mapActions, mapState } from 'vuex';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import LedgerActionSettings from '@/components/settings/accounting/LedgerActionSettings.vue';
 import { settingsMessages } from '@/components/settings/utils';
+import AssetMixin from '@/mixins/asset-mixin';
 import SettingsMixin from '@/mixins/settings-mixin';
 import { ActionStatus } from '@/store/types';
 
@@ -196,9 +197,9 @@ type SettingsEntries = typeof SETTINGS[number];
     ...mapActions('session', ['ignoreAsset', 'unignoreAsset'])
   }
 })
-export default class Accounting extends Mixins<SettingsMixin<SettingsEntries>>(
-  SettingsMixin
-) {
+export default class Accounting extends Mixins<
+  SettingsMixin<SettingsEntries> & AssetMixin
+>(SettingsMixin, AssetMixin) {
   ignoredAssets!: string[];
   ignoreAsset!: (asset: string) => Promise<ActionStatus>;
   unignoreAsset!: (asset: string) => Promise<ActionStatus>;
@@ -414,8 +415,9 @@ export default class Accounting extends Mixins<SettingsMixin<SettingsEntries>>(
   }
 
   async addAsset() {
-    const asset = this.assetToIgnore;
-    const { message, success } = await this.ignoreAsset(asset);
+    const identifier = this.assetToIgnore;
+    const { message, success } = await this.ignoreAsset(identifier);
+    const asset = this.getSymbol(identifier);
 
     const validationMessage = success
       ? this.$tc('account_settings.messages.ignored_success', 0, { asset })
@@ -435,8 +437,9 @@ export default class Accounting extends Mixins<SettingsMixin<SettingsEntries>>(
   }
 
   async removeAsset() {
-    const asset = this.assetToRemove;
-    const { message, success } = await this.unignoreAsset(asset);
+    const identifier = this.assetToRemove;
+    const { message, success } = await this.unignoreAsset(identifier);
+    const asset = this.getSymbol(identifier);
 
     const validationMessage = success
       ? this.$tc('account_settings.messages.unignored_success', 0, { asset })

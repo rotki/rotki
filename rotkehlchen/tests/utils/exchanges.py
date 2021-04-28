@@ -13,6 +13,7 @@ from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro
+from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.exchanges.kucoin import Kucoin
@@ -178,6 +179,43 @@ BINANCE_FUTURES_WALLET_RESPONSE = """{
     ]
 }"""
 
+BINANCE_POOL_BALANCES_RESPONSE = """[
+    {
+        "poolId": 2,
+        "poolName": "BUSD/USDT",
+        "updateTime": 2,
+        "liquidity": {
+            "USDT": "80",
+            "BUSD": "80"
+        },
+        "share": {
+            "shareAmount": "0",
+            "sharePercentage": "0",
+            "asset": {
+                "BUSD": "0",
+                "USDT": "0"
+            }
+        }
+    },
+    {
+        "poolId": 15,
+        "poolName": "BTC/WBTC",
+        "updateTime": 2,
+        "liquidity": {
+            "BTC": "80",
+            "WBTC": "80"
+        },
+        "share": {
+            "shareAmount": "0",
+            "sharePercentage": "0",
+            "asset": {
+                "BTC": "2",
+                "WBTC": "2.1"
+            }
+        }
+    }
+]"""
+
 BINANCE_USDT_FUTURES_BALANCES_RESPONSE = """[
 {"accountAlias": "foo", "asset": "USDT", "availableBalance": "125.55", "balance": "125.55", "crossUnPnl": "0", "crossWalletBalance": "125.55", "maxWithdrawAmount": "125.55"},
  {"accountAlias": "foo", "asset": "BNB", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "maxWithdrawAmount": "0"},
@@ -264,6 +302,8 @@ def mock_binance_balance_response(url):
         return MockResponse(200, BINANCE_USDT_FUTURES_BALANCES_RESPONSE)
     if 'https://dapi' in url:
         return MockResponse(200, BINANCE_COIN_FUTURES_BALANCES_RESPONSE)
+    if 'bswap/liquidity' in url:
+        return MockResponse(200, BINANCE_POOL_BALANCES_RESPONSE)
 
     # else
     return MockResponse(200, BINANCE_BALANCES_RESPONSE)
@@ -278,6 +318,8 @@ def patch_binance_balances_query(binance: 'Binance'):
         elif 'https://fapi' in url:
             response = '[]'
         elif 'https://dapi' in url:
+            response = '[]'
+        elif 'bswap/liquidity' in url:
             response = '[]'
         else:
             response = BINANCE_BALANCES_RESPONSE
@@ -409,6 +451,19 @@ def create_test_coinbasepro(
         passphrase=passphrase,
     )
     return coinbasepro
+
+
+def create_test_ftx(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Ftx:
+    mock = Ftx(
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+    return mock
 
 
 def create_test_gemini(

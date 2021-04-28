@@ -10,11 +10,12 @@
       <v-row justify="end" no-gutters>
         <v-col cols="12" sm="4">
           <v-text-field
-            v-model="search"
+            :value="pendingSearch"
             dense
             prepend-inner-icon="mdi-magnify"
             :label="$t('asset_table.search')"
             outlined
+            @input="onSearchTermChange($event)"
           />
         </v-col>
       </v-row>
@@ -28,7 +29,7 @@
       :headers="headers"
       single-expand
       :expanded="expanded"
-      item-key="address"
+      item-key="identifier"
       sort-by="name"
       :search.sync="search"
     >
@@ -54,7 +55,7 @@
           :edit-tooltip="$t('asset_table.edit_tooltip')"
           :delete-tooltip="$t('asset_table.delete_tooltip')"
           @edit-click="edit(item)"
-          @delete-click="deleteClick(item)"
+          @delete-click="deleteAsset(item)"
         />
       </template>
       <template #expanded-item="{ item, headers }">
@@ -133,22 +134,27 @@ export default class AssetTable extends Vue {
   @Emit()
   add() {}
   @Emit()
-  edit(_token: ManagedAsset) {}
+  edit(_asset: ManagedAsset) {}
   @Emit()
-  deleteToken(_address: string) {}
-  @Emit()
-  deleteAsset(_identifier: string) {}
-
-  deleteClick(item: ManagedAsset) {
-    if ('assetType' in item) {
-      this.deleteAsset(item.identifier);
-    } else {
-      this.deleteToken(item.address);
-    }
-  }
+  deleteAsset(_asset: ManagedAsset) {}
 
   expanded = [];
   search: string = '';
+  pendingSearch: string = '';
+  searchTimeout: any = null;
+
+  onSearchTermChange(term: string) {
+    this.pendingSearch = term;
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
+    }
+    this.searchTimeout = setTimeout(
+      () => (this.search = this.pendingSearch),
+      400
+    );
+  }
+
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('asset_table.headers.asset').toString(),

@@ -8,27 +8,24 @@ export class HistoryPage {
     cy.get('.navigation__history-trades').click();
   }
 
-  addTrade(externalTrade: ExternalTrade) {
+  addTrade(trade: ExternalTrade) {
     cy.get('.closed-trades__add-trade').click();
     cy.get('[data-cy=trade-form]').should('be.visible');
     cy.get('[data-cy=date]')
-      .type(`{selectall}{backspace}${externalTrade.time}`)
+      .type(`{selectall}{backspace}${trade.time}`)
       .click(); // Click is needed to hide the popup
 
-    const [base, quote] = externalTrade.pair.split('_');
-    selectAsset('[data-cy=base_asset]', base);
-    selectAsset('[data-cy=quote_asset]', quote);
-    cy.get('[data-cy=type] input').check(externalTrade.trade_type, {
+    selectAsset('[data-cy=base_asset]', trade.base, trade.base_id);
+    selectAsset('[data-cy=quote_asset]', trade.quote, trade.quote_id);
+    cy.get('[data-cy=type] input').check(trade.trade_type, {
       force: true
     });
-    cy.get('[data-cy=amount]').type(externalTrade.amount);
-    cy.get('[data-cy=rate]').type(
-      `{selectall}{backspace}${externalTrade.rate}`
-    );
-    cy.get('[data-cy=fee]').type(externalTrade.fee);
-    selectAsset('[data-cy=fee-currency]', externalTrade.fee_currency);
-    cy.get('[data-cy=link]').type(externalTrade.link);
-    cy.get('[data-cy=notes]').type(externalTrade.notes);
+    cy.get('[data-cy=amount]').type(trade.amount);
+    cy.get('[data-cy=rate]').type(`{selectall}{backspace}${trade.rate}`);
+    cy.get('[data-cy=fee]').type(trade.fee);
+    selectAsset('[data-cy=fee-currency]', trade.fee_currency, trade.fee_id);
+    cy.get('[data-cy=link]').type(trade.link);
+    cy.get('[data-cy=notes]').type(trade.notes);
     cy.get('.big-dialog__buttons__confirm').click();
     cy.get('[data-cy=trade-form]').should('not.be.visible');
   }
@@ -46,11 +43,24 @@ export class HistoryPage {
   tradeIsVisible(position: number, otcTrade: ExternalTrade) {
     cy.get('.closed-trades tbody > tr').eq(position).as('row');
 
-    cy.get('@row').find('td').eq(3).should('contain', otcTrade.pair);
+    cy.get('@row')
+      .find('td')
+      .eq(3)
+      .find('[data-cy=trade_base]')
+      .find('[data-cy=details-symbol]')
+      .should('contain', otcTrade.base);
+
     cy.get('@row')
       .find('td')
       .eq(5)
-      .find('.amount-display__value')
+      .find('[data-cy=trade_quote]')
+      .find('[data-cy=details-symbol]')
+      .should('contain', otcTrade.quote);
+
+    cy.get('@row')
+      .find('td')
+      .eq(7)
+      .find('[data-cy=display-amount]')
       .should('contain', otcTrade.amount);
     cy.get('@row').find('td').eq(2).should('contain', otcTrade.trade_type);
   }

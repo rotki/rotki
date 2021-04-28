@@ -5,6 +5,7 @@ import * as path from 'path';
 import stream from 'stream';
 import { app, App, BrowserWindow, ipcMain } from 'electron';
 import tasklist from 'tasklist';
+import { BackendCode } from '@/electron-main/backend-code';
 import { DEFAULT_PORT, selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
 import { Level } from '@/utils/log-level';
@@ -111,6 +112,18 @@ export default class PyHandler {
       return;
     }
 
+    if (os.platform() === 'darwin') {
+      const release = os.release().split('.');
+      if (release.length > 0 && parseInt(release[0]) < 18) {
+        this.setFailureNotification(
+          window,
+          'rotki requires at least macOS Mojave',
+          BackendCode.MACOS_VERSION
+        );
+        return;
+      }
+    }
+
     const port = await selectPort();
     const backendUrl = process.env.VUE_APP_BACKEND_URL;
     if (port !== DEFAULT_PORT && backendUrl && typeof backendUrl === 'string') {
@@ -160,7 +173,7 @@ export default class PyHandler {
         `Encountered an error while trying to start the python sub-process\n\n${err}`
       );
       // Notify the main window every 2 seconds until it acks the notification
-      handler.setFailureNotification(window, err);
+      handler.setFailureNotification(window, err, BackendCode.TERMINATED);
     });
 
     childProcess.on('exit', (code: number, signal: any) => {
@@ -169,7 +182,11 @@ export default class PyHandler {
       );
       if (code !== 0) {
         // Notify the main window every 2 seconds until it acks the notification
-        handler.setFailureNotification(window, this.backendOutput);
+        handler.setFailureNotification(
+          window,
+          this.backendOutput,
+          BackendCode.TERMINATED
+        );
       }
     });
 
@@ -232,13 +249,14 @@ export default class PyHandler {
 
   private setFailureNotification(
     window: Electron.BrowserWindow | null,
-    backendOutput: string | Error
+    backendOutput: string | Error,
+    code: BackendCode
   ) {
     if (this.rpcFailureNotifier) {
       clearInterval(this.rpcFailureNotifier);
     }
     this.rpcFailureNotifier = setInterval(function () {
-      window?.webContents.send('failed', backendOutput);
+      window?.webContents.send('failed', backendOutput, code);
     }, 2000);
   }
 
