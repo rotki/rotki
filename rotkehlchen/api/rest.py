@@ -1485,6 +1485,13 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
+    @require_loggedin_user()
+    def rebuild_assets_information(self) -> Response:
+        success, msg = GlobalDBHandler().rebuild_assets_list()
+        if not success:
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+        return api_response(_wrap_in_ok_result(OK_RESULT), status_code=HTTPStatus.OK)
+
     def query_netvalue_data(self) -> Response:
         from_ts = Timestamp(0)
         premium = self.rotkehlchen.premium

@@ -488,6 +488,9 @@ class AssetUpdatesResource(BaseResource):
     ) -> Response:
         return self.rest_api.perform_assets_updates(async_query, up_to_version, conflicts)
 
+    def delete(self) -> Response:
+        return self.rest_api.rebuild_assets_information()
+
 
 class BlockchainBalancesResource(BaseResource):
 

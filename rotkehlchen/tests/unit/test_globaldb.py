@@ -3,6 +3,7 @@ from pathlib import Path
 from shutil import copyfile
 
 import pytest
+import sqlite3
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
@@ -274,6 +275,7 @@ def test_enum_values_are_present_in_global_db(globaldb, enum_class, table_name):
         assert r.fetchone() == (1,), f'Did not find {table_name} entry for value {enum_class_entry.value}'  # noqa: E501
 
 
+<<<<<<< HEAD
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_get_all_asset_data_specific_ids(globaldb):
     btc_asset_data = AssetData(
@@ -431,3 +433,44 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     cursor.execute('PRAGMA foreign_keys')
     # Now the pragma should be off
     assert cursor.fetchone()[0] == 0
+=======
+def test_global_db_restore(globaldb):
+    """
+    Check that the user can recreate assets information from the packaged
+    database with rotki. The test adds a new asset, restores the database
+    and checks that the added token is not in there and that the amount of
+    assets is the expected
+    """
+    address_to_delete = make_ethereum_address()
+    token_to_delete = CustomEthereumToken(
+        address=address_to_delete,
+        decimals=18,
+        name='willdell',
+        symbol='DELME',
+    )
+    token_to_delete_id = 'DELMEID1'
+    globaldb.add_asset(
+        asset_id=token_to_delete_id,
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        data=token_to_delete,
+    )
+    status, _ = globaldb.rebuild_assets_list()
+    assert status
+    cursor = globaldb._conn.cursor()
+    query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{address_to_delete}";'
+    r = cursor.execute(query)
+    assert r.fetchone() == (0,)
+    query = f'SELECT COUNT(*) FROM assets where details_reference == "{address_to_delete}";'
+    r = cursor.execute(query)
+    assert r.fetchone() == (0,)
+
+    # Check that the number of assets is the expected
+    root_dir = Path(__file__).resolve().parent.parent.parent
+    builtin_database = root_dir / 'data' / 'global.db'
+    conn = sqlite3.connect(builtin_database)
+    cursor_clean_db = conn.cursor()
+    tokens_expected = cursor_clean_db.execute('SELECT COUNT(*) FROM assets;')
+    tokens_local = cursor.execute('SELECT COUNT(*) FROM assets;')
+    assert tokens_expected.fetchone() == tokens_local.fetchone()
+    conn.close()
+>>>>>>> a2a1868f (Add bakcend code to handle db restore)
