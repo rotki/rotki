@@ -3,25 +3,14 @@
 import '@mdi/font/css/materialdesignicons.css';
 import Vue from 'vue';
 import Vuetify from 'vuetify/lib';
-import { ThemeColors } from '@/store/settings/types';
+import {
+  DARK_ACCENT,
+  DARK_PRIMARY,
+  LIGHT_ACCENT,
+  LIGHT_PRIMARY
+} from '@/plugins/theme';
 
 Vue.use(Vuetify);
-
-const LIGHT_PRIMARY = '#7e4a3b';
-const LIGHT_ACCENT = '#e45325';
-
-const DARK_PRIMARY = '#ff5722';
-const DARK_ACCENT = '#ff8a50';
-
-export const DARK_COLORS: ThemeColors = {
-  primary: DARK_PRIMARY,
-  accent: DARK_ACCENT
-};
-
-export const LIGHT_COLORS: ThemeColors = {
-  primary: LIGHT_PRIMARY,
-  accent: LIGHT_ACCENT
-};
 
 export default new Vuetify({
   icons: {

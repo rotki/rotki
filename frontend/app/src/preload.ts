@@ -12,7 +12,7 @@ import {
 
 function ipcAction<T>(message: string, arg?: any): Promise<T> {
   return new Promise(resolve => {
-    ipcRenderer.on(message, (event, args) => {
+    ipcRenderer.once(message, (event, args) => {
       resolve(args);
     });
     ipcRenderer.send(message, arg);

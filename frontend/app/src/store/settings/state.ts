@@ -1,6 +1,6 @@
 import { default as BigNumber } from 'bignumber.js';
 import { Defaults } from '@/data/defaults';
-import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/vuetify';
+import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
   ALL,
   CURRENCY_LOCATION,

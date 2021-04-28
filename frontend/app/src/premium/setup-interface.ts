@@ -5,7 +5,7 @@ import Vuex from 'vuex';
 import { TIME_UNIT_DAY } from '@/components/dashboard/const';
 import { TimeUnit } from '@/components/dashboard/types';
 import { displayDateFormatter } from '@/data/date_formatter';
-import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/vuetify';
+import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { registerComponents } from '@/premium/register-components';
 import { DataUtilities, DateUtilities, SettingsApi } from '@/premium/types';
 import { DARK_THEME, LIGHT_THEME } from '@/store/settings/consts';
