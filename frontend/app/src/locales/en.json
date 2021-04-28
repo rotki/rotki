@@ -102,7 +102,17 @@
     },
     "title": "A supported asset update is available",
     "total_changes": "This update contains {changes} asset changes.",
-    "up_to_version": "Only update up to version"
+    "up_to_version": "Only update up to version",
+    "restore": {
+      "title": "Restore assets database",
+      "subtitle": "Discard all the local changes for assets and use a the database provided by rotki",
+      "action": "Restore",
+      "restore_error": "Error restoring assets to an initial state",
+      "delete_confirmation": {
+        "title": "Do you really want to restore your local copy of assets?",
+        "message": "You will lose the assets added manually"
+      }
+    }
   },
   "assets": {
     "amount": "Total Owned",
