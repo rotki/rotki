@@ -7,7 +7,7 @@ export const TYPE_INFO = 'info';
 export const DIALOG_TYPES = [TYPE_SUCCESS, TYPE_INFO, TYPE_WARNING] as const;
 
 export const themes: DialogThemes = {
-  info: { icon: 'mdi-help-circle', color: 'primary' },
+  info: { icon: 'mdi-information', color: 'primary' },
   warning: { icon: 'mdi-alert-circle', color: 'error' },
   success: { icon: 'mdi-check-circle', color: 'success' }
 };

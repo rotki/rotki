@@ -1,4 +1,4 @@
-import { ChildProcess, execFile, spawn } from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -331,7 +331,7 @@ export default class PyHandler {
     this.logToFile(
       `Starting packaged python subprocess: ${executable} ${args.join(' ')}`
     );
-    this.childProcess = execFile(executable, args);
+    this.childProcess = spawn(executable, args);
   }
 
   private async terminateWindowsProcesses(restart: boolean) {

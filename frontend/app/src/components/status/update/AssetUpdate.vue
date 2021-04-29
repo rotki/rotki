@@ -87,12 +87,26 @@
       @cancel="showConflictDialog = false"
       @resolve="updateAssets($event)"
     />
+    <confirm-dialog
+      v-if="done"
+      single-action
+      display
+      :title="$t('asset_update.success.title')"
+      :primary-action="$t('asset_update.success.ok')"
+      :message="
+        $t('asset_update.success.description', {
+          remoteVersion
+        })
+      "
+      @confirm="updateComplete()"
+    />
   </fragment>
 </template>
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
 import {
@@ -104,15 +118,15 @@ import {
   AssetUpdateCheckResult,
   AssetUpdateConflictResult
 } from '@/store/assets/types';
-import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
+import { currentLogLevel } from '@/utils/log-level';
 
 const SKIP_ASSET_DB_VERSION = 'rotki_skip_asset_db_version';
 
 @Component({
-  components: { Fragment, ConflictDialog },
+  components: { ConfirmDialog, Fragment, ConflictDialog },
   methods: {
-    ...mapActions('assets', ['checkForUpdate', 'applyUpdates'])
+    ...mapActions('assets', ['checkForUpdate', 'applyUpdates']),
+    ...mapActions('session', ['logout'])
   }
 })
 export default class AssetUpdate extends Vue {
@@ -128,7 +142,9 @@ export default class AssetUpdate extends Vue {
   partial: boolean = false;
   checkForUpdate!: () => Promise<AssetUpdateCheckResult>;
   applyUpdates!: (payload: AssetUpdatePayload) => Promise<ApplyUpdateResult>;
+  logout!: () => Promise<void>;
   conflicts: AssetUpdateConflictResult[] = [];
+  done: boolean = false;
 
   get multiple(): boolean {
     return this.remoteVersion - this.localVersion > 1;
@@ -202,14 +218,17 @@ export default class AssetUpdate extends Vue {
     const updateResult = await this.applyUpdates({ version, resolution });
     if (updateResult.done) {
       this.skipped = undefined;
-      const title = this.$t('asset_update.success.title').toString();
-      const description = this.$t('asset_update.success.description', {
-        remoteVersion: this.remoteVersion
-      }).toString();
-      notify(description, title, Severity.INFO, true);
+      this.done = true;
     } else if (updateResult.conflicts) {
       this.conflicts = updateResult.conflicts;
       this.showConflictDialog = true;
+    }
+  }
+
+  async updateComplete() {
+    await this.logout();
+    if (this.$interop.isPackaged) {
+      await this.$interop.restartBackend(currentLogLevel());
     }
   }
 }

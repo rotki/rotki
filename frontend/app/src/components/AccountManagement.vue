@@ -66,9 +66,13 @@ import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import { SyncConflict } from '@/store/session/types';
 import { ActionStatus, Message } from '@/store/types';
 import { Credentials, UnlockPayload } from '@/typing/types';
-import { CRITICAL, DEBUG, Level, levels } from '@/utils/log-level';
-
-const LOG_LEVEL = 'log_level';
+import {
+  CRITICAL,
+  currentLogLevel,
+  DEBUG,
+  Level,
+  LOG_LEVEL
+} from '@/utils/log-level';
 
 @Component({
   components: {
@@ -112,7 +116,7 @@ export default class AccountManagement extends Vue {
   }
 
   async created() {
-    this.loadLogLevel();
+    this.loglevel = currentLogLevel();
     if (this.connected) {
       return;
     }
@@ -130,13 +134,6 @@ export default class AccountManagement extends Vue {
     if (sessionOnly) {
       deleteBackendUrl();
       await this.startBackendWithLogLevel(this.loglevel);
-    }
-  }
-
-  private loadLogLevel() {
-    const item = localStorage.getItem(LOG_LEVEL) as any;
-    if (item && levels.includes(item)) {
-      this.loglevel = item as Level;
     }
   }
 
