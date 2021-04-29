@@ -10,7 +10,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import PremiumLock from '../helper/PremiumLock.vue';
+import PremiumLock from '../premium/PremiumLock.vue';
 
 @Component({
   components: { PremiumLock }

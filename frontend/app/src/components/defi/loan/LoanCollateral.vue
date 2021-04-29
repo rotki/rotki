@@ -111,7 +111,7 @@ import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import PremiumLock from '@/components/helper/PremiumLock.vue';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 import ThemeMixin from '@/mixins/theme-mixin';
 import { Watcher, WatcherType } from '@/services/session/types';

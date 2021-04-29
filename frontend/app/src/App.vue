@@ -50,6 +50,7 @@
         <v-spacer />
         <update-indicator />
         <theme-switch v-if="premium" />
+        <theme-switch-lock v-else />
         <notification-indicator
           :visible="notifications"
           class="app__app-bar__button"
@@ -105,6 +106,7 @@ import HelpIndicator from '@/components/help/HelpIndicator.vue';
 import HelpSidebar from '@/components/help/HelpSidebar.vue';
 import BackButton from '@/components/helper/BackButton.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
+import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
@@ -126,6 +128,7 @@ import { Message } from '@/store/types';
 
 @Component({
   components: {
+    ThemeSwitchLock,
     MacOsVersionUnsupported,
     AssetUpdate,
     HelpIndicator,

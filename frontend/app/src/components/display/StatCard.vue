@@ -40,7 +40,7 @@
 
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator';
-import PremiumLock from '@/components/helper/PremiumLock.vue';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
 import ThemeMixin from '@/mixins/theme-mixin';
 
 @Component({

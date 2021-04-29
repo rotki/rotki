@@ -72,11 +72,13 @@
 
     <explorers />
     <theme-manager v-if="premium" />
+    <theme-manager-lock v-else />
   </setting-category>
 </template>
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
+import ThemeManagerLock from '@/components/premium/ThemeManagerLock.vue';
 import Explorers from '@/components/settings/explorers/Explorers.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
@@ -116,6 +118,7 @@ type SettingsEntries = typeof SETTINGS[number];
 
 @Component({
   components: {
+    ThemeManagerLock,
     ThemeManager,
     Explorers,
     TimeFrameSettings,
