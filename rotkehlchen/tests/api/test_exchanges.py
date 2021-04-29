@@ -13,6 +13,7 @@ from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, KrakenAccountType
 from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
@@ -827,3 +828,123 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
     assert result is True
     assert len(rotki.data.db.get_trades()) == 1
     assert len(rotki.data.db.get_asset_movements()) == 1
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.POLONIEX)])
+def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges):
+    server = rotkehlchen_api_server_with_exchanges
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
+    assert kraken.name == 'mockkraken'
+    assert kraken.account_type == DEFAULT_KRAKEN_ACCOUNT_TYPE
+    assert poloniex.name == 'poloniex'
+
+    data = {'name': 'mockkraken', 'location': 'kraken', 'new_name': 'my_kraken'}
+    response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
+    result = assert_proper_response_with_result(response)
+    assert result is True
+    kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    assert kraken.name == 'my_kraken'
+    assert kraken.account_type == DEFAULT_KRAKEN_ACCOUNT_TYPE
+
+    data = {'name': 'poloniex', 'location': 'poloniex', 'new_name': 'my_poloniex'}
+    response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
+    result = assert_proper_response_with_result(response)
+    assert result is True
+    poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
+    assert poloniex.name == 'my_poloniex'
+
+    # Make sure that existing location exchange but wrong name returns error
+    data = {'name': 'some_poloniex', 'location': 'poloniex', 'new_name': 'other_poloniex'}
+    response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
+    assert_error_response(
+        response=response,
+        status_code=HTTPStatus.CONFLICT,
+        contained_in_msg='Could not find poloniex exchange some_poloniex for editing',
+    )
+    # Make sure that real location but not registered returns error
+    data = {'name': 'kucoin', 'location': 'kucoin', 'new_name': 'other_kucoin'}
+    response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
+    assert_error_response(
+        response=response,
+        status_code=HTTPStatus.CONFLICT,
+        contained_in_msg='Could not find kucoin exchange kucoin for editing',
+    )
+    # Make sure that not existing location returns error
+    data = {'name': 'kucoin', 'location': 'fakeexchange', 'new_name': 'other_kucoin'}
+    response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
+    assert_error_response(
+        response=response,
+        status_code=HTTPStatus.BAD_REQUEST,
+        contained_in_msg='Failed to deserialize Location value fakeexchange',
+    )
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.COINBASEPRO, Location.KUCOIN)])
+def test_edit_exchange_account_passphrase(rotkehlchen_api_server_with_exchanges):
+    server = rotkehlchen_api_server_with_exchanges
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    coinbasepro = try_get_first_exchange(rotki.exchange_manager, Location.COINBASEPRO)
+    kucoin = try_get_first_exchange(rotki.exchange_manager, Location.KUCOIN)
+    assert kucoin.name == 'kucoin'
+    assert kucoin.api_passphrase == '123'
+    assert coinbasepro.name == 'coinbasepro'
+    assert coinbasepro.session.headers['CB-ACCESS-PASSPHRASE'] == '123'
+
+    # change both passphrase and name -- kucoin
+    data = {'name': 'kucoin', 'location': 'kucoin', 'new_name': 'my_kucoin', 'passphrase': '$123$'}
+    response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
+    result = assert_proper_response_with_result(response)
+    assert result is True
+    kucoin = try_get_first_exchange(rotki.exchange_manager, Location.KUCOIN)
+    assert kucoin.name == 'my_kucoin'
+    assert kucoin.api_passphrase == '$123$'
+
+    # change only passphrase -- coinbasepro
+    data = {'name': 'coinbasepro', 'location': 'coinbasepro', 'passphrase': '$321$'}
+    response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
+    result = assert_proper_response_with_result(response)
+    assert result is True
+    coinbasepro = try_get_first_exchange(rotki.exchange_manager, Location.COINBASEPRO)
+    assert coinbasepro.name == 'coinbasepro'
+    assert coinbasepro.session.headers['CB-ACCESS-PASSPHRASE'] == '$321$'
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
+def test_edit_exchange_kraken_account_type(rotkehlchen_api_server_with_exchanges):
+    server = rotkehlchen_api_server_with_exchanges
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    assert kraken.account_type == DEFAULT_KRAKEN_ACCOUNT_TYPE
+    assert kraken.call_limit == 15
+    assert kraken.reduction_every_secs == 3
+
+    data = {'name': 'mockkraken', 'location': 'kraken', 'kraken_account_type': 'intermediate'}
+    response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
+    result = assert_proper_response_with_result(response)
+    assert result is True
+    kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    assert kraken.name == 'mockkraken'
+    assert kraken.account_type == KrakenAccountType.INTERMEDIATE
+    assert kraken.call_limit == 20
+    assert kraken.reduction_every_secs == 2
+
+    data = {'name': 'mockkraken', 'location': 'kraken', 'kraken_account_type': 'pro'}
+    response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
+    result = assert_proper_response_with_result(response)
+    assert result is True
+    kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    assert kraken.name == 'mockkraken'
+    assert kraken.account_type == KrakenAccountType.PRO
+    assert kraken.call_limit == 20
+    assert kraken.reduction_every_secs == 1
+
+    # Make sure invalid type is caught
+    data = {'name': 'mockkraken', 'location': 'kraken', 'kraken_account_type': 'pleb'}
+    response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
+    assert_error_response(
+        response=response,
+        status_code=HTTPStatus.BAD_REQUEST,
+        contained_in_msg='pleb is not a valid kraken account type',
+    )

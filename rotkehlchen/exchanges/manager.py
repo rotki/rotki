@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict
 from importlib import import_module
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 from rotkehlchen.constants.misc import BINANCE_BASE_URL, BINANCEUS_BASE_URL
@@ -11,6 +12,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -34,6 +36,7 @@ SUPPORTED_EXCHANGES = [
     Location.KUCOIN,
     Location.FTX,
 ]
+EXCHANGES_WITH_PASSPHRASE = (Location.COINBASEPRO, Location.KUCOIN)
 # Exchanges for which we allow import via CSV
 EXTERNAL_EXCHANGES = [Location.CRYPTOCOM]
 ALL_SUPPORTED_EXCHANGES = SUPPORTED_EXCHANGES + EXTERNAL_EXCHANGES
@@ -73,6 +76,44 @@ class ExchangeManager():
             for exchange in exchanges:
                 yield exchange
 
+    def edit_exchange(
+            self,
+            name: str,
+            location: Location,
+            new_name: Optional[str],
+            passphrase: Optional[str],
+            kraken_account_type: Optional['KrakenAccountType'],
+    ) -> bool:
+        """Edits both the exchange object and the database entry
+
+        Returns True if an entry was found and edited and false otherwise
+
+        May raise:
+        - InputError if there is an error updating the DB
+        """
+        exchangeobj = self.get_exchange(name=name, location=location)
+        if not exchangeobj:
+            return False
+
+        # First edit the database entries. This may raise InputError
+        self.database.edit_exchange(
+            name=name,
+            location=location,
+            new_name=new_name,
+            passphrase=passphrase,
+            kraken_account_type=kraken_account_type,
+        )
+
+        # Edit the exchange object
+        if new_name is not None:
+            exchangeobj.name = new_name
+        if passphrase is not None and location in (Location.KUCOIN, Location.COINBASEPRO):
+            exchangeobj.update_passphrase(passphrase)  # type: ignore  # kucoin and coinbasepro have this function  # noqa: E501
+        if kraken_account_type is not None and location == Location.KRAKEN:
+            exchangeobj.set_account_type(kraken_account_type)  # type: ignore  # kraken has this function  # noqa: E501
+
+        return True
+
     def delete_exchange(self, name: str, location: Location) -> None:
         """Deletes exchange only from the manager. Not from the DB"""
         exchanges_list = self.connected_exchanges.get(location)
@@ -94,6 +135,18 @@ class ExchangeManager():
             for location, exchanges in self.connected_exchanges.items() for e in exchanges
         ]
 
+    def _get_exchange_module(self, location: Location) -> ModuleType:
+        module_name = self._get_exchange_module_name(location)
+        try:
+            module = import_module(f'rotkehlchen.exchanges.{module_name}')
+        except ModuleNotFoundError:
+            # This should never happen
+            raise AssertionError(
+                f'Tried to initialize unknown exchange {str(location)}. Should not happen',
+            ) from None
+
+        return module
+
     def setup_exchange(
             self,
             name: str,
@@ -102,10 +155,12 @@ class ExchangeManager():
             api_secret: ApiSecret,
             database: 'DBHandler',
             passphrase: Optional[str] = None,
+            kraken_account_type: Optional['KrakenAccountType'] = None,
     ) -> Tuple[bool, str]:
         """
-        Setup a new exchange with an api key, an api secret and for some exchanges a passphrase.
+        Setup a new exchange with an api key, an api secret.
 
+        For some exchanges there is more attributes to add
         """
         if location not in SUPPORTED_EXCHANGES:  # also checked via marshmallow
             return False, 'Attempted to register unsupported exchange {}'.format(name)
@@ -113,7 +168,6 @@ class ExchangeManager():
         if self.get_exchange(name=name, location=location) is not None:
             return False, f'{str(location)} exchange {name} is already registered'
 
-        credentials_dict = {}
         api_credentials = ExchangeApiCredentials(
             name=name,
             location=location,
@@ -121,9 +175,15 @@ class ExchangeManager():
             api_secret=api_secret,
             passphrase=passphrase,
         )
-        credentials_dict[location] = [api_credentials]
-        self.initialize_exchanges(credentials_dict, database)
-
+        extras = {}
+        if kraken_account_type is not None:
+            extras['kraken_account_type'] = kraken_account_type
+        self.initialize_exchange(
+            module=self._get_exchange_module(location),
+            credentials=api_credentials,
+            database=database,
+            **extras,
+        )
         exchange = self.get_exchange(name=name, location=location)
         if exchange is None:
             return False, 'Should never happen. Exchange is None after initialization'
@@ -143,44 +203,54 @@ class ExchangeManager():
 
         return True, ''
 
+    def initialize_exchange(
+            self,
+            module: ModuleType,
+            credentials: ExchangeApiCredentials,
+            database: 'DBHandler',
+            **kwargs: Any,
+    ) -> ExchangeInterface:
+        maybe_exchange = self.get_exchange(name=credentials.name, location=credentials.location)
+        if maybe_exchange:
+            return maybe_exchange  # already initialized
+
+        module_name = module.__name__.split('.')[-1]
+        exchange_ctor = getattr(module, module_name.capitalize())
+        if credentials.passphrase is not None:
+            kwargs['passphrase'] = credentials.passphrase
+        elif credentials.location == Location.BINANCE:
+            kwargs['uri'] = BINANCE_BASE_URL
+        elif credentials.location == Location.BINANCEUS:
+            kwargs['uri'] = BINANCEUS_BASE_URL
+        exchange_obj = exchange_ctor(
+            name=credentials.name,
+            api_key=credentials.api_key,
+            secret=credentials.api_secret,
+            database=database,
+            msg_aggregator=self.msg_aggregator,
+            **kwargs,
+        )
+        return exchange_obj
+
     def initialize_exchanges(
             self,
             exchange_credentials: Dict[Location, List[ExchangeApiCredentials]],
             database: 'DBHandler',
     ) -> None:
         log.debug('Initializing exchanges')
+        self.database = database
         # initialize exchanges for which we have keys and are not already initialized
         for location, credentials_list in exchange_credentials.items():
-            module_name = self._get_exchange_module_name(location)
-            try:
-                module = import_module(f'rotkehlchen.exchanges.{module_name}')
-            except ModuleNotFoundError:
-                # This should never happen
-                raise AssertionError(
-                    f'Tried to initialize unknown exchange {str(location)}. Should not happen',
-                ) from None
-
+            module = self._get_exchange_module(location)
             for credentials in credentials_list:
-                if self.get_exchange(name=credentials.name, location=credentials.location):
-                    continue  # already initialized
-
-                exchange_ctor = getattr(module, module_name.capitalize())
-                extra_args: Dict[str, Any] = {}
-                if credentials.passphrase is not None:
-                    extra_args['passphrase'] = credentials.passphrase
-                if location == Location.KRAKEN:
-                    settings = database.get_settings()
-                    extra_args['account_type'] = settings.kraken_account_type
-                elif location == Location.BINANCE:
-                    extra_args['uri'] = BINANCE_BASE_URL
-                elif location == Location.BINANCEUS:
-                    extra_args['uri'] = BINANCEUS_BASE_URL
-                exchange_obj = exchange_ctor(
+                extras = database.get_exchange_credentials_extras(
                     name=credentials.name,
-                    api_key=credentials.api_key,
-                    secret=credentials.api_secret,
+                    location=credentials.location,
+                )
+                exchange_obj = self.initialize_exchange(
+                    module=module,
+                    credentials=credentials,
                     database=database,
-                    msg_aggregator=self.msg_aggregator,
-                    **extra_args,
+                    **extras,
                 )
                 self.connected_exchanges[location].append(exchange_obj)

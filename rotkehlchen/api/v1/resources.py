@@ -39,6 +39,7 @@ from rotkehlchen.api.v1.encoding import (
     ExchangeRatesSchema,
     ExchangesDataResourceSchema,
     ExchangesResourceAddSchema,
+    ExchangesResourceEditSchema,
     ExchangesResourceRemoveSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
@@ -111,6 +112,7 @@ from rotkehlchen.typing import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
     from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
+    from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 
 def _combine_parser_data(
@@ -233,6 +235,7 @@ class ExchangeRatesResource(BaseResource):
 class ExchangesResource(BaseResource):
 
     put_schema = ExchangesResourceAddSchema()
+    patch_schema = ExchangesResourceEditSchema()
     delete_schema = ExchangesResourceRemoveSchema()
 
     def get(self) -> Response:
@@ -246,8 +249,33 @@ class ExchangesResource(BaseResource):
             api_key: ApiKey,
             api_secret: ApiSecret,
             passphrase: Optional[str],
+            kraken_account_type: Optional['KrakenAccountType'],
     ) -> Response:
-        return self.rest_api.setup_exchange(name, location, api_key, api_secret, passphrase)
+        return self.rest_api.setup_exchange(
+            name=name,
+            location=location,
+            api_key=api_key,
+            api_secret=api_secret,
+            passphrase=passphrase,
+            kraken_account_type=kraken_account_type,
+        )
+
+    @use_kwargs(patch_schema, location='json')  # type: ignore
+    def patch(
+            self,
+            name: str,
+            location: Location,
+            new_name: Optional[str],
+            passphrase: Optional[str],
+            kraken_account_type: Optional['KrakenAccountType'],
+    ) -> Response:
+        return self.rest_api.edit_exchange(
+            name=name,
+            location=location,
+            new_name=new_name,
+            passphrase=passphrase,
+            kraken_account_type=kraken_account_type,
+        )
 
     @use_kwargs(delete_schema, location='json')  # type: ignore
     def delete(self, name: str, location: Location) -> Response:

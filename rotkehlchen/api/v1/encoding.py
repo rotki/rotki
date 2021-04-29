@@ -980,7 +980,6 @@ class ModifiableSettingsSchema(Schema):
     main_currency = AssetField(missing=None)
     # TODO: Add some validation to this field
     date_display_format = fields.String(missing=None)
-    kraken_account_type = KrakenAccountTypeField(missing=None)
     active_modules = fields.List(fields.String(), missing=None)
     frontend_settings = fields.String(missing=None)
     account_for_assets_movements = fields.Bool(missing=None)
@@ -1039,7 +1038,6 @@ class ModifiableSettingsSchema(Schema):
             main_currency=data['main_currency'],
             date_display_format=data['date_display_format'],
             submit_usage_analytics=data['submit_usage_analytics'],
-            kraken_account_type=data['kraken_account_type'],
             active_modules=data['active_modules'],
             frontend_settings=data['frontend_settings'],
             account_for_assets_movements=data['account_for_assets_movements'],
@@ -1139,12 +1137,21 @@ class ExternalServicesResourceDeleteSchema(Schema):
     services = fields.List(ExternalServiceNameField(), required=True)
 
 
+class ExchangesResourceEditSchema(Schema):
+    name = fields.String(required=True)
+    location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
+    new_name = fields.String(missing=None)
+    passphrase = fields.String(missing=None)
+    kraken_account_type = KrakenAccountTypeField(missing=None)
+
+
 class ExchangesResourceAddSchema(Schema):
     name = fields.String(required=True)
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
     api_key = ApiKeyField(required=True)
     api_secret = ApiSecretField(required=True)
     passphrase = fields.String(missing=None)
+    kraken_account_type = KrakenAccountTypeField(missing=None)
 
 
 class ExchangesDataResourceSchema(Schema):

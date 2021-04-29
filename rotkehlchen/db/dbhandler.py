@@ -86,6 +86,7 @@ from rotkehlchen.errors import (
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -2171,6 +2172,7 @@ class DBHandler:
             api_key: ApiKey,
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
+            kraken_account_type: Optional[KrakenAccountType] = None,
     ) -> None:
         if location not in SUPPORTED_EXCHANGES:
             raise InputError(f'Unsupported exchange {str(location)}')
@@ -2181,6 +2183,59 @@ class DBHandler:
             '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
             (name, location.serialize_for_db(), api_key, api_secret.decode(), passphrase),
         )
+
+        if location == Location.KRAKEN and kraken_account_type is not None:
+            cursor.execute(
+                'INSERT INTO user_credentials_mappings '
+                '(credential_name, credential_location, setting_name, setting_value) '
+                'VALUES (?, ?, ?, ?)',
+                (name, location.serialize_for_db(), 'kraken_account_type', kraken_account_type.serialize()),  # noqa: E501
+            )
+        self.conn.commit()
+        self.update_last_write()
+
+    def edit_exchange(
+            self,
+            name: str,
+            location: Location,
+            new_name: Optional[str],
+            passphrase: Optional[str],
+            kraken_account_type: Optional['KrakenAccountType'],
+    ) -> None:
+        """May raise InputError if something is wrong with editing the DB"""
+        if location not in SUPPORTED_EXCHANGES:
+            raise InputError(f'Unsupported exchange {str(location)}')
+
+        cursor = self.conn.cursor()
+        if new_name is not None or passphrase is not None:
+            querystr = 'UPDATE user_credentials SET '
+            bindings = []
+            if new_name is not None:
+                querystr += 'name=?,'
+                bindings.append(new_name)
+            if passphrase is not None:
+                querystr += 'passphrase=?,'
+                bindings.append(passphrase)
+
+            if querystr[-1] == ',':
+                querystr = querystr[:-1]
+            try:
+                cursor.execute(querystr, bindings)
+            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                raise InputError(f'Could not update DB user_credentials due to {str(e)}') from e
+
+        if location == Location.KRAKEN and kraken_account_type is not None:
+            try:
+                cursor.execute(
+                    'INSERT OR REPLACE INTO user_credentials_mappings '
+                    '(credential_name, credential_location, setting_name, setting_value) '
+                    'VALUES (?, ?, ?, ?)',
+                    (name, location.serialize_for_db(), 'kraken_account_type', kraken_account_type.serialize()),  # noqa: E501
+                )
+            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                self.conn.rollback()
+                raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
+
         self.conn.commit()
         self.update_last_write()
 
@@ -2214,6 +2269,30 @@ class DBHandler:
             ))
 
         return credentials
+
+    def get_exchange_credentials_extras(self, name: str, location: Location) -> Dict[str, Any]:
+        """Returns any extra settings for a particular exchange key credentials"""
+        cursor = self.conn.cursor()
+        result = cursor.execute(
+            'SELECT setting_name, setting_value FROM user_credentials_mappings '
+            'WHERE credential_name=? AND credential_location=?',
+            (name, location.serialize_for_db()),
+        )
+        extras = {}
+        for entry in result:
+            if entry[0] != 'kraken_account_type':
+                log.error(
+                    f'Unknown credential setting {entry[0]} found in the DB. Skipping.',
+                )
+                continue
+
+            try:
+                extras['kraken_account_type'] = KrakenAccountType.deserialize(entry[1])
+            except DeserializationError as e:
+                log.error(f'Couldnt deserialize kraken account type from DB. {str(e)}')
+                continue
+
+        return extras
 
     def write_tuples(
             self,

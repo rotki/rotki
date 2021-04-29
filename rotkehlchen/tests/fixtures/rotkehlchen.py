@@ -9,6 +9,7 @@ from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.database import (
     add_blockchain_accounts_to_db,
@@ -321,16 +322,28 @@ def rotkehlchen_api_server_with_exchanges(
     exchanges = rotkehlchen_api_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     for exchange_location in added_exchanges:
-
-        if exchange_location in (Location.COINBASEPRO, Location.COINBASE, Location.GEMINI):
-            # TODO: Add support for the above exchanges in tests too
-            continue
-
         create_fn = getattr(exchange_tests, f'create_test_{str(exchange_location)}')
-        exchanges[exchange_location] = [create_fn(
+        passphrase = None
+        kwargs = {}
+        if exchange_location in EXCHANGES_WITH_PASSPHRASE:
+            passphrase = '123'
+            kwargs['passphrase'] = passphrase
+        exchangeobj = create_fn(
             database=rotki.data.db,
             msg_aggregator=rotki.msg_aggregator,
-        )]
+            **kwargs,
+        )
+        kraken_account_type = exchangeobj.account_type if exchange_location == Location.KRAKEN else None  # noqa: E501
+        exchanges[exchange_location] = [exchangeobj]
+        # also add credentials in the DB
+        rotki.data.db.add_exchange(
+            name=exchangeobj.name,
+            location=exchange_location,
+            api_key=exchangeobj.api_key,
+            api_secret=exchangeobj.secret,
+            passphrase=passphrase,
+            kraken_account_type=kraken_account_type,
+        )
 
     yield rotkehlchen_api_server
     rotkehlchen_api_server.stop()

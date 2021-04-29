@@ -55,7 +55,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
 KRAKEN_PUBLIC_METHODS = ('AssetPairs', 'Assets')
 KRAKEN_QUERY_TRIES = 8
@@ -250,6 +249,9 @@ class KrakenAccountType(Enum):
         raise DeserializationError(f'Tried to deserialized invalid kraken account type: {symbol}')
 
 
+DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
+
+
 class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def __init__(
             self,
@@ -258,7 +260,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
-            account_type: KrakenAccountType = KrakenAccountType.STARTER,
+            kraken_account_type: Optional[KrakenAccountType] = None,
     ):
         super().__init__(
             name=name,
@@ -272,11 +274,14 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             'API-Key': self.api_key,
         })
         self.nonce_lock = Semaphore()
-        self.set_account_type(account_type)
+        self.set_account_type(kraken_account_type)
         self.call_counter = 0
         self.last_query_ts = 0
 
-    def set_account_type(self, account_type: KrakenAccountType) -> None:
+    def set_account_type(self, account_type: Optional[KrakenAccountType]) -> None:
+        if account_type is None:
+            account_type = DEFAULT_KRAKEN_ACCOUNT_TYPE
+
         self.account_type = account_type
         if self.account_type == KrakenAccountType.STARTER:
             self.call_limit = 15

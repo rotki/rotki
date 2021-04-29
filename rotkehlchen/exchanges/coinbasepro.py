@@ -120,6 +120,9 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             'CB-ACCESS-PASSPHRASE': passphrase,
         })
 
+    def update_passphrase(self, new_passphrase: str) -> None:
+        self.session.headers.update({'CB-ACCESS-PASSPHRASE': new_passphrase})
+
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Coinbase Pro API key is good for usage in Rotki
 

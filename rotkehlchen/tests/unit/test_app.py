@@ -3,7 +3,7 @@ import os
 import pytest
 
 from rotkehlchen.errors import SystemPermissionError
-from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.typing import Location
@@ -29,7 +29,7 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
     credentials = []
     for location in SUPPORTED_EXCHANGES:
         passphrase = None
-        if location in (Location.COINBASEPRO, Location.KUCOIN):
+        if location in EXCHANGES_WITH_PASSPHRASE:
             passphrase = 'supersecretpassphrase'
         credentials.append(
             (str(location), location.serialize_for_db(), make_api_key(), make_api_secret().decode(), passphrase),  # noqa: E501  # pylint: disable=no-member

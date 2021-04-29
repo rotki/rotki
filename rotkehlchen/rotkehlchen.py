@@ -89,6 +89,7 @@ from rotkehlchen.utils.misc import combine_dicts
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
+    from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -1006,12 +1007,6 @@ class Rotkehlchen():
                 if not result:
                     return False, msg
 
-            if settings.kraken_account_type is not None:
-                kraken_exchanges = self.exchange_manager.connected_exchanges.get(Location.KRAKEN)
-                if kraken_exchanges is not None:
-                    for exchange in kraken_exchanges:
-                        exchange.set_account_type(settings.kraken_account_type)  # type: ignore
-
             if settings.btc_derivation_gap_limit is not None:
                 self.chain_manager.btc_derivation_gap_limit = settings.btc_derivation_gap_limit
 
@@ -1038,6 +1033,7 @@ class Rotkehlchen():
             api_key: ApiKey,
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
+            kraken_account_type: Optional['KrakenAccountType'] = None,
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase
@@ -1059,6 +1055,7 @@ class Rotkehlchen():
                 api_key=api_key,
                 api_secret=api_secret,
                 passphrase=passphrase,
+                kraken_account_type=kraken_account_type,
             )
         return is_success, msg
 

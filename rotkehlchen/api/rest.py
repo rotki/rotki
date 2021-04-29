@@ -106,6 +106,7 @@ from rotkehlchen.utils.version_check import check_if_version_up_to_date
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 
 OK_RESULT = {'result': True, 'message': ''}
@@ -476,6 +477,7 @@ class RestAPI():
             api_key: ApiKey,
             api_secret: ApiSecret,
             passphrase: Optional[str],
+            kraken_account_type: Optional['KrakenAccountType'],
     ) -> Response:
         result = None
         status_code = HTTPStatus.OK
@@ -486,9 +488,42 @@ class RestAPI():
             api_key=api_key,
             api_secret=api_secret,
             passphrase=passphrase,
+            kraken_account_type=kraken_account_type,
         )
         if not result:
             result = None
+            status_code = HTTPStatus.CONFLICT
+
+        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+
+    @require_loggedin_user()
+    def edit_exchange(
+            self,
+            name: str,
+            location: Location,
+            new_name: Optional[str],
+            passphrase: Optional[str],
+            kraken_account_type: Optional['KrakenAccountType'],
+    ) -> Response:
+        result = True
+        status_code = HTTPStatus.OK
+        msg = ''
+        try:
+            edited = self.rotkehlchen.exchange_manager.edit_exchange(
+                name=name,
+                location=location,
+                new_name=new_name,
+                passphrase=passphrase,
+                kraken_account_type=kraken_account_type,
+            )
+            if edited is False:
+                msg = f'Could not find {str(location)} exchange {name} for editing'
+        except InputError as e:
+            edited = False
+            msg = str(e)
+
+        if not edited:
+            result = False
             status_code = HTTPStatus.CONFLICT
 
         return api_response(_wrap_in_result(result, msg), status_code=status_code)

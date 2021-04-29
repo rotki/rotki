@@ -182,6 +182,9 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         })
         self.msg_aggregator = msg_aggregator
 
+    def update_passphrase(self, new_passphrase: str) -> None:
+        self.api_passphrase = new_passphrase
+
     def _api_query(
             self,
             case: KucoinCase,

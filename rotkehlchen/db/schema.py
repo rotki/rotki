@@ -177,6 +177,17 @@ CREATE TABLE IF NOT EXISTS user_credentials (
 );
 """
 
+DB_CREATE_USER_CREDENTIALS_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS user_credentials_mappings (
+    credential_name TEXT NOT NULL,
+    credential_location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    setting_name TEXT NOT NULL,
+    setting_value TEXT NOT NULL,
+    FOREIGN KEY(credential_name, credential_location) REFERENCES user_credentials(name, location) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY (credential_name, credential_location, setting_name)
+);
+"""  # noqa: E501
+
 DB_CREATE_AAVE_EVENTS = """
 CREATE TABLE IF NOT EXISTS aave_events (
     address VARCHAR[42] NOT NULL,
@@ -588,7 +599,7 @@ CREATE TABLE IF NOT EXISTS balancer_events (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -599,6 +610,7 @@ PRAGMA foreign_keys=on;
     DB_CREATE_TIMED_BALANCES,
     DB_CREATE_TIMED_LOCATION_DATA,
     DB_CREATE_USER_CREDENTIALS,
+    DB_CREATE_USER_CREDENTIALS_MAPPINGS,
     DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS,
     DB_CREATE_BLOCKCHAIN_ACCOUNTS,
     DB_CREATE_ETHEREUM_ACCOUNTS_DETAILS,
