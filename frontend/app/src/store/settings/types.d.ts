@@ -55,6 +55,7 @@ export interface Themes {
 export type ThemeColors = {
   readonly primary: string;
   readonly accent: string;
+  readonly graph: string;
 };
 
 export interface SettingsState {

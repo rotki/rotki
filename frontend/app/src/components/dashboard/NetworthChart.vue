@@ -58,8 +58,7 @@ export interface ValueOverTime {
 
 @Component({
   computed: {
-    ...mapGetters('session', ['currency']),
-    ...mapGetters('settings', ['darkModeEnabled'])
+    ...mapGetters('session', ['currency'])
   }
 })
 export default class NetWorthChart extends Vue {
@@ -75,7 +74,10 @@ export default class NetWorthChart extends Vue {
   chartData!: NetValue;
 
   currency!: Currency;
-  darkModeEnabled!: boolean;
+
+  get darkModeEnabled(): boolean {
+    return this.$vuetify.theme.dark;
+  }
 
   @Watch('darkModeEnabled')
   onDarkMode() {
@@ -301,13 +303,8 @@ export default class NetWorthChart extends Vue {
 
   private datasets(chartCanvas: CanvasRenderingContext2D): ChartDataSets[] {
     const theme = this.$vuetify.theme;
-    const themes = theme.themes;
-    const color = (theme.dark
-      ? themes.dark.accent
-      : themes.light['rotki-light-blue']) as string;
-    const secondaryColor = theme.dark
-      ? (themes.dark['dark'] as string)
-      : 'white';
+    const color = theme.currentTheme['graph'] as string;
+    const secondaryColor = theme.currentTheme['graphFade'] as string;
 
     const areaGradient = chartCanvas.createLinearGradient(0, 0, 0, 160);
     areaGradient.addColorStop(0, color);
