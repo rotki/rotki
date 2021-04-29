@@ -50,11 +50,13 @@ describe('settings:mutations', () => {
       [DARK_MODE_ENABLED]: true,
       [LIGHT_THEME]: {
         primary: '#000000',
-        accent: '#ffffff'
+        accent: '#ffffff',
+        graph: '#555555'
       },
       [DARK_THEME]: {
         primary: '#ffffff',
-        accent: '#000000'
+        accent: '#000000',
+        graph: '#555555'
       }
     };
     store.commit('settings/restore', state);
@@ -82,11 +84,13 @@ describe('settings:mutations', () => {
     expect(settings[DARK_MODE_ENABLED]).toBe(true);
     expect(settings[LIGHT_THEME]).toStrictEqual({
       primary: '#000000',
-      accent: '#ffffff'
+      accent: '#ffffff',
+      graph: '#555555'
     });
     expect(settings[DARK_THEME]).toStrictEqual({
       primary: '#ffffff',
-      accent: '#000000'
+      accent: '#000000',
+      graph: '#555555'
     });
   });
 });
