@@ -410,38 +410,56 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'ECOC',
     # As of 28/08/2020 the following assets don't have prices listed anywhere
     'FME',
+    'FOL',  # neither in coingecko nor cryptocompare
+    'GET',  # couldn't find any reference
     'INX',
     'MFA',
     'FCT2',  # neither in coingecko nor cryptocompare
     'UPXAU',  # neither in coingecko nor cryptocompare
     'TEA',  # neither in coingecko nor cryptocompare
     'PANDO',  # neither in coingecko nor cryptocompare (own blockchain, released on 2020)
-    # bittrex tokenized stocks -- not sure how to handle yet
-    'AAPL',
-    'AMC',
-    'AMZN',
-    'BABA',
-    'BB',
-    'BILI',
-    'BNTX',
-    'BYND',
-    'FB',
-    'FOL',  # neither in coingecko nor cryptocompare
-    'GET',  # couldn't find any reference
-    'GME',
-    'GOOGL',
-    'MSTR',
-    'NFLX',
-    'NOK',
-    'PFE',
-    'SLV',  # iShares Silver Trust
     'SMBSWAP',  # neither in coingecko nor cryptocompare
-    'SPY',
-    'SQ',
-    'TSLA',
     'UPCO2',  # neither in coingecko nor cryptocompare
     'VIL',  # neither in coingecko nor cryptocompare (VICDeal)
     'WXBTC',  # neither in coingecko nor cryptocompare
+    # bittrex tokenized stocks -- not sure how to handle yet
+    'AAPL',
+    'ABNB',
+    'ACB',
+    'AMD',
+    'AMC',
+    'AMZN',
+    'APHA',
+    'ARKK',
+    'BABA',
+    'BB',
+    'BILI',
+    'BITW',
+    'BNTX',
+    'BYND',
+    'FB',
+    'GDXJ',
+    'GME',
+    'GLD',
+    'GLXY',
+    'GOOGL',
+    'MRNA',
+    'MSTR',
+    'NFLX',
+    'NOK',
+    'NVDA',
+    'PENN',
+    'PFE',
+    'PYPL',
+    'SLV',  # iShares Silver Trust
+    'SPY',
+    'SQ',
+    'TSLA',
+    'TSM',
+    'TWTR',
+    'UBER',
+    'USO',
+    'ZM',
 )
 
 
@@ -492,6 +510,9 @@ UNSUPPORTED_FTX_ASSETS = (
     'BILI',
     'BITW',
     'BNTX',
+    'DOGEBEAR2021',  # no cryptocompare/coingecko data
+    'MATICBEAR2021',  # no cryptocompare/coingecko data
+    'TOMOBEAR2021',  # no cryptocompare/coingecko data
     'FB',
     'GME',
     'GOOGL',
@@ -558,6 +579,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'SATT',  # delisted
     'SERO',  # delisted
     'SPRK',  # delisted
+    'TCP',  # The Crypto Prophecies no cryptocompare/coingecko data
     'TNC2',  # delisted and no cryptocompare/coingecko data
     'TT',  # delisted
     'VNX',  # delisted and no cryptocompare/coingecko data
