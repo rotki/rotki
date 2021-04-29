@@ -111,6 +111,11 @@
       "delete_confirmation": {
         "title": "Do you really want to restore your local copy of assets?",
         "message": "You will lose the assets added manually"
+      },
+      "success": {
+        "description": "The asset database has been successfully restored. You will now need to re-login to apply the changes",
+        "ok": "OK",
+        "title": "Asset database restore"
       }
     }
   },

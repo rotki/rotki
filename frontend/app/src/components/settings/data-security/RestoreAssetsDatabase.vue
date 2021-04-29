@@ -37,6 +37,7 @@ import { notify } from '@/store/notifications/utils';
 })
 export default class RestoreAssetsDatabase extends Vue {
   confirmRestore: boolean = false;
+  done: boolean = false;
 
   activateRestoreAssets() {
     this.confirmRestore = true;
@@ -47,8 +48,11 @@ export default class RestoreAssetsDatabase extends Vue {
       this.confirmRestore = false;
       let updated = await this.$api.assets.restoreAssetsDatabase();
       if (updated) {
-        const title = this.$t('asset_update.success.title').toString();
-        const description = this.$t('asset_update.success.description').toString();
+        const title = this.$t('asset_update.restore.success.title').toString();
+        const description = this.$t(
+          'asset_update.restore.success.description'
+        ).toString();
+        this.done = true;
         notify(description, title, Severity.INFO, true);
       }
     } catch (e) {

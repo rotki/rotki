@@ -1487,6 +1487,7 @@ class RestAPI():
 
     @require_loggedin_user()
     def rebuild_assets_information(self) -> Response:
+        # pylint: disable=no-self-use
         success, msg = GlobalDBHandler().rebuild_assets_list()
         if not success:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)

@@ -1266,26 +1266,42 @@ def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
         """
         root_dir = Path(__file__).resolve().parent.parent
         builtin_database = root_dir / 'data' / 'global.db'
-        drop_assets = 'PRAGMA foreign_keys = OFF; DELETE FROM ethereum_tokens; DELETE FROM assets; PRAGMA foreign_keys = ON;'  # noqa: E501
+        remove_assets = 'DELETE FROM assets;'
+        remove_tokens = 'DELETE FROM ethereum_tokens;'
         atach_datbase = f'ATTACH DATABASE "{builtin_database}" AS clean_db;'
         check_version = 'SELECT value from clean_db.settings WHERE name=="version";'
-        insert_assets = 'INSERT INTO assets SELECT * FROM clean_db.assets; INSERT INTO ethereum_tokens SELECT * FROM clean_db.ethereum_tokens;'  # noqa: E501
+        insert_assets = 'INSERT INTO assets SELECT * FROM clean_db.assets;'
+        insert_tokens = 'INSERT INTO ethereum_tokens SELECT * FROM clean_db.ethereum_tokens;'
         detach_database = 'DETACH DATABASE "clean_db";'
 
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
-        # Atach the clean db packaged with rotki
-        cursor.execute(atach_datbase)
-        # Check that versions match
-        query = cursor.execute(check_version)
-        version = query.fetchone()
-        if int(version[0]) != _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION):
-            return False, 'Database is not updated to the latest version'
-        # If versions match drop tables
-        cursor.executescript(drop_assets)
-        # Copy assets
-        cursor.executescript(insert_assets)
-        cursor.execute(detach_database)
+
+        try:
+            # Atach the clean db packaged with rotki
+            cursor.execute(atach_datbase)
+            # Check that versions match
+            query = cursor.execute(check_version)
+            version = query.fetchone()
+            if int(version[0]) != _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION):
+                cursor.execute(detach_database)
+                msg = 'Failed to restore assets. Database is not updated to the latest version'
+                return False, msg
+            # If versions match drop tables
+            cursor.execute('PRAGMA foreign_keys = OFF;')
+            cursor.execute(remove_assets)
+            cursor.execute(remove_tokens)
+            cursor.execute('PRAGMA foreign_keys = ON;')
+            # Copy assets
+            cursor.execute(insert_assets)
+            cursor.execute(insert_tokens)
+        except sqlite3.Error as e:
+            connection.rollback()
+            cursor.execute(detach_database)
+            log.error(f'Failed to restore assets in globaldb due to {str(e)}')
+            return False, 'Failed to restore assets. Read logs to get more information.'
+
         connection.commit()
+        cursor.execute(detach_database)
 
         return True, ''
