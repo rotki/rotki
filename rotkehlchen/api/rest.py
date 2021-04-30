@@ -505,7 +505,7 @@ class RestAPI():
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
     ) -> Response:
-        result = True
+        result: Optional[bool] = True
         status_code = HTTPStatus.OK
         msg = ''
         try:
@@ -523,7 +523,7 @@ class RestAPI():
             msg = str(e)
 
         if not edited:
-            result = False
+            result = None
             status_code = HTTPStatus.CONFLICT
 
         return api_response(_wrap_in_result(result, msg), status_code=status_code)

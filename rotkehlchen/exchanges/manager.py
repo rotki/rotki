@@ -178,15 +178,12 @@ class ExchangeManager():
         extras = {}
         if kraken_account_type is not None:
             extras['kraken_account_type'] = kraken_account_type
-        self.initialize_exchange(
+        exchange = self.initialize_exchange(
             module=self._get_exchange_module(location),
             credentials=api_credentials,
             database=database,
             **extras,
         )
-        exchange = self.get_exchange(name=name, location=location)
-        if exchange is None:
-            return False, 'Should never happen. Exchange is None after initialization'
         try:
             result, message = exchange.validate_api_key()
         except Exception as e:  # pylint: disable=broad-except
@@ -198,9 +195,9 @@ class ExchangeManager():
                 f'Failed to validate API key for {str(location)} exchange {name}'
                 f' due to {message}',
             )
-            self.delete_exchange(name=name, location=location)
             return False, message
 
+        self.connected_exchanges[location].append(exchange)
         return True, ''
 
     def initialize_exchange(

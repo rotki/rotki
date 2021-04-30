@@ -317,6 +317,9 @@ def rotkehlchen_instance(
 def rotkehlchen_api_server_with_exchanges(
         rotkehlchen_api_server,
         added_exchanges,
+        gemini_test_base_uri,
+        gemini_sandbox_api_secret,
+        gemini_sandbox_api_key,
 ):
     """Adds mock exchange objects to the rotkehlchen_server fixture"""
     exchanges = rotkehlchen_api_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
@@ -328,6 +331,10 @@ def rotkehlchen_api_server_with_exchanges(
         if exchange_location in EXCHANGES_WITH_PASSPHRASE:
             passphrase = '123'
             kwargs['passphrase'] = passphrase
+        if exchange_location == Location.GEMINI:
+            kwargs['base_uri'] = gemini_test_base_uri
+            kwargs['api_key'] = gemini_sandbox_api_key
+            kwargs['api_secret'] = gemini_sandbox_api_secret
         exchangeobj = create_fn(
             database=rotki.data.db,
             msg_aggregator=rotki.msg_aggregator,

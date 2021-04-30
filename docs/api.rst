@@ -1126,7 +1126,7 @@ Edit an exchange entry
           "message": ""
       }
 
-   :resjson bool result: A boolean indicating success or failure. If the given name and location don't match an existing exchange False is returned. Otherwise true.
+   :resjson bool result: A boolean indicating success if all went well. If there is an error then the usual result: null and message having a value format is followed.
    :statuscode 200: The exchange has been sucesfully edited
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in. The exchange can not be found.
