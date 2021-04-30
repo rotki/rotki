@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, DefaultDict, Dict, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.fval import FVal
@@ -156,7 +157,7 @@ class CostBasisCalculator():
 
     def reset(self, profit_currency: Asset) -> None:
         self.profit_currency = profit_currency
-        self.events: DefaultDict[Asset, CostBasisEvents] = defaultdict(CostBasisEvents)
+        self._events: DefaultDict[Asset, CostBasisEvents] = defaultdict(CostBasisEvents)
 
     @property
     def taxfree_after_period(self) -> Optional[int]:
@@ -167,6 +168,13 @@ class CostBasisCalculator():
         is_valid = isinstance(value, int) or value is None
         assert is_valid, 'set taxfree_after_period should only get int or None'
         self._taxfree_after_period = value
+
+    def get_events(self, asset: Asset) -> CostBasisEvents:
+        """Custom getter for events so that we have common cost basis for some assets"""
+        if asset == A_WETH:
+            asset = A_ETH
+
+        return self._events[asset]
 
     def inform_user_missing_acquisition(
             self,
@@ -200,12 +208,13 @@ class CostBasisCalculator():
         if amount == ZERO:
             return True
 
-        if asset not in self.events or len(self.events[asset].acquisitions) == 0:
+        asset_events = self.get_events(asset)
+        if len(asset_events.acquisitions) == 0:
             return False
 
         remaining_amount_from_last_buy = FVal('-1')
         remaining_amount = amount
-        for idx, acquisition_event in enumerate(self.events[asset].acquisitions):
+        for idx, acquisition_event in enumerate(asset_events.acquisitions):
             if remaining_amount < acquisition_event.remaining_amount:
                 stop_index = idx
                 remaining_amount_from_last_buy = acquisition_event.remaining_amount - remaining_amount  # noqa: E501
@@ -214,14 +223,14 @@ class CostBasisCalculator():
 
             # else
             remaining_amount -= acquisition_event.remaining_amount
-            if idx == len(self.events[asset].acquisitions) - 1:
+            if idx == len(asset_events.acquisitions) - 1:
                 stop_index = idx + 1
 
         # Otherwise, delete all the used up acquisitions from the list
-        del self.events[asset].acquisitions[:stop_index]
+        del asset_events.acquisitions[:stop_index]
         # and modify the amount of the buy where we stopped if there is one
         if remaining_amount_from_last_buy != FVal('-1'):
-            self.events[asset].acquisitions[0].remaining_amount = remaining_amount_from_last_buy
+            asset_events.acquisitions[0].remaining_amount = remaining_amount_from_last_buy
         elif remaining_amount != ZERO:
             return False
 
@@ -251,7 +260,8 @@ class CostBasisCalculator():
             rate=rate,
             fee_rate=fee_in_profit_currency / amount,
         )
-        self.events[asset].acquisitions.append(event)
+        asset_events = self.get_events(asset)
+        asset_events.acquisitions.append(event)
         logger.debug(event)
 
     def spend_asset(
@@ -272,7 +282,8 @@ class CostBasisCalculator():
             fee_rate=fee_in_profit_currency / amount,
             gain=gain_in_profit_currency,
         )
-        self.events[asset].spends.append(event)
+        asset_events = self.get_events(asset)
+        asset_events.spends.append(event)
         logger.debug(event)
 
     def calculate_spend_cost_basis(
@@ -298,7 +309,8 @@ class CostBasisCalculator():
         taxfree_amount = ZERO
         remaining_amount_from_last_buy = FVal('-1')
         matched_acquisitions = []
-        for idx, acquisition_event in enumerate(self.events[spending_asset].acquisitions):
+        asset_events = self.get_events(spending_asset)
+        for idx, acquisition_event in enumerate(asset_events.acquisitions):
             if self.taxfree_after_period is None:
                 at_taxfree_period = False
             else:
@@ -365,10 +377,10 @@ class CostBasisCalculator():
             acquisition_event.remaining_amount = ZERO
 
             # If the sell used up the last historical acquisition
-            if idx == len(self.events[spending_asset].acquisitions) - 1:
+            if idx == len(asset_events.acquisitions) - 1:
                 stop_index = idx + 1
 
-        if len(self.events[spending_asset].acquisitions) == 0:
+        if len(asset_events.acquisitions) == 0:
             self.inform_user_missing_acquisition(spending_asset, timestamp)
             # That means we had no documented acquisition for that asset. This is not good
             # because we can't prove a corresponding acquisition and as such we are burdened
@@ -383,13 +395,13 @@ class CostBasisCalculator():
 
         is_complete = True
         # Otherwise, delete all the used up acquisitions from the list
-        self.events[spending_asset].used_acquisitions.extend(
-            self.events[spending_asset].acquisitions[:stop_index],
+        asset_events.used_acquisitions.extend(
+            asset_events.acquisitions[:stop_index],
         )
-        del self.events[spending_asset].acquisitions[:stop_index]
+        del asset_events.acquisitions[:stop_index]
         # and modify the amount of the buy where we stopped if there is one
         if remaining_amount_from_last_buy != FVal('-1'):
-            self.events[spending_asset].acquisitions[0].remaining_amount = remaining_amount_from_last_buy  # noqa: E501
+            asset_events.acquisitions[0].remaining_amount = remaining_amount_from_last_buy  # noqa: E501
         elif remaining_sold_amount != ZERO:
             # if we still have sold amount but no acquisitions to satisfy it then we only
             # found acquisitions to partially satisfy the sell
@@ -419,7 +431,7 @@ class CostBasisCalculator():
         and is hence tax-free and also the average buy price for each asset"""
         self.details: Dict[Asset, Tuple[FVal, FVal]] = {}
         now = ts_now()
-        for asset, events in self.events.items():
+        for asset, events in self._events.items():
             tax_free_amount_left = ZERO
             amount_sum = ZERO
             average = ZERO
@@ -441,10 +453,11 @@ class CostBasisCalculator():
         """Get the amount of asset accounting has calculated we should have after
         the history has been processed
         """
-        if asset not in self.events:
+        asset_events = self.get_events(asset)
+        if len(asset_events.acquisitions) == 0:
             return None
 
         amount = FVal(0)
-        for acquisition_event in self.events[asset].acquisitions:
+        for acquisition_event in asset_events.acquisitions:
             amount += acquisition_event.remaining_amount
         return amount
