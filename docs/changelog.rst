@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2811` ETH and WETH are now considered equivalent for cost basis and accounting purposes.
 * :bug:`2794` Aave v1 data after block 12,152,920 should be now available. Rotki switched to the new Aave v1 subgraph.
 * :bug:`2781` From this version and on, attempting to open a new global DB with an older rotki version will not be allowed and the app will crash with an error message.
 * :bug:`2773` Timestamps will be correctly read for trades in the Kraken exchange.
