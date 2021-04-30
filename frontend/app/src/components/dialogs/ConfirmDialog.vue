@@ -25,6 +25,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn
+          v-if="!singleAction"
           color="primary"
           depressed
           outlined
@@ -69,6 +70,8 @@ export default class ConfirmDialog extends Vue {
   confirmType!: string;
   @Prop({ type: Boolean, required: false, default: false })
   disabled!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  singleAction!: boolean;
 
   @Emit()
   confirm() {}
