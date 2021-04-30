@@ -51,6 +51,8 @@ WORLD_TO_BITTREX = {
     strethaddress_to_identifier('0xb1f871Ae9462F1b2C6826E88A7827e76f86751d4'): 'GNY',
     # MTC is Metacoin in Bittrex
     'MTC-3': 'MTC',
+    # EDG renamed to EDGELESS
+    strethaddress_to_identifier('0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c'): 'EDGELESS',
 }
 
 WORLD_TO_FTX = {
@@ -261,6 +263,8 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'): 'FET',
     # WINK is WINk in KUCOIN
     'WIN-3': 'WINK',
+    # As reported in #2805 CAPP refers to this token
+    strethaddress_to_identifier('0x11613b1f840bb5A40F8866d857e24DA126B79D73'): 'CAPP',
 }
 
 WORLD_TO_ICONOMI = {
