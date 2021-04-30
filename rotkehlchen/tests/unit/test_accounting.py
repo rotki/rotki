@@ -1,18 +1,12 @@
 import pytest
 
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.typing import (
-    AssetMovementCategory,
-    EthereumTransaction,
-    Fee,
-    Location,
-    Timestamp,
-)
+from rotkehlchen.typing import AssetMovementCategory, EthereumTransaction, Fee, Location, Timestamp
 
 DUMMY_ADDRESS = '0x0'
 DUMMY_HASH = b''
@@ -104,7 +98,7 @@ def test_selling_crypto_bought_with_crypto(accountant):
     }]
     accounting_history_process(accountant, 1436979735, 1495751688, history)
     # Make sure buying XMR with BTC also creates a BTC sell
-    sells = accountant.events.cost_basis.events['BTC'].spends
+    sells = accountant.events.cost_basis.get_events(A_BTC).spends
     assert len(sells) == 1
     assert sells[0].amount == FVal('0.3853125')
     assert sells[0].timestamp == 1449809536
@@ -216,14 +210,14 @@ def test_buying_selling_btc_before_bchfork(accountant):
 
     amount_bch = FVal(3.9)
     amount_btc = FVal(4.8)
-    buys = accountant.events.cost_basis.events['BCH'].acquisitions
+    buys = accountant.events.cost_basis.get_events(A_BCH).acquisitions
     assert len(buys) == 1
     assert buys[0].remaining_amount == amount_bch
     assert buys[0].timestamp == 1491593374
     assert buys[0].rate == FVal('1128.905')
     assert buys[0].fee_rate.is_close(FVal('0.0846153846154'))
-    assert accountant.events.cost_basis.get_calculated_asset_amount('BCH') == amount_bch
-    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC') == amount_btc
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BCH) == amount_bch
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
 
     assert accountant.general_trade_pl.is_close('13876.6464615')
     assert accountant.taxable_trade_pl.is_close('13876.6464615')
@@ -314,19 +308,19 @@ def test_buying_selling_bch_before_bsvfork(accountant):
     amount_btc = FVal(4.8)
     amount_bch = FVal(4.1)
     amount_bsv = FVal(4.6)
-    bch_buys = accountant.events.cost_basis.events['BCH'].acquisitions
+    bch_buys = accountant.events.cost_basis.get_events(A_BCH).acquisitions
     assert len(bch_buys) == 2
     assert sum(x.remaining_amount for x in bch_buys) == amount_bch
     assert bch_buys[0].timestamp == 1491593374
     assert bch_buys[1].timestamp == 1524937600
-    bsv_buys = accountant.events.cost_basis.events['BSV'].acquisitions
+    bsv_buys = accountant.events.cost_basis.get_events(A_BSV).acquisitions
     assert len(bsv_buys) == 2
     assert sum(x.remaining_amount for x in bsv_buys) == amount_bsv
     assert bsv_buys[0].timestamp == 1491593374
     assert bsv_buys[1].timestamp == 1524937600
-    assert accountant.events.cost_basis.get_calculated_asset_amount('BCH') == amount_bch
-    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC') == amount_btc
-    assert accountant.events.cost_basis.get_calculated_asset_amount('BSV') == amount_bsv
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BCH) == amount_bch
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BSV) == amount_bsv
 
     assert accountant.general_trade_pl.is_close('13411.164769')
     assert accountant.taxable_trade_pl.is_close('13876.646461')
@@ -403,7 +397,7 @@ def test_buy_event_creation(accountant):
         'location': 'kraken',
     }]
     accounting_history_process(accountant, 1436979735, 1519693374, history)
-    buys = accountant.events.cost_basis.events['BTC'].acquisitions
+    buys = accountant.events.cost_basis.get_events(A_BTC).acquisitions
     assert len(buys) == 2
     assert buys[0].amount == FVal(5)
     assert buys[0].timestamp == 1476979735
