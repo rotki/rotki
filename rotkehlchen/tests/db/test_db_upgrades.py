@@ -1769,7 +1769,10 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     assert db.get_version() == 25
 
 
-def test_upgrade_db_25_to_26(user_data_dir):  # pylint: disable=unused-argument
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('have_kraken', [True, False])
+@pytest.mark.parametrize('have_kraken_setting', [True, False])
+def test_upgrade_db_25_to_26(user_data_dir, have_kraken, have_kraken_setting):  # pylint: disable=unused-argument  # noqa: E501
     """Test upgrading the DB from version 25 to version 26.
 
     Upgrades the user credentials database to contain both name and location
@@ -1782,7 +1785,7 @@ def test_upgrade_db_25_to_26(user_data_dir):  # pylint: disable=unused-argument
     credentials = cursor.execute(
         'SELECT name, api_key, api_secret, passphrase from user_credentials',
     ).fetchall()
-    assert credentials == [
+    expected_credentials_before = [
         ('rotkehlchen', 'key', 'secret', ''),
         ('kraken', 'key', 'secret', ''),
         ('poloniex', 'key', 'secret', ''),
@@ -1800,6 +1803,24 @@ def test_upgrade_db_25_to_26(user_data_dir):  # pylint: disable=unused-argument
         ('kucoin', 'key', 'secret', ''),
         ('ftx', 'key', 'secret', ''),
     ]
+    if have_kraken:
+        expected_credentials_before.append(('kraken', 'key', 'secret', ''))
+    else:  # Make sure the credentials are not in the DB
+        cursor.execute('DELETE from user_credentials WHERE name="kraken";')
+
+    if have_kraken_setting is False:
+        # Make sure it's not there
+        cursor.execute('DELETE from settings WHERE name="kraken_account_type";')
+
+    assert set(credentials) == set(expected_credentials_before)
+    settings = cursor.execute(
+        'SELECT name, value from settings WHERE name="kraken_account_type";',
+    ).fetchone()
+    if have_kraken_setting:
+        assert settings == ('kraken_account_type', 'pro')
+    else:
+        assert settings is None
+    v25_conn.commit()
     v25_conn.close()
 
     # Migrate to v26
@@ -1814,9 +1835,8 @@ def test_upgrade_db_25_to_26(user_data_dir):  # pylint: disable=unused-argument
     credentials = cursor.execute(
         'SELECT name, location, api_key, api_secret, passphrase from user_credentials',
     ).fetchall()
-    assert credentials == [
+    expected_credentials = [
         ('rotkehlchen', 'A', 'key', 'secret', ''),
-        ('kraken', 'B', 'key', 'secret', ''),
         ('poloniex', 'C', 'key', 'secret', ''),
         ('bittrex', 'D', 'key', 'secret', ''),
         ('bitmex', 'F', 'key', 'secret', ''),
@@ -1832,6 +1852,22 @@ def test_upgrade_db_25_to_26(user_data_dir):  # pylint: disable=unused-argument
         ('kucoin', 'W', 'key', 'secret', ''),
         ('ftx', 'Z', 'key', 'secret', ''),
     ]
+    if have_kraken:
+        expected_credentials.append(('kraken', 'B', 'key', 'secret', ''))
+    assert set(credentials) == set(expected_credentials)
+    # Make sure settings is no longer there
+    settings = cursor.execute(
+        'SELECT name, value from settings WHERE name="kraken_account_type";',
+    ).fetchone()
+    assert settings is None
+    mapping = cursor.execute(
+        'SELECT credential_name, credential_location, setting_name, setting_value '
+        'FROM user_credentials_mappings;',
+    ).fetchone()
+    if have_kraken and have_kraken_setting:
+        assert mapping == ('kraken', 'B', 'kraken_account_type', 'pro')
+    else:
+        assert mapping is None
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 26

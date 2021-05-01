@@ -74,14 +74,41 @@ class V25V26UpgradeHelper():
             new_tuples,
         )
 
+    @staticmethod
+    def migrate_kraken_account_type(cursor: 'Cursor') -> None:
+        settings = cursor.execute(
+            'SELECT name, value from settings WHERE name="kraken_account_type";',
+        ).fetchone()
+        cursor.execute('DELETE from settings WHERE name="kraken_account_type";')
+        if settings is None:
+            return  # nothing to do
+
+        got_kraken = cursor.execute(
+            'SELECT name, location from user_credentials WHERE name=? AND location=?',
+            ('kraken', 'B'),
+        ).fetchone()
+        if got_kraken is None:
+            return  # nothing to do
+
+        kraken_account_type = settings[1]
+        cursor.execute(
+            'INSERT OR IGNORE INTO user_credentials_mappings('
+            'credential_name, credential_location, setting_name, setting_value'
+            ') VALUES(?, ?, ?, ?);',
+            ('kraken', 'B', 'kraken_account_type', kraken_account_type),
+        )
+
 
 def upgrade_v25_to_v26(db: 'DBHandler') -> None:
     """Upgrades the DB from v25 to v26
 
     - Upgrades the user_credentials table to have a name and location
+    - Delete deprecated kraken_account_type from settings.
+      If user has a kraken key and that setting, associate them in the new mappings table
     """
     helper = V25V26UpgradeHelper(db.msg_aggregator)
     cursor = db.conn.cursor()
     helper.upgrade_user_credentials(cursor)
+    helper.migrate_kraken_account_type(cursor)
     del helper
     db.conn.commit()
