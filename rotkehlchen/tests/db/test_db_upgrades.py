@@ -1820,7 +1820,30 @@ def test_upgrade_db_25_to_26(user_data_dir, have_kraken, have_kraken_setting):  
         assert settings == ('kraken_account_type', 'pro')
     else:
         assert settings is None
-    v25_conn.commit()
+
+    # check trades/assets movements and used query ranges are there
+    trades_query = cursor.execute(
+        'SELECT id, time, location, base_asset, quote_asset, type, amount, rate, fee,'
+        'fee_currency, link, notes from trades ORDER BY time ASC;',
+    ).fetchall()
+    assert trades_query == [
+        ('foo1', 1, 'S', 'ETH', 'BTC', 'A', '1', '1', '1', 'ETH', '', ''),
+        ('foo2', 1, 'B', 'ETH', 'BTC', 'A', '1', '1', '1', 'ETH', '', ''),
+    ]
+    asset_movements_query = cursor.execute('SELECT id, location, category, address, transaction_id, time, asset, amount, fee_asset, fee, link from asset_movements ORDER BY time ASC;').fetchall()  # noqa: E501
+    assert asset_movements_query == [
+        ('foo1', 'S', 'B', '0xaddy', '0xtxid', 1, 'YFI', '1', 'GNO', '1', 'customlink'),
+        ('foo2', 'B', 'B', '0xaddy', '0xtxid', 1, 'YFI', '1', 'GNO', '1', 'customlink'),
+    ]
+    used_query_ranges = cursor.execute('SELECT * from used_query_ranges').fetchall()
+    assert used_query_ranges == [
+        ('binance_us_trades', 0, 1),
+        ('binance_us_asset_movements', 0, 1),
+        ('kraken_trades', 0, 1),
+        ('kraken_asset_movements', 0, 1),
+    ]
+
+    v25_conn.commit()  # for changes done depending on test params
     v25_conn.close()
 
     # Migrate to v26
@@ -1868,6 +1891,20 @@ def test_upgrade_db_25_to_26(user_data_dir, have_kraken, have_kraken_setting):  
         assert mapping == ('kraken', 'B', 'kraken_account_type', 'pro')
     else:
         assert mapping is None
+
+    # check trades/assets movements and used query ranges of binanceus were purged
+    trades_query = cursor.execute(
+        'SELECT id, time, location, base_asset, quote_asset, type, amount, rate, fee,'
+        'fee_currency, link, notes from trades ORDER BY time ASC;',
+    ).fetchall()
+    assert trades_query == [('foo2', 1, 'B', 'ETH', 'BTC', 'A', '1', '1', '1', 'ETH', '', '')]
+    asset_movements_query = cursor.execute('SELECT id, location, category, address, transaction_id, time, asset, amount, fee_asset, fee, link from asset_movements ORDER BY time ASC;').fetchall()  # noqa: E501
+    assert asset_movements_query == [('foo2', 'B', 'B', '0xaddy', '0xtxid', 1, 'YFI', '1', 'GNO', '1', 'customlink')]  # noqa: E501
+    used_query_ranges = cursor.execute('SELECT * from used_query_ranges').fetchall()
+    assert used_query_ranges == [
+        ('kraken_trades', 0, 1),
+        ('kraken_asset_movements', 0, 1),
+    ]
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 26

@@ -98,6 +98,16 @@ class V25V26UpgradeHelper():
             ('kraken', 'B', 'kraken_account_type', kraken_account_type),
         )
 
+    @staticmethod
+    def purge_binanceus(cursor: 'Cursor') -> None:
+        # Delete the old way of naming binanceus in used query ranges
+        cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+            ('binance_us\\_%', '\\'),
+        )
+        cursor.execute('DELETE FROM trades WHERE location = "S";')
+        cursor.execute('DELETE FROM asset_movements WHERE location = "S";')
+
 
 def upgrade_v25_to_v26(db: 'DBHandler') -> None:
     """Upgrades the DB from v25 to v26
@@ -105,10 +115,16 @@ def upgrade_v25_to_v26(db: 'DBHandler') -> None:
     - Upgrades the user_credentials table to have a name and location
     - Delete deprecated kraken_account_type from settings.
       If user has a kraken key and that setting, associate them in the new mappings table
+    - String representation for 2 locations changed.
+      * crypto.com -> cryptocom
+      * binance_us -> binanceus
+
+      For that reason we need to purge used query ranges and data of binance_us
     """
     helper = V25V26UpgradeHelper(db.msg_aggregator)
     cursor = db.conn.cursor()
     helper.upgrade_user_credentials(cursor)
     helper.migrate_kraken_account_type(cursor)
+    helper.purge_binanceus(cursor)
     del helper
     db.conn.commit()
