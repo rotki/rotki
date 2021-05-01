@@ -44,7 +44,8 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.mixins import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
+from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
@@ -95,13 +96,20 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             passphrase: str,
     ):
-        super().__init__('coinbasepro', api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.COINBASEPRO,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.base_uri = 'https://api.pro.coinbase.com'
         self.msg_aggregator = msg_aggregator
         self.account_to_currency: Optional[Dict[str, Asset]] = None
@@ -111,6 +119,9 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             'CB-ACCESS-KEY': self.api_key,
             'CB-ACCESS-PASSPHRASE': passphrase,
         })
+
+    def update_passphrase(self, new_passphrase: str) -> None:
+        self.session.headers.update({'CB-ACCESS-PASSPHRASE': new_passphrase})
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Coinbase Pro API key is good for usage in Rotki

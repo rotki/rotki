@@ -483,7 +483,8 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
         return MockResponse(200, payload)
 
     # TODO: Turn this into a loop of all exchanges and return a list of patches
-    poloniex = rotki.exchange_manager.connected_exchanges.get('poloniex', None)
+    poloniex_objects = rotki.exchange_manager.connected_exchanges.get(Location.POLONIEX, None)
+    poloniex = None if poloniex_objects is None else poloniex_objects[0]
     polo_patch = None
     if poloniex:
         polo_patch = patch.object(
@@ -492,7 +493,8 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             side_effect=mock_poloniex_api_queries,
         )
 
-    binance = rotki.exchange_manager.connected_exchanges.get('binance', None)
+    binance_objects = rotki.exchange_manager.connected_exchanges.get(Location.BINANCE, None)
+    binance = None if binance_objects is None else binance_objects[0]
     binance_patch = None
     if binance:
         binance_patch = patch.object(
@@ -501,7 +503,8 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             side_effect=mock_binance_api_queries,
         )
 
-    bittrex = rotki.exchange_manager.connected_exchanges.get('bittrex', None)
+    bittrex_objects = rotki.exchange_manager.connected_exchanges.get(Location.BITTREX, None)
+    bittrex = None if bittrex_objects is None else bittrex_objects[0]
     bittrex_patch = None
     if bittrex:
         bittrex_patch = patch.object(
@@ -510,7 +513,8 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             side_effect=mock_bittrex_api_queries,
         )
 
-    bitmex = rotki.exchange_manager.connected_exchanges.get('bitmex', None)
+    bitmex_objects = rotki.exchange_manager.connected_exchanges.get(Location.BITMEX, None)
+    bitmex = None if bitmex_objects is None else bitmex_objects[0]
     bitmex_patch = None
     if bitmex:
         bitmex_patch = patch.object(
@@ -957,7 +961,7 @@ def prepare_rotki_for_history_processing_test(
     Makes sure blockchain accounts are loaded, kraken does not generate random trades
     and that all mocks are ready.
     """
-    kraken = cast(MockKraken, rotki.exchange_manager.connected_exchanges['kraken'])
+    kraken = cast(MockKraken, rotki.exchange_manager.connected_exchanges.get(Location.KRAKEN)[0])  # type: ignore  # noqa: E501
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.remote_errors = remote_errors

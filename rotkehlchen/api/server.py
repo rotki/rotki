@@ -121,7 +121,7 @@ URLS_V1: URLS = [
     ('/exchanges', ExchangesResource),
     ('/exchanges/balances', ExchangeBalancesResource),
     (
-        '/exchanges/balances/<string:name>',
+        '/exchanges/balances/<string:location>',
         ExchangeBalancesResource,
         'named_exchanges_balances_resource',
     ),
@@ -136,7 +136,7 @@ URLS_V1: URLS = [
     ('/asset_movements', AssetMovementsResource),
     ('/tags', TagsResource),
     ('/exchanges/data/', ExchangesDataResource),
-    ('/exchanges/data/<string:name>', ExchangesDataResource, 'named_exchanges_data_resource'),
+    ('/exchanges/data/<string:location>', ExchangesDataResource, 'named_exchanges_data_resource'),
     ('/balances/blockchains', BlockchainBalancesResource),
     (
         '/balances/blockchains/<string:blockchain>',

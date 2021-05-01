@@ -2,7 +2,7 @@ import { TradeLocationData } from '@/components/history/type';
 import {
   EXCHANGE_BALANCER,
   EXCHANGE_BINANCE,
-  EXCHANGE_BINANCE_US,
+  EXCHANGE_BINANCEUS,
   EXCHANGE_BITCOIN_DE,
   EXCHANGE_BITFINEX,
   EXCHANGE_BITMEX,
@@ -59,7 +59,7 @@ export const tradeLocations: TradeLocationData[] = [
     exchange: true
   },
   {
-    identifier: EXCHANGE_BINANCE_US,
+    identifier: EXCHANGE_BINANCEUS,
     name: 'Binance US',
     icon: require('@/assets/images/binance.png'),
     imageIcon: true,

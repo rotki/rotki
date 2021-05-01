@@ -63,8 +63,9 @@ TEST_POLO_LOAN_2 = {
 
 
 def test_name():
-    exchange = Poloniex('a', b'a', object(), object())
-    assert exchange.name == 'poloniex'
+    exchange = Poloniex('poloniex1', 'a', b'a', object(), object())
+    assert exchange.location == Location.POLONIEX
+    assert exchange.name == 'poloniex1'
 
 
 def test_trade_from_poloniex():

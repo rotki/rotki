@@ -29,7 +29,6 @@ from rotkehlchen.db.settings import (
     DEFAULT_HISTORICAL_PRICE_ORACLES,
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
     DEFAULT_INCLUDE_GAS_COSTS,
-    DEFAULT_KRAKEN_ACCOUNT_TYPE,
     DEFAULT_MAIN_CURRENCY,
     DEFAULT_TAXABLE_LEDGER_ACTIONS,
     DEFAULT_UI_FLOATING_PRECISION,
@@ -47,8 +46,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_action_type_from_db,
     deserialize_asset_movement_category,
     deserialize_asset_movement_category_from_db,
-    deserialize_location,
-    deserialize_location_from_db,
     deserialize_trade_type,
     deserialize_trade_type_from_db,
 )
@@ -98,6 +95,7 @@ TABLES_AT_INIT = [
     'balance_category',
     'external_service_credentials',
     'user_credentials',
+    'user_credentials_mappings',
     'blockchain_accounts',
     'ethereum_accounts_details',
     'multisettings',
@@ -171,30 +169,63 @@ def test_add_remove_exchange(user_data_dir):
 
     # Test that an unknown exchange fails
     with pytest.raises(InputError):
-        db.add_exchange('non_existing_exchange', 'api_key', 'api_secret')
+        db.add_exchange('foo', Location.EXTERNAL, 'api_key', 'api_secret')
     credentials = db.get_exchange_credentials()
     assert len(credentials) == 0
 
-    kraken_api_key = ApiKey('kraken_api_key')
-    kraken_api_secret = ApiSecret(b'kraken_api_secret')
+    kraken_api_key1 = ApiKey('kraken_api_key')
+    kraken_api_secret1 = ApiSecret(b'kraken_api_secret')
+    kraken_api_key2 = ApiKey('kraken_api_key2')
+    kraken_api_secret2 = ApiSecret(b'kraken_api_secret2')
     binance_api_key = ApiKey('binance_api_key')
     binance_api_secret = ApiSecret(b'binance_api_secret')
 
     # add mock kraken and binance
-    db.add_exchange('kraken', kraken_api_key, kraken_api_secret)
-    db.add_exchange('binance', binance_api_key, binance_api_secret)
+    db.add_exchange('kraken1', Location.KRAKEN, kraken_api_key1, kraken_api_secret1)
+    db.add_exchange('kraken2', Location.KRAKEN, kraken_api_key2, kraken_api_secret2)
+    db.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
     # and check the credentials can be retrieved
     credentials = db.get_exchange_credentials()
     assert len(credentials) == 2
-    assert credentials['kraken'].api_key == kraken_api_key
-    assert credentials['kraken'].api_secret == kraken_api_secret
-    assert credentials['binance'].api_key == binance_api_key
-    assert credentials['binance'].api_secret == binance_api_secret
+    assert len(credentials[Location.KRAKEN]) == 2
+    kraken1 = credentials[Location.KRAKEN][0]
+    assert kraken1.name == 'kraken1'
+    assert kraken1.api_key == kraken_api_key1
+    assert kraken1.api_secret == kraken_api_secret1
+    kraken2 = credentials[Location.KRAKEN][1]
+    assert kraken2.name == 'kraken2'
+    assert kraken2.api_key == kraken_api_key2
+    assert kraken2.api_secret == kraken_api_secret2
+    assert len(credentials[Location.BINANCE]) == 1
+    binance = credentials[Location.BINANCE][0]
+    assert binance.name == 'binance'
+    assert binance.api_key == binance_api_key
+    assert binance.api_secret == binance_api_secret
 
     # remove an exchange and see it works
-    db.remove_exchange('kraken')
+    db.remove_exchange('kraken1', Location.KRAKEN)
+    credentials = db.get_exchange_credentials()
+    assert len(credentials) == 2
+    assert len(credentials[Location.KRAKEN]) == 1
+    kraken2 = credentials[Location.KRAKEN][0]
+    assert kraken2.name == 'kraken2'
+    assert kraken2.api_key == kraken_api_key2
+    assert kraken2.api_secret == kraken_api_secret2
+    assert len(credentials[Location.BINANCE]) == 1
+    binance = credentials[Location.BINANCE][0]
+    assert binance.name == 'binance'
+    assert binance.api_key == binance_api_key
+    assert binance.api_secret == binance_api_secret
+
+    # remove last exchange of a location and see nothing is returned
+    db.remove_exchange('kraken2', Location.KRAKEN)
     credentials = db.get_exchange_credentials()
     assert len(credentials) == 1
+    assert len(credentials[Location.BINANCE]) == 1
+    binance = credentials[Location.BINANCE][0]
+    assert binance.name == 'binance'
+    assert binance.api_key == binance_api_key
+    assert binance.api_secret == binance_api_secret
 
 
 def test_export_import_db(data_dir, username):
@@ -304,7 +335,6 @@ def test_writing_fetching_data(data_dir, username):
         'premium_should_sync': False,
         'submit_usage_analytics': True,
         'last_write_ts': 0,
-        'kraken_account_type': DEFAULT_KRAKEN_ACCOUNT_TYPE,
         'active_modules': DEFAULT_ACTIVE_MODULES,
         'frontend_settings': '',
         'account_for_assets_movements': DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
@@ -381,7 +411,7 @@ def test_balance_save_frequency_check(data_dir, username):
     now = int(time.time())
     data_save_ts = now - 24 * 60 * 60 + 20
     data.db.add_multiple_location_data([LocationData(
-        time=data_save_ts, location=Location.KRAKEN.serialize_for_db(), usd_value='1500',
+        time=data_save_ts, location=Location.KRAKEN.serialize_for_db(), usd_value='1500',  # pylint: disable=no-member  # noqa: E501
     )])
 
     assert not data.should_save_balances()
@@ -1288,7 +1318,7 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
 
 @pytest.mark.parametrize('enum_class, query, deserialize_from_db, deserialize', [
     (Location, 'SELECT location, seq from location',
-        deserialize_location_from_db, deserialize_location),
+        Location.deserialize_from_db, Location.deserialize),
     (TradeType, 'SELECT type, seq from trade_type',
         deserialize_trade_type_from_db, deserialize_trade_type),
     (ActionType, 'SELECT type, seq from action_type',

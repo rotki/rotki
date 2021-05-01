@@ -10,7 +10,6 @@ from rotkehlchen.config import default_data_directory
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
@@ -94,7 +93,7 @@ class StatisticsFaker():
         from_ts, to_ts = StatisticsFaker._get_timestamps(args)
         starting_amount, min_amount, max_amount = StatisticsFaker._get_amounts(args)
         total_amount = starting_amount
-        locations = [deserialize_location(location) for location in args.locations.split(',')]
+        locations = [Location.deserialize(location) for location in args.locations.split(',')]
         assets = [Asset(symbol) for symbol in args.assets.split(',')]
         go_up_probability = FVal(args.go_up_probability)
 
@@ -109,7 +108,7 @@ class StatisticsFaker():
         # add the location data + total to the DB
         self.db.add_multiple_location_data(location_data + [LocationData(
             time=from_ts,
-            location=Location.TOTAL.serialize_for_db(),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
             usd_value=str(total_amount),
         )])
 
@@ -163,7 +162,7 @@ class StatisticsFaker():
             # add the location data + total to the DB
             self.db.add_multiple_location_data(new_location_data + [LocationData(
                 time=from_ts,
-                location=Location.TOTAL.serialize_for_db(),
+                location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
                 usd_value=str(total_amount),
             )])
 

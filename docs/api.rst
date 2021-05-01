@@ -126,7 +126,11 @@ Handling user creation, sign-in, log-out and querying
 
       {
           "result": {
-              "exchanges": ["kraken", "poloniex", "binance"],
+              "exchanges": [
+                   {"location": "kraken", "name": "kraken1"},
+                   {"location": "poloniex", "name": "poloniex1"},
+                   {"location": "binance", "name": "binance1"}
+               ],
               "settings": {
                   "have_premium": true,
                   "version": "6",
@@ -145,7 +149,6 @@ Handling user creation, sign-in, log-out and querying
                   "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
                   "last_balance_save": 1571552172,
                   "submit_usage_analytics": true,
-                  "kraken_account_type": "intermediate",
                   "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
                   "current_price_oracles": ["cryptocompare", "coingecko"],
                   "historical_price_oracles": ["cryptocompare", "coingecko"],
@@ -192,7 +195,11 @@ Handling user creation, sign-in, log-out and querying
 
       {
           "result": {
-              "exchanges": ["kraken", "poloniex", "binance"],
+              "exchanges": [
+                   {"location": "kraken", "name": "kraken1"},
+                   {"location": "poloniex", "name": "poloniex1"},
+                   {"location": "binance", "name": "binance1"}
+               ],
               "settings": {
                   "have_premium": true,
                   "version": "6",
@@ -211,7 +218,6 @@ Handling user creation, sign-in, log-out and querying
                   "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
                   "last_balance_save": 1571552172,
                   "submit_usage_analytics": true,
-                  "kraken_account_type": "intermediate",
                   "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
                   "current_price_oracles": ["cryptocompare", "coingecko"],
                   "historical_price_oracles": ["cryptocompare", "coingecko"],
@@ -583,7 +589,6 @@ Getting or modifying settings
               "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
               "last_balance_save": 1571552172,
               "submit_usage_analytics": true,
-              "kraken_account_type": "intermediate",
               "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
               "current_price_oracles": ["coingecko"],
               "historical_price_oracles": ["cryptocompare", "coingecko"],
@@ -610,7 +615,6 @@ Getting or modifying settings
    :resjson string date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :resjson int last_balance_save: The timestamp at which the balances were last saved in the database.
    :resjson bool submit_usage_analytics: A boolean denoting wether or not to submit anonymous usage analytics to the Rotki server.
-   :resjson string kraken_account_type: The type of the user's kraken account if he has one. Valid values are "starter", "intermediate" and "pro".
    :resjson list active_module: A list of strings denoting the active modules with which Rotki is running.
    :resjson list current_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting current prices.
    :resjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
@@ -682,7 +686,6 @@ Getting or modifying settings
               "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
               "last_balance_save": 1571552172,
               "submit_usage_analytics": true,
-              "kraken_account_type": "intermediate",
               "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
               "current_price_oracles": ["cryptocompare"],
               "historical_price_oracles": ["coingecko", "cryptocompare"],
@@ -981,7 +984,7 @@ Get a list of setup exchanges
 
 .. http:get:: /api/(version)/exchanges
 
-   Doing a GET on this endpoint will return a list of which exchanges are currently setup for the logged in user.
+   Doing a GET on this endpoint will return a list of which exchanges are currently setup for the logged in user and with which names.
 
    **Example Request**:
 
@@ -998,11 +1001,15 @@ Get a list of setup exchanges
       Content-Type: application/json
 
       {
-          "result": ["kraken", "binance"]
+          "result": [
+               {"location": "kraken", "name": "kraken1"},
+               {"location": "poloniex", "name": "poloniex1"},
+               {"location": "binance", "name": "binance1"}
+           ],
           "message": ""
       }
 
-   :resjson list result: A list of exchange names that have been setup for the logged in user.
+   :resjson list result: A list of exchange location/name pairs that have been setup for the logged in user.
    :statuscode 200: The exchanges list has been sucesfully setup
    :statuscode 409: No user is logged in.
    :statuscode 500: Internal Rotki error
@@ -1012,7 +1019,7 @@ Setup or remove an exchange
 
 .. http:put:: /api/(version)/exchanges
 
-   Doing a PUT on this endpoint with an exchange's name, api key and secret will setup the exchange for the current user.
+   Doing a PUT on this endpoint with an exchange's name, location, api key and secret will setup the exchange for the current user. Also for some exchanges additional optional info can be provided.
 
    **Example Request**:
 
@@ -1022,12 +1029,14 @@ Setup or remove an exchange
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret"}
+      {"name": "my kraken key", "location": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret"}
 
-   :reqjson string name: The name of the exchange to setup
+   :reqjson string name: A name to give to this exchange's key
+   :reqjson string location: The location of the exchange to setup
    :reqjson string api_key: The api key with which to setup the exchange
    :reqjson string api_secret: The api secret with which to setup the exchange
    :reqjson string passphrase: An optional passphrase, only for exchanges, like coinbase pro, which need a passphrase.
+   :reqjson string kraken_account_type: An optional setting for kraken. The type of the user's kraken account. Valid values are "starter", "intermediate" and "pro".
 
    **Example Response**:
 
@@ -1059,9 +1068,10 @@ Setup or remove an exchange
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "kraken"}
+      {"name": "my kraken key", "location": "kraken"}
 
-   :reqjson string name: The name of the exchange to delete
+   :reqjson string name: The name of the exchange whose key to delete
+   :reqjson string location: The location of the exchange to delete
 
    **Example Response**:
 
@@ -1081,10 +1091,51 @@ Setup or remove an exchange
    :statuscode 409: No user is logged in. The exchange is not registered or some other error
    :statuscode 500: Internal Rotki error
 
+Edit an exchange entry
+========================
+
+.. http:patch:: /api/(version)/exchanges
+
+   Doing a PATCH on this endpoint with an exchange's name and location and the various optional attributes will result in editing it.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/exchanges HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"name": "my kraken key", "location": "kraken", "new_name": "my_kraken", "passphrase": "secret", "kraken_account_type": "intermediate"}
+
+   :reqjson string name: The name of the exchange key to edit
+   :reqjson string location: The location of the exchange to edit
+   :reqjson string new_name: Optional. If given this will be the new name for the exchange credentials.
+   :reqjson string passphrase: Optional. If given this will be the new passphrase. Only for exchanges, like coinbase pro, which need a passphrase.
+   :reqjson string kraken_account_type: Optional. An optional setting for kraken. The type of the user's kraken account. Valid values are "starter", "intermediate" and "pro".
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true
+          "message": ""
+      }
+
+   :resjson bool result: A boolean indicating success if all went well. If there is an error then the usual result: null and message having a value format is followed.
+   :statuscode 200: The exchange has been sucesfully edited
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in. The exchange can not be found.
+   :statuscode 500: Internal Rotki error
+
 Querying the balances of exchanges
 ====================================
 
-.. http:get:: /api/(version)/exchanges/balances/(name)
+.. http:get:: /api/(version)/exchanges/balances/(location)
 
    Doing a GET on the appropriate exchanges balances endpoint will return the balances of all assets currently held in that exchange. If no name is provided then the balance of all exchanges is returned.
 
@@ -1176,7 +1227,7 @@ Querying the balances of exchanges
 Purging locally saved data for exchanges
 =========================================
 
-.. http:delete:: /api/(version)/exchanges/data/(name)
+.. http:delete:: /api/(version)/exchanges/data/(location)
 
    Doing a DELETE on the appropriate exchanges trades endpoint will delete the cached trades, deposits and withdrawals for that exchange. If no exchange is given then all exchanges will be affected. Next time exchange history is queried, everything will be queried again, and may take some time.
 

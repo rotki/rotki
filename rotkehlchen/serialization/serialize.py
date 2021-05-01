@@ -56,7 +56,6 @@ from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
-from rotkehlchen.serialization.deserialize import deserialize_location_from_db
 from rotkehlchen.typing import (
     AssetMovementCategory,
     BlockchainAccountData,
@@ -87,7 +86,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
     if isinstance(entry, LocationData):
         return {
             'time': entry.time,
-            'location': str(deserialize_location_from_db(entry.location)),
+            'location': str(Location.deserialize_from_db(entry.location)),
             'usd_value': entry.usd_value,
         }
     if isinstance(entry, SingleDBAssetBalance):

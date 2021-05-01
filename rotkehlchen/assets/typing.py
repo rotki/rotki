@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional
 
-from rotkehlchen.errors import DeserializationError
-from rotkehlchen.utils.mixins import DBEnumMixIn
+from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
 if TYPE_CHECKING:
     from rotkehlchen.typing import ChecksumEthAddress, Timestamp
@@ -33,19 +32,6 @@ class AssetType(DBEnumMixIn):
     OTHER = 23
     AVALANCHE_TOKEN = 24
     SOLANA_TOKEN = 25
-
-    @staticmethod
-    def deserialize(value: str) -> 'AssetType':
-        """Deserializes an asset type from a string. Probably sent via the API
-
-        May raise DeserializationError if the value does not match an asset type
-        """
-        upper_str = value.replace(' ', '_').upper()
-        asset_type = AssetType.__members__.get(upper_str, None)  # pylint: disable=no-member
-        if asset_type is None:
-            raise DeserializationError(f'Could not deserialize {value} as an asset type')
-
-        return asset_type
 
 
 class AssetData(NamedTuple):

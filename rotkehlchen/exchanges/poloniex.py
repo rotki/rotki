@@ -57,7 +57,8 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import create_timestamp, ts_now_in_ms
-from rotkehlchen.utils.mixins import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
+from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
@@ -218,12 +219,19 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super().__init__('poloniex', api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.POLONIEX,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='

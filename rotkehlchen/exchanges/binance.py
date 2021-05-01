@@ -26,7 +26,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.constants import BINANCE_BASE_URL, BINANCE_US_BASE_URL
+from rotkehlchen.constants import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade, TradeType
@@ -45,7 +45,8 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.mixins import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
+from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -204,7 +205,7 @@ def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, B
 class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """This class supports:
       - Binance: when instantiated with default uri, equals BINANCE_BASE_URL.
-      - Binance US: when instantiated with uri equals BINANCE_US_BASE_URL.
+      - Binance US: when instantiated with uri equals BINANCEUS_BASE_URL.
 
     Binance exchange api docs:
     https://github.com/binance-exchange/binance-official-api-docs/
@@ -217,17 +218,24 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             uri: str = BINANCE_BASE_URL,
     ):
-        exchange_name = str(Location.BINANCE)
-        if uri == BINANCE_US_BASE_URL:
-            exchange_name = str(Location.BINANCE_US)
+        exchange_location = Location.BINANCE
+        if uri == BINANCEUS_BASE_URL:
+            exchange_location = Location.BINANCEUS
 
-        super().__init__(exchange_name, api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=exchange_location,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.uri = uri
         self.session.headers.update({
             'Accept': 'application/json',
@@ -782,7 +790,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self.first_connection()
             returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
             returned_balances = self._query_spot_balances(returned_balances)
-            if self.name != str(Location.BINANCE_US):
+            if self.name != str(Location.BINANCEUS):
                 returned_balances = self._query_lending_balances(returned_balances)
                 returned_balances = self._query_cross_collateral_futures_balances(returned_balances)  # noqa: E501
                 returned_balances = self._query_margined_futures_balances('fapi', returned_balances)  # noqa: E501

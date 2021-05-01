@@ -26,9 +26,9 @@ export const EXCHANGE_BINANCE = 'binance';
 export const EXCHANGE_COINBASE = 'coinbase';
 export const EXCHANGE_COINBASEPRO = 'coinbasepro';
 export const EXCHANGE_GEMINI = 'gemini';
-export const EXCHANGE_CRYPTOCOM = 'crypto.com';
+export const EXCHANGE_CRYPTOCOM = 'cryptocom';
 export const EXCHANGE_BITSTAMP = 'bitstamp';
-export const EXCHANGE_BINANCE_US = 'binance_us';
+export const EXCHANGE_BINANCEUS = 'binanceus';
 export const EXCHANGE_BITCOIN_DE = 'bitcoinde';
 export const EXCHANGE_ICONOMI = 'iconomi';
 export const EXCHANGE_KUCOIN = 'kucoin';
@@ -54,7 +54,7 @@ export const SUPPORTED_EXCHANGES = [
   EXCHANGE_BITMEX,
   EXCHANGE_BITFINEX,
   EXCHANGE_BINANCE,
-  EXCHANGE_BINANCE_US,
+  EXCHANGE_BINANCEUS,
   EXCHANGE_BITCOIN_DE,
   EXCHANGE_COINBASE,
   EXCHANGE_COINBASEPRO,

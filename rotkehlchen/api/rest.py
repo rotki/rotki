@@ -29,7 +29,7 @@ from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import ActionType, BalanceType
+from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
@@ -100,11 +100,13 @@ from rotkehlchen.typing import (
     Timestamp,
     TradeType,
 )
+from rotkehlchen.utils.misc import combine_dicts
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 
 OK_RESULT = {'result': True, 'message': ''}
@@ -471,14 +473,23 @@ class RestAPI():
     def setup_exchange(
             self,
             name: str,
+            location: Location,
             api_key: ApiKey,
             api_secret: ApiSecret,
             passphrase: Optional[str],
+            kraken_account_type: Optional['KrakenAccountType'],
     ) -> Response:
         result = None
         status_code = HTTPStatus.OK
         msg = ''
-        result, msg = self.rotkehlchen.setup_exchange(name, api_key, api_secret, passphrase)
+        result, msg = self.rotkehlchen.setup_exchange(
+            name=name,
+            location=location,
+            api_key=api_key,
+            api_secret=api_secret,
+            passphrase=passphrase,
+            kraken_account_type=kraken_account_type,
+        )
         if not result:
             result = None
             status_code = HTTPStatus.CONFLICT
@@ -486,9 +497,41 @@ class RestAPI():
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
     @require_loggedin_user()
-    def remove_exchange(self, name: str) -> Response:
+    def edit_exchange(
+            self,
+            name: str,
+            location: Location,
+            new_name: Optional[str],
+            passphrase: Optional[str],
+            kraken_account_type: Optional['KrakenAccountType'],
+    ) -> Response:
+        result: Optional[bool] = True
+        status_code = HTTPStatus.OK
+        msg = ''
+        try:
+            edited = self.rotkehlchen.exchange_manager.edit_exchange(
+                name=name,
+                location=location,
+                new_name=new_name,
+                passphrase=passphrase,
+                kraken_account_type=kraken_account_type,
+            )
+            if edited is False:
+                msg = f'Could not find {str(location)} exchange {name} for editing'
+        except InputError as e:
+            edited = False
+            msg = str(e)
+
+        if not edited:
+            result = None
+            status_code = HTTPStatus.CONFLICT
+
+        return api_response(_wrap_in_result(result, msg), status_code=status_code)
+
+    @require_loggedin_user()
+    def remove_exchange(self, name: str, location: Location) -> Response:
         result: Optional[bool]
-        result, message = self.rotkehlchen.remove_exchange(name)
+        result, message = self.rotkehlchen.remove_exchange(name=name, location=location)
         status_code = HTTPStatus.OK
         if not result:
             result = None
@@ -498,12 +541,19 @@ class RestAPI():
     def _query_all_exchange_balances(self, ignore_cache: bool) -> Dict[str, Any]:
         final_balances = {}
         error_msg = ''
-        for name, exchange_obj in self.rotkehlchen.exchange_manager.connected_exchanges.items():
+        for exchange_obj in self.rotkehlchen.exchange_manager.iterate_exchanges():
             balances, msg = exchange_obj.query_balances(ignore_cache=ignore_cache)
             if balances is None:
                 error_msg += msg
             else:
-                final_balances[name] = balances
+                location_str = str(exchange_obj.location)
+                if location_str not in final_balances:
+                    final_balances[location_str] = balances
+                else:  # multiple exchange of same type. Combine balances
+                    final_balances[location_str] = combine_dicts(
+                        final_balances[location_str],
+                        balances,
+                    )
 
         if final_balances == {}:
             result = None
@@ -514,42 +564,52 @@ class RestAPI():
 
         return {'result': result, 'message': error_msg, 'status_code': status_code}
 
-    def _query_exchange_balances(self, name: Optional[str], ignore_cache: bool) -> Dict[str, Any]:
-        if name is None:
+    def _query_exchange_balances(self, location: Optional[Location], ignore_cache: bool) -> Dict[str, Any]:  # noqa: E501
+        if location is None:
             # Query all exchanges
             return self._query_all_exchange_balances(ignore_cache=ignore_cache)
 
         # else query only the specific exchange
-        exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
-        if not exchange_obj:
+        exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(location)
+        if exchanges_list is None:
             return {
                 'result': None,
-                'message': f'Could not query balances for {name} since it is not registered',
+                'message': f'Could not query balances for {str(location)} since it is not registered',  # noqa: E501
                 'status_code': HTTPStatus.CONFLICT,
             }
 
-        result, msg = exchange_obj.query_balances(ignore_cache=ignore_cache)
+        balances: Dict[Asset, Balance] = {}
+        for exchange in exchanges_list:
+            result, msg = exchange.query_balances(ignore_cache=ignore_cache)
+            if result is None:
+                return {
+                    'result': result,
+                    'message': msg,
+                    'status_code': HTTPStatus.CONFLICT,
+                }
+            balances = combine_dicts(balances, result)
+
         return {
-            'result': result,
-            'message': msg,
-            'status_code': HTTPStatus.OK if result else HTTPStatus.CONFLICT,
+            'result': balances,
+            'message': '',
+            'status_code': HTTPStatus.OK,
         }
 
     @require_loggedin_user()
     def query_exchange_balances(
             self,
-            name: Optional[str],
+            location: Optional[Location],
             async_query: bool,
             ignore_cache: bool,
     ) -> Response:
         if async_query:
             return self._query_async(
                 command='_query_exchange_balances',
-                name=name,
+                location=location,
                 ignore_cache=ignore_cache,
             )
 
-        response = self._query_exchange_balances(name=name, ignore_cache=ignore_cache)
+        response = self._query_exchange_balances(location=location, ignore_cache=ignore_cache)
         balances = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)
@@ -1926,7 +1986,7 @@ class RestAPI():
     @require_loggedin_user()
     def import_data(
             self,
-            source: Literal['cointracking.info', 'crypto.com'],
+            source: Literal['cointracking.info', 'cryptocom'],
             filepath: Path,
     ) -> Response:
         if source == 'cointracking.info':
@@ -1934,7 +1994,7 @@ class RestAPI():
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
-        elif source == 'crypto.com':
+        elif source == 'cryptocom':
             success, msg = self.rotkehlchen.data_importer.import_cryptocom_csv(filepath)
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
@@ -2448,12 +2508,12 @@ class RestAPI():
         return self._watcher_query(method='DELETE', data={'watchers': watchers})
 
     @require_loggedin_user()
-    def purge_exchange_data(self, name: Optional[str]) -> Response:
-        if name:
-            self.rotkehlchen.data.db.purge_exchange_data(name)
+    def purge_exchange_data(self, location: Optional[Location]) -> Response:
+        if location:
+            self.rotkehlchen.data.db.purge_exchange_data(location)
         else:
-            for exchange_name in ALL_SUPPORTED_EXCHANGES:
-                self.rotkehlchen.data.db.purge_exchange_data(exchange_name)
+            for exchange_location in ALL_SUPPORTED_EXCHANGES:
+                self.rotkehlchen.data.db.purge_exchange_data(exchange_location)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 

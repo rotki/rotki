@@ -124,12 +124,19 @@ def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
 class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super().__init__('bitcoinde', api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.BITCOINDE,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.uri = 'https://api.bitcoin.de'
         self.session.headers.update({'x-api-key': api_key})
         self.msg_aggregator = msg_aggregator

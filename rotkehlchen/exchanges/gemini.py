@@ -40,7 +40,8 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.mixins import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
+from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
@@ -88,13 +89,20 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             base_uri: str = 'https://api.gemini.com',
     ):
-        super().__init__('gemini', api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.GEMINI,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.base_uri = base_uri
         self.msg_aggregator = msg_aggregator
 

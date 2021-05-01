@@ -1,27 +1,27 @@
-from unittest.mock import patch
-from typing import Optional, Set
 import warnings as test_warnings
+from typing import Optional, Set
+from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import asset_from_ftx, UNSUPPORTED_FTX_ASSETS
+from rotkehlchen.assets.converters import UNSUPPORTED_FTX_ASSETS, asset_from_ftx
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ETH, A_USD, A_USDC, A_1INCH
+from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_USD, A_USDC
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location, TradeType, Timestamp, Fee
-
+from rotkehlchen.typing import AssetMovementCategory, Fee, Location, Timestamp, TradeType
 
 TEST_END_TS = Timestamp(1617382780)
 
 
 def test_name():
-    exchange = Ftx('a', b'a', object(), object())
-    assert exchange.name == 'ftx'
+    exchange = Ftx('ftx1', 'a', b'a', object(), object())
+    assert exchange.location == Location.FTX
+    assert exchange.name == 'ftx1'
 
 
 def test_ftx_exchange_assets_are_known(mock_ftx: Ftx):

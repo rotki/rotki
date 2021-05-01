@@ -1,9 +1,8 @@
 from typing import TYPE_CHECKING, NamedTuple, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import DeserializationError
 from rotkehlchen.typing import Price, Timestamp
-from rotkehlchen.utils.mixins import DBEnumMixIn
+from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
 from .deserialization import deserialize_price
 
@@ -21,16 +20,6 @@ class HistoricalPriceOracle(DBEnumMixIn):
     COINGECKO = 2
     CRYPTOCOMPARE = 3
     XRATESCOM = 4
-
-    def serialize(self) -> str:
-        return str(self)
-
-    @classmethod
-    def deserialize(cls, name: str) -> 'HistoricalPriceOracle':
-        try:
-            return getattr(cls, name.upper())
-        except AttributeError as e:
-            raise DeserializationError(f'Failed to deserialize historical price oracle: {name}') from e  # noqa: E501
 
 
 NOT_EXPOSED_SOURCES = (

@@ -3,9 +3,10 @@ import os
 import pytest
 
 from rotkehlchen.errors import SystemPermissionError
-from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
+from rotkehlchen.typing import Location
 
 
 def test_initializing_exchanges(uninitialized_rotkehlchen):
@@ -22,16 +23,20 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
     # Mock having user_credentials for all exchanges and for premium
     cmd = (
         'INSERT OR REPLACE INTO user_credentials '
-        '(name, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?)'
+        '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)'
     )
 
     credentials = []
-    for name in SUPPORTED_EXCHANGES:
+    for location in SUPPORTED_EXCHANGES:
         passphrase = None
-        if name in ('coinbasepro', 'kucoin'):
+        if location in EXCHANGES_WITH_PASSPHRASE:
             passphrase = 'supersecretpassphrase'
-        credentials.append((name, make_api_key(), make_api_secret(), passphrase))
-    credentials.append(('rotkehlchen', make_api_key(), make_api_secret(), None))
+        credentials.append(
+            (str(location), location.serialize_for_db(), make_api_key(), make_api_secret().decode(), passphrase),  # noqa: E501  # pylint: disable=no-member
+        )
+    credentials.append(
+        ('rotkehlchen', Location.EXTERNAL.serialize_for_db(), make_api_key(), make_api_secret().decode(), None),  # noqa: E501  # pylint: disable=no-member
+    )
     cursor = rotki.data.db.conn.cursor()
     for entry in credentials:
         cursor.execute(cmd, entry)
@@ -43,7 +48,7 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
         database=database,
     )
 
-    assert all(name in rotki.exchange_manager.connected_exchanges for name in SUPPORTED_EXCHANGES)
+    assert all(location in rotki.exchange_manager.connected_exchanges for location in SUPPORTED_EXCHANGES)  # noqa: E501
 
 
 def test_initializing_rotki_with_datadir_with_wrong_permissions(cli_args, data_dir):
