@@ -6,7 +6,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.chain.substrate.typing import KusamaAddress
 from rotkehlchen.fval import FVal
-from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
+from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 
 ModuleName = Literal[
     'makerdao_dsr',
