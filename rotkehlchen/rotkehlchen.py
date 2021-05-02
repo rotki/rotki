@@ -118,9 +118,6 @@ class Rotkehlchen():
         - SystemPermissionError if the given data directory's permissions
         are not correct.
         """
-        self.lock = Semaphore()
-        self.lock.acquire()
-
         # Can also be None after unlock if premium credentials did not
         # authenticate or premium server temporarily offline
         self.premium: Optional[Premium] = None
@@ -169,8 +166,6 @@ class Rotkehlchen():
             'trade': defaultdict(int),
             'asset_movement': defaultdict(int),
         }
-
-        self.lock.release()
         self.task_manager: Optional[TaskManager] = None
         self.shutdown_event = gevent.event.Event()
 
@@ -983,35 +978,34 @@ class Rotkehlchen():
 
     def set_settings(self, settings: ModifiableDBSettings) -> Tuple[bool, str]:
         """Tries to set new settings. Returns True in success or False with message if error"""
-        with self.lock:
-            if settings.eth_rpc_endpoint is not None:
-                result, msg = self.chain_manager.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
-                if not result:
-                    return False, msg
+        if settings.eth_rpc_endpoint is not None:
+            result, msg = self.chain_manager.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
+            if not result:
+                return False, msg
 
-            if settings.ksm_rpc_endpoint is not None:
-                result, msg = self.chain_manager.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
-                if not result:
-                    return False, msg
+        if settings.ksm_rpc_endpoint is not None:
+            result, msg = self.chain_manager.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
+            if not result:
+                return False, msg
 
-            if settings.kraken_account_type is not None:
-                kraken = self.exchange_manager.get('kraken')
-                if kraken:
-                    kraken.set_account_type(settings.kraken_account_type)  # type: ignore
+        if settings.kraken_account_type is not None:
+            kraken = self.exchange_manager.get('kraken')
+            if kraken:
+                kraken.set_account_type(settings.kraken_account_type)  # type: ignore
 
-            if settings.btc_derivation_gap_limit is not None:
-                self.chain_manager.btc_derivation_gap_limit = settings.btc_derivation_gap_limit
+        if settings.btc_derivation_gap_limit is not None:
+            self.chain_manager.btc_derivation_gap_limit = settings.btc_derivation_gap_limit
 
-            if settings.current_price_oracles is not None:
-                Inquirer().set_oracles_order(settings.current_price_oracles)
+        if settings.current_price_oracles is not None:
+            Inquirer().set_oracles_order(settings.current_price_oracles)
 
-            if settings.historical_price_oracles is not None:
-                PriceHistorian().set_oracles_order(settings.historical_price_oracles)
-            if settings.active_modules is not None:
-                self.chain_manager.process_new_modules_list(settings.active_modules)
+        if settings.historical_price_oracles is not None:
+            PriceHistorian().set_oracles_order(settings.historical_price_oracles)
+        if settings.active_modules is not None:
+            self.chain_manager.process_new_modules_list(settings.active_modules)
 
-            self.data.db.set_settings(settings)
-            return True, ''
+        self.data.db.set_settings(settings)
+        return True, ''
 
     def get_settings(self) -> DBSettings:
         """Returns the db settings with a check whether premium is active or not"""
