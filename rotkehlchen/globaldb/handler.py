@@ -51,7 +51,7 @@ def _initialize_temp_db_directory() -> TemporaryDirectory:
     return tempdir
 
 
-def _initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
+def initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
     connection = sqlite3.connect(dbpath)
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
     cursor = connection.cursor()
@@ -81,7 +81,7 @@ def _initialize_global_db_directory(data_dir: Path) -> sqlite3.Connection:
         root_dir = Path(__file__).resolve().parent.parent
         builtin_data_dir = root_dir / 'data'
         shutil.copyfile(builtin_data_dir / 'global.db', global_dir / 'global.db')
-    return _initialize_globaldb(dbname)
+    return initialize_globaldb(dbname)
 
 
 class GlobalDBHandler():
@@ -123,7 +123,7 @@ class GlobalDBHandler():
             tempdir = _initialize_temp_db_directory()
             GlobalDBHandler.__instance._temp_db_directory = tempdir
             dbname = Path(tempdir.name) / 'global.db'
-            GlobalDBHandler.__instance._conn = _initialize_globaldb(dbname)
+            GlobalDBHandler.__instance._conn = initialize_globaldb(dbname)
         else:  # probably tests
             GlobalDBHandler.__instance._data_directory = data_dir
             GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)

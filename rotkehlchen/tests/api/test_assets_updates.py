@@ -10,6 +10,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
@@ -22,6 +23,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_GLM
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.typing import ChecksumEthAddress
 
 
 def mock_asset_updates(original_requests_get, latest: int, updates: Dict[str, Any], sql_actions: Dict[str, str]):  # noqa: E501
@@ -189,7 +191,26 @@ INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES("0x6B175474E8909
 *
 INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, cryptocompare, details_reference) VALUES("DASH", "B","Dash","DASH",1337, NULL, "dash-coingecko", NULL, "DASH");INSERT INTO common_asset_details(asset_id, forked) VALUES("DASH", "BTC");
 *
+INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES("0x1B175474E89094C44Da98b954EedeAC495271d0F", 18, NULL); INSERT INTO assets(identifier,type, name, symbol,started, swapped_for, coingecko, cryptocompare, details_reference) VALUES("_ceth_0x1B175474E89094C44Da98b954EedeAC495271d0F", "C", "Conflicting token", "CTK", 1573672677, NULL, "ctk", NULL, "0x1B175474E89094C44Da98b954EedeAC495271d0F");
+*
     """  # noqa: E501
+    globaldb.add_asset(  # add a conflicting token
+        asset_id='_ceth_0x1B175474E89094C44Da98b954EedeAC495271d0F',
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        data=CustomEthereumToken(
+            address=ChecksumEthAddress('0x1B175474E89094C44Da98b954EedeAC495271d0F'),
+            decimals=12,
+            name='Conflicting token',
+            symbol='CTK',
+            started=None,
+            swapped_for=None,
+            coingecko='ctk',
+            cryptocompare=None,
+            protocol=None,
+            underlying_tokens=None,
+        ),
+    )
+    globaldb.add_user_owned_assets([Asset('_ceth_0x1B175474E89094C44Da98b954EedeAC495271d0F')])
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
         latest=999999991,
@@ -255,7 +276,7 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
         warnings = rotki.msg_aggregator.consume_warnings()
         assert len(errors) == 0, f'Found errors: {errors}'
         assert len(warnings) == 0, f'Found warnings: {warnings}'
-        # See that we get two conflicts
+        # See that we get 3 conflicts
         expected_result = [{
             'identifier': '_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F',
             'local': {
@@ -312,11 +333,39 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
                 'coingecko': 'dash-coingecko',
                 'protocol': None,
             },
+        }, {
+            'identifier': '_ceth_0x1B175474E89094C44Da98b954EedeAC495271d0F',
+            'local': {
+                'asset_type': 'ethereum token',
+                'coingecko': 'ctk',
+                'cryptocompare': None,
+                'decimals': 12,
+                'ethereum_address': '0x1B175474E89094C44Da98b954EedeAC495271d0F',
+                'forked': None,
+                'name': 'Conflicting token',
+                'protocol': None,
+                'started': None,
+                'swapped_for': None,
+                'symbol': 'CTK',
+            },
+            'remote': {
+                'asset_type': 'ethereum token',
+                'coingecko': 'ctk',
+                'cryptocompare': None,
+                'decimals': 18,
+                'ethereum_address': '0x1b175474E89094C44DA98B954EeDEAC495271d0f',
+                'forked': None,
+                'name': 'Conflicting token',
+                'protocol': None,
+                'started': 1573672677,
+                'swapped_for': None,
+                'symbol': 'CTK',
+            },
         }]
         assert result == expected_result
 
         # now try the update again but specify the conflicts resolution
-        conflicts = {'_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F': 'remote', 'DASH': 'local'}
+        conflicts = {'_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F': 'remote', 'DASH': 'local', '_ceth_0x1B175474E89094C44Da98b954EedeAC495271d0F': 'remote'}  # noqa: E501
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
@@ -339,6 +388,7 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
                 status_code=HTTPStatus.OK,
             )
 
+        cursor = globaldb._conn.cursor()
         # check conflicts were solved as per the given choices and new asset also added
         assert result is True
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999991
@@ -359,6 +409,9 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
         assert dai.ethereum_address == '0x6B175474E89094C44Da98b954EedeAC495271d0F'
         assert dai.decimals == 8
         assert dai.protocol == 'maker'
+        # make sure data is in both tables
+        assert cursor.execute('SELECT COUNT(*) from ethereum_tokens WHERE address="0x6B175474E89094C44Da98b954EedeAC495271d0F";').fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F";').fetchone()[0] == 1  # noqa: E501
 
         dash = Asset('DASH')
         assert dash.identifier == 'DASH'
@@ -370,6 +423,8 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
         assert dash.swapped_for is None
         assert dash.coingecko == 'dash'
         assert dash.cryptocompare is None
+        assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE asset_id="DASH";').fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="DASH";').fetchone()[0] == 1  # noqa: E501
 
         new_asset = Asset('121-ada-FADS-as')
         assert new_asset.identifier == '121-ada-FADS-as'
@@ -381,13 +436,32 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
         assert new_asset.swapped_for is None
         assert new_asset.coingecko == ''
         assert new_asset.cryptocompare == ''
+        assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE asset_id="121-ada-FADS-as";').fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="121-ada-FADS-as";').fetchone()[0] == 1  # noqa: E501
+
+        ctk = EthereumToken('0x1B175474E89094C44Da98b954EedeAC495271d0F')
+        assert ctk.name == 'Conflicting token'
+        assert ctk.symbol == 'CTK'
+        assert ctk.asset_type == AssetType.ETHEREUM_TOKEN
+        assert ctk.started == 1573672677
+        assert ctk.forked is None
+        assert ctk.swapped_for is None
+        assert ctk.coingecko == 'ctk'
+        assert ctk.cryptocompare is None
+        assert ctk.ethereum_address == '0x1B175474E89094C44Da98b954EedeAC495271d0F'
+        assert ctk.decimals == 18
+        assert ctk.protocol is None
+        assert cursor.execute('SELECT COUNT(*) from ethereum_tokens WHERE address="0x1B175474E89094C44Da98b954EedeAC495271d0F";').fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="_ceth_0x1B175474E89094C44Da98b954EedeAC495271d0F";').fetchone()[0] == 1  # noqa: E501
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_foreignkey_conflict(rotkehlchen_api_server, globaldb):
     """Test that when a conflict that's not solvable happens the entry is ignored
 
-    One such case is when the update of an asset would violate a foreign key constraint"""
+    One such case is when the update of an asset would violate a foreign key constraint.
+    So we try to update the swapped_for to a non existing asset and make sure it's skipped.
+    """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     update_1 = """INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, cryptocompare, details_reference) VALUES("121-ada-FADS-as", "F","A name","SYMBOL",NULL, NULL,"", "", "121-ada-FADS-as");INSERT INTO common_asset_details(asset_id, forked) VALUES("121-ada-FADS-as", "BTC");
