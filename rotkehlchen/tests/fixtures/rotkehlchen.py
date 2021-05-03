@@ -129,8 +129,11 @@ def initialize_mock_rotkehlchen_instance(
         '_connect_ksm_manager_on_startup',
         return_value=bool(blockchain_accounts.ksm),
     )
-
-    with settings_patch, eth_rpcconnect_patch, ksm_rpcconnect_patch, ksm_connect_on_startup_patch:
+    # patch the constants to make sure that the periodic query for icons
+    # does not run during tests
+    size_patch = patch('rotkehlchen.rotkehlchen.ICONS_BATCH_SIZE', new=0)
+    sleep_patch = patch('rotkehlchen.rotkehlchen.ICONS_QUERY_SLEEP', new=999999)
+    with settings_patch, eth_rpcconnect_patch, ksm_rpcconnect_patch, ksm_connect_on_startup_patch, size_patch, sleep_patch:  # noqa: E501
         rotki.unlock_user(
             user=username,
             password=db_password,
@@ -186,12 +189,7 @@ def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, global
 
     Adding the AssetResolver as a requirement so that the first initialization happens here
     """
-    # patch the constants to make sure that the periodic query for icons
-    # does not run during tests
-    size_patch = patch('rotkehlchen.rotkehlchen.ICONS_BATCH_SIZE', new=0)
-    sleep_patch = patch('rotkehlchen.rotkehlchen.ICONS_QUERY_SLEEP', new=999999)
-    with size_patch, sleep_patch:
-        rotki = Rotkehlchen(cli_args)
+    rotki = Rotkehlchen(cli_args)
     return rotki
 
 

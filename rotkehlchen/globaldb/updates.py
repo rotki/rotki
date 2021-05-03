@@ -63,10 +63,10 @@ def _replace_assets_from_db(
 
 def _force_remote(cursor: sqlite3.Cursor, local_asset: Asset, full_insert: str) -> None:
     """Force the remote entry into the database by deleting old one and doing the full insert.
-σ
+
     May raise an sqlite3 error if something fails.
     """
-    cursor.executescript('PRAGMA foreign_keys=off;')
+    cursor.executescript('BEGIN TRANSACTION; PRAGMA foreign_keys=off; COMMIT;')
     # Delete the old entry
     if local_asset.asset_type == AssetType.ETHEREUM_TOKEN:
         token = EthereumToken.from_asset(local_asset)
@@ -83,7 +83,7 @@ def _force_remote(cursor: sqlite3.Cursor, local_asset: Asset, full_insert: str) 
         'DELETE FROM assets WHERE identifier=?;',
         (local_asset.identifier,),
     )
-    cursor.executescript('PRAGMA foreign_keys=on;')
+    cursor.executescript('BEGIN TRANSACTION; PRAGMA foreign_keys=on; COMMIT;')
     # Insert new entry. Since identifiers are the same, no foreign key constrains should break
     executeall(cursor, full_insert)
     AssetResolver().clean_memory_cache(local_asset.identifier.lower())
@@ -287,10 +287,6 @@ class AssetsUpdater():
     ) -> None:
         lines = text.splitlines()
         for action, full_insert in zip(*[iter(lines)] * 2):
-            # if '0x71F85B2E46976bD21302B64329868fd15eb0D127' in action:
-            #     __import__("pdb").set_trace()
-            #     a = 1
-
             if full_insert == '*':
                 full_insert = action
 
@@ -392,8 +388,8 @@ class AssetsUpdater():
                     for x in self.conflicts
                 ]
 
-            # otherwise we are sure the DB will work without conflicts so let's now do it
-            # for the actual global DB
+            # otherwise we are sure the DB will work without conflicts so let's
+            # now move the data to the actual global DB
             connection.close()
             connection = GlobalDBHandler()._conn
             _replace_assets_from_db(connection, tempdbpath)
