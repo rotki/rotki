@@ -8,7 +8,11 @@ import sqlite3
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetData, AssetType
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.typing import (
+    CustomEthereumToken,
+    string_to_ethereum_address,
+    UnderlyingToken,
+)
 from rotkehlchen.constants.assets import A_BAT
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError
@@ -275,7 +279,6 @@ def test_enum_values_are_present_in_global_db(globaldb, enum_class, table_name):
         assert r.fetchone() == (1,), f'Did not find {table_name} entry for value {enum_class_entry.value}'  # noqa: E501
 
 
-<<<<<<< HEAD
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_get_all_asset_data_specific_ids(globaldb):
     btc_asset_data = AssetData(
@@ -433,7 +436,7 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     cursor.execute('PRAGMA foreign_keys')
     # Now the pragma should be off
     assert cursor.fetchone()[0] == 0
-=======
+
 def test_global_db_restore(globaldb):
     """
     Check that the user can recreate assets information from the packaged
@@ -441,6 +444,7 @@ def test_global_db_restore(globaldb):
     and checks that the added token is not in there and that the amount of
     assets is the expected
     """
+    # Add a custom eth token
     address_to_delete = make_ethereum_address()
     token_to_delete = CustomEthereumToken(
         address=address_to_delete,
@@ -448,19 +452,62 @@ def test_global_db_restore(globaldb):
         name='willdell',
         symbol='DELME',
     )
-    token_to_delete_id = 'DELMEID1'
     globaldb.add_asset(
-        asset_id=token_to_delete_id,
+        asset_id='DELMEID1',
         asset_type=AssetType.ETHEREUM_TOKEN,
         data=token_to_delete,
     )
+    # Add a token with underlaying token
+    with_underlying_address = make_ethereum_address()
+    with_underlying = CustomEthereumToken(
+        address=with_underlying_address,
+        decimals=18,
+        name="Not a scam",
+        symbol="NSCM",
+        started=0,
+        underlying_tokens=[UnderlyingToken(
+            address=address_to_delete,
+            weight=1,
+        )],
+    )
+    globaldb.add_asset(
+        asset_id='xDELMEID1',
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        data=with_underlying,
+    )
+    # Add asset that is not a token
+    globaldb.add_asset(
+        asset_id='1',
+        asset_type=AssetType.OWN_CHAIN,
+        data={
+            'name': 'Lolcoin',
+            'symbol': 'LOLZ',
+            'started': 0,
+        },
+    )
+
     status, _ = globaldb.rebuild_assets_list()
     assert status
     cursor = globaldb._conn.cursor()
+    # Check that the ethereum token was deleted
     query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{address_to_delete}";'
     r = cursor.execute(query)
     assert r.fetchone() == (0,)
     query = f'SELECT COUNT(*) FROM assets where details_reference == "{address_to_delete}";'
+    r = cursor.execute(query)
+    assert r.fetchone() == (0,)
+    # Check that the ethereum token with underlaying token was deleted
+    query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{with_underlying_address}";'
+    r = cursor.execute(query)
+    assert r.fetchone() == (0,)
+    query = f'SELECT COUNT(*) FROM assets where details_reference == "{with_underlying_address}";'
+    r = cursor.execute(query)
+    assert r.fetchone() == (0,)
+    query = f'SELECT COUNT(*) FROM underlying_tokens_list where address == "{address_to_delete}";'
+    r = cursor.execute(query)
+    assert r.fetchone() == (0,)
+    # Check that the non ethereum asset was deleted
+    query = 'SELECT COUNT(*) FROM assets where identifier == "1";'
     r = cursor.execute(query)
     assert r.fetchone() == (0,)
 
@@ -473,4 +520,3 @@ def test_global_db_restore(globaldb):
     tokens_local = cursor.execute('SELECT COUNT(*) FROM assets;')
     assert tokens_expected.fetchone() == tokens_local.fetchone()
     conn.close()
->>>>>>> a2a1868f (Add bakcend code to handle db restore)

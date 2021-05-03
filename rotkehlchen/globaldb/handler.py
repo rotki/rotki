@@ -1261,17 +1261,11 @@ def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
     @staticmethod
     def rebuild_assets_list() -> Tuple[bool, str]:
         """
-        Delete current information about assets and repopulate with the last
+        Delete all custom asset entries and repopulate from the last
         builtin version
         """
         root_dir = Path(__file__).resolve().parent.parent
         builtin_database = root_dir / 'data' / 'global.db'
-        remove_assets = 'DELETE FROM assets;'
-        remove_tokens = 'DELETE FROM ethereum_tokens;'
-        atach_datbase = f'ATTACH DATABASE "{builtin_database}" AS clean_db;'
-        check_version = 'SELECT value from clean_db.settings WHERE name=="version";'
-        insert_assets = 'INSERT INTO assets SELECT * FROM clean_db.assets;'
-        insert_tokens = 'INSERT INTO ethereum_tokens SELECT * FROM clean_db.ethereum_tokens;'
         detach_database = 'DETACH DATABASE "clean_db";'
 
         connection = GlobalDBHandler()._conn
@@ -1279,9 +1273,9 @@ def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
 
         try:
             # Atach the clean db packaged with rotki
-            cursor.execute(atach_datbase)
+            cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
             # Check that versions match
-            query = cursor.execute(check_version)
+            query = cursor.execute('SELECT value from clean_db.settings WHERE name=="version";')
             version = query.fetchone()
             if int(version[0]) != _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION):
                 cursor.execute(detach_database)
@@ -1289,12 +1283,16 @@ def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
                 return False, msg
             # If versions match drop tables
             cursor.execute('PRAGMA foreign_keys = OFF;')
-            cursor.execute(remove_assets)
-            cursor.execute(remove_tokens)
+            cursor.execute('DELETE FROM assets;')
+            cursor.execute('DELETE FROM ethereum_tokens;')
+            cursor.execute('DELETE FROM underlying_tokens_list;')
+            cursor.execute('DELETE FROM common_asset_details;')
             cursor.execute('PRAGMA foreign_keys = ON;')
             # Copy assets
-            cursor.execute(insert_assets)
-            cursor.execute(insert_tokens)
+            cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
+            cursor.execute('INSERT INTO ethereum_tokens SELECT * FROM clean_db.ethereum_tokens;')
+            cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
+            cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
         except sqlite3.Error as e:
             connection.rollback()
             cursor.execute(detach_database)
