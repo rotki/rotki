@@ -136,6 +136,11 @@ def fixture_session_should_mock_current_price_queries():
     return True
 
 
+@pytest.fixture(name='ignore_mocked_prices_for')
+def fixture_ignore_mocked_prices_for():
+    return []
+
+
 @pytest.fixture(name='mocked_current_prices')
 def fixture_mocked_current_prices():
     return {}
@@ -161,6 +166,7 @@ def create_inquirer(
         should_mock_current_price_queries,
         mocked_prices,
         current_price_oracles_order,
+        ignore_mocked_prices_for=None,
 ) -> Inquirer:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
@@ -186,12 +192,27 @@ def create_inquirer(
     ):
         return mocked_prices.get((from_asset, to_asset), FVal('1.5'))
 
-    inquirer.find_price = mock_find_price  # type: ignore
-
     def mock_find_usd_price(asset, ignore_cache: bool = False):  # pylint: disable=unused-argument
         return mocked_prices.get(asset, FVal('1.5'))
 
-    inquirer.find_usd_price = mock_find_usd_price  # type: ignore
+    if ignore_mocked_prices_for is None:
+        inquirer.find_price = mock_find_price  # type: ignore
+        inquirer.find_usd_price = mock_find_usd_price  # type: ignore
+    else:
+        def mock_some_prices(from_asset, to_asset, ignore_cache=False):
+            if from_asset.symbol in ignore_mocked_prices_for:
+                return inquirer.find_price_old(from_asset, to_asset, ignore_cache)
+            return mock_find_price(from_asset, to_asset, ignore_cache)
+
+        def mock_some_usd_prices(asset, ignore_cache=False):
+            if asset.symbol in ignore_mocked_prices_for:
+                return inquirer.find_usd_price_old(asset, ignore_cache)
+            return mock_find_usd_price(asset, ignore_cache)
+
+        inquirer.find_price_old = inquirer.find_price  # type: ignore
+        inquirer.find_usd_price_old = inquirer.find_usd_price  # type: ignore
+        inquirer.find_price = mock_some_prices  # type: ignore
+        inquirer.find_usd_price = mock_some_usd_prices  # type: ignore
 
     def mock_query_fiat_pair(base, quote):  # pylint: disable=unused-argument
         return FVal(1)
@@ -207,12 +228,14 @@ def fixture_inquirer(
         should_mock_current_price_queries,
         mocked_current_prices,
         current_price_oracles_order,
+        ignore_mocked_prices_for,
 ):
     return create_inquirer(
         data_directory=data_dir,
         should_mock_current_price_queries=should_mock_current_price_queries,
         mocked_prices=mocked_current_prices,
         current_price_oracles_order=current_price_oracles_order,
+        ignore_mocked_prices_for=ignore_mocked_prices_for,
     )
 
 
