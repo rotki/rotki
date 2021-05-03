@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`2819` Users using macOS will no longer be stuck at "connecting to backend".
+* :bug:`865` Users will now be given an option to retry or terminate the application when communication with the backend fails.
 * :bug:`2791` Updating assets database which adds customs assets already owned as officially supported should no longer get the DB in an incosistent state.
 
 * :release:`1.16.1 <2021-04-30>`
