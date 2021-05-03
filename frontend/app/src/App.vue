@@ -211,8 +211,6 @@ export default class App extends Vue {
     });
 
     await this.$store.dispatch('connect');
-    await this.$store.dispatch('version');
-
     if (process.env.NODE_ENV === 'development' && this.logged) {
       monitor.start();
     }

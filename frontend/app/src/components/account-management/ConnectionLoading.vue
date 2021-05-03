@@ -10,7 +10,7 @@
       <span class="connection-loading__content__text my-3 pb-6">
         {{ $t('connection_loading.message') }}
       </span>
-      <v-progress-circular color="grey" indeterminate size="56" />
+      <v-icon x-large> mdi-spin mdi-loading </v-icon>
     </v-col>
   </v-row>
 </template>

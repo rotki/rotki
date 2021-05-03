@@ -136,6 +136,12 @@
     "keep_remote": "Keep Remote",
     "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input."
   },
+  "connection_failure": {
+    "message": "A connection to the rotki backend was not possible, would you like to retry again?",
+    "retry": "Retry",
+    "terminate": "Terminate",
+    "title": "Connection failure"
+  },
   "cost_basis_table": {
     "complete": "(Complete)",
     "cost_basis": "Cost Basis",
