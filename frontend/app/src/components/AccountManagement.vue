@@ -164,7 +164,6 @@ export default class AccountManagement extends Vue {
       deleteBackendUrl();
       await this.startBackendWithLogLevel(this.loglevel);
     }
-    await this.$store.dispatch('version');
   }
 
   async startBackendWithLogLevel(level: Level) {
@@ -172,7 +171,6 @@ export default class AccountManagement extends Vue {
     await this.$store.commit('setConnected', false);
     await this.$interop.restartBackend(level);
     await this.$store.dispatch('connect');
-    await this.$store.dispatch('version');
   }
 
   async login(credentials: Credentials) {
