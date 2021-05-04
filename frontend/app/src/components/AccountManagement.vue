@@ -11,7 +11,8 @@
             {{ $t('app.moto') }}
           </span>
         </div>
-        <connection-loading :connected="connected" />
+        <connection-loading v-if="!connectionFailure" :connected="connected" />
+        <connection-failure v-else />
         <v-slide-y-transition>
           <login
             :loading="loading"
@@ -53,6 +54,7 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
+import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import CreateAccount from '@/components/account-management/CreateAccount.vue';
 import Login from '@/components/account-management/Login.vue';
@@ -76,6 +78,7 @@ import {
 
 @Component({
   components: {
+    ConnectionFailure,
     PrivacyNotice,
     ConnectionLoading,
     PremiumReminder,
@@ -84,6 +87,7 @@ import {
     CreateAccount
   },
   computed: {
+    ...mapState(['connectionFailure']),
     ...mapState('session', ['syncConflict', 'premium']),
     ...mapState(['message', 'connected']),
     ...mapGetters(['updateNeeded', 'message'])
@@ -110,6 +114,7 @@ export default class AccountManagement extends Vue {
 
   @Prop({ required: true, type: Boolean })
   logged!: boolean;
+  connectionFailure!: boolean;
 
   get displayPremium(): boolean {
     return !this.premium && !this.message.title && this.premiumVisible;

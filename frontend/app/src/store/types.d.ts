@@ -32,6 +32,7 @@ export interface RotkehlchenState {
   message: Message;
   version: Version;
   connected: boolean;
+  connectionFailure: boolean;
   status: SectionStatus;
   session?: SessionState;
   tasks?: TaskState;
