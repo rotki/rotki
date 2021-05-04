@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`2791` Updating assets database which adds customs assets already owned as officially supported should no longer get the DB in an incosistent state.
+
 * :release:`1.16.1 <2021-04-30>`
 * :bug:`2811` ETH and WETH are now considered equivalent for cost basis and accounting purposes.
 * :bug:`2794` Aave v1 data after block 12,152,920 should be now available. Rotki switched to the new Aave v1 subgraph.
