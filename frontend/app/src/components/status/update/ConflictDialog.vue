@@ -66,6 +66,9 @@
           </v-btn-toggle>
         </template>
       </data-table>
+      <template #options>
+        <div class="conflict-dialog__pagination" />
+      </template>
       <template #buttons>
         <v-row no-gutters justify="end">
           <v-col cols="auto">
@@ -193,25 +196,68 @@ export default class ConflictDialog extends Vue {
 </script>
 
 <style scoped lang="scss">
+@import '~@/scss/scroll';
+
+::v-deep {
+  .v-card {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+}
+
 .conflict-dialog {
   &__table {
-    height: 100%;
+    height: calc(100vh - 550px);
     overflow-y: auto;
+
+    ::v-deep {
+      .v-data-footer {
+        position: fixed;
+        bottom: 48px;
+        left: 0;
+        right: 0;
+        margin-left: 40px;
+        margin-right: 40px;
+        border-top: none !important;
+        @media (max-width: 450px) {
+          margin-left: 8px;
+          margin-right: 8px;
+        }
+        @media (max-width: 700px) {
+          margin-left: 16px;
+          margin-right: 16px;
+        }
+      }
+    }
+
+    @media (max-width: 450px) {
+      height: calc(100vh - 690px);
+    }
+
+    @media (max-height: 700px) {
+      height: calc(100vh - 360px);
+    }
+
+    @media (min-height: 701px) and (max-height: 1024px) {
+      height: calc(100vh - 388px);
+    }
+
+    @extend .themed-scrollbar;
   }
 
   &__action {
     width: 90px;
   }
 
+  &__pagination {
+    height: 70px;
+    @media (max-width: 450px) {
+      height: 120px;
+    }
+  }
+
   &__action-container {
     width: 200px;
-  }
-}
-
-::v-deep {
-  .v-card {
-    border-bottom-left-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
   }
 }
 </style>
