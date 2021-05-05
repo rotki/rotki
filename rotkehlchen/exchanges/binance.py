@@ -168,9 +168,10 @@ def trade_from_binance(
         fee=fee,
     )
 
+    location = Location.BINANCE if name == str(Location.BINANCE) else Location.BINANCE_US  # noqa: E501
     return Trade(
         timestamp=timestamp,
-        location=Location.BINANCE,
+        location=location,
         base_asset=base_asset,
         quote_asset=quote_asset,
         trade_type=order_type,
@@ -920,8 +921,9 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             timestamp = deserialize_timestamp_from_binance(raw_data[time_key])
             asset = asset_from_binance(raw_data['asset'])
+            location = Location.BINANCE if self.name == str(Location.BINANCE) else Location.BINANCE_US  # noqa: E501
             return AssetMovement(
-                location=Location.BINANCE,
+                location=location,
                 category=category,
                 address=deserialize_asset_movement_address(raw_data, 'address', asset),
                 transaction_id=get_key_if_has_val(raw_data, 'txId'),
