@@ -129,11 +129,16 @@ class ExchangeManager():
     def delete_all_exchanges(self) -> None:
         self.connected_exchanges.clear()
 
-    def get_connected_exchange_names(self) -> List[Dict[str, Any]]:
-        return [
-            {"location": str(location), "name": e.name}
-            for location, exchanges in self.connected_exchanges.items() for e in exchanges
-        ]
+    def get_connected_exchanges_info(self) -> List[Dict[str, Any]]:
+        exchange_info = []
+        for location, exchanges in self.connected_exchanges.items():
+            for exchangeobj in exchanges:
+                data = {"location": str(location), "name": exchangeobj.name}
+                if location == Location.KRAKEN:  # ignore type since we know this is kraken here
+                    data['kraken_account_type'] = str(exchangeobj.account_type)  # type: ignore
+                exchange_info.append(data)
+
+        return exchange_info
 
     def _get_exchange_module(self, location: Location) -> ModuleType:
         module_name = self._get_exchange_module_name(location)

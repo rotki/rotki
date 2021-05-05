@@ -119,7 +119,7 @@ def test_setup_exchange(rotkehlchen_api_server):
     # and check that kraken is now registered
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
     result = assert_proper_response_with_result(response)
-    assert result == [{'location': 'kraken', 'name': 'my_kraken'}]
+    assert result == [{'location': 'kraken', 'name': 'my_kraken', 'kraken_account_type': 'starter'}]  # noqa: E501
 
     # Check that we get an error if we try to re-setup an already setup exchange
     data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}  # noqa: E501
@@ -145,8 +145,8 @@ def test_setup_exchange(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
     result = assert_proper_response_with_result(response)
     assert result == [
-        {'location': 'kraken', 'name': 'my_kraken'},
-        {'location': 'kraken', 'name': 'my_other_kraken'},
+        {'location': 'kraken', 'name': 'my_kraken', 'kraken_account_type': 'starter'},
+        {'location': 'kraken', 'name': 'my_other_kraken', 'kraken_account_type': 'starter'},
     ]
 
     # Check that giving a passphrase is fine
@@ -160,8 +160,8 @@ def test_setup_exchange(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
     result = assert_proper_response_with_result(response)
     assert result == [
-        {'location': 'kraken', 'name': 'my_kraken'},
-        {'location': 'kraken', 'name': 'my_other_kraken'},
+        {'location': 'kraken', 'name': 'my_kraken', 'kraken_account_type': 'starter'},
+        {'location': 'kraken', 'name': 'my_other_kraken', 'kraken_account_type': 'starter'},
         {'location': 'coinbasepro', 'name': 'my_coinbasepro'},
     ]
 
@@ -241,7 +241,7 @@ def test_setup_exchange_does_not_stay_in_mapping_after_500_error(rotkehlchen_api
     # and check that kraken is now registered
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
     result = assert_proper_response_with_result(response)
-    assert result == [{'location': 'kraken', 'name': 'my_kraken'}]
+    assert result == [{'location': 'kraken', 'name': 'my_kraken', 'kraken_account_type': 'starter'}]  # noqa: E501
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

@@ -465,7 +465,7 @@ class RestAPI():
     @require_loggedin_user()
     def get_exchanges(self) -> Response:
         return api_response(
-            _wrap_in_ok_result(self.rotkehlchen.exchange_manager.get_connected_exchange_names()),
+            _wrap_in_ok_result(self.rotkehlchen.exchange_manager.get_connected_exchanges_info()),
             status_code=HTTPStatus.OK,
         )
 
@@ -1127,7 +1127,7 @@ class RestAPI():
 
         # Success!
         result_dict['result'] = {
-            'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchange_names(),
+            'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchanges_info(),
             'settings': process_result(self.rotkehlchen.get_settings()),
         }
         return api_response(result_dict, status_code=HTTPStatus.OK)
@@ -1172,7 +1172,7 @@ class RestAPI():
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
         # Success!
         result_dict['result'] = {
-            'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchange_names(),
+            'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchanges_info(),
             'settings': process_result(self.rotkehlchen.get_settings()),
         }
         return api_response(result_dict, status_code=HTTPStatus.OK)

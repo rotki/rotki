@@ -127,7 +127,7 @@ Handling user creation, sign-in, log-out and querying
       {
           "result": {
               "exchanges": [
-                   {"location": "kraken", "name": "kraken1"},
+                   {"location": "kraken", "name": "kraken1", "kraken_account_type": "starter"},
                    {"location": "poloniex", "name": "poloniex1"},
                    {"location": "binance", "name": "binance1"}
                ],
@@ -196,7 +196,7 @@ Handling user creation, sign-in, log-out and querying
       {
           "result": {
               "exchanges": [
-                   {"location": "kraken", "name": "kraken1"},
+                   {"location": "kraken", "name": "kraken1", "kraken_account_type": "starter"},
                    {"location": "poloniex", "name": "poloniex1"},
                    {"location": "binance", "name": "binance1"}
                ],
@@ -1002,7 +1002,7 @@ Get a list of setup exchanges
 
       {
           "result": [
-               {"location": "kraken", "name": "kraken1"},
+               {"location": "kraken", "name": "kraken1", "kraken_account_type": "starter"},
                {"location": "poloniex", "name": "poloniex1"},
                {"location": "binance", "name": "binance1"}
            ],
