@@ -11,7 +11,6 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
 from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_USDT, A_WBTC
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import (
     API_TIME_INTERVAL_CONSTRAINT_TS,
@@ -22,14 +21,17 @@ from rotkehlchen.exchanges.binance import (
 )
 from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_ADA, A_BUSD, A_DOT, A_RDN, A_XMR
+from rotkehlchen.tests.utils.constants import A_ADA, A_BUSD, A_DOT, A_RDN
 from rotkehlchen.tests.utils.exchanges import (
+    BINANCE_DEPOSITS_HISTORY_RESPONSE,
     BINANCE_MYTRADES_RESPONSE,
+    BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
+    assert_binance_asset_movements_result,
     mock_binance_balance_response,
 )
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Timestamp
+from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms
 
@@ -355,55 +357,6 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     )
 
 
-BINANCE_DEPOSITS_HISTORY_RESPONSE = """{
-    "depositList": [
-        {
-            "insertTime": 1508198532000,
-            "amount": 0.04670582,
-            "asset": "ETH",
-            "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
-            "txId": "0xef33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
-            "status": 1
-        },
-        {
-            "insertTime": 1508398632000,
-            "amount": 1000,
-            "asset": "XMR",
-            "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvV38",
-            "addressTag": "342341222",
-            "txId": "c3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
-            "status": 1
-        }
-    ],
-    "success": true
-}"""
-
-BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """{
-    "withdrawList": [
-        {
-            "id":"7213fea8e94b4a5593d507237e5a555b",
-            "amount": 1,
-            "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
-            "asset": "ETH",
-            "txId": "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
-            "applyTime": 1508488245000,
-            "status": 4
-        },
-        {
-            "id":"7213fea8e94b4a5534ggsd237e5a555b",
-            "amount": 850.1,
-            "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvyVz8",
-            "addressTag": "342341222",
-            "txId": "b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
-            "asset": "XMR",
-            "applyTime": 1508512521000,
-            "status": 4
-        }
-    ],
-    "success": true
-}"""
-
-
 def test_binance_query_deposits_withdrawals(function_scope_binance):
     """Test the happy case of binance deposit withdrawal query
 
@@ -432,40 +385,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     warnings = binance.msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 0
-
-    assert len(movements) == 4
-
-    assert movements[0].location == Location.BINANCE
-    assert movements[0].category == AssetMovementCategory.DEPOSIT
-    assert movements[0].timestamp == 1508198532
-    assert isinstance(movements[0].asset, Asset)
-    assert movements[0].asset == A_ETH
-    assert movements[0].amount == FVal('0.04670582')
-    assert movements[0].fee == ZERO
-
-    assert movements[1].location == Location.BINANCE
-    assert movements[1].category == AssetMovementCategory.DEPOSIT
-    assert movements[1].timestamp == 1508398632
-    assert isinstance(movements[1].asset, Asset)
-    assert movements[1].asset == A_XMR
-    assert movements[1].amount == FVal('1000')
-    assert movements[1].fee == ZERO
-
-    assert movements[2].location == Location.BINANCE
-    assert movements[2].category == AssetMovementCategory.WITHDRAWAL
-    assert movements[2].timestamp == 1508488245
-    assert isinstance(movements[2].asset, Asset)
-    assert movements[2].asset == A_ETH
-    assert movements[2].amount == FVal('1')
-    assert movements[2].fee == ZERO
-
-    assert movements[3].location == Location.BINANCE
-    assert movements[3].category == AssetMovementCategory.WITHDRAWAL
-    assert movements[3].timestamp == 1508512521
-    assert isinstance(movements[3].asset, Asset)
-    assert movements[3].asset == A_XMR
-    assert movements[3].amount == FVal('850.1')
-    assert movements[3].fee == ZERO
+    assert_binance_asset_movements_result(movements=movements, location=Location.BINANCE)
 
 
 def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binance):
