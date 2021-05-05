@@ -118,7 +118,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       ...(source !== FETCH_FROM_SOURCE
         ? ([TRADE_LOCATION_EXTERNAL, ...EXTERNAL_EXCHANGES] as TradeLocation[])
         : []),
-      ...connectedExchanges
+      ...connectedExchanges.map(exchange => exchange.location)
     ];
 
     const fetchLocation: (

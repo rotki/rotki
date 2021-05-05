@@ -1,10 +1,10 @@
 import { MutationTree } from 'vuex';
+import { Exchange } from '@/model/action-result';
 import {
   Balances,
   BtcBalances,
   BlockchainAssetBalances,
-  ManualBalanceWithValue,
-  SupportedExchange
+  ManualBalanceWithValue
 } from '@/services/balances/types';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
@@ -42,22 +42,22 @@ export const mutations: MutationTree<BalanceState> = {
   ) {
     state.usdToFiatExchangeRates = usdToFiatExchangeRates;
   },
-  connectedExchanges(
-    state: BalanceState,
-    connectedExchanges: SupportedExchange[]
-  ) {
+  connectedExchanges(state: BalanceState, connectedExchanges: Exchange[]) {
     state.connectedExchanges = connectedExchanges;
   },
-  addExchange(state: BalanceState, exchangeName: SupportedExchange) {
-    state.connectedExchanges.push(exchangeName);
+  addExchange(state: BalanceState, exchange: Exchange) {
+    state.connectedExchanges.push(exchange);
   },
-  removeExchange(state: BalanceState, exchangeName: string) {
+  removeExchange(state: BalanceState, exchange: Exchange) {
     const exchanges = [...state.connectedExchanges];
     const balances = { ...state.exchangeBalances };
-    const index = exchanges.findIndex(value => value === exchangeName);
+    const index = exchanges.findIndex(
+      ({ location, name }) =>
+        name === exchange.name && location === exchange.location
+    );
     // can't modify in place or else the vue reactivity does not work
     exchanges.splice(index, 1);
-    delete balances[exchangeName];
+    delete balances[exchange.location];
     state.connectedExchanges = exchanges;
     state.exchangeBalances = balances;
   },

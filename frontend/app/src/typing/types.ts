@@ -21,11 +21,7 @@ export interface GeneralSettings {
   readonly ksmRpcEndpoint: string;
   readonly balanceSaveFrequency: number;
   readonly dateDisplayFormat: string;
-  readonly thousandSeparator: string;
-  readonly decimalSeparator: string;
-  readonly currencyLocation: CurrencyLocation;
   readonly selectedCurrency: Currency;
-  readonly krakenAccountType: string;
   readonly activeModules: SupportedModules[];
   readonly btcDerivationGapLimit: number;
   readonly displayDateInLocaltime: boolean;

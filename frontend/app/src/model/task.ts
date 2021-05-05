@@ -16,7 +16,7 @@ export interface TaskMeta {
 }
 
 export interface ExchangeMeta extends TaskMeta {
-  readonly name: string;
+  readonly location: string;
 }
 
 export interface BlockchainMetadata extends TaskMeta {

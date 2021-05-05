@@ -1,5 +1,5 @@
 import { BigNumber } from 'bignumber.js';
-import { PriceOracles } from '@/model/action-result';
+import { Exchange, PriceOracles } from '@/model/action-result';
 import {
   BlockchainAssetBalances,
   BtcBalances,
@@ -14,6 +14,7 @@ import {
   HasBalance
 } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
+import { KRAKEN_ACCOUNT_TYPES } from '@/store/balances/const';
 import { Section } from '@/store/const';
 import {
   Blockchain,
@@ -48,7 +49,7 @@ export interface BalanceState {
   totals: AssetBalances;
   liabilities: AssetBalances;
   usdToFiatExchangeRates: ExchangeRates;
-  connectedExchanges: SupportedExchange[];
+  connectedExchanges: Exchange[];
   exchangeBalances: ExchangeData;
   ethAccounts: GeneralAccountData[];
   btcAccounts: BtcAccountData;
@@ -60,10 +61,12 @@ export interface BalanceState {
 }
 
 export interface ExchangePayload {
-  readonly exchange: string;
+  readonly name: string;
+  readonly location: SupportedExchange;
   readonly apiKey: string;
   readonly apiSecret: string;
   readonly passphrase: string | null;
+  readonly krakenAccountType?: KrakenAccountType;
 }
 
 interface XpubPayload {
@@ -85,7 +88,7 @@ export interface AccountPayload {
 }
 
 export interface ExchangeBalancePayload {
-  readonly name: string;
+  readonly location: string;
   readonly ignoreCache: boolean;
 }
 
@@ -193,3 +196,5 @@ export type AssetInfoGetter = (
 
 export type IdentifierForSymbolGetter = (symbol: string) => string | undefined;
 export type AssetSymbolGetter = (identifier: TokenDetails) => string;
+
+export type KrakenAccountType = typeof KRAKEN_ACCOUNT_TYPES[number];

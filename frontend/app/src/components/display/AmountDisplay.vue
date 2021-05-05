@@ -72,7 +72,7 @@ import {
   AMOUNT_ROUNDING_MODE,
   VALUE_ROUNDING_MODE
 } from '@/store/settings/consts';
-import { GeneralSettings } from '@/typing/types';
+import { CurrencyLocation } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
 import RoundingMode = BigNumber.RoundingMode;
 
@@ -135,7 +135,7 @@ export default class AmountDisplay extends Mixins(AssetMixin) {
   floatingPrecision!: number;
   thousandSeparator!: string;
   decimalSeparator!: string;
-  currencyLocation!: GeneralSettings['currencyLocation'];
+  currencyLocation!: CurrencyLocation;
   exchangeRate!: ExchangeRateGetter;
   amountRoundingMode!: RoundingMode;
   valueRoundingMode!: RoundingMode;

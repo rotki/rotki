@@ -221,7 +221,7 @@ export default class Dashboard extends Vue {
     } else if (balanceSource === 'exchange') {
       for (const exchange of this.exchanges) {
         this.fetchExchangeBalances({
-          name: exchange.name,
+          location: exchange.name,
           ignoreCache: true
         });
       }

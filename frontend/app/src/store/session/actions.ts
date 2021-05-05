@@ -5,7 +5,7 @@ import {
 } from '@/data/converters';
 import { EXTERNAL_EXCHANGES, SUPPORTED_EXCHANGES } from '@/data/defaults';
 import i18n from '@/i18n';
-import { DBSettings } from '@/model/action-result';
+import { DBSettings, Exchange } from '@/model/action-result';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import {
@@ -84,7 +84,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     payload: UnlockPayload
   ): Promise<ActionStatus> {
     let settings: DBSettings;
-    let exchanges: string[];
+    let exchanges: Exchange[];
 
     try {
       const { username, create } = payload;

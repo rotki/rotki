@@ -233,7 +233,7 @@ export const getters: Getters<
     };
 
     for (const exchange of connectedExchanges) {
-      const balances = exchangeBalances(exchange);
+      const balances = exchangeBalances(exchange.location);
       balances.forEach((value: AssetBalance) => addToOwned(value));
     }
 

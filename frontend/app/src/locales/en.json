@@ -216,6 +216,10 @@
     "hint": "Select as the main currency",
     "profit_currency": "Profit Currency"
   },
+  "exchange_keys_form": {
+    "exchange": "Exchange",
+    "name": "Name"
+  },
   "explorers": {
     "title": "Blockchain explorers",
     "address_url": "Addresses will open at {addressUrl}",
@@ -1583,11 +1587,11 @@
       },
       "exchange_balances": {
         "task": {
-          "title": "Retrieving {name} balances"
+          "title": "Retrieving {location} balances"
         },
         "error": {
-          "title": "{name} balance query",
-          "message": "Failed to query {name} balances: {error}"
+          "title": "{location} balance query",
+          "message": "Failed to query {location} balances: {error}"
         }
       },
       "historic_fetch_price": {
@@ -2109,7 +2113,17 @@
     }
   },
   "exchange_settings": {
-    "title": "Exchanges",
+    "button": {
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "delete": {
+      "tooltip": "Delete the exchange account"
+    },
+    "edit": {
+      "tooltip": "Edit the exchange account"
+    },
+    "title": "Connected Exchanges",
     "subtitle": "rotki can connect to supported exchanges and automatically pull your trades and balances from them. See the {0} for more information.",
     "usage_guide": "Usage Guide",
     "inputs": {

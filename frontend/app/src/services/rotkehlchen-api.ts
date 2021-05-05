@@ -3,6 +3,7 @@ import { SupportedCurrency } from '@/data/currencies';
 import {
   AccountState,
   DBSettings,
+  Exchange,
   ExternalServiceKeys
 } from '@/model/action-result';
 import { AssetApi } from '@/services/assets/asset-api';
@@ -48,6 +49,7 @@ import {
 import {
   AccountPayload,
   BlockchainAccountPayload,
+  ExchangePayload,
   XpubPayload
 } from '@/store/balances/types';
 import { IgnoreActionType } from '@/store/history/types';
@@ -221,11 +223,11 @@ export class RotkehlchenApi {
   }
 
   queryExchangeBalances(
-    name: string,
+    location: string,
     ignoreCache: boolean = false
   ): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<PendingTask>>(`/exchanges/balances/${name}`, {
+      .get<ActionResult<PendingTask>>(`/exchanges/balances/${location}`, {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true,
           ignoreCache: ignoreCache ? true : undefined
@@ -442,11 +444,12 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  removeExchange(name: string): Promise<boolean> {
+  removeExchange({ location, name }: Exchange): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>('/exchanges', {
         data: {
-          name
+          name,
+          location
         },
         validateStatus: validStatus
       })
@@ -622,21 +625,11 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  setupExchange(
-    name: string,
-    api_key: string,
-    api_secret: string,
-    passphrase: string | null
-  ): Promise<boolean> {
+  setupExchange(payload: ExchangePayload): Promise<boolean> {
     return this.axios
       .put<ActionResult<boolean>>(
         '/exchanges',
-        {
-          name,
-          api_key,
-          api_secret,
-          passphrase
-        },
+        axiosSnakeCaseTransformer(payload),
         {
           validateStatus: validStatus
         }
@@ -669,9 +662,9 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async getExchanges(): Promise<string[]> {
+  async getExchanges(): Promise<Exchange[]> {
     return this.axios
-      .get<ActionResult<string[]>>('/exchanges', {
+      .get<ActionResult<Exchange[]>>('/exchanges', {
         validateStatus: validWithSessionStatus
       })
       .then(handleResponse);

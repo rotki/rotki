@@ -2,6 +2,7 @@ import { BigNumber } from 'bignumber.js';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
+import { Exchange } from '@/model/action-result';
 import {
   BlockchainMetadata,
   createTask,
@@ -162,7 +163,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   }): Promise<void> {
     for (const exchange of exchanges) {
       await dispatch('fetchExchangeBalances', {
-        name: exchange,
+        location: exchange.location,
         ignoreCache: false
       } as ExchangeBalancePayload);
     }
@@ -172,7 +173,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     { commit, rootGetters },
     payload: ExchangeBalancePayload
   ): Promise<void> {
-    const { name, ignoreCache } = payload;
+    const { location, ignoreCache } = payload;
     const isTaskRunning = rootGetters['tasks/isTaskRunning'];
     const taskMetadata = rootGetters['tasks/metadata'];
     const status = rootGetters['status'];
@@ -180,7 +181,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     const meta: ExchangeMeta = taskMetadata(taskType);
 
-    if (isTaskRunning(taskType) && meta.name === name) {
+    if (isTaskRunning(taskType) && meta.location === location) {
       return;
     }
 
@@ -191,12 +192,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     setStatus(newStatus, section, status, commit);
 
     try {
-      const { taskId } = await api.queryExchangeBalances(name, ignoreCache);
+      const { taskId } = await api.queryExchangeBalances(location, ignoreCache);
       const meta: ExchangeMeta = {
-        name,
-        title: i18n.tc('actions.balances.exchange_balances.task.title', 0, {
-          name
-        }),
+        location,
+        title: i18n
+          .t('actions.balances.exchange_balances.task.title', {
+            location
+          })
+          .toString(),
         ignoreResult: false,
         numericKeys: balanceKeys
       };
@@ -211,22 +214,21 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       );
 
       commit('addExchangeBalances', {
-        name: meta.name,
+        location: location,
         balances: result
       });
     } catch (e) {
-      const message = i18n.tc(
-        'actions.balances.exchange_balances.error.message',
-        0,
-        { name, error: e.message }
-      );
-      const title = i18n.tc(
-        'actions.balances.exchange_balances.error.title',
-        0,
-        {
-          name
-        }
-      );
+      const message = i18n
+        .t('actions.balances.exchange_balances.error.message', {
+          location,
+          error: e.message
+        })
+        .toString();
+      const title = i18n
+        .t('actions.balances.exchange_balances.error.title', {
+          location
+        })
+        .toString();
       notify(message, title, Severity.ERROR, true);
     } finally {
       setStatus(Status.LOADED, section, status, commit);
@@ -337,21 +339,24 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       );
     }
   },
-  async addExchanges({ commit, dispatch }, exchanges: string[]): Promise<void> {
+  async addExchanges(
+    { commit, dispatch },
+    exchanges: Exchange[]
+  ): Promise<void> {
     commit('connectedExchanges', exchanges);
     for (const exchange of exchanges) {
       await dispatch('fetchExchangeBalances', {
-        name: exchange,
+        location: exchange.location,
         ignoreCache: false
       } as ExchangeBalancePayload);
     }
   },
 
-  async fetch({ dispatch }, exchanges: string[]): Promise<void> {
+  async fetch({ dispatch }, exchanges: Exchange[]): Promise<void> {
     await dispatch('fetchExchangeRates');
     await dispatch('fetchBalances');
 
-    if (exchanges) {
+    if (exchanges && exchanges.length > 0) {
       await dispatch('addExchanges', exchanges);
     }
     await dispatch('fetchBlockchainBalances');
@@ -802,25 +807,24 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async setupExchange(
     { commit, dispatch },
-    { apiKey, apiSecret, exchange, passphrase }: ExchangePayload
+    payload: ExchangePayload
   ): Promise<boolean> {
     try {
-      const success = await api.setupExchange(
-        exchange,
-        apiKey,
-        apiSecret,
-        passphrase ?? null
-      );
+      const success = await api.setupExchange(payload);
+      const exchange: Exchange = {
+        name: payload.name,
+        location: payload.location
+      };
       commit('addExchange', exchange);
       dispatch('fetchExchangeBalances', {
-        name: exchange
+        name: location
       }).then(() => dispatch('refreshPrices', false));
 
       return success;
     } catch (e) {
       showError(
         i18n.tc('actions.balances.exchange_setup.description', 0, {
-          exchange,
+          location: location,
           error: e.message
         }),
         i18n.tc('actions.balances.exchange_setup.title')
@@ -831,17 +835,20 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async removeExchange(
     { commit, state: { connectedExchanges } },
-    exchange: string
+    exchange: Exchange
   ): Promise<boolean> {
     try {
       const success = await api.removeExchange(exchange);
       if (success) {
         const exchangeIndex = connectedExchanges.findIndex(
-          value => value === exchange
+          ({ location, name }) =>
+            name === exchange.name && location === exchange.location
         );
         assert(
           exchangeIndex >= 0,
-          `${exchange} not found in ${connectedExchanges.join(', ')}`
+          `${exchange} not found in ${connectedExchanges
+            .map(exchange => `${exchange.name} on ${exchange.location}`)
+            .join(', ')}`
         );
         commit('removeExchange', exchange);
       }

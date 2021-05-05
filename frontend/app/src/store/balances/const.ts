@@ -6,3 +6,5 @@ export const chainSection: ChainSections = {
   ETH: Section.BLOCKCHAIN_ETH,
   KSM: Section.BLOCKCHAIN_KSM
 };
+
+export const KRAKEN_ACCOUNT_TYPES = ['starter', 'intermediate', 'pro'] as const;

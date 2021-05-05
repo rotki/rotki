@@ -1,8 +1,12 @@
 <template>
   <v-data-table
+    ref="table"
     v-bind="$attrs"
     :sort-desc="sortDesc"
     must-sort
+    :items="items"
+    :headers="headers"
+    :expanded="expanded"
     :footer-props="footerProps"
     :items-per-page="itemsPerPage"
     @update:items-per-page="onSelectionChange($event)"
@@ -23,6 +27,7 @@
 
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator';
+import { DataTableHeader } from 'vuetify';
 import { mapState } from 'vuex';
 import { footerProps } from '@/config/datatable.common';
 import SettingsMixin from '@/mixins/settings-mixin';
@@ -34,11 +39,17 @@ import { ITEMS_PER_PAGE } from '@/store/settings/consts';
   }
 })
 export default class DataTable extends Mixins(SettingsMixin) {
-  @Prop({ required: false, default: true, type: Boolean })
-  sortDesc!: boolean;
-
   readonly footerProps = footerProps;
   itemsPerPage!: number;
+
+  @Prop({ required: false, default: true, type: Boolean })
+  sortDesc!: boolean;
+  @Prop({ required: true, type: Array })
+  items!: any[];
+  @Prop({ required: true, type: Array })
+  headers!: DataTableHeader[];
+  @Prop({ required: false, type: Array, default: () => [] })
+  expanded!: any[];
 
   async onSelectionChange(itemsPerPage: number) {
     await this.updateSetting({
