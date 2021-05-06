@@ -66,7 +66,7 @@ export const mutations: MutationTree<BalanceState> = {
   },
   addExchangeBalances(state: BalanceState, data: ExchangeInfo) {
     const update: ExchangeData = {};
-    update[data.name] = data.balances;
+    update[data.location] = data.balances;
     state.exchangeBalances = { ...state.exchangeBalances, ...update };
   },
   ethAccounts(state: BalanceState, accounts: GeneralAccountData[]) {

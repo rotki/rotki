@@ -74,9 +74,9 @@ import { Getters } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';
 import { Writeable } from '@/types';
 import { DefiAccount, ETH } from '@/typing/types';
-import { uniqueStrings } from '@/utils/array';
 import { Zero } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
+import { uniqueStrings } from '@/utils/data';
 
 function isLendingEvent(value: AaveHistoryEvents): value is AaveEvent {
   const lending: string[] = [...AAVE_LENDING_EVENTS];

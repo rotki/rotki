@@ -54,6 +54,7 @@ import {
 } from '@/store/balances/types';
 import { IgnoreActionType } from '@/store/history/types';
 import { ActionStatus } from '@/store/types';
+import { Writeable } from '@/types';
 import {
   AccountSession,
   Blockchain,
@@ -69,6 +70,7 @@ import {
   UnlockPayload
 } from '@/typing/types';
 import { assert } from '@/utils/assertions';
+import { nonNullProperties } from '@/utils/data';
 
 export class RotkehlchenApi {
   private axios: AxiosInstance;
@@ -76,13 +78,15 @@ export class RotkehlchenApi {
   private _session: SessionApi;
   private _balances: BalancesApi;
   private _history: HistoryApi;
-  private _assets: AssetApi;
+  private readonly _assets: AssetApi;
+  private readonly baseTransformer = setupTransformer([]);
 
   constructor() {
     this.axios = axios.create({
       baseURL: `${process.env.VUE_APP_BACKEND_URL}/api/1/`,
       timeout: 30000
     });
+    this.baseTransformer = setupTransformer();
     this._defi = new DefiApi(this.axios);
     this._session = new SessionApi(this.axios);
     this._balances = new BalancesApi(this.axios);
@@ -369,7 +373,7 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  unlockUser(payload: UnlockPayload): Promise<AccountState> {
+  async unlockUser(payload: UnlockPayload): Promise<AccountState> {
     const {
       create,
       username,
@@ -390,7 +394,14 @@ export class RotkehlchenApi {
           : undefined
       );
     }
-    return this.login(username, password, syncApproval);
+    const state: Writeable<AccountState> = await this.login(
+      username,
+      password,
+      syncApproval
+    );
+    // TODO: Remove after migrating settings logic to use the transformers
+    state.exchanges = axiosCamelCaseTransformer(state.exchanges);
+    return state;
   }
 
   registerUser(
@@ -625,11 +636,11 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  setupExchange(payload: ExchangePayload): Promise<boolean> {
+  async setupExchange(payload: ExchangePayload): Promise<boolean> {
     return this.axios
       .put<ActionResult<boolean>>(
         '/exchanges',
-        axiosSnakeCaseTransformer(payload),
+        axiosSnakeCaseTransformer(nonNullProperties(payload)),
         {
           validateStatus: validStatus
         }
@@ -665,6 +676,7 @@ export class RotkehlchenApi {
   async getExchanges(): Promise<Exchange[]> {
     return this.axios
       .get<ActionResult<Exchange[]>>('/exchanges', {
+        transformResponse: this.baseTransformer,
         validateStatus: validWithSessionStatus
       })
       .then(handleResponse);

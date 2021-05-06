@@ -58,6 +58,7 @@
       <exchange-keys-form
         v-model="valid"
         :exchange="exchange"
+        :edit="edit"
         @update:exchange="exchange = $event"
       />
     </big-dialog>
@@ -72,19 +73,23 @@ import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
-import ExchangeBadge from '@/components/ExchangeBadge.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
-import { SUPPORTED_EXCHANGES } from '@/data/defaults';
+import { EXCHANGE_KRAKEN } from '@/data/defaults';
 import { Exchange } from '@/model/action-result';
 import { ExchangePayload } from '@/store/balances/types';
 import { Nullable } from '@/types';
 import { assert } from '@/utils/assertions';
 
-const placeholder: () => Exchange = () => ({
-  location: SUPPORTED_EXCHANGES[0],
-  name: ''
+const placeholder: () => ExchangePayload = () => ({
+  location: EXCHANGE_KRAKEN,
+  name: '',
+  newName: null,
+  apiKey: '',
+  apiSecret: '',
+  passphrase: null,
+  krakenAccountType: 'starter'
 });
 
 @Component({
@@ -95,7 +100,6 @@ const placeholder: () => Exchange = () => ({
     ExchangeDisplay,
     RevealableInput,
     ConfirmDialog,
-    ExchangeBadge,
     BaseExternalLink
   },
   computed: {
@@ -108,18 +112,19 @@ const placeholder: () => Exchange = () => ({
 export default class ExchangeSettings extends Vue {
   pendingRemoval: Nullable<Exchange> = null;
   confirmation: boolean = false;
-
-  connectedExchanges!: string[];
   setupExchange!: (payload: ExchangePayload) => Promise<boolean>;
   removeExchange!: (exchange: Exchange) => Promise<boolean>;
 
-  exchange: Exchange = placeholder();
+  exchange: ExchangePayload = placeholder();
 
   showForm: boolean = false;
+  edit: boolean = false;
   valid: boolean = false;
 
   get dialogTitle(): string {
-    return '';
+    return this.edit
+      ? this.$t('exchange_settings.dialog.edit.title').toString()
+      : this.$t('exchange_settings.dialog.add.title').toString();
   }
 
   get dialogSubtitle(): string {
@@ -128,17 +133,17 @@ export default class ExchangeSettings extends Vue {
 
   readonly headers: DataTableHeader[] = [
     {
-      text: 'Location',
+      text: this.$t('exchange_settings.header.location').toString(),
       value: 'location',
       width: '120px',
       align: 'center'
     },
     {
-      text: 'Name',
+      text: this.$t('exchange_settings.header.name').toString(),
       value: 'name'
     },
     {
-      text: 'Actions',
+      text: this.$t('exchange_settings.header.actions').toString(),
       value: 'actions',
       width: '105px',
       align: 'center',
@@ -146,22 +151,21 @@ export default class ExchangeSettings extends Vue {
     }
   ];
 
-  get isConnected(): boolean {
-    return (
-      this.connectedExchanges.findIndex(
-        value => value === this.selectedExchange
-      ) >= 0
-    );
-  }
-
   confirmRemoval(exchange: Exchange) {
     this.confirmation = true;
     this.pendingRemoval = exchange;
   }
 
-  editExchange(exchange: Exchange) {
+  addExchange() {
+    this.edit = false;
     this.showForm = true;
-    this.exchange = exchange;
+    this.exchange = placeholder();
+  }
+
+  editExchange(exchange: Exchange) {
+    this.edit = true;
+    this.showForm = true;
+    this.exchange = { ...placeholder(), ...exchange };
   }
 
   cancel() {
@@ -179,8 +183,9 @@ export default class ExchangeSettings extends Vue {
     assert(exchange !== null);
     this.pendingRemoval = null;
     const success = await this.removeExchange(exchange);
+
     if (success) {
-      this.resetFields(true);
+      this.exchange = placeholder();
     }
   }
 }

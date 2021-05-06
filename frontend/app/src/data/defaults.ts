@@ -11,7 +11,6 @@ export class Defaults {
   static BALANCE_SAVE_FREQUENCY = 24;
   static ANONYMIZED_LOGS = false;
   static ANONYMOUS_USAGE_ANALYTICS = true;
-  static KRAKEN_DEFAULT_ACCOUNT_TYPE = 'starter';
   static DEFAULT_QUERY_PERIOD = 5;
   static BTC_DERIVATION_GAP_LIMIT = 20;
   static DISPLAY_DATE_IN_LOCALTIME = true;

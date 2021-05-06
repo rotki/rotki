@@ -103,7 +103,7 @@ import {
 import { SupportedAsset } from '@/services/types-model';
 import { AssetUpdateConflictResult } from '@/store/assets/types';
 import { Writeable } from '@/types';
-import { uniqueStrings } from '@/utils/array';
+import { uniqueStrings } from '@/utils/data';
 
 @Component({
   components: { ConflictRow }

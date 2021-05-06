@@ -32,10 +32,10 @@ import {
   KSM,
   L2_LOOPRING
 } from '@/typing/types';
-import { uniqueStrings } from '@/utils/array';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
+import { uniqueStrings } from '@/utils/data';
 
 export interface BalanceGetters {
   ethAccounts: BlockchainAccountWithBalance[];
@@ -185,7 +185,7 @@ export const getters: Getters<
     const balances = state.exchangeBalances;
     return Object.keys(balances)
       .map(value => ({
-        name: value,
+        location: value,
         balances: balances[value],
         total: assetSum(balances[value])
       }))

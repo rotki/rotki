@@ -71,7 +71,7 @@
     "advanced": "Advanced",
     "buttons": {
       "skip": "Skip",
-      "update":"Update"
+      "update": "Update"
     },
     "description": "Version {remote} of the asset database is available. Would you like to update from version {local}?",
     "manual": {
@@ -2120,8 +2120,21 @@
     "delete": {
       "tooltip": "Delete the exchange account"
     },
+    "dialog": {
+      "add": {
+        "title": "Add an exchange"
+      },
+      "edit": {
+        "title": "Edit an exchange"
+      }
+    },
     "edit": {
       "tooltip": "Edit the exchange account"
+    },
+    "header": {
+      "actions": "Actions",
+      "location": "Location",
+      "name": "Name"
     },
     "title": "Connected Exchanges",
     "subtitle": "rotki can connect to supported exchanges and automatically pull your trades and balances from them. See the {0} for more information.",
@@ -2404,7 +2417,7 @@
       "error": "Account creation failed"
     },
     "custom_backend": {
-      "failed":  {
+      "failed": {
         "title": "Could not connect to custom backend",
         "description": "Connection to {url} failed after 5 attempts"
       }

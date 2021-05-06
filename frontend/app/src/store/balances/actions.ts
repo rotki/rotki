@@ -63,9 +63,9 @@ import {
   KSM,
   SupportedBlockchains
 } from '@/typing/types';
-import { chunkArray } from '@/utils/array';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
+import { chunkArray } from '@/utils/data';
 import { convertFromTimestamp } from '@/utils/date';
 
 function removeTag(tags: string[] | null, tagName: string): string[] | null {

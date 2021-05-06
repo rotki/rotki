@@ -16,6 +16,7 @@ import {
 import { SupportedAsset } from '@/services/types-model';
 import { KRAKEN_ACCOUNT_TYPES } from '@/store/balances/const';
 import { Section } from '@/store/const';
+import { Nullable } from '@/types';
 import {
   Blockchain,
   ExchangeData,
@@ -62,11 +63,12 @@ export interface BalanceState {
 
 export interface ExchangePayload {
   readonly name: string;
+  readonly newName: Nullable<string>;
   readonly location: SupportedExchange;
   readonly apiKey: string;
   readonly apiSecret: string;
-  readonly passphrase: string | null;
-  readonly krakenAccountType?: KrakenAccountType;
+  readonly passphrase: Nullable<string>;
+  readonly krakenAccountType: Nullable<KrakenAccountType>;
 }
 
 interface XpubPayload {

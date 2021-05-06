@@ -6,7 +6,7 @@
         <overall-balances />
       </v-col>
     </v-row>
-    <v-row class="mr--1" justify="center">
+    <v-row class="mr-1" justify="center">
       <v-col cols="12" md="4" lg="4">
         <summary-card
           :name="$t('dashboard.exchange_balances.title')"
@@ -28,8 +28,8 @@
           <div v-else>
             <exchange-box
               v-for="exchange in exchanges"
-              :key="exchange.name"
-              :name="exchange.name"
+              :key="exchange.location"
+              :location="exchange.location"
               :amount="exchange.total"
             />
           </div>
@@ -221,7 +221,7 @@ export default class Dashboard extends Vue {
     } else if (balanceSource === 'exchange') {
       for (const exchange of this.exchanges) {
         this.fetchExchangeBalances({
-          location: exchange.name,
+          location: exchange.location,
           ignoreCache: true
         });
       }

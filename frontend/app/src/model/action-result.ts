@@ -1,5 +1,6 @@
 import { SupportedExchange } from '@/services/balances/types';
 import { SupportedModules } from '@/services/session/types';
+import { KrakenAccountType } from '@/store/balances/types';
 import { LedgerActionType } from '@/store/history/types';
 
 const PRICE_ORACLES = ['cryptocompare', 'coingecko'] as const;
@@ -8,6 +9,7 @@ export type PriceOracles = typeof PRICE_ORACLES[number];
 export interface Exchange {
   readonly location: SupportedExchange;
   readonly name: string;
+  readonly krakenAccountType?: KrakenAccountType;
 }
 
 export interface AccountState {

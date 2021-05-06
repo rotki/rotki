@@ -54,8 +54,9 @@ export interface Credentials {
 export type ExchangeRates = { [key: string]: BigNumber };
 
 export interface ExchangeInfo {
-  readonly name: string;
+  readonly location: string;
   readonly balances: AssetBalances;
+  readonly total: BigNumber;
 }
 
 export type ExchangeData = { [exchange: string]: AssetBalances };
