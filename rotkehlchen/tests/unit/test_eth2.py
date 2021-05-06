@@ -308,7 +308,7 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         [],  # no on-chain request, nothing in DB
         [EXPECTED_DEPOSITS[0]],  # on-chain request, deposit in DB
     ]
-    dbeth2_mock = patch('rotkehlchen.chain.ethereum.eth2.DBEth2', return_value=dbeth2)
+    dbeth2_mock = patch('rotkehlchen.chain.ethereum.modules.eth2.DBEth2', return_value=dbeth2)
     with dbeth2_mock, patch.object(
             eth2, '_get_eth2_staking_deposits_onchain',
     )as mock_get_eth2_staking_deposits_onchain:
