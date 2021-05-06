@@ -35,7 +35,6 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
-from rotkehlchen.chain.ethereum.eth2_utils import get_validator_daily_stats
 from rotkehlchen.chain.ethereum.modules import (
     Aave,
     Adex,
@@ -1300,8 +1299,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             if entry.validator_index is None:
                 continue  # don't query stats for validators without an index yet
 
-            stats = get_validator_daily_stats(
-                db=self.database,
+            stats = eth2.get_validator_daily_stats(
                 validator_index=entry.validator_index,
                 msg_aggregator=self.msg_aggregator,
                 from_timestamp=from_timestamp,

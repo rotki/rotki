@@ -2,15 +2,17 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.eth2_utils import get_validator_daily_stats
+from rotkehlchen.chain.ethereum.eth2_utils import scrape_validator_daily_stats
 from rotkehlchen.chain.ethereum.typing import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
     Eth2Deposit,
+    ValidatorDailyStats,
     ValidatorDetails,
 )
 from rotkehlchen.chain.ethereum.utils import decode_event_data
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
@@ -238,8 +240,8 @@ class Eth2(EthereumModule):
 
         return balance_mapping
 
-    @staticmethod
     def get_details(
+            self,
             beaconchain: 'BeaconChain',
             addresses: List[ChecksumEthAddress],
     ) -> List[ValidatorDetails]:
@@ -275,8 +277,7 @@ class Eth2(EthereumModule):
         # Get current balance of all validator indices
         performance_result = beaconchain.get_performance(list(indices))
         for validator_index, entry in performance_result.items():
-            stats = get_validator_daily_stats(
-                db=beaconchain.db,
+            stats = self.get_validator_daily_stats(
                 validator_index=validator_index,
                 msg_aggregator=beaconchain.msg_aggregator,
             )
@@ -291,8 +292,7 @@ class Eth2(EthereumModule):
         # Performance call does not return validators that are not active and are still depositing
         depositing_indices = set(index_to_address.keys()) - set(performance_result.keys())
         for index in depositing_indices:
-            stats = get_validator_daily_stats(
-                db=beaconchain.db,
+            stats = self.get_validator_daily_stats(
                 validator_index=index,
                 msg_aggregator=beaconchain.msg_aggregator,
             )
@@ -305,6 +305,44 @@ class Eth2(EthereumModule):
             ))
 
         return result
+
+    def get_validator_daily_stats(
+            self,
+            validator_index: int,
+            msg_aggregator: MessagesAggregator,
+            from_timestamp: Optional[Timestamp] = None,
+            to_timestamp: Optional[Timestamp] = None,
+    ) -> List[ValidatorDailyStats]:
+        """Gets the daily stats of an ETH2 validator by index
+
+        First queries the DB for the already known stats and then if needed also scrapes
+        the beacocha.in website for more. Saves all new entries to the DB.
+        """
+        dbeth2 = DBEth2(self.database)
+        known_stats = dbeth2.get_validator_daily_stats(
+            validator_index=validator_index,
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+        )
+        last_ts = Timestamp(0) if len(known_stats) == 0 else known_stats[-1].timestamp
+        limit_ts = to_timestamp if to_timestamp else ts_now()
+        if limit_ts - last_ts <= DAY_IN_SECONDS:
+            return known_stats  # no need to requery if less than a day passed
+
+        new_stats = scrape_validator_daily_stats(
+            validator_index=validator_index,
+            last_known_timestamp=last_ts,
+            msg_aggregator=msg_aggregator,
+        )
+
+        if len(new_stats) != 0:
+            dbeth2.add_validator_daily_stats(stats=new_stats)
+
+        return dbeth2.get_validator_daily_stats(
+            validator_index=validator_index,
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+        )
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:

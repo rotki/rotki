@@ -5,10 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.eth2_utils import (
-    _scrape_validator_daily_stats,
-    get_validator_daily_stats,
-)
+from rotkehlchen.chain.ethereum.eth2_utils import scrape_validator_daily_stats
 from rotkehlchen.chain.ethereum.modules.eth2 import REQUEST_DELTA_TS
 from rotkehlchen.chain.ethereum.typing import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
@@ -477,7 +474,7 @@ def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer, price_
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
 def test_validator_daily_stats(price_historian, function_scope_messages_aggregator):  # pylint: disable=unused-argument  # noqa: E501
     validator_index = 33710
-    stats = _scrape_validator_daily_stats(
+    stats = scrape_validator_daily_stats(
         validator_index=validator_index,
         last_known_timestamp=0,
         msg_aggregator=function_scope_messages_aggregator,
@@ -671,7 +668,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         function_scope_messages_aggregator,
 ):
     validator_index = 33710
-    stats = _scrape_validator_daily_stats(
+    stats = scrape_validator_daily_stats(
         validator_index=validator_index,
         last_known_timestamp=1613520000,
         msg_aggregator=function_scope_messages_aggregator,
@@ -743,6 +740,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         price_historian,
         database,
         function_scope_messages_aggregator,
+        eth2,
 ):
     stats_call_patch = patch(
         'requests.get',
@@ -751,8 +749,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
 
     validator_index = 33710
     with stats_call_patch as stats_call:
-        stats = get_validator_daily_stats(
-            db=database,
+        stats = eth2.get_validator_daily_stats(
             validator_index=validator_index,
             msg_aggregator=function_scope_messages_aggregator,
             from_timestamp=1613606300,
@@ -819,8 +816,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         assert stats[:len(expected_stats)] == expected_stats
 
         # Make sure that calling it again does not make an external call
-        stats = get_validator_daily_stats(
-            db=database,
+        stats = eth2.get_validator_daily_stats(
             validator_index=33710,
             msg_aggregator=function_scope_messages_aggregator,
             from_timestamp=1613606300,
