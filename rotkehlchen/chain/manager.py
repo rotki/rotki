@@ -35,11 +35,6 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
-from rotkehlchen.chain.ethereum.eth2 import (
-    get_eth2_balances,
-    get_eth2_details,
-    get_eth2_staking_deposits,
-)
 from rotkehlchen.chain.ethereum.eth2_utils import get_validator_daily_stats
 from rotkehlchen.chain.ethereum.modules import (
     Aave,
@@ -65,6 +60,7 @@ from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors import (
     EthSyncError,
     InputError,
+    ModuleInactive,
     ModuleInitializationFailure,
     RemoteError,
     UnknownAsset,
@@ -1222,6 +1218,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             addresses: List[ChecksumEthAddress],
             at_addition: bool = False,
     ) -> None:
+        eth2 = self.get_module('eth2')
+        if eth2 is None:
+            return  # no eth2 module active -- do nothing
+
         if not at_addition:
             # Before querying the new balances, delete the ones in memory if any
             self.totals.assets.pop(A_ETH2, None)
@@ -1230,7 +1230,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     del entry.assets[A_ETH2]
 
         try:
-            mapping = get_eth2_balances(self.beaconchain, addresses)
+            mapping = eth2.get_balances(self.beaconchain, addresses)
         except RemoteError as e:
             self.msg_aggregator.add_error(
                 f'Did not manage to query beaconcha.in api for addresses due to {str(e)}.'
@@ -1244,12 +1244,16 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     @protect_with_lock()
     @cache_response_timewise()
     def get_eth2_staking_deposits(self) -> List['Eth2Deposit']:
+        eth2 = self.get_module('eth2')
+        if eth2 is None:
+            raise ModuleInactive(
+                'Could not query eth2 staking deposits since eth2 module is not active',
+            )
         # Get the details first, to see which of the user's addresses have deposits
         details = self.get_eth2_staking_details()
         addresses = {x.eth1_depositor for x in details}
         # now narrow down the deposits query to save time
-        deposits = get_eth2_staking_deposits(
-            ethereum=self.ethereum,
+        deposits = eth2.get_staking_deposits(
             addresses=list(addresses),
             msg_aggregator=self.msg_aggregator,
             database=self.database,
@@ -1259,7 +1263,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     @protect_with_lock()
     @cache_response_timewise()
     def get_eth2_staking_details(self) -> List['ValidatorDetails']:
-        return get_eth2_details(
+        """May raise:
+        - ModuleInactive if eth2 module is not activated
+        """
+        eth2 = self.get_module('eth2')
+        if eth2 is None:
+            raise ModuleInactive('Cant query eth2 staking details since eth2 module is not active')
+        return eth2.get_details(
             beaconchain=self.beaconchain,
             addresses=self.queried_addresses_for_module('eth2'),
         )
@@ -1271,11 +1281,18 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> List[DefiEvent]:
+        """May raise:
+        - ModuleInactive if eth2 module is not activated
+        """
+        eth2 = self.get_module('eth2')
+        if eth2 is None:
+            raise ModuleInactive('Cant query eth2 history events since eth2 module is not active')
+
         if to_timestamp < 1607212800:  # Dec 1st UTC
             return []  # no need to bother querying before beacon chain launch
 
         defi_events = []
-        eth2_details = get_eth2_details(
+        eth2_details = eth2.get_details(
             beaconchain=self.beaconchain,
             addresses=self.queried_addresses_for_module('eth2'),
         )
@@ -1321,7 +1338,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         """Query loopring balances if the module is activated"""
         # Check if the loopring module is activated
         loopring_module = self.get_module('loopring')
-
         if loopring_module is None:
             return {}
 

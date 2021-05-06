@@ -20,11 +20,11 @@ from web3.middleware.exception_retry_request import http_retry_request_middlewar
 from web3.types import FilterParams
 
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.chain.ethereum.eth2 import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.graph import Graph
+from rotkehlchen.chain.ethereum.modules.eth2 import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.utils import multicall_2
-from rotkehlchen.constants.ethereum import ETH_SCAN, ERC20TOKEN_ABI
+from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     BlockchainQueryError,
@@ -37,8 +37,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_int_from_hex,
     deserialize_ethereum_address,
+    deserialize_int_from_hex,
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.typing import ChecksumEthAddress, SupportedBlockchain, Timestamp

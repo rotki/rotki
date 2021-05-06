@@ -6,6 +6,7 @@ from rotkehlchen.tests.fixtures.accounting import *
 from rotkehlchen.tests.fixtures.assets import *
 from rotkehlchen.tests.fixtures.blockchain import *
 from rotkehlchen.tests.fixtures.db import *
+from rotkehlchen.tests.fixtures.eth2 import *
 from rotkehlchen.tests.fixtures.exchanges.binance import *
 from rotkehlchen.tests.fixtures.exchanges.bitcoinde import *
 from rotkehlchen.tests.fixtures.exchanges.bitfinex import *

@@ -5,25 +5,19 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.eth2 import (
-    REQUEST_DELTA_TS,
-    _get_eth2_staking_deposits_onchain,
-    get_eth2_balances,
-    get_eth2_details,
-    get_eth2_staking_deposits,
-)
 from rotkehlchen.chain.ethereum.eth2_utils import (
     _scrape_validator_daily_stats,
     get_validator_daily_stats,
 )
+from rotkehlchen.chain.ethereum.modules.eth2 import REQUEST_DELTA_TS
 from rotkehlchen.chain.ethereum.typing import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
     Eth2Deposit,
     ValidatorDailyStats,
     ValidatorDetails,
     ValidatorPerformance,
+    string_to_ethereum_address,
 )
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
@@ -235,6 +229,7 @@ def test_get_eth2_staking_deposits_onchain(  # pylint: disable=unused-argument
         ethereum_manager_connect_at_start,
         inquirer,
         price_historian,
+        eth2,
 ):
     """
     Test on-chain request of deposit events for ADDR1, ADDR2 and ADDR3 in a
@@ -252,8 +247,7 @@ def test_get_eth2_staking_deposits_onchain(  # pylint: disable=unused-argument
         ethereum=ethereum_manager,
     )
     # Main call
-    deposits = _get_eth2_staking_deposits_onchain(
-        ethereum=ethereum_manager,
+    deposits = eth2._get_eth2_staking_deposits_onchain(
         addresses=[ADDR1, ADDR2, ADDR3],
         msg_aggregator=MessagesAggregator(),
         from_ts=from_ts,
@@ -293,6 +287,7 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         inquirer,
         price_historian,
         freezer,
+        eth2,
 ):
     """
     Test new on-chain requests for existing addresses requires a difference of
@@ -314,9 +309,9 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         [EXPECTED_DEPOSITS[0]],  # on-chain request, deposit in DB
     ]
     dbeth2_mock = patch('rotkehlchen.chain.ethereum.eth2.DBEth2', return_value=dbeth2)
-    with dbeth2_mock, patch(
-        'rotkehlchen.chain.ethereum.eth2._get_eth2_staking_deposits_onchain',
-    ) as mock_get_eth2_staking_deposits_onchain:
+    with dbeth2_mock, patch.object(
+            eth2, '_get_eth2_staking_deposits_onchain',
+    )as mock_get_eth2_staking_deposits_onchain:
         # 3rd call return
         mock_get_eth2_staking_deposits_onchain.return_value = [EXPECTED_DEPOSITS[0]]
 
@@ -327,8 +322,7 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         message_aggregator = MessagesAggregator()
 
         # First call
-        deposit_results_onchain = get_eth2_staking_deposits(
-            ethereum=ethereum_manager,
+        deposit_results_onchain = eth2.get_staking_deposits(
             addresses=[ADDR1],
             msg_aggregator=message_aggregator,
             database=database,
@@ -340,8 +334,7 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         freezer.move_to(datetime.fromtimestamp(ts_now + REQUEST_DELTA_TS - 1))
 
         # Second call
-        deposit_results_onchain = get_eth2_staking_deposits(
-            ethereum=ethereum_manager,
+        deposit_results_onchain = eth2.get_staking_deposits(
             addresses=[ADDR1],
             msg_aggregator=message_aggregator,
             database=database,
@@ -353,15 +346,13 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         freezer.move_to(datetime.fromtimestamp(ts_now + REQUEST_DELTA_TS))
 
         # Third call
-        deposit_results_onchain = get_eth2_staking_deposits(
-            ethereum=ethereum_manager,
+        deposit_results_onchain = eth2.get_staking_deposits(
             addresses=[ADDR1],
             msg_aggregator=message_aggregator,
             database=database,
         )
         assert deposit_results_onchain == [EXPECTED_DEPOSITS[0]]
         mock_get_eth2_staking_deposits_onchain.assert_called_with(
-            ethereum=ethereum_manager,
             addresses=[ADDR1],
             msg_aggregator=message_aggregator,
             from_ts=Timestamp(ts_now),
@@ -431,13 +422,13 @@ def _create_beacon_mock(beaconchain):
     return patch.object(beaconchain.session, 'get', wraps=mock_requests_get)
 
 
-def test_get_eth2_balances_validator_not_yet_active(beaconchain, inquirer):  # pylint: disable=unused-argument  # noqa: E501
+def test_get_eth2_balances_validator_not_yet_active(beaconchain, inquirer, eth2):  # pylint: disable=unused-argument  # noqa: E501
     """Test that if a validator is detected but is not yet active the balance is shown properly
 
     Test for: https://github.com/rotki/rotki/issues/1888
     """
     with _create_beacon_mock(beaconchain):
-        mapping = get_eth2_balances(beaconchain, [ADDR1])
+        mapping = eth2.get_balances(beaconchain, [ADDR1])
 
     assert len(mapping) == 1
     amount = FVal('64.143716247')
@@ -445,13 +436,13 @@ def test_get_eth2_balances_validator_not_yet_active(beaconchain, inquirer):  # p
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer, price_historian):  # pylint: disable=unused-argument  # noqa: E501
+def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer, price_historian, eth2):  # pylint: disable=unused-argument  # noqa: E501
     """Test that if a validator is detected but is not yet active the balance is shown properly
 
     Test for: https://github.com/rotki/rotki/issues/1888
     """
     with _create_beacon_mock(beaconchain):
-        details = get_eth2_details(beaconchain=beaconchain, addresses=[ADDR1])
+        details = eth2.get_details(beaconchain=beaconchain, addresses=[ADDR1])
 
     for idx in range(0, 2):
         # basic check about daily stats but then delete since this is not what this test checks
