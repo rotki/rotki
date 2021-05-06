@@ -56,12 +56,17 @@ class Eth2(EthereumModule):
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> List[Eth2Deposit]:
+        from_block = max(
+            ETH2_DEPOSIT.deployed_block,
+            self.ethereum.get_blocknumber_by_time(from_ts),
+        )
+        to_block = self.ethereum.get_blocknumber_by_time(to_ts)
         events = ETH2_DEPOSIT.get_logs(
             ethereum=self.ethereum,
             event_name='DepositEvent',
             argument_filters={},
-            from_block=ETH2_DEPOSIT.deployed_block,
-            to_block='latest',
+            from_block=from_block,
+            to_block=to_block,
         )
         transactions = self.ethereum.transactions.query(
             addresses=addresses,
