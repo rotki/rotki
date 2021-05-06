@@ -15,7 +15,10 @@ import {
   EXPLORERS,
   ITEMS_PER_PAGE,
   VALUE_ROUNDING_MODE,
-  AMOUNT_ROUNDING_MODE
+  AMOUNT_ROUNDING_MODE,
+  DARK_MODE_ENABLED,
+  LIGHT_THEME,
+  DARK_THEME
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 import store from '@/store/store';
@@ -43,7 +46,18 @@ describe('settings:mutations', () => {
       },
       [ITEMS_PER_PAGE]: 25,
       [VALUE_ROUNDING_MODE]: BigNumber.ROUND_DOWN,
-      [AMOUNT_ROUNDING_MODE]: BigNumber.ROUND_UP
+      [AMOUNT_ROUNDING_MODE]: BigNumber.ROUND_UP,
+      [DARK_MODE_ENABLED]: true,
+      [LIGHT_THEME]: {
+        primary: '#000000',
+        accent: '#ffffff',
+        graph: '#555555'
+      },
+      [DARK_THEME]: {
+        primary: '#ffffff',
+        accent: '#000000',
+        graph: '#555555'
+      }
     };
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
@@ -67,5 +81,16 @@ describe('settings:mutations', () => {
     expect(settings[ITEMS_PER_PAGE]).toBe(25);
     expect(settings[VALUE_ROUNDING_MODE]).toBe(BigNumber.ROUND_DOWN);
     expect(settings[AMOUNT_ROUNDING_MODE]).toBe(BigNumber.ROUND_UP);
+    expect(settings[DARK_MODE_ENABLED]).toBe(true);
+    expect(settings[LIGHT_THEME]).toStrictEqual({
+      primary: '#000000',
+      accent: '#ffffff',
+      graph: '#555555'
+    });
+    expect(settings[DARK_THEME]).toStrictEqual({
+      primary: '#ffffff',
+      accent: '#000000',
+      graph: '#555555'
+    });
   });
 });

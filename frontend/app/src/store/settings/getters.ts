@@ -1,5 +1,6 @@
 import {
   CURRENCY_LOCATION,
+  DARK_MODE_ENABLED,
   DECIMAL_SEPARATOR,
   PROFIT_LOSS_PERIOD,
   THOUSAND_SEPARATOR
@@ -14,6 +15,7 @@ type SettingsGetters = {
   [THOUSAND_SEPARATOR]: string;
   [DECIMAL_SEPARATOR]: string;
   [CURRENCY_LOCATION]: CurrencyLocation;
+  [DARK_MODE_ENABLED]: boolean;
 };
 
 export const getters: Getters<
@@ -25,5 +27,6 @@ export const getters: Getters<
   [PROFIT_LOSS_PERIOD]: state => state[PROFIT_LOSS_PERIOD],
   [THOUSAND_SEPARATOR]: state => state[THOUSAND_SEPARATOR],
   [DECIMAL_SEPARATOR]: state => state[DECIMAL_SEPARATOR],
-  [CURRENCY_LOCATION]: state => state[CURRENCY_LOCATION]
+  [CURRENCY_LOCATION]: state => state[CURRENCY_LOCATION],
+  [DARK_MODE_ENABLED]: state => state[DARK_MODE_ENABLED]
 };

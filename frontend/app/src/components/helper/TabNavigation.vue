@@ -85,6 +85,19 @@ export default class TabNavigation extends Vue {
         background-color: var(--v-rotki-light-grey-base) !important;
       }
 
+      /* stylelint-disable scss/selector-nest-combinators,selector-class-pattern,selector-nested-pattern, rule-empty-line-before */
+      .theme {
+        &--dark {
+          &.v-tabs-bar {
+            background-color: transparent !important;
+          }
+          .tab-navigation__tabs__tab:not(.tab-navigation__tabs__tab--active) {
+            background: var(--v-dark-base) !important;
+          }
+        }
+      }
+      /* stylelint-enable scss/selector-nest-combinators,selector-class-pattern,selector-nested-pattern, rule-empty-line-before */
+
       .v-tabs-items {
         background-color: transparent !important;
       }
@@ -105,6 +118,8 @@ export default class TabNavigation extends Vue {
         margin-top: 50px;
       }
     }
+
+    /* stylelint-disable no-descending-specificity */
 
     &__tab {
       background-color: white;
@@ -131,7 +146,6 @@ export default class TabNavigation extends Vue {
 
         @include start();
       }
-      /* stylelint-disable no-descending-specificity */
 
       &:last-of-type {
         &:hover {

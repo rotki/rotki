@@ -6,6 +6,7 @@ export const IPC_CHECK_FOR_UPDATES = 'CHECK_FOR_UPDATES' as const;
 export const IPC_DOWNLOAD_UPDATE = 'DOWNLOAD_UPDATE' as const;
 export const IPC_DOWNLOAD_PROGRESS = 'DOWNLOAD_PROGRESS' as const;
 export const IPC_INSTALL_UPDATE = 'INSTALL_UPDATE' as const;
+export const IPC_DARK_MODE = 'DARK_MODE' as const;
 
 export type DebugSettings = { vuex: boolean };
 
@@ -35,4 +36,5 @@ export interface Interop {
   downloadUpdate(progress: (percentage: number) => void): Promise<boolean>;
   installUpdate(): Promise<boolean | Error>;
   restartBackend(logLevel: Level): Promise<boolean>;
+  setDarkMode(enabled: boolean): Promise<boolean>;
 }

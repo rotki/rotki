@@ -5,8 +5,11 @@ import Vuex from 'vuex';
 import { TIME_UNIT_DAY } from '@/components/dashboard/const';
 import { TimeUnit } from '@/components/dashboard/types';
 import { displayDateFormatter } from '@/data/date_formatter';
+import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { registerComponents } from '@/premium/register-components';
-import { DataUtilities, DateUtilities } from '@/premium/types';
+import { DataUtilities, DateUtilities, SettingsApi } from '@/premium/types';
+import { DARK_THEME, LIGHT_THEME } from '@/store/settings/consts';
+import { FrontendSettingsPayload, Themes } from '@/store/settings/types';
 import store from '@/store/store';
 
 const date: DateUtilities = {
@@ -45,6 +48,25 @@ const data: DataUtilities = {
   }
 };
 
+const settings: SettingsApi = {
+  async update(settings: FrontendSettingsPayload): Promise<void> {
+    await store.dispatch('settings/updateSetting', settings);
+  },
+  defaultThemes(): Themes {
+    return {
+      dark: DARK_COLORS,
+      light: LIGHT_COLORS
+    };
+  },
+  themes(): Themes {
+    const settings = store.state.settings!;
+    return {
+      light: settings[LIGHT_THEME],
+      dark: settings[DARK_THEME]
+    };
+  }
+};
+
 export const setupPremium = () => {
   window.Vue = Vue;
   window.Chart = Chart;
@@ -55,7 +77,8 @@ export const setupPremium = () => {
     version: 11,
     utils: {
       date,
-      data
+      data,
+      settings
     }
   };
   registerComponents();

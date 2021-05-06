@@ -1,7 +1,12 @@
 <template>
   <div class="net-worth-chart__chart">
     <canvas id="net-worth-chart__chart" />
-    <div id="net-worth-chart__tooltip">
+    <div
+      id="net-worth-chart__tooltip"
+      :class="{
+        'theme--dark': $vuetify.theme.dark
+      }"
+    >
       <div
         class="net-worth-chart__tooltip__value font-weight-bold text-center"
       />
@@ -69,6 +74,15 @@ export default class NetWorthChart extends Vue {
   chartData!: NetValue;
 
   currency!: Currency;
+
+  get darkModeEnabled(): boolean {
+    return this.$vuetify.theme.dark;
+  }
+
+  @Watch('darkModeEnabled')
+  onDarkMode() {
+    this.setup();
+  }
 
   chart: Chart | null = null;
   times: number[] = [];
@@ -288,11 +302,13 @@ export default class NetWorthChart extends Vue {
   });
 
   private datasets(chartCanvas: CanvasRenderingContext2D): ChartDataSets[] {
-    const color = String(this.$vuetify.theme.currentTheme['rotki-light-blue']);
+    const theme = this.$vuetify.theme;
+    const color = theme.currentTheme['graph'] as string;
+    const secondaryColor = theme.currentTheme['graphFade'] as string;
 
     const areaGradient = chartCanvas.createLinearGradient(0, 0, 0, 160);
     areaGradient.addColorStop(0, color);
-    areaGradient.addColorStop(1, 'white');
+    areaGradient.addColorStop(1, secondaryColor);
 
     const dataset: ChartDataSets = {
       data: this.filteredData,
@@ -318,6 +334,13 @@ export default class NetWorthChart extends Vue {
   }
 
   mounted() {
+    this.setup();
+  }
+
+  private setup() {
+    if (this.chart) {
+      this.chart.destroy();
+    }
     Chart.defaults.global.defaultFontFamily = 'Roboto';
     this.clearData();
     this.chart = this.createChart();
@@ -332,6 +355,12 @@ export default class NetWorthChart extends Vue {
 }
 </script>
 <style scoped lang="scss">
+.theme {
+  &--dark {
+    color: black;
+  }
+}
+
 #net-worth-chart__tooltip {
   opacity: 0;
   background-color: white;

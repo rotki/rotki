@@ -20,7 +20,7 @@
         </menu-tooltip-button>
       </template>
       <v-container class="progress-indicator__container">
-        <v-row class="progress-indicator__details">
+        <v-row class="progress-indicator__details" :style="backgroundStyle">
           <v-col v-if="tasks.length > 0">
             <v-list two-line>
               <template v-for="task in tasks">
@@ -49,9 +49,10 @@
             </v-list>
           </v-col>
           <v-col v-else class="progress-indicator__no-tasks align justify">
-            <v-icon color="primary">mdi-information</v-icon>
+            <v-icon x-large color="primary">mdi-information</v-icon>
             <p
               class="progress-indicator__no-tasks__label"
+              :style="fontStyle"
               v-text="$t('progress_indicator.no_tasks')"
             />
           </v-col>
@@ -62,9 +63,10 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Mixins } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import ThemeMixin from '@/mixins/theme-mixin';
 import { Task, TaskMeta } from '@/model/task';
 
 @Component({
@@ -74,7 +76,7 @@ import { Task, TaskMeta } from '@/model/task';
     ...mapGetters('reports', ['progress'])
   }
 })
-export default class ProgressIndicator extends Vue {
+export default class ProgressIndicator extends Mixins(ThemeMixin) {
   hasRunningTasks!: boolean;
   tasks!: Task<TaskMeta>[];
   progress!: number;
@@ -92,7 +94,6 @@ export default class ProgressIndicator extends Vue {
   &__details {
     width: 350px;
     height: 350px;
-    background-color: white;
   }
 
   &__no-tasks {
@@ -105,7 +106,6 @@ export default class ProgressIndicator extends Vue {
       font-size: 22px;
       margin-top: 22px;
       font-weight: 300;
-      color: rgb(0, 0, 0, 0.6);
     }
   }
 

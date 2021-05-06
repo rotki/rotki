@@ -14,7 +14,7 @@
         <v-list-item-title class="mt-2">
           {{ notification.title }}
         </v-list-item-title>
-        <span class="notification__message mt-1">
+        <span class="notification__message mt-1" :style="fontStyle">
           {{ notification.message }}
           <textarea
             ref="copy"
@@ -65,13 +65,14 @@
 
 <script lang="ts">
 import moment from 'moment';
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
+import ThemeMixin from '@/mixins/theme-mixin';
 import { Severity } from '@/store/notifications/consts';
 import { NotificationData } from '@/store/notifications/types';
 @Component({
   components: {}
 })
-export default class Notification extends Vue {
+export default class Notification extends Mixins(ThemeMixin) {
   @Prop({ required: true })
   notification!: NotificationData;
   @Prop({ required: false, type: Boolean, default: false })
@@ -126,7 +127,6 @@ export default class Notification extends Vue {
 
   &__message {
     font-size: 13px;
-    color: rgb(0, 0, 0, 0.6);
     min-height: 60px;
     max-height: 60px;
     overflow-y: auto;

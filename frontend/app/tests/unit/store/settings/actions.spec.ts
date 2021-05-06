@@ -1,5 +1,6 @@
 import { default as BigNumber } from 'bignumber.js';
 import { Defaults } from '@/data/defaults';
+import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -18,7 +19,10 @@ import {
   EXPLORERS,
   ITEMS_PER_PAGE,
   AMOUNT_ROUNDING_MODE,
-  VALUE_ROUNDING_MODE
+  VALUE_ROUNDING_MODE,
+  DARK_MODE_ENABLED,
+  LIGHT_THEME,
+  DARK_THEME
 } from '@/store/settings/consts';
 import { FrontendSettingsPayload } from '@/store/settings/types';
 import store from '@/store/store';
@@ -54,7 +58,10 @@ describe('settings:actions', () => {
             [EXPLORERS]: {},
             [ITEMS_PER_PAGE]: 10,
             [AMOUNT_ROUNDING_MODE]: BigNumber.ROUND_UP,
-            [VALUE_ROUNDING_MODE]: BigNumber.ROUND_DOWN
+            [VALUE_ROUNDING_MODE]: BigNumber.ROUND_DOWN,
+            [DARK_MODE_ENABLED]: false,
+            [LIGHT_THEME]: LIGHT_COLORS,
+            [DARK_THEME]: DARK_COLORS
           })
         )
       })

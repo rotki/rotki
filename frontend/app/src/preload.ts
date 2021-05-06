@@ -3,6 +3,7 @@ import { BackendCode } from '@/electron-main/backend-code';
 import {
   Interop,
   IPC_CHECK_FOR_UPDATES,
+  IPC_DARK_MODE,
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_INSTALL_UPDATE,
@@ -11,7 +12,7 @@ import {
 
 function ipcAction<T>(message: string, arg?: any): Promise<T> {
   return new Promise(resolve => {
-    ipcRenderer.on(message, (event, args) => {
+    ipcRenderer.once(message, (event, args) => {
       resolve(args);
     });
     ipcRenderer.send(message, arg);
@@ -60,5 +61,6 @@ contextBridge.exposeInMainWorld('interop', {
     });
     return ipcAction(IPC_DOWNLOAD_UPDATE);
   },
-  installUpdate: () => ipcAction(IPC_INSTALL_UPDATE)
+  installUpdate: () => ipcAction(IPC_INSTALL_UPDATE),
+  setDarkMode: (enabled: boolean) => ipcAction(IPC_DARK_MODE, enabled)
 } as Interop);

@@ -12,7 +12,10 @@ import {
   EXPLORERS,
   ITEMS_PER_PAGE,
   AMOUNT_ROUNDING_MODE,
-  VALUE_ROUNDING_MODE
+  VALUE_ROUNDING_MODE,
+  DARK_MODE_ENABLED,
+  LIGHT_THEME,
+  DARK_THEME
 } from '@/store/settings/consts';
 import { defaultState } from '@/store/settings/state';
 import {
@@ -21,7 +24,8 @@ import {
   TimeFramePeriod,
   TimeFrameSetting,
   RefreshPeriod,
-  ExplorersSettings
+  ExplorersSettings,
+  ThemeColors
 } from '@/store/settings/types';
 import { Writeable } from '@/types';
 import { CurrencyLocation } from '@/typing/types';
@@ -41,6 +45,9 @@ type Mutations<S = SettingsState> = {
   [ITEMS_PER_PAGE](state: S, itemsPerPage: number): void;
   [AMOUNT_ROUNDING_MODE](state: S, mode: RoundingMode): void;
   [VALUE_ROUNDING_MODE](state: S, mode: RoundingMode): void;
+  [DARK_MODE_ENABLED](state: S, enabled: boolean): void;
+  [LIGHT_THEME](state: S, theme: ThemeColors): void;
+  [DARK_THEME](state: S, theme: ThemeColors): void;
   restore(state: S, persisted: S): void;
   reset(state: S): void;
 };
@@ -102,6 +109,15 @@ export const mutations: Mutations = {
     roundingMode: RoundingMode
   ) {
     state.valueRoundingMode = roundingMode;
+  },
+  [DARK_MODE_ENABLED](state: Writeable<SettingsState>, enabled: boolean) {
+    state.darkModeEnabled = enabled;
+  },
+  [LIGHT_THEME](state: Writeable<SettingsState>, theme: ThemeColors) {
+    state[LIGHT_THEME] = theme;
+  },
+  [DARK_THEME](state: Writeable<SettingsState>, theme: ThemeColors) {
+    state[DARK_THEME] = theme;
   },
   restore(state: SettingsState, persisted: SettingsState) {
     Object.assign(state, persisted);
