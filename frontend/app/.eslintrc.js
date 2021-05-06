@@ -104,6 +104,7 @@ module.exports = {
     '@intlify/vue-i18n/no-unused-keys': [
       'error',
       {
+        src: './src',
         extensions: ['.ts', '.vue']
       }
     ],
@@ -138,6 +139,16 @@ module.exports = {
   parserOptions: {
     parser: '@typescript-eslint/parser'
   },
+  overrides: [
+    {
+      files: ['*.json', '*.json5'],
+      extends: ['plugin:@intlify/vue-i18n/base']
+    },
+    {
+      files: ['*.yaml', '*.yml'],
+      extends: ['plugin:@intlify/vue-i18n/base']
+    }
+  ],
 
   settings: {
     'import/resolver': {
@@ -148,7 +159,8 @@ module.exports = {
     },
     'vue-i18n': {
       localeDir:
-        path.resolve(__dirname, 'src', 'locales') + '/*.{json,json5,yaml,yml}'
+        path.resolve(__dirname, 'src', 'locales') + '/*.{json,json5,yaml,yml}',
+      messageSyntaxVersion: '^9.0.0'
     }
   }
 };

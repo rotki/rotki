@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title>
-      <card-title> {{ $t('asset-locations.title') }}</card-title>
+      <card-title> {{ $t('asset_locations.title') }}</card-title>
     </v-card-title>
     <v-card-text>
       <v-sheet outlined rounded>
