@@ -312,7 +312,8 @@ class EventsHistorian():
         self._increase_progress(step, total_steps)
 
         # include eth2 staking events
-        if has_premium:
+        eth2 = self.chain_manager.get_module('eth2')
+        if eth2 is not None and has_premium:
             self.processing_state_name = 'Querying ETH2 staking history'
             defi_events.extend(self.chain_manager.get_eth2_history_events(
                 from_timestamp=start_ts,

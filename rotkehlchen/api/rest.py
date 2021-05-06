@@ -59,6 +59,7 @@ from rotkehlchen.errors import (
     EthSyncError,
     IncorrectApiKeyFormat,
     InputError,
+    ModuleInactive,
     NoPriceForGivenTimestamp,
     PremiumApiError,
     PremiumAuthenticationError,
@@ -1946,6 +1947,8 @@ class RestAPI():
             result = self.rotkehlchen.chain_manager.get_eth2_staking_deposits()
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+        except ModuleInactive as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
         return {'result': process_result_list([x._asdict() for x in result]), 'message': ''}
 
@@ -1970,6 +1973,8 @@ class RestAPI():
             result = self.rotkehlchen.chain_manager.get_eth2_staking_details()
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+        except ModuleInactive as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
         current_usd_price = Inquirer().find_usd_price(A_ETH)
         return {

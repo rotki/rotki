@@ -450,6 +450,8 @@ def create_test_binance(
         uri = BINANCE_BASE_URL
     elif location == Location.BINANCE_US:
         uri = BINANCE_US_BASE_URL
+    else:
+        raise AssertionError(f'Tried to create binance exchange with location {location}')
     binance = Binance(
         api_key=make_api_key(),
         secret=make_api_secret(),

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2835` Eth2 users with a very big number of validators should no longer get a 429 error.
 * :bug:`2821` Users will now be able to properly scroll through the asset when conflicts appear during the asset database upgrade.
 * :bug:`2837` Binance US users will now be able to see the correct location for their trades and deposits/withdrawals. It should no longer be Binance. To reflect those changes Binance US data should be purged and then requeried. To see how to purge data for an exchange look here: https://rotki.readthedocs.io/en/latest/usage_guide.html#purging-data
 * :bug:`2819` Users using macOS will no longer be stuck at "connecting to backend".

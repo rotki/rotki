@@ -6349,7 +6349,7 @@ Getting Eth2 Staking details
    :resjson deposited_balance object: The amount deposited from the eth1 chain for the validator inside the day along with its usd value.
 
    :statuscode 200: Eth2 staking details succesfully queried
-   :statuscode 409: User is not logged in.
+   :statuscode 409: User is not logged in. Or eth2 module is not activated.
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -6417,7 +6417,7 @@ Getting Eth2 Staking deposits
    :resjson log_index int: The log index of the deposit
 
    :statuscode 200: Eth2 staking deposits succesfully queried
-   :statuscode 409: User is not logged in.
+   :statuscode 409: User is not logged in. Or eth2 module is not activated.
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 

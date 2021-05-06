@@ -1,6 +1,7 @@
 import os
 import random
 from contextlib import ExitStack
+from http import HTTPStatus
 
 import pytest
 import requests
@@ -10,6 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
+    assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
     wait_for_async_task,
@@ -26,6 +28,7 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 ]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
 def test_query_eth2_info(rotkehlchen_api_server, ethereum_accounts):
     """This test uses real data and queries the eth2 deposit contract logs"""
     async_query = random.choice([False, True])
@@ -98,3 +101,32 @@ def test_query_eth2_info(rotkehlchen_api_server, ethereum_accounts):
         # https://twitter.com/LefterisJP/status/1361091757274972160
         assert FVal(performance['amount']) is not None
         assert FVal(performance['usd_value']) is not None
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397',
+]])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+def test_query_eth2_inactive(rotkehlchen_api_server, ethereum_accounts):
+    """Test that quering eth2 module while it's not active properly errors"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=[],
+        original_queries=['logs', 'transactions', 'blocknobytime', 'beaconchain'],
+    )
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'eth2stakedetailsresource',
+            ),
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='Cant query eth2 staking details since eth2 module is not active',
+            status_code=HTTPStatus.CONFLICT,
+        )
