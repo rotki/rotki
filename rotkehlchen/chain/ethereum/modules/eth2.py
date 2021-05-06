@@ -1,6 +1,10 @@
+import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Optional
 
+import gevent
+
+log = logging.getLogger(__name__)
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.eth2_utils import scrape_validator_daily_stats
 from rotkehlchen.chain.ethereum.typing import (
@@ -35,6 +39,10 @@ EVENT_ABI = [x for x in ETH2_DEPOSIT.abi if x['type'] == 'event'][0]
 
 REQUEST_DELTA_TS = 60 * 60  # 1
 
+VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS = 30
+VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE = 20
+VALIDATOR_STATS_QUERY_BACKOFF_TIME = 8
+
 
 class Eth2(EthereumModule):
     """Module representation for Eth2"""
@@ -50,6 +58,8 @@ class Eth2(EthereumModule):
         self.premium = premium
         self.ethereum = ethereum_manager
         self.msg_aggregator = msg_aggregator
+        self.last_stats_query_ts = 0
+        self.validator_stats_queried = 0
 
     def _get_eth2_staking_deposits_onchain(
             self,
@@ -329,11 +339,27 @@ class Eth2(EthereumModule):
         if limit_ts - last_ts <= DAY_IN_SECONDS:
             return known_stats  # no need to requery if less than a day passed
 
+        now = ts_now()
+        should_backoff = (
+            now - self.last_stats_query_ts < VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE and
+            self.validator_stats_queried >= VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS
+        )
+        if should_backoff:
+            log.debug(
+                f'Queried {self.validator_stats_queried} validators in the last '
+                f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE} seconds. Backing off for '
+                f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME} seconds.',
+            )
+            self.validator_stats_queried = 0
+            gevent.sleep(VALIDATOR_STATS_QUERY_BACKOFF_TIME)
+
         new_stats = scrape_validator_daily_stats(
             validator_index=validator_index,
             last_known_timestamp=last_ts,
             msg_aggregator=msg_aggregator,
         )
+        self.validator_stats_queried += 1
+        self.last_stats_query_ts = now
 
         if len(new_stats) != 0:
             dbeth2.add_validator_daily_stats(stats=new_stats)

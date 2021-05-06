@@ -1,6 +1,8 @@
 import logging
+from http import HTTPStatus
 from typing import List, NamedTuple
 
+import gevent
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
 
@@ -61,17 +63,33 @@ def scrape_validator_daily_stats(
     - RemoteError if we can't query beaconcha.in or if the data is not in the expected format
     """
     url = f'https://beaconcha.in/validator/{validator_index}/stats'
-    log.debug(f'Querying beaconchain stats: {url}')
-    try:
-        response = requests.get(url)
-    except requests.exceptions.RequestException as e:
-        raise RemoteError(f'Beaconcha.in api request {url} failed due to {str(e)}') from e
+    tries = 1
+    max_tries = 3
+    backoff = 60
+    while True:
+        log.debug(f'Querying beaconchain stats: {url}')
+        try:
+            response = requests.get(url)
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Beaconcha.in api request {url} failed due to {str(e)}') from e
 
-    if response.status_code != 200:
-        raise RemoteError(
-            f'Beaconcha.in api request {url} failed with code: {response.status_code}'
-            f' and response: {response.text}',
-        )
+        if response.status_code == HTTPStatus.TOO_MANY_REQUESTS and tries <= max_tries:
+            sleep_secs = backoff * tries / max_tries
+            log.warning(
+                f'Querying {url} returned 429. Backoff try {tries} / {max_tries}.'
+                f' We are backing off for {sleep_secs}',
+            )
+            tries += 1
+            gevent.sleep(sleep_secs)
+            continue
+
+        if response.status_code != 200:
+            raise RemoteError(
+                f'Beaconcha.in api request {url} failed with code: {response.status_code}'
+                f' and response: {response.text}',
+            )
+
+        break  # else all good - break from the loop
 
     soup = BeautifulSoup(response.text, 'html.parser', parse_only=SoupStrainer('tbod'))
     if soup is None:
