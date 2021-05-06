@@ -1,5 +1,10 @@
 <template>
-  <location-icon class="location-display" :item="location" :icon="icon" />
+  <location-icon
+    class="location-display"
+    :item="location"
+    :icon="icon"
+    :size="size"
+  />
 </template>
 
 <script lang="ts">
@@ -21,6 +26,8 @@ export default class LocationDisplay extends Mixins(AssetMixin) {
   identifier!: TradeLocation;
   @Prop({ required: false, type: Boolean, default: false })
   icon!: boolean;
+  @Prop({ required: false, type: String, default: '24px' })
+  size!: string;
 
   get location(): TradeLocationData {
     if (this.isSupportedBlockchain(this.identifier)) {

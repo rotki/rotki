@@ -6,10 +6,10 @@
     <span>
       <v-img
         v-if="item.imageIcon"
-        width="24px"
+        :width="size"
         contain
         position="left"
-        max-height="24px"
+        :max-height="size"
         :src="item.icon"
       />
       <v-icon v-else color="accent"> {{ item.icon }} </v-icon>
@@ -31,5 +31,7 @@ export default class LocationIcon extends Vue {
   horizontal!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   icon!: boolean;
+  @Prop({ required: false, type: String, default: '24px' })
+  size!: string;
 }
 </script>
