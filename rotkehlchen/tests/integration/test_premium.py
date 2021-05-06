@@ -391,7 +391,10 @@ def test_try_premium_at_start_first_time_no_previous_db(
         db_password,
         rotki_premium_credentials,
 ):
-    """Regression test for https://github.com/rotki/rotki/issues/1571"""
+    """Regression test for:
+    - https://github.com/rotki/rotki/issues/1571
+    - https://github.com/rotki/rotki/issues/2846
+    """
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
@@ -405,6 +408,12 @@ def test_try_premium_at_start_first_time_no_previous_db(
     )
     # DB should not have changed and no exception raised
     assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
+    # DB should have the given rotki premium credentials saved in it since premium
+    # was succesfully initialized
+    credentials = rotkehlchen_instance.data.db.get_rotkehlchen_premium()
+    assert credentials is not None
+    assert credentials.api_key == rotki_premium_credentials.api_key
+    assert credentials.api_secret == rotki_premium_credentials.api_secret
 
 
 def test_premium_credentials():

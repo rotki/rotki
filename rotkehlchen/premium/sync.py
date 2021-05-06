@@ -284,25 +284,18 @@ class PremiumSyncManager():
 
             if sync_approval == 'yes':
                 log.info('User approved data sync from server')
-                if self._sync_data_from_server_and_replace_local()[0]:
-                    if create_new:
-                        # if we successfully synced data from the server and this is
-                        # a new account, make sure the api keys are properly stored
-                        # in the DB
-                        self.data.db.set_rotkehlchen_premium(self.premium.credentials)
+                self._sync_data_from_server_and_replace_local()  # this may raise due to password
 
             else:
                 log.debug('Could sync data from server but user refused')
         elif result.can_sync == CanSync.YES:
             log.info('User approved data sync from server')
-            if self._sync_data_from_server_and_replace_local()[0]:
-                if create_new:
-                    # if we successfully synced data from the server and this is
-                    # a new account, make sure the api keys are properly stored
-                    # in the DB
-                    self.data.db.set_rotkehlchen_premium(self.premium.credentials)
+            self._sync_data_from_server_and_replace_local()  # this may raise due to password
 
-        # else result.can_sync was no, so we do nothing
+        if create_new:
+            # if this is a new account, make sure the api keys are properly stored
+            # in the DB
+            self.data.db.set_rotkehlchen_premium(self.premium.credentials)
 
         # Success, return premium
         return self.premium
