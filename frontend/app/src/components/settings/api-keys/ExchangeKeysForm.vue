@@ -1,5 +1,5 @@
 <template>
-  <v-form data-cy="exchange-keys" :value="value" @input="input">
+  <v-form ref="form" data-cy="exchange-keys" :value="value" @input="input">
     <v-row class="pt-2">
       <v-col cols="12" md="6">
         <v-autocomplete
@@ -33,8 +33,9 @@
         <v-text-field
           outlined
           :value="exchange.name"
+          :rules="nameRules"
           data-cy="name"
-          :label="$t('exchange_keys_form.name')"
+          :label="$t('exchange_keys_form.name.label')"
           @input="onUpdateExchange({ ...exchange, name: $event })"
         />
       </v-col>
@@ -50,9 +51,13 @@
       @change="onUpdateExchange({ ...exchange, krakenAccountType: $event })"
     />
 
+    <div class="text-subtitle-2">{{ $t('exchange_settings.keys') }}</div>
+
     <revealable-input
       outlined
+      :disabled="edit"
       :value="exchange.apiKey"
+      :rules="!edit ? apiKeyRules : []"
       data-cy="api-key"
       :label="$t('exchange_settings.inputs.api_key')"
       @input="onUpdateExchange({ ...exchange, apiKey: $event })"
@@ -61,7 +66,9 @@
 
     <revealable-input
       outlined
+      :disabled="edit"
       :value="exchange.apiSecret"
+      :rules="!edit ? apiSecretRules : []"
       data-cy="api-secret"
       prepend-icon="mdi-lock"
       :label="$t('exchange_settings.inputs.api_secret')"
@@ -73,6 +80,7 @@
       v-if="requiresPassphrase"
       outlined
       :value="exchange.passphrase"
+      :rules="passphraseRules"
       prepend-icon="mdi-key-plus"
       data-cy="passphrase"
       :label="$t('exchange_settings.inputs.passphrase')"
@@ -119,12 +127,33 @@ export default class ExchangeKeysForm extends Vue {
   @Emit('update:exchange')
   onUpdateExchange(_exchange: ExchangePayload) {}
 
+  readonly nameRules = [
+    (v: string) =>
+      !!v || this.$t('exchange_keys_form.name.non_empty').toString()
+  ];
+
+  readonly apiKeyRules = [
+    (v: string) =>
+      !!v || this.$t('exchange_keys_form.api_key.non_empty').toString()
+  ];
+
+  readonly apiSecretRules = [
+    (v: string) =>
+      !!v || this.$t('exchange_keys_form.api_secret.non_empty').toString()
+  ];
+
+  readonly passphraseRules = [
+    (v: string) =>
+      !!v || this.$t('exchange_keys_form.passphrase.non_empty').toString()
+  ];
+
   get requiresPassphrase(): boolean {
     const exchange = this.exchange.location;
     return exchange === EXCHANGE_COINBASEPRO || exchange === EXCHANGE_KUCOIN;
   }
 
   onExchangeChange(exchange: SupportedExchange) {
+    (this.$refs.form as any).reset();
     this.onUpdateExchange({
       name: '',
       newName: null,
