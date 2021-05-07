@@ -29,6 +29,8 @@
           <create-account
             :loading="loading"
             :displayed="accountCreation && connected"
+            :error="accountCreationError"
+            @error:clear="accountCreationError = ''"
             @cancel="accountCreation = false"
             @confirm="createAccount($event)"
           />
@@ -107,6 +109,7 @@ export default class AccountManagement extends Vue {
   unlock!: (payload: UnlockPayload) => Promise<ActionStatus>;
   setMessage!: (message: Message) => void;
   errors: string[] = [];
+  accountCreationError: string = '';
 
   loglevel: Level = process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL;
 
@@ -201,7 +204,8 @@ export default class AccountManagement extends Vue {
       submitUsageAnalytics
     } = credentials;
     this.loading = true;
-    await this.$store.dispatch('session/unlock', {
+    this.accountCreationError = '';
+    const { message, success } = await this.unlock({
       username,
       password,
       create: true,
@@ -209,12 +213,19 @@ export default class AccountManagement extends Vue {
       apiKey,
       apiSecret,
       submitUsageAnalytics
-    } as UnlockPayload);
-    this.accountCreation = false;
+    });
     this.loading = false;
-    if (this.logged) {
-      this.showGetPremiumButton();
-      this.loginComplete();
+
+    if (success) {
+      this.accountCreation = false;
+
+      if (this.logged) {
+        this.showGetPremiumButton();
+        this.loginComplete();
+      }
+    } else {
+      this.accountCreationError =
+        message ?? this.$t('account_management.creation.error').toString();
     }
   }
 
