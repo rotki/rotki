@@ -5,6 +5,7 @@ Changelog
 * :bug:`2857` Users will now properly see their blockchain balances fetched when restoring to a new account using premium.
 * :bug:`2818` Windows users will now be able to properly login after updating the assets.
 * :bug:`2856` Users will properly see error messages when the account creation fails.
+* :bug:`2851` Users should now see the external trades fetched first when visiting the trades page.
 * :bug:`2835` Eth2 users with a very big number of validators should no longer get a 429 error.
 * :bug:`2846` Premium users who create a new account with premium api credentials that have no saved DB in the server to sync with will have these credentials properly saved in the DB right after creation. At re-login the premium subscription should be properly recognized and the credentials should not need to be input again.
 * :bug:`2821` Users will now be able to properly scroll through the asset when conflicts appear during the asset database upgrade.
