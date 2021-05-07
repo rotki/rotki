@@ -53,9 +53,9 @@ def _replace_assets_from_db(
     INSERT INTO ethereum_tokens SELECT * FROM other_db.ethereum_tokens;
     INSERT INTO underlying_tokens_list SELECT * FROM other_db.underlying_tokens_list;
     INSERT INTO common_asset_details SELECT * FROM other_db.common_asset_details;
-    UPDATE settings SET value=(
-        SELECT value FROM other_db.settings WHERE name="{ASSETS_VERSION_KEY}"
-    ) WHERE name="{ASSETS_VERSION_KEY}";
+    INSERT OR REPLACE INTO settings(name, value) VALUES("{ASSETS_VERSION_KEY}",
+    (SELECT value FROM other_db.settings WHERE name="{ASSETS_VERSION_KEY}")
+    );
     PRAGMA foreign_keys = ON;
     DETACH DATABASE "other_db";
     """)
