@@ -1,7 +1,7 @@
 <template>
   <v-data-table
     v-bind="$attrs"
-    sort-desc
+    :sort-desc="sortDesc"
     must-sort
     :footer-props="footerProps"
     :items-per-page="itemsPerPage"
@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import { footerProps } from '@/config/datatable.common';
 import SettingsMixin from '@/mixins/settings-mixin';
@@ -34,6 +34,9 @@ import { ITEMS_PER_PAGE } from '@/store/settings/consts';
   }
 })
 export default class DataTable extends Mixins(SettingsMixin) {
+  @Prop({ required: false, default: true, type: Boolean })
+  sortDesc!: boolean;
+
   readonly footerProps = footerProps;
   itemsPerPage!: number;
 
