@@ -227,9 +227,11 @@ export default class AssetUpdate extends Vue {
 
   async updateComplete() {
     await this.logout();
+    this.$store.commit('connected', false);
     if (this.$interop.isPackaged) {
       await this.$interop.restartBackend(currentLogLevel());
     }
+    await this.$store.dispatch('connect');
   }
 }
 </script>

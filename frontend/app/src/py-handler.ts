@@ -8,7 +8,9 @@ import tasklist from 'tasklist';
 import { BackendCode } from '@/electron-main/backend-code';
 import { DEFAULT_PORT, selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
+import { wait } from '@/utils/backoff';
 import { Level } from '@/utils/log-level';
+import Task = tasklist.Task;
 
 async function streamToString(givenStream: stream.Readable): Promise<string> {
   const bufferChunks: Buffer[] = [];
@@ -47,6 +49,8 @@ export default class PyHandler {
   private readonly ELECTRON_LOG_PATH: string;
   private _corsURL?: string;
   private backendOutput: string = '';
+  private onChildError?: (err: Error) => void;
+  private onChildExit?: (code: number, signal: any) => void;
 
   get port(): number {
     assert(this._port);
@@ -168,15 +172,15 @@ export default class PyHandler {
     }
 
     const handler = this;
-    childProcess.on('error', (err: Error) => {
+    this.onChildError = (err: Error) => {
       this.logToFile(
         `Encountered an error while trying to start the python sub-process\n\n${err}`
       );
       // Notify the main window every 2 seconds until it acks the notification
       handler.setFailureNotification(window, err, BackendCode.TERMINATED);
-    });
+    };
 
-    childProcess.on('exit', (code: number, signal: any) => {
+    this.onChildExit = (code: number, signal: any) => {
       this.logToFile(
         `The Python sub-process exited with signal: ${signal} (Code: ${code})`
       );
@@ -188,7 +192,10 @@ export default class PyHandler {
           BackendCode.TERMINATED
         );
       }
-    });
+    };
+
+    childProcess.on('error', this.onChildError);
+    childProcess.on('exit', this.onChildExit);
 
     if (childProcess) {
       this.logToFile(
@@ -200,16 +207,25 @@ export default class PyHandler {
   }
 
   async exitPyProc(restart: boolean = false) {
+    const client = this.childProcess;
     this.logToFile(
       restart ? 'Restarting the backend' : 'Terminating the backend'
     );
     if (this.rpcFailureNotifier) {
       clearInterval(this.rpcFailureNotifier);
     }
+    if (restart && client) {
+      if (this.onChildExit) {
+        client.off('exit', this.onChildExit);
+      }
+      if (this.onChildError) {
+        client.off('error', this.onChildError);
+      }
+    }
     if (process.platform === 'win32') {
       return this.terminateWindowsProcesses(restart);
     }
-    const client = this.childProcess;
+
     if (client) {
       return this.terminateBackend(client);
     }
@@ -382,7 +398,8 @@ export default class PyHandler {
         if (!restart) {
           app.exit();
         }
-        resolve();
+
+        this.waitForTermination(tasks, pids).then(resolve);
       });
 
       taskKill.on('error', err => {
@@ -395,6 +412,28 @@ export default class PyHandler {
 
       setTimeout(() => resolve, 15000);
     });
+  }
+
+  private async waitForTermination(tasks: Task[], processes: number[]) {
+    function stillRunning() {
+      return tasks.filter(({ pid }) => processes.includes(pid)).length;
+    }
+
+    let running = stillRunning();
+    if (running === 0) {
+      return;
+    }
+
+    for (let i = 0; i < 10; i++) {
+      this.logToFile(
+        `The ${running} processes are still running. Waiting for 2 seconds`
+      );
+      await wait(2000);
+      running = stillRunning();
+      if (stillRunning.length === 0) {
+        break;
+      }
+    }
   }
 
   private loadArgumentsFromFile(args: string[]) {
