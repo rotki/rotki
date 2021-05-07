@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2857` Users will now properly see their blockchain balances fetched when restoring to a new account using premium.
 * :bug:`2818` Windows users will now be able to properly login after updating the assets.
 * :bug:`2856` Users will properly see error messages when the account creation fails.
 * :bug:`2835` Eth2 users with a very big number of validators should no longer get a 429 error.

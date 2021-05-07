@@ -123,14 +123,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         dispatch('session/fetchWatchers', null, options),
         dispatch('balances/fetchManualBalances', null, options),
         dispatch('statistics/fetchNetValue', null, options),
-        dispatch(
-          'balances/fetch',
-          {
-            newUser: create,
-            exchanges
-          },
-          options
-        ),
+        dispatch('balances/fetch', exchanges, options),
         dispatch('balances/fetchLoopringBalances', false, options)
       ];
 
