@@ -251,14 +251,16 @@ class CostBasisCalculator():
         - rate: The rate in profit currency for which 1 unit of asset is obtained
         - fee_in_profit_currency: The amount of profit currency paid as fee for this acquisition.
             Can be ZERO
+        - amount: The amount that gets obtained. Can be zero for some edge cases.
         """
+        fee_rate = ZERO if amount == ZERO else fee_in_profit_currency / amount
         event = AssetAcquisitionEvent(
             location=location,
             timestamp=timestamp,
             description=description,
             amount=amount,
             rate=rate,
-            fee_rate=fee_in_profit_currency / amount,
+            fee_rate=fee_rate,
         )
         asset_events = self.get_events(asset)
         asset_events.acquisitions.append(event)
@@ -274,12 +276,13 @@ class CostBasisCalculator():
             fee_in_profit_currency: FVal = ZERO,
             gain_in_profit_currency: FVal = ZERO,
     ) -> None:
+        fee_rate = ZERO if amount == ZERO else fee_in_profit_currency / amount
         event = AssetSpendEvent(
             location=location,
             timestamp=timestamp,
             amount=amount,
             rate=rate,
-            fee_rate=fee_in_profit_currency / amount,
+            fee_rate=fee_rate,
             gain=gain_in_profit_currency,
         )
         asset_events = self.get_events(asset)
