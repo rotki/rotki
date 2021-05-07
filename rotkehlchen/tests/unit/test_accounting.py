@@ -1,6 +1,9 @@
 import pytest
 
-from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH
+from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
+from rotkehlchen.chain.ethereum.structures import AaveInterestEvent
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH, A_WBTC
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
@@ -741,3 +744,56 @@ def test_not_calculate_past_cost_basis(accountant, db_settings):
     assert FVal(result['overview']['taxable_trade_profit_loss']).is_close(expected)
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close(expected)
     assert FVal(result['overview']['total_profit_loss']).is_close(expected)
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_defi_event_zero_amount(accountant):
+    """Test that if a Defi Event with a zero amount obtained
+    comes in we don't raise an error
+
+    Regression test for a division by zero error a user reported
+    """
+    defi_events = [DefiEvent(
+        timestamp=1467279735,
+        wrapped_event=AaveInterestEvent(
+            event_type='interest',
+            asset=A_WBTC,
+            value=Balance(amount=FVal(0), usd_value=FVal(0)),
+            block_number=4,
+            timestamp=Timestamp(1467279735),
+            tx_hash='0x49c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+            log_index=4,
+        ),
+        event_type=DefiEventType.AAVE_EVENT,
+        got_asset=A_WBTC,
+        got_balance=Balance(amount=FVal(0), usd_value=FVal(0)),
+        spent_asset=A_WBTC,
+        spent_balance=Balance(amount=FVal(0), usd_value=FVal(0)),
+        pnl=[AssetBalance(asset=A_WBTC, balance=Balance(amount=FVal(0), usd_value=FVal(0)))],
+        count_spent_got_cost_basis=True,
+        tx_hash='0x49c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
+    )]
+    result = accounting_history_process(
+        accountant=accountant,
+        start_ts=1466979735,
+        end_ts=1519693374,
+        history_list=[],
+        defi_events_list=defi_events,
+    )
+
+    assert result['all_events'][0] == {
+        'cost_basis': None,
+        'is_virtual': False,
+        'location': 'blockchain',
+        'net_profit_or_loss': ZERO,
+        'paid_asset': 'WBTC(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599)',
+        'paid_in_asset': ZERO,
+        'paid_in_profit_currency': ZERO,
+        'received_asset': '',
+        'received_in_asset': ZERO,
+        'taxable_amount': ZERO,
+        'taxable_bought_cost_in_profit_currency': ZERO,
+        'taxable_received_in_profit_currency': ZERO,
+        'time': 1467279735,
+        'type': 'defi_event',
+    }
