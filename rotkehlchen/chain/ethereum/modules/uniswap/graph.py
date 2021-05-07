@@ -141,6 +141,45 @@ SWAPS_QUERY = (
     """
 )
 
+V3_SWAPS_QUERY = (
+    """
+    swaps
+    (
+        first: $limit,
+        skip: $offset,
+        where: {{
+            recipient: $address,
+            timestamp_gte: $start_ts,
+            timestamp_lte: $end_ts,
+        }}
+    ) {{
+        transaction {{
+            swaps {{
+                id
+                logIndex
+                sender
+                recipient
+                timestamp
+                token0 {{
+                    id
+                    decimals
+                    name
+                    symbol
+                }}
+                token1 {{
+                    id
+                    decimals
+                    name
+                    symbol
+                }}
+                amount0
+                amount1
+            }}
+        }}
+    }}}}
+    """
+)
+
 # Get LP events queries
 # TODO: At the moment there are no protocol fees. However, it is possible they
 # turn them on in a future. The fees (from `feeTo` field in both `mints` and
