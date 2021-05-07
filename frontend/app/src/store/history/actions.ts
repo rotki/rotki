@@ -115,10 +115,10 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     const { connectedExchanges } = balances!;
     const locations: TradeLocation[] = [
-      ...connectedExchanges,
       ...(source !== FETCH_FROM_SOURCE
         ? ([TRADE_LOCATION_EXTERNAL, EXCHANGE_CRYPTOCOM] as TradeLocation[])
-        : [])
+        : []),
+      ...connectedExchanges
     ];
 
     const fetchLocation: (
