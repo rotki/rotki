@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.16.2 <2021-05-07>`
 * :bug:`2857` Users will now properly see their blockchain balances fetched when restoring to a new account using premium.
 * :bug:`2818` Windows users will now be able to properly login after updating the assets.
 * :bug:`2856` Users will properly see error messages when the account creation fails.
