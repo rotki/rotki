@@ -2349,6 +2349,9 @@
     "message": "Connecting to rotki backend"
   },
   "account_management": {
+    "creation": {
+      "error": "Account creation failed"
+    },
     "custom_backend": {
       "failed":  {
         "title": "Could not connect to custom backend",

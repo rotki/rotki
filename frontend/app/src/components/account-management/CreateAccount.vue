@@ -107,6 +107,9 @@
               >
                 {{ $t('create_account.usage_analytics.description') }}
               </v-alert>
+              <v-alert v-if="error" type="error" outlined>
+                {{ error }}
+              </v-alert>
               <v-row no-gutters>
                 <v-col>
                   <v-checkbox
@@ -125,7 +128,7 @@
                 depressed
                 :disabled="loading"
                 outlined
-                @click="step = 1"
+                @click="back"
               >
                 {{ $t('create_account.usage_analytics.button_back') }}
               </v-btn>
@@ -162,6 +165,9 @@ export default class CreateAccount extends Vue {
 
   @Prop({ required: true, type: Boolean, default: false })
   loading!: boolean;
+
+  @Prop({ required: false, type: String, default: '' })
+  error!: string;
 
   username: string = '';
   password: string = '';
@@ -264,6 +270,16 @@ export default class CreateAccount extends Vue {
 
   @Emit()
   cancel() {}
+
+  @Emit('error:clear')
+  errorClear() {}
+
+  back() {
+    this.step = 1;
+    if (this.error) {
+      this.errorClear();
+    }
+  }
 }
 </script>
 
