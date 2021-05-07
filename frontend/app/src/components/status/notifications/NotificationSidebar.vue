@@ -145,7 +145,6 @@ export default class NotificationSidebar extends Vue {
   }
 
   &__details {
-    background-color: white;
     overflow-y: hidden;
     height: calc(100% - 64px);
     font-weight: 400;

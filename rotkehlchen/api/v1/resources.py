@@ -39,6 +39,7 @@ from rotkehlchen.api.v1.encoding import (
     ExchangeRatesSchema,
     ExchangesDataResourceSchema,
     ExchangesResourceAddSchema,
+    ExchangesResourceEditSchema,
     ExchangesResourceRemoveSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
@@ -111,6 +112,7 @@ from rotkehlchen.typing import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
     from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
+    from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 
 def _combine_parser_data(
@@ -233,6 +235,7 @@ class ExchangeRatesResource(BaseResource):
 class ExchangesResource(BaseResource):
 
     put_schema = ExchangesResourceAddSchema()
+    patch_schema = ExchangesResourceEditSchema()
     delete_schema = ExchangesResourceRemoveSchema()
 
     def get(self) -> Response:
@@ -242,15 +245,41 @@ class ExchangesResource(BaseResource):
     def put(
             self,
             name: str,
+            location: Location,
             api_key: ApiKey,
             api_secret: ApiSecret,
             passphrase: Optional[str],
+            kraken_account_type: Optional['KrakenAccountType'],
     ) -> Response:
-        return self.rest_api.setup_exchange(name, api_key, api_secret, passphrase)
+        return self.rest_api.setup_exchange(
+            name=name,
+            location=location,
+            api_key=api_key,
+            api_secret=api_secret,
+            passphrase=passphrase,
+            kraken_account_type=kraken_account_type,
+        )
+
+    @use_kwargs(patch_schema, location='json')  # type: ignore
+    def patch(
+            self,
+            name: str,
+            location: Location,
+            new_name: Optional[str],
+            passphrase: Optional[str],
+            kraken_account_type: Optional['KrakenAccountType'],
+    ) -> Response:
+        return self.rest_api.edit_exchange(
+            name=name,
+            location=location,
+            new_name=new_name,
+            passphrase=passphrase,
+            kraken_account_type=kraken_account_type,
+        )
 
     @use_kwargs(delete_schema, location='json')  # type: ignore
-    def delete(self, name: str) -> Response:
-        return self.rest_api.remove_exchange(name=name)
+    def delete(self, name: str, location: Location) -> Response:
+        return self.rest_api.remove_exchange(name=name, location=location)
 
 
 class ExchangesDataResource(BaseResource):
@@ -258,8 +287,8 @@ class ExchangesDataResource(BaseResource):
     delete_schema = ExchangesDataResourceSchema()
 
     @use_kwargs(delete_schema, location='view_args')  # type: ignore
-    def delete(self, name: Optional[str]) -> Response:
-        return self.rest_api.purge_exchange_data(name=name)
+    def delete(self, location: Optional[Location]) -> Response:
+        return self.rest_api.purge_exchange_data(location=location)
 
 
 class EthereumTransactionsResource(BaseResource):
@@ -333,9 +362,9 @@ class ExchangeBalancesResource(BaseResource):
     get_schema = ExchangeBalanceQuerySchema()
 
     @use_kwargs(get_schema, location='json_and_query_and_view_args')  # type: ignore
-    def get(self, name: Optional[str], async_query: bool, ignore_cache: bool) -> Response:
+    def get(self, location: Optional[Location], async_query: bool, ignore_cache: bool) -> Response:
         return self.rest_api.query_exchange_balances(
-            name=name,
+            location=location,
             async_query=async_query,
             ignore_cache=ignore_cache,
         )
@@ -1059,13 +1088,13 @@ class DataImportResource(BaseResource):
     upload_schema = DataImportSchema()
 
     @use_kwargs(upload_schema, location='json')  # type: ignore
-    def put(self, source: Literal['cointracking.info', 'crypto.com'], file: Path) -> Response:
+    def put(self, source: Literal['cointracking.info', 'cryptocom'], file: Path) -> Response:
         return self.rest_api.import_data(source=source, filepath=file)
 
     @use_kwargs(upload_schema, location='form_and_file')  # type: ignore
     def post(
             self,
-            source: Literal['cointracking.info', 'crypto.com'],
+            source: Literal['cointracking.info', 'cryptocom'],
             file: FileStorage,
     ) -> Response:
         with TemporaryDirectory() as temp_directory:

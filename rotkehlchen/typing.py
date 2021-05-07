@@ -6,6 +6,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.chain.substrate.typing import KusamaAddress
 from rotkehlchen.fval import FVal
+from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 
 ModuleName = Literal[
     'makerdao_dsr',
@@ -58,28 +59,6 @@ B64EncodedString = NewType('B64EncodedString', T_B64EncodedString)
 
 T_HexColorCode = str
 HexColorCode = NewType('HexColorCode', T_HexColorCode)
-
-
-class ApiCredentials(NamedTuple):
-    """Represents Credentials for various APIs. Exchanges, Premium e.t.c.
-
-    The Api in question must at least have an API key and an API secret.
-    """
-    api_key: ApiKey
-    api_secret: ApiSecret
-    passphrase: Optional[str] = None
-
-    @staticmethod
-    def serialize(
-            api_key: str,
-            api_secret: str,
-            passphrase: Optional[str] = None,
-    ) -> 'ApiCredentials':
-        return ApiCredentials(
-            api_key=ApiKey(api_key),
-            api_secret=ApiSecret(str.encode(api_secret)),
-            passphrase=passphrase,
-        )
 
 
 class ExternalService(Enum):
@@ -266,7 +245,7 @@ class TradeType(Enum):
         raise RuntimeError(f'Corrupt value {self} for TradeType -- Should never happen')
 
 
-class Location(Enum):
+class Location(DBEnumMixIn):
     """Supported Locations"""
     EXTERNAL = 1
     KRAKEN = 2
@@ -286,7 +265,7 @@ class Location(Enum):
     CRYPTOCOM = 16
     UNISWAP = 17
     BITSTAMP = 18
-    BINANCE_US = 19
+    BINANCEUS = 19
     BITFINEX = 20
     BITCOINDE = 21
     ICONOMI = 22
@@ -294,118 +273,6 @@ class Location(Enum):
     BALANCER = 24
     LOOPRING = 25
     FTX = 26
-
-    def __str__(self) -> str:
-        if self == Location.EXTERNAL:
-            return 'external'
-        if self == Location.KRAKEN:
-            return 'kraken'
-        if self == Location.POLONIEX:
-            return 'poloniex'
-        if self == Location.BITTREX:
-            return 'bittrex'
-        if self == Location.BINANCE:
-            return 'binance'
-        if self == Location.BITMEX:
-            return 'bitmex'
-        if self == Location.COINBASE:
-            return 'coinbase'
-        if self == Location.TOTAL:
-            return 'total'
-        if self == Location.BANKS:
-            return 'banks'
-        if self == Location.BLOCKCHAIN:
-            return 'blockchain'
-        if self == Location.COINBASEPRO:
-            return 'coinbasepro'
-        if self == Location.GEMINI:
-            return 'gemini'
-        if self == Location.EQUITIES:
-            return 'equities'
-        if self == Location.REALESTATE:
-            return 'realestate'
-        if self == Location.COMMODITIES:
-            return 'commodities'
-        if self == Location.CRYPTOCOM:
-            return 'crypto.com'
-        if self == Location.UNISWAP:
-            return 'uniswap'
-        if self == Location.BITSTAMP:
-            return 'bitstamp'
-        if self == Location.BINANCE_US:
-            return 'binance_us'
-        if self == Location.BITFINEX:
-            return 'bitfinex'
-        if self == Location.BITCOINDE:
-            return 'bitcoinde'
-        if self == Location.ICONOMI:
-            return 'iconomi'
-        if self == Location.KUCOIN:
-            return 'kucoin'
-        if self == Location.BALANCER:
-            return 'balancer'
-        if self == Location.LOOPRING:
-            return 'loopring'
-        if self == Location.FTX:
-            return 'ftx'
-        # else
-        raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
-
-    def serialize_for_db(self) -> str:
-        if self == Location.EXTERNAL:
-            return 'A'
-        if self == Location.KRAKEN:
-            return 'B'
-        if self == Location.POLONIEX:
-            return 'C'
-        if self == Location.BITTREX:
-            return 'D'
-        if self == Location.BINANCE:
-            return 'E'
-        if self == Location.BITMEX:
-            return 'F'
-        if self == Location.COINBASE:
-            return 'G'
-        if self == Location.TOTAL:
-            return 'H'
-        if self == Location.BANKS:
-            return 'I'
-        if self == Location.BLOCKCHAIN:
-            return 'J'
-        if self == Location.COINBASEPRO:
-            return 'K'
-        if self == Location.GEMINI:
-            return 'L'
-        if self == Location.EQUITIES:
-            return 'M'
-        if self == Location.REALESTATE:
-            return 'N'
-        if self == Location.COMMODITIES:
-            return 'O'
-        if self == Location.CRYPTOCOM:
-            return 'P'
-        if self == Location.UNISWAP:
-            return 'Q'
-        if self == Location.BITSTAMP:
-            return 'R'
-        if self == Location.BINANCE_US:
-            return 'S'
-        if self == Location.BITFINEX:
-            return 'T'
-        if self == Location.BITCOINDE:
-            return 'U'
-        if self == Location.ICONOMI:
-            return 'V'
-        if self == Location.KUCOIN:
-            return 'W'
-        if self == Location.BALANCER:
-            return 'X'
-        if self == Location.LOOPRING:
-            return 'Y'
-        if self == Location.FTX:
-            return 'Z'
-        # else
-        raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 
 
 class AssetMovementCategory(Enum):
@@ -438,3 +305,15 @@ class BlockchainAccountData(NamedTuple):
     address: BlockchainAddress
     label: Optional[str] = None
     tags: Optional[List[str]] = None
+
+
+class ExchangeApiCredentials(NamedTuple):
+    """Represents Credentials for Exchanges
+
+    The Api in question must at least have an API key and an API secret.
+    """
+    name: str  # A unique name to identify this particular Location credentials
+    location: Location
+    api_key: ApiKey
+    api_secret: ApiSecret
+    passphrase: Optional[str] = None

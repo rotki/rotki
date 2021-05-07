@@ -17,14 +17,13 @@ from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_category_from_db,
-    deserialize_location_from_db,
     deserialize_trade_type_from_db,
 )
+from rotkehlchen.typing import Location
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from sqlite3 import Cursor
-
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -150,7 +149,7 @@ class V24V25UpgradeHelper():
             # formulate the new DB identifier primary key. Copy the identifier() functionality
             open_time_str = 'None' if entry[2] == 0 else str(entry[2])
             new_id_string = (
-                str(deserialize_location_from_db(entry[1])) +
+                str(Location.deserialize_from_db(entry[1])) +
                 open_time_str +
                 str(entry[3]) +
                 new_pl_currency +
@@ -198,7 +197,7 @@ class V24V25UpgradeHelper():
             new_fee_asset = self.get_new_asset_identifier_if_existing(entry[8])
             # formulate the new DB identifier primary key. Copy the identifier() functionality
             new_id_string = (
-                str(deserialize_location_from_db(entry[1])) +
+                str(Location.deserialize_from_db(entry[1])) +
                 str(deserialize_asset_movement_category_from_db(entry[2])) +
                 str(entry[5]) +
                 new_asset +
@@ -326,7 +325,7 @@ class V24V25UpgradeHelper():
                 self.msg_aggregator.add_warning(
                     f'During v24 -> v25 DB upgrade {str(e)}. This should not have happened.'
                     f' Removing the trade with id {entry[0]} at timestamp {entry[1]} '
-                    f'and location {str(deserialize_location_from_db(entry[2]))} that '
+                    f'and location {str(Location.deserialize_from_db(entry[2]))} that '
                     f'contained the offending pair from the DB.',
                 )
                 continue
@@ -345,7 +344,7 @@ class V24V25UpgradeHelper():
             notes = None if entry[10] == '' else entry[10]
             # Copy the identifier() functionality. This identifier does not sound like a good idea
             new_trade_id_string = (
-                str(deserialize_location_from_db(entry[2])) +
+                str(Location.deserialize_from_db(entry[2])) +
                 str(timestamp) +
                 str(deserialize_trade_type_from_db(entry[4])) +
                 new_base +

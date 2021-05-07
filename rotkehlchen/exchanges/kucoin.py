@@ -59,7 +59,8 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.mixins import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
+from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -157,6 +158,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
@@ -164,7 +166,13 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             passphrase: str,
             base_uri: str = 'https://api.kucoin.com',
     ):
-        super().__init__(str(Location.KUCOIN), api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.KUCOIN,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.base_uri = base_uri
         self.api_passphrase = passphrase
         self.session.headers.update({
@@ -173,6 +181,9 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             'KC-API-KEY-VERSION': '2',
         })
         self.msg_aggregator = msg_aggregator
+
+    def update_passphrase(self, new_passphrase: str) -> None:
+        self.api_passphrase = new_passphrase
 
     def _api_query(
             self,

@@ -15,7 +15,10 @@ import {
   EXPLORERS,
   ITEMS_PER_PAGE,
   AMOUNT_ROUNDING_MODE,
-  VALUE_ROUNDING_MODE
+  VALUE_ROUNDING_MODE,
+  DARK_MODE_ENABLED,
+  LIGHT_THEME,
+  DARK_THEME
 } from '@/store/settings/consts';
 import { CurrencyLocation } from '@/typing/types';
 import RoundingMode = BigNumber.RoundingMode;
@@ -44,6 +47,17 @@ export type ExplorersSettings = {
   readonly KSM?: ExplorerEndpoints;
 };
 
+export interface Themes {
+  readonly light: ThemeColors;
+  readonly dark: ThemeColors;
+}
+
+export type ThemeColors = {
+  readonly primary: string;
+  readonly accent: string;
+  readonly graph: string;
+};
+
 export interface SettingsState {
   readonly [DEFI_SETUP_DONE]: boolean;
   readonly [TIMEFRAME_SETTING]: TimeFrameSetting;
@@ -58,6 +72,9 @@ export interface SettingsState {
   readonly [ITEMS_PER_PAGE]: number;
   readonly [AMOUNT_ROUNDING_MODE]: RoundingMode;
   readonly [VALUE_ROUNDING_MODE]: RoundingMode;
+  readonly [DARK_MODE_ENABLED]: boolean;
+  readonly [LIGHT_THEME]: ThemeColors;
+  readonly [DARK_THEME]: ThemeColors;
 }
 
 export type FrontendSettingsPayload = {

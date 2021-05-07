@@ -1,16 +1,17 @@
 import pytest
 
 from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_WETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location
-from rotkehlchen.constants.misc import ZERO
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_calculate_spend_cost_basis_after_year(accountant):
-    asset = 'BTC'
-    events = accountant.events.cost_basis.events
-    events[asset].acquisitions.append(
+    asset = A_BTC
+    asset_events = accountant.events.cost_basis.get_events(asset)
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -20,7 +21,7 @@ def test_calculate_spend_cost_basis_after_year(accountant):
             fee_rate=FVal(0.0001),
         ),
     )
-    events[asset].acquisitions.append(
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -30,7 +31,7 @@ def test_calculate_spend_cost_basis_after_year(accountant):
             fee_rate=FVal(0.0019),
         ),
     )
-    events[asset].acquisitions.append(
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -61,9 +62,9 @@ def test_calculate_spend_cost_basis_after_year(accountant):
     assert cinfo.matched_acquisitions[1].event.amount == FVal(15)
     assert cinfo.matched_acquisitions[1].event.remaining_amount == FVal(12)
 
-    acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
+    acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 2, 'first buy should have been used'
-    remaining_amount = accountant.events.cost_basis.events[asset].acquisitions[0].remaining_amount
+    remaining_amount = asset_events.acquisitions[0].remaining_amount
     assert remaining_amount == FVal(12), '3 of 15 should have been consumed'
 
 
@@ -72,9 +73,9 @@ def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant):
 
     Regression test for part of https://github.com/rotki/rotki/issues/223
     """
-    asset = 'BTC'
-    events = accountant.events.cost_basis.events
-    events[asset].acquisitions.append(
+    asset = A_BTC
+    asset_events = accountant.events.cost_basis.get_events(asset)
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -101,7 +102,7 @@ def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant):
     assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
     assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
 
-    acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
+    acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 0, 'only buy should have been used'
 
 
@@ -111,9 +112,9 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
     Regression test for taxable part of:
     https://github.com/rotki/rotki/issues/223
     """
-    asset = 'BTC'
-    events = accountant.events.cost_basis.events
-    events[asset].acquisitions.append(
+    asset = A_BTC
+    asset_events = accountant.events.cost_basis.get_events(asset)
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -140,9 +141,9 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
     assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
     assert cinfo.matched_acquisitions[0].event.remaining_amount == FVal(2)
 
-    acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
+    acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 1, 'whole buy was not used'
-    remaining_amount = accountant.events.cost_basis.events[asset].acquisitions[0].remaining_amount
+    remaining_amount = asset_events.acquisitions[0].remaining_amount
     assert remaining_amount == FVal(2), '3 of 5 should have been consumed'
 
     # now eat up all the rest
@@ -162,7 +163,7 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
     assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
     assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
 
-    acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
+    acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 0, 'the buy should have been used'
 
 
@@ -173,9 +174,9 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
     Regression test for taxfree part of:
     https://github.com/rotki/rotki/issues/223
     """
-    asset = 'BTC'
-    events = accountant.events.cost_basis.events
-    events[asset].acquisitions.append(
+    asset = A_BTC
+    asset_events = accountant.events.cost_basis.get_events(asset)
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -202,9 +203,9 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
     assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
     assert cinfo.matched_acquisitions[0].event.remaining_amount == FVal(2)
 
-    acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
+    acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 1, 'whole buy was not used'
-    remaining_amount = accountant.events.cost_basis.events[asset].acquisitions[0].remaining_amount
+    remaining_amount = asset_events.acquisitions[0].remaining_amount
     assert remaining_amount == FVal(2), '3 of 5 should have been consumed'
 
     spending_amount = FVal(2)
@@ -223,15 +224,15 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
     assert cinfo.matched_acquisitions[0].event.amount == FVal(5)
     assert cinfo.matched_acquisitions[0].event.remaining_amount == ZERO
 
-    acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
+    acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 0, 'the buy should have been used'
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant):
-    asset = 'BTC'
-    events = accountant.events.cost_basis.events
-    events[asset].acquisitions.append(
+    asset = A_BTC
+    asset_events = accountant.events.cost_basis.get_events(asset)
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -241,7 +242,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
             fee_rate=FVal(0.0001),
         ),
     )
-    events[asset].acquisitions.append(
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -272,15 +273,15 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
     assert cinfo.matched_acquisitions[1].event.amount == FVal(1)
     assert cinfo.matched_acquisitions[1].event.remaining_amount == ZERO
 
-    acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
+    acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 0, 'only buy should have been used'
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant):
-    asset = 'BTC'
-    events = accountant.events.cost_basis.events
-    events[asset].acquisitions.append(
+    asset = A_BTC
+    asset_events = accountant.events.cost_basis.get_events(asset)
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -290,7 +291,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant)
             fee_rate=FVal(0.0001),
         ),
     )
-    events[asset].acquisitions.append(
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -321,14 +322,14 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant)
     assert cinfo.matched_acquisitions[1].event.amount == FVal(1)
     assert cinfo.matched_acquisitions[1].event.remaining_amount == ZERO
 
-    acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
+    acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 0, 'only buy should have been used'
 
 
 def test_reduce_asset_amount(accountant):
-    asset = 'BTC'
-    events = accountant.events.cost_basis.events
-    events[asset].acquisitions.append(
+    asset = A_ETH
+    asset_events = accountant.events.cost_basis.get_events(asset)
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -338,7 +339,7 @@ def test_reduce_asset_amount(accountant):
             fee_rate=FVal(0.0001),
         ),
     )
-    events[asset].acquisitions.append(
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -348,7 +349,7 @@ def test_reduce_asset_amount(accountant):
             fee_rate=FVal(0.0019),
         ),
     )
-    events[asset].acquisitions.append(
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -360,16 +361,20 @@ def test_reduce_asset_amount(accountant):
     )
 
     assert accountant.events.cost_basis.reduce_asset_amount(asset, FVal(1.5))
-    acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
+    acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 2, '1 buy should be used'
-    remaining_amount = accountant.events.cost_basis.events[asset].acquisitions[0].remaining_amount
+    remaining_amount = asset_events.acquisitions[0].remaining_amount
     assert remaining_amount == FVal(0.5), '0.5 of 2nd buy should remain'
+
+    # make sure same thing works for WETH
+    equivalent_events = accountant.events.cost_basis.get_events(A_WETH)
+    assert equivalent_events.acquisitions[0].remaining_amount == FVal(0.5)
 
 
 def test_reduce_asset_amount_exact(accountant):
-    asset = 'BTC'
-    events = accountant.events.cost_basis.events
-    events[asset].acquisitions.append(
+    asset = A_BTC
+    asset_events = accountant.events.cost_basis.get_events(asset)
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -379,7 +384,7 @@ def test_reduce_asset_amount_exact(accountant):
             fee_rate=FVal(0.0001),
         ),
     )
-    events[asset].acquisitions.append(
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -391,7 +396,7 @@ def test_reduce_asset_amount_exact(accountant):
     )
 
     assert accountant.events.cost_basis.reduce_asset_amount(asset, FVal(2))
-    acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
+    acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 0, 'all buys should be used'
 
 
@@ -401,9 +406,9 @@ def test_reduce_asset_amount_not_bought(accountant):
 
 
 def test_reduce_asset_amount_more_that_bought(accountant):
-    asset = 'BTC'
-    events = accountant.events.cost_basis.events
-    events[asset].acquisitions.append(
+    asset = A_ETH
+    asset_events = accountant.events.cost_basis.get_events(asset)
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -413,7 +418,7 @@ def test_reduce_asset_amount_more_that_bought(accountant):
             fee_rate=FVal(0.0001),
         ),
     )
-    events[asset].acquisitions.append(
+    asset_events.acquisitions.append(
         AssetAcquisitionEvent(
             location=Location.EXTERNAL,
             description='trade',
@@ -424,6 +429,7 @@ def test_reduce_asset_amount_more_that_bought(accountant):
         ),
     )
 
-    assert not accountant.events.cost_basis.reduce_asset_amount(asset, FVal(3))
-    acquisitions_num = len(accountant.events.cost_basis.events[asset].acquisitions)
+    # Also reduce WETH, to make sure it's counted same as ETH
+    assert not accountant.events.cost_basis.reduce_asset_amount(A_WETH, FVal(3))
+    acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 0, 'all buys should be used'

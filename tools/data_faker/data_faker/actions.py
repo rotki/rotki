@@ -8,7 +8,7 @@ from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.serialization.deserialize import deserialize_location, pair_get_assets
+from rotkehlchen.serialization.deserialize import pair_get_assets
 from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.typing import Location, Timestamp, TradePair
 
@@ -208,7 +208,7 @@ class ActionWriter():
         base, quote = pair.split('_')
         trade = Trade(
             timestamp=ts,
-            location=deserialize_location(exchange_name),
+            location=Location.deserialize(exchange_name),
             base_asset=base,
             quote_asset=quote,
             trade_type=action_type,

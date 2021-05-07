@@ -18,7 +18,7 @@
           {{ currency.unicode_symbol }}
         </menu-tooltip-button>
       </template>
-      <div class="currency-dropdown__content">
+      <div :style="backgroundStyle">
         <v-row class="ps-4 pe-4">
           <v-col>
             <v-text-field
@@ -55,10 +55,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { currencies } from '@/data/currencies';
+import ThemeMixin from '@/mixins/theme-mixin';
 import { Currency } from '@/model/currency';
 import { SettingsUpdate } from '@/typing/types';
 
@@ -69,7 +70,7 @@ import { SettingsUpdate } from '@/typing/types';
     ...mapActions('session', ['updateSettings'])
   }
 })
-export default class CurrencyDropDown extends Vue {
+export default class CurrencyDropDown extends Mixins(ThemeMixin) {
   currency!: Currency;
   updateSettings!: (update: SettingsUpdate) => Promise<void>;
   filter: string = '';
@@ -118,10 +119,6 @@ export default class CurrencyDropDown extends Vue {
   .currency-dropdown {
     font-size: 1.6em !important;
     font-weight: bold !important;
-
-    &__content {
-      background: white;
-    }
 
     &__list {
       max-height: 400px;

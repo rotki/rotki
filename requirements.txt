@@ -6,7 +6,7 @@ requests==2.25.1
 pycryptodome==3.6.6
 pycryptodomex==3.6.6
 coincurve==13.0.0
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
 base58check==1.0.2
 bech32==1.2.0
 gql==2.0.0

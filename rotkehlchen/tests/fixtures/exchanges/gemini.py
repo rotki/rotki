@@ -54,6 +54,7 @@ def sandbox_gemini(
         gemini_test_base_uri,
 ):
     gemini = Gemini(
+        name='gemini',
         api_key=gemini_sandbox_api_key,
         secret=gemini_sandbox_api_secret,
         database=database,

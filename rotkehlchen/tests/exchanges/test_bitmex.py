@@ -12,8 +12,9 @@ from rotkehlchen.utils.misc import ts_now
 
 
 def test_name():
-    exchange = Bitmex('a', b'a', object(), object())
-    assert exchange.name == 'bitmex'
+    exchange = Bitmex('bitmex1', 'a', b'a', object(), object())
+    assert exchange.location == Location.BITMEX
+    assert exchange.name == 'bitmex1'
 
 
 def test_bitmex_api_signature(mock_bitmex):

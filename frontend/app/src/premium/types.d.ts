@@ -1,6 +1,7 @@
 import { TimeUnit } from '@/components/dashboard/types';
 import { DebugSettings } from '@/electron-main/ipc';
 import { SupportedAsset } from '@/services/types-model';
+import { FrontendSettingsPayload, Themes } from '@/store/settings/types';
 
 export interface RotkiPremiumInterface {
   readonly useHostComponents: boolean;
@@ -24,7 +25,14 @@ interface DataUtilities {
   getIdentifierForSymbol(symbol: string): string | undefined;
 }
 
+interface SettingsApi {
+  update(settings: FrontendSettingsPayload): Promise<void>;
+  defaultThemes(): Themes;
+  themes(): Themes;
+}
+
 export type ExposedUtilities = {
   readonly date: DateUtilities;
   readonly data: DataUtilities;
+  readonly settings: SettingsApi;
 };

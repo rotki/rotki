@@ -1,18 +1,19 @@
 from unittest.mock import patch
 
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, A_USDC, A_1INCH
+from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_USD, A_USDC
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.coinbase import Coinbase, trade_from_conversion
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
 
 
 def test_name():
-    exchange = Coinbase('a', b'a', object(), object())
-    assert exchange.name == 'coinbase'
+    exchange = Coinbase('coinbase1', 'a', b'a', object(), object())
+    assert exchange.location == Location.COINBASE
+    assert exchange.name == 'coinbase1'
 
 
 def test_coinbase_query_balances(function_scope_coinbase):

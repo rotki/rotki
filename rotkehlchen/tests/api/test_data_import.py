@@ -63,7 +63,7 @@ def test_data_import_cryptocom(rotkehlchen_api_server):
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     filepath = os.path.join(dir_path, 'data', 'cryptocom_trades_list.csv')
 
-    json_data = {'source': 'crypto.com', 'file': filepath}
+    json_data = {'source': 'cryptocom', 'file': filepath}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,

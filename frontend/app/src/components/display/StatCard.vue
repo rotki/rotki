@@ -11,7 +11,14 @@
           :src="protocolIcon"
         />
       </div>
-      <div class="stat-card__border__gradient" />
+      <div
+        class="stat-card__border__gradient"
+        :class="
+          $vuetify.theme.dark
+            ? 'stat-card__border__gradient--dark'
+            : 'stat-card__border__gradient--light'
+        "
+      />
     </div>
     <div class="stat-card__content flex-grow-1">
       <v-card-title class="py-2">
@@ -32,13 +39,14 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import PremiumLock from '@/components/helper/PremiumLock.vue';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
+import ThemeMixin from '@/mixins/theme-mixin';
 
 @Component({
   components: { PremiumLock }
 })
-export default class StatCard extends Vue {
+export default class StatCard extends Mixins(ThemeMixin) {
   @Prop({ required: false })
   title!: string;
   @Prop({ required: false, type: Boolean, default: false })
@@ -56,6 +64,10 @@ export default class StatCard extends Vue {
 .stat-card {
   width: 100%;
   min-height: 130px;
+
+  &__image {
+    z-index: 1;
+  }
 
   ::v-deep {
     .v-card {
@@ -78,7 +90,18 @@ export default class StatCard extends Vue {
       left: 0;
       height: 100%;
       width: 48px;
-      background: linear-gradient(115deg, rgba(255, 0, 0, 0), white);
+
+      &--light {
+        background: linear-gradient(
+          115deg,
+          rgba(255, 0, 0, 0),
+          rgba(255, 255, 255, 0.6)
+        );
+      }
+
+      &--dark {
+        background: linear-gradient(115deg, rgba(30, 30, 30, 0), #272727);
+      }
     }
   }
 }

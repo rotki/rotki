@@ -55,7 +55,7 @@ import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import PremiumLock from '@/components/helper/PremiumLock.vue';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 
 @Component({

@@ -86,6 +86,7 @@ from rotkehlchen.errors import (
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -98,20 +99,18 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_category_from_db,
     deserialize_fee,
     deserialize_hex_color_code,
-    deserialize_location,
-    deserialize_location_from_db,
     deserialize_optional,
     deserialize_timestamp,
     deserialize_trade_type_from_db,
 )
 from rotkehlchen.typing import (
-    ApiCredentials,
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
     BTCAddress,
     ChecksumEthAddress,
     EthereumTransaction,
+    ExchangeApiCredentials,
     ExternalService,
     ExternalServiceApiCredentials,
     HexColorCode,
@@ -177,18 +176,18 @@ def db_tuple_to_str(
     if tuple_type == 'trade':
         return (
             f'{deserialize_trade_type_from_db(data[5])} trade with id {data[0]} '
-            f'in {deserialize_location_from_db(data[2])} and base/quote asset {data[3]} / '
+            f'in {Location.deserialize_from_db(data[2])} and base/quote asset {data[3]} / '
             f'{data[4]} at timestamp {data[1]}'
         )
     if tuple_type == 'asset_movement':
         return (
             f'{deserialize_asset_movement_category_from_db(data[2])} of '
             f'{data[4]} with id {data[0]} '
-            f'in {deserialize_location_from_db(data[1])} at timestamp {data[3]}'
+            f'in {Location.deserialize_from_db(data[1])} at timestamp {data[3]}'
         )
     if tuple_type == 'margin_position':
         return (
-            f'Margin position with id {data[0]} in  {deserialize_location_from_db(data[1])} '
+            f'Margin position with id {data[0]} in  {Location.deserialize_from_db(data[1])} '
             f'for {data[5]} closed at timestamp {data[3]}'
         )
     if tuple_type == 'ethereum_transaction':
@@ -196,7 +195,7 @@ def db_tuple_to_str(
     if tuple_type == 'amm_swap':
         return (
             f'AMM swap with id {data[0]}-{data[1]} '
-            f'in {deserialize_location_from_db(data[6])} '
+            f'in {Location.deserialize_from_db(data[6])} '
         )
 
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
@@ -1241,7 +1240,7 @@ class DBHandler:
         """Delete all historical Balancer trades data"""
         cursor = self.conn.cursor()
         cursor.execute(
-            f'DELETE FROM amm_swaps WHERE location="{Location.BALANCER.serialize_for_db()}";',
+            f'DELETE FROM amm_swaps WHERE location="{Location.BALANCER.serialize_for_db()}";',  # pylint: disable=no-member  # noqa: E501
         )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_TRADES_PREFIX}%";',
@@ -1426,7 +1425,7 @@ class DBHandler:
         """Delete all historical Uniswap trades data"""
         cursor = self.conn.cursor()
         cursor.execute(
-            f'DELETE FROM amm_swaps WHERE location="{Location.UNISWAP.serialize_for_db()}";',
+            f'DELETE FROM amm_swaps WHERE location="{Location.UNISWAP.serialize_for_db()}";',  # pylint: disable=no-member  # noqa: E501
         )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_TRADES_PREFIX}%";',
@@ -1579,26 +1578,26 @@ class DBHandler:
 
         return Timestamp(int(query[0][0])), Timestamp(int(query[0][1]))
 
-    def delete_used_query_range_for_exchange(self, exchange_name: str) -> None:
+    def delete_used_query_range_for_exchange(self, location: Location) -> None:
         """Delete the query ranges for the given exchange name"""
         cursor = self.conn.cursor()
         cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            (f'{exchange_name}\\_%', '\\'),
+            (f'{str(location)}\\_%', '\\'),
         )
         self.conn.commit()
         self.update_last_write()
 
-    def purge_exchange_data(self, exchange_name: str) -> None:
-        self.delete_used_query_range_for_exchange(exchange_name)
+    def purge_exchange_data(self, location: Location) -> None:
+        self.delete_used_query_range_for_exchange(location)
         cursor = self.conn.cursor()
         cursor.execute(
             'DELETE FROM trades WHERE location = ?;',
-            (deserialize_location(exchange_name).serialize_for_db(),),
+            (location.serialize_for_db(),),
         )
         cursor.execute(
             'DELETE FROM asset_movements WHERE location = ?;',
-            (deserialize_location(exchange_name).serialize_for_db(),),
+            (location.serialize_for_db(),),
         )
         self.conn.commit()
         self.update_last_write()
@@ -1651,7 +1650,7 @@ class DBHandler:
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 self.msg_aggregator.add_warning(
                     f'Tried to add a timed_location_data for '
-                    f'{str(deserialize_location_from_db(entry.location))} at'
+                    f'{str(Location.deserialize_from_db(entry.location))} at'
                     f' already existing timestamp {entry.time}. Skipping.',
                 )
                 continue
@@ -2006,7 +2005,7 @@ class DBHandler:
                     asset=Asset(entry[0]),
                     label=entry[1],
                     amount=FVal(entry[2]),
-                    location=deserialize_location_from_db(entry[3]),
+                    location=Location.deserialize_from_db(entry[3]),
                     tags=tags,
                 ))
             except (DeserializationError, UnknownAsset, UnsupportedAsset, ValueError) as e:
@@ -2153,13 +2152,13 @@ class DBHandler:
         for key2, val2 in data['location'].items():
             # Here we know val2 is just a Dict since the key to data is 'location'
             val2 = cast(Dict, val2)
-            location = deserialize_location(key2).serialize_for_db()
+            location = Location.deserialize(key2).serialize_for_db()
             locations.append(LocationData(
                 time=timestamp, location=location, usd_value=str(val2['usd_value']),
             ))
         locations.append(LocationData(
             time=timestamp,
-            location=Location.TOTAL.serialize_for_db(),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
             usd_value=str(data['net_usd']),
         ))
 
@@ -2169,50 +2168,131 @@ class DBHandler:
     def add_exchange(
             self,
             name: str,
+            location: Location,
             api_key: ApiKey,
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
+            kraken_account_type: Optional[KrakenAccountType] = None,
     ) -> None:
-        if name not in SUPPORTED_EXCHANGES:
-            raise InputError('Unsupported exchange {}'.format(name))
+        if location not in SUPPORTED_EXCHANGES:
+            raise InputError(f'Unsupported exchange {str(location)}')
 
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT INTO user_credentials '
-            '(name, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?)',
-            (name, api_key, api_secret.decode(), passphrase),
+            '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
+            (name, location.serialize_for_db(), api_key, api_secret.decode(), passphrase),
         )
+
+        if location == Location.KRAKEN and kraken_account_type is not None:
+            cursor.execute(
+                'INSERT INTO user_credentials_mappings '
+                '(credential_name, credential_location, setting_name, setting_value) '
+                'VALUES (?, ?, ?, ?)',
+                (name, location.serialize_for_db(), 'kraken_account_type', kraken_account_type.serialize()),  # noqa: E501
+            )
         self.conn.commit()
         self.update_last_write()
 
-    def remove_exchange(self, name: str) -> None:
+    def edit_exchange(
+            self,
+            name: str,
+            location: Location,
+            new_name: Optional[str],
+            passphrase: Optional[str],
+            kraken_account_type: Optional['KrakenAccountType'],
+    ) -> None:
+        """May raise InputError if something is wrong with editing the DB"""
+        if location not in SUPPORTED_EXCHANGES:
+            raise InputError(f'Unsupported exchange {str(location)}')
+
+        cursor = self.conn.cursor()
+        if new_name is not None or passphrase is not None:
+            querystr = 'UPDATE user_credentials SET '
+            bindings = []
+            if new_name is not None:
+                querystr += 'name=?,'
+                bindings.append(new_name)
+            if passphrase is not None:
+                querystr += 'passphrase=?,'
+                bindings.append(passphrase)
+
+            if querystr[-1] == ',':
+                querystr = querystr[:-1]
+            try:
+                cursor.execute(querystr, bindings)
+            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                raise InputError(f'Could not update DB user_credentials due to {str(e)}') from e
+
+        if location == Location.KRAKEN and kraken_account_type is not None:
+            try:
+                cursor.execute(
+                    'INSERT OR REPLACE INTO user_credentials_mappings '
+                    '(credential_name, credential_location, setting_name, setting_value) '
+                    'VALUES (?, ?, ?, ?)',
+                    (name, location.serialize_for_db(), 'kraken_account_type', kraken_account_type.serialize()),  # noqa: E501
+                )
+            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                self.conn.rollback()
+                raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
+
+        self.conn.commit()
+        self.update_last_write()
+
+    def remove_exchange(self, name: str, location: Location) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
-            'DELETE FROM user_credentials WHERE name =?', (name,),
+            'DELETE FROM user_credentials WHERE name=? AND location=?',
+            (name, location.serialize_for_db()),
         )
         self.conn.commit()
         self.update_last_write()
 
-    def get_exchange_credentials(self) -> Dict[str, ApiCredentials]:
+    def get_exchange_credentials(self) -> Dict[Location, List[ExchangeApiCredentials]]:
         cursor = self.conn.cursor()
         result = cursor.execute(
-            'SELECT name, api_key, api_secret, passphrase FROM user_credentials;',
+            'SELECT name, location, api_key, api_secret, passphrase FROM user_credentials;',
         )
-        result = result.fetchall()
-        credentials = {}
-
+        credentials = defaultdict(list)
         for entry in result:
             if entry[0] == 'rotkehlchen':
                 continue
-            name = entry[0]
-            passphrase = None if entry[3] is None else str(entry[3])
-            credentials[name] = ApiCredentials.serialize(
-                api_key=str(entry[1]),
-                api_secret=str(entry[2]),
+
+            passphrase = None if entry[4] is None else entry[4]
+            location = Location.deserialize_from_db(entry[1])
+            credentials[location].append(ExchangeApiCredentials(
+                name=entry[0],
+                location=location,
+                api_key=ApiKey(entry[2]),
+                api_secret=ApiSecret(str.encode(entry[3])),
                 passphrase=passphrase,
-            )
+            ))
 
         return credentials
+
+    def get_exchange_credentials_extras(self, name: str, location: Location) -> Dict[str, Any]:
+        """Returns any extra settings for a particular exchange key credentials"""
+        cursor = self.conn.cursor()
+        result = cursor.execute(
+            'SELECT setting_name, setting_value FROM user_credentials_mappings '
+            'WHERE credential_name=? AND credential_location=?',
+            (name, location.serialize_for_db()),
+        )
+        extras = {}
+        for entry in result:
+            if entry[0] != 'kraken_account_type':
+                log.error(
+                    f'Unknown credential setting {entry[0]} found in the DB. Skipping.',
+                )
+                continue
+
+            try:
+                extras['kraken_account_type'] = KrakenAccountType.deserialize(entry[1])
+            except DeserializationError as e:
+                log.error(f'Couldnt deserialize kraken account type from DB. {str(e)}')
+                continue
+
+        return extras
 
     def write_tuples(
             self,
@@ -2338,7 +2418,7 @@ class DBHandler:
             self,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            location: Optional[str] = None,
+            location: Optional[Location] = None,
     ) -> List[MarginPosition]:
         """Returns a list of margin positions optionally filtered by time and location
 
@@ -2358,7 +2438,7 @@ class DBHandler:
             '  notes FROM margin_positions '
         )
         if location is not None:
-            query += f'WHERE location="{deserialize_location(location).serialize_for_db()}" '
+            query += f'WHERE location="{location.serialize_for_db()}" '
         query, bindings = form_query_to_filter_timestamps(query, 'close_time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
@@ -2370,7 +2450,7 @@ class DBHandler:
                 else:
                     open_time = deserialize_timestamp(result[2])
                 margin = MarginPosition(
-                    location=deserialize_location_from_db(result[1]),
+                    location=Location.deserialize_from_db(result[1]),
                     open_time=open_time,
                     close_time=deserialize_timestamp(result[3]),
                     profit_loss=deserialize_asset_amount(result[4]),
@@ -2464,7 +2544,7 @@ class DBHandler:
         for result in results:
             try:
                 movement = AssetMovement(
-                    location=deserialize_location_from_db(result[1]),
+                    location=Location.deserialize_from_db(result[1]),
                     category=deserialize_asset_movement_category_from_db(result[2]),
                     timestamp=result[3],
                     asset=Asset(result[4]),
@@ -2796,7 +2876,7 @@ class DBHandler:
             try:
                 trade = Trade(
                     timestamp=deserialize_timestamp(result[1]),
-                    location=deserialize_location_from_db(result[2]),
+                    location=Location.deserialize_from_db(result[2]),
                     base_asset=Asset(result[3]),
                     quote_asset=Asset(result[4]),
                     trade_type=deserialize_trade_type_from_db(result[5]),

@@ -315,12 +315,14 @@ class MockKraken(Kraken):
 
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
+            name=name,
             api_key=api_key,
             secret=secret,
             database=database,

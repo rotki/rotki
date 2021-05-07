@@ -21,7 +21,6 @@ from rotkehlchen.typing import (
     ChecksumEthAddress,
     Fee,
     HexColorCode,
-    Location,
     Optional,
     Timestamp,
     TradePair,
@@ -354,75 +353,6 @@ def deserialize_action_type_from_db(symbol: str) -> ActionType:
     )
 
 
-def deserialize_location(symbol: str) -> Location:
-    """Takes a string and attempts to turn it into a Location enum class
-
-    Can throw DeserializationError if the symbol is not as expected
-    """
-
-    if not isinstance(symbol, str):
-        raise DeserializationError(
-            f'Failed to deserialize location symbol from {type(symbol)} entry',
-        )
-
-    if symbol == 'external':
-        return Location.EXTERNAL
-    if symbol == 'kraken':
-        return Location.KRAKEN
-    if symbol == 'poloniex':
-        return Location.POLONIEX
-    if symbol == 'bittrex':
-        return Location.BITTREX
-    if symbol == 'binance':
-        return Location.BINANCE
-    if symbol == 'bitmex':
-        return Location.BITMEX
-    if symbol == 'coinbase':
-        return Location.COINBASE
-    if symbol == 'total':
-        return Location.TOTAL
-    if symbol == 'banks':
-        return Location.BANKS
-    if symbol == 'blockchain':
-        return Location.BLOCKCHAIN
-    if symbol == 'coinbasepro':
-        return Location.COINBASEPRO
-    if symbol == 'gemini':
-        return Location.GEMINI
-    if symbol == 'equities':
-        return Location.EQUITIES
-    if symbol == 'realestate':
-        return Location.REALESTATE
-    if symbol == 'commodities':
-        return Location.COMMODITIES
-    if symbol == 'crypto.com':
-        return Location.CRYPTOCOM
-    if symbol == 'uniswap':
-        return Location.UNISWAP
-    if symbol == 'bitstamp':
-        return Location.BITSTAMP
-    if symbol == 'binance_us':
-        return Location.BINANCE_US
-    if symbol == 'bitfinex':
-        return Location.BITFINEX
-    if symbol == 'bitcoinde':
-        return Location.BITCOINDE
-    if symbol == 'iconomi':
-        return Location.ICONOMI
-    if symbol == 'kucoin':
-        return Location.KUCOIN
-    if symbol == 'balancer':
-        return Location.BALANCER
-    if symbol == 'loopring':
-        return Location.LOOPRING
-    if symbol == 'ftx':
-        return Location.FTX
-    # else
-    raise DeserializationError(
-        f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
-    )
-
-
 def _split_pair(pair: TradePair) -> Tuple[str, str]:
     assets = pair.split('_')
     if len(assets) != 2:
@@ -472,75 +402,6 @@ def deserialize_trade_pair(pair: str) -> TradePair:
         ) from e
 
     return TradePair(pair)
-
-
-def deserialize_location_from_db(symbol: str) -> Location:
-    """Takes a DB enum string and attempts to turn it into a Location enum class
-
-    Can throw DeserializationError if the symbol is not as expected
-    """
-
-    if not isinstance(symbol, str):
-        raise DeserializationError(
-            f'Failed to deserialize location symbol from {type(symbol)} entry',
-        )
-
-    if symbol == 'A':
-        return Location.EXTERNAL
-    if symbol == 'B':
-        return Location.KRAKEN
-    if symbol == 'C':
-        return Location.POLONIEX
-    if symbol == 'D':
-        return Location.BITTREX
-    if symbol == 'E':
-        return Location.BINANCE
-    if symbol == 'F':
-        return Location.BITMEX
-    if symbol == 'G':
-        return Location.COINBASE
-    if symbol == 'H':
-        return Location.TOTAL
-    if symbol == 'I':
-        return Location.BANKS
-    if symbol == 'J':
-        return Location.BLOCKCHAIN
-    if symbol == 'K':
-        return Location.COINBASEPRO
-    if symbol == 'L':
-        return Location.GEMINI
-    if symbol == 'M':
-        return Location.EQUITIES
-    if symbol == 'N':
-        return Location.REALESTATE
-    if symbol == 'O':
-        return Location.COMMODITIES
-    if symbol == 'P':
-        return Location.CRYPTOCOM
-    if symbol == 'Q':
-        return Location.UNISWAP
-    if symbol == 'R':
-        return Location.BITSTAMP
-    if symbol == 'S':
-        return Location.BINANCE_US
-    if symbol == 'T':
-        return Location.BITFINEX
-    if symbol == 'U':
-        return Location.BITCOINDE
-    if symbol == 'V':
-        return Location.ICONOMI
-    if symbol == 'W':
-        return Location.KUCOIN
-    if symbol == 'X':
-        return Location.BALANCER
-    if symbol == 'Y':
-        return Location.LOOPRING
-    if symbol == 'Z':
-        return Location.FTX
-    # else
-    raise DeserializationError(
-        f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
-    )
 
 
 def deserialize_asset_movement_category(symbol: str) -> AssetMovementCategory:

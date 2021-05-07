@@ -21,7 +21,7 @@
       </menu-tooltip-button>
     </template>
     <v-container>
-      <v-row class="node-status-indicator__content">
+      <v-row class="node-status-indicator__content" :style="backgroundStyle">
         <v-col cols="2">
           <v-icon
             v-if="nodeConnection"
@@ -56,15 +56,16 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Mixins } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import ThemeMixin from '@/mixins/theme-mixin';
 
 @Component({
   components: { MenuTooltipButton },
   computed: mapState('session', ['nodeConnection'])
 })
-export default class NodeStatusIndicator extends Vue {
+export default class NodeStatusIndicator extends Mixins(ThemeMixin) {
   nodeConnection!: boolean;
 }
 </script>
@@ -72,7 +73,6 @@ export default class NodeStatusIndicator extends Vue {
 <style scoped lang="scss">
 .node-status-indicator {
   &__content {
-    background: white;
     padding: 16px;
     width: 420px;
   }

@@ -6,6 +6,7 @@ from shutil import copyfile
 from unittest.mock import patch
 
 import pytest
+from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
@@ -85,6 +86,15 @@ def _use_prepared_db(user_data_dir: Path, filename: str) -> None:
         os.path.join(os.path.dirname(dir_path), 'data', filename),
         user_data_dir / 'rotkehlchen.db',
     )
+
+
+def _init_prepared_db(user_data_dir: Path, filename: str):
+    _use_prepared_db(user_data_dir, filename)
+    password = '123'
+    conn = sqlcipher.connect(str(user_data_dir / 'rotkehlchen.db'))  # pylint: disable=no-member
+    conn.executescript(f'PRAGMA key={password};')
+    conn.execute('PRAGMA foreign_keys=ON;')
+    return conn
 
 
 def populate_db_and_check_for_asset_renaming(
@@ -1757,6 +1767,147 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     assert len(errors) == 0
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 25
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('have_kraken', [True, False])
+@pytest.mark.parametrize('have_kraken_setting', [True, False])
+def test_upgrade_db_25_to_26(user_data_dir, have_kraken, have_kraken_setting):  # pylint: disable=unused-argument  # noqa: E501
+    """Test upgrading the DB from version 25 to version 26.
+
+    Upgrades the user credentials database to contain both name and location
+    """
+    msg_aggregator = MessagesAggregator()
+    v25_conn = _init_prepared_db(user_data_dir, 'v25_rotkehlchen.db')
+    cursor = v25_conn.cursor()
+
+    # Checks before migration
+    credentials = cursor.execute(
+        'SELECT name, api_key, api_secret, passphrase from user_credentials',
+    ).fetchall()
+    expected_credentials_before = [
+        ('rotkehlchen', 'key', 'secret', ''),
+        ('kraken', 'key', 'secret', ''),
+        ('poloniex', 'key', 'secret', ''),
+        ('bittrex', 'key', 'secret', ''),
+        ('bitmex', 'key', 'secret', ''),
+        ('binance', 'key', 'secret', ''),
+        ('coinbase', 'key', 'secret', ''),
+        ('coinbasepro', 'key', 'secret', 'phrase'),
+        ('gemini', 'key', 'secret', ''),
+        ('bitstamp', 'key', 'secret', ''),
+        ('binance_us', 'key', 'secret', ''),
+        ('bitfinex', 'key', 'secret', ''),
+        ('bitcoinde', 'key', 'secret', ''),
+        ('iconomi', 'key', 'secret', ''),
+        ('kucoin', 'key', 'secret', ''),
+        ('ftx', 'key', 'secret', ''),
+    ]
+    if have_kraken:
+        expected_credentials_before.append(('kraken', 'key', 'secret', ''))
+    else:  # Make sure the credentials are not in the DB
+        cursor.execute('DELETE from user_credentials WHERE name="kraken";')
+
+    if have_kraken_setting is False:
+        # Make sure it's not there
+        cursor.execute('DELETE from settings WHERE name="kraken_account_type";')
+
+    assert set(credentials) == set(expected_credentials_before)
+    settings = cursor.execute(
+        'SELECT name, value from settings WHERE name="kraken_account_type";',
+    ).fetchone()
+    if have_kraken_setting:
+        assert settings == ('kraken_account_type', 'pro')
+    else:
+        assert settings is None
+
+    # check trades/assets movements and used query ranges are there
+    trades_query = cursor.execute(
+        'SELECT id, time, location, base_asset, quote_asset, type, amount, rate, fee,'
+        'fee_currency, link, notes from trades ORDER BY time ASC;',
+    ).fetchall()
+    assert trades_query == [
+        ('foo1', 1, 'S', 'ETH', 'BTC', 'A', '1', '1', '1', 'ETH', '', ''),
+        ('foo2', 1, 'B', 'ETH', 'BTC', 'A', '1', '1', '1', 'ETH', '', ''),
+    ]
+    asset_movements_query = cursor.execute('SELECT id, location, category, address, transaction_id, time, asset, amount, fee_asset, fee, link from asset_movements ORDER BY time ASC;').fetchall()  # noqa: E501
+    assert asset_movements_query == [
+        ('foo1', 'S', 'B', '0xaddy', '0xtxid', 1, 'YFI', '1', 'GNO', '1', 'customlink'),
+        ('foo2', 'B', 'B', '0xaddy', '0xtxid', 1, 'YFI', '1', 'GNO', '1', 'customlink'),
+    ]
+    used_query_ranges = cursor.execute('SELECT * from used_query_ranges').fetchall()
+    assert used_query_ranges == [
+        ('binance_us_trades', 0, 1),
+        ('binance_us_asset_movements', 0, 1),
+        ('kraken_trades', 0, 1),
+        ('kraken_asset_movements', 0, 1),
+    ]
+
+    v25_conn.commit()  # for changes done depending on test params
+    v25_conn.close()
+
+    # Migrate to v26
+    db = _init_db_with_target_version(
+        target_version=26,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    # Make sure that the user credentials have been upgraded
+    credentials = cursor.execute(
+        'SELECT name, location, api_key, api_secret, passphrase from user_credentials',
+    ).fetchall()
+    expected_credentials = [
+        ('rotkehlchen', 'A', 'key', 'secret', ''),
+        ('poloniex', 'C', 'key', 'secret', ''),
+        ('bittrex', 'D', 'key', 'secret', ''),
+        ('bitmex', 'F', 'key', 'secret', ''),
+        ('binance', 'E', 'key', 'secret', ''),
+        ('coinbase', 'G', 'key', 'secret', ''),
+        ('coinbasepro', 'K', 'key', 'secret', 'phrase'),
+        ('gemini', 'L', 'key', 'secret', ''),
+        ('bitstamp', 'R', 'key', 'secret', ''),
+        ('binance_us', 'S', 'key', 'secret', ''),
+        ('bitfinex', 'T', 'key', 'secret', ''),
+        ('bitcoinde', 'U', 'key', 'secret', ''),
+        ('iconomi', 'V', 'key', 'secret', ''),
+        ('kucoin', 'W', 'key', 'secret', ''),
+        ('ftx', 'Z', 'key', 'secret', ''),
+    ]
+    if have_kraken:
+        expected_credentials.append(('kraken', 'B', 'key', 'secret', ''))
+    assert set(credentials) == set(expected_credentials)
+    # Make sure settings is no longer there
+    settings = cursor.execute(
+        'SELECT name, value from settings WHERE name="kraken_account_type";',
+    ).fetchone()
+    assert settings is None
+    mapping = cursor.execute(
+        'SELECT credential_name, credential_location, setting_name, setting_value '
+        'FROM user_credentials_mappings;',
+    ).fetchone()
+    if have_kraken and have_kraken_setting:
+        assert mapping == ('kraken', 'B', 'kraken_account_type', 'pro')
+    else:
+        assert mapping is None
+
+    # check trades/assets movements and used query ranges of binanceus were purged
+    trades_query = cursor.execute(
+        'SELECT id, time, location, base_asset, quote_asset, type, amount, rate, fee,'
+        'fee_currency, link, notes from trades ORDER BY time ASC;',
+    ).fetchall()
+    assert trades_query == [('foo2', 1, 'B', 'ETH', 'BTC', 'A', '1', '1', '1', 'ETH', '', '')]
+    asset_movements_query = cursor.execute('SELECT id, location, category, address, transaction_id, time, asset, amount, fee_asset, fee, link from asset_movements ORDER BY time ASC;').fetchall()  # noqa: E501
+    assert asset_movements_query == [('foo2', 'B', 'B', '0xaddy', '0xtxid', 1, 'YFI', '1', 'GNO', '1', 'customlink')]  # noqa: E501
+    used_query_ranges = cursor.execute('SELECT * from used_query_ranges').fetchall()
+    assert used_query_ranges == [
+        ('kraken_trades', 0, 1),
+        ('kraken_asset_movements', 0, 1),
+    ]
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 26
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

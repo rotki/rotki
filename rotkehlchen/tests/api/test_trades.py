@@ -5,7 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.api.v1.encoding import TradeSchema
-from rotkehlchen.constants.assets import A_BTC, A_WETH, A_AAVE, A_DAI
+from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_WETH
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import FREE_TRADES_LIMIT
@@ -24,7 +24,7 @@ from rotkehlchen.tests.utils.history import (
 from rotkehlchen.typing import Location, TradeType
 
 
-@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_query_trades(rotkehlchen_api_server_with_exchanges):
     """Test that querying the trades endpoint works as expected
 
@@ -130,7 +130,7 @@ def test_query_trades_errors(rotkehlchen_api_server_with_exchanges):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
+            'tradesresource',
         ), json={'from_timestamp': 'fooo'},
     )
     assert_error_response(
@@ -142,7 +142,7 @@ def test_query_trades_errors(rotkehlchen_api_server_with_exchanges):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
+            'tradesresource',
         ), json={'to_timestamp': [55.2]},
     )
     assert_error_response(
@@ -154,30 +154,30 @@ def test_query_trades_errors(rotkehlchen_api_server_with_exchanges):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
+            'tradesresource',
         ), json={'location': 3452},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to deserialize location symbol',
+        contained_in_msg='Failed to deserialize Location value from non string value',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Test that non-existing location is handled
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
+            'tradesresource',
         ), json={'location': 'foo'},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to deserialize location symbol. Unknown symbol foo for location',
+        contained_in_msg='Failed to deserialize Location value foo',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [False, True])
-@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_query_trades_over_limit(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
     """
     Test querying the trades endpoint with trades over the limit limits the result if non premium
@@ -365,7 +365,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
@@ -379,12 +379,12 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Failed to deserialize location symbol from",
+        contained_in_msg="Failed to deserialize Location value from non string value",
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Test that invalid location is handled
@@ -393,12 +393,12 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Failed to deserialize location symbol. Unknown symbol foo for location",
+        contained_in_msg='Failed to deserialize Location value foo',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Test that invalid base_asset type is handled
@@ -435,7 +435,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
@@ -449,13 +449,13 @@ def test_add_trades_errors(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=broken_trade,
     )
     assert_error_response(
         response=response,
         contained_in_msg=(
-            "Failed to deserialize trade type symbol. Unknown symbol foo for trade type"
+            'Failed to deserialize trade type symbol. Unknown symbol foo for trade type'
         ),
         status_code=HTTPStatus.BAD_REQUEST,
     )
@@ -599,7 +599,7 @@ def _check_trade_is_edited(original_trade: Dict[str, Any], result_trade: Dict[st
             assert value == original_trade[key]
 
 
-@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_edit_trades(rotkehlchen_api_server_with_exchanges):
     """Test that editing a trade via the trades endpoint works as expected"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -704,7 +704,7 @@ def test_edit_trades_errors(rotkehlchen_api_server):
     )
 
 
-@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_delete_trades(rotkehlchen_api_server_with_exchanges):
     """Test that deleting a trade via the trades endpoint works as expected"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen

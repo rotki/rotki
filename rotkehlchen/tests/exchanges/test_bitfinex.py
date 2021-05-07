@@ -30,8 +30,9 @@ from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Fee, Location
 
 
 def test_name():
-    exchange = Bitfinex('a', b'a', object(), object())
-    assert exchange.name == str(Location.BITFINEX)
+    exchange = Bitfinex('bitfinex1', 'a', b'a', object(), object())
+    assert exchange.location == Location.BITFINEX
+    assert exchange.name == 'bitfinex1'
 
 
 def test_assets_are_known(mock_bitfinex):

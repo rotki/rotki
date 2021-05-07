@@ -9,6 +9,7 @@ from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.database import (
     add_blockchain_accounts_to_db,
@@ -22,6 +23,7 @@ from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
+from rotkehlchen.typing import Location
 
 
 @pytest.fixture(name='max_tasks_num')
@@ -315,20 +317,39 @@ def rotkehlchen_instance(
 def rotkehlchen_api_server_with_exchanges(
         rotkehlchen_api_server,
         added_exchanges,
+        gemini_test_base_uri,
+        gemini_sandbox_api_secret,
+        gemini_sandbox_api_key,
 ):
     """Adds mock exchange objects to the rotkehlchen_server fixture"""
     exchanges = rotkehlchen_api_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    for exchange_name in added_exchanges:
-
-        if exchange_name in ('coinbasepro', 'coinbase', 'gemini'):
-            # TODO: Add support for the above exchanges in tests too
-            continue
-
-        create_fn = getattr(exchange_tests, f'create_test_{exchange_name}')
-        exchanges[exchange_name] = create_fn(
+    for exchange_location in added_exchanges:
+        create_fn = getattr(exchange_tests, f'create_test_{str(exchange_location)}')
+        passphrase = None
+        kwargs = {}
+        if exchange_location in EXCHANGES_WITH_PASSPHRASE:
+            passphrase = '123'
+            kwargs['passphrase'] = passphrase
+        if exchange_location == Location.GEMINI:
+            kwargs['base_uri'] = gemini_test_base_uri
+            kwargs['api_key'] = gemini_sandbox_api_key
+            kwargs['api_secret'] = gemini_sandbox_api_secret
+        exchangeobj = create_fn(
             database=rotki.data.db,
             msg_aggregator=rotki.msg_aggregator,
+            **kwargs,
+        )
+        kraken_account_type = exchangeobj.account_type if exchange_location == Location.KRAKEN else None  # noqa: E501
+        exchanges[exchange_location] = [exchangeobj]
+        # also add credentials in the DB
+        rotki.data.db.add_exchange(
+            name=exchangeobj.name,
+            location=exchange_location,
+            api_key=exchangeobj.api_key,
+            api_secret=exchangeobj.secret,
+            passphrase=passphrase,
+            kraken_account_type=kraken_account_type,
         )
 
     yield rotkehlchen_api_server

@@ -25,6 +25,7 @@ def mock_bitmex(
 @pytest.fixture
 def sandbox_bitmex(database, inquirer):  # pylint: disable=unused-argument
     bitmex = Bitmex(
+        name='bitmex',
         api_key=TEST_BITMEX_API_KEY,
         secret=TEST_BITMEX_API_SECRET,
         database=database,

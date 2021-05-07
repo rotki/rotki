@@ -56,7 +56,8 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.mixins import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
+from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
@@ -122,12 +123,19 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     """
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super().__init__(str(Location.BITFINEX), api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.BITFINEX,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.base_uri = 'https://api.bitfinex.com'
         self.msg_aggregator = msg_aggregator
         self.nonce_lock = Semaphore()

@@ -13,10 +13,12 @@ from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro
+from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.exchanges.kucoin import Kucoin
+from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.tests.utils.factories import (
     make_api_key,
@@ -25,7 +27,7 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import ApiKey, ApiSecret
+from rotkehlchen.typing import ApiKey, ApiSecret, Location
 from rotkehlchen.user_messages import MessagesAggregator
 
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
@@ -344,6 +346,7 @@ def create_test_coinbase(
         msg_aggregator: MessagesAggregator,
 ) -> Coinbase:
     mock = Coinbase(
+        name='coinbase',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -357,6 +360,7 @@ def create_test_binance(
         msg_aggregator: MessagesAggregator,
 ) -> Binance:
     binance = Binance(
+        name='binance',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -384,6 +388,7 @@ def create_test_bitfinex(
         secret = make_api_secret()
 
     return Bitfinex(
+        name='bitfinex',
         api_key=api_key,
         secret=secret,
         database=database,
@@ -397,6 +402,7 @@ def create_test_bitmex(
 ) -> Bitmex:
     # API key/secret from tests cases here: https://www.bitmex.com/app/apiKeysUsage
     bitmex = Bitmex(
+        name='bitmex',
         api_key=ApiKey('LAqUlngMIQkIUjXMUreyu3qn'),
         secret=ApiSecret(b'chNOOS4KvNXR_Xq4k4c9qsfoKWvnDecLATCRlcBwyKDYnWgO'),
         database=database,
@@ -418,6 +424,7 @@ def create_test_bitstamp(
         secret = make_api_secret()
 
     return Bitstamp(
+        name='bitstamp',
         api_key=api_key,
         secret=secret,
         database=database,
@@ -430,6 +437,7 @@ def create_test_bittrex(
         msg_aggregator: MessagesAggregator,
 ) -> Bittrex:
     bittrex = Bittrex(
+        name='bittrex',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -444,6 +452,7 @@ def create_test_coinbasepro(
         passphrase: str,
 ) -> Coinbasepro:
     coinbasepro = Coinbasepro(
+        name='coinbasepro',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -458,6 +467,7 @@ def create_test_ftx(
         msg_aggregator: MessagesAggregator,
 ) -> Ftx:
     mock = Ftx(
+        name='ftx',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -474,6 +484,7 @@ def create_test_gemini(
         base_uri,
 ):
     return Gemini(
+        name='gemini',
         api_key=api_key,
         secret=api_secret,
         database=database,
@@ -487,6 +498,7 @@ def create_test_kraken(
         msg_aggregator: MessagesAggregator,
 ) -> MockKraken:
     return MockKraken(
+        name='mockkraken',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -509,6 +521,7 @@ def create_test_kucoin(
         passphrase = make_random_uppercasenumeric_string(size=6)
 
     return Kucoin(
+        name='kucoin',
         api_key=api_key,
         secret=secret,
         database=database,
@@ -522,6 +535,7 @@ def create_test_iconomi(
         msg_aggregator: MessagesAggregator,
 ) -> Iconomi:
     return Iconomi(
+        name='iconomi',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -534,6 +548,7 @@ def create_test_bitcoinde(
         msg_aggregator: MessagesAggregator,
 ) -> Bitcoinde:
     return Bitcoinde(
+        name='bitcoinde',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -546,8 +561,27 @@ def create_test_poloniex(
         msg_aggregator: MessagesAggregator,
 ) -> Poloniex:
     return Poloniex(
+        name='poloniex',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
         msg_aggregator=msg_aggregator,
     )
+
+
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Location,
+) -> Optional[ExchangeInterface]:
+    """Tries to get the first exchange of a given type from the exchange manager
+
+    If no such exchange exists returns None.
+
+    It's not part of exchange manager itself since it's not used in production but only in tests.
+    If this changes we should move this to the exchange manager
+    """
+    exchanges_list = exchange_manager.connected_exchanges.get(location)
+    if exchanges_list is None:
+        return None
+
+    return exchanges_list[0]

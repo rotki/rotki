@@ -86,12 +86,8 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.mixins import (
-    CacheableMixIn,
-    LockableQueryMixIn,
-    cache_response_timewise,
-    protect_with_lock,
-)
+from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
+from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager

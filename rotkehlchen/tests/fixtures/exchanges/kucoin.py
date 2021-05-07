@@ -76,6 +76,7 @@ def sandbox_kuckoin(
         kucoin_sandbox_base_uri,
 ):
     kucoin = Kucoin(
+        name='kucoin',
         api_key=kucoin_sandbox_api_key,
         secret=kucoin_sandbox_api_secret,
         database=database,

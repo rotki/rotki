@@ -14,7 +14,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ethereum_address,
     deserialize_ethereum_token_from_db,
-    deserialize_location_from_db,
     deserialize_timestamp,
     deserialize_unknown_ethereum_token_from_db,
 )
@@ -164,7 +163,7 @@ class AMMSwap(NamedTuple):
             from_address=from_address,
             to_address=to_address,
             timestamp=deserialize_timestamp(trade_tuple[5]),
-            location=deserialize_location_from_db(trade_tuple[6]),
+            location=Location.deserialize_from_db(trade_tuple[6]),
             token0=token0,
             token1=token1,
             amount0_in=deserialize_asset_amount(trade_tuple[17]),

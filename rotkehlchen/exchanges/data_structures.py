@@ -9,7 +9,6 @@ from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
-    deserialize_location,
     deserialize_timestamp,
     deserialize_trade_type,
 )
@@ -226,7 +225,7 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
     rate = deserialize_price(data['rate'])
     amount = deserialize_asset_amount(data['amount'])
     trade_type = deserialize_trade_type(data['trade_type'])
-    location = deserialize_location(data['location'])
+    location = Location.deserialize(data['location'])
 
     trade_link = ''
     if 'link' in data:

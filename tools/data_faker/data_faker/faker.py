@@ -12,7 +12,7 @@ from data_faker.mock_apis.api import APIServer, RestAPI
 
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
-from rotkehlchen.typing import ApiKey, ApiSecret
+from rotkehlchen.typing import ApiKey, ApiSecret, Location
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +40,13 @@ class DataFaker():
 
         self.rotki.setup_exchange(
             name='kraken',
+            location=Location.KRAKEN,
             api_key=ApiKey(str(make_random_b64bytes(128))),
             api_secret=ApiSecret(make_random_b64bytes(128)),
         )
         self.rotki.setup_exchange(
             name='binance',
+            location=Location.BINANCE,
             api_key=ApiKey(str(make_random_b64bytes(128))),
             api_secret=ApiSecret(make_random_b64bytes(128)),
         )

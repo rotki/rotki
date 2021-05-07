@@ -93,12 +93,19 @@ def trade_from_iconomi(raw_trade: Dict) -> Trade:
 class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
-        super().__init__('iconomi', api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.ICONOMI,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.uri = 'https://api.iconomi.com'
         self.msg_aggregator = msg_aggregator
 

@@ -11,6 +11,7 @@
         class="app__navigation-drawer"
         fixed
         :mini-variant="mini"
+        :color="appBarColor"
         clipped
         app
       >
@@ -31,7 +32,14 @@
         </div>
       </v-navigation-drawer>
 
-      <v-app-bar app fixed clipped-left flat color="white" class="app__app-bar">
+      <v-app-bar
+        app
+        fixed
+        clipped-left
+        flat
+        :color="appBarColor"
+        class="app__app-bar"
+      >
         <v-app-bar-nav-icon
           class="secondary--text text--lighten-2"
           @click="toggleDrawer()"
@@ -41,6 +49,8 @@
         <back-button :can-navigate-back="canNavigateBack" />
         <v-spacer />
         <update-indicator />
+        <theme-switch v-if="premium" />
+        <theme-switch-lock v-else />
         <notification-indicator
           :visible="notifications"
           class="app__app-bar__button"
@@ -84,7 +94,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from 'vue-property-decorator';
+import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { mapGetters, mapMutations, mapState } from 'vuex';
 import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
@@ -96,6 +106,7 @@ import HelpIndicator from '@/components/help/HelpIndicator.vue';
 import HelpSidebar from '@/components/help/HelpSidebar.vue';
 import BackButton from '@/components/helper/BackButton.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
+import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
@@ -109,11 +120,15 @@ import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import DevApp from '@/DevApp.vue';
 import { BackendCode } from '@/electron-main/backend-code';
+import PremiumMixin from '@/mixins/premium-mixin';
+import ThemeMixin from '@/mixins/theme-mixin';
+import { ThemeSwitch } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import { Message } from '@/store/types';
 
 @Component({
   components: {
+    ThemeSwitchLock,
     MacOsVersionUnsupported,
     AssetUpdate,
     HelpIndicator,
@@ -121,6 +136,7 @@ import { Message } from '@/store/types';
     BackButton,
     UpdatePopup,
     StartupErrorScreen,
+    ThemeSwitch,
     DevApp,
     NotificationPopup,
     NotificationSidebar,
@@ -145,7 +161,7 @@ import { Message } from '@/store/types';
     ...mapMutations('session', ['completeLogin'])
   }
 })
-export default class App extends Vue {
+export default class App extends Mixins(PremiumMixin, ThemeMixin) {
   logged!: boolean;
   message!: Message;
   version!: string;
@@ -289,7 +305,6 @@ export default class App extends Vue {
 
 ::v-deep {
   .v-navigation-drawer {
-    background: #ffffff;
     box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
 
     &__border {

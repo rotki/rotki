@@ -179,9 +179,9 @@ import StatCardWide from '@/components/display/StatCardWide.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ConfirmableReset from '@/components/helper/ConfirmableReset.vue';
 import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
-import PremiumLock from '@/components/helper/PremiumLock.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
 import StatusMixin from '@/mixins/status-mixin';
 import {
   AaveEarnedDetails,

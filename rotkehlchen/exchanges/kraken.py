@@ -44,7 +44,8 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.mixins import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
+from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -53,7 +54,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
 
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
 KRAKEN_PUBLIC_METHODS = ('AssetPairs', 'Assets')
@@ -249,26 +249,39 @@ class KrakenAccountType(Enum):
         raise DeserializationError(f'Tried to deserialized invalid kraken account type: {symbol}')
 
 
+DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
+
+
 class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def __init__(
             self,
+            name: str,
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
-            account_type: KrakenAccountType = KrakenAccountType.STARTER,
+            kraken_account_type: Optional[KrakenAccountType] = None,
     ):
-        super().__init__('kraken', api_key, secret, database)
+        super().__init__(
+            name=name,
+            location=Location.KRAKEN,
+            api_key=api_key,
+            secret=secret,
+            database=database,
+        )
         self.msg_aggregator = msg_aggregator
         self.session.headers.update({
             'API-Key': self.api_key,
         })
         self.nonce_lock = Semaphore()
-        self.set_account_type(account_type)
+        self.set_account_type(kraken_account_type)
         self.call_counter = 0
         self.last_query_ts = 0
 
-    def set_account_type(self, account_type: KrakenAccountType) -> None:
+    def set_account_type(self, account_type: Optional[KrakenAccountType]) -> None:
+        if account_type is None:
+            account_type = DEFAULT_KRAKEN_ACCOUNT_TYPE
+
         self.account_type = account_type
         if self.account_type == KrakenAccountType.STARTER:
             self.call_limit = 15

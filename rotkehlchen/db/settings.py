@@ -7,7 +7,6 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors import DeserializationError
-from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.history.typing import (
     DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER,
     HistoricalPriceOracle,
@@ -16,7 +15,7 @@ from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPri
 from rotkehlchen.typing import AVAILABLE_MODULES_MAP, ModuleName, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
-ROTKEHLCHEN_DB_VERSION = 25
+ROTKEHLCHEN_DB_VERSION = 26
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_INCLUDE_GAS_COSTS = True
@@ -27,7 +26,6 @@ DEFAULT_BALANCE_SAVE_FREQUENCY = 24
 DEFAULT_MAIN_CURRENCY = A_USD
 DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 DEFAULT_SUBMIT_USAGE_ANALYTICS = True
-DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER
 DEFAULT_ACTIVE_MODULES = list(AVAILABLE_MODULES_MAP.keys())
 DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS = True
 DEFAULT_BTC_DERIVATION_GAP_LIMIT = 20
@@ -89,7 +87,6 @@ class DBSettings(NamedTuple):
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
     last_balance_save: Timestamp = Timestamp(0)
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
-    kraken_account_type: KrakenAccountType = DEFAULT_KRAKEN_ACCOUNT_TYPE
     active_modules: List[ModuleName] = DEFAULT_ACTIVE_MODULES  # type: ignore
     frontend_settings: str = ''
     account_for_assets_movements: bool = DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS
@@ -114,7 +111,6 @@ class ModifiableDBSettings(NamedTuple):
     main_currency: Optional[Asset] = None
     date_display_format: Optional[str] = None
     submit_usage_analytics: Optional[bool] = None
-    kraken_account_type: Optional[KrakenAccountType] = None
     active_modules: Optional[List[ModuleName]] = None
     frontend_settings: Optional[str] = None
     account_for_assets_movements: Optional[bool] = None
@@ -139,8 +135,6 @@ class ModifiableDBSettings(NamedTuple):
                 # taxfree_after_period of -1 by the user means disable the setting
                 elif setting == 'taxfree_after_period' and value == -1:
                     value = None
-                elif setting == 'kraken_account_type':
-                    value = value.serialize()
                 elif setting == 'active_modules':
                     value = json.dumps(value)
                 elif setting in JSON_KEYS:
@@ -196,8 +190,6 @@ def db_settings_from_dict(
             specified_args[key] = Asset(str(value))
         elif key in TIMESTAMP_KEYS:
             specified_args[key] = Timestamp(int(value))
-        elif key == 'kraken_account_type':
-            specified_args[key] = KrakenAccountType.deserialize(value)
         elif key == 'active_modules':
             specified_args[key] = json.loads(value)
         elif key == 'current_price_oracles':

@@ -28,7 +28,10 @@ from rotkehlchen.tests.utils.blockchain import (
     assert_eth_balances_result,
 )
 from rotkehlchen.tests.utils.constants import A_EUR, A_RDN
-from rotkehlchen.tests.utils.exchanges import assert_binance_balances_result
+from rotkehlchen.tests.utils.exchanges import (
+    assert_binance_balances_result,
+    try_get_first_exchange,
+)
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
 from rotkehlchen.tests.utils.substrate import (
@@ -118,15 +121,15 @@ def assert_all_balances(
         assert len(location_data) == 0
     else:
         expected_locations = {
-            Location.POLONIEX.serialize_for_db(),
-            Location.BINANCE.serialize_for_db(),
-            Location.TOTAL.serialize_for_db(),
-            Location.BLOCKCHAIN.serialize_for_db(),
+            Location.POLONIEX.serialize_for_db(),  # pylint: disable=no-member
+            Location.BINANCE.serialize_for_db(),  # pylint: disable=no-member
+            Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            Location.BLOCKCHAIN.serialize_for_db(),  # pylint: disable=no-member
         }
         if got_external:
-            expected_locations.add(Location.EXTERNAL.serialize_for_db())
+            expected_locations.add(Location.EXTERNAL.serialize_for_db())  # pylint: disable=no-member  # noqa: E501
         if total_eur != ZERO:
-            expected_locations.add(Location.BANKS.serialize_for_db())
+            expected_locations.add(Location.BANKS.serialize_for_db())  # pylint: disable=no-member
         locations = {x.location for x in location_data}
         assert locations == expected_locations
 
@@ -136,7 +139,7 @@ def assert_all_balances(
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_query_all_balances(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
@@ -225,7 +228,7 @@ def test_query_all_balances(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_query_all_balances_ignore_cache(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
@@ -234,8 +237,8 @@ def test_query_all_balances_ignore_cache(
     """Test that using the query all balances endpoint can ignore the cache"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
-    binance = rotki.exchange_manager.connected_exchanges['binance']
-    poloniex = rotki.exchange_manager.connected_exchanges['poloniex']
+    binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
+    poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
     eth_query_patch = patch.object(
         rotki.chain_manager,
         'query_ethereum_balances',
@@ -347,7 +350,7 @@ def test_query_all_balances_ignore_cache(
 }]])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_query_all_balances_with_manually_tracked_balances(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
@@ -445,7 +448,7 @@ def test_query_all_balances_errors(rotkehlchen_api_server):
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('separate_blockchain_calls', [True, False])
-@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_multiple_balance_queries_not_concurrent(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
@@ -471,7 +474,7 @@ def test_multiple_balance_queries_not_concurrent(
         'rotkehlchen.chain.manager.get_bitcoin_addresses_balances',
         wraps=get_bitcoin_addresses_balances,
     )
-    binance = rotki.exchange_manager.connected_exchanges['binance']
+    binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
     binance_querydict_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
 
     # Test all balances request by requesting to not save the data
@@ -483,14 +486,14 @@ def test_multiple_balance_queries_not_concurrent(
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "allbalancesresource",
+                'allbalancesresource',
             ), json={'async_query': True},
         )
         task_id_all = assert_ok_async_response(response)
         response = requests.get(api_url_for(
             rotkehlchen_api_server_with_exchanges,
             "named_exchanges_balances_resource",
-            name='binance',
+            location='binance',
         ), json={'async_query': True})
         task_id_one_exchange = assert_ok_async_response(response)
         if separate_blockchain_calls:
