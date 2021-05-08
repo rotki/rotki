@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 import requests
 from ens import ENS
 from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
+from ens.exceptions import InvalidName
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import BlockNumber, HexStr
@@ -29,6 +30,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     BlockchainQueryError,
     DeserializationError,
+    InputError,
     RemoteError,
     UnableToDecryptRemoteData,
 )
@@ -604,8 +606,13 @@ class EthereumManager():
         May raise:
         - RemoteError if Etherscan is used and there is a problem querying it or
         parsing its response
+        - InputError if the given name is not a valid ENS name
         """
-        normal_name = normalize_name(name)
+        try:
+            normal_name = normalize_name(name)
+        except InvalidName as e:
+            raise InputError(str(e)) from e
+
         resolver_addr = self._call_contract(
             web3=web3,
             contract_address=ENS_MAINNET_ADDR,
