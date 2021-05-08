@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`2875` Invalid ENS names should now provide a proper error when provided to rotki.
+
 * :release:`1.16.2 <2021-05-08>`
 * :bug:`-` If a DeFi event provides zero amount of an asset to a user the PnL report should now work properly again.
 * :bug:`2857` Users will now properly see their blockchain balances fetched when restoring to a new account using premium.

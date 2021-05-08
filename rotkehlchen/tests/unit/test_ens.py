@@ -3,6 +3,7 @@ import warnings as test_warnings
 import pytest
 
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
+from rotkehlchen.errors import InputError
 from rotkehlchen.tests.utils.ens import (
     ENS_BRUNO,
     ENS_BRUNO_BTC_BYTES,
@@ -27,6 +28,12 @@ def test_ens_lookup(ethereum_manager, call_order, ethereum_manager_connect_at_st
 
     result = ethereum_manager.ens_lookup('rotki.eth', call_order=call_order)
     assert result == '0x9531C059098e3d194fF87FebB587aB07B30B1306'
+
+    # Test invalid name
+    with pytest.raises(InputError) as e:
+        ethereum_manager.ens_lookup('fl00_id.loopring.eth', call_order=call_order)
+    assert "fl00_id.loopring.eth is an invalid name, because Codepoint U+005F not allowed at position 5 in 'fl00_id.loopring.eth'" in str(e.value)  # noqa: E501
+
     result = ethereum_manager.ens_lookup('ishouldprobablynotexist.eth', call_order=call_order)
     assert result is None
 
