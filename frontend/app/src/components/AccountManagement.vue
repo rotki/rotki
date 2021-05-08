@@ -11,7 +11,8 @@
             {{ $t('app.moto') }}
           </span>
         </div>
-        <connection-loading :connected="connected" />
+        <connection-loading v-if="!connectionFailure" :connected="connected" />
+        <connection-failure v-else />
         <v-slide-y-transition>
           <login
             :loading="loading"
@@ -28,6 +29,8 @@
           <create-account
             :loading="loading"
             :displayed="accountCreation && connected"
+            :error="accountCreationError"
+            @error:clear="accountCreationError = ''"
             @cancel="accountCreation = false"
             @confirm="createAccount($event)"
           />
@@ -53,6 +56,7 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
+import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import CreateAccount from '@/components/account-management/CreateAccount.vue';
 import Login from '@/components/account-management/Login.vue';
@@ -76,6 +80,7 @@ import {
 
 @Component({
   components: {
+    ConnectionFailure,
     PrivacyNotice,
     ConnectionLoading,
     PremiumReminder,
@@ -84,6 +89,7 @@ import {
     CreateAccount
   },
   computed: {
+    ...mapState(['connectionFailure']),
     ...mapState('session', ['syncConflict', 'premium']),
     ...mapState(['message', 'connected']),
     ...mapGetters(['updateNeeded', 'message'])
@@ -103,6 +109,7 @@ export default class AccountManagement extends Vue {
   unlock!: (payload: UnlockPayload) => Promise<ActionStatus>;
   setMessage!: (message: Message) => void;
   errors: string[] = [];
+  accountCreationError: string = '';
 
   loglevel: Level = process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL;
 
@@ -110,6 +117,7 @@ export default class AccountManagement extends Vue {
 
   @Prop({ required: true, type: Boolean })
   logged!: boolean;
+  connectionFailure!: boolean;
 
   get displayPremium(): boolean {
     return !this.premium && !this.message.title && this.premiumVisible;
@@ -159,7 +167,6 @@ export default class AccountManagement extends Vue {
       deleteBackendUrl();
       await this.startBackendWithLogLevel(this.loglevel);
     }
-    await this.$store.dispatch('version');
   }
 
   async startBackendWithLogLevel(level: Level) {
@@ -167,7 +174,6 @@ export default class AccountManagement extends Vue {
     await this.$store.commit('setConnected', false);
     await this.$interop.restartBackend(level);
     await this.$store.dispatch('connect');
-    await this.$store.dispatch('version');
   }
 
   async login(credentials: Credentials) {
@@ -198,7 +204,8 @@ export default class AccountManagement extends Vue {
       submitUsageAnalytics
     } = credentials;
     this.loading = true;
-    await this.$store.dispatch('session/unlock', {
+    this.accountCreationError = '';
+    const { message, success } = await this.unlock({
       username,
       password,
       create: true,
@@ -206,12 +213,19 @@ export default class AccountManagement extends Vue {
       apiKey,
       apiSecret,
       submitUsageAnalytics
-    } as UnlockPayload);
-    this.accountCreation = false;
+    });
     this.loading = false;
-    if (this.logged) {
-      this.showGetPremiumButton();
-      this.loginComplete();
+
+    if (success) {
+      this.accountCreation = false;
+
+      if (this.logged) {
+        this.showGetPremiumButton();
+        this.loginComplete();
+      }
+    } else {
+      this.accountCreationError =
+        message ?? this.$t('account_management.creation.error').toString();
     }
   }
 

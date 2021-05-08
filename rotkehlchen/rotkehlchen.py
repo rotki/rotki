@@ -20,7 +20,6 @@ from typing import (
 )
 
 import gevent
-from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import Accountant
@@ -115,13 +114,12 @@ class Rotkehlchen():
     def __init__(self, args: argparse.Namespace) -> None:
         """Initialize the Rotkehlchen object
 
+        This runs during backend initialization so it should be as light as possible.
+
         May Raise:
         - SystemPermissionError if the given data directory's permissions
         are not correct.
         """
-        self.lock = Semaphore()
-        self.lock.acquire()
-
         # Can also be None after unlock if premium credentials did not
         # authenticate or premium server temporarily offline
         self.premium: Optional[Premium] = None
@@ -151,14 +149,6 @@ class Rotkehlchen():
         self.coingecko = Coingecko(data_directory=self.data_dir)
         self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
         self.assets_updater = AssetsUpdater(self.msg_aggregator)
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='periodically_query_icons_until_all_cached',
-            exception_is_error=False,
-            method=self.icon_manager.periodically_query_icons_until_all_cached,
-            batch_size=ICONS_BATCH_SIZE,
-            sleep_time_secs=ICONS_QUERY_SLEEP,
-        )
         # Initialize the Inquirer singleton
         Inquirer(
             data_dir=self.data_dir,
@@ -170,8 +160,6 @@ class Rotkehlchen():
             'trade': defaultdict(int),
             'asset_movement': defaultdict(int),
         }
-
-        self.lock.release()
         self.task_manager: Optional[TaskManager] = None
         self.shutdown_event = gevent.event.Event()
 
@@ -325,6 +313,14 @@ class Rotkehlchen():
             premium_sync_manager=self.premium_sync_manager,
             chain_manager=self.chain_manager,
             exchange_manager=self.exchange_manager,
+        )
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=5,
+            task_name='periodically_query_icons_until_all_cached',
+            exception_is_error=False,
+            method=self.icon_manager.periodically_query_icons_until_all_cached,
+            batch_size=ICONS_BATCH_SIZE,
+            sleep_time_secs=ICONS_QUERY_SLEEP,
         )
         self.user_is_logged_in = True
         log.debug('User unlocking complete')
@@ -996,30 +992,29 @@ class Rotkehlchen():
 
     def set_settings(self, settings: ModifiableDBSettings) -> Tuple[bool, str]:
         """Tries to set new settings. Returns True in success or False with message if error"""
-        with self.lock:
-            if settings.eth_rpc_endpoint is not None:
-                result, msg = self.chain_manager.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
-                if not result:
-                    return False, msg
+        if settings.eth_rpc_endpoint is not None:
+            result, msg = self.chain_manager.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
+            if not result:
+                return False, msg
 
-            if settings.ksm_rpc_endpoint is not None:
-                result, msg = self.chain_manager.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
-                if not result:
-                    return False, msg
+        if settings.ksm_rpc_endpoint is not None:
+            result, msg = self.chain_manager.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
+            if not result:
+                return False, msg
 
-            if settings.btc_derivation_gap_limit is not None:
-                self.chain_manager.btc_derivation_gap_limit = settings.btc_derivation_gap_limit
+        if settings.btc_derivation_gap_limit is not None:
+            self.chain_manager.btc_derivation_gap_limit = settings.btc_derivation_gap_limit
 
-            if settings.current_price_oracles is not None:
-                Inquirer().set_oracles_order(settings.current_price_oracles)
+        if settings.current_price_oracles is not None:
+            Inquirer().set_oracles_order(settings.current_price_oracles)
 
-            if settings.historical_price_oracles is not None:
-                PriceHistorian().set_oracles_order(settings.historical_price_oracles)
-            if settings.active_modules is not None:
-                self.chain_manager.process_new_modules_list(settings.active_modules)
+        if settings.historical_price_oracles is not None:
+            PriceHistorian().set_oracles_order(settings.historical_price_oracles)
+        if settings.active_modules is not None:
+            self.chain_manager.process_new_modules_list(settings.active_modules)
 
-            self.data.db.set_settings(settings)
-            return True, ''
+        self.data.db.set_settings(settings)
+        return True, ''
 
     def get_settings(self) -> DBSettings:
         """Returns the db settings with a check whether premium is active or not"""

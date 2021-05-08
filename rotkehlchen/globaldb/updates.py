@@ -3,6 +3,8 @@ import logging
 import re
 import sqlite3
 import sys
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 import requests
@@ -16,7 +18,7 @@ from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
-from .handler import GlobalDBHandler
+from .handler import GlobalDBHandler, initialize_globaldb
 
 log = logging.getLogger(__name__)
 
@@ -35,12 +37,36 @@ def executeall(cursor: sqlite3.Cursor, statements: str) -> None:
         cursor.execute(statement)
 
 
+def _replace_assets_from_db(
+        connection: sqlite3.Connection,
+        sourcedb_path: Path,
+) -> None:
+    cursor = connection.cursor()
+    cursor.executescript(f"""
+    ATTACH DATABASE "{sourcedb_path}" AS other_db;
+    PRAGMA foreign_keys = OFF;
+    DELETE FROM assets;
+    DELETE FROM ethereum_tokens;
+    DELETE FROM underlying_tokens_list;
+    DELETE FROM common_asset_details;
+    INSERT INTO assets SELECT * FROM other_db.assets;
+    INSERT INTO ethereum_tokens SELECT * FROM other_db.ethereum_tokens;
+    INSERT INTO underlying_tokens_list SELECT * FROM other_db.underlying_tokens_list;
+    INSERT INTO common_asset_details SELECT * FROM other_db.common_asset_details;
+    INSERT OR REPLACE INTO settings(name, value) VALUES("{ASSETS_VERSION_KEY}",
+    (SELECT value FROM other_db.settings WHERE name="{ASSETS_VERSION_KEY}")
+    );
+    PRAGMA foreign_keys = ON;
+    DETACH DATABASE "other_db";
+    """)
+
+
 def _force_remote(cursor: sqlite3.Cursor, local_asset: Asset, full_insert: str) -> None:
     """Force the remote entry into the database by deleting old one and doing the full insert.
 
     May raise an sqlite3 error if something fails.
     """
-    cursor.execute('PRAGMA foreign_keys=off;')
+    cursor.executescript('BEGIN TRANSACTION; PRAGMA foreign_keys=off; COMMIT;')
     # Delete the old entry
     if local_asset.asset_type == AssetType.ETHEREUM_TOKEN:
         token = EthereumToken.from_asset(local_asset)
@@ -57,10 +83,10 @@ def _force_remote(cursor: sqlite3.Cursor, local_asset: Asset, full_insert: str) 
         'DELETE FROM assets WHERE identifier=?;',
         (local_asset.identifier,),
     )
+    cursor.executescript('BEGIN TRANSACTION; PRAGMA foreign_keys=on; COMMIT;')
     # Insert new entry. Since identifiers are the same, no foreign key constrains should break
     executeall(cursor, full_insert)
     AssetResolver().clean_memory_cache(local_asset.identifier.lower())
-    cursor.execute('PRAGMA foreign_keys=on;')
 
 
 class ParsedAssetData(NamedTuple):
@@ -316,7 +342,10 @@ class AssetsUpdater():
                 self.conflicts.append((local_data, remote_asset_data))
 
         # at the very end update the current version in the DB
-        GlobalDBHandler().add_setting_value(ASSETS_VERSION_KEY, version, commit=False)
+        cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            (ASSETS_VERSION_KEY, str(version)),
+        )
 
     def perform_update(
             self,
@@ -337,12 +366,47 @@ class AssetsUpdater():
         self.conflicts = []  # reset the stored conflicts
         infojson = self._get_remote_info_json()
         local_schema_version = GlobalDBHandler().get_schema_version()
+        data_directory = GlobalDBHandler()._data_directory
+        assert data_directory is not None, 'data directory should be initialized at this point'
+        global_db_path = data_directory / 'global_data' / 'global.db'
+        with TemporaryDirectory() as tmpdirname:
+            tempdbpath = Path(tmpdirname) / 'temp.db'
+            connection = initialize_globaldb(tempdbpath)
+            _replace_assets_from_db(connection, global_db_path)
+            self._perform_update(
+                connection=connection,
+                conflicts=conflicts,
+                local_schema_version=local_schema_version,
+                infojson=infojson,
+                up_to_version=up_to_version,
+            )
+            if len(self.conflicts) != 0:
+                # close the temporary DB and return the conflicts
+                connection.close()
+                return [
+                    {'identifier': x[0].identifier, 'local': x[0].serialize(), 'remote': x[1].serialize()}  # noqa: E501
+                    for x in self.conflicts
+                ]
+
+            # otherwise we are sure the DB will work without conflicts so let's
+            # now move the data to the actual global DB
+            connection.close()
+            connection = GlobalDBHandler()._conn
+            _replace_assets_from_db(connection, tempdbpath)
+            return None
+
+    def _perform_update(
+            self,
+            connection: sqlite3.Connection,
+            conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
+            local_schema_version: int,
+            infojson: Dict[str, Any],
+            up_to_version: Optional[int],
+    ) -> None:
         version = self.local_assets_version + 1
-        connection = GlobalDBHandler()._conn
-        cursor = connection.cursor()
         target_version = min(up_to_version, self.last_remote_checked_version) if up_to_version else self.last_remote_checked_version   # type: ignore # noqa: E501
         # type ignore since due to check_for_updates we know last_remote_checked_version exists
-
+        cursor = connection.cursor()
         while version <= target_version:
             try:
                 min_schema_version = infojson['updates'][str(version)]['min_schema_version']
@@ -355,7 +419,10 @@ class AssetsUpdater():
                         f'You will have to follow an alternative method to '
                         f'obtain the assets of this update.',
                     )
-                    GlobalDBHandler().add_setting_value(ASSETS_VERSION_KEY, version, commit=False)
+                    cursor.execute(
+                        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                        (ASSETS_VERSION_KEY, str(version)),
+                    )
                     version += 1
                     continue
             except KeyError as e:
@@ -390,11 +457,7 @@ class AssetsUpdater():
 
         if self.conflicts == []:
             connection.commit()
-            return None
+            return
 
         # In this case we have conflicts. Everything should also be rolled back
         connection.rollback()
-        return [
-            {'identifier': x[0].identifier, 'local': x[0].serialize(), 'remote': x[1].serialize()}
-            for x in self.conflicts
-        ]

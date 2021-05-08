@@ -4,6 +4,20 @@ Changelog
 
 * :feature:`1549` Rotki premium users will now be able to switch to a dark mode and change the theme colors.
 
+* :release:`1.16.2 <2021-05-08>`
+* :bug:`-` If a DeFi event provides zero amount of an asset to a user the PnL report should now work properly again.
+* :bug:`2857` Users will now properly see their blockchain balances fetched when restoring to a new account using premium.
+* :bug:`2818` Windows users will now be able to properly login after updating the assets.
+* :bug:`2856` Users will properly see error messages when the account creation fails.
+* :bug:`2851` Users should now see the external trades fetched first when visiting the trades page.
+* :bug:`2835` Eth2 users with a very big number of validators should no longer get a 429 error.
+* :bug:`2846` Premium users who create a new account with premium api credentials that have no saved DB in the server to sync with will have these credentials properly saved in the DB right after creation. At re-login the premium subscription should be properly recognized and the credentials should not need to be input again.
+* :bug:`2821` Users will now be able to properly scroll through the asset when conflicts appear during the asset database upgrade.
+* :bug:`2837` Binance US users will now be able to see the correct location for their trades and deposits/withdrawals. It should no longer be Binance. To reflect those changes Binance US data should be purged and then requeried. To see how to purge data for an exchange look here: https://rotki.readthedocs.io/en/latest/usage_guide.html#purging-data
+* :bug:`2819` Users using macOS will no longer be stuck at "connecting to backend".
+* :bug:`865` Users will now be given an option to retry or terminate the application when communication with the backend fails.
+* :bug:`2791` Updating assets database which adds customs assets already owned as officially supported should no longer get the DB in an incosistent state.
+
 * :release:`1.16.1 <2021-04-30>`
 * :bug:`2811` ETH and WETH are now considered equivalent for cost basis and accounting purposes.
 * :bug:`2794` Aave v1 data after block 12,152,920 should be now available. Rotki switched to the new Aave v1 subgraph.

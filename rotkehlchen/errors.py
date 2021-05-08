@@ -119,3 +119,7 @@ class EncodingError(Exception):
 
 class ModuleInitializationFailure(Exception):
     """Raises when a module failed to initialize"""
+
+
+class ModuleInactive(Exception):
+    """Raises when call happens for a module that is not initialized"""

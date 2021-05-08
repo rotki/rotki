@@ -221,14 +221,15 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
     this.$interop.onError((backendOutput: string, code: BackendCode) => {
       if (code === BackendCode.TERMINATED) {
         this.startupError = backendOutput;
-      } else {
+      } else if (code === BackendCode.MACOS_VERSION) {
         this.macosUnsupported = true;
+      } else {
+        // eslint-disable-next-line no-console
+        console.error(backendOutput, code);
       }
     });
 
     await this.$store.dispatch('connect');
-    await this.$store.dispatch('version');
-
     if (process.env.NODE_ENV === 'development' && this.logged) {
       monitor.start();
     }

@@ -31,6 +31,7 @@
       :expanded="expanded"
       item-key="identifier"
       sort-by="name"
+      :sort-desc="false"
       :search.sync="search"
     >
       <template #item.name="{ item }">

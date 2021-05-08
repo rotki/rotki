@@ -347,27 +347,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async fetch(
-    { commit, dispatch },
-    payload: { newUser: boolean; exchanges: string[] }
-  ): Promise<void> {
-    const { exchanges, newUser } = payload;
-
+  async fetch({ dispatch }, exchanges: string[]): Promise<void> {
     await dispatch('fetchExchangeRates');
     await dispatch('fetchBalances');
 
     if (exchanges) {
       await dispatch('addExchanges', exchanges);
     }
-
-    if (!newUser) {
-      await dispatch('fetchBlockchainBalances');
-    } else {
-      const loaded = Status.LOADED;
-      const oldStatus = () => Status.NONE;
-      setStatus(loaded, Section.BLOCKCHAIN_ETH, oldStatus, commit);
-      setStatus(loaded, Section.BLOCKCHAIN_BTC, oldStatus, commit);
-    }
+    await dispatch('fetchBlockchainBalances');
   },
 
   async updateBalances(

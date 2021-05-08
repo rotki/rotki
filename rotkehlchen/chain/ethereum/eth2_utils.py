@@ -1,6 +1,8 @@
 import logging
-from typing import TYPE_CHECKING, List, NamedTuple, Optional
+from http import HTTPStatus
+from typing import List, NamedTuple
 
+import gevent
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
 
@@ -8,16 +10,12 @@ from rotkehlchen.chain.ethereum.typing import ValidatorDailyStats
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
-from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import create_timestamp, ts_now
-
-if TYPE_CHECKING:
-    from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.utils.misc import create_timestamp
 
 log = logging.getLogger(__name__)
 
@@ -49,7 +47,7 @@ def _parse_int(line: str, entry: str) -> int:
     return result
 
 
-def _scrape_validator_daily_stats(
+def scrape_validator_daily_stats(
         validator_index: int,
         last_known_timestamp: Timestamp,
         msg_aggregator: MessagesAggregator,
@@ -65,17 +63,33 @@ def _scrape_validator_daily_stats(
     - RemoteError if we can't query beaconcha.in or if the data is not in the expected format
     """
     url = f'https://beaconcha.in/validator/{validator_index}/stats'
-    log.debug(f'Querying beaconchain stats: {url}')
-    try:
-        response = requests.get(url)
-    except requests.exceptions.RequestException as e:
-        raise RemoteError(f'Beaconcha.in api request {url} failed due to {str(e)}') from e
+    tries = 1
+    max_tries = 3
+    backoff = 60
+    while True:
+        log.debug(f'Querying beaconchain stats: {url}')
+        try:
+            response = requests.get(url)
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Beaconcha.in api request {url} failed due to {str(e)}') from e
 
-    if response.status_code != 200:
-        raise RemoteError(
-            f'Beaconcha.in api request {url} failed with code: {response.status_code}'
-            f' and response: {response.text}',
-        )
+        if response.status_code == HTTPStatus.TOO_MANY_REQUESTS and tries <= max_tries:
+            sleep_secs = backoff * tries / max_tries
+            log.warning(
+                f'Querying {url} returned 429. Backoff try {tries} / {max_tries}.'
+                f' We are backing off for {sleep_secs}',
+            )
+            tries += 1
+            gevent.sleep(sleep_secs)
+            continue
+
+        if response.status_code != 200:
+            raise RemoteError(
+                f'Beaconcha.in api request {url} failed with code: {response.status_code}'
+                f' and response: {response.text}',
+            )
+
+        break  # else all good - break from the loop
 
     soup = BeautifulSoup(response.text, 'html.parser', parse_only=SoupStrainer('tbod'))
     if soup is None:
@@ -185,42 +199,3 @@ def _scrape_validator_daily_stats(
         tr = tr.find_next_sibling()
 
     return stats
-
-
-def get_validator_daily_stats(
-        db: 'DBHandler',
-        validator_index: int,
-        msg_aggregator: MessagesAggregator,
-        from_timestamp: Optional[Timestamp] = None,
-        to_timestamp: Optional[Timestamp] = None,
-) -> List[ValidatorDailyStats]:
-    """Gets the daily stats of an ETH2 validator by index
-
-    First queries the DB for the already known stats and then if needed also scrapes
-    the beacocha.in website for more. Saves all new entries to the DB.
-    """
-    dbeth2 = DBEth2(db)
-    known_stats = dbeth2.get_validator_daily_stats(
-        validator_index=validator_index,
-        from_ts=from_timestamp,
-        to_ts=to_timestamp,
-    )
-    last_ts = Timestamp(0) if len(known_stats) == 0 else known_stats[-1].timestamp
-    limit_ts = to_timestamp if to_timestamp else ts_now()
-    if limit_ts - last_ts <= DAY_IN_SECONDS:
-        return known_stats  # no need to requery if less than a day passed
-
-    new_stats = _scrape_validator_daily_stats(
-        validator_index=validator_index,
-        last_known_timestamp=last_ts,
-        msg_aggregator=msg_aggregator,
-    )
-
-    if len(new_stats) != 0:
-        dbeth2.add_validator_daily_stats(stats=new_stats)
-
-    return dbeth2.get_validator_daily_stats(
-        validator_index=validator_index,
-        from_ts=from_timestamp,
-        to_ts=to_timestamp,
-    )
