@@ -116,7 +116,7 @@ class BinancePair(NamedTuple):
 def trade_from_binance(
         binance_trade: Dict,
         binance_symbols_to_pair: Dict[str, BinancePair],
-        name: str = 'binance',
+        location: Location,
 ) -> Trade:
     """Turn a binance trade returned from trade history to our common trade
     history format
@@ -136,7 +136,7 @@ def trade_from_binance(
     rate = deserialize_price(binance_trade['price'])
     if binance_trade['symbol'] not in binance_symbols_to_pair:
         raise DeserializationError(
-            f'Error reading a {name} trade. Could not find '
+            f'Error reading a {str(location)} trade. Could not find '
             f'{binance_trade["symbol"]} in binance_symbols_to_pair',
         )
 
@@ -156,7 +156,7 @@ def trade_from_binance(
     fee = deserialize_fee(binance_trade['commission'])
 
     log.debug(
-        f'Processing {name} Trade',
+        f'Processing {str(location)} Trade',
         sensitive_log=True,
         amount=amount,
         rate=rate,
@@ -168,8 +168,6 @@ def trade_from_binance(
         commision_asset=binance_trade['commissionAsset'],
         fee=fee,
     )
-
-    location = Location.BINANCE if name == str(Location.BINANCE) else Location.BINANCEUS  # noqa: E501
     return Trade(
         timestamp=timestamp,
         location=location,
@@ -874,7 +872,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 trade = trade_from_binance(
                     binance_trade=raw_trade,
                     binance_symbols_to_pair=self.symbols_to_pair,
-                    name=self.name,
+                    location=self.location,
                 )
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
@@ -929,9 +927,8 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             timestamp = deserialize_timestamp_from_binance(raw_data[time_key])
             asset = asset_from_binance(raw_data['asset'])
-            location = Location.BINANCE if self.name == str(Location.BINANCE) else Location.BINANCEUS  # noqa: E501
             return AssetMovement(
-                location=location,
+                location=self.location,
                 category=category,
                 address=deserialize_asset_movement_address(raw_data, 'address', asset),
                 transaction_id=get_key_if_has_val(raw_data, 'txId'),
@@ -946,12 +943,12 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {self.name} deposit/withdrawal with unknown asset '
+                f'Found {str(self.location)} deposit/withdrawal with unknown asset '
                 f'{e.asset_name}. Ignoring it.',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {self.name} deposit/withdrawal with unsupported asset '
+                f'Found {str(self.location)} deposit/withdrawal with unsupported asset '
                 f'{e.asset_name}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
@@ -959,11 +956,11 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if isinstance(e, KeyError):
                 msg = f'Missing key entry for {msg}.'
             self.msg_aggregator.add_error(
-                f'Error processing a {self.name} deposit/withdrawal. Check logs '
+                f'Error processing a {str(self.location)} deposit/withdrawal. Check logs '
                 f'for details. Ignoring it.',
             )
             log.error(
-                f'Error processing a {self.name} deposit_withdrawal',
+                f'Error processing a {str(self.location)} deposit/withdrawal',
                 asset_movement=raw_data,
                 error=msg,
             )

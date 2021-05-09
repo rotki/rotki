@@ -147,7 +147,7 @@ def test_trade_from_binance(function_scope_binance):
     ]
 
     for idx, binance_trade in enumerate(binance_trades_list):
-        our_trade = trade_from_binance(binance_trade, binance.symbols_to_pair)
+        our_trade = trade_from_binance(binance_trade, binance.symbols_to_pair, location=Location.BINANCE)  # noqa: E501
         assert our_trade == our_expected_list[idx]
         assert isinstance(our_trade.fee_currency, Asset)
 
