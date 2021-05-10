@@ -178,6 +178,17 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def first_connection(self) -> None:
         self.first_connection_made = True
 
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'Api-Key': self.api_key})
+        return changed
+
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
             self.api_query('balances')
@@ -266,7 +277,6 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 hashlib.sha512,
             ).hexdigest()
             self.session.headers.update({
-                'Api-Key': self.api_key,
                 'Api-Timestamp': api_timestamp,
                 'Api-Content-Hash': api_content_hash,
                 'Api-Signature': signature,

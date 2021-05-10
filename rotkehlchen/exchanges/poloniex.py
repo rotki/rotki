@@ -235,9 +235,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='
-        self.session.headers.update({
-            'Key': self.api_key,
-        })
+        self.session.headers.update({'Key': self.api_key})
         self.msg_aggregator = msg_aggregator
         self.nonce_lock = Semaphore()
 
@@ -246,6 +244,18 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return
 
         self.first_connection_made = True
+
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'Key': self.api_key})
+
+        return changed
 
     def validate_api_key(self) -> Tuple[bool, str]:
         try:

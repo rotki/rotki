@@ -81,9 +81,11 @@ class ExchangeManager():
             name: str,
             location: Location,
             new_name: Optional[str],
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
-    ) -> bool:
+    ) -> Tuple[bool, str]:
         """Edits both the exchange object and the database entry
 
         Returns True if an entry was found and edited and false otherwise
@@ -93,26 +95,37 @@ class ExchangeManager():
         """
         exchangeobj = self.get_exchange(name=name, location=location)
         if not exchangeobj:
-            return False
+            return False, f'Could not find {str(location)} exchange {name} for editing'
 
         # First edit the database entries. This may raise InputError
         self.database.edit_exchange(
             name=name,
             location=location,
             new_name=new_name,
+            api_key=api_key,
+            api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
+            should_commit=False,
         )
 
         # Edit the exchange object
-        if new_name is not None:
-            exchangeobj.name = new_name
-        if passphrase is not None and location in (Location.KUCOIN, Location.COINBASEPRO):
-            exchangeobj.update_passphrase(passphrase)  # type: ignore  # kucoin and coinbasepro have this function  # noqa: E501
-        if kraken_account_type is not None and location == Location.KRAKEN:
-            exchangeobj.set_account_type(kraken_account_type)  # type: ignore  # kraken has this function  # noqa: E501
+        success, msg = exchangeobj.edit_exchange(
+            name=new_name,
+            api_key=api_key,
+            api_secret=api_secret,
+            passphrase=passphrase,
+            kraken_account_type=kraken_account_type,
+        )
+        if success is False:
+            self.database.conn.rollback()  # the database changes that happened need rollback
+            return False, msg
 
-        return True
+        # At this point all is great so we should also commit to the database
+        self.database.conn.commit()
+        self.database.update_last_write()
+
+        return True, ''
 
     def delete_exchange(self, name: str, location: Location) -> None:
         """Deletes exchange only from the manager. Not from the DB"""
