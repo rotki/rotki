@@ -258,6 +258,17 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         self.first_connection_made = True
 
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'X-MBX-APIKEY': api_key})
+        return changed
+
     @property
     def symbols_to_pair(self) -> Dict[str, BinancePair]:
         self.first_connection()

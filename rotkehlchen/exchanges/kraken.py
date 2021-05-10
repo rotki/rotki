@@ -270,9 +270,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             database=database,
         )
         self.msg_aggregator = msg_aggregator
-        self.session.headers.update({
-            'API-Key': self.api_key,
-        })
+        self.session.headers.update({'API-Key': self.api_key})
         self.nonce_lock = Semaphore()
         self.set_account_type(kraken_account_type)
         self.call_counter = 0
@@ -292,6 +290,42 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         else:  # Pro
             self.call_limit = 20
             self.reduction_every_secs = 1
+
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'API-Key': self.api_key})
+
+        return changed
+
+    def edit_exchange(
+            self,
+            name: Optional[str],
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            **kwargs: Any,
+    ) -> Tuple[bool, str]:
+        success, msg = super().edit_exchange(
+            name=name,
+            api_key=api_key,
+            api_secret=api_secret,
+            **kwargs,
+        )
+        if success is False:
+            return success, msg
+
+        account_type = kwargs.get('kraken_account_type')
+        if account_type is None:
+            return success, msg
+
+        # here we can finally update the account type
+        self.set_account_type(account_type)
+        return True, ''
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Kraken API Key is good for usage in Rotkehlchen

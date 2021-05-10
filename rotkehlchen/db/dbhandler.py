@@ -2199,15 +2199,18 @@ class DBHandler:
             name: str,
             location: Location,
             new_name: Optional[str],
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
+            should_commit: bool = False,
     ) -> None:
         """May raise InputError if something is wrong with editing the DB"""
         if location not in SUPPORTED_EXCHANGES:
             raise InputError(f'Unsupported exchange {str(location)}')
 
         cursor = self.conn.cursor()
-        if new_name is not None or passphrase is not None:
+        if any(x is not None for x in (new_name, passphrase, api_key, api_secret)):
             querystr = 'UPDATE user_credentials SET '
             bindings = []
             if new_name is not None:
@@ -2216,9 +2219,19 @@ class DBHandler:
             if passphrase is not None:
                 querystr += 'passphrase=?,'
                 bindings.append(passphrase)
+            if api_key is not None:
+                querystr += 'api_key=?,'
+                bindings.append(api_key)
+            if api_secret is not None:
+                querystr += 'api_secret=?,'
+                bindings.append(api_secret.decode())
 
             if querystr[-1] == ',':
                 querystr = querystr[:-1]
+
+            querystr += ' WHERE name=? AND location=?;'
+            bindings.extend([name, location.serialize_for_db()])
+
             try:
                 cursor.execute(querystr, bindings)
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
@@ -2236,8 +2249,9 @@ class DBHandler:
                 self.conn.rollback()
                 raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
 
-        self.conn.commit()
-        self.update_last_write()
+        if should_commit is True:
+            self.conn.commit()
+            self.update_last_write()
 
     def remove_exchange(self, name: str, location: Location) -> None:
         cursor = self.conn.cursor()
@@ -2248,11 +2262,23 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def get_exchange_credentials(self) -> Dict[Location, List[ExchangeApiCredentials]]:
+    def get_exchange_credentials(
+            self,
+            location: Location = None,
+            name: str = None,
+    ) -> Dict[Location, List[ExchangeApiCredentials]]:
+        """Gets all exchange credentials
+
+        If an exchange name and location are passed the credentials are filtered further
+        """
         cursor = self.conn.cursor()
-        result = cursor.execute(
-            'SELECT name, location, api_key, api_secret, passphrase FROM user_credentials;',
-        )
+        bindings = ()
+        querystr = 'SELECT name, location, api_key, api_secret, passphrase FROM user_credentials'
+        if name is not None and location is not None:
+            querystr += ' WHERE name=? and location=?'
+            bindings = (name, location.serialize_for_db())  # type: ignore
+        querystr += ';'
+        result = cursor.execute(querystr, bindings)
         credentials = defaultdict(list)
         for entry in result:
             if entry[0] == 'rotkehlchen':

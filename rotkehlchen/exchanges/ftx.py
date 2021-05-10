@@ -105,6 +105,18 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def first_connection(self) -> None:
         self.first_connection_made = True
 
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'FTX-KEY': self.api_key})
+
+        return changed
+
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the FTX API key is good for usage in Rotki"""
         try:
@@ -148,7 +160,6 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             signature = hmac.new(self.secret, signature_payload, 'sha256').hexdigest()
             log.debug('FTX API query', request_url=request_url)
             self.session.headers.update({
-                'FTX-KEY': self.api_key,
                 'FTX-SIGN': signature,
                 'FTX-TS': str(timestamp),
             })

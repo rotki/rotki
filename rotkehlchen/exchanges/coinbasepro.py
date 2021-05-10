@@ -123,6 +123,20 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def update_passphrase(self, new_passphrase: str) -> None:
         self.session.headers.update({'CB-ACCESS-PASSPHRASE': new_passphrase})
 
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
+        if passphrase is not None:
+            self.update_passphrase(passphrase)
+
+        return changed
+
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Coinbase Pro API key is good for usage in Rotki
 

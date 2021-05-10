@@ -503,6 +503,8 @@ class RestAPI():
             name: str,
             location: Location,
             new_name: Optional[str],
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
     ) -> Response:
@@ -510,15 +512,15 @@ class RestAPI():
         status_code = HTTPStatus.OK
         msg = ''
         try:
-            edited = self.rotkehlchen.exchange_manager.edit_exchange(
+            edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
                 name=name,
                 location=location,
                 new_name=new_name,
+                api_key=api_key,
+                api_secret=api_secret,
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
             )
-            if edited is False:
-                msg = f'Could not find {str(location)} exchange {name} for editing'
         except InputError as e:
             edited = False
             msg = str(e)

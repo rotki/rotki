@@ -1141,6 +1141,8 @@ class ExchangesResourceEditSchema(Schema):
     name = fields.String(required=True)
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
     new_name = fields.String(missing=None)
+    api_key = ApiKeyField(missing=None)
+    api_secret = ApiSecretField(missing=None)
     passphrase = fields.String(missing=None)
     kraken_account_type = KrakenAccountTypeField(missing=None)
 

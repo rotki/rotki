@@ -266,6 +266,8 @@ class ExchangesResource(BaseResource):
             name: str,
             location: Location,
             new_name: Optional[str],
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
     ) -> Response:
@@ -273,6 +275,8 @@ class ExchangesResource(BaseResource):
             name=name,
             location=location,
             new_name=new_name,
+            api_key=api_key,
+            api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
         )

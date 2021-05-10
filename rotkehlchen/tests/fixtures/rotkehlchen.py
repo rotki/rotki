@@ -6,10 +6,10 @@ import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.db.settings import DBSettings
+from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.database import (
     add_blockchain_accounts_to_db,
@@ -323,7 +323,10 @@ def rotkehlchen_api_server_with_exchanges(
     exchanges = rotkehlchen_api_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     for exchange_location in added_exchanges:
-        create_fn = getattr(exchange_tests, f'create_test_{str(exchange_location)}')
+        name = str(exchange_location)
+        if exchange_location == Location.BINANCEUS:
+            name = 'binance'
+        create_fn = getattr(exchange_tests, f'create_test_{name}')
         passphrase = None
         kwargs = {}
         if exchange_location in EXCHANGES_WITH_PASSPHRASE:

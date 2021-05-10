@@ -137,8 +137,20 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             database=database,
         )
         self.base_uri = 'https://api.bitfinex.com'
+        self.session.headers.update({'bfx-apikey': self.api_key})
         self.msg_aggregator = msg_aggregator
         self.nonce_lock = Semaphore()
+
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'bfx-apikey': self.api_key})
+        return changed
 
     def _api_query(
             self,
@@ -198,7 +210,6 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 ).hexdigest()
                 self.session.headers.update({
                     'Content-Type': 'application/json',
-                    'bfx-apikey': self.api_key,
                     'bfx-nonce': nonce,
                     'bfx-signature': signature,
                 })
