@@ -1,5 +1,5 @@
 <template>
-  <v-container class="exchange-settings">
+  <v-container class="exchange-settings" data-cy="exchanges">
     <card outlined-body>
       <template #title>
         {{ $t('exchange_settings.title') }}
@@ -12,11 +12,20 @@
           />
         </i18n>
       </template>
-      <v-btn absolute fab top right color="primary" @click="addExchange()">
+      <v-btn
+        absolute
+        fab
+        top
+        right
+        color="primary"
+        data-cy="add-exchange"
+        @click="addExchange()"
+      >
         <v-icon> mdi-plus </v-icon>
       </v-btn>
       <data-table
         key="index"
+        data-cy="exchange-table"
         :items="connectedExchanges"
         :headers="headers"
         sort-by="name"

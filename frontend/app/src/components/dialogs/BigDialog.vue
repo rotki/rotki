@@ -9,7 +9,7 @@
     @keydown.esc.stop="cancel()"
     @input="cancel"
   >
-    <v-card class="big-dialog">
+    <v-card class="big-dialog" data-cy="bottom-dialog">
       <v-card-title class="text-h5 big-dialog__title pt-6">
         {{ title }}
       </v-card-title>
@@ -36,6 +36,7 @@
             {{ secondaryAction }}
           </v-btn>
           <v-btn
+            data-cy="confirm"
             :color="themes[confirmType].color"
             :disabled="actionDisabled"
             depressed
