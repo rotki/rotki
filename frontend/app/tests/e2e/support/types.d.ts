@@ -13,3 +13,11 @@ export type ExternalTrade = {
   readonly link: string;
   readonly notes: string;
 };
+
+declare global {
+  namespace Cypress {
+    interface Chainable {
+      logout: () => void;
+    }
+  }
+}
