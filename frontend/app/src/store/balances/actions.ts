@@ -43,7 +43,7 @@ import {
   BlockchainBalancePayload,
   ERC20Token,
   ExchangeBalancePayload,
-  ExchangePayload,
+  ExchangeSetupPayload,
   HistoricPricePayload,
   HistoricPrices,
   OracleCachePayload,
@@ -807,50 +807,73 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async setupExchange(
     { commit, dispatch },
-    payload: ExchangePayload
+    { exchange, edit }: ExchangeSetupPayload
   ): Promise<boolean> {
     try {
-      const success = await api.setupExchange(payload);
-      const exchange: Exchange = {
-        name: payload.name,
-        location: payload.location
+      const success = await api.setupExchange(exchange, edit);
+      const exchangeEntry: Exchange = {
+        name: exchange.name,
+        location: exchange.location
       };
-      commit('addExchange', exchange);
+
+      if (!edit) {
+        commit('addExchange', exchangeEntry);
+      } else {
+        commit('editExchange', {
+          exchange: exchangeEntry,
+          newName: exchange.newName
+        });
+      }
+
       dispatch('fetchExchangeBalances', {
-        name: location
-      }).then(() => dispatch('refreshPrices', false));
+        location: exchange.location,
+        ignoreCache: false
+      } as ExchangeBalancePayload).then(() => dispatch('refreshPrices', false));
 
       return success;
     } catch (e) {
       showError(
-        i18n.tc('actions.balances.exchange_setup.description', 0, {
-          location: location,
-          error: e.message
-        }),
-        i18n.tc('actions.balances.exchange_setup.title')
+        i18n
+          .t('actions.balances.exchange_setup.description', {
+            location: location,
+            error: e.message
+          })
+          .toString(),
+        i18n.t('actions.balances.exchange_setup.title').toString()
       );
       return false;
     }
   },
 
   async removeExchange(
-    { commit, state: { connectedExchanges } },
+    { commit, dispatch, state },
     exchange: Exchange
   ): Promise<boolean> {
     try {
       const success = await api.removeExchange(exchange);
       if (success) {
-        const exchangeIndex = connectedExchanges.findIndex(
+        const exchangeIndex = state.connectedExchanges.findIndex(
           ({ location, name }) =>
             name === exchange.name && location === exchange.location
         );
         assert(
           exchangeIndex >= 0,
-          `${exchange} not found in ${connectedExchanges
+          `${exchange} not found in ${state.connectedExchanges
             .map(exchange => `${exchange.name} on ${exchange.location}`)
             .join(', ')}`
         );
         commit('removeExchange', exchange);
+
+        const remaining = state.connectedExchanges
+          .map(({ location }) => location)
+          .filter(location => location === exchange.location);
+
+        if (remaining.length > 0) {
+          await dispatch('fetchExchangeBalances', {
+            location: exchange.location,
+            ignoreCache: false
+          } as ExchangeBalancePayload);
+        }
       }
       return success;
     } catch (e) {

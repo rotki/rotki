@@ -61,12 +61,22 @@ export interface BalanceState {
   prices: AssetPrices;
 }
 
+export interface EditExchange {
+  readonly exchange: Exchange;
+  readonly newName: Nullable<string>;
+}
+
+export interface ExchangeSetupPayload {
+  readonly edit: Boolean;
+  readonly exchange: ExchangePayload;
+}
+
 export interface ExchangePayload {
   readonly name: string;
   readonly newName: Nullable<string>;
   readonly location: SupportedExchange;
-  readonly apiKey: string;
-  readonly apiSecret: string;
+  readonly apiKey: Nullable<string>;
+  readonly apiSecret: Nullable<string>;
   readonly passphrase: Nullable<string>;
   readonly krakenAccountType: Nullable<KrakenAccountType>;
 }

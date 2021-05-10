@@ -37,11 +37,7 @@
     <confirm-dialog
       :display="confirmation"
       :title="$t('exchange_settings.confirmation.title')"
-      :message="
-        $t('exchange_settings.confirmation.message', {
-          exchange: pendingRemoval
-        })
-      "
+      :message="$t('exchange_settings.confirmation.message', message)"
       @cancel="confirmation = false"
       @confirm="remove()"
     />
@@ -51,7 +47,8 @@
       :subtitle="dialogSubtitle"
       :primary-action="$t('exchange_settings.button.save')"
       :secondary-action="$t('exchange_settings.button.cancel')"
-      :action-disabled="!valid"
+      :action-disabled="!valid || pending"
+      :loading="pending"
       @confirm="setup"
       @cancel="cancel"
     >
@@ -74,20 +71,21 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
+import { exchangeName } from '@/components/history/consts';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
 import { EXCHANGE_KRAKEN } from '@/data/defaults';
 import { Exchange } from '@/model/action-result';
-import { ExchangePayload } from '@/store/balances/types';
-import { Nullable } from '@/types';
+import { ExchangePayload, ExchangeSetupPayload } from '@/store/balances/types';
+import { Nullable, Writeable } from '@/types';
 import { assert } from '@/utils/assertions';
 
 const placeholder: () => ExchangePayload = () => ({
   location: EXCHANGE_KRAKEN,
   name: '',
   newName: null,
-  apiKey: '',
-  apiSecret: '',
+  apiKey: null,
+  apiSecret: null,
   passphrase: null,
   krakenAccountType: 'starter'
 });
@@ -112,7 +110,7 @@ const placeholder: () => ExchangePayload = () => ({
 export default class ExchangeSettings extends Vue {
   pendingRemoval: Nullable<Exchange> = null;
   confirmation: boolean = false;
-  setupExchange!: (payload: ExchangePayload) => Promise<boolean>;
+  setupExchange!: (payload: ExchangeSetupPayload) => Promise<boolean>;
   removeExchange!: (exchange: Exchange) => Promise<boolean>;
 
   exchange: ExchangePayload = placeholder();
@@ -120,6 +118,7 @@ export default class ExchangeSettings extends Vue {
   showForm: boolean = false;
   edit: boolean = false;
   valid: boolean = false;
+  pending: boolean = false;
 
   get dialogTitle(): string {
     return this.edit
@@ -129,6 +128,15 @@ export default class ExchangeSettings extends Vue {
 
   get dialogSubtitle(): string {
     return '';
+  }
+
+  get message() {
+    const exchange = this.pendingRemoval;
+
+    return {
+      name: exchange?.name ?? '',
+      location: exchange ? exchangeName(exchange.location) : ''
+    };
   }
 
   readonly headers: DataTableHeader[] = [
@@ -165,7 +173,7 @@ export default class ExchangeSettings extends Vue {
   editExchange(exchange: Exchange) {
     this.edit = true;
     this.showForm = true;
-    this.exchange = { ...placeholder(), ...exchange };
+    this.exchange = { ...placeholder(), ...exchange, newName: exchange.name };
   }
 
   cancel() {
@@ -174,7 +182,20 @@ export default class ExchangeSettings extends Vue {
   }
 
   async setup() {
-    await this.setupExchange(this.exchange);
+    this.pending = true;
+    const exchange: Writeable<ExchangePayload> = { ...this.exchange };
+    if (exchange.name === exchange.newName) {
+      exchange.newName = null;
+    }
+
+    const success = await this.setupExchange({
+      exchange: exchange,
+      edit: this.edit
+    });
+    this.pending = false;
+    if (success) {
+      this.cancel();
+    }
   }
 
   async remove() {

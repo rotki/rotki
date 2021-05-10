@@ -16,7 +16,8 @@ import { defaultState } from '@/store/balances/state';
 import {
   AccountAssetBalances,
   AssetPrices,
-  BalanceState
+  BalanceState,
+  EditExchange
 } from '@/store/balances/types';
 import { ExchangeData, ExchangeInfo, ExchangeRates } from '@/typing/types';
 
@@ -47,6 +48,18 @@ export const mutations: MutationTree<BalanceState> = {
   },
   addExchange(state: BalanceState, exchange: Exchange) {
     state.connectedExchanges.push(exchange);
+  },
+  editExchange(
+    state: BalanceState,
+    { exchange: { location, name: oldName }, newName }: EditExchange
+  ) {
+    const exchanges = [...state.connectedExchanges];
+    const name = newName ?? oldName;
+    const index = exchanges.findIndex(
+      value => value.name === oldName && value.location === location
+    );
+    exchanges[index] = Object.assign(exchanges[index], { name, location });
+    state.connectedExchanges = exchanges;
   },
   removeExchange(state: BalanceState, exchange: Exchange) {
     const exchanges = [...state.connectedExchanges];

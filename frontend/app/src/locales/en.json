@@ -2137,7 +2137,7 @@
     },
     "confirmation": {
       "title": "Confirmation Required",
-      "message": "Are you sure you want to delete the API key and secret for {exchange} from rotki? This action can not be undone and you will need to obtain the key and secret again from the exchange."
+      "message": "Are you sure you want to delete the API key and secret for the {location} entry named {name} from rotki? This action can not be undone and you will need to obtain the key and secret again from the exchange."
     }
   },
   "premium_settings": {

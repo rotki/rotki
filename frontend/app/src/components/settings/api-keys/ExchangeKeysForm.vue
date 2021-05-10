@@ -31,6 +31,16 @@
       </v-col>
       <v-col cols="12" md="6">
         <v-text-field
+          v-if="edit"
+          outlined
+          :value="exchange.newName"
+          :rules="nameRules"
+          data-cy="name"
+          :label="$t('exchange_keys_form.name.label')"
+          @input="onUpdateExchange({ ...exchange, newName: $event })"
+        />
+        <v-text-field
+          v-else
           outlined
           :value="exchange.name"
           :rules="nameRules"
@@ -158,8 +168,8 @@ export default class ExchangeKeysForm extends Vue {
       name: '',
       newName: null,
       location: exchange,
-      apiKey: '',
-      apiSecret: '',
+      apiKey: null,
+      apiSecret: null,
       passphrase: null,
       krakenAccountType: exchange === EXCHANGE_KRAKEN ? 'starter' : null
     });

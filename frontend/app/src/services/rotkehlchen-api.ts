@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { SupportedCurrency } from '@/data/currencies';
 import {
   AccountState,
@@ -636,16 +636,31 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async setupExchange(payload: ExchangePayload): Promise<boolean> {
-    return this.axios
-      .put<ActionResult<boolean>>(
+  async setupExchange(
+    payload: ExchangePayload,
+    edit: Boolean
+  ): Promise<boolean> {
+    let request: Promise<AxiosResponse<ActionResult<boolean>>>;
+
+    if (!edit) {
+      request = this.axios.put<ActionResult<boolean>>(
         '/exchanges',
         axiosSnakeCaseTransformer(nonNullProperties(payload)),
         {
           validateStatus: validStatus
         }
-      )
-      .then(handleResponse);
+      );
+    } else {
+      request = this.axios.patch<ActionResult<boolean>>(
+        '/exchanges',
+        axiosSnakeCaseTransformer(nonNullProperties(payload)),
+        {
+          validateStatus: validStatus
+        }
+      );
+    }
+
+    return request.then(handleResponse);
   }
 
   exportHistoryCSV(directory: string): Promise<boolean> {
