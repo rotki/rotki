@@ -106,7 +106,6 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             secret=secret,
             database=database,
         )
-        self.session.headers.update({'ICN-API-KEY': self.api_key})
         self.uri = 'https://api.iconomi.com'
         self.msg_aggregator = msg_aggregator
 
@@ -117,9 +116,6 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             passphrase: Optional[str],
     ) -> bool:
         changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
-        if api_key is not None:
-            self.session.headers.update({'ICN-API-KEY': self.api_key})
-
         return changed
 
     def _generate_signature(self, request_type: str, request_path: str, timestamp: str) -> str:
@@ -165,6 +161,8 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             headers.update({
                 'ICN-SIGN': signature,
+                # set api key only here since if given in non authenticated endpoint gives 400
+                'ICN-API-KEY': self.api_key,
                 'ICN-TIMESTAMP': timestamp,
             })
 
