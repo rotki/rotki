@@ -8,6 +8,7 @@ import {
   EXCHANGE_BITMEX,
   EXCHANGE_BITSTAMP,
   EXCHANGE_BITTREX,
+  EXCHANGE_BLOCKFI,
   EXCHANGE_COINBASE,
   EXCHANGE_COINBASEPRO,
   EXCHANGE_CRYPTOCOM,
@@ -16,6 +17,7 @@ import {
   EXCHANGE_ICONOMI,
   EXCHANGE_KRAKEN,
   EXCHANGE_KUCOIN,
+  EXCHANGE_NEXO,
   EXCHANGE_POLONIEX,
   EXCHANGE_UNISWAP,
   TRADE_LOCATION_BANKS,
@@ -129,11 +131,25 @@ export const tradeLocations: TradeLocationData[] = [
     exchange: false
   },
   {
+    identifier: EXCHANGE_BLOCKFI,
+    name: 'BlockFi',
+    icon: require('@/assets/images/blockfi.png'),
+    imageIcon: true,
+    exchange: true
+  },
+  {
     identifier: EXCHANGE_CRYPTOCOM,
     name: 'Crypto.com',
     icon: require('@/assets/images/crypto.com.png'),
     imageIcon: true,
     exchange: false
+  },
+  {
+    identifier: EXCHANGE_NEXO,
+    name: 'Nexo',
+    icon: require('@/assets/images/nexo.png'),
+    imageIcon: true,
+    exchange: true
   },
   {
     identifier: EXCHANGE_BITSTAMP,

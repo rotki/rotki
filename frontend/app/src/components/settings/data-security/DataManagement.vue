@@ -43,7 +43,7 @@ import PurgeSelector, {
   PurgeParams
 } from '@/components/settings/data-security/PurgeSelector.vue';
 import StatusButton from '@/components/settings/data-security/StatusButton.vue';
-import { EXCHANGE_CRYPTOCOM, SUPPORTED_EXCHANGES } from '@/data/defaults';
+import { EXTERNAL_EXCHANGES, SUPPORTED_EXCHANGES } from '@/data/defaults';
 import { SupportedExchange } from '@/services/balances/types';
 import {
   ALL_DECENTRALIZED_EXCHANGES,
@@ -117,7 +117,7 @@ export default class DataManagement extends Vue {
     } else {
       if (
         SUPPORTED_EXCHANGES.includes(source as any) ||
-        source === EXCHANGE_CRYPTOCOM
+        EXTERNAL_EXCHANGES.includes(source as any)
       ) {
         await this.$api.balances.deleteExchangeData(
           source as SupportedExchange

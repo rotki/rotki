@@ -1,4 +1,4 @@
-import { EXCHANGE_CRYPTOCOM, SUPPORTED_EXCHANGES } from '@/data/defaults';
+import { EXTERNAL_EXCHANGES, SUPPORTED_EXCHANGES } from '@/data/defaults';
 
 export const MODULE_YEARN = 'yearn_vaults';
 export const MODULE_COMPOUND = 'compound';
@@ -34,6 +34,6 @@ export const PURGABLE = [
   ALL_MODULES,
   ALL_TRANSACTIONS,
   ...SUPPORTED_EXCHANGES,
-  EXCHANGE_CRYPTOCOM,
+  ...EXTERNAL_EXCHANGES,
   ...MODULES
 ];

@@ -72,7 +72,7 @@
             </v-row>
             <v-row>
               <v-col>
-                <file-upload source="crypto.com" />
+                <file-upload source="cryptocom" />
               </v-col>
             </v-row>
             <v-row>
@@ -106,6 +106,73 @@
                       />
                     </i18n>
                   </li>
+                </ul>
+              </v-col>
+            </v-row>
+            <v-divider class="mt-1" />
+            <v-row>
+              <v-col cols="12">
+                <div class="import-data__crypto-com">
+                  <v-img
+                    max-width="200"
+                    :src="require('@/assets/images/import/blockfi.svg')"
+                  />
+                </div>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <i18n tag="span" path="import_data.blockfi.import">
+                  <strong v-text="$t('import_data.blockfi.import_trade')" />
+                </i18n>
+                <file-upload source="blockfi-trades" />
+              </v-col>
+              <v-col>
+                <i18n tag="span" path="import_data.blockfi.import">
+                  <strong
+                    v-text="$t('import_data.blockfi.import_transactions')"
+                  />
+                </i18n>
+                <file-upload source="blockfi-transactions" />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <i18n tag="span" path="import_data.blockfi.note">
+                  <strong v-text="$t('import_data.blockfi.name')" />
+                </i18n>
+                <ul>
+                  <li>{{ $t('import_data.blockfi.line_one') }}</li>
+                  <li>{{ $t('import_data.blockfi.line_two') }}</li>
+                </ul>
+              </v-col>
+            </v-row>
+            <v-divider class="mt-1" />
+            <v-row>
+              <v-col cols="12">
+                <div class="import-data__crypto-com">
+                  <v-img
+                    max-width="200"
+                    :src="require('@/assets/images/import/nexo.svg')"
+                  />
+                </div>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <i18n tag="span" path="import_data.nexo.import">
+                  <strong v-text="$t('import_data.nexo.import_transactions')" />
+                </i18n>
+                <file-upload source="nexo" />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <i18n tag="span" path="import_data.nexo.note">
+                  <strong v-text="$t('import_data.nexo.name')" />
+                </i18n>
+                <ul>
+                  <li>{{ $t('import_data.nexo.line_one') }}</li>
                 </ul>
               </v-col>
             </v-row>

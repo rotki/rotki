@@ -1599,6 +1599,14 @@ class DBHandler:
             'DELETE FROM asset_movements WHERE location = ?;',
             (location.serialize_for_db(),),
         )
+        cursor.execute(
+            'DELETE FROM ledger_actions WHERE location = ?;',
+            (location.serialize_for_db(),),
+        )
+        cursor.execute(
+            'DELETE FROM asset_movements WHERE location = ?;',
+            (location.serialize_for_db(),),
+        )
         self.conn.commit()
         self.update_last_write()
 

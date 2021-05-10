@@ -1,13 +1,15 @@
 import { default as BigNumber } from 'bignumber.js';
 import {
   SUPPORTED_EXCHANGES,
-  SUPPORTED_TRADE_LOCATIONS
+  SUPPORTED_TRADE_LOCATIONS,
+  EXTERNAL_EXCHANGES
 } from '@/data/defaults';
 import { TradeLocation } from '@/services/history/types';
 import { Balance } from '@/services/types-api';
 
 export type SupportedExchange = typeof SUPPORTED_EXCHANGES[number];
 export type SupportedTradeLocation = typeof SUPPORTED_TRADE_LOCATIONS[number];
+export type SupportedExternalExchanges = typeof EXTERNAL_EXCHANGES[number];
 
 export interface ManualBalance {
   readonly asset: string;

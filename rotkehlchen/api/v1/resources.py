@@ -100,6 +100,7 @@ from rotkehlchen.typing import (
     ExternalServiceApiCredentials,
     Fee,
     HexColorCode,
+    IMPORTABLE_LOCATIONS,
     ListOfBlockchainAddresses,
     Location,
     ModuleName,
@@ -1092,13 +1093,17 @@ class DataImportResource(BaseResource):
     upload_schema = DataImportSchema()
 
     @use_kwargs(upload_schema, location='json')  # type: ignore
-    def put(self, source: Literal['cointracking.info', 'cryptocom'], file: Path) -> Response:
+    def put(
+        self,
+        source: IMPORTABLE_LOCATIONS,
+        file: Path,
+    ) -> Response:
         return self.rest_api.import_data(source=source, filepath=file)
 
     @use_kwargs(upload_schema, location='form_and_file')  # type: ignore
     def post(
             self,
-            source: Literal['cointracking.info', 'cryptocom'],
+            source: IMPORTABLE_LOCATIONS,
             file: FileStorage,
     ) -> Response:
         with TemporaryDirectory() as temp_directory:

@@ -2258,6 +2258,22 @@
       "name": "crypto.com mobile app",
       "note": "Important notes for importing data from {0}'s CSV exports."
     },
+    "blockfi": {
+      "import": "Import {0} from BlockFi",
+      "import_trade": "trades",
+      "import_transactions": "transactions",
+      "name": "BlockFi",
+      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
+      "line_two": "BlockFi lets you export two different files. Trades will be imported from the file that only contains trades.",
+      "note": "Important notes for importing data from {0}'s CSV exports."
+    },
+    "nexo": {
+      "import": "Import {0} from Nexo",
+      "import_transactions": "transactions",
+      "name": "Nexo",
+      "line_one": "[Experimental] If you find an issue with the imported data let us know so we can adapt the code accordingly.",
+      "note": "Important notes for importing data from {0}'s CSV exports."
+    },
     "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",
     "title": "Import Data",
     "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
