@@ -68,6 +68,16 @@ def mock_validate_api_key_success(location: Location):
     )
 
 
+def mock_validate_api_key_failure(location: Location):
+    name = str(location)
+    if location == Location.BINANCEUS:
+        name = 'binance'
+    return patch(
+        f'rotkehlchen.exchanges.{name}.{name.capitalize()}.validate_api_key',
+        side_effect=mock_validate_api_key,
+    )
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_setup_exchange(rotkehlchen_api_server):
     """Test that setting up an exchange via the api works"""
@@ -954,9 +964,10 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges):
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
 
+    # Test that valid api key/secret is edited properly
+    new_key = 'new_key'
+    new_secret = 'new_secret'
     for location in SUPPORTED_EXCHANGES:
-        new_key = 'new_key'
-        new_secret = 'new_secret'
         exchange = try_get_first_exchange(rotki.exchange_manager, location)
         # change both passphrase and name -- kucoin
         data = {
@@ -969,6 +980,31 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges):
         with mock_validate_api_key_success(location):
             response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
             assert_simple_ok_response(response)
+            assert exchange.api_key == new_key
+            assert exchange.secret == new_secret.encode()
+            # all of the api keys end up in session headers. Check they are properly
+            # updated there
+            assert any(new_key in value for _, value in exchange.session.headers.items())
+
+    # Test that api key validation failure is handled correctly
+    for location in SUPPORTED_EXCHANGES:
+        exchange = try_get_first_exchange(rotki.exchange_manager, location)
+        # change both passphrase and name -- kucoin
+        data = {
+            'name': exchange.name,
+            'location': str(location),
+            'new_name': f'my_{exchange.name}',
+            'api_key': 'invalid',
+            'api_secret': 'invalid',
+        }
+        with mock_validate_api_key_failure(location):
+            response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
+            assert_error_response(
+                response=response,
+                contained_in_msg='BOOM ERROR',
+                status_code=HTTPStatus.CONFLICT,
+            )
+            # Test that the api key/secret DID NOT change
             assert exchange.api_key == new_key
             assert exchange.secret == new_secret.encode()
             # all of the api keys end up in session headers. Check they are properly

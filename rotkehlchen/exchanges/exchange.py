@@ -92,6 +92,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         If extra exchange info should be edited this needs to also be implemented by the subclass.
         """
         passphrase = kwargs.get('passphrase')
+        old_passphrase = None
         if passphrase is not None:  # backup old passphrase
             mapping = self.db.get_exchange_credentials(name=self.name, location=self.location)
             credentials = mapping.get(self.location)
@@ -108,7 +109,12 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         old_api_secret = self.secret
         changed = self.edit_exchange_credentials(api_key, api_secret, passphrase)
         if changed is True:
-            success, message = self.validate_api_key()
+            try:
+                success, message = self.validate_api_key()
+            except Exception as e:  # pylint: disable=broad-except
+                success = False
+                message = str(e)
+
             if success is False:
                 self.edit_exchange_credentials(old_api_key, old_api_secret, old_passphrase)
                 return False, message
