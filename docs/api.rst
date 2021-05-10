@@ -1096,7 +1096,7 @@ Edit an exchange entry
 
 .. http:patch:: /api/(version)/exchanges
 
-   Doing a PATCH on this endpoint with an exchange's name and location and the various optional attributes will result in editing it.
+   Doing a PATCH on this endpoint with an exchange's name and location and the various attributes will result in editing it.
 
    **Example Request**:
 
@@ -1106,11 +1106,13 @@ Edit an exchange entry
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "my kraken key", "location": "kraken", "new_name": "my_kraken", "passphrase": "secret", "kraken_account_type": "intermediate"}
+      {"name": "my kraken key", "location": "kraken", "new_name": "my_kraken", "api_key": "my_new_api_key", "api_secret": "my_new_api_secret", "passphrase": "my_new_passphrase", "kraken_account_type": "intermediate"}
 
    :reqjson string name: The name of the exchange key to edit
    :reqjson string location: The location of the exchange to edit
    :reqjson string new_name: Optional. If given this will be the new name for the exchange credentials.
+   :reqjson string api_key: Optional. If given this will be the new api key for the exchange credentials.
+   :reqjson string api_secret: Optional. If given this will be the new api secret for the exchange credentials.
    :reqjson string passphrase: Optional. If given this will be the new passphrase. Only for exchanges, like coinbase pro, which need a passphrase.
    :reqjson string kraken_account_type: Optional. An optional setting for kraken. The type of the user's kraken account. Valid values are "starter", "intermediate" and "pro".
 
@@ -1129,7 +1131,7 @@ Edit an exchange entry
    :resjson bool result: A boolean indicating success if all went well. If there is an error then the usual result: null and message having a value format is followed.
    :statuscode 200: The exchange has been sucesfully edited
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in. The exchange can not be found.
+   :statuscode 409: No user is logged in. The exchange can not be found. The new exchange credentials were invalid.
    :statuscode 500: Internal Rotki error
 
 Querying the balances of exchanges
