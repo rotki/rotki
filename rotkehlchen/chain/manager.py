@@ -348,6 +348,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             return module  # already activated
 
         logger.debug(f'Activating {module_name} module')
+        kwargs = {}
+        if module_name == 'eth2':
+            kwargs['beaconchain'] = self.beaconchain
         klass = _module_name_to_class(module_name)
         # TODO: figure out the type here: class EthereumModule not callable.
         try:
@@ -356,6 +359,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 database=self.database,
                 premium=self.premium,
                 msg_aggregator=self.msg_aggregator,
+                **kwargs,
             )
         except ModuleInitializationFailure as e:
             logger.error(f'Failed to activate {module_name} due to: {str(e)}')
@@ -644,8 +648,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self.balances.eth[account] = BalanceSheet(
                 assets=defaultdict(Balance, {A_ETH: Balance(amount, usd_value)}),
             )
-            # Check if the new account has any staked eth2 deposits
-            self.account_for_staked_eth2_balances([account], at_addition=True)
         elif append_or_remove == 'remove':
             if account not in self.accounts.eth:
                 raise InputError('Tried to remove a non existing ETH account')
@@ -1140,10 +1142,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 self.totals.assets[A_ADX] += balance
 
         # Count ETH staked in Eth2 beacon chain
-        self.account_for_staked_eth2_balances(
-            addresses=self.queried_addresses_for_module('eth2'),
-            at_addition=False,
-        )
+        self.account_for_staked_eth2_balances(addresses=self.queried_addresses_for_module('eth2'))
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_token_and_totals()
 
@@ -1211,21 +1210,19 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     def account_for_staked_eth2_balances(
             self,
             addresses: List[ChecksumEthAddress],
-            at_addition: bool = False,
     ) -> None:
         eth2 = self.get_module('eth2')
         if eth2 is None:
             return  # no eth2 module active -- do nothing
 
-        if not at_addition:
-            # Before querying the new balances, delete the ones in memory if any
-            self.totals.assets.pop(A_ETH2, None)
-            for _, entry in self.balances.eth.items():
-                if A_ETH2 in entry.assets:
-                    del entry.assets[A_ETH2]
+        # Before querying the new balances, delete the ones in memory if any
+        self.totals.assets.pop(A_ETH2, None)
+        for _, entry in self.balances.eth.items():
+            if A_ETH2 in entry.assets:
+                del entry.assets[A_ETH2]
 
         try:
-            mapping = eth2.get_balances(self.beaconchain, addresses)
+            mapping = eth2.get_balances(addresses)
         except RemoteError as e:
             self.msg_aggregator.add_error(
                 f'Did not manage to query beaconcha.in api for addresses due to {str(e)}.'
@@ -1264,10 +1261,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant query eth2 staking details since eth2 module is not active')
-        return eth2.get_details(
-            beaconchain=self.beaconchain,
-            addresses=self.queried_addresses_for_module('eth2'),
-        )
+        return eth2.get_details(addresses=self.queried_addresses_for_module('eth2'))
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -1287,10 +1281,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             return []  # no need to bother querying before beacon chain launch
 
         defi_events = []
-        eth2_details = eth2.get_details(
-            beaconchain=self.beaconchain,
-            addresses=self.queried_addresses_for_module('eth2'),
-        )
+        eth2_details = eth2.get_details(addresses=self.queried_addresses_for_module('eth2'))
         for entry in eth2_details:
             if entry.validator_index is None:
                 continue  # don't query stats for validators without an index yet
