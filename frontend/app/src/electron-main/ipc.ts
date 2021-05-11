@@ -7,6 +7,8 @@ export const IPC_DOWNLOAD_UPDATE = 'DOWNLOAD_UPDATE' as const;
 export const IPC_DOWNLOAD_PROGRESS = 'DOWNLOAD_PROGRESS' as const;
 export const IPC_INSTALL_UPDATE = 'INSTALL_UPDATE' as const;
 export const IPC_DARK_MODE = 'DARK_MODE' as const;
+export const IPC_VERSION = 'VERSION' as const;
+export const IPC_ABOUT = 'ABOUT' as const;
 
 export type DebugSettings = { vuex: boolean };
 
@@ -19,6 +21,13 @@ type MetamaskImportSupport = {
 };
 
 type MetamaskImport = MetamaskImportError | MetamaskImportSupport;
+
+export type SystemVersion = {
+  readonly electron: string;
+  readonly osVersion: string;
+  readonly os: string;
+  readonly arch: string;
+};
 
 export interface Interop {
   openUrl(url: string): Promise<void>;
@@ -37,4 +46,6 @@ export interface Interop {
   installUpdate(): Promise<boolean | Error>;
   restartBackend(logLevel: Level): Promise<boolean>;
   setDarkMode(enabled: boolean): Promise<boolean>;
+  version(): Promise<SystemVersion>;
+  onAbout(callback: () => void): void;
 }

@@ -5,8 +5,6 @@ import {
   dialog,
   ipcMain,
   Menu,
-  MenuItem,
-  MenuItemConstructorOptions,
   nativeTheme,
   protocol,
   shell
@@ -23,15 +21,17 @@ import {
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_INSTALL_UPDATE,
-  IPC_RESTART_BACKEND
+  IPC_RESTART_BACKEND,
+  IPC_VERSION,
+  SystemVersion
 } from '@/electron-main/ipc';
+import { debugSettings, getUserMenu } from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
 import PyHandler from './py-handler';
 import Timeout = NodeJS.Timeout;
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
-const isMac = process.platform === 'darwin';
 
 const onActivate = async () => {
   // On macOS it's common to re-create a window in the app when the
@@ -63,41 +63,7 @@ const onReady = async () => {
   });
 
   ipcMain.on('PREMIUM_USER_LOGGED_IN', (event, args) => {
-    const getRotkiPremiumButton = {
-      label: '&Get Rotki Premium',
-      ...(isMac
-        ? {
-            // submenu is mandatory to be displayed on macOS
-            submenu: [
-              {
-                label: 'Get Rotki Premium',
-                id: 'premium-button',
-                click: () => {
-                  shell.openExternal('https://rotki.com/products/');
-                }
-              }
-            ]
-          }
-        : {
-            id: 'premium-button',
-            click: () => {
-              shell.openExternal('https://rotki.com/products/');
-            }
-          })
-    };
-
-    // Re-render the menu with the 'Get Rotki Premium' button if the user who just logged in
-    // is not a premium user, otherwise render the menu without the button. Since we are unable to just toggle
-    // visibility on a top-level menu item, we instead have to add/remove it from the menu upon every login
-    // (see https://github.com/electron/electron/issues/8703). TODO: if we move the menu to the render
-    // process we can make this a lot cleaner.
-
-    const menuTemplate =
-      args === false
-        ? defaultMenuTemplate.concat(getRotkiPremiumButton)
-        : defaultMenuTemplate;
-
-    Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
+    Menu.setApplicationMenu(Menu.buildFromTemplate(getUserMenu(!args)));
   });
   ipcMain.on('CLOSE_APP', async () => await closeApp());
   ipcMain.on('OPEN_URL', (event, args) => {
@@ -143,6 +109,16 @@ const onReady = async () => {
     }
 
     event.sender.send(IPC_RESTART_BACKEND, success);
+  });
+
+  ipcMain.on(IPC_VERSION, event => {
+    const version: SystemVersion = {
+      os: process.platform,
+      arch: process.arch,
+      osVersion: process.getSystemVersion(),
+      electron: process.versions.electron
+    };
+    event.sender.send(IPC_VERSION, version);
   });
 
   setupUpdaterInterop();
@@ -280,149 +256,6 @@ protocol.registerSchemesAsPrivileged([
   }
 ]);
 
-const debugSettings = {
-  vuex: false
-};
-
-const defaultMenuTemplate: any[] = [
-  // On a mac we want to show a "Rotki" menu item in the app bar
-  ...(isMac
-    ? [
-        {
-          label: app.name,
-          submenu: [
-            { role: 'hide' },
-            { role: 'hideOthers' },
-            { role: 'unhide' },
-            { type: 'separator' },
-            { role: 'quit' }
-          ]
-        }
-      ]
-    : []),
-  {
-    label: 'File',
-    submenu: [isMac ? { role: 'close' } : { role: 'quit' }]
-  },
-
-  {
-    label: '&Edit',
-    submenu: [
-      { role: 'undo' },
-      { role: 'redo' },
-      { type: 'separator' },
-      { role: 'cut' },
-      { role: 'copy' },
-      { role: 'paste' },
-      // Macs have special copy/paste and speech functionality
-      ...(isMac
-        ? [
-            { role: 'pasteAndMatchStyle' },
-            { role: 'delete' },
-            { role: 'selectAll' },
-            { type: 'separator' },
-            {
-              label: 'Speech',
-              submenu: [{ role: 'startspeaking' }, { role: 'stopspeaking' }]
-            }
-          ]
-        : [{ role: 'delete' }, { type: 'separator' }, { role: 'selectAll' }])
-    ]
-  },
-  {
-    label: '&View',
-    submenu: [
-      ...(isDevelopment
-        ? [
-            { role: 'reload' },
-            { role: 'forceReload' },
-            { role: 'toggleDevTools' },
-            { type: 'separator' }
-          ]
-        : [{ role: 'toggleDevTools', visible: false }]),
-
-      { role: 'resetZoom' },
-      { role: 'zoomIn' },
-      { role: 'zoomOut' },
-      { type: 'separator' },
-      { role: 'togglefullscreen' }
-    ]
-  },
-  {
-    label: '&Help',
-    submenu: [
-      {
-        label: 'Usage Guide',
-        click: async () => {
-          await shell.openExternal(
-            'https://rotki.readthedocs.io/en/latest/usage_guide.html'
-          );
-        }
-      },
-      {
-        label: 'Frequently Asked Questions',
-        click: async () => {
-          await shell.openExternal(
-            'https://rotki.readthedocs.io/en/latest/faq.html'
-          );
-        }
-      },
-      { type: 'separator' },
-      {
-        label: 'Release Notes',
-        click: async () => {
-          await shell.openExternal(
-            'https://rotki.readthedocs.io/en/latest/changelog.html'
-          );
-        }
-      },
-      { type: 'separator' },
-      {
-        label: 'Issue / Feature Requests',
-        click: async () => {
-          await shell.openExternal('https://github.com/rotki/rotki/issues');
-        }
-      },
-      {
-        label: 'Logs Directory',
-        click: async () => {
-          await shell.openPath(app.getPath('logs'));
-        }
-      },
-      { type: 'separator' },
-      {
-        label: 'Clear Cache',
-        click: async (_item: MenuItem, browserWindow: BrowserWindow) => {
-          await browserWindow.webContents.session.clearCache();
-        }
-      }
-    ]
-  },
-  {
-    type: 'separator'
-  },
-
-  ...(isDevelopment
-    ? [
-        {
-          label: '&Debug',
-          submenu: [
-            {
-              label: 'Persist vuex state',
-              type: 'checkbox',
-              checked: debugSettings.vuex,
-              click: async (item: MenuItem, browserWindow: BrowserWindow) => {
-                debugSettings.vuex = item.checked;
-                browserWindow.webContents.send('DEBUG_SETTINGS', debugSettings);
-                browserWindow.reload();
-              }
-            }
-          ]
-        }
-      ]
-    : [])
-];
-
 async function createWindow() {
   // set default window Width and Height in case not specific
   const mainWindowState = windowStateKeeper({
@@ -457,8 +290,7 @@ async function createWindow() {
     await win.loadURL('app://./index.html');
   }
 
-  const menuTemplate: MenuItemConstructorOptions[] = defaultMenuTemplate as MenuItemConstructorOptions[];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
+  Menu.setApplicationMenu(Menu.buildFromTemplate(getUserMenu(true)));
   // Register and deregister listeners to window events (resize, move, close) so that window state is saved
   mainWindowState.manage(win);
 

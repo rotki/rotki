@@ -36,3 +36,8 @@ export type Properties<TObj, TResult> = {
 export type Diff<T, U> = T extends U ? never : T;
 
 export type Nullable<T> = T | null;
+
+export interface WebVersion {
+  readonly platform: string;
+  readonly userAgent: string;
+}

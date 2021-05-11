@@ -1,4 +1,12 @@
 {
+  "about": {
+    "copy_tooltip": "Copy the application information",
+    "electron": "Electron:",
+    "frontend_version": "Frontend Version:",
+    "platform": "Platform:",
+    "release_notes": "What's new",
+    "user_agent": "User Agent:"
+  },
   "account_settings_display": {
     "account_asset_movement": "Account asset movement fees were taken into account:",
     "crypto2crypto": "Crypto to crypto trades were taken into account:",
