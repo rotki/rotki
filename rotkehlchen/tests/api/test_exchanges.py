@@ -939,18 +939,19 @@ def test_edit_exchange_kraken_account_type(rotkehlchen_api_server_with_exchanges
     assert kraken.call_limit == 20
     assert kraken.reduction_every_secs == 2
 
-    data = {'name': 'mockkraken', 'location': 'kraken', 'kraken_account_type': 'pro'}
+    # at second edit, also change name
+    data = {'name': 'mockkraken', 'new_name': 'lolkraken', 'location': 'kraken', 'kraken_account_type': 'pro'}  # noqa: E501
     response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
     result = assert_proper_response_with_result(response)
     assert result is True
     kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
-    assert kraken.name == 'mockkraken'
+    assert kraken.name == 'lolkraken'
     assert kraken.account_type == KrakenAccountType.PRO
     assert kraken.call_limit == 20
     assert kraken.reduction_every_secs == 1
 
     # Make sure invalid type is caught
-    data = {'name': 'mockkraken', 'location': 'kraken', 'kraken_account_type': 'pleb'}
+    data = {'name': 'lolkraken', 'location': 'kraken', 'kraken_account_type': 'pleb'}
     response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
     assert_error_response(
         response=response,

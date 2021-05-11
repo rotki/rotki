@@ -2251,7 +2251,12 @@ class DBHandler:
                     'INSERT OR REPLACE INTO user_credentials_mappings '
                     '(credential_name, credential_location, setting_name, setting_value) '
                     'VALUES (?, ?, ?, ?)',
-                    (name, location.serialize_for_db(), 'kraken_account_type', kraken_account_type.serialize()),  # noqa: E501
+                    (
+                        new_name if new_name is not None else name,
+                        location.serialize_for_db(),
+                        'kraken_account_type',
+                        kraken_account_type.serialize(),
+                    ),
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 self.conn.rollback()
