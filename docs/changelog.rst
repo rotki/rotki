@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`2875` Invalid ENS names should now provide a proper error when provided to rotki.
+* :bug:`2888` Ledger actions selected to be ignored in the profit and loss report will now be correctly ignored.
 
 * :release:`1.16.2 <2021-05-08>`
 * :bug:`-` If a DeFi event provides zero amount of an asset to a user the PnL report should now work properly again.
