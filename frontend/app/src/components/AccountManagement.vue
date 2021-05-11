@@ -43,6 +43,22 @@
           @input="startBackendWithLogLevel($event)"
         />
       </div>
+      <div v-if="!$interop.isPackaged" class="account-management__about">
+        <v-tooltip open-delay="400" top>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              icon
+              color="primary"
+              v-bind="attrs"
+              @click="$emit('about')"
+              v-on="on"
+            >
+              <v-icon>mdi-information</v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('account_management.about_tooltip') }}</span>
+        </v-tooltip>
+      </div>
     </div>
 
     <premium-reminder
@@ -298,7 +314,8 @@ export default class AccountManagement extends Vue {
     animation-iteration-count: infinite;
   }
 
-  &__log-level {
+  &__log-level,
+  &__about {
     position: absolute !important;
     width: 56px !important;
     right: 12px !important;

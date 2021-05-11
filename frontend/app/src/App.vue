@@ -65,7 +65,11 @@
         :visible="notifications"
         @close="notifications = false"
       />
-      <help-sidebar :visible="help" @visible:update="help = $event" />
+      <help-sidebar
+        :visible="help"
+        @visible:update="help = $event"
+        @about="showAbout = true"
+      />
       <v-main v-if="logged" class="fill-height">
         <router-view />
       </v-main>
@@ -87,6 +91,7 @@
         v-if="startupError.length === 0 && !loginIn"
         :logged="logged"
         @login-complete="completeLogin(true)"
+        @about="showAbout = true"
       />
     </v-fade-transition>
     <v-dialog v-if="showAbout" v-model="showAbout" max-width="500">
