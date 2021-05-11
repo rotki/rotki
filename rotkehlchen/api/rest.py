@@ -83,6 +83,7 @@ from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMI
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
     AVAILABLE_MODULES_MAP,
+    IMPORTABLE_LOCATIONS,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -93,7 +94,6 @@ from rotkehlchen.typing import (
     ExternalServiceApiCredentials,
     Fee,
     HexColorCode,
-    IMPORTABLE_LOCATIONS,
     ListOfBlockchainAddresses,
     Location,
     ModuleName,
@@ -1978,10 +1978,10 @@ class RestAPI():
 
         return self.get_queried_addresses_per_module()
 
-    @staticmethod
-    def version_check() -> Response:
-        result = _wrap_in_ok_result(check_if_version_up_to_date())
-        return api_response(process_result(result), status_code=HTTPStatus.OK)
+    def get_info(self) -> Response:
+        version = check_if_version_up_to_date()
+        result = {'version': process_result(version), 'data_directory': str(self.rotkehlchen.data_dir)}  # noqa: E501
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @staticmethod
     def ping() -> Response:

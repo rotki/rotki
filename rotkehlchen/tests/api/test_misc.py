@@ -3,13 +3,18 @@ from unittest.mock import patch
 
 import requests
 
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_proper_response,
+    assert_proper_response_with_result,
+)
 from rotkehlchen.utils.misc import get_system_spec
 
 
-def test_query_version_when_up_to_date(rotkehlchen_api_server):
+def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
     """Test that endpoint to query the rotki version works if no new version is available"""
     expected_version = 'v1.1.0'
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     def patched_get_system_spec() -> Dict[str, Any]:
         return {'rotkehlchen': expected_version}
@@ -29,17 +34,19 @@ def test_query_version_when_up_to_date(rotkehlchen_api_server):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
-                "versionresource",
+                'inforesource',
             ),
         )
 
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert len(data['result']) == 3
-    assert data['result']['our_version'] == expected_version
-    assert data['result']['latest_version'] == expected_version
-    assert data['result']['download_url'] is None
+    result = assert_proper_response_with_result(response)
+    assert result == {
+        'version': {
+            'our_version': expected_version,
+            'latest_version': expected_version,
+            'download_url': None,
+        },
+        'data_directory': str(rotki.data_dir),
+    }
 
 
 def test_query_ping(rotkehlchen_api_server):
@@ -57,6 +64,8 @@ def test_query_ping(rotkehlchen_api_server):
 
 def test_query_version_when_update_required(rotkehlchen_api_server):
     """Test that endpoint to query version works when a new version is available"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
     def patched_get_latest_release(_klass):
         new_latest = 'v99.99.99'
         return new_latest, f'https://github.com/rotki/rotki/releases/tag/{new_latest}'
@@ -68,15 +77,17 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
-                "versionresource",
+                'inforesource',
             ),
         )
 
-    assert_proper_response(response)
+    result = assert_proper_response_with_result(response)
     our_version = get_system_spec()['rotkehlchen']
-    data = response.json()
-    assert data['message'] == ''
-    assert len(data['result']) == 3
-    assert data['result']['our_version'] == our_version
-    assert data['result']['latest_version'] == 'v99.99.99'
-    assert 'v99.99.99' in data['result']['download_url']
+    assert result == {
+        'version': {
+            'our_version': our_version,
+            'latest_version': 'v99.99.99',
+            'download_url': 'https://github.com/rotki/rotki/releases/tag/v99.99.99',
+        },
+        'data_directory': str(rotki.data_dir),
+    }
