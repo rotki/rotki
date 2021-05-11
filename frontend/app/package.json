@@ -51,8 +51,6 @@
     "@babel/plugin-proposal-nullish-coalescing-operator": "7.13.8",
     "@babel/plugin-proposal-optional-chaining": "7.13.12",
     "@babel/preset-env": "7.14.1",
-    "@cypress/code-coverage": "3.9.5",
-    "@cypress/webpack-preprocessor": "5.7.0",
     "@intlify/eslint-plugin-vue-i18n": "0.11.1",
     "@mdi/font": "5.9.55",
     "@namics/stylelint-bem": "6.3.4",
@@ -67,7 +65,6 @@
     "@typescript-eslint/eslint-plugin": "4.22.1",
     "@typescript-eslint/parser": "4.22.1",
     "@vue/cli-plugin-babel": "4.5.13",
-    "@vue/cli-plugin-e2e-cypress": "4.5.13",
     "@vue/cli-plugin-eslint": "4.5.13",
     "@vue/cli-plugin-router": "4.5.13",
     "@vue/cli-plugin-typescript": "4.5.13",
@@ -119,6 +116,11 @@
     "vue-template-compiler": "2.6.12",
     "vuetify-loader": "1.7.2",
     "webpack": "4.44.2"
+  },
+  "optionalDependencies": {
+    "@cypress/code-coverage": "3.9.5",
+    "@cypress/webpack-preprocessor": "5.7.0",
+    "@vue/cli-plugin-e2e-cypress": "4.5.13"
   },
   "engines": {
     "node": ">=14 <15",
