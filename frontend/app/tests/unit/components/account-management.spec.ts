@@ -54,7 +54,7 @@ describe('AccountManagement.vue', () => {
       await flushPromises();
       await wrapper.vm.$nextTick();
 
-      expect(wrapper.find('.premium-reminder').element).toBeVisible();
+      expect(wrapper.find('.premium-reminder').exists()).toBe(true);
 
       wrapper.find('.premium-reminder__buttons__confirm').trigger('click');
 
