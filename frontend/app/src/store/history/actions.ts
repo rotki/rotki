@@ -72,6 +72,7 @@ import {
 import { setStatus } from '@/store/utils';
 import { Writeable } from '@/types';
 import { assert } from '@/utils/assertions';
+import { uniqueStrings } from '@/utils/data';
 
 export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async fetchTrades(
@@ -278,7 +279,9 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
-    const { connectedExchanges: locations } = balances!;
+    const locations = balances!.connectedExchanges
+      .map(({ location }) => location)
+      .filter(uniqueStrings);
 
     const fetchLocation: (
       location: TradeLocation
@@ -345,8 +348,8 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     await Promise.all(
       ([
-        ...locations,
-        ...(source !== FETCH_FROM_SOURCE ? EXTERNAL_EXCHANGES : [])
+        ...(source !== FETCH_FROM_SOURCE ? EXTERNAL_EXCHANGES : []),
+        ...locations
       ] as TradeLocation[]).map(location =>
         fetchLocation(location).catch(e => onError(location, e.message))
       )
