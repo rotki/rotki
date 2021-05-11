@@ -241,16 +241,5 @@ export default class ExchangeSettings extends Vue {
       }
     }
   }
-
-  ::v-deep {
-    .v-input {
-      &--is-disabled {
-        .v-icon,
-        .v-label {
-          color: green !important;
-        }
-      }
-    }
-  }
 }
 </style>

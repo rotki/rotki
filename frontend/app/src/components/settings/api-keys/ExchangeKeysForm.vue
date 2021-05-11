@@ -61,30 +61,49 @@
       @change="onUpdateExchange({ ...exchange, krakenAccountType: $event })"
     />
 
-    <div class="text-subtitle-2">{{ $t('exchange_settings.keys') }}</div>
+    <div class="text-subtitle-2 mt-2 pb-4">
+      {{ $t('exchange_settings.keys') }}
+      <v-tooltip top open-delay="400">
+        <template #activator="{ on, attrs }">
+          <v-btn icon v-bind="attrs" class="ml-4" v-on="on" @click="toggleEdit">
+            <v-icon v-if="!editKeys">mdi-pencil-outline</v-icon>
+            <v-icon v-else>mdi-close</v-icon>
+          </v-btn>
+        </template>
+        <span>
+          {{
+            !editKeys
+              ? $t('exchange_keys_form.edit.activate_tooltip')
+              : $t('exchange_keys_form.edit.deactivate_tooltip')
+          }}
+        </span>
+      </v-tooltip>
+    </div>
 
-    <revealable-input
-      outlined
-      :disabled="edit"
-      :value="exchange.apiKey"
-      :rules="!edit ? apiKeyRules : []"
-      data-cy="api-key"
-      :label="$t('exchange_settings.inputs.api_key')"
-      @input="onUpdateExchange({ ...exchange, apiKey: $event })"
-      @paste="onApiKeyPaste"
-    />
+    <div class="exchange-keys-form__keys">
+      <revealable-input
+        outlined
+        :disabled="edit && !editKeys"
+        :value="exchange.apiKey"
+        :rules="!edit || editKeys ? apiKeyRules : []"
+        data-cy="api-key"
+        :label="$t('exchange_settings.inputs.api_key')"
+        @input="onUpdateExchange({ ...exchange, apiKey: $event })"
+        @paste="onApiKeyPaste"
+      />
 
-    <revealable-input
-      outlined
-      :disabled="edit"
-      :value="exchange.apiSecret"
-      :rules="!edit ? apiSecretRules : []"
-      data-cy="api-secret"
-      prepend-icon="mdi-lock"
-      :label="$t('exchange_settings.inputs.api_secret')"
-      @input="onUpdateExchange({ ...exchange, apiSecret: $event })"
-      @paste="onApiSecretPaste"
-    />
+      <revealable-input
+        outlined
+        :disabled="edit && !editKeys"
+        :value="exchange.apiSecret"
+        :rules="!edit || editKeys ? apiSecretRules : []"
+        data-cy="api-secret"
+        prepend-icon="mdi-lock"
+        :label="$t('exchange_settings.inputs.api_secret')"
+        @input="onUpdateExchange({ ...exchange, apiSecret: $event })"
+        @paste="onApiSecretPaste"
+      />
+    </div>
 
     <revealable-input
       v-if="requiresPassphrase"
@@ -136,6 +155,19 @@ export default class ExchangeKeysForm extends Vue {
 
   @Emit('update:exchange')
   onUpdateExchange(_exchange: ExchangePayload) {}
+
+  editKeys: boolean = false;
+
+  toggleEdit() {
+    this.editKeys = !this.editKeys;
+    if (!this.editKeys) {
+      this.onUpdateExchange({
+        ...this.exchange,
+        apiSecret: null,
+        apiKey: null
+      });
+    }
+  }
 
   readonly nameRules = [
     (v: string) =>
@@ -193,6 +225,19 @@ export default class ExchangeKeysForm extends Vue {
 
 <style lang="scss" scoped>
 ::v-deep {
+  .exchange-keys-form {
+    &__keys {
+      .v-input {
+        &--is-disabled {
+          .v-icon,
+          .v-label {
+            color: green !important;
+          }
+        }
+      }
+    }
+  }
+
   .v-text-field {
     &--outlined {
       .v-input {
