@@ -424,8 +424,8 @@ def test_get_eth2_balances_validator_not_yet_active(beaconchain, inquirer, eth2)
 
     Test for: https://github.com/rotki/rotki/issues/1888
     """
-    with _create_beacon_mock(beaconchain):
-        mapping = eth2.get_balances(beaconchain, [ADDR1])
+    with _create_beacon_mock(eth2.beaconchain):
+        mapping = eth2.get_balances([ADDR1])
 
     assert len(mapping) == 1
     amount = FVal('64.143716247')
@@ -438,8 +438,8 @@ def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer, price_
 
     Test for: https://github.com/rotki/rotki/issues/1888
     """
-    with _create_beacon_mock(beaconchain):
-        details = eth2.get_details(beaconchain=beaconchain, addresses=[ADDR1])
+    with _create_beacon_mock(eth2.beaconchain):
+        details = eth2.get_details(addresses=[ADDR1])
 
     for idx in range(0, 2):
         # basic check about daily stats but then delete since this is not what this test checks

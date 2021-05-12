@@ -11,6 +11,7 @@ def fixture_eth2(
         messages_aggregator,
         start_with_valid_premium,
         rotki_premium_credentials,
+        beaconchain,
 ):
     premium = None
     if start_with_valid_premium:
@@ -20,4 +21,5 @@ def fixture_eth2(
         database=database,
         premium=premium,
         msg_aggregator=messages_aggregator,
+        beaconchain=beaconchain,
     )
