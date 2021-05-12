@@ -23,3 +23,31 @@
 //
 // -- This is will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
+
+const logout = () => {
+  cy.request({
+    url: 'http://localhost:22221/api/1/users',
+    method: 'GET'
+  })
+    .its('body')
+    .then(body => {
+      const result = body.result;
+      if (result) {
+        const loggedUsers = Object.keys(result).filter(
+          user => result[user] === 'loggedin'
+        );
+        if (loggedUsers.length === 1) {
+          const user = loggedUsers[0];
+          cy.request({
+            url: `http://localhost:22221/api/1/users/${user}`,
+            method: 'PATCH',
+            body: {
+              action: 'logout'
+            }
+          });
+        }
+      }
+    });
+};
+
+Cypress.Commands.add('logout', logout);

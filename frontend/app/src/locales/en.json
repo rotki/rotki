@@ -32,9 +32,6 @@
     "loading": "Please wait while rotki queries the airdrops for your addresses...",
     "title": "Airdrops"
   },
-  "asset-locations": {
-    "title": "Asset Locations"
-  },
   "asset_balances": {
     "headers": {
       "amount": "Amount",
@@ -46,6 +43,7 @@
     "total": "Total"
   },
   "asset_locations": {
+    "title": "Asset Locations",
     "header": {
       "account": "Account",
       "amount": "Amount",
@@ -71,7 +69,7 @@
     "advanced": "Advanced",
     "buttons": {
       "skip": "Skip",
-      "update":"Update"
+      "update": "Update"
     },
     "description": "Version {remote} of the asset database is available. Would you like to update from version {local}?",
     "manual": {
@@ -215,6 +213,26 @@
   "currency_drop_down": {
     "hint": "Select as the main currency",
     "profit_currency": "Profit Currency"
+  },
+  "exchange_keys_form": {
+    "api_key": {
+      "non_empty": "The api key field cannot be empty."
+    },
+    "api_secret": {
+      "non_empty": "The api secret field cannot be empty."
+    },
+    "edit": {
+      "activate_tooltip": "Edit the api keys for the exchange.",
+      "deactivate_tooltip": "Cancel the edit of the api keys for the exchange."
+    },
+    "exchange": "Exchange",
+    "name": {
+      "label": "Name",
+      "non_empty": "The name field cannot be empty."
+    },
+    "passphrase": {
+      "non_empty": "The passphrase field cannot be empty."
+    }
   },
   "explorers": {
     "title": "Blockchain explorers",
@@ -806,10 +824,8 @@
   "profit_loss_events": {
     "headers": {
       "location": "Location",
-      "paid_asset": "Paid Asset",
       "paid_in": "Paid in {currency}",
       "paid_in_asset": "Paid in Asset",
-      "received_asset": "Received Asset",
       "received_in_asset": "Received in Asset",
       "taxable_amount": "Taxable Amount",
       "taxable_bought_cost_in": "Taxable Bought Cost in {currency}",
@@ -854,12 +870,6 @@
       "refresh": "Set the automatic refresh period",
       "refresh_enabled": "Enabled",
       "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions."
-    },
-    "refresh": {
-      "1h": "1 hour",
-      "2h": "2 hours",
-      "30min": "30 minutes",
-      "none": "None"
     },
     "subtitle": {
       "query": "Periodic status query",
@@ -929,7 +939,6 @@
         "error": "Error setting anonymized logs"
       },
       "display_date_in_localtime": {
-        "success": "Succesfully set the display date in local time setting",
         "error": "Error setting the display date in local time setting"
       },
       "balance_frequency": {
@@ -1094,8 +1103,8 @@
     "real_estate": "Real Estate"
   },
   "trade_location_selector": {
-    "selection-none": "Showing results across all locations",
-    "selection-single": "Showing results for {location}",
+    "selection_none": "Showing results across all locations",
+    "selection_single": "Showing results for {location}",
     "label": "Filter location"
   },
   "deposits_withdrawals": {
@@ -1329,8 +1338,7 @@
       },
       "generate": {
         "error": {
-          "description": "An unexpected response was received while generating the profit and loss report. This might indicate an issue with the generation mechanism. Please check the logs for any error messages (you might have to enable debug logging first) and create an issue.",
-          "title": "Trade History Report"
+          "description": "An unexpected response was received while generating the profit and loss report. This might indicate an issue with the generation mechanism. Please check the logs for any error messages (you might have to enable debug logging first) and create an issue."
         },
         "task": {
           "title": "Create tax report"
@@ -1583,11 +1591,11 @@
       },
       "exchange_balances": {
         "task": {
-          "title": "Retrieving {name} balances"
+          "title": "Retrieving {location} balances"
         },
         "error": {
-          "title": "{name} balance query",
-          "message": "Failed to query {name} balances: {error}"
+          "title": "{location} balance query",
+          "message": "Failed to query {location} balances: {error}"
         }
       },
       "historic_fetch_price": {
@@ -1605,11 +1613,6 @@
           "title": "Querying Loopring balances"
         }
       },
-      "manual_add": {
-        "error": {
-          "title": "Adding Manual Balance"
-        }
-      },
       "manual_balances": {
         "error": {
           "message": "Failed: {message}",
@@ -1619,11 +1622,6 @@
       "manual_delete": {
         "error": {
           "title": "Deleting Manual Balance"
-        }
-      },
-      "manual_edit": {
-        "error": {
-          "title": "Editing Manual Balance"
         }
       },
       "net_value": {
@@ -2097,7 +2095,6 @@
     }
   },
   "task_manager": {
-    "not_found": "The backend responded with a 404 not found error for task {taskId}: {title}",
     "error": "An error occurred while processing task [{taskId}] '{title}': {error}"
   },
   "confirmable_reset": {
@@ -2109,7 +2106,31 @@
     }
   },
   "exchange_settings": {
-    "title": "Exchanges",
+    "button": {
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "delete": {
+      "tooltip": "Delete the exchange account"
+    },
+    "dialog": {
+      "add": {
+        "title": "Add an exchange"
+      },
+      "edit": {
+        "title": "Edit an exchange"
+      }
+    },
+    "edit": {
+      "tooltip": "Edit the exchange account"
+    },
+    "header": {
+      "actions": "Actions",
+      "location": "Location",
+      "name": "Name"
+    },
+    "keys": "Keys",
+    "title": "Connected Exchanges",
     "subtitle": "rotki can connect to supported exchanges and automatically pull your trades and balances from them. See the {0} for more information.",
     "usage_guide": "Usage Guide",
     "inputs": {
@@ -2118,19 +2139,10 @@
       "passphrase": "Passphrase",
       "kraken_account": "Select the type of your Kraken account"
     },
-    "actions": {
-      "setup": "Setup"
-    },
     "confirmation": {
       "title": "Confirmation Required",
-      "message": "Are you sure you want to delete the API key and secret for {exchange} from rotki? This action can not be undone and you will need to obtain the key and secret again from the exchange."
-    },
-    "connected_exchanges": "Connected Exchanges",
-    "setup_exchange": "Setup Exchange"
-  },
-  "exchange_badge": {
-    "remove_tooltip": "Remove the exchange",
-    "icon_alt": "Exchange icon"
+      "message": "Are you sure you want to delete the API key and secret for the {location} entry named {name} from rotki? This action can not be undone and you will need to obtain the key and secret again from the exchange."
+    }
   },
   "premium_settings": {
     "title": "Rotki Premium",
@@ -2390,7 +2402,7 @@
       "error": "Account creation failed"
     },
     "custom_backend": {
-      "failed":  {
+      "failed": {
         "title": "Could not connect to custom backend",
         "description": "Connection to {url} failed after 5 attempts"
       }
@@ -2443,9 +2455,7 @@
     "title": "Uniswap Pools",
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "pool_header": "UNIv2 {asset1}/{asset2}",
-    "balance": "Balance",
-    "asset_supply": "{asset} supply:",
-    "asset_price": "({asset} price: {price})"
+    "balance": "Balance"
   },
   "staking": {
     "title": "Staking",

@@ -2,10 +2,12 @@
 Changelog
 =========
 
+* :feature:`47` Users can now add multiple accounts per supported exchange.
 * :feature:`1881` Users can now access an about screen with information about the application.
 * :feature:`1549` Rotki premium users will now be able to switch to a dark mode and change the theme colors.
 * :feature:`1674` Add experimental support for BlockFi imports using CSV files.
 * :feature:`2224` Add experimental support for Nexo imports using CSV files.
+* :bug:`2850` User will now see a consistent naming of exchanges across the application.
 
 * :release:`1.16.2 <2021-05-08>`
 * :bug:`-` If a DeFi event provides zero amount of an asset to a user the PnL report should now work properly again.

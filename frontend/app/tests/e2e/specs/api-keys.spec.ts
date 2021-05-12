@@ -23,7 +23,7 @@ describe('API keys', () => {
     const apiKey = Cypress.env('BITTREX_API_KEY');
     const apiSecret = Cypress.env('BITTREX_API_SECRET');
     page.visit();
-    page.addExchange(apiKey, apiSecret, 'bittrex');
-    page.exchangeIsAdded('bittrex');
+    page.addExchange(apiKey, apiSecret, 'bittrex', 'BitRex');
+    page.exchangeIsAdded('Bittrex', 'BitRex');
   });
 });
