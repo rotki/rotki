@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1881` Users can now access an about screen with information about the application.
 * :feature:`1549` Rotki premium users will now be able to switch to a dark mode and change the theme colors.
 * :feature:`1674` Add experimental support for BlockFi imports using CSV files.
 * :feature:`2224` Add experimental support for Nexo imports using CSV files.

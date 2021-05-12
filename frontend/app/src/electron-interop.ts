@@ -1,4 +1,6 @@
 import { BackendCode } from '@/electron-main/backend-code';
+import { SystemVersion } from '@/electron-main/ipc';
+import { WebVersion } from '@/types';
 import { assert } from '@/utils/assertions';
 import { Level } from '@/utils/log-level';
 
@@ -61,6 +63,20 @@ export class ElectronInterop {
   async restartBackend(logLevel: Level): Promise<boolean> {
     assert(window.interop);
     return await window.interop.restartBackend(logLevel);
+  }
+
+  async version(): Promise<SystemVersion | WebVersion> {
+    if (!window.interop) {
+      return {
+        platform: navigator.platform,
+        userAgent: navigator.userAgent
+      };
+    }
+    return window.interop?.version();
+  }
+
+  onAbout(cb: () => void) {
+    window.interop?.onAbout(cb);
   }
 }
 

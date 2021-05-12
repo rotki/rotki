@@ -1,5 +1,6 @@
 // vue.config.js
 const { totalmem } = require('os');
+const { DefinePlugin } = require('webpack');
 const { ContextReplacementPlugin } = require('webpack');
 
 module.exports = {
@@ -45,7 +46,14 @@ module.exports = {
         return `webpack-vue:///${info.resourcePath}`;
       };
     }
+    const appPackage = require('./package.json');
+    const version = appPackage.version ?? '0.0.0';
     config.plugins.push(
+      new DefinePlugin({
+        'process.env': {
+          VERSION: `'${version}'`
+        }
+      }),
       new ContextReplacementPlugin(/moment[/\\]locale$/, /en/)
     );
   },

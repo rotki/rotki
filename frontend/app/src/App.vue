@@ -65,7 +65,11 @@
         :visible="notifications"
         @close="notifications = false"
       />
-      <help-sidebar :visible="help" @visible:update="help = $event" />
+      <help-sidebar
+        :visible="help"
+        @visible:update="help = $event"
+        @about="showAbout = true"
+      />
       <v-main v-if="logged" class="fill-height">
         <router-view />
       </v-main>
@@ -87,8 +91,12 @@
         v-if="startupError.length === 0 && !loginIn"
         :logged="logged"
         @login-complete="completeLogin(true)"
+        @about="showAbout = true"
       />
     </v-fade-transition>
+    <v-dialog v-if="showAbout" v-model="showAbout" max-width="500">
+      <about />
+    </v-dialog>
   </v-app>
   <dev-app v-else />
 </template>
@@ -96,6 +104,7 @@
 <script lang="ts">
 import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { mapGetters, mapMutations, mapState } from 'vuex';
+import About from '@/components/About.vue';
 import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
@@ -128,6 +137,7 @@ import { Message } from '@/store/types';
 
 @Component({
   components: {
+    About,
     ThemeSwitchLock,
     MacOsVersionUnsupported,
     AssetUpdate,
@@ -171,6 +181,7 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
 
   notifications: boolean = false;
   help: boolean = false;
+  showAbout: boolean = false;
 
   get canNavigateBack(): boolean {
     const canNavigateBack = this.$route.meta?.canNavigateBack ?? false;
@@ -227,6 +238,9 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
         // eslint-disable-next-line no-console
         console.error(backendOutput, code);
       }
+    });
+    this.$interop.onAbout(() => {
+      this.showAbout = true;
     });
 
     await this.$store.dispatch('connect');

@@ -42,6 +42,20 @@
           <v-icon>mdi-chevron-right</v-icon>
         </v-list-item-action>
       </v-list-item>
+      <v-list-item v-if="!$interop.isPackaged" selectable @click="openAbout()">
+        <v-list-item-avatar>
+          <v-icon>mdi-information</v-icon>
+        </v-list-item-avatar>
+        <v-list-item-content>
+          <v-list-item-title>{{ $t('help_sidebar.about') }}</v-list-item-title>
+          <v-list-item-subtitle>
+            {{ $t('help_sidebar.about_subtitle') }}
+          </v-list-item-subtitle>
+        </v-list-item-content>
+        <v-list-item-action>
+          <v-icon>mdi-chevron-right</v-icon>
+        </v-list-item-action>
+      </v-list-item>
     </v-list>
   </v-navigation-drawer>
 </template>
@@ -65,6 +79,11 @@ export default class HelpSidebar extends Vue {
 
   @Emit('visible:update')
   visibleUpdate(_visible: boolean) {}
+
+  @Emit('about')
+  openAbout() {
+    this.visibleUpdate(false);
+  }
 
   readonly entries: Entry[] = [
     {
