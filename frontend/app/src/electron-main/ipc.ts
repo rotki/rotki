@@ -30,6 +30,14 @@ export type SystemVersion = {
   readonly arch: string;
 };
 
+export type BackendOptions = {
+  readonly loglevel: Level;
+  readonly dataDirectory: string;
+  readonly logFile: string;
+  readonly sleepSeconds?: number;
+  readonly logFromOtherModules?: boolean;
+};
+
 export interface Interop {
   openUrl(url: string): Promise<void>;
   openPath(path: string): Promise<void>;
@@ -46,7 +54,7 @@ export interface Interop {
   checkForUpdates(): Promise<boolean>;
   downloadUpdate(progress: (percentage: number) => void): Promise<boolean>;
   installUpdate(): Promise<boolean | Error>;
-  restartBackend(logLevel: Level): Promise<boolean>;
+  restartBackend(options: BackendOptions): Promise<boolean>;
   setDarkMode(enabled: boolean): Promise<boolean>;
   version(): Promise<SystemVersion>;
   onAbout(callback: () => void): void;

@@ -56,7 +56,7 @@ contextBridge.exposeInMainWorld('interop', {
     : undefined,
   serverUrl: (): string => ipcRenderer.sendSync('SERVER_URL'),
   metamaskImport: () => ipcAction('METAMASK_IMPORT'),
-  restartBackend: level => ipcAction(IPC_RESTART_BACKEND, level),
+  restartBackend: options => ipcAction(IPC_RESTART_BACKEND, options),
   checkForUpdates: () => ipcAction(IPC_CHECK_FOR_UPDATES),
   downloadUpdate: progress => {
     ipcRenderer.on(IPC_DOWNLOAD_PROGRESS, (event, args) => {

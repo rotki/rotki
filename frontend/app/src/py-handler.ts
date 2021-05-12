@@ -437,39 +437,38 @@ export default class PyHandler {
   }
 
   private loadArgumentsFromFile(args: string[]) {
-    // try to see if there is a configfile
-    if (fs.existsSync('rotki_config.json')) {
-      const raw_data: Buffer = fs.readFileSync('rotki_config.json');
+    const configFile = 'rotki_config.json';
 
-      try {
-        const jsondata = JSON.parse(raw_data.toString());
-        if (Object.prototype.hasOwnProperty.call(jsondata, 'loglevel')) {
-          args.push('--loglevel', jsondata['loglevel']);
-        }
-        if (
-          Object.prototype.hasOwnProperty.call(jsondata, 'logfromothermodules')
-        ) {
-          if (jsondata['logfromothermodules'] === true) {
-            args.push('--logfromothermodules');
-          }
-        }
-        if (Object.prototype.hasOwnProperty.call(jsondata, 'logfile')) {
-          args.push('--logfile', jsondata['logfile']);
-        }
-        if (Object.prototype.hasOwnProperty.call(jsondata, 'data-dir')) {
-          args.push('--data-dir', jsondata['data-dir']);
-        }
-        if (Object.prototype.hasOwnProperty.call(jsondata, 'sleep-secs')) {
-          args.push('--sleep-secs', jsondata['sleep-secs']);
-        }
-      } catch (e) {
-        // do nothing, act as if there is no config given
-        // TODO: Perhaps in the future warn the user inside
-        // the app that there is a config file with invalid json
-        this.logToFile(
-          `Could not read the rotki_config.json file due to: "${e}". Proceeding normally without a config file ...`
-        );
+    if (!fs.existsSync(configFile)) {
+      return;
+    }
+    try {
+      const config = JSON.parse(fs.readFileSync(configFile).toString());
+      if ('loglevel' in config) {
+        args.push('--loglevel', config['loglevel']);
       }
+      if (
+        'logfromothermodules' in config &&
+        config['logfromothermodules'] === true
+      ) {
+        args.push('--logfromothermodules');
+      }
+      if ('logfile' in config) {
+        args.push('--logfile', config['logfile']);
+      }
+      if ('data-dir' in config) {
+        args.push('--data-dir', config['data-dir']);
+      }
+      if ('sleep-secs' in config) {
+        args.push('--sleep-secs', config['sleep-secs']);
+      }
+    } catch (e) {
+      // do nothing, act as if there is no config given
+      // TODO: Perhaps in the future warn the user inside
+      // the app that there is a config file with invalid json
+      this.logToFile(
+        `Could not read the rotki_config.json file due to: "${e}". Proceeding normally without a config file ...`
+      );
     }
   }
 }

@@ -16,6 +16,7 @@ import windowStateKeeper from 'electron-window-state';
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import { startHttp, stopHttp } from '@/electron-main/http';
 import {
+  BackendOptions,
   IPC_CHECK_FOR_UPDATES,
   IPC_DARK_MODE,
   IPC_DOWNLOAD_PROGRESS,
@@ -98,12 +99,12 @@ const onReady = async () => {
     }
   });
 
-  ipcMain.on(IPC_RESTART_BACKEND, async (event, args) => {
+  ipcMain.on(IPC_RESTART_BACKEND, async (event, options: BackendOptions) => {
     let success = false;
     try {
       assert(win);
       await pyHandler.exitPyProc(true);
-      await pyHandler.createPyProc(win, args);
+      await pyHandler.createPyProc(win, options.loglevel);
       success = true;
     } catch (e) {
       console.error(e);

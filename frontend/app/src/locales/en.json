@@ -97,6 +97,25 @@
   "back_button": {
     "tooltip": "Navigate back to the previous page."
   },
+  "backend_settings": {
+    "actions": {
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "data_directory": {
+      "select": "Select where rotki will store the data"
+    },
+    "settings": {
+      "data_directory": {
+        "label": "Data Directory"
+      },
+      "log_level": {
+        "label": "Log Level"
+      }
+    },
+    "subtitle": "Modify the backend settings",
+    "title": "Backend Settings"
+  },
   "balancer": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "premium": "Balancer feature "
@@ -2378,8 +2397,8 @@
       "label": "XPUB"
     }
   },
-  "loglevel": {
-    "tooltip": "Change the backend loglevel. This action will restart the rotki backend"
+  "backend_settings_button": {
+    "tooltip": "Change the backend settings. Changing the settings will restart the rotki backend"
   },
   "premium_reminder": {
     "title": "Upgrade to Premium",
