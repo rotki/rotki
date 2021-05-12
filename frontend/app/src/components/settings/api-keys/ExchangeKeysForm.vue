@@ -103,18 +103,19 @@
         @input="onUpdateExchange({ ...exchange, apiSecret: $event })"
         @paste="onApiSecretPaste"
       />
-    </div>
 
-    <revealable-input
-      v-if="requiresPassphrase"
-      outlined
-      :value="exchange.passphrase"
-      :rules="passphraseRules"
-      prepend-icon="mdi-key-plus"
-      data-cy="passphrase"
-      :label="$t('exchange_settings.inputs.passphrase')"
-      @input="onUpdateExchange({ ...exchange, passphrase: $event })"
-    />
+      <revealable-input
+        v-if="requiresPassphrase"
+        :disabled="edit && !editKeys"
+        outlined
+        :value="exchange.passphrase"
+        :rules="passphraseRules"
+        prepend-icon="mdi-key-plus"
+        data-cy="passphrase"
+        :label="$t('exchange_settings.inputs.passphrase')"
+        @input="onUpdateExchange({ ...exchange, passphrase: $event })"
+      />
+    </div>
   </v-form>
 </template>
 
