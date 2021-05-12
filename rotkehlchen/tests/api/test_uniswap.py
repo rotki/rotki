@@ -1219,12 +1219,7 @@ def test_get_events_history_get_all_events_empty(
 @pytest.mark.parametrize('ethereum_accounts', [["0x3ba6eb0e4327b96ade6d4f3b578724208a590cef"]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_uniswap_trades_history_me(
-        rotkehlchen_api_server,
-        ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,  # pylint: disable=unused-argument
-        start_with_valid_premium,  # pylint: disable=unused-argument
-):
+def test_get_uniswap_trades_history_v3(rotkehlchen_api_server):
     """Test that the last 11/23 uniswap trades of the account since 1605437542
     are parsed and returned correctly
 

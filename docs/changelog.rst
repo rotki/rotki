@@ -7,7 +7,7 @@ Changelog
 * :feature:`1549` Rotki premium users will now be able to switch to a dark mode and change the theme colors.
 * :feature:`1674` Add experimental support for BlockFi imports using CSV files.
 * :feature:`2224` Add experimental support for Nexo imports using CSV files.
-* :feature:`2844` Users will now have available their swaps from Uniswap V3.
+* :feature:`2844` Premium users will now be able to fetch their Uniswap v3 swaps.
 * :bug:`2850` User will now see a consistent naming of exchanges across the application.
 
 * :release:`1.16.2 <2021-05-08>`

@@ -119,7 +119,7 @@ class Uniswap(EthereumModule):
             self.graph = Graph(
                 'https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v2',
             )
-            self.graph_V3 = Graph(
+            self.graph_v3 = Graph(
                 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
             )
         except RemoteError as e:
@@ -796,8 +796,21 @@ class Uniswap(EthereumModule):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AMMTrade]:
-        trades = self._get_trades_graph_v2_for_address(address, start_ts, end_ts)
-        trades.extend(self._get_trades_graph_v3_for_address(address, start_ts, end_ts))
+        trades = []
+        try:
+            trades.extend(self._get_trades_graph_v2_for_address(address, start_ts, end_ts))
+        except RemoteError as e:
+            log.error(
+                f'Error querying uniswap v2 trades using graph for address {address} ',
+                f'between {start_ts} and {end_ts}. {str(e)}',
+            )
+        try:
+            trades.extend(self._get_trades_graph_v3_for_address(address, start_ts, end_ts))
+        except RemoteError as e:
+            log.error(
+                f'Error querying uniswap v3 trades using graph for address {address} ',
+                f'between {start_ts} and {end_ts}. {str(e)}',
+            )
         return trades
 
     def _get_trades_graph_v2_for_address(
@@ -820,6 +833,9 @@ class Uniswap(EthereumModule):
         Trade type SELL:
         - `asset0In` (BASE, reserve0) is gt 0.
         - `asset1Out` (QUOTE, reserve1) is gt 0.
+
+        May raise
+        - RemoteError
         """
         trades: List[AMMTrade] = []
         param_types = {
@@ -872,14 +888,14 @@ class Uniswap(EthereumModule):
                         token1_deserialized = deserialize_ethereum_address(swap_token1['id'])
                         from_address_deserialized = deserialize_ethereum_address(swap['sender'])
                         to_address_deserialized = deserialize_ethereum_address(swap['to'])
-                    except DeserializationError as e:
+                    except DeserializationError:
                         msg = (
                             f'Failed to deserialize addresses in trade from uniswap graph with '
                             f'token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '
                             f'swap sender: {swap["sender"]}, swap receiver {swap["to"]}'
                         )
                         log.error(msg)
-                        raise RemoteError(msg) from e
+                        continue
 
                     token0 = get_ethereum_token(
                         symbol=swap_token0['symbol'],
@@ -893,10 +909,19 @@ class Uniswap(EthereumModule):
                         name=swap_token1['name'],
                         decimals=int(swap_token1['decimals']),
                     )
-                    amount0_in = FVal(swap['amount0In'])
-                    amount1_in = FVal(swap['amount1In'])
-                    amount0_out = FVal(swap['amount0Out'])
-                    amount1_out = FVal(swap['amount1Out'])
+
+                    try:
+                        amount0_in = FVal(swap['amount0In'])
+                        amount1_in = FVal(swap['amount1In'])
+                        amount0_out = FVal(swap['amount0Out'])
+                        amount1_out = FVal(swap['amount1Out'])
+                    except ValueError as e:
+                        log.error(
+                            f'Failed to read amounts in Uniswap V2 swap {str(swap)}. '
+                            f'{str(e)}.',
+                        )
+                        continue
+
                     swaps.append(AMMSwap(
                         tx_hash=swap['id'].split('-')[0],
                         log_index=int(swap['logIndex']),
@@ -952,6 +977,9 @@ class Uniswap(EthereumModule):
         Trade type SELL:
         - `amount0` (BASE, reserve0) is gt 0.
         - `amount1` (QUOTE, reserve1) is lt 0.
+
+        May raise:
+        - RemoteError
         """
         trades: List[AMMTrade] = []
         param_types = {
@@ -972,7 +1000,7 @@ class Uniswap(EthereumModule):
 
         while True:
             try:
-                result = self.graph_V3.query(
+                result = self.graph_v3.query(
                     querystr=querystr,
                     param_types=param_types,
                     param_values=param_values,
@@ -994,14 +1022,14 @@ class Uniswap(EthereumModule):
                         token1_deserialized = deserialize_ethereum_address(swap_token1['id'])
                         from_address_deserialized = deserialize_ethereum_address(swap['sender'])
                         to_address_deserialized = deserialize_ethereum_address(swap['recipient'])
-                    except DeserializationError as e:
+                    except DeserializationError:
                         msg = (
                             f'Failed to deserialize addresses in trade from uniswap graph with '
                             f'token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '
                             f'swap sender: {swap["sender"]}, swap receiver {swap["to"]}'
                         )
                         log.error(msg)
-                        raise RemoteError(msg) from e
+                        continue
 
                     token0 = get_ethereum_token(
                         symbol=swap_token0['symbol'],
@@ -1016,16 +1044,23 @@ class Uniswap(EthereumModule):
                         decimals=int(swap_token1['decimals']),
                     )
 
-                    if swap['amount0'].startswith('-'):
-                        amount0_in = AssetAmount(FVal(ZERO))
-                        amount0_out = deserialize_asset_amount_force_positive(swap['amount0'])
-                        amount1_in = deserialize_asset_amount_force_positive(swap['amount1'])
-                        amount1_out = AssetAmount(FVal(ZERO))
-                    else:
-                        amount0_in = deserialize_asset_amount_force_positive(swap['amount0'])
-                        amount0_out = AssetAmount(FVal(ZERO))
-                        amount1_in = AssetAmount(FVal(ZERO))
-                        amount1_out = deserialize_asset_amount_force_positive(swap['amount1'])
+                    try:
+                        if swap['amount0'].startswith('-'):
+                            amount0_in = AssetAmount(FVal(ZERO))
+                            amount0_out = deserialize_asset_amount_force_positive(swap['amount0'])
+                            amount1_in = deserialize_asset_amount_force_positive(swap['amount1'])
+                            amount1_out = AssetAmount(FVal(ZERO))
+                        else:
+                            amount0_in = deserialize_asset_amount_force_positive(swap['amount0'])
+                            amount0_out = AssetAmount(FVal(ZERO))
+                            amount1_in = AssetAmount(FVal(ZERO))
+                            amount1_out = deserialize_asset_amount_force_positive(swap['amount1'])
+                    except ValueError as e:
+                        log.error(
+                            f'Failed to read amounts in Uniswap V3 swap {str(swap)}. '
+                            f'{str(e)}.',
+                        )
+                        continue
 
                     swaps.append(AMMSwap(
                         tx_hash=swap['id'].split('#')[0],
