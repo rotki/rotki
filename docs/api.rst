@@ -7914,12 +7914,12 @@ Dealing with ignored actions
    :statuscode 500: Internal Rotki error
 
 
-Querying the version
-====================
+Querying general information
+==============================
 
-.. http:get:: /api/(version)/version
+.. http:get:: /api/(version)/info
 
-   Doing a GET on the version endpoint will return information about the version of Rotki. If there is a newer version then ``"download_url"`` will be populated. If not then only ``"our_version"`` and ``"latest_version"`` will be. There is a possibility that latest version may not be populated due to github not being reachable.
+   Doing a GET on the info endpoint will return general information about rotki. Under the version key we get info on the version of Rotki. If there is a newer version then ``"download_url"`` will be populated. If not then only ``"our_version"`` and ``"latest_version"`` will be. There is a possibility that latest version may not be populated due to github not being reachable. Also we return the data directory
 
 
    **Example Request**:
@@ -7938,9 +7938,12 @@ Querying the version
 
       {
           "result": {
-              "our_version": "1.0.3",
-              "latest_version": "1.0.4",
-              "download_url": "https://github.com/rotki/rotki/releases/tag/v1.0.4"
+              "version": {
+                  "our_version": "1.0.3",
+                  "latest_version": "1.0.4",
+                  "download_url": "https://github.com/rotki/rotki/releases/tag/v1.0.4"
+              },
+              "data_directory": "/home/username/.local/share/rotki/data"
           },
           "message": ""
       }
@@ -7948,8 +7951,9 @@ Querying the version
    :resjson str our_version: The version of Rotki present in the system
    :resjson str latest_version: The latest version of Rotki available
    :resjson str url: URL link to download the latest version
+   :resjson str data_directory: The rotki data directory
 
-   :statuscode 200: Version information queried
+   :statuscode 200: Information queried succesfully
    :statuscode 500: Internal Rotki error
 
 Sending a Ping

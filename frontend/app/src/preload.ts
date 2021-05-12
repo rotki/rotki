@@ -8,6 +8,7 @@ import {
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_INSTALL_UPDATE,
+  IPC_OPEN_PATH,
   IPC_RESTART_BACKEND,
   IPC_VERSION
 } from '@/electron-main/ipc';
@@ -70,5 +71,6 @@ contextBridge.exposeInMainWorld('interop', {
     ipcRenderer.on(IPC_ABOUT, () => {
       callback();
     });
-  }
+  },
+  openPath: (path: string) => ipcRenderer.send(IPC_OPEN_PATH, path)
 } as Interop);

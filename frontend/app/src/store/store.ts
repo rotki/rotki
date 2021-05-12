@@ -1,7 +1,7 @@
 ﻿import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
-import { VersionCheck } from '@/services/types-api';
+import { BackendVersion } from '@/services/types-api';
 import { assets } from '@/store/assets';
 import { balances } from '@/store/balances';
 import { defiSections, Section, Status } from '@/store/const';
@@ -45,7 +45,8 @@ const defaultState = () => ({
   version: defaultVersion(),
   connected: false,
   connectionFailure: false,
-  status: {}
+  status: {},
+  dataDirectory: ''
 });
 
 const store: StoreOptions<RotkehlchenState> = {
@@ -57,12 +58,15 @@ const store: StoreOptions<RotkehlchenState> = {
     resetMessage: (state: RotkehlchenState) => {
       state.message = emptyMessage();
     },
-    versions: (state: RotkehlchenState, version: VersionCheck) => {
+    versions: (state: RotkehlchenState, version: BackendVersion) => {
       state.version = {
-        version: version.our_version || '',
-        latestVersion: version.latest_version || '',
-        downloadUrl: version.download_url || ''
+        version: version.ourVersion || '',
+        latestVersion: version.latestVersion || '',
+        downloadUrl: version.downloadUrl || ''
       };
+    },
+    dataDirectory(state: RotkehlchenState, directory: string) {
+      state.dataDirectory = directory;
     },
     setConnected: (state: RotkehlchenState, connected: boolean) => {
       state.connected = connected;
@@ -85,9 +89,10 @@ const store: StoreOptions<RotkehlchenState> = {
   },
   actions: {
     async version({ commit }): Promise<void> {
-      const version = await api.checkVersion();
+      const { version, dataDirectory } = await api.info();
       if (version) {
         commit('versions', version);
+        commit('dataDirectory', dataDirectory);
       }
     },
     async connect({ commit, dispatch }, payload: string | null): Promise<void> {

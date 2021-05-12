@@ -1076,10 +1076,10 @@ class QueriedAddressesResource(BaseResource):
         return self.rest_api.remove_queried_address_per_module(module=module, address=address)
 
 
-class VersionResource(BaseResource):
+class InfoResource(BaseResource):
 
     def get(self) -> Response:
-        return self.rest_api.version_check()
+        return self.rest_api.get_info()
 
 
 class PingResource(BaseResource):

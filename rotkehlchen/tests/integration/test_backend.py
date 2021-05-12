@@ -1,8 +1,8 @@
 import subprocess
+from http import HTTPStatus
+
 import gevent
 import requests
-
-from http import HTTPStatus
 
 
 def test_backend():
@@ -24,10 +24,10 @@ def test_backend():
                 if 'Rotki API server is running at' in output:
                     break
 
-            url = f'http://{output.split()[-1]}/api/1/version'
+            url = f'http://{output.split()[-1]}/api/1/info'
             response = requests.get(url)
             assert response.status_code == HTTPStatus.OK
-            assert 'latest_version' in response.json()['result']
+            assert 'data_directory' in response.json()['result']
 
         except gevent.Timeout as e:
             raise AssertionError(

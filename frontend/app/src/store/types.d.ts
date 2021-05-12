@@ -29,6 +29,7 @@ export interface Version {
 type SectionStatus = { [section: string]: Status };
 
 export interface RotkehlchenState {
+  dataDirectory: string;
   message: Message;
   version: Version;
   connected: boolean;

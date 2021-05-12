@@ -9,6 +9,7 @@ export const IPC_INSTALL_UPDATE = 'INSTALL_UPDATE' as const;
 export const IPC_DARK_MODE = 'DARK_MODE' as const;
 export const IPC_VERSION = 'VERSION' as const;
 export const IPC_ABOUT = 'ABOUT' as const;
+export const IPC_OPEN_PATH = 'OPEN_PATH' as const;
 
 export type DebugSettings = { vuex: boolean };
 
@@ -31,6 +32,7 @@ export type SystemVersion = {
 
 export interface Interop {
   openUrl(url: string): Promise<void>;
+  openPath(path: string): Promise<void>;
   closeApp(): void;
   listenForErrors(
     callback: (backendOutput: string, code: BackendCode) => void

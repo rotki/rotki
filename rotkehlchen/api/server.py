@@ -88,7 +88,7 @@ from rotkehlchen.api.v1.resources import (
     UserPremiumSyncResource,
     UsersByNameResource,
     UsersResource,
-    VersionResource,
+    InfoResource,
     WatchersResource,
     YearnVaultsBalancesResource,
     YearnVaultsHistoryResource,
@@ -200,7 +200,7 @@ URLS_V1: URLS = [
     ('/assets/ignored', IgnoredAssetsResource),
     ('/assets/updates', AssetUpdatesResource),
     ('/actions/ignored', IgnoredActionsResource),
-    ('/version', VersionResource),
+    ('/info', InfoResource),
     ('/ping', PingResource),
     ('/import', DataImportResource),
 ]

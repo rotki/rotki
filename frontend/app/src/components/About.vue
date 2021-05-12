@@ -7,6 +7,12 @@
       </span>
     </div>
     <v-card-text>
+      <v-img
+        class="mt-4 mb-2"
+        contain
+        max-width="72px"
+        :src="require('@/assets/images/rotkehlchen_no_text.png')"
+      />
       <div class="d-flex flex-row align-center about__version mt-4">
         <div class="font-weight-bold">{{ version.version }}</div>
         <div class="font-weight-regular ml-4">
@@ -18,10 +24,33 @@
         <v-spacer />
         <update-indicator />
       </div>
-      <v-divider class="mt-4" />
+      <v-divider class="mt-4 mb-2" />
+      <div class="d-flex flex-row align-center">
+        <div class="font-weight-medium about__label">
+          {{ $t('about.data_directory') }}
+        </div>
+        <div class="text-truncate">{{ dataDirectory }}</div>
+        <v-spacer />
+        <div v-if="$interop.isPackaged" class="ml-2">
+          <v-tooltip top open-delay="400">
+            <template #activator="{ on, attrs }">
+              <v-btn
+                v-bind="attrs"
+                icon
+                x-small
+                v-on="on"
+                @click="$interop.openPath(dataDirectory)"
+              >
+                <v-icon x-small>mdi-launch</v-icon>
+              </v-btn>
+            </template>
+            <span>{{ $t('about.open_data_dir_tooltip') }}</span>
+          </v-tooltip>
+        </div>
+      </div>
       <v-row align="center">
         <v-col>
-          <div class="mt-2 d-flex flex-row">
+          <div class="d-flex flex-row">
             <div class="font-weight-medium about__label">
               {{ $t('about.frontend_version') }}
             </div>
@@ -88,12 +117,13 @@ import { WebVersion } from '@/types';
   name: 'About',
   components: { UpdateIndicator, BaseExternalLink },
   computed: {
-    ...mapState(['version'])
+    ...mapState(['version', 'dataDirectory'])
   }
 })
 export default class About extends Vue {
   version!: Version;
   versionInfo: SystemVersion | WebVersion | null = null;
+  dataDirectory!: string;
 
   get web(): boolean {
     return (this.versionInfo && 'userAgent' in this.versionInfo) ?? false;
