@@ -813,7 +813,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const success = await api.setupExchange(exchange, edit);
       const exchangeEntry: Exchange = {
         name: exchange.name,
-        location: exchange.location
+        location: exchange.location,
+        krakenAccountType: exchange.krakenAccountType ?? undefined
       };
 
       if (!edit) {
@@ -835,7 +836,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       showError(
         i18n
           .t('actions.balances.exchange_setup.description', {
-            location: location,
+            exchange: exchange.location,
             error: e.message
           })
           .toString(),

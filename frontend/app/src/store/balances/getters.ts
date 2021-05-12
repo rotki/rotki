@@ -232,8 +232,11 @@ export const getters: Getters<
           };
     };
 
-    for (const exchange of connectedExchanges) {
-      const balances = exchangeBalances(exchange.location);
+    const exchanges = connectedExchanges
+      .map(({ location }) => location)
+      .filter(uniqueStrings);
+    for (const exchange of exchanges) {
+      const balances = exchangeBalances(exchange);
       balances.forEach((value: AssetBalance) => addToOwned(value));
     }
 
