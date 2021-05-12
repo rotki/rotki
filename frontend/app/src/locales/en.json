@@ -1,8 +1,10 @@
 {
   "about": {
     "copy_tooltip": "Copy the application information",
+    "data_directory": "Data Directory:",
     "electron": "Electron:",
     "frontend_version": "Frontend Version:",
+    "open_data_dir_tooltip": "Open the data directory",
     "platform": "Platform:",
     "release_notes": "What's new",
     "user_agent": "User Agent:"
@@ -2400,7 +2402,7 @@
   },
   "app": {
     "name": "rotki",
-    "moto": "the opensource portfolio manager that respects your privacy"
+    "moto": "the opensource portfolio manager that protects your privacy"
   },
   "blockchains": {
     "eth": "Ethereum",

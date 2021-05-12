@@ -32,7 +32,7 @@ import {
   SyncAction,
   TaskNotFoundError,
   TaskStatus,
-  VersionCheck
+  BackendInfo
 } from '@/services/types-api';
 import {
   handleResponse,
@@ -198,9 +198,11 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  checkVersion(): Promise<VersionCheck> {
+  info(): Promise<BackendInfo> {
     return this.axios
-      .get<ActionResult<VersionCheck>>('/version')
+      .get<ActionResult<BackendInfo>>('/info', {
+        transformResponse: basicAxiosTransformer
+      })
       .then(handleResponse);
   }
 

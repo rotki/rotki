@@ -21,6 +21,7 @@ import {
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_INSTALL_UPDATE,
+  IPC_OPEN_PATH,
   IPC_RESTART_BACKEND,
   IPC_VERSION,
   SystemVersion
@@ -120,6 +121,8 @@ const onReady = async () => {
     };
     event.sender.send(IPC_VERSION, version);
   });
+
+  ipcMain.on(IPC_OPEN_PATH, (event, path) => shell.openPath(path));
 
   setupUpdaterInterop();
   await createWindow();

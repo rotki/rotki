@@ -40,6 +40,10 @@ export class ElectronInterop {
     window.interop?.openUrl(url);
   }
 
+  openPath(path: string) {
+    window.interop?.openPath(path);
+  }
+
   premiumUserLoggedIn(premiumUser: boolean) {
     window.interop?.premiumUserLoggedIn(premiumUser);
   }
