@@ -932,9 +932,11 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if 'insertTime' in raw_data:
                 category = AssetMovementCategory.DEPOSIT
                 time_key = 'insertTime'
+                fee = Fee(ZERO)
             else:
                 category = AssetMovementCategory.WITHDRAWAL
                 time_key = 'applyTime'
+                fee = Fee(deserialize_asset_amount(raw_data['transactionFee']))
 
             timestamp = deserialize_timestamp_from_binance(raw_data[time_key])
             asset = asset_from_binance(raw_data['asset'])
@@ -947,8 +949,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 asset=asset,
                 amount=deserialize_asset_amount_force_positive(raw_data['amount']),
                 fee_asset=asset,
-                # Binance does not include withdrawal fees neither in the API nor in their UI
-                fee=Fee(ZERO),
+                fee=fee,
                 link=str(raw_data['txId']),
             )
 

@@ -530,6 +530,7 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
         {
             "id":"7213fea8e94b4a5593d507237e5a555b",
             "amount": 0.04670582,
+            "transactionFee": 0.01,
             "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
             "asset": "ETH",
             "txId": "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
