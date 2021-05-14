@@ -6,7 +6,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
+from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
 from rotkehlchen.constants.assets import (
     A_ALINK_V1,
@@ -48,6 +51,7 @@ from rotkehlchen.constants.assets import (
     A_YV1_WETH,
     A_YV1_YFI,
 )
+from rotkehlchen.constants.ethereum import UNISWAP_V2_LP_ABI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors import (
     DeserializationError,
@@ -65,7 +69,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Price, Timestamp
+from rotkehlchen.typing import Price, Timestamp, KnownProtocolsAssets
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.network import request_get_dict
 
@@ -134,6 +138,9 @@ def get_underlying_asset_price(token: EthereumToken) -> Optional[Price]:
     due to recursive import problems
     """
     price = None
+    if token.protocol == 'UNI-V2':
+        price = Inquirer().find_uniswap_v2_lp_price(token)
+
     if token == A_YV1_ALINK:
         price = Inquirer().find_usd_price(A_ALINK_V1)
     elif token == A_YV1_GUSD:
@@ -152,6 +159,15 @@ def get_underlying_asset_price(token: EthereumToken) -> Optional[Price]:
         price = Inquirer().find_usd_price(A_TUSD)
     elif token in ASSETS_UNDERLYING_BTC:
         price = Inquirer().find_usd_price(A_BTC)
+
+    custom_token = GlobalDBHandler().get_ethereum_token(token.ethereum_address)
+    if custom_token and custom_token.underlying_tokens is not None:
+        usd_price = ZERO
+        for underlying_token in custom_token.underlying_tokens:
+            token = EthereumToken(underlying_token.address)
+            usd_price += Inquirer().find_usd_price(token) * underlying_token.weight
+        if usd_price != Price(ZERO):
+            price = Price(usd_price)
 
     return price
 
@@ -197,6 +213,7 @@ class Inquirer():
     _oracles: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
     special_tokens: List[EthereumToken]
+    special_protocols: Tuple[str]
 
     def __new__(
             cls,
@@ -248,6 +265,9 @@ class Inquirer():
             A_FARM_RENBTC,
             A_FARM_CRVRENWBTC,
         ]
+
+        Inquirer.special_protocols = KnownProtocolsAssets
+
         # This asset may be missing if user has not yet updated their DB
         try:
             a3crv = EthereumToken('0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900')
@@ -342,7 +362,8 @@ class Inquirer():
             if cache is not None:
                 return cache.price
 
-        return instance._query_oracle_instances(from_asset=from_asset, to_asset=to_asset)
+        oracle_price = instance._query_oracle_instances(from_asset=from_asset, to_asset=to_asset)
+        return oracle_price
 
     @staticmethod
     def find_usd_price(
@@ -369,10 +390,24 @@ class Inquirer():
             except RemoteError:
                 pass  # continue, a price can be found by one of the oracles (CC for example)
 
+        # Try and check if it is an ethereum token with specified protocol or underlying tokens
+        is_known_protocol = False
+        underlying_tokens = None
+        try:
+            token = EthereumToken.from_asset(asset)
+            if token is not None:
+                if token.protocol is not None:
+                    is_known_protocol = token.protocol in KnownProtocolsAssets
+                underlying_tokens = GlobalDBHandler().get_ethereum_token(  # type: ignore
+                    token.ethereum_address,
+                ).underlying_tokens
+        except UnknownAsset:
+            pass
+
+        # Check if it is a special token
         if asset in instance.special_tokens:
             ethereum = instance._ethereum
             assert ethereum, 'Inquirer should never be called before the injection of ethereum'
-            token = EthereumToken.from_asset(asset)
             assert token, 'all assets in special tokens are already ethereum tokens'
             underlying_asset_price = get_underlying_asset_price(token)
             usd_price = handle_defi_price_query(
@@ -388,7 +423,93 @@ class Inquirer():
             Inquirer._cached_current_price[cache_key] = CachedPriceEntry(price=price, time=ts_now())  # noqa: E501
             return price
 
+        if is_known_protocol is True or underlying_tokens is not None:
+            assert token is not None
+            result = get_underlying_asset_price(token)
+            usd_price = Price(ZERO) if result is None else Price(result)
+            Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
+                price=usd_price,
+                time=ts_now(),
+            )
+            return usd_price
+
         return instance._query_oracle_instances(from_asset=asset, to_asset=A_USD)
+
+    def find_uniswap_v2_lp_price(
+        self,
+        token: Union[EthereumToken, UnknownEthereumToken],
+    ) -> Optional[Price]:
+        """
+        Calculate the price for a uniswap v2 LP token. That is
+        value = (Total value of liquidity pool) / (Current suply of LP tokens)
+        We need:
+        - Price of token 0
+        - Price of token 1
+        - Pooled amount of token 0
+        - Pooled amount of token 1
+        - Total supply of of pool token
+        """
+        assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
+
+        address = token.ethereum_address
+        contract = EthereumContract(address=address, abi=UNISWAP_V2_LP_ABI, deployed_block=0)
+        methods = ['token0', 'token1', 'totalSupply', 'getReserves', 'decimals']
+        try:
+            output = multicall_2(
+                ethereum=self._ethereum,
+                require_success=True,
+                calls=[(address, contract.encode(method_name=method)) for method in methods],
+            )
+        except RemoteError as e:
+            log.error(
+                f'Remote error calling multicall contract for uniswap v2 lp '
+                f'token {token.ethereum_address} properties: {str(e)}',
+            )
+            return None
+
+        # decode output
+        decoded = []
+        for (method_output, method_name) in zip(output, methods):
+            if method_output[0] and len(method_output[1]) != 0:
+                decoded_method = contract.decode(method_output[1], method_name)
+                if len(decoded_method) == 1:
+                    decoded.append(decoded_method[0])
+                else:
+                    decoded.append(decoded_method)
+            else:
+                log.debug(
+                    f'Multicall to Uniswap V2 LP failed to fetch field {method_name} '
+                    f'for token {token.ethereum_address}',
+                )
+                return None
+
+        try:
+            token0 = EthereumToken(decoded[0])
+            token1 = EthereumToken(decoded[1])
+        except UnknownAsset:
+            return None
+
+        try:
+            token0_supply = FVal(decoded[3][0] * 10**-token0.decimals)
+            token1_supply = FVal(decoded[3][1] * 10**-token1.decimals)
+            total_supply = FVal(decoded[2] * 10 ** - decoded[4])
+        except ValueError as e:
+            log.debug(
+                f'Failed to deserialize token amounts for token {address} '
+                f'with values {str(decoded)}. f{str(e)}',
+            )
+            return None
+        token0_price = self.find_usd_price(token0)
+        token1_price = self.find_usd_price(token1)
+
+        if ZERO in (token0_price, token1_price):
+            log.debug(
+                f'Couldnt retrieve non zero price information for tokens {token0}, {token1} '
+                f'with result {token0_price}, {token1_price}',
+            )
+        numerator = (token0_supply * token0_price + token1_supply * token1_price)
+        share_value = numerator / total_supply
+        return Price(share_value)
 
     @staticmethod
     def get_fiat_usd_exchange_rates(currencies: Iterable[Asset]) -> Dict[Asset, Price]:
