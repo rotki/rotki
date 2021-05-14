@@ -137,7 +137,6 @@ Handling user creation, sign-in, log-out and querying
                   "last_write_ts": 1571552172,
                   "premium_should_sync": true,
                   "include_crypto2crypto": true,
-                  "anonymized_logs": true,
                   "last_data_upload_ts": 1571552172,
                   "ui_floating_precision": 2,
                   "taxfree_after_period": 31536000,
@@ -206,7 +205,6 @@ Handling user creation, sign-in, log-out and querying
                   "last_write_ts": 1571552172,
                   "premium_should_sync": true,
                   "include_crypto2crypto": true,
-                  "anonymized_logs": true,
                   "last_data_upload_ts": 1571552172,
                   "ui_floating_precision": 2,
                   "taxfree_after_period": 31536000,
@@ -577,7 +575,6 @@ Getting or modifying settings
               "last_write_ts": 1571552172,
               "premium_should_sync": true,
               "include_crypto2crypto": true,
-              "anonymized_logs": true,
               "last_data_upload_ts": 1571552172,
               "ui_floating_precision": 2,
               "taxfree_after_period": 31536000,
@@ -603,7 +600,6 @@ Getting or modifying settings
    :resjson int last_write_ts: The unix timestamp at which an entry was last written in the database
    :resjson bool premium_should_sync: A boolean denoting whether premium users database should be synced from/to the server
    :resjson bool include_crypto2crypto: A boolean denoting whether crypto to crypto trades should be counted.
-   :resjson bool anonymized_logs: A boolean denoting whether sensitive logs should be anonymized.
    :resjson int last_data_upload_ts: The unix timestamp at which the last data upload to the server happened.
    :resjson int ui_floating_precision: The number of decimals points to be shown for floating point numbers in the UI. Can be between 0 and 8.
    :resjson int taxfree_after_period: The number of seconds after which holding a crypto in FIFO order is considered no longer taxable. Must be either a positive number, or -1. 0 is not a valid value. The default is 1 year, as per current german tax rules. Can also be set to ``-1`` which will then set the taxfree_after_period to ``null`` which means there is no taxfree period.
@@ -645,7 +641,6 @@ Getting or modifying settings
 
    :reqjson bool[optional] premium_should_sync: A boolean denoting whether premium users database should be synced from/to the server
    :reqjson bool[optional] include_crypto2crypto: A boolean denoting whether crypto to crypto trades should be counted.
-   :reqjson bool[optional] anonymized_logs: A boolean denoting whether sensitive logs should be anonymized.
    :reqjson int[optional] ui_floating_precision: The number of decimals points to be shown for floating point numbers in the UI. Can be between 0 and 8.
    :reqjson int[optional] taxfree_after_period: The number of seconds after which holding a crypto in FIFO order is considered no longer taxable. Must be either a positive number, or -1. 0 is not a valid value. The default is 1 year, as per current german tax rules. Can also be set to ``-1`` which will then set the taxfree_after_period to ``null`` which means there is no taxfree period.
    :reqjson int[optional] balance_save_frequency: The number of hours after which user balances should be saved in the DB again. This is useful for the statistics kept in the DB for each user. Default is 24 hours. Can't be less than 1 hour.
@@ -674,7 +669,6 @@ Getting or modifying settings
               "last_write_ts": 1571552172,
               "premium_should_sync": true,
               "include_crypto2crypto": true,
-              "anonymized_logs": true,
               "last_data_upload_ts": 1571552172,
               "ui_floating_precision": 4,
               "taxfree_after_period": 31536000,

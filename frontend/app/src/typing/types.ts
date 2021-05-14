@@ -15,7 +15,6 @@ export type CurrencyLocation = typeof CURRENCY_LOCATION[number];
 
 export interface GeneralSettings {
   readonly floatingPrecision: number;
-  readonly anonymizedLogs: boolean;
   readonly anonymousUsageAnalytics: boolean;
   readonly ethRpcEndpoint: string;
   readonly ksmRpcEndpoint: string;
@@ -115,7 +114,6 @@ export type SettingsUpdate = {
 interface SettingsPayload {
   balance_save_frequency: number;
   main_currency: string;
-  anonymized_logs: boolean;
   submit_usage_analytics: boolean;
   eth_rpc_endpoint: string;
   ksm_rpc_endpoint: string;

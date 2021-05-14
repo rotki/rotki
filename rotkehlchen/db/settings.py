@@ -19,7 +19,6 @@ ROTKEHLCHEN_DB_VERSION = 26
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_INCLUDE_GAS_COSTS = True
-DEFAULT_ANONYMIZED_LOGS = False
 DEFAULT_PREMIUM_SHOULD_SYNC = False
 DEFAULT_UI_FLOATING_PRECISION = 2
 DEFAULT_BALANCE_SAVE_FREQUENCY = 24
@@ -46,7 +45,6 @@ JSON_KEYS = ('current_price_oracles', 'historical_price_oracles', 'taxable_ledge
 BOOLEAN_KEYS = (
     'have_premium',
     'include_crypto2crypto',
-    'anonymized_logs',
     'include_gas_costs',
     'premium_should_sync',
     'submit_usage_analytics',
@@ -75,7 +73,6 @@ class DBSettings(NamedTuple):
     last_write_ts: Timestamp = Timestamp(0)
     premium_should_sync: bool = DEFAULT_PREMIUM_SHOULD_SYNC
     include_crypto2crypto: bool = DEFAULT_INCLUDE_CRYPTO2CRYPTO
-    anonymized_logs: bool = DEFAULT_ANONYMIZED_LOGS
     last_data_upload_ts: Timestamp = Timestamp(0)
     ui_floating_precision: int = DEFAULT_UI_FLOATING_PRECISION
     taxfree_after_period: Optional[int] = DEFAULT_TAXFREE_AFTER_PERIOD
@@ -101,7 +98,6 @@ class DBSettings(NamedTuple):
 class ModifiableDBSettings(NamedTuple):
     premium_should_sync: Optional[bool] = None
     include_crypto2crypto: Optional[bool] = None
-    anonymized_logs: Optional[bool] = None
     ui_floating_precision: Optional[int] = None
     taxfree_after_period: Optional[int] = None
     balance_save_frequency: Optional[int] = None

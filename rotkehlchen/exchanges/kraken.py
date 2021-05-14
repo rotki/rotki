@@ -130,7 +130,6 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
 
     log.debug(
         'Processing kraken Trade',
-        sensitive_log=True,
         timestamp=timestamp,
         order_type=order_type,
         kraken_pair=kraken_trade['pair'],
@@ -561,7 +560,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             assets_balance[our_asset] += balance
             log.debug(
                 'kraken balance query result',
-                sensitive_log=True,
                 currency=our_asset,
                 amount=balance.amount,
                 usd_value=balance.usd_value,

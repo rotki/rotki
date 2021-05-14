@@ -64,21 +64,16 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.logging import (
-    DEFAULT_ANONYMIZED_LOGS,
-    LoggingSettings,
-    RotkehlchenLogsAdapter,
-    configure_logging,
-)
+from rotkehlchen.logging import RotkehlchenLogsAdapter, configure_logging
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.typing import (
+    EXTERNAL_EXCHANGES,
+    EXTERNAL_LOCATION,
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
-    EXTERNAL_EXCHANGES,
-    EXTERNAL_LOCATION,
     ListOfBlockchainAddresses,
     Location,
     SupportedBlockchain,
@@ -257,8 +252,6 @@ class Rotkehlchen():
             premium=self.premium,
         )
 
-        # Initialize the rotkehlchen logger
-        LoggingSettings(anonymized_logs=settings.anonymized_logs)
         exchange_credentials = self.data.db.get_exchange_credentials()
         self.exchange_manager.initialize_exchanges(
             exchange_credentials=exchange_credentials,
@@ -340,9 +333,6 @@ class Rotkehlchen():
         self.greenlet_manager.clear()
         del self.chain_manager
         self.exchange_manager.delete_all_exchanges()
-
-        # Reset rotkehlchen logger to default
-        LoggingSettings(anonymized_logs=DEFAULT_ANONYMIZED_LOGS)
 
         del self.accountant
         del self.events_historian

@@ -952,7 +952,6 @@ class ModifiableSettingsSchema(Schema):
     """This is the Schema for the settings that can be modified via the API"""
     premium_should_sync = fields.Bool(missing=None)
     include_crypto2crypto = fields.Bool(missing=None)
-    anonymized_logs = fields.Bool(missing=None)
     submit_usage_analytics = fields.Bool(missing=None)
     ui_floating_precision = fields.Integer(
         strict=True,
@@ -1028,7 +1027,6 @@ class ModifiableSettingsSchema(Schema):
         return ModifiableDBSettings(
             premium_should_sync=data['premium_should_sync'],
             include_crypto2crypto=data['include_crypto2crypto'],
-            anonymized_logs=data['anonymized_logs'],
             ui_floating_precision=data['ui_floating_precision'],
             taxfree_after_period=data['taxfree_after_period'],
             balance_save_frequency=data['balance_save_frequency'],

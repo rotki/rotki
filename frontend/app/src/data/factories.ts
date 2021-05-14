@@ -4,7 +4,6 @@ import { AccountingSettings, GeneralSettings } from '@/typing/types';
 
 export const defaultGeneralSettings = (): GeneralSettings => ({
   floatingPrecision: Defaults.FLOATING_PRECISION,
-  anonymizedLogs: Defaults.ANONYMIZED_LOGS,
   ethRpcEndpoint: Defaults.RPC_ENDPOINT,
   ksmRpcEndpoint: Defaults.KSM_RPC_ENDPOINT,
   balanceSaveFrequency: Defaults.BALANCE_SAVE_FREQUENCY,

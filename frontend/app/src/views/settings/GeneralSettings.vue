@@ -8,15 +8,6 @@
           </v-card-title>
           <v-card-text>
             <v-switch
-              v-model="anonymizedLogs"
-              class="general-settings__fields__anonymized-logs"
-              :label="$t('general_settings.labels.anonymized_logs')"
-              color="primary"
-              :success-messages="settingsMessages[ANONYMIZED_LOGS].success"
-              :error-messages="settingsMessages[ANONYMIZED_LOGS].error"
-              @change="onAnonymizedLogsChange($event)"
-            />
-            <v-switch
               v-model="anonymousUsageAnalytics"
               class="general-settings__fields__anonymous-usage-statistics"
               color="primary"
@@ -257,7 +248,6 @@ import {
 import { bigNumberify } from '@/utils/bignumbers';
 
 const SETTING_FLOATING_PRECISION = 'floatingPrecision';
-const SETTING_ANONYMIZED_LOGS = 'anonymizedLogs';
 const SETTING_ANONYMOUS_USAGE_ANALYTICS = 'anonymousUsageAnalytics';
 const SETTING_RPC_ENDPOINT = 'rpcEndpoint';
 const SETTING_KSM_RPC_ENDPOINT = 'ksmRpcEndpoint';
@@ -272,7 +262,6 @@ const SETTING_DISPLAY_DATE_IN_LOCALTIME = 'displayDateInLocaltime';
 
 const SETTINGS = [
   SETTING_FLOATING_PRECISION,
-  SETTING_ANONYMIZED_LOGS,
   SETTING_ANONYMOUS_USAGE_ANALYTICS,
   SETTING_RPC_ENDPOINT,
   SETTING_KSM_RPC_ENDPOINT,
@@ -307,7 +296,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   currency!: Currency;
 
   floatingPrecision: string = '0';
-  anonymizedLogs: boolean = false;
   anonymousUsageAnalytics: boolean = false;
   rpcEndpoint: string = Defaults.RPC_ENDPOINT;
   ksmRpcEndpoint: string = Defaults.KSM_RPC_ENDPOINT;
@@ -321,7 +309,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   displayDateInLocaltime: boolean = true;
 
   readonly FLOATING_PRECISION = SETTING_FLOATING_PRECISION;
-  readonly ANONYMIZED_LOGS = SETTING_ANONYMIZED_LOGS;
   readonly ANONYMOUS_USAGE_ANALYTICS = SETTING_ANONYMOUS_USAGE_ANALYTICS;
   readonly RPC_ENDPOINT = SETTING_RPC_ENDPOINT;
   readonly KSM_RPC_ENDPOINT = SETTING_KSM_RPC_ENDPOINT;
@@ -478,14 +465,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     if (!success) {
       this.floatingPrecision = previousValue;
     }
-  }
-
-  async onAnonymizedLogsChange(enabled: boolean) {
-    const message = makeMessage(
-      `${this.$t('general_settings.validation.anonymized_logs.error')}`
-    );
-
-    await this.update({ anonymized_logs: enabled }, 'anonymizedLogs', message);
   }
 
   async onAnonymousUsageAnalyticsChange(enabled: boolean) {
@@ -652,7 +631,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     this.selectedCurrency = this.currency;
     const settings = this.generalSettings;
     this.floatingPrecision = settings.floatingPrecision.toString();
-    this.anonymizedLogs = settings.anonymizedLogs;
     this.anonymousUsageAnalytics = settings.anonymousUsageAnalytics;
     this.rpcEndpoint = settings.ethRpcEndpoint;
     this.ksmRpcEndpoint = settings.ksmRpcEndpoint;

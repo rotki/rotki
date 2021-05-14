@@ -124,7 +124,6 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     base_asset, quote_asset = bittrex_pair_to_world(bittrex_trade['marketSymbol'])
     log.debug(
         'Processing bittrex Trade',
-        sensitive_log=True,
         amount=amount,
         rate=rate,
         order_type=order_type,
@@ -364,7 +363,6 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             log.debug(
                 'bittrex balance query result',
-                sensitive_log=True,
                 currency=asset,
                 amount=amount,
                 usd_value=usd_value,

@@ -35,7 +35,6 @@ export interface DBSettings {
   readonly ksm_rpc_endpoint: string;
   readonly main_currency: string;
   readonly last_balance_save: number;
-  readonly anonymized_logs: boolean;
   readonly date_display_format: string;
   readonly kraken_account_type: string;
   readonly active_modules: SupportedModules[];

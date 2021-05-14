@@ -15,7 +15,6 @@ describe('Settings', () => {
 
   const settings = {
     floatingPrecision: '4',
-    anonymizedLogs: true,
     anonymousUsageStatistics: false,
     currency: 'JPY',
     balanceSaveFrequency: '48',
