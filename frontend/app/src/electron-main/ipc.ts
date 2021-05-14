@@ -23,9 +23,9 @@ export type SystemVersion = {
 export type BackendOptions = {
   readonly loglevel: Level;
   readonly dataDirectory: string;
-  readonly logFile: string;
-  readonly sleepSeconds?: number;
-  readonly logFromOtherModules?: boolean;
+  readonly logDirectory: string;
+  readonly sleepSeconds: number;
+  readonly logFromOtherModules: boolean;
 };
 
 export interface Interop {
@@ -44,9 +44,9 @@ export interface Interop {
   checkForUpdates(): Promise<boolean>;
   downloadUpdate(progress: (percentage: number) => void): Promise<boolean>;
   installUpdate(): Promise<boolean | Error>;
-  restartBackend(options: BackendOptions): Promise<boolean>;
+  restartBackend(options: Partial<BackendOptions>): Promise<boolean>;
   setDarkMode(enabled: boolean): Promise<boolean>;
   version(): Promise<SystemVersion>;
   onAbout(callback: () => void): void;
-  config(): Promise<BackendOptions>;
+  config(): Promise<Partial<BackendOptions>>;
 }

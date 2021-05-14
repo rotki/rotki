@@ -104,11 +104,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import ConflictDialog from '@/components/status/update/ConflictDialog.vue';
+import BackendMixin from '@/mixins/backend-mixin';
 import {
   AssetUpdatePayload,
   ConflictResolution
@@ -118,7 +119,6 @@ import {
   AssetUpdateCheckResult,
   AssetUpdateConflictResult
 } from '@/store/assets/types';
-import { currentLogLevel } from '@/utils/log-level';
 
 const SKIP_ASSET_DB_VERSION = 'rotki_skip_asset_db_version';
 
@@ -129,7 +129,7 @@ const SKIP_ASSET_DB_VERSION = 'rotki_skip_asset_db_version';
     ...mapActions('session', ['logout'])
   }
 })
-export default class AssetUpdate extends Vue {
+export default class AssetUpdate extends Mixins(BackendMixin) {
   @Prop({ required: false, default: false, type: Boolean })
   auto!: Boolean;
   showUpdateDialog: boolean = false;
@@ -229,7 +229,7 @@ export default class AssetUpdate extends Vue {
     await this.logout();
     this.$store.commit('connected', false);
     if (this.$interop.isPackaged) {
-      await this.$interop.restartBackend(currentLogLevel());
+      await this.restartBackend();
     }
     await this.$store.dispatch('connect');
   }

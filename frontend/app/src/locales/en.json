@@ -102,12 +102,24 @@
       "cancel": "Cancel",
       "save": "Save"
     },
+    "config_file_disabled": "This parameter is set in the rotki_config.json",
     "data_directory": {
       "select": "Select where rotki will store the data"
+    },
+    "log_from_other_modules": {
+      "hint": "Enables logging from third party libraries (useful for debugging)",
+      "label": "Log from other modules"
+    },
+    "main_loop_sleep": {
+      "hint": "The main event loop sleep duration.",
+      "label": "Main Loop Sleep"
     },
     "settings": {
       "data_directory": {
         "label": "Data Directory"
+      },
+      "log_directory": {
+        "label": "Log Directory"
       },
       "log_level": {
         "label": "Log Level"

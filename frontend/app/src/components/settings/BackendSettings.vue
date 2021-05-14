@@ -6,6 +6,13 @@
     <v-text-field
       v-model="dataDirectory"
       outlined
+      :disabled="!!fileConfig.dataDirectory"
+      :persistent-hint="!!fileConfig.dataDirectory"
+      :hint="
+        !!fileConfig.dataDirectory
+          ? $t('backend_settings.config_file_disabled')
+          : null
+      "
       :label="$t('backend_settings.settings.data_directory.label')"
       readonly
       @click="selectDirectory"
@@ -16,10 +23,39 @@
         </v-btn>
       </template>
     </v-text-field>
+
+    <v-text-field
+      v-model="logDirectory"
+      :disabled="!!fileConfig.logDirectory"
+      :persistent-hint="!!fileConfig.logDirectory"
+      :hint="
+        !!fileConfig.logDirectory
+          ? $t('backend_settings.config_file_disabled')
+          : null
+      "
+      outlined
+      :label="$t('backend_settings.settings.log_directory.label')"
+      readonly
+      @click="selectDirectory"
+    >
+      <template #append>
+        <v-btn icon @click="selectDirectory">
+          <v-icon>mdi-folder</v-icon>
+        </v-btn>
+      </template>
+    </v-text-field>
+
     <v-select
       v-model="loglevel"
       :items="levels"
+      :disabled="!!fileConfig.loglevel"
       :label="$t('backend_settings.settings.log_level.label')"
+      :persistent-hint="!!fileConfig.loglevel"
+      :hint="
+        !!fileConfig.loglevel
+          ? $t('backend_settings.config_file_disabled')
+          : null
+      "
       outlined
     >
       <template #item="{ item }">
@@ -40,6 +76,32 @@
       </template>
     </v-select>
 
+    <v-text-field
+      v-model="mainLoopSleep"
+      outlined
+      :hint="
+        !!fileConfig.sleepSeconds
+          ? $t('backend_settings.config_file_disabled')
+          : $t('backend_settings.main_loop_sleep.hint')
+      "
+      :label="$t('backend_settings.main_loop_sleep.label')"
+      :disabled="!!fileConfig.sleepSeconds"
+      :persistent-hint="!!fileConfig.sleepSeconds"
+      type="number"
+    />
+
+    <v-checkbox
+      v-model="logFromOtherModules"
+      :label="$t('backend_settings.log_from_other_modules.label')"
+      :disabled="!!fileConfig.logFromOtherModules"
+      persistent-hint
+      :hint="
+        !!fileConfig.logFromOtherModules
+          ? $t('backend_settings.config_file_disabled')
+          : $t('backend_settings.log_from_other_modules.hint')
+      "
+    />
+
     <template #buttons>
       <v-spacer />
       <v-btn depressed>{{ $t('backend_settings.actions.cancel') }}</v-btn>
@@ -55,7 +117,6 @@ import { Component, Mixins } from 'vue-property-decorator';
 import BackendMixin from '@/mixins/backend-mixin';
 import {
   CRITICAL,
-  currentLogLevel,
   DEBUG,
   ERROR,
   INFO,
@@ -69,6 +130,9 @@ import {
 })
 export default class BackendSettings extends Mixins(BackendMixin) {
   dataDirectory: string = '';
+  logDirectory: string = '';
+  logFromOtherModules: boolean = false;
+  mainLoopSleep: string = '';
 
   readonly levels = levels;
   selecting: boolean = false;
@@ -89,14 +153,14 @@ export default class BackendSettings extends Mixins(BackendMixin) {
   }
 
   mounted() {
-    this.dataDirectory = this.getDataDirectory();
-    this.loglevel = currentLogLevel();
+    this.dataDirectory = this.config.dataDirectory;
+    this.logDirectory = this.config.logDirectory;
+    this.loglevel = this.config.loglevel;
+    this.mainLoopSleep = this.config.sleepSeconds ?? '';
+    this.logFromOtherModules = this.config.logFromOtherModules ?? false;
   }
 
-  save() {
-    this.setLogLevel(this.loglevel);
-    this.setDataDirectory(this.dataDirectory);
-  }
+  save() {}
 
   async selectDirectory() {
     if (this.selecting) {

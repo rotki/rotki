@@ -6,6 +6,7 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import { ipcSetup } from '@/electron-main/ipc-setup';
 import { getUserMenu } from '@/electron-main/menu';
 import PyHandler from './py-handler';
+import { assert } from './utils/assertions';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
@@ -30,7 +31,13 @@ const onReady = async () => {
     }
   }
 
-  ipcSetup(pyHandler, win!!, closeApp);
+  const getWindow = () => {
+    const window = win;
+    assert(window !== null);
+    return window;
+  };
+
+  ipcSetup(pyHandler, getWindow, closeApp);
   await createWindow();
 };
 
@@ -114,6 +121,7 @@ async function createWindow() {
   win.on('closed', async () => {
     win = null;
   });
+  return win;
 }
 
 async function closeApp() {

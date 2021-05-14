@@ -6,10 +6,10 @@ import stream from 'stream';
 import { app, App, BrowserWindow, ipcMain } from 'electron';
 import tasklist from 'tasklist';
 import { BackendCode } from '@/electron-main/backend-code';
+import { BackendOptions } from '@/electron-main/ipc';
 import { DEFAULT_PORT, selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
 import { wait } from '@/utils/backoff';
-import { Level } from '@/utils/log-level';
 import Task = tasklist.Task;
 
 async function streamToString(givenStream: stream.Readable): Promise<string> {
@@ -36,6 +36,26 @@ async function streamToString(givenStream: stream.Readable): Promise<string> {
       resolve(stringChunks.join('\n'));
     });
   });
+}
+
+function getBackendArguments(options: Partial<BackendOptions>): string[] {
+  const args: string[] = [];
+  if (options.loglevel) {
+    args.push('--loglevel', options.loglevel);
+  }
+  if (options.logFromOtherModules) {
+    args.push('--logfromothermodules');
+  }
+  if (options.logDirectory) {
+    args.push('--logfile', options.logDirectory);
+  }
+  if (options.dataDirectory) {
+    args.push('--data-dir', options.dataDirectory);
+  }
+  if (options.sleepSeconds) {
+    args.push('--sleep-secs', options.sleepSeconds.toString());
+  }
+  return args;
 }
 
 export default class PyHandler {
@@ -110,7 +130,7 @@ export default class PyHandler {
     this.app.quit();
   }
 
-  async createPyProc(window: BrowserWindow, level?: Level) {
+  async createPyProc(window: BrowserWindow, options: Partial<BackendOptions>) {
     if (process.env.SKIP_PYTHON_BACKEND) {
       this.logToFile('Skipped starting python sub-process');
       return;
@@ -143,12 +163,7 @@ export default class PyHandler {
     }
 
     this._port = port;
-    const args: string[] = [];
-    this.loadArgumentsFromFile(args);
-
-    if (level) {
-      args.push('--loglevel', level);
-    }
+    const args: string[] = getBackendArguments(options);
 
     if (this.guessPackaged()) {
       this.startProcessPackaged(port, args);
@@ -433,42 +448,6 @@ export default class PyHandler {
       if (stillRunning.length === 0) {
         break;
       }
-    }
-  }
-
-  private loadArgumentsFromFile(args: string[]) {
-    const configFile = 'rotki_config.json';
-
-    if (!fs.existsSync(configFile)) {
-      return;
-    }
-    try {
-      const config = JSON.parse(fs.readFileSync(configFile).toString());
-      if ('loglevel' in config) {
-        args.push('--loglevel', config['loglevel']);
-      }
-      if (
-        'logfromothermodules' in config &&
-        config['logfromothermodules'] === true
-      ) {
-        args.push('--logfromothermodules');
-      }
-      if ('logfile' in config) {
-        args.push('--logfile', config['logfile']);
-      }
-      if ('data-dir' in config) {
-        args.push('--data-dir', config['data-dir']);
-      }
-      if ('sleep-secs' in config) {
-        args.push('--sleep-secs', config['sleep-secs']);
-      }
-    } catch (e) {
-      // do nothing, act as if there is no config given
-      // TODO: Perhaps in the future warn the user inside
-      // the app that there is a config file with invalid json
-      this.logToFile(
-        `Could not read the rotki_config.json file due to: "${e}". Proceeding normally without a config file ...`
-      );
     }
   }
 }

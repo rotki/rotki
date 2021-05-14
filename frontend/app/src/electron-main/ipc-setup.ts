@@ -8,11 +8,13 @@ import {
 } from 'electron';
 import { ProgressInfo } from 'electron-builder';
 import { autoUpdater } from 'electron-updater';
+import { loadConfig } from '@/electron-main/config';
 import { startHttp, stopHttp } from '@/electron-main/http';
 import { BackendOptions, SystemVersion } from '@/electron-main/ipc';
 import {
   IPC_CHECK_FOR_UPDATES,
   IPC_CLOSE_APP,
+  IPC_CONFIG,
   IPC_DARK_MODE,
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
@@ -30,10 +32,10 @@ import {
 import { debugSettings, getUserMenu } from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
 import PyHandler from '@/py-handler';
-import { assert } from '@/utils/assertions';
-import Timeout = NodeJS.Timeout;
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
+
+type WindowProvider = () => BrowserWindow;
 
 async function select(
   title: string,
@@ -51,7 +53,7 @@ async function select(
 }
 
 function setupMetamaskImport() {
-  let importTimeout: Timeout;
+  let importTimeout: any;
   ipcMain.on(IPC_METAMASK_IMPORT, async (event, _args) => {
     try {
       const port = startHttp(
@@ -72,23 +74,23 @@ function setupMetamaskImport() {
   });
 }
 
-function setupBackendRestart(
-  win: Electron.BrowserWindow,
-  pyHandler: PyHandler
-) {
-  ipcMain.on(IPC_RESTART_BACKEND, async (event, options: BackendOptions) => {
-    let success = false;
-    try {
-      assert(win);
-      await pyHandler.exitPyProc(true);
-      await pyHandler.createPyProc(win, options.loglevel);
-      success = true;
-    } catch (e) {
-      console.error(e);
-    }
+function setupBackendRestart(getWindow: WindowProvider, pyHandler: PyHandler) {
+  ipcMain.on(
+    IPC_RESTART_BACKEND,
+    async (event, options: Partial<BackendOptions>) => {
+      let success = false;
+      try {
+        const win = getWindow();
+        await pyHandler.exitPyProc(true);
+        await pyHandler.createPyProc(win, options);
+        success = true;
+      } catch (e) {
+        console.error(e);
+      }
 
-    event.sender.send(IPC_RESTART_BACKEND, success);
-  });
+      event.sender.send(IPC_RESTART_BACKEND, success);
+    }
+  );
 }
 
 function setupVersionInfo() {
@@ -116,7 +118,7 @@ function setupDarkModeSupport() {
 
 export function ipcSetup(
   pyHandler: PyHandler,
-  win: BrowserWindow,
+  getWindow: WindowProvider,
   closeApp: () => Promise<void>
 ) {
   ipcMain.on(IPC_GET_DEBUG, event => {
@@ -146,12 +148,15 @@ export function ipcSetup(
     event.sender.send(IPC_OPEN_DIRECTORY, directory);
   });
   ipcMain.on(IPC_OPEN_PATH, (event, path) => shell.openPath(path));
+  ipcMain.on(IPC_CONFIG, event => {
+    event.sender.send(IPC_CONFIG, loadConfig());
+  });
 
   setupMetamaskImport();
-  setupBackendRestart(win, pyHandler);
   setupVersionInfo();
-  setupUpdaterInterop(pyHandler, win);
+  setupUpdaterInterop(pyHandler, getWindow);
   setupDarkModeSupport();
+  setupBackendRestart(getWindow, pyHandler);
 }
 
 function setupInstallUpdate(pyHandler: PyHandler) {
@@ -178,14 +183,12 @@ function setupInstallUpdate(pyHandler: PyHandler) {
   });
 }
 
-function setupDownloadUpdate(
-  win: Electron.BrowserWindow,
-  pyHandler: PyHandler
-) {
+function setupDownloadUpdate(getWindow: WindowProvider, pyHandler: PyHandler) {
   ipcMain.on(IPC_DOWNLOAD_UPDATE, async event => {
+    const window = getWindow();
     const progress = (progress: ProgressInfo) => {
       event.sender.send(IPC_DOWNLOAD_PROGRESS, progress.percent);
-      win?.setProgressBar(progress.percent);
+      window.setProgressBar(progress.percent);
     };
     autoUpdater.on('download-progress', progress);
     try {
@@ -222,7 +225,7 @@ function setupCheckForUpdates(pyHandler: PyHandler) {
   });
 }
 
-function setupUpdaterInterop(pyHandler: PyHandler, win: BrowserWindow) {
+function setupUpdaterInterop(pyHandler: PyHandler, getWindow: WindowProvider) {
   autoUpdater.autoDownload = false;
   autoUpdater.logger = {
     error: (message?: any) => pyHandler.logToFile(`(error): ${message}`),
@@ -231,6 +234,6 @@ function setupUpdaterInterop(pyHandler: PyHandler, win: BrowserWindow) {
     warn: (message?: any) => pyHandler.logToFile(`(warn): ${message}`)
   };
   setupCheckForUpdates(pyHandler);
-  setupDownloadUpdate(win, pyHandler);
+  setupDownloadUpdate(getWindow, pyHandler);
   setupInstallUpdate(pyHandler);
 }
