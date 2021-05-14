@@ -313,26 +313,30 @@ BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """{
     "withdrawList": [
         {
             "id":"7213fea8e94b4a5593d507237e5a555b",
-            "amount": 1,
+            "withdrawOrderId": null,
+            "amount": 0.99,
+            "transactionFee": 0.01,
             "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
             "asset": "ETH",
             "txId": "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
-            "applyTime": 1508488245000,
+            "applyTime": 1508198532000,
             "status": 4
         },
         {
             "id":"7213fea8e94b4a5534ggsd237e5a555b",
-            "amount": 850.1,
-            "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvyVz8",
+            "withdrawOrderId": "withdrawtest",
+            "amount": 999.9999,
+            "transactionFee": 0.0001,
+            "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvyV3z8zctJLPCZy24jvb3NiTcTJ",
             "addressTag": "342341222",
             "txId": "b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
             "asset": "XMR",
-            "applyTime": 1508512521000,
+            "applyTime": 1508198532000,
             "status": 4
         }
     ],
     "success": true
-}"""
+}"""  # noqa: E501
 
 
 def assert_binance_balances_result(balances: Dict[str, Any]) -> None:
@@ -362,19 +366,19 @@ def assert_binance_asset_movements_result(movements: List[AssetMovement], locati
 
     assert movements[2].location == location
     assert movements[2].category == AssetMovementCategory.WITHDRAWAL
-    assert movements[2].timestamp == 1508488245
+    assert movements[2].timestamp == 1508198532
     assert isinstance(movements[2].asset, Asset)
     assert movements[2].asset == A_ETH
-    assert movements[2].amount == FVal('1')
-    assert movements[2].fee == ZERO
+    assert movements[2].amount == FVal('0.99')
+    assert movements[2].fee == FVal('0.01')
 
     assert movements[3].location == location
     assert movements[3].category == AssetMovementCategory.WITHDRAWAL
-    assert movements[3].timestamp == 1508512521
+    assert movements[3].timestamp == 1508198532
     assert isinstance(movements[3].asset, Asset)
     assert movements[3].asset == A_XMR
-    assert movements[3].amount == FVal('850.1')
-    assert movements[3].fee == ZERO
+    assert movements[3].amount == FVal('999.9999')
+    assert movements[3].fee == FVal('0.0001')
 
 
 def assert_poloniex_balances_result(balances: Dict[str, Any]) -> None:
