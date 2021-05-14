@@ -13,11 +13,6 @@ export class GeneralSettingsPage {
     cy.get('.general-settings__fields__floating-precision input').blur();
   }
 
-  changeAnonymizedLogs() {
-    cy.get('.general-settings__fields__anonymized-logs').click();
-    this.confirmInlineSuccess('.general-settings__fields__anonymized-logs');
-  }
-
   changeAnonymousUsageStatistics() {
     cy.get('.general-settings__fields__anonymous-usage-statistics').click();
     this.confirmInlineSuccess(

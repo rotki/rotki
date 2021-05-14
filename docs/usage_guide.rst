@@ -116,11 +116,6 @@ By choosing the "General" settings button you can customize some general applica
 General Settings
 ----------------------
 
-Anonymized logs
-^^^^^^^^^^^^^^^^^^^
-
-Specify whether logging functionality should be anonymized. That has a small cost in performance but makes sure that all logs that would otherwise contain sensitive trade information have them anonymized with random values. Note: This setting does its best to anonymize as many log entries as it can but it does not do so everywhere. It's on a best effort basis.
-
 Anonymous usage analytics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

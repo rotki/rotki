@@ -54,10 +54,6 @@ describe('Settings', () => {
       );
     });
 
-    it('change anonymized switch & validate UI message', () => {
-      pageGeneral.changeAnonymizedLogs();
-    });
-
     it('change anonymous statistics switch & validate UI message', () => {
       pageGeneral.changeAnonymousUsageStatistics();
     });
