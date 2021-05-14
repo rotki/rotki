@@ -1,16 +1,6 @@
 import { BackendCode } from '@/electron-main/backend-code';
 import { Level } from '@/utils/log-level';
 
-export const IPC_RESTART_BACKEND = 'RESTART_BACKEND' as const;
-export const IPC_CHECK_FOR_UPDATES = 'CHECK_FOR_UPDATES' as const;
-export const IPC_DOWNLOAD_UPDATE = 'DOWNLOAD_UPDATE' as const;
-export const IPC_DOWNLOAD_PROGRESS = 'DOWNLOAD_PROGRESS' as const;
-export const IPC_INSTALL_UPDATE = 'INSTALL_UPDATE' as const;
-export const IPC_DARK_MODE = 'DARK_MODE' as const;
-export const IPC_VERSION = 'VERSION' as const;
-export const IPC_ABOUT = 'ABOUT' as const;
-export const IPC_OPEN_PATH = 'OPEN_PATH' as const;
-
 export type DebugSettings = { vuex: boolean };
 
 type MetamaskImportError = {
@@ -58,4 +48,5 @@ export interface Interop {
   setDarkMode(enabled: boolean): Promise<boolean>;
   version(): Promise<SystemVersion>;
   onAbout(callback: () => void): void;
+  config(): Promise<BackendOptions>;
 }

@@ -1,17 +1,26 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { BackendCode } from '@/electron-main/backend-code';
+import { Interop } from '@/electron-main/ipc';
 import {
-  Interop,
   IPC_ABOUT,
   IPC_CHECK_FOR_UPDATES,
+  IPC_CLOSE_APP,
+  IPC_CONFIG,
   IPC_DARK_MODE,
+  IPC_DEBUG_SETTINGS,
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
+  IPC_GET_DEBUG,
   IPC_INSTALL_UPDATE,
+  IPC_METAMASK_IMPORT,
+  IPC_OPEN_DIRECTORY,
   IPC_OPEN_PATH,
+  IPC_OPEN_URL,
+  IPC_PREMIUM_LOGIN,
   IPC_RESTART_BACKEND,
+  IPC_SERVER_URL,
   IPC_VERSION
-} from '@/electron-main/ipc';
+} from '@/electron-main/ipc-commands';
 
 function ipcAction<T>(message: string, arg?: any): Promise<T> {
   return new Promise(resolve => {
@@ -26,21 +35,21 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 
 type DebugSettings = { vuex: boolean };
 let debugSettings: DebugSettings | undefined = isDevelopment
-  ? ipcRenderer.sendSync('GET_DEBUG')
+  ? ipcRenderer.sendSync(IPC_GET_DEBUG)
   : undefined;
 
 if (isDevelopment) {
-  ipcRenderer.on('DEBUG_SETTINGS', (event, args) => {
+  ipcRenderer.on(IPC_DEBUG_SETTINGS, (event, args) => {
     debugSettings = args;
   });
 }
 
 contextBridge.exposeInMainWorld('interop', {
-  openUrl: (url: string) => ipcRenderer.send('OPEN_URL', url),
-  closeApp: () => ipcRenderer.send('CLOSE_APP'),
-  openDirectory: (title: string) => ipcAction('OPEN_DIRECTORY', title),
+  openUrl: (url: string) => ipcRenderer.send(IPC_OPEN_URL, url),
+  closeApp: () => ipcRenderer.send(IPC_CLOSE_APP),
+  openDirectory: (title: string) => ipcAction(IPC_OPEN_DIRECTORY, title),
   premiumUserLoggedIn: (premiumUser: boolean) =>
-    ipcRenderer.send('PREMIUM_USER_LOGGED_IN', premiumUser),
+    ipcRenderer.send(IPC_PREMIUM_LOGIN, premiumUser),
   listenForErrors: (
     callback: (backendOutput: string, code: BackendCode) => void
   ) => {
@@ -54,8 +63,8 @@ contextBridge.exposeInMainWorld('interop', {
         return debugSettings;
       }
     : undefined,
-  serverUrl: (): string => ipcRenderer.sendSync('SERVER_URL'),
-  metamaskImport: () => ipcAction('METAMASK_IMPORT'),
+  serverUrl: (): string => ipcRenderer.sendSync(IPC_SERVER_URL),
+  metamaskImport: () => ipcAction(IPC_METAMASK_IMPORT),
   restartBackend: options => ipcAction(IPC_RESTART_BACKEND, options),
   checkForUpdates: () => ipcAction(IPC_CHECK_FOR_UPDATES),
   downloadUpdate: progress => {
@@ -72,5 +81,6 @@ contextBridge.exposeInMainWorld('interop', {
       callback();
     });
   },
-  openPath: (path: string) => ipcRenderer.send(IPC_OPEN_PATH, path)
+  openPath: (path: string) => ipcRenderer.send(IPC_OPEN_PATH, path),
+  config: () => ipcAction(IPC_CONFIG)
 } as Interop);
