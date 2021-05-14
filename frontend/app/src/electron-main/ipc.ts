@@ -48,5 +48,5 @@ export interface Interop {
   setDarkMode(enabled: boolean): Promise<boolean>;
   version(): Promise<SystemVersion>;
   onAbout(callback: () => void): void;
-  config(): Promise<Partial<BackendOptions>>;
+  config(defaults: boolean): Promise<Partial<BackendOptions>>;
 }

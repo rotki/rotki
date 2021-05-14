@@ -39,10 +39,12 @@ type WindowProvider = () => BrowserWindow;
 
 async function select(
   title: string,
-  prop: 'openFile' | 'openDirectory'
+  prop: 'openFile' | 'openDirectory',
+  defaultPath?: string
 ): Promise<string | undefined> {
   const value = await dialog.showOpenDialog({
     title,
+    defaultPath,
     properties: [prop]
   });
 
@@ -143,13 +145,19 @@ export function ipcSetup(
     shell.openExternal(args);
   });
 
-  ipcMain.on(IPC_OPEN_DIRECTORY, async (event, args) => {
-    const directory = await select(args, 'openDirectory');
-    event.sender.send(IPC_OPEN_DIRECTORY, directory);
-  });
+  ipcMain.on(
+    IPC_OPEN_DIRECTORY,
+    async (event, title: string, defaultPath?: string) => {
+      const directory = await select(title, 'openDirectory', defaultPath);
+      event.sender.send(IPC_OPEN_DIRECTORY, directory);
+    }
+  );
   ipcMain.on(IPC_OPEN_PATH, (event, path) => shell.openPath(path));
-  ipcMain.on(IPC_CONFIG, event => {
-    event.sender.send(IPC_CONFIG, loadConfig());
+  ipcMain.on(IPC_CONFIG, (event, defaults: boolean) => {
+    const options: Partial<BackendOptions> = defaults
+      ? { logDirectory: pyHandler.defaultLogDirectory }
+      : loadConfig();
+    event.sender.send(IPC_CONFIG, options);
   });
 
   setupMetamaskImport();

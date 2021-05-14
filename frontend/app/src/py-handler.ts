@@ -46,9 +46,6 @@ function getBackendArguments(options: Partial<BackendOptions>): string[] {
   if (options.logFromOtherModules) {
     args.push('--logfromothermodules');
   }
-  if (options.logDirectory) {
-    args.push('--logfile', options.logDirectory);
-  }
   if (options.dataDirectory) {
     args.push('--data-dir', options.dataDirectory);
   }
@@ -65,12 +62,22 @@ export default class PyHandler {
   private _port?: number;
   private _serverUrl: string;
   private executable?: string;
-  private readonly logsPath: string;
-  private readonly ELECTRON_LOG_PATH: string;
   private _corsURL?: string;
   private backendOutput: string = '';
   private onChildError?: (err: Error) => void;
   private onChildExit?: (code: number, signal: any) => void;
+  private logDirectory?: string;
+  readonly defaultLogDirectory: string;
+
+  get electronLogFile(): string {
+    const dir = this.logDirectory ?? this.defaultLogDirectory;
+    return path.join(dir, 'rotki_electron.log');
+  }
+
+  get backendLogFile(): string {
+    const dir = this.logDirectory ?? this.defaultLogDirectory;
+    return path.join(dir, 'rotkehlchen.log');
+  }
 
   get port(): number {
     assert(this._port);
@@ -83,12 +90,7 @@ export default class PyHandler {
 
   constructor(private app: App) {
     app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
-    this.logsPath = app.getPath('logs');
-    this.ELECTRON_LOG_PATH = path.join(this.logsPath, 'rotki_electron.log');
-    fs.writeFileSync(
-      this.ELECTRON_LOG_PATH,
-      'Rotki Electron Log initialization\n'
-    );
+    this.defaultLogDirectory = app.getPath('logs');
     this._serverUrl = '';
   }
 
@@ -98,7 +100,7 @@ export default class PyHandler {
     }
     const message = `${new Date(Date.now()).toISOString()}: ${msg}`;
     console.log(message);
-    fs.appendFileSync(this.ELECTRON_LOG_PATH, `${message}\n`);
+    fs.appendFileSync(this.electronLogFile, `${message}\n`);
   }
 
   private logBackendOutput(msg: string | Error) {
@@ -131,6 +133,7 @@ export default class PyHandler {
   }
 
   async createPyProc(window: BrowserWindow, options: Partial<BackendOptions>) {
+    this.logDirectory = options.logDirectory;
     if (process.env.SKIP_PYTHON_BACKEND) {
       this.logToFile('Skipped starting python sub-process');
       return;
@@ -303,7 +306,7 @@ export default class PyHandler {
       defaultArgs.push('--api-cors', this._corsURL);
     }
 
-    defaultArgs.push('--logfile', path.join(this.logsPath, 'rotkehlchen.log'));
+    defaultArgs.push('--logfile', this.backendLogFile);
 
     if (process.env.ROTKEHLCHEN_ENVIRONMENT === 'test') {
       const tempPath = path.join(this.app.getPath('temp'), 'rotkehlchen');
@@ -357,7 +360,7 @@ export default class PyHandler {
     if (this._corsURL) {
       args.push('--api-cors', this._corsURL);
     }
-    args.push('--logfile', path.join(this.logsPath, 'rotkehlchen.log'));
+    args.push('--logfile', this.backendLogFile);
     args = ['--api-port', port.toString()].concat(args);
     this.logToFile(
       `Starting packaged python subprocess: ${executable} ${args.join(' ')}`

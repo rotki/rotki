@@ -5,7 +5,7 @@ import { CRITICAL, DEBUG, Level, LOG_LEVEL } from '@/utils/log-level';
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 
-const loadUserConfig: () => Partial<BackendOptions> = () => {
+const loadUserOptions: () => Partial<BackendOptions> = () => {
   const defaultConfig: Partial<BackendOptions> = {
     loglevel: process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL
   };
@@ -17,7 +17,7 @@ const loadUserConfig: () => Partial<BackendOptions> = () => {
     const loglevel = localStorage.getItem(LOG_LEVEL);
     if (loglevel) {
       options.loglevel = loglevel as Level;
-      saveUserConfig(options);
+      saveUserOptions(options);
       localStorage.removeItem(LOG_LEVEL);
     }
     return options;
@@ -26,7 +26,7 @@ const loadUserConfig: () => Partial<BackendOptions> = () => {
   }
 };
 
-const saveUserConfig = (config: Partial<BackendOptions>) => {
+const saveUserOptions = (config: Partial<BackendOptions>) => {
   const options = JSON.stringify(config);
   localStorage.setItem(BACKEND_OPTIONS, options);
 };
@@ -35,12 +35,17 @@ const saveUserConfig = (config: Partial<BackendOptions>) => {
   name: 'BackendMixin'
 })
 export default class BackendMixin extends Vue {
-  loglevel: Level = process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL;
+  loglevel: Level = this.defaultLogLevel;
   fileConfig: Partial<BackendOptions> = {};
-  userConfig: Partial<BackendOptions> = {};
+  userOptions: Partial<BackendOptions> = {};
+  defaultLogDirectory: string = '';
 
-  get config(): Partial<BackendOptions> {
-    return { ...this.userConfig, ...this.fileConfig };
+  get defaultLogLevel(): Level {
+    return process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL;
+  }
+
+  get options(): Partial<BackendOptions> {
+    return { ...this.userOptions, ...this.fileConfig };
   }
 
   async restartBackendWithOptions(options: Partial<BackendOptions>) {
@@ -50,15 +55,31 @@ export default class BackendMixin extends Vue {
   }
 
   async mounted() {
-    this.userConfig = loadUserConfig();
-    this.fileConfig = await this.$interop.backendConfig();
+    this.userOptions = loadUserOptions();
+    this.fileConfig = await this.$interop.config(false);
+    const { logDirectory } = await this.$interop.config(true);
+    if (logDirectory) {
+      this.defaultLogDirectory = logDirectory;
+    }
+
+    this.loaded();
   }
 
-  saveOptions() {
-    saveUserConfig(this.userConfig);
+  loaded() {}
+
+  async saveOptions(options: Partial<BackendOptions>) {
+    saveUserOptions(options);
+    this.userOptions = options;
+    await this.restartBackendWithOptions(this.options);
+  }
+
+  async resetOptions() {
+    saveUserOptions({});
+    this.userOptions = {};
+    await this.restartBackendWithOptions(this.options);
   }
 
   async restartBackend() {
-    await this.restartBackendWithOptions(this.config);
+    await this.restartBackendWithOptions(this.options);
   }
 }

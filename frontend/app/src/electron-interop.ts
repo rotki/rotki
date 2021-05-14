@@ -68,9 +68,9 @@ export class ElectronInterop {
     return await window.interop.restartBackend(options);
   }
 
-  async backendConfig(): Promise<Partial<BackendOptions>> {
+  async config(defaults: boolean): Promise<Partial<BackendOptions>> {
     assert(window.interop);
-    return await window.interop.config();
+    return await window.interop.config(defaults);
   }
 
   async version(): Promise<SystemVersion | WebVersion> {

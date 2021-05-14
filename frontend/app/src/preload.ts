@@ -82,5 +82,5 @@ contextBridge.exposeInMainWorld('interop', {
     });
   },
   openPath: (path: string) => ipcRenderer.send(IPC_OPEN_PATH, path),
-  config: () => ipcAction(IPC_CONFIG)
+  config: (defaults: boolean) => ipcAction(IPC_CONFIG, defaults)
 } as Interop);

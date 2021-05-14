@@ -4,28 +4,28 @@
     <template #subtitle>{{ $t('backend_settings.subtitle') }}</template>
 
     <v-text-field
-      v-model="dataDirectory"
+      v-model="userDataDirectory"
       outlined
       :disabled="!!fileConfig.dataDirectory"
-      :persistent-hint="!!fileConfig.dataDirectory"
+      persistent-hint
       :hint="
         !!fileConfig.dataDirectory
           ? $t('backend_settings.config_file_disabled')
-          : null
+          : $t('backend_settings.settings.data_directory.hint')
       "
       :label="$t('backend_settings.settings.data_directory.label')"
       readonly
-      @click="selectDirectory"
+      @click="selectDataDirectory"
     >
       <template #append>
-        <v-btn icon @click="selectDirectory">
+        <v-btn icon @click="selectDataDirectory">
           <v-icon>mdi-folder</v-icon>
         </v-btn>
       </template>
     </v-text-field>
 
     <v-text-field
-      v-model="logDirectory"
+      v-model="userLogDirectory"
       :disabled="!!fileConfig.logDirectory"
       :persistent-hint="!!fileConfig.logDirectory"
       :hint="
@@ -36,10 +36,10 @@
       outlined
       :label="$t('backend_settings.settings.log_directory.label')"
       readonly
-      @click="selectDirectory"
+      @click="selectLogsDirectory"
     >
       <template #append>
-        <v-btn icon @click="selectDirectory">
+        <v-btn icon @click="selectLogsDirectory">
           <v-icon>mdi-folder</v-icon>
         </v-btn>
       </template>
@@ -104,8 +104,13 @@
 
     <template #buttons>
       <v-spacer />
-      <v-btn depressed>{{ $t('backend_settings.actions.cancel') }}</v-btn>
-      <v-btn depressed color="primary">
+      <v-btn depressed @click="dismiss()">
+        {{ $t('backend_settings.actions.cancel') }}
+      </v-btn>
+      <v-btn depressed @click="dismiss()">
+        {{ $t('backend_settings.actions.reset') }}
+      </v-btn>
+      <v-btn depressed color="primary" :disabled="!valid" @click="save()">
         {{ $t('backend_settings.actions.save') }}
       </v-btn>
     </template>
@@ -113,8 +118,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
+import { Component, Emit, Mixins } from 'vue-property-decorator';
+import { mapState } from 'vuex';
+import { BackendOptions } from '@/electron-main/ipc';
 import BackendMixin from '@/mixins/backend-mixin';
+import { Writeable } from '@/types';
 import {
   CRITICAL,
   DEBUG,
@@ -126,16 +134,55 @@ import {
 } from '@/utils/log-level';
 
 @Component({
-  name: 'BackendSettings'
+  name: 'BackendSettings',
+  computed: {
+    ...mapState(['dataDirectory'])
+  }
 })
 export default class BackendSettings extends Mixins(BackendMixin) {
-  dataDirectory: string = '';
-  logDirectory: string = '';
+  dataDirectory!: string;
+  userDataDirectory: string = '';
+  userLogDirectory: string = '';
   logFromOtherModules: boolean = false;
   mainLoopSleep: string = '';
 
   readonly levels = levels;
   selecting: boolean = false;
+
+  @Emit()
+  dismiss() {}
+
+  get valid() {
+    return Object.keys(this.newUserOptions).length > 0;
+  }
+
+  get newUserOptions(): Partial<BackendOptions> {
+    const options: Writeable<Partial<BackendOptions>> = {};
+    if (this.loglevel !== this.defaultLogLevel) {
+      options.loglevel = this.loglevel;
+    }
+
+    if (this.userLogDirectory !== this.defaultLogDirectory) {
+      options.logDirectory = this.userLogDirectory;
+    }
+
+    if (this.mainLoopSleep) {
+      const seconds = parseInt(this.mainLoopSleep);
+      if (isFinite(seconds) && !isNaN(seconds)) {
+        options.sleepSeconds = seconds;
+      }
+    }
+
+    if (this.logFromOtherModules) {
+      options.logFromOtherModules = true;
+    }
+
+    if (this.userDataDirectory !== this.dataDirectory) {
+      options.dataDirectory = this.userDataDirectory;
+    }
+
+    return options;
+  }
 
   icon(level: Level): string {
     if (level === DEBUG) {
@@ -152,17 +199,38 @@ export default class BackendSettings extends Mixins(BackendMixin) {
     throw new Error(`Invalid option: ${level}`);
   }
 
-  mounted() {
-    this.dataDirectory = this.config.dataDirectory;
-    this.logDirectory = this.config.logDirectory;
-    this.loglevel = this.config.loglevel;
-    this.mainLoopSleep = this.config.sleepSeconds ?? '';
-    this.logFromOtherModules = this.config.logFromOtherModules ?? false;
+  loaded() {
+    this.userDataDirectory = this.options.dataDirectory ?? this.dataDirectory;
+    this.userLogDirectory =
+      this.options.logDirectory ?? this.defaultLogDirectory;
+    this.loglevel = this.options.loglevel ?? this.defaultLogLevel;
+    this.mainLoopSleep = this.options.sleepSeconds?.toString() ?? '';
+    this.logFromOtherModules = this.options.logFromOtherModules ?? false;
   }
 
-  save() {}
+  async save() {
+    this.dismiss();
+    await this.saveOptions(this.newUserOptions);
+  }
 
-  async selectDirectory() {
+  async selectLogsDirectory() {
+    if (this.selecting) {
+      return;
+    }
+    this.selecting = true;
+    try {
+      const directory = await this.$interop.openDirectory(
+        this.$t('backend_settings.log_directory.select').toString()
+      );
+      if (directory) {
+        this.userLogDirectory = directory;
+      }
+    } finally {
+      this.selecting = false;
+    }
+  }
+
+  async selectDataDirectory() {
     if (this.selecting) {
       return;
     }
@@ -172,7 +240,7 @@ export default class BackendSettings extends Mixins(BackendMixin) {
         this.$t('backend_settings.data_directory.select').toString()
       );
       if (directory) {
-        this.dataDirectory = directory;
+        this.userDataDirectory = directory;
       }
     } finally {
       this.selecting = false;

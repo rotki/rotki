@@ -100,22 +100,27 @@
   "backend_settings": {
     "actions": {
       "cancel": "Cancel",
+      "reset": "Reset to default",
       "save": "Save"
     },
     "config_file_disabled": "This parameter is set in the rotki_config.json",
     "data_directory": {
       "select": "Select where rotki will store the data"
     },
+    "log_directory": {
+      "select": "bSelect where rotki will store the logs"
+    },
     "log_from_other_modules": {
       "hint": "Enables logging from third party libraries (useful for debugging)",
       "label": "Log from other modules"
     },
     "main_loop_sleep": {
-      "hint": "The main event loop sleep duration.",
+      "hint": "The main event loop sleep duration. (Don't modify unless you know what you are doing)",
       "label": "Main Loop Sleep"
     },
     "settings": {
       "data_directory": {
+        "hint": "By changing the data directory, data in the old directory will have to be manually moved to the new one.",
         "label": "Data Directory"
       },
       "log_directory": {

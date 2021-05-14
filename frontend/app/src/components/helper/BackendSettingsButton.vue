@@ -1,5 +1,5 @@
 <template>
-  <v-bottom-sheet width="98%">
+  <v-bottom-sheet v-model="visible" width="98%">
     <template #activator="{ on: menu, attrs }">
       <v-tooltip left max-width="280">
         <template #activator="{ on: tooltip }">
@@ -16,7 +16,7 @@
         <span>{{ $t('backend_settings_button.tooltip') }}</span>
       </v-tooltip>
     </template>
-    <backend-settings />
+    <backend-settings v-if="visible" @dismiss="visible = false" />
   </v-bottom-sheet>
 </template>
 
@@ -27,7 +27,9 @@ import BackendSettings from '@/components/settings/BackendSettings.vue';
 @Component({
   components: { BackendSettings }
 })
-export default class BackendSettingsButton extends Vue {}
+export default class BackendSettingsButton extends Vue {
+  visible: boolean = false;
+}
 </script>
 
 <style scoped lang="scss"></style>
