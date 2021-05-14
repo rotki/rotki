@@ -3,10 +3,12 @@ import random
 from collections import defaultdict
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
-from rotkehlchen.chain.ethereum.typing import CustomEthereumTokenWithIdentifier
+from rotkehlchen.chain.ethereum.typing import (
+    CustomEthereumTokenWithIdentifier,
+    string_to_ethereum_address,
+)
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.constants.misc import ZERO
@@ -118,13 +120,18 @@ class EthTokens():
             'Querying/detecting token balances for all addresses',
             force_detection=force_detection,
         )
-        all_tokens = GlobalDBHandler().get_ethereum_tokens(exceptions=[
+        ignored_assets = self.db.get_ignored_assets()
+        exceptions = [
             # Ignore the veCRV balance in token query. It's already detected by
             # defi SDK as part of locked CRV in Vote Escrowed CRV. Which is the right way
             # to approach it as there is no way to assign a price to 1 veCRV. It
             # can be 1 CRV locked for 4 years or 4 CRV locked for 1 year etc.
             string_to_ethereum_address('0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2'),
-        ])
+        ]
+        for asset in ignored_assets:  # don't query for the ignored tokens
+            if asset.is_eth_token():  # type ignore since we know asset is a token
+                exceptions.append(EthereumToken.from_asset(asset).ethereum_address)  # type: ignore
+        all_tokens = GlobalDBHandler().get_ethereum_tokens(exceptions=exceptions)
         # With etherscan with chunks > 120, we get request uri too large
         # so the limitation is not in the gas, but in the request uri length
         etherscan_chunks = list(get_chunks(all_tokens, n=ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH))
