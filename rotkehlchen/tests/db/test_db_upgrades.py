@@ -1773,10 +1773,7 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
 @pytest.mark.parametrize('have_kraken', [True, False])
 @pytest.mark.parametrize('have_kraken_setting', [True, False])
 def test_upgrade_db_25_to_26(user_data_dir, have_kraken, have_kraken_setting):  # pylint: disable=unused-argument  # noqa: E501
-    """Test upgrading the DB from version 25 to version 26.
-
-    Upgrades the user credentials database to contain both name and location
-    """
+    """Test upgrading the DB from version 25 to version 26"""
     msg_aggregator = MessagesAggregator()
     v25_conn = _init_prepared_db(user_data_dir, 'v25_rotkehlchen.db')
     cursor = v25_conn.cursor()
@@ -1820,6 +1817,10 @@ def test_upgrade_db_25_to_26(user_data_dir, have_kraken, have_kraken_setting):  
         assert settings == ('kraken_account_type', 'pro')
     else:
         assert settings is None
+    settings = cursor.execute(
+        'SELECT name, value from settings WHERE name="anonymized_logs";',
+    ).fetchone()
+    assert settings == ('anonymized_logs', 'True')
 
     # check trades/assets movements and used query ranges are there
     trades_query = cursor.execute(
@@ -1881,6 +1882,10 @@ def test_upgrade_db_25_to_26(user_data_dir, have_kraken, have_kraken_setting):  
     # Make sure settings is no longer there
     settings = cursor.execute(
         'SELECT name, value from settings WHERE name="kraken_account_type";',
+    ).fetchone()
+    assert settings is None
+    settings = cursor.execute(
+        'SELECT name, value from settings WHERE name="anonymized_logs";',
     ).fetchone()
     assert settings is None
     mapping = cursor.execute(

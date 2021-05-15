@@ -9,7 +9,6 @@ export class Defaults {
   static RPC_ENDPOINT = 'http://localhost:8545';
   static KSM_RPC_ENDPOINT = 'http://localhost:9933';
   static BALANCE_SAVE_FREQUENCY = 24;
-  static ANONYMIZED_LOGS = false;
   static ANONYMOUS_USAGE_ANALYTICS = true;
   static DEFAULT_QUERY_PERIOD = 5;
   static BTC_DERIVATION_GAP_LIMIT = 20;

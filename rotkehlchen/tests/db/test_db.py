@@ -19,7 +19,6 @@ from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
     DEFAULT_ACTIVE_MODULES,
-    DEFAULT_ANONYMIZED_LOGS,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_BTC_DERIVATION_GAP_LIMIT,
     DEFAULT_CALCULATE_PAST_COST_BASIS,
@@ -329,7 +328,6 @@ def test_writing_fetching_data(data_dir, username):
         'balance_save_frequency': DEFAULT_BALANCE_SAVE_FREQUENCY,
         'last_balance_save': 0,
         'main_currency': DEFAULT_MAIN_CURRENCY.identifier,
-        'anonymized_logs': DEFAULT_ANONYMIZED_LOGS,
         'date_display_format': DEFAULT_DATE_DISPLAY_FORMAT,
         'last_data_upload_ts': 0,
         'premium_should_sync': False,
@@ -360,7 +358,6 @@ def test_settings_entry_types(database):
     database.set_settings(ModifiableDBSettings(
         premium_should_sync=True,
         include_crypto2crypto=True,
-        anonymized_logs=True,
         ui_floating_precision=1,
         taxfree_after_period=1,
         include_gas_costs=True,
@@ -391,8 +388,6 @@ def test_settings_entry_types(database):
     assert res.last_balance_save == 0
     assert isinstance(res.main_currency, Asset)
     assert res.main_currency == DEFAULT_TESTS_MAIN_CURRENCY
-    assert isinstance(res.anonymized_logs, bool)
-    assert res.anonymized_logs is True
     assert isinstance(res.date_display_format, str)
     assert res.date_display_format == '%d/%m/%Y %H:%M:%S %z'
     assert isinstance(res.submit_usage_analytics, bool)

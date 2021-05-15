@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2584` Removed the option to anonymize the logs. Logs are off by default anyway and it was never possible to anonymize accurately and completely when activated so the setting was misleading.
 * :feature:`47` Users can now add multiple accounts per supported exchange.
 * :feature:`1881` Users can now access an about screen with information about the application.
 * :feature:`1549` Rotki premium users will now be able to switch to a dark mode and change the theme colors.

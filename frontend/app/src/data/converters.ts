@@ -22,7 +22,6 @@ export const convertToGeneralSettings = (
   balanceSaveFrequency: settings.balance_save_frequency,
   ethRpcEndpoint: settings.eth_rpc_endpoint,
   ksmRpcEndpoint: settings.ksm_rpc_endpoint,
-  anonymizedLogs: settings.anonymized_logs,
   anonymousUsageAnalytics: settings.submit_usage_analytics,
   activeModules: settings.active_modules,
   btcDerivationGapLimit: settings.btc_derivation_gap_limit,

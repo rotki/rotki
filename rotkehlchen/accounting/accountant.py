@@ -161,7 +161,6 @@ class Accountant():
         self.asset_movement_fees += cost
         log.debug(
             'Accounting for asset movement',
-            sensitive_log=True,
             category=movement.category,
             asset=movement.asset,
             cost_in_profit_currency=cost,
@@ -211,7 +210,6 @@ class Accountant():
 
         log.debug(
             'Accounting for ethereum transaction gas cost',
-            sensitive_log=True,
             gas_used=transaction.gas_used,
             gas_price=gas_price,
             timestamp=transaction.timestamp,

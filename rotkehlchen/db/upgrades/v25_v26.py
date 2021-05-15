@@ -120,11 +120,13 @@ def upgrade_v25_to_v26(db: 'DBHandler') -> None:
       * binance_us -> binanceus
 
       For that reason we need to purge used query ranges and data of binance_us
+    - Delete the unused anonymized logs setting from the DB
     """
     helper = V25V26UpgradeHelper(db.msg_aggregator)
     cursor = db.conn.cursor()
     helper.upgrade_user_credentials(cursor)
     helper.migrate_kraken_account_type(cursor)
     helper.purge_binanceus(cursor)
+    cursor.execute('DELETE from settings WHERE name="anonymized_logs";')
     del helper
     db.conn.commit()

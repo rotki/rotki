@@ -15,7 +15,6 @@ describe('Settings', () => {
 
   const settings = {
     floatingPrecision: '4',
-    anonymizedLogs: true,
     anonymousUsageStatistics: false,
     currency: 'JPY',
     balanceSaveFrequency: '48',
@@ -53,10 +52,6 @@ describe('Settings', () => {
         '.general-settings__fields__floating-precision',
         settings.floatingPrecision
       );
-    });
-
-    it('change anonymized switch & validate UI message', () => {
-      pageGeneral.changeAnonymizedLogs();
     });
 
     it('change anonymous statistics switch & validate UI message', () => {

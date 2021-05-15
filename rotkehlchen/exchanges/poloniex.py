@@ -36,7 +36,7 @@ from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalan
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
@@ -109,7 +109,6 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
 
     log.debug(
         'Processing poloniex Trade',
-        sensitive_log=True,
         timestamp=timestamp,
         order_type=trade_type,
         base_currency=base_currency,
@@ -148,7 +147,7 @@ def process_polo_loans(
     new_data = []
 
     for loan in reversed(data):
-        log.debug('processing poloniex loan', **make_sensitive(loan))
+        log.debug('processing poloniex loan', **loan)
         try:
             close_time = deserialize_timestamp_from_poloniex_date(loan['close'])
             open_time = deserialize_timestamp_from_poloniex_date(loan['open'])
@@ -528,7 +527,6 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 log.debug(
                     'Poloniex balance query',
-                    sensitive_log=True,
                     currency=asset,
                     amount=amount,
                     usd_value=usd_value,

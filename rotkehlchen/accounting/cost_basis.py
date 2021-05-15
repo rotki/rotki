@@ -338,7 +338,6 @@ class CostBasisCalculator():
                 remaining_amount_from_last_buy = acquisition_event.remaining_amount - remaining_sold_amount  # noqa: E501
                 log.debug(
                     'Spend uses up part of historical acquisition',
-                    sensitive_log=True,
                     tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
                     used_amount=remaining_sold_amount,
                     from_amount=acquisition_event.amount,
@@ -364,7 +363,6 @@ class CostBasisCalculator():
 
             log.debug(
                 'Spend uses up entire historical acquisition',
-                sensitive_log=True,
                 tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
                 bought_amount=acquisition_event.remaining_amount,
                 asset=spending_asset,

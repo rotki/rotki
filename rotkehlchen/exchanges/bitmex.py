@@ -72,7 +72,6 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
 
     log.debug(
         'Processing Bitmex Trade',
-        sensitive_log=True,
         timestamp=close_time,
         profit_loss=profit_loss,
         currency=currency,
@@ -267,7 +266,6 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         )
         log.debug(
             'Bitmex balance query result',
-            sensitive_log=True,
             currency='BTC',
             amount=amount,
             usd_value=usd_value,

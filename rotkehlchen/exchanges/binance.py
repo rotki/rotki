@@ -157,7 +157,6 @@ def trade_from_binance(
 
     log.debug(
         f'Processing {str(location)} Trade',
-        sensitive_log=True,
         amount=amount,
         rate=rate,
         timestamp=timestamp,
@@ -817,7 +816,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         log.debug(
             f'{self.name} balance query result',
-            sensitive_log=True,
             balances=returned_balances,
         )
         return dict(returned_balances), ''

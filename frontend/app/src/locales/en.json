@@ -914,7 +914,6 @@
       }
     },
     "labels": {
-      "anonymized_logs": "Should logs be anonymized?",
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
       "btc_derivation_gap": "BTC derivation gap limit",
@@ -934,9 +933,6 @@
       },
       "analytics": {
         "error": "Error setting anonymous usage analytics"
-      },
-      "anonymized_logs": {
-        "error": "Error setting anonymized logs"
       },
       "display_date_in_localtime": {
         "error": "Error setting the display date in local time setting"
