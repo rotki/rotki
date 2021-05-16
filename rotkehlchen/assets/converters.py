@@ -493,7 +493,6 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'B21X',  # no cryptocompare/coingecko data
     'GTX',  # no cryptocompare/coingecko data (GT, Gate.io token)
     'IQX',  # no cryptocompare/coingecko data (EOS token)
-    'BOSON',  # no cryptocompare/coingecko data
 )
 
 UNSUPPORTED_FTX_ASSETS = (
@@ -556,9 +555,7 @@ UNSUPPORTED_FTX_ASSETS = (
 
 # https://api.kucoin.com/api/v1/currencies
 UNSUPPORTED_KUCOIN_ASSETS = (
-    'ANC',  # Quantity no cryptocompare/coingecko data
     'AXE',  # delisted
-    'BOSON',  # no cryptocompare/coingecko data
     'BTC3L',  # no cryptocompare/coingecko data
     'BTC3S',  # no cryptocompare/coingecko data
     'BTCP',  # delisted
@@ -574,8 +571,6 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'KTS',  # delisted
     'LOL',  # delisted
     'MAP2',  # delisted
-    'MHC',  # delisted
-    'PDEX',  # Polkadex no cryptocompare/coingecko data
     'SATT',  # delisted
     'SERO',  # delisted
     'SPRK',  # delisted
