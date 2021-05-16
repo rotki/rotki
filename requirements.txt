@@ -16,9 +16,9 @@ beautifulsoup4==4.9.3
 # For the rest api
 flask-cors==3.0.10
 flask-restful==0.3.8
-flask==1.1.1
+flask==2.0.0
 marshmallow==3.12.1
-webargs==6.0.0
+webargs==8.0.0
 
 #constraints
 setuptools==41.0.1  # constraint required by pyinstaller==3.5.0
