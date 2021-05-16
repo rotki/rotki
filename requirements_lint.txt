@@ -6,7 +6,7 @@ flake8==3.9.2
 flake8-commas==2.0.0
 flake8-bugbear==21.4.3
 flake8-tuple==0.4.1
-flake8-comprehensions==3.4.0
+flake8-comprehensions==3.5.0
 flake8-debugger==4.0.0
 flake8-executable==2.1.1
 flake8-mutable==1.2.0
