@@ -15,7 +15,7 @@ beautifulsoup4==4.9.3
 
 # For the rest api
 flask-cors==3.0.10
-flask-restful==0.3.8
+git+git://github.com/flask-restful/flask-restful@fc9b34c39472284a57c50d94fec5b51fe8d71e14#egg=flask-restful
 flask==2.0.0
 marshmallow==3.12.1
 webargs==8.0.0
