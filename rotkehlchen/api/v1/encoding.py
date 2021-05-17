@@ -108,12 +108,9 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
                 else value.split(self.delimiter)  # type: ignore
             )
         except AttributeError as e:
-            if MARSHMALLOW_VERSION_INFO[0] < 3:
-                self.fail("invalid")
-            else:
-                raise self.make_error("invalid") from e
+            raise self.make_error("invalid") from e
         # purposefully skip the superclass here
-        return super(webargs.fields.DelimitedList, self)._deserialize(ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
+        return marshmallow.fields.List._deserialize(self, ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
 
 
 class TimestampField(fields.Field):
