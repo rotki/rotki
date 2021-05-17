@@ -11,6 +11,7 @@ Changelog
 * :feature:`2475` Withdrawals from Binance and Binance US will now have their fee correctly imported.
 * :feature:`2803` Ethereum tokens that consist of underlying tokens will now see their price correctly fetched.
 * :feature:`2844` Premium users will now be able to fetch their Uniswap v3 swaps.
+* :feature:`2893` Users can now see if any of their addresses have CVX available to claim from the ConvexFinance airdrop.
 * :bug:`2850` User will now see a consistent naming of exchanges across the application.
 
 * :release:`1.16.2 <2021-05-08>`
