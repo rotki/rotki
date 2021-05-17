@@ -8,7 +8,6 @@ from eth_utils import to_checksum_address
 from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from typing_extensions import Literal
-from webargs.compat import MARSHMALLOW_VERSION_INFO
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
@@ -86,7 +85,7 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
     ) -> None:
         super().__init__(cls_or_instance, **kwargs)
 
-    def _deserialize(
+    def _deserialize(  # type: ignore  # we may get a list in value
             self,
             value: Union[List[str], str],
             attr: str,
@@ -108,12 +107,9 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
                 else value.split(self.delimiter)  # type: ignore
             )
         except AttributeError as e:
-            if MARSHMALLOW_VERSION_INFO[0] < 3:
-                self.fail("invalid")
-            else:
-                raise self.make_error("invalid") from e
+            raise self.make_error("invalid") from e
         # purposefully skip the superclass here
-        return super(webargs.fields.DelimitedList, self)._deserialize(ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
+        return marshmallow.fields.List._deserialize(self, ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
 
 
 class TimestampField(fields.Field):
@@ -843,7 +839,7 @@ class LedgerActionSchema(Schema):
 class LedgerActionWithIdentifierSchema(LedgerActionSchema):
     identifier = fields.Integer(required=True)
 
-    @post_load  # type: ignore
+    @post_load
     def make_ledger_action(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -871,7 +867,7 @@ class ManuallyTrackedBalanceSchema(Schema):
     location = LocationField(required=True)
     tags = fields.List(fields.String(), missing=None)
 
-    @post_load  # type: ignore
+    @post_load
     def make_manually_tracked_balances(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1004,7 +1000,7 @@ class ModifiableSettingsSchema(Schema):
     )
     taxable_ledger_actions = fields.List(LedgerActionTypeField, missing=None)
 
-    @validates_schema  # type: ignore
+    @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1018,7 +1014,7 @@ class ModifiableSettingsSchema(Schema):
                         field_name='active_modules',
                     )
 
-    @post_load  # type: ignore
+    @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1072,7 +1068,7 @@ class UserActionSchema(Schema):
     premium_api_key = fields.String(missing='')
     premium_api_secret = fields.String(missing='')
 
-    @validates_schema  # type: ignore
+    @validates_schema
     def validate_user_action_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1117,7 +1113,7 @@ class ExternalServiceSchema(Schema):
     name = ExternalServiceNameField(required=True)
     api_key = fields.String(required=True)
 
-    @post_load  # type: ignore
+    @post_load
     def make_external_service(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1222,7 +1218,7 @@ class XpubAddSchema(Schema):
     )
     tags = fields.List(fields.String(), missing=None)
 
-    @post_load  # type: ignore
+    @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1427,7 +1423,7 @@ class BlockchainAccountsPatchSchema(Schema):
         super().__init__()
         self.ethereum_manager = ethereum_manager
 
-    @validates_schema  # type: ignore
+    @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1435,7 +1431,7 @@ class BlockchainAccountsPatchSchema(Schema):
     ) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x['address'])
 
-    @post_load  # type: ignore
+    @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1476,7 +1472,7 @@ class BlockchainAccountsDeleteSchema(Schema):
         super().__init__()
         self.ethereum_manager = ethereum_manager
 
-    @validates_schema  # type: ignore
+    @validates_schema
     def validate_blockchain_accounts_delete_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1484,7 +1480,7 @@ class BlockchainAccountsDeleteSchema(Schema):
     ) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x)
 
-    @post_load  # type: ignore
+    @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1566,7 +1562,7 @@ class EthereumTokenSchema(Schema):
     protocol = fields.String(missing=None)
     underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), missing=None)
 
-    @validates_schema  # type: ignore
+    @validates_schema
     def validate_ethereum_token_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1591,7 +1587,7 @@ class EthereumTokenSchema(Schema):
                     f'is {weight_sum * 100} and does not add up to 100%',
                 )
 
-    @post_load  # type: ignore
+    @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],

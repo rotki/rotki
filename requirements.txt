@@ -1,24 +1,24 @@
 gevent==21.1.2
-greenlet==1.0.0
-web3==5.15.0
-pysqlcipher3==1.0.3
+greenlet==1.1.0
+web3==5.19.0
+pysqlcipher3==1.0.4
 requests==2.25.1
-pycryptodome==3.6.6
-pycryptodomex==3.6.6
-coincurve==13.0.0
+pycryptodome==3.10.1
+pycryptodomex==3.10.1
+coincurve==15.0.0
 typing-extensions==3.10.0.0
 base58check==1.0.2
 bech32==1.2.0
 gql==2.0.0
-substrate-interface==0.11.16
+substrate-interface==0.13.2
 beautifulsoup4==4.9.3
 
 # For the rest api
 flask-cors==3.0.10
-flask-restful==0.3.8
-flask==1.1.1
-marshmallow==3.2.1
-webargs==6.0.0
+git+git://github.com/flask-restful/flask-restful@fc9b34c39472284a57c50d94fec5b51fe8d71e14#egg=flask-restful
+flask==2.0.0
+marshmallow==3.12.1
+webargs==8.0.0
 
 #constraints
 setuptools==41.0.1  # constraint required by pyinstaller==3.5.0

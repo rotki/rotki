@@ -46,7 +46,7 @@ def test_querying_exchange_rates(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, 'exchangeratesresource'), json=data,
     )
     assert_okay(response)
-    # The query parameters test serves as a test that a list of parametrs works with query args too
+    # This serves as a test that a list of parameters works with query args too
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'exchangeratesresource') + '?currencies=' +
         ','.join(data['currencies']),

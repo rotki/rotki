@@ -717,7 +717,7 @@ class EthereumManager():
                 ) from e
             return tx_receipt
 
-        tx_receipt = web3.eth.getTransactionReceipt(tx_hash)  # type: ignore
+        tx_receipt = web3.eth.getTransactionReceipt(tx_hash)
         return process_result(tx_receipt)
 
     def get_transaction_receipt(
