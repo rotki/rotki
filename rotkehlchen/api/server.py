@@ -58,6 +58,7 @@ from rotkehlchen.api.v1.resources import (
     HistoryStatusResource,
     IgnoredActionsResource,
     IgnoredAssetsResource,
+    InfoResource,
     LedgerActionsResource,
     LoopringBalancesResource,
     MakerdaoDSRBalanceResource,
@@ -88,7 +89,6 @@ from rotkehlchen.api.v1.resources import (
     UserPremiumSyncResource,
     UsersByNameResource,
     UsersResource,
-    InfoResource,
     WatchersResource,
     YearnVaultsBalancesResource,
     YearnVaultsHistoryResource,
@@ -240,7 +240,7 @@ def endpoint_not_found(e: NotFound) -> Response:
 
 
 @parser.error_handler  # type: ignore
-@resource_parser.error_handler  # type: ignore
+@resource_parser.error_handler
 def handle_request_parsing_error(
         err: ValidationError,
         _request: werkzeug.local.LocalProxy,

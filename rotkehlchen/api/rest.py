@@ -1561,7 +1561,7 @@ class RestAPI():
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
         try:
-            return send_file(
+            return send_file(  # type: ignore
                 self.rotkehlchen.accountant.csvexporter.create_zip(),
                 mimetype='application/zip',
                 as_attachment=True,

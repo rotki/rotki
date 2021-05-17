@@ -371,7 +371,7 @@ class HDKey():
             # Data = 0x00 || ser256(kpar) || ser32(i)
             # (Note: The 0x00 pads the private key to make it 33 bytes long.)
             data.extend(b'\x00')
-            data.extend(cast(bytes, self.privkey.secret))
+            data.extend(self.privkey.secret)
             data.extend(index_as_bytes)
         else:
             # Data = serP(point(kpar)) || ser32(i)).
