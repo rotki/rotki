@@ -20,13 +20,13 @@ Run Rotki in debug mode
 For running Rotki in debug mode, you can do it either via a config file or the app UI:
 
 - **Config file**: see the section :ref:`set-the-backend-s-arguments`.
-- **App UI**: before log in, click the cog wheel at the bottom right corner and select "Debug" (image below). Then log in as usual.
+- **App UI**: before log in, click the cog wheel at the bottom right corner and select "Debug" (image below). Pres the save button and proceed to log in as usual.
 
 .. image:: images/rotki_debug_mode_set.png
    :alt: Run Rotki in debug mode via app UI
    :align: center
 
-You can find the app logs location by going to "Help" menu at the top and then choosing "Logs Directory".
+You can open the app logs location by going to "Help" menu at the top and then choosing "Logs Directory".
 
 Feature Requests
 ******************
