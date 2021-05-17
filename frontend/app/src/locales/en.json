@@ -103,7 +103,11 @@
       "reset": "Reset to default",
       "save": "Save"
     },
-    "config_file_disabled": "This parameter is set in the rotki_config.json",
+    "config_file_disabled": "This parameter is already set in the rotki_config.json",
+    "confirm": {
+      "message": "Are you sure you want to rest the backend settings to default?",
+      "title": "Rest backend settings"
+    },
     "data_directory": {
       "select": "Select where rotki will store the data"
     },

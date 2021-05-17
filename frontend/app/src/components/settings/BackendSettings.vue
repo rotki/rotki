@@ -107,19 +107,28 @@
       <v-btn depressed @click="dismiss()">
         {{ $t('backend_settings.actions.cancel') }}
       </v-btn>
-      <v-btn depressed @click="dismiss()">
+      <v-btn depressed @click="confirmReset = true">
         {{ $t('backend_settings.actions.reset') }}
       </v-btn>
       <v-btn depressed color="primary" :disabled="!valid" @click="save()">
         {{ $t('backend_settings.actions.save') }}
       </v-btn>
     </template>
+    <confirm-dialog
+      v-if="confirmReset"
+      :message="$t('backend_settings.confirm.message')"
+      :display="confirmReset"
+      :title="$t('backend_settings.confirm.title')"
+      @confirm="reset"
+      @cancel="confirmReset = false"
+    />
   </card>
 </template>
 
 <script lang="ts">
 import { Component, Emit, Mixins } from 'vue-property-decorator';
 import { mapState } from 'vuex';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { BackendOptions } from '@/electron-main/ipc';
 import BackendMixin from '@/mixins/backend-mixin';
 import { Writeable } from '@/types';
@@ -135,6 +144,7 @@ import {
 
 @Component({
   name: 'BackendSettings',
+  components: { ConfirmDialog },
   computed: {
     ...mapState(['dataDirectory'])
   }
@@ -148,6 +158,7 @@ export default class BackendSettings extends Mixins(BackendMixin) {
 
   readonly levels = levels;
   selecting: boolean = false;
+  confirmReset: boolean = false;
 
   @Emit()
   dismiss() {}
@@ -245,6 +256,12 @@ export default class BackendSettings extends Mixins(BackendMixin) {
     } finally {
       this.selecting = false;
     }
+  }
+
+  async reset() {
+    this.confirmReset = false;
+    this.dismiss();
+    await this.resetOptions();
   }
 }
 </script>
