@@ -97,6 +97,21 @@ export class DateFormatter {
 
   constructor(private readonly locale: string = 'en-US') {}
 
+  get directives(): string[] {
+    return Object.keys(this.translations)
+      .filter(key => key !== '%')
+      .map(key => `%${key}`);
+  }
+
+  containsValidDirectives(pattern: string): boolean {
+    const m = this.regex.exec(pattern);
+    if (m === null) {
+      return false;
+    }
+    const matches = m.find(value => this.directives.includes(value));
+    return !!matches && matches.length > 0;
+  }
+
   format(date: Date, format: string) {
     let formattedString = format;
     let m;
@@ -111,7 +126,7 @@ export class DateFormatter {
         const matched = match.substr(1);
         formattedString = formattedString.replace(
           match,
-          this.translations[matched](date, this.locale) || ''
+          this.translations[matched]?.(date, this.locale) || ''
         );
       });
     }

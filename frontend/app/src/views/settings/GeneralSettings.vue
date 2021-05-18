@@ -2,74 +2,100 @@
   <v-container class="general-settings">
     <v-row no-gutters>
       <v-col>
-        <v-card>
-          <v-card-title>
-            <card-title>{{ $t('general_settings.title') }}</card-title>
-          </v-card-title>
-          <v-card-text>
-            <v-switch
-              v-model="anonymousUsageAnalytics"
-              class="general-settings__fields__anonymous-usage-statistics"
-              color="primary"
-              :label="$t('general_settings.labels.anonymous_analytics')"
-              :success-messages="
-                settingsMessages[ANONYMOUS_USAGE_ANALYTICS].success
-              "
-              :error-messages="
-                settingsMessages[ANONYMOUS_USAGE_ANALYTICS].error
-              "
-              @change="onAnonymousUsageAnalyticsChange($event)"
-            />
+        <card>
+          <template #title>
+            {{ $t('general_settings.title') }}
+          </template>
 
-            <v-text-field
-              v-model="balanceSaveFrequency"
-              class="general-settings__fields__balance-save-frequency"
-              :label="$t('general_settings.labels.balance_saving_frequency')"
-              type="number"
-              :success-messages="
-                settingsMessages[BALANCE_SAVE_FREQUENCY].success
-              "
-              :error-messages="settingsMessages[BALANCE_SAVE_FREQUENCY].error"
-              @change="onBalanceSaveFrequencyChange($event)"
-            />
+          <v-switch
+            v-model="anonymousUsageAnalytics"
+            class="general-settings__fields__anonymous-usage-statistics"
+            color="primary"
+            :label="$t('general_settings.labels.anonymous_analytics')"
+            :success-messages="
+              settingsMessages[ANONYMOUS_USAGE_ANALYTICS].success
+            "
+            :error-messages="settingsMessages[ANONYMOUS_USAGE_ANALYTICS].error"
+            @change="onAnonymousUsageAnalyticsChange($event)"
+          />
 
-            <v-text-field
-              v-model="dateDisplayFormat"
-              class="general-settings__fields__date-display-format"
-              :label="$t('general_settings.labels.date_display_format')"
-              type="text"
-              :success-messages="settingsMessages[DATE_DISPLAY_FORMAT].success"
-              :error-messages="settingsMessages[DATE_DISPLAY_FORMAT].error"
-              @change="onDateDisplayFormatChange($event)"
-            />
+          <v-text-field
+            v-model="balanceSaveFrequency"
+            outlined
+            class="general-settings__fields__balance-save-frequency"
+            :label="$t('general_settings.labels.balance_saving_frequency')"
+            type="number"
+            :success-messages="settingsMessages[BALANCE_SAVE_FREQUENCY].success"
+            :error-messages="settingsMessages[BALANCE_SAVE_FREQUENCY].error"
+            @change="onBalanceSaveFrequencyChange($event)"
+          />
 
-            <v-switch
-              v-model="displayDateInLocaltime"
-              class="general-settings__fields__display-date-in-localtime"
-              color="primary"
-              :label="$t('general_settings.labels.display_date_in_localtime')"
-              :success-messages="
-                settingsMessages[DISPLAY_DATE_IN_LOCALTIME].success
-              "
-              :error-messages="
-                settingsMessages[DISPLAY_DATE_IN_LOCALTIME].error
-              "
-              @change="onDisplayDateInLocaltimeChange($event)"
-            />
+          <v-text-field
+            v-model="dateDisplayFormat"
+            outlined
+            class="general-settings__fields__date-display-format"
+            :label="$t('general_settings.labels.date_display_format')"
+            type="text"
+            :rules="dateDisplayFormatRules"
+            :success-messages="settingsMessages[DATE_DISPLAY_FORMAT].success"
+            :error-messages="settingsMessages[DATE_DISPLAY_FORMAT].error"
+            :hint="
+              $t('general_settings.date_display_format_hint', {
+                format: formatter.format(now, dateDisplayFormat)
+              })
+            "
+            persistent-hint
+            @change="onDateDisplayFormatChange($event)"
+          >
+            <template #append>
+              <v-btn small icon @click="formatHelp = true">
+                <v-icon small> mdi-information </v-icon>
+              </v-btn>
+            </template>
+            <template #append-outer>
+              <v-tooltip top open-delay="400">
+                <template #activator="{ on, attrs }">
+                  <v-btn
+                    class="general-settings__date-restore"
+                    icon
+                    v-bind="attrs"
+                    @click="resetDateFormat()"
+                    v-on="on"
+                  >
+                    <v-icon> mdi-backup-restore </v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('general_settings.date_display_tooltip') }}</span>
+              </v-tooltip>
+            </template>
+          </v-text-field>
 
-            <v-text-field
-              v-model="btcDerivationGapLimit"
-              class="general-settings__fields__btc-derivation-gap"
-              :label="$t('general_settings.labels.btc_derivation_gap')"
-              type="number"
-              :success-messages="
-                settingsMessages[BTC_DERIVATION_GAP_LIMIT].success
-              "
-              :error-messages="settingsMessages[BTC_DERIVATION_GAP_LIMIT].error"
-              @change="onBtcDerivationGapLimitChanged($event)"
-            />
-          </v-card-text>
-        </v-card>
+          <v-switch
+            v-model="displayDateInLocaltime"
+            class="general-settings__fields__display-date-in-localtime"
+            color="primary"
+            :label="$t('general_settings.labels.display_date_in_localtime')"
+            :success-messages="
+              settingsMessages[DISPLAY_DATE_IN_LOCALTIME].success
+            "
+            :error-messages="settingsMessages[DISPLAY_DATE_IN_LOCALTIME].error"
+            @change="onDisplayDateInLocaltimeChange($event)"
+          />
+
+          <v-text-field
+            v-model="btcDerivationGapLimit"
+            outlined
+            class="general-settings__fields__btc-derivation-gap"
+            :label="$t('general_settings.labels.btc_derivation_gap')"
+            type="number"
+            :success-messages="
+              settingsMessages[BTC_DERIVATION_GAP_LIMIT].success
+            "
+            :error-messages="settingsMessages[BTC_DERIVATION_GAP_LIMIT].error"
+            @change="onBtcDerivationGapLimitChanged($event)"
+          />
+          <date-format-help v-model="formatHelp" />
+        </card>
         <v-card class="mt-8">
           <v-card-title>
             <card-title>{{ $t('general_settings.amount.title') }}</card-title>
@@ -230,6 +256,7 @@ import {
   settingsMessages
 } from '@/components/settings/utils';
 import { currencies } from '@/data/currencies';
+import { displayDateFormatter } from '@/data/date_formatter';
 import { Defaults } from '@/data/defaults';
 import SettingsMixin from '@/mixins/settings-mixin';
 import { Currency } from '@/model/currency';
@@ -246,6 +273,7 @@ import {
   SettingsUpdate
 } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
+import DateFormatHelp from '@/views/settings/DateFormatHelp.vue';
 
 const SETTING_FLOATING_PRECISION = 'floatingPrecision';
 const SETTING_ANONYMOUS_USAGE_ANALYTICS = 'anonymousUsageAnalytics';
@@ -279,6 +307,7 @@ type SettingsEntries = typeof SETTINGS[number];
 
 @Component({
   components: {
+    DateFormatHelp,
     RoundingSettings,
     FrontendSettings,
     PriceOracleSettings,
@@ -308,6 +337,10 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   btcDerivationGapLimit: string = '20';
   displayDateInLocaltime: boolean = true;
 
+  formatHelp: boolean = false;
+  readonly formatter = displayDateFormatter;
+  readonly now = new Date();
+
   readonly FLOATING_PRECISION = SETTING_FLOATING_PRECISION;
   readonly ANONYMOUS_USAGE_ANALYTICS = SETTING_ANONYMOUS_USAGE_ANALYTICS;
   readonly RPC_ENDPOINT = SETTING_RPC_ENDPOINT;
@@ -324,6 +357,25 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   historicDateMenu: boolean = false;
   date: string = '';
   amountExample = bigNumberify(123456.789);
+
+  resetDateFormat() {
+    this.dateDisplayFormat = Defaults.DEFAULT_DATE_DISPLAY_FORMAT;
+    this.onDateDisplayFormatChange(this.dateDisplayFormat);
+  }
+
+  readonly dateDisplayFormatRules = [
+    (v: string) => {
+      if (!v) {
+        return this.$t('general_settings.date_display.validation.empty');
+      }
+      if (!displayDateFormatter.containsValidDirectives(v)) {
+        return this.$t(
+          'general_settings.date_display.validation.invalid'
+        ).toString();
+      }
+      return true;
+    }
+  ];
 
   async onBtcDerivationGapLimitChanged(limit: string) {
     const message = makeMessage(
@@ -526,6 +578,10 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   }
 
   async onDateDisplayFormatChange(dateFormat: string) {
+    if (!displayDateFormatter.containsValidDirectives(dateFormat)) {
+      return;
+    }
+
     const message = makeMessage(
       `${this.$t('general_settings.validation.date_format.error')}`,
       `${this.$t('general_settings.validation.date_format.success', {
@@ -657,6 +713,10 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
 
   &__timeframe {
     min-height: 55px;
+  }
+
+  &__date-restore {
+    margin-top: -6px;
   }
 }
 </style>
