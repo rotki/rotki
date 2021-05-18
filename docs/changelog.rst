@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2725` Users will now be able to view a small help dialog with the supported options for the date display format.
 * :feature:`1902` Users can now modify the backend settings (e.g. data directory, log directory) through the application.
 * :feature:`2584` Removed the option to anonymize the logs. Logs are off by default anyway and it was never possible to anonymize accurately and completely when activated so the setting was misleading.
 * :feature:`47` Users can now add multiple accounts per supported exchange.
