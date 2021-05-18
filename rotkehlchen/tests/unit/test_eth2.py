@@ -568,7 +568,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1607990400,  # 2020/12/15
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0120'),
+        pnl=FVal('0.01196'),
         start_amount=FVal(32),
         end_amount=FVal('32.01'),
         proposed_blocks=1,
@@ -577,7 +577,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608076800,  # 2020/12/16
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0132'),
+        pnl=FVal('0.01318'),
         start_amount=FVal('32.01'),
         end_amount=FVal('32.03'),
     ), ValidatorDailyStats(
@@ -585,7 +585,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608163200,  # 2020/12/17
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('-0.0001'),
+        pnl=FVal('-0.00006'),
         start_amount=FVal('32.03'),
         end_amount=FVal('32.03'),
         missed_attestations=126,
@@ -594,7 +594,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608249600,  # 2020/12/18
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0129'),
+        pnl=FVal('0.01286'),
         start_amount=FVal('32.03'),
         end_amount=FVal('32.04'),
     ), ValidatorDailyStats(
@@ -602,7 +602,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608336000,  # 2020/12/19
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0127'),
+        pnl=FVal('0.01267'),
         start_amount=FVal('32.04'),
         end_amount=FVal('32.05'),
     ), ValidatorDailyStats(
@@ -610,7 +610,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608422400,  # 2020/12/20
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0144'),
+        pnl=FVal('0.01442'),
         start_amount=FVal('32.05'),
         end_amount=FVal('32.07'),
         missed_attestations=1,
@@ -620,7 +620,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608508800,  # 2020/12/21
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0124'),
+        pnl=FVal('0.01237'),
         start_amount=FVal('32.07'),
         end_amount=FVal('32.08'),
     ), ValidatorDailyStats(
@@ -628,7 +628,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608595200,  # 2020/12/22
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0121'),
+        pnl=FVal('0.01213'),
         start_amount=FVal('32.08'),
         end_amount=FVal('32.09'),
         missed_attestations=1,
@@ -637,7 +637,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608681600,  # 2020/12/23
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0120'),
+        pnl=FVal('0.01199'),
         start_amount=FVal('32.09'),
         end_amount=FVal('32.10'),
     ), ValidatorDailyStats(
@@ -645,7 +645,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608768000,  # 2020/12/24
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0119'),
+        pnl=FVal('0.01194'),
         start_amount=FVal('32.1'),
         end_amount=FVal('32.11'),
     ), ValidatorDailyStats(
@@ -653,11 +653,10 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608854400,  # 2020/12/25
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0117'),
+        pnl=FVal('0.01174'),
         start_amount=FVal('32.11'),
         end_amount=FVal('32.13'),
     )]
-
     stats.reverse()
     assert stats[:len(expected_stats)] == expected_stats
 
@@ -680,7 +679,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         timestamp=1613606400,    # 2021/02/18
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0078'),
+        pnl=FVal('0.00784'),
         start_amount=FVal('32.66'),
         end_amount=FVal('32.67'),
         missed_attestations=1,
@@ -689,7 +688,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         timestamp=1613692800,    # 2021/02/19
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0068'),
+        pnl=FVal('0.00683'),
         start_amount=FVal('32.67'),
         end_amount=FVal('32.68'),
         missed_attestations=19,
@@ -698,7 +697,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         timestamp=1613779200,    # 2021/02/20
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0080'),
+        pnl=FVal('0.00798'),
         start_amount=FVal('32.68'),
         end_amount=FVal('32.68'),
     ), ValidatorDailyStats(
@@ -706,7 +705,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         timestamp=1613865600,    # 2021/02/21
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0111'),
+        pnl=FVal('0.01114'),
         start_amount=FVal('32.68'),
         end_amount=FVal('32.69'),
         missed_attestations=3,
@@ -716,7 +715,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         timestamp=1613952000,    # 2021/02/22
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0078'),
+        pnl=FVal('0.00782'),
         start_amount=FVal('32.69'),
         end_amount=FVal('32.7'),
         missed_attestations=1,
@@ -725,7 +724,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         timestamp=1614038400,    # 2021/02/23
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0077'),
+        pnl=FVal('0.00772'),
         start_amount=FVal('32.7'),
         end_amount=FVal('32.71'),
         missed_attestations=1,
@@ -763,7 +762,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1613606400,    # 2021/02/18
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
-            pnl=FVal('0.0078'),
+            pnl=FVal('0.00784'),
             start_amount=FVal('32.66'),
             end_amount=FVal('32.67'),
             missed_attestations=1,
@@ -772,7 +771,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1613692800,    # 2021/02/19
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
-            pnl=FVal('0.0068'),
+            pnl=FVal('0.00683'),
             start_amount=FVal('32.67'),
             end_amount=FVal('32.68'),
             missed_attestations=19,
@@ -781,7 +780,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1613779200,    # 2021/02/20
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
-            pnl=FVal('0.0080'),
+            pnl=FVal('0.00798'),
             start_amount=FVal('32.68'),
             end_amount=FVal('32.68'),
         ), ValidatorDailyStats(
@@ -789,7 +788,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1613865600,    # 2021/02/21
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
-            pnl=FVal('0.0111'),
+            pnl=FVal('0.01114'),
             start_amount=FVal('32.68'),
             end_amount=FVal('32.69'),
             missed_attestations=3,
@@ -799,7 +798,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1613952000,    # 2021/02/22
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
-            pnl=FVal('0.0078'),
+            pnl=FVal('0.00782'),
             start_amount=FVal('32.69'),
             end_amount=FVal('32.7'),
             missed_attestations=1,
@@ -808,7 +807,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1614038400,    # 2021/02/23
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
-            pnl=FVal('0.0077'),
+            pnl=FVal('0.00772'),
             start_amount=FVal('32.7'),
             end_amount=FVal('32.71'),
             missed_attestations=1,
