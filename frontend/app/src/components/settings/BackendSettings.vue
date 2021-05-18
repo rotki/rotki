@@ -76,31 +76,41 @@
       </template>
     </v-select>
 
-    <v-text-field
-      v-model="mainLoopSleep"
-      outlined
-      :hint="
-        !!fileConfig.sleepSeconds
-          ? $t('backend_settings.config_file_disabled')
-          : $t('backend_settings.main_loop_sleep.hint')
-      "
-      :label="$t('backend_settings.main_loop_sleep.label')"
-      :disabled="!!fileConfig.sleepSeconds"
-      :persistent-hint="!!fileConfig.sleepSeconds"
-      type="number"
-    />
+    <v-expansion-panels flat>
+      <v-expansion-panel>
+        <v-expansion-panel-header>
+          {{ $t('backend_settings.advanced') }}
+        </v-expansion-panel-header>
+        <v-expansion-panel-content>
+          <v-text-field
+            v-model="mainLoopSleep"
+            outlined
+            :hint="
+              !!fileConfig.sleepSeconds
+                ? $t('backend_settings.config_file_disabled')
+                : $t('backend_settings.main_loop_sleep.hint')
+            "
+            :label="$t('backend_settings.main_loop_sleep.label')"
+            :disabled="!!fileConfig.sleepSeconds"
+            :persistent-hint="!!fileConfig.sleepSeconds"
+            clearable
+            type="number"
+          />
 
-    <v-checkbox
-      v-model="logFromOtherModules"
-      :label="$t('backend_settings.log_from_other_modules.label')"
-      :disabled="!!fileConfig.logFromOtherModules"
-      persistent-hint
-      :hint="
-        !!fileConfig.logFromOtherModules
-          ? $t('backend_settings.config_file_disabled')
-          : $t('backend_settings.log_from_other_modules.hint')
-      "
-    />
+          <v-checkbox
+            v-model="logFromOtherModules"
+            :label="$t('backend_settings.log_from_other_modules.label')"
+            :disabled="!!fileConfig.logFromOtherModules"
+            persistent-hint
+            :hint="
+              !!fileConfig.logFromOtherModules
+                ? $t('backend_settings.config_file_disabled')
+                : $t('backend_settings.log_from_other_modules.hint')
+            "
+          />
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
 
     <template #buttons>
       <v-spacer />
@@ -266,4 +276,16 @@ export default class BackendSettings extends Mixins(BackendMixin) {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+::v-deep {
+  .v-expansion-panel-content {
+    &__wrap {
+      padding: 0 0 16px;
+    }
+  }
+
+  .v-expansion-panel-header {
+    padding: 16px 0;
+  }
+}
+</style>

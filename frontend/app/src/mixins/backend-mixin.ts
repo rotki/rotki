@@ -71,8 +71,15 @@ export default class BackendMixin extends Vue {
   loaded() {}
 
   async saveOptions(options: Partial<BackendOptions>) {
-    saveUserOptions(options);
-    this.userOptions = options;
+    const { logDirectory, dataDirectory, loglevel } = this.userOptions;
+    const updatedOptions = {
+      logDirectory,
+      dataDirectory,
+      loglevel,
+      ...options
+    };
+    saveUserOptions(updatedOptions);
+    this.userOptions = updatedOptions;
     await this.restartBackendWithOptions(this.options);
   }
 

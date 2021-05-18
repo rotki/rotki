@@ -103,6 +103,7 @@
       "reset": "Reset to default",
       "save": "Save"
     },
+    "advanced": "Advanced",
     "config_file_disabled": "This parameter is already set in the rotki_config.json",
     "confirm": {
       "message": "Are you sure you want to rest the backend settings to default?",
