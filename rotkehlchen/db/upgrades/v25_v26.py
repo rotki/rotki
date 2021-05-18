@@ -31,7 +31,11 @@ class V25V26UpgradeHelper():
             'ftx': 'Z',
             'rotkehlchen': 'A',
         }
-        self.asset_ids: Set[str] = set()
+        globaldb = GlobalDBHandler()
+        globaldb_conn = globaldb._conn
+        globaldb_cursor = globaldb_conn.cursor()
+        query = globaldb_cursor.execute('SELECT identifier from assets;')
+        self.all_asset_ids = {x[0] for x in query}
 
     def upgrade_user_credentials(self, cursor: 'Cursor') -> None:
         # get old data
@@ -116,36 +120,22 @@ class V25V26UpgradeHelper():
             asset_ids: Set[str],
             table_name: str,
     ) -> bool:
-        """Processes the given asset id and adds it to the assets table if not there
+        """Processes the given asset ids of an entry and determines if the entry can be used.
 
-        If an asset can't be found in the global db False is returned
+        If an asset can't be found in the global db False is returned and warning logged.
         """
         asset_ids = asset_ids - {None}  # remove empty identifiers
-        if asset_ids.issubset(self.asset_ids):
+        if asset_ids.issubset(self.all_asset_ids):
             return True
 
-        globaldb = GlobalDBHandler()
-
         for asset_id in asset_ids:
-            if asset_id in self.asset_ids:
-                continue
-
-            data = globaldb.get_asset_data(identifier=asset_id, form_with_incomplete_data=True)
-            if data is None:
+            if asset_id not in self.all_asset_ids:
                 self.msg_aggregator.add_warning(
                     f'During v25 -> v26 DB upgrade found {table_name} entry of unknown asset '
                     f'{asset_id}. This will not be in the upgraded DB.',
                 )
-                return False
+            return False
 
-            cursor.execute('INSERT OR IGNORE INTO assets(identifier) VALUES(?);', (asset_id,))
-            globaldb_conn = globaldb._conn
-            globaldb_cursor = globaldb_conn.cursor()
-            globaldb_cursor.execute(
-                'INSERT OR IGNORE INTO user_owned_assets(asset_id) VALUES(?)',
-                (asset_id,),
-            )
-            globaldb_conn.commit()
         return True
 
     def upgrade_timed_balances(self, cursor: 'Cursor') -> None:
@@ -420,7 +410,12 @@ class V25V26UpgradeHelper():
 
         -> Remember to also clear relevant used_query_ranges for the deleted tables
         """
-        # First just drop and recreate tables that can easily be repulled
+        # First populate all assets table with all identifiers of the global db assets
+        cursor.executemany(
+            'INSERT OR IGNORE INTO assets(identifier) VALUES(?);',
+            [(x,) for x in self.all_asset_ids],
+        )
+        # Then just drop and recreate tables that can easily be repulled
         cursor.execute('DROP TABLE IF EXISTS adex_events;')
         cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "adex_events%";')
         cursor.execute("""
