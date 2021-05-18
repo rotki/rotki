@@ -111,6 +111,7 @@ import {
   AIRDROP_LIDO,
   AIRDROP_FURUCOMBO,
   AIRDROP_CURVE,
+  AIRDROP_CONVEX,
   AIRDROP_POAP
 } from '@/store/defi/const';
 import { Airdrop, AirdropType } from '@/store/defi/types';
@@ -222,6 +223,10 @@ export default class Airdrops extends Mixins(StatusMixin) {
     [AIRDROP_POAP]: {
       icon: require(`@/assets/images/airdrops/poap.svg`),
       name: 'POAP Delivery'
+    },
+    [AIRDROP_CONVEX]: {
+      icon: require('@/assets/images/airdrops/convex.jpeg'),
+      name: 'Convex'
     }
   };
 
