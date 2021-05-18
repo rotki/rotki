@@ -376,6 +376,21 @@ be visible in the same way as the modules above. To remove an address you need t
 
 If no addresses are selected for a module this means that rotki will check all the eligible addresses which can add to the total query duration.
 
+Changing the backend settings
+====================================
+
+Users of the desktop app can change the default data directory, and log directory. This can be done via the login
+screen. You can click the cog wheel at the bottom right corner to view the backend settings dialog.
+
+.. image:: images/rotki_backend_settings.png
+   :alt: Change the backend settings
+   :align: center
+
+After selecting a new data directory, log directory etc you can press the save button to save your settings.
+
+Keep in mind that any accounts that where created in the previous directory will not be accessible anymore and you will
+have to manually move them to the new location.
+
 Importing data
 *******************
 
