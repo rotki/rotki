@@ -128,6 +128,7 @@ class Rotkehlchen():
             self.data_dir = default_data_directory()
         else:
             self.data_dir = Path(args.data_dir)
+            self.data_dir.mkdir(parents=True, exist_ok=True)
 
         if not os.access(self.data_dir, os.W_OK | os.R_OK):
             raise SystemPermissionError(

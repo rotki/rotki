@@ -376,6 +376,21 @@ be visible in the same way as the modules above. To remove an address you need t
 
 If no addresses are selected for a module this means that rotki will check all the eligible addresses which can add to the total query duration.
 
+Changing the backend settings
+====================================
+
+Users of the desktop app can change the default data directory, and log directory. This can be done via the login
+screen. You can click the cog wheel at the bottom right corner to view the backend settings dialog.
+
+.. image:: images/rotki_backend_settings.png
+   :alt: Change the backend settings
+   :align: center
+
+After selecting a new data directory, log directory etc you can press the save button to save your settings.
+
+Keep in mind that any accounts that where created in the previous directory will not be accessible anymore and you will
+have to manually move them to the new location.
+
 Importing data
 *******************
 
@@ -840,7 +855,7 @@ Create or edit if it exists a file with the name ``rotki_config.json`` in the sa
   {
       "loglevel": "debug",
       "logfromothermodules": false,
-      "logile": "filenameforthelogs",
+      "log-dir": "/path/to/dir",
       "data-dir": "/path/to/dir"
       "sleep-secs": 20
   }
@@ -849,7 +864,7 @@ The above arguments are:
 
 - **loglevel**: Set the loglevel for the application. Valid values are: ``'debug', 'info', 'warn', 'error', 'critical'``.
 - **logfromothermodules**: If this argument appears then logging will also include log entries from other dependent libraries and not only rotki. Default is ``false``.
-- **logfile**: The name for the logfile. Default is: ``rotkehlchen.log``.
+- **log-dir**: The name for the log directory.
 - **data-dir**: The path to the directory where all rotki data will be saved. Default depends on the user's OS. Check next section
 - **sleep-secs**: This is the amount of seconds that the main loop of rotki sleeps for. Default is 20.
 

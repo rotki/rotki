@@ -97,6 +97,47 @@
   "back_button": {
     "tooltip": "Navigate back to the previous page."
   },
+  "backend_settings": {
+    "actions": {
+      "cancel": "Cancel",
+      "reset": "Reset to default",
+      "save": "Save"
+    },
+    "advanced": "Advanced",
+    "config_file_disabled": "This parameter is already set in the rotki_config.json",
+    "confirm": {
+      "message": "Are you sure you want to rest the backend settings to default?",
+      "title": "Rest backend settings"
+    },
+    "data_directory": {
+      "select": "Select where rotki will store the data"
+    },
+    "log_directory": {
+      "select": "bSelect where rotki will store the logs"
+    },
+    "log_from_other_modules": {
+      "hint": "Enables logging from third party libraries (useful for debugging)",
+      "label": "Log from other modules"
+    },
+    "main_loop_sleep": {
+      "hint": "The main event loop sleep duration. (Don't modify unless you know what you are doing)",
+      "label": "Main Loop Sleep"
+    },
+    "settings": {
+      "data_directory": {
+        "hint": "By changing the data directory, data in the old directory will have to be manually moved to the new one.",
+        "label": "Data Directory"
+      },
+      "log_directory": {
+        "label": "Log Directory"
+      },
+      "log_level": {
+        "label": "Log Level"
+      }
+    },
+    "subtitle": "Modify the backend settings",
+    "title": "Backend Settings"
+  },
   "balancer": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "premium": "Balancer feature "
@@ -2378,8 +2419,8 @@
       "label": "XPUB"
     }
   },
-  "loglevel": {
-    "tooltip": "Change the backend loglevel. This action will restart the rotki backend"
+  "backend_settings_button": {
+    "tooltip": "Change the backend settings. Changing the settings will restart the rotki backend"
   },
   "premium_reminder": {
     "title": "Upgrade to Premium",

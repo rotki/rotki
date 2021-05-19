@@ -6,10 +6,10 @@ import stream from 'stream';
 import { app, App, BrowserWindow, ipcMain } from 'electron';
 import tasklist from 'tasklist';
 import { BackendCode } from '@/electron-main/backend-code';
+import { BackendOptions } from '@/electron-main/ipc';
 import { DEFAULT_PORT, selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
 import { wait } from '@/utils/backoff';
-import { Level } from '@/utils/log-level';
 import Task = tasklist.Task;
 
 async function streamToString(givenStream: stream.Readable): Promise<string> {
@@ -38,6 +38,23 @@ async function streamToString(givenStream: stream.Readable): Promise<string> {
   });
 }
 
+function getBackendArguments(options: Partial<BackendOptions>): string[] {
+  const args: string[] = [];
+  if (options.loglevel) {
+    args.push('--loglevel', options.loglevel);
+  }
+  if (options.logFromOtherModules) {
+    args.push('--logfromothermodules');
+  }
+  if (options.dataDirectory) {
+    args.push('--data-dir', options.dataDirectory);
+  }
+  if (options.sleepSeconds) {
+    args.push('--sleep-secs', options.sleepSeconds.toString());
+  }
+  return args;
+}
+
 export default class PyHandler {
   private static PY_DIST_FOLDER = 'rotkehlchen_py_dist';
   private rpcFailureNotifier?: any;
@@ -45,12 +62,24 @@ export default class PyHandler {
   private _port?: number;
   private _serverUrl: string;
   private executable?: string;
-  private readonly logsPath: string;
-  private readonly ELECTRON_LOG_PATH: string;
   private _corsURL?: string;
   private backendOutput: string = '';
   private onChildError?: (err: Error) => void;
   private onChildExit?: (code: number, signal: any) => void;
+  private logDirectory?: string;
+  readonly defaultLogDirectory: string;
+
+  get logDir(): string {
+    return this.logDirectory ?? this.defaultLogDirectory;
+  }
+
+  get electronLogFile(): string {
+    return path.join(this.logDir, 'rotki_electron.log');
+  }
+
+  get backendLogFile(): string {
+    return path.join(this.logDir, 'rotkehlchen.log');
+  }
 
   get port(): number {
     assert(this._port);
@@ -63,12 +92,7 @@ export default class PyHandler {
 
   constructor(private app: App) {
     app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
-    this.logsPath = app.getPath('logs');
-    this.ELECTRON_LOG_PATH = path.join(this.logsPath, 'rotki_electron.log');
-    fs.writeFileSync(
-      this.ELECTRON_LOG_PATH,
-      'Rotki Electron Log initialization\n'
-    );
+    this.defaultLogDirectory = app.getPath('logs');
     this._serverUrl = '';
   }
 
@@ -78,7 +102,10 @@ export default class PyHandler {
     }
     const message = `${new Date(Date.now()).toISOString()}: ${msg}`;
     console.log(message);
-    fs.appendFileSync(this.ELECTRON_LOG_PATH, `${message}\n`);
+    if (!fs.existsSync(this.logDir)) {
+      fs.mkdirSync(this.logDir);
+    }
+    fs.appendFileSync(this.electronLogFile, `${message}\n`);
   }
 
   private logBackendOutput(msg: string | Error) {
@@ -110,7 +137,11 @@ export default class PyHandler {
     this.app.quit();
   }
 
-  async createPyProc(window: BrowserWindow, level?: Level) {
+  async createPyProc(window: BrowserWindow, options: Partial<BackendOptions>) {
+    if (options.logDirectory && !fs.existsSync(options.logDirectory)) {
+      fs.mkdirSync(options.logDirectory);
+    }
+    this.logDirectory = options.logDirectory;
     if (process.env.SKIP_PYTHON_BACKEND) {
       this.logToFile('Skipped starting python sub-process');
       return;
@@ -143,12 +174,7 @@ export default class PyHandler {
     }
 
     this._port = port;
-    const args: string[] = [];
-    this.loadArgumentsFromFile(args);
-
-    if (level) {
-      args.push('--loglevel', level);
-    }
+    const args: string[] = getBackendArguments(options);
 
     if (this.guessPackaged()) {
       this.startProcessPackaged(port, args);
@@ -288,7 +314,7 @@ export default class PyHandler {
       defaultArgs.push('--api-cors', this._corsURL);
     }
 
-    defaultArgs.push('--logfile', path.join(this.logsPath, 'rotkehlchen.log'));
+    defaultArgs.push('--logfile', this.backendLogFile);
 
     if (process.env.ROTKEHLCHEN_ENVIRONMENT === 'test') {
       const tempPath = path.join(this.app.getPath('temp'), 'rotkehlchen');
@@ -342,7 +368,7 @@ export default class PyHandler {
     if (this._corsURL) {
       args.push('--api-cors', this._corsURL);
     }
-    args.push('--logfile', path.join(this.logsPath, 'rotkehlchen.log'));
+    args.push('--logfile', this.backendLogFile);
     args = ['--api-port', port.toString()].concat(args);
     this.logToFile(
       `Starting packaged python subprocess: ${executable} ${args.join(' ')}`
@@ -432,43 +458,6 @@ export default class PyHandler {
       running = stillRunning();
       if (stillRunning.length === 0) {
         break;
-      }
-    }
-  }
-
-  private loadArgumentsFromFile(args: string[]) {
-    // try to see if there is a configfile
-    if (fs.existsSync('rotki_config.json')) {
-      const raw_data: Buffer = fs.readFileSync('rotki_config.json');
-
-      try {
-        const jsondata = JSON.parse(raw_data.toString());
-        if (Object.prototype.hasOwnProperty.call(jsondata, 'loglevel')) {
-          args.push('--loglevel', jsondata['loglevel']);
-        }
-        if (
-          Object.prototype.hasOwnProperty.call(jsondata, 'logfromothermodules')
-        ) {
-          if (jsondata['logfromothermodules'] === true) {
-            args.push('--logfromothermodules');
-          }
-        }
-        if (Object.prototype.hasOwnProperty.call(jsondata, 'logfile')) {
-          args.push('--logfile', jsondata['logfile']);
-        }
-        if (Object.prototype.hasOwnProperty.call(jsondata, 'data-dir')) {
-          args.push('--data-dir', jsondata['data-dir']);
-        }
-        if (Object.prototype.hasOwnProperty.call(jsondata, 'sleep-secs')) {
-          args.push('--sleep-secs', jsondata['sleep-secs']);
-        }
-      } catch (e) {
-        // do nothing, act as if there is no config given
-        // TODO: Perhaps in the future warn the user inside
-        // the app that there is a config file with invalid json
-        this.logToFile(
-          `Could not read the rotki_config.json file due to: "${e}". Proceeding normally without a config file ...`
-        );
       }
     }
   }

@@ -1,5 +1,5 @@
 import { app, BrowserWindow, MenuItem, shell } from 'electron';
-import { IPC_ABOUT } from '@/electron-main/ipc';
+import { IPC_ABOUT, IPC_DEBUG_SETTINGS } from '@/electron-main/ipc-commands';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const isMac = process.platform === 'darwin';
@@ -17,7 +17,7 @@ const debugMenu = {
       checked: debugSettings.vuex,
       click: async (item: MenuItem, browserWindow: BrowserWindow) => {
         debugSettings.vuex = item.checked;
-        browserWindow.webContents.send('DEBUG_SETTINGS', debugSettings);
+        browserWindow.webContents.send(IPC_DEBUG_SETTINGS, debugSettings);
         browserWindow.reload();
       }
     }

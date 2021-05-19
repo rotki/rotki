@@ -38,10 +38,7 @@
       </v-card>
       <privacy-notice />
       <div v-if="$interop.isPackaged" class="account-management__log-level">
-        <log-level
-          :value="loglevel"
-          @input="startBackendWithLogLevel($event)"
-        />
+        <backend-settings-button />
       </div>
       <div v-if="!$interop.isPackaged" class="account-management__about">
         <v-tooltip open-delay="400" top>
@@ -70,7 +67,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
@@ -81,26 +78,20 @@ import {
   deleteBackendUrl,
   getBackendUrl
 } from '@/components/account-management/utils';
-import LogLevel from '@/components/helper/LogLevel.vue';
+import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue';
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
+import BackendMixin from '@/mixins/backend-mixin';
 import { SyncConflict } from '@/store/session/types';
 import { ActionStatus, Message } from '@/store/types';
 import { Credentials, UnlockPayload } from '@/typing/types';
-import {
-  CRITICAL,
-  currentLogLevel,
-  DEBUG,
-  Level,
-  LOG_LEVEL
-} from '@/utils/log-level';
 
 @Component({
   components: {
+    BackendSettingsButton,
     ConnectionFailure,
     PrivacyNotice,
     ConnectionLoading,
     PremiumReminder,
-    LogLevel,
     Login,
     CreateAccount
   },
@@ -115,7 +106,7 @@ import {
     ...mapMutations(['setMessage'])
   }
 })
-export default class AccountManagement extends Vue {
+export default class AccountManagement extends Mixins(BackendMixin) {
   accountCreation: boolean = false;
   premium!: boolean;
   loading: boolean = false;
@@ -126,8 +117,6 @@ export default class AccountManagement extends Vue {
   setMessage!: (message: Message) => void;
   errors: string[] = [];
   accountCreationError: string = '';
-
-  loglevel: Level = process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL;
 
   premiumVisible = false;
 
@@ -140,7 +129,6 @@ export default class AccountManagement extends Vue {
   }
 
   async created() {
-    this.loglevel = currentLogLevel();
     if (this.connected) {
       return;
     }
@@ -149,7 +137,7 @@ export default class AccountManagement extends Vue {
     if (!!url && !sessionOnly) {
       await this.backendChanged(url);
     } else {
-      await this.startBackendWithLogLevel(this.loglevel);
+      await this.restartBackend();
     }
   }
 
@@ -157,7 +145,7 @@ export default class AccountManagement extends Vue {
     const { sessionOnly } = getBackendUrl();
     if (sessionOnly) {
       deleteBackendUrl();
-      await this.startBackendWithLogLevel(this.loglevel);
+      await this.restartBackend();
     }
   }
 
@@ -181,15 +169,8 @@ export default class AccountManagement extends Vue {
         ).toString()
       });
       deleteBackendUrl();
-      await this.startBackendWithLogLevel(this.loglevel);
+      await this.restartBackend();
     }
-  }
-
-  async startBackendWithLogLevel(level: Level) {
-    localStorage.setItem(LOG_LEVEL, level);
-    await this.$store.commit('setConnected', false);
-    await this.$interop.restartBackend(level);
-    await this.$store.dispatch('connect');
   }
 
   async login(credentials: Credentials) {
