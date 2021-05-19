@@ -1311,6 +1311,7 @@ class RestAPI():
         types = [str(x) for x in AssetType]
         return api_response(_wrap_in_ok_result(types), status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
     def add_custom_asset(self, asset_type: AssetType, **kwargs: Any) -> Response:
         globaldb = GlobalDBHandler()
         # There is no good way to figure out if an asset already exists in the DB
@@ -1392,6 +1393,7 @@ class RestAPI():
             log_result=False,
         )
 
+    @require_loggedin_user()
     def add_custom_ethereum_token(self, token: CustomEthereumToken) -> Response:
         identifier = ethaddress_to_identifier(token.address)
         try:
@@ -2961,9 +2963,7 @@ class RestAPI():
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         if result is None:
-            cursor = GlobalDBHandler()._conn.cursor()  # after succesfull update add all asset ids
-            query = cursor.execute('SELECT identifier from assets;')
-            self.rotkehlchen.data.db.add_asset_identifiers([x[0] for x in query])
+            self.rotkehlchen.data.db.add_globaldb_assetids()
             return OK_RESULT
 
         return {

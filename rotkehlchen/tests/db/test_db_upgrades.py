@@ -29,7 +29,10 @@ from rotkehlchen.db.upgrades.v7_v8 import (
 )
 from rotkehlchen.db.upgrades.v13_v14 import REMOVED_ASSETS, REMOVED_ETH_TOKENS
 from rotkehlchen.errors import DBUpgradeError
-from rotkehlchen.tests.utils.database import mock_dbhandler_update_owned_assets
+from rotkehlchen.tests.utils.database import (
+    mock_dbhandler_add_globaldb_assetids,
+    mock_dbhandler_update_owned_assets,
+)
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
@@ -319,7 +322,7 @@ def test_upgrade_db_1_to_2(data_dir, username):
     ethereum accounts are now checksummed"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch, target_patch(1), mock_dbhandler_update_owned_assets():
+    with creation_patch, target_patch(1), mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids():  # noqa: E501
         data.unlock(username, '123', create_new=True)
     # Manually input a non checksummed account
     data.db.conn.commit()
@@ -348,14 +351,14 @@ def test_upgrade_db_1_to_2(data_dir, username):
 def test_upgrade_db_2_to_3(user_data_dir):
     """Test upgrading the DB from version 2 to version 3, rename BCHSV to BSV"""
     msg_aggregator = MessagesAggregator()
-    with creation_patch:
+    with creation_patch, mock_dbhandler_add_globaldb_assetids():
         db = _init_db_with_target_version(
             target_version=2,
             user_data_dir=user_data_dir,
             msg_aggregator=msg_aggregator,
         )
 
-    with mock_dbhandler_update_owned_assets():
+    with mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids():
         populate_db_and_check_for_asset_renaming(
             db=db,
             user_data_dir=user_data_dir,
@@ -372,7 +375,7 @@ def test_upgrade_db_3_to_4(data_dir, username):
     the eth_rpc_port setting is changed to eth_rpc_endpoint"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch, target_patch(3), mock_dbhandler_update_owned_assets():
+    with creation_patch, target_patch(3), mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids():  # noqa: E501
         data.unlock(username, '123', create_new=True)
     # Manually set version and input the old rpcport setting
     cursor = data.db.conn.cursor()
@@ -387,7 +390,7 @@ def test_upgrade_db_3_to_4(data_dir, username):
     data.db.conn.commit()
 
     # now relogin and check that the setting has been changed and the version bumped
-    with mock_dbhandler_update_owned_assets():
+    with mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids():
         del data
         data = DataHandler(data_dir, msg_aggregator)
         with target_patch(target_version=4):
@@ -409,14 +412,14 @@ def test_upgrade_db_3_to_4(data_dir, username):
 def test_upgrade_db_4_to_5(user_data_dir):
     """Test upgrading the DB from version 4 to version 5, rename BCC to BCH"""
     msg_aggregator = MessagesAggregator()
-    with creation_patch:
+    with creation_patch, mock_dbhandler_add_globaldb_assetids():
         db = _init_db_with_target_version(
             target_version=4,
             user_data_dir=user_data_dir,
             msg_aggregator=msg_aggregator,
         )
 
-    with mock_dbhandler_update_owned_assets():
+    with mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids():
         populate_db_and_check_for_asset_renaming(
             db=db,
             user_data_dir=user_data_dir,

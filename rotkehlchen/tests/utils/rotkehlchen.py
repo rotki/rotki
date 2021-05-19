@@ -209,14 +209,6 @@ def add_starting_balances(datahandler) -> List[DBAssetBalance]:
         ),
     ]
     datahandler.db.add_multiple_balances(balances)
-    # Also add an unknown/invalid asset. This will generate a warning
-    cursor = datahandler.db.conn.cursor()
-    cursor.execute(
-        'INSERT INTO timed_balances('
-        '    time, currency, amount, usd_value) '
-        ' VALUES(?, ?, ?, ?)',
-        (1469326500, 'ADSADX', '10.1', '100.5'),
-    )
     datahandler.db.conn.commit()
 
     location_data = [

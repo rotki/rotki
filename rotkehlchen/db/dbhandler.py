@@ -249,6 +249,7 @@ class DBHandler:
         if initial_settings is not None:
             self.set_settings(initial_settings)
         self.update_owned_assets_in_globaldb()
+        self.add_globaldb_assetids()
 
     def __del__(self) -> None:
         if hasattr(self, 'conn') and self.conn:
@@ -750,8 +751,9 @@ class DBHandler:
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 self.msg_aggregator.add_warning(
-                    f'Tried to add a timed_balance for {entry.asset.identifier} at'
-                    f' already existing timestamp {entry.time}. Skipping.',
+                    f'Adding timed_balance failed. Either asset with identifier '
+                    f'{entry.asset.identifier} is not known or an entry for timestamp '
+                    f'{entry.time} already exists. Skipping.',
                 )
                 continue
         self.conn.commit()
@@ -3253,6 +3255,12 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
+    def add_globaldb_assetids(self) -> None:
+        """Makes sure that all the GlobalDB asset identifiers are mirrored in the user DB"""
+        cursor = GlobalDBHandler()._conn.cursor()  # after succesfull update add all asset ids
+        query = cursor.execute('SELECT identifier from assets;')
+        self.add_asset_identifiers([x[0] for x in query])
+
     def delete_asset_identifier(self, asset_id: str) -> None:
         """Deletes an asset identifier from the user db asset identifier table
 
@@ -3267,7 +3275,8 @@ class DBHandler:
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
-                f'Failed to delete asset with id {asset_id} from the DB due to {e}',
+                f'Failed to delete asset with id {asset_id} from the DB since '
+                f'the user owns it now or did some time in the past',
             ) from e
 
         self.conn.commit()

@@ -86,6 +86,7 @@ from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 TABLES_AT_INIT = [
+    'assets',
     'aave_events',
     'yearn_vaults_events',
     'timed_balances',
@@ -619,13 +620,6 @@ def test_query_owned_assets(data_dir, username):
         ),
     ])
     data.db.add_multiple_balances(balances)
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT INTO timed_balances('
-        '    time, currency, amount, usd_value, category) '
-        ' VALUES(?, ?, ?, ?, ?)',
-        (1469326500, 'ADSADX', '10.1', '100.5', 'A'),
-    )
     data.db.conn.commit()
 
     # also make sure that assets from trades are included
@@ -697,8 +691,7 @@ def test_query_owned_assets(data_dir, username):
     assert set(assets_list) == {A_USD, A_ETH, A_DAI, A_BTC, A_XMR, A_SDC, A_SDT2, A_SUSHI, A_1INCH}  # noqa: E501
     assert all(isinstance(x, Asset) for x in assets_list)
     warnings = data.db.msg_aggregator.consume_warnings()
-    assert len(warnings) == 1
-    assert 'Unknown/unsupported asset ADSADX' in warnings[0]
+    assert len(warnings) == 0
 
 
 def test_get_latest_location_value_distribution(data_dir, username):
