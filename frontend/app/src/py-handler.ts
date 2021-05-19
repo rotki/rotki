@@ -69,14 +69,16 @@ export default class PyHandler {
   private logDirectory?: string;
   readonly defaultLogDirectory: string;
 
+  get logDir(): string {
+    return this.logDirectory ?? this.defaultLogDirectory;
+  }
+
   get electronLogFile(): string {
-    const dir = this.logDirectory ?? this.defaultLogDirectory;
-    return path.join(dir, 'rotki_electron.log');
+    return path.join(this.logDir, 'rotki_electron.log');
   }
 
   get backendLogFile(): string {
-    const dir = this.logDirectory ?? this.defaultLogDirectory;
-    return path.join(dir, 'rotkehlchen.log');
+    return path.join(this.logDir, 'rotkehlchen.log');
   }
 
   get port(): number {
@@ -100,6 +102,9 @@ export default class PyHandler {
     }
     const message = `${new Date(Date.now()).toISOString()}: ${msg}`;
     console.log(message);
+    if (!fs.existsSync(this.logDir)) {
+      fs.mkdirSync(this.logDir);
+    }
     fs.appendFileSync(this.electronLogFile, `${message}\n`);
   }
 
@@ -133,6 +138,9 @@ export default class PyHandler {
   }
 
   async createPyProc(window: BrowserWindow, options: Partial<BackendOptions>) {
+    if (options.logDirectory && !fs.existsSync(options.logDirectory)) {
+      fs.mkdirSync(options.logDirectory);
+    }
     this.logDirectory = options.logDirectory;
     if (process.env.SKIP_PYTHON_BACKEND) {
       this.logToFile('Skipped starting python sub-process');
