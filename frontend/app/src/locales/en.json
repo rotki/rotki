@@ -286,7 +286,7 @@
       "year": "Four-digit year",
       "year_two_digit": "Last two digits of the year"
     },
-    "example": "e.g. ({example})",
+    "example": "Resulting date ({example})",
     "subtitle": "These are the supported date formatting options",
     "title": "Date Format"
   },
@@ -995,7 +995,7 @@
         "invalid": "No valid pattern detected in the date display format"
       }
     },
-    "date_display_format_hint": "Example: {format}",
+    "date_display_format_hint": "Resulting date: {format}",
     "date_display_tooltip": "Restore the default date display format",
     "labels": {
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
