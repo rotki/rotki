@@ -48,7 +48,7 @@ from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
+from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE, ethaddress_to_identifier
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -1311,8 +1311,7 @@ class RestAPI():
         types = [str(x) for x in AssetType]
         return api_response(_wrap_in_ok_result(types), status_code=HTTPStatus.OK)
 
-    @staticmethod
-    def add_custom_asset(asset_type: AssetType, **kwargs: Any) -> Response:
+    def add_custom_asset(self, asset_type: AssetType, **kwargs: Any) -> Response:
         globaldb = GlobalDBHandler()
         # There is no good way to figure out if an asset already exists in the DB
         # Best approximation we can do is this.
@@ -1341,6 +1340,7 @@ class RestAPI():
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        self.rotkehlchen.data.db.add_asset_identifiers([asset_id])
         return api_response(
             _wrap_in_ok_result({'identifier': asset_id}),
             status_code=HTTPStatus.OK,
@@ -1362,6 +1362,7 @@ class RestAPI():
         # Before deleting, also make sure we have up to date global DB owned data
         self.rotkehlchen.data.db.update_owned_assets_in_globaldb()
         try:
+            self.rotkehlchen.data.db.delete_asset_identifier(identifier)
             GlobalDBHandler().delete_custom_asset(identifier)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
@@ -1391,10 +1392,8 @@ class RestAPI():
             log_result=False,
         )
 
-    @staticmethod
-    def add_custom_ethereum_token(token: CustomEthereumToken) -> Response:
-        # TODO: hacky. Clean this up when we allow addition of all assets
-        identifier = ETHEREUM_DIRECTIVE + token.address
+    def add_custom_ethereum_token(self, token: CustomEthereumToken) -> Response:
+        identifier = ethaddress_to_identifier(token.address)
         try:
             GlobalDBHandler().add_asset(
                 asset_id=identifier,
@@ -1404,6 +1403,7 @@ class RestAPI():
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        self.rotkehlchen.data.db.add_asset_identifiers([identifier])
         return api_response(
             _wrap_in_ok_result({'identifier': identifier}),
             status_code=HTTPStatus.OK,
@@ -1428,7 +1428,9 @@ class RestAPI():
     def delete_custom_ethereum_token(self, address: ChecksumEthAddress) -> Response:
         # Before deleting, also make sure we have up to date global DB owned data
         self.rotkehlchen.data.db.update_owned_assets_in_globaldb()
+
         try:
+            self.rotkehlchen.data.db.delete_asset_identifier(ethaddress_to_identifier(address))
             identifier = GlobalDBHandler().delete_ethereum_token(address=address)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
@@ -2959,6 +2961,9 @@ class RestAPI():
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         if result is None:
+            cursor = GlobalDBHandler()._conn.cursor()  # after succesfull update add all asset ids
+            query = cursor.execute('SELECT identifier from assets;')
+            self.rotkehlchen.data.db.add_asset_identifiers([x[0] for x in query])
             return OK_RESULT
 
         return {

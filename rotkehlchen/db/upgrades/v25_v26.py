@@ -116,7 +116,6 @@ class V25V26UpgradeHelper():
 
     def _process_asset_identifiers(
             self,
-            cursor: 'Cursor',
             asset_ids: Set[str],
             table_name: str,
     ) -> bool:
@@ -147,7 +146,6 @@ class V25V26UpgradeHelper():
         new_tuples = []
         for entry in old_tuples:
             should_write = self._process_asset_identifiers(
-                cursor=cursor,
                 asset_ids={entry[2]},
                 table_name='timed_balances',
             )
@@ -183,7 +181,6 @@ class V25V26UpgradeHelper():
         new_tuples = []
         for entry in old_tuples:
             should_write = self._process_asset_identifiers(
-                cursor=cursor,
                 asset_ids={entry[0]},
                 table_name='manually_tracked_balances',
             )
@@ -217,7 +214,6 @@ class V25V26UpgradeHelper():
         new_tuples = []
         for entry in old_tuples:
             should_write = self._process_asset_identifiers(
-                cursor=cursor,
                 asset_ids={entry[5], entry[7]},
                 table_name='margin_positions',
             )
@@ -260,7 +256,6 @@ class V25V26UpgradeHelper():
         new_tuples = []
         for entry in old_tuples:
             should_write = self._process_asset_identifiers(
-                cursor=cursor,
                 asset_ids={entry[6], entry[8]},
                 table_name='asset_movements',
             )
@@ -304,7 +299,6 @@ class V25V26UpgradeHelper():
         new_tuples = []
         for entry in old_tuples:
             should_write = self._process_asset_identifiers(
-                cursor=cursor,
                 asset_ids={entry[5], entry[7]},
                 table_name='ledger_actions',
             )
@@ -346,7 +340,6 @@ class V25V26UpgradeHelper():
         new_tuples = []
         for entry in old_tuples:
             should_write = self._process_asset_identifiers(
-                cursor=cursor,
                 asset_ids={entry[3], entry[4], entry[9]},
                 table_name='trades',
             )

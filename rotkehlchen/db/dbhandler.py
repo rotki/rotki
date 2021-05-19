@@ -3243,6 +3243,36 @@ class DBHandler:
         assets = self.query_owned_assets()
         GlobalDBHandler().add_user_owned_assets(assets)
 
+    def add_asset_identifiers(self, asset_identifiers: List[str]) -> None:
+        """Adds an asset to the user db asset identifier table"""
+        cursor = self.conn.cursor()
+        cursor.executemany(
+            'INSERT OR IGNORE INTO assets(identifier) VALUES(?);',
+            [(x,) for x in asset_identifiers],
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_asset_identifier(self, asset_id: str) -> None:
+        """Deletes an asset identifier from the user db asset identifier table
+
+        May raise:
+        - InputError if a foreign key error is encountered during deletion
+        """
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(
+                'DELETE FROM assets WHERE identifier=?;',
+                (asset_id,),
+            )
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+            raise InputError(
+                f'Failed to delete asset with id {asset_id} from the DB due to {e}',
+            ) from e
+
+        self.conn.commit()
+        self.update_last_write()
+
     def get_latest_location_value_distribution(self) -> List[LocationData]:
         """Gets the latest location data
 
