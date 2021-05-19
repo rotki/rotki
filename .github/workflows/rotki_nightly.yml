@@ -117,7 +117,7 @@ jobs:
           path: |
             ~/rotki-e2e/price_history
             ~/rotki-e2e/icons
-            ~/rotki-e2e/assets
+            ~/rotki-e2e/global_data
           key: ${{ runner.os }}-e2e-cache-${{ hashFiles('**/app/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-e2e-cache-
