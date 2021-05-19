@@ -41,7 +41,7 @@
             :error-messages="settingsMessages[DATE_DISPLAY_FORMAT].error"
             :hint="
               $t('general_settings.date_display_format_hint', {
-                format: formatter.format(now, dateDisplayFormat)
+                format: dateFormat
               })
             "
             persistent-hint
@@ -338,7 +338,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   displayDateInLocaltime: boolean = true;
 
   formatHelp: boolean = false;
-  readonly formatter = displayDateFormatter;
   readonly now = new Date();
 
   readonly FLOATING_PRECISION = SETTING_FLOATING_PRECISION;
@@ -357,6 +356,10 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   historicDateMenu: boolean = false;
   date: string = '';
   amountExample = bigNumberify(123456.789);
+
+  get dateFormat(): string {
+    return displayDateFormatter.format(this.now, this.dateDisplayFormat, true);
+  }
 
   resetDateFormat() {
     this.dateDisplayFormat = Defaults.DEFAULT_DATE_DISPLAY_FORMAT;

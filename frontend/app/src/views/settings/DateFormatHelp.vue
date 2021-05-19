@@ -23,7 +23,7 @@
             <span class="ms-8">
               {{
                 $t('date_format_help.example', {
-                  example: formatter.format(now, directive)
+                  example: formatter.format(now, directive, true)
                 })
               }}
             </span>
@@ -50,7 +50,7 @@ export default class DateFormatHelp extends Vue {
 
   readonly formatter = displayDateFormatter;
   readonly directives: string[] = displayDateFormatter.directives;
-  readonly now: Date = new Date();
+  readonly now: Date = new Date('2018-03-09T21:09:08');
 
   description(directive: string): string {
     const descriptions: { [directive: string]: string } = {

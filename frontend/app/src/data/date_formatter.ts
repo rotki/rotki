@@ -104,6 +104,7 @@ export class DateFormatter {
   }
 
   containsValidDirectives(pattern: string): boolean {
+    this.regex.lastIndex = 0;
     const m = this.regex.exec(pattern);
     if (m === null) {
       return false;
@@ -112,11 +113,14 @@ export class DateFormatter {
     return !!matches && matches.length > 0;
   }
 
-  format(date: Date, format: string) {
+  format(date: Date, format: string, resetIndex: boolean = false) {
     let formattedString = format;
     let m;
 
     const regex = this.regex;
+    if (resetIndex) {
+      regex.lastIndex = 0;
+    }
     while ((m = regex.exec(format)) !== null) {
       if (m.index === regex.lastIndex) {
         regex.lastIndex++;
