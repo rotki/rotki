@@ -53,10 +53,12 @@ WORLD_TO_BITTREX = {
     'MTC-3': 'MTC',
     # EDG renamed to EDGELESS
     strethaddress_to_identifier('0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c'): 'EDGELESS',
+    strethaddress_to_identifier('0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6'): 'RCN',
 }
 
 WORLD_TO_FTX = {
     strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
+    'SOL-2': 'SOL',
 }
 
 WORLD_TO_POLONIEX = {
@@ -179,6 +181,12 @@ WORLD_TO_KRAKEN = {
     'FLOW': 'FLOW',
     'OCEAN': 'OCEAN',
     'EWT': 'EWT',
+    'MATIC': 'MATIC',
+    'MKR': 'MKR',
+    strethaddress_to_identifier('0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'): 'RARI',
+    'REN': 'REN',
+    strethaddress_to_identifier('0xE41d2489571d322189246DaFA5ebDe1F4699F498'): 'ZRX',
+    strethaddress_to_identifier('0x3F382DbD960E3a9bbCeaE22651E88158d2791550'): 'GHST',
 }
 
 WORLD_TO_BINANCE = {
@@ -219,6 +227,7 @@ WORLD_TO_BINANCE = {
     strethaddress_to_identifier('0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0'): 'TRB',
     # WIN is WINk in Binance
     'WIN-3': 'WIN',
+    strethaddress_to_identifier('0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6'): 'RCN',
 }
 
 WORLD_TO_BITFINEX = {
@@ -226,6 +235,7 @@ WORLD_TO_BITFINEX = {
     'CNY': 'CNH',
     'DOGE': 'DOG',
     'LUNA-2': 'LUNA',
+    'SOL-2': 'SOL',
     # make sure GNY maps to the appropriate token for bitfinex
     strethaddress_to_identifier('0xb1f871Ae9462F1b2C6826E88A7827e76f86751d4'): 'GNY',
     # make sure REP maps to latest one in bitfinex
@@ -265,6 +275,7 @@ WORLD_TO_KUCOIN = {
     'WIN-3': 'WINK',
     # As reported in #2805 CAPP refers to this token
     strethaddress_to_identifier('0x11613b1f840bb5A40F8866d857e24DA126B79D73'): 'CAPP',
+    'WIN-4': 'WIN',
 }
 
 WORLD_TO_ICONOMI = {
@@ -285,6 +296,14 @@ WORLD_TO_ICONOMI = {
     # FET is Fetch AI in iconomi
     strethaddress_to_identifier('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'): 'FET',
     # TRB is Tellor Tributes in iconomi
+    strethaddress_to_identifier('0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0'): 'TRB',
+    # EDG is Edgeless in iconomi
+    strethaddress_to_identifier('0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c'): 'EDG',
+    'SOL-2': 'SOL',
+    strethaddress_to_identifier('0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6'): 'RCN',
+}
+
+WORLD_TO_COINBASE_PRO = {
     strethaddress_to_identifier('0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0'): 'TRB',
 }
 

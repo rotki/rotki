@@ -4,6 +4,7 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_BINANCE,
     WORLD_TO_BITFINEX,
     WORLD_TO_BITTREX,
+    WORLD_TO_COINBASE_PRO,
     WORLD_TO_FTX,
     WORLD_TO_ICONOMI,
     WORLD_TO_KRAKEN,
@@ -345,12 +346,14 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # APM Coin. As of 16/11/2019 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-APM
     'APM',
+    'CBC',  # neither in coingecko nor cryptocompare
     # Tether CNH. As of 30/09/2019 no data found outside of Bittrex for this token
     # https://medium.com/bittrex/new-bittrex-international-listing-tether-cnh-cnht-c9ad966ac303
     'CNHT',
     # Credit coin. As of 29/01/2020 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-CTC
     'CTC',
+    'DAF',  # neither in coingecko nor cryptocompare
     # Foresting. As of 22/03/2019 no data found.
     # Only exists in bittrex. Perhaps it will soon be added to other APIs.
     # https://international.bittrex.com/Market/Index?MarketName=BTC-PTON
@@ -395,6 +398,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Forkspot. As for 01/03/2020 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-FRSP
     'FRSP',
+    'PIST',  # neither in coingecko nor cryptocompare
     # Universal Protocol Token. As of 19/03/2020 no data found outside of Bittrex for this token.
     # https://global.bittrex.com/Market/Index?MarketName=BTC-UPT
     'UPT',
@@ -422,6 +426,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'UPCO2',  # neither in coingecko nor cryptocompare
     'VIL',  # neither in coingecko nor cryptocompare (VICDeal)
     'WXBTC',  # neither in coingecko nor cryptocompare
+    'ZILD',  # neither in coingecko nor cryptocompare
     # bittrex tokenized stocks -- not sure how to handle yet
     'AAPL',
     'ABNB',
@@ -493,6 +498,7 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'B21X',  # no cryptocompare/coingecko data
     'GTX',  # no cryptocompare/coingecko data (GT, Gate.io token)
     'IQX',  # no cryptocompare/coingecko data (EOS token)
+    'ID',  # no cryptocompare/coingecko data
 )
 
 UNSUPPORTED_FTX_ASSETS = (
@@ -560,6 +566,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'BTC3S',  # no cryptocompare/coingecko data
     'BTCP',  # delisted
     'CADH',  # no cryptocompare/coingecko data
+    'CBC',  # neither in coingecko nor cryptocompare
     'EPRX',  # delisted and no cryptocompare/coingecko data
     'ETH3L',  # no cryptocompare/coingecko data
     'ETH3S',  # no cryptocompare/coingecko data
@@ -568,6 +575,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'GMB',  # delisted
     'GOD',  # delisted
     'GZIL',  # delisted
+    'HOTCROSS',  # no cryptocompare/coingecko data
     'KTS',  # delisted
     'LOL',  # delisted
     'MAP2',  # delisted
@@ -584,6 +592,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
 # https://api.iconomi.com/v1/assets marks delisted assets
 UNSUPPORTED_ICONOMI_ASSETS = (
     'ICNGS',
+    'ETCPOLO',
     'FTR',  # delisted
     'TT',  # delisted
 )
@@ -610,6 +619,7 @@ FTX_TO_WORLD = {v: k for k, v in WORLD_TO_FTX.items()}
 KRAKEN_TO_WORLD = {v: k for k, v in WORLD_TO_KRAKEN.items()}
 KUCOIN_TO_WORLD = {v: k for k, v, in WORLD_TO_KUCOIN.items()}
 ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
+COINBASE_PRO_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE_PRO.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -733,16 +743,19 @@ def asset_from_bittrex(bittrex_name: str) -> Asset:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_coinbasepro(symbol: str) -> Asset:
+def asset_from_coinbasepro(coinbase_pro_name: str) -> Asset:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
     - UnknownAsset
     """
-    if not isinstance(symbol, str):
-        raise DeserializationError(f'Got non-string type {type(symbol)} for coinbasepro asset')
-
-    return symbol_to_asset_or_token(symbol)
+    if not isinstance(coinbase_pro_name, str):
+        raise DeserializationError(
+            f'Got non-string type {type(coinbase_pro_name)} for '
+            f'coinbasepro asset',
+        )
+    name = COINBASE_PRO_TO_WORLD.get(coinbase_pro_name, coinbase_pro_name)
+    return symbol_to_asset_or_token(name)
 
 
 def asset_from_binance(binance_name: str) -> Asset:
