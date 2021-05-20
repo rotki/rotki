@@ -255,6 +255,41 @@
     "hint": "Select as the main currency",
     "profit_currency": "Profit Currency"
   },
+  "date_format_help": {
+    "close": "Close",
+    "directive": {
+      "ampm": "morning or afternoon marker",
+      "day_numeric": "Day (numeric)",
+      "day_of_the_week": "Day of the week numeric",
+      "day_of_year": "Day of the year",
+      "day_of_year_padded": "Three-digit day of the year (with leading zeroes)",
+      "day_two_digit": "Two-digit day",
+      "hour": "Hour 24h",
+      "hour_padded": "Two-digit hour (with leading zeroes) 24h",
+      "hour_twelve": "Two-digit hour (with leading zeroes) 12h",
+      "hour_twelve_padded": "Hour 12h",
+      "locale_date": "Date in the locale format",
+      "locale_datetime": "Date and time in the locale format",
+      "locale_time": "Time in the locale format",
+      "minutes": "Minutes",
+      "minutes_padded": "Two-digit minutes (with leading zeroes)",
+      "month": "Full month name",
+      "month_numeric": "Month (numeric)",
+      "month_short": "Abbreviated month name",
+      "month_two_digit": "Two-digit month",
+      "seconds": "Seconds",
+      "seconds_padded": "Two-digit seconds (with leading zeroes)",
+      "timezone": "Time zone",
+      "timezone_offset": "RFC 822 numeric offset from GMT",
+      "week_day": "Full weekday name",
+      "week_day_short": "Abbreviated weekday name",
+      "year": "Four-digit year",
+      "year_two_digit": "Last two digits of the year"
+    },
+    "example": "Resulting date ({example})",
+    "subtitle": "These are the supported date formatting options",
+    "title": "Date Format"
+  },
   "exchange_keys_form": {
     "api_key": {
       "non_empty": "The api key field cannot be empty."
@@ -954,6 +989,14 @@
         "main_currency_subtitle": "Select as the main currency"
       }
     },
+    "date_display": {
+      "validation": {
+        "empty": "The date display format cannot be empty",
+        "invalid": "No valid pattern detected in the date display format"
+      }
+    },
+    "date_display_format_hint": "Resulting date: {format}",
+    "date_display_tooltip": "Restore the default date display format",
     "labels": {
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
