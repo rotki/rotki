@@ -262,7 +262,7 @@ class DBUpgradeManager():
                 raise DBUpgradeError(error_message) from e
 
             # for some upgrades even for success keep the backup of the previous db
-            if upgrade.from_version == 24:
+            if upgrade.from_version in (24, 25):
                 shutil.copyfile(
                     tmp_db_path,
                     os.path.join(self.db.user_data_dir, tmp_db_filename),

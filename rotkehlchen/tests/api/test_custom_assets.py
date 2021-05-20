@@ -16,7 +16,7 @@ from rotkehlchen.typing import Location
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('start_with_logged_in_user', [False])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
     """Test that the endpoint for adding a custom asset works"""
 
@@ -136,7 +136,7 @@ def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('start_with_logged_in_user', [False])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
     """Test that the endpoint for editing a custom asset works"""
 
@@ -417,10 +417,7 @@ def test_custom_asset_delete_guard(rotkehlchen_api_server):
         ),
         json={'identifier': custom1_id},
     )
-    expected_msg = (
-        'Tried to delete asset with name "foo token" and symbol "FOO" but its deletion '
-        'would violate a constraint'
-    )
+    expected_msg = 'Failed to delete asset with id'
     assert_error_response(
         response=response,
         contained_in_msg=expected_msg,
