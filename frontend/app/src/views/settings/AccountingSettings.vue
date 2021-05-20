@@ -2,151 +2,155 @@
   <v-container class="accounting-settings">
     <v-row no-gutters>
       <v-col>
-        <v-card>
-          <v-card-title>
-            <card-title>{{ $t('accounting_settings.title') }}</card-title>
-          </v-card-title>
-          <v-card-text>
-            <v-switch
-              v-model="crypto2CryptoTrades"
-              class="accounting-settings__crypto2crypto"
-              :label="$t('accounting_settings.labels.crypto_to_crypto')"
-              color="primary"
-              :success-messages="settingsMessages['crypto2crypto'].success"
-              :error-messages="settingsMessages['crypto2crypto'].error"
-              @change="onCrypto2CryptoChange($event)"
-            />
-            <v-switch
-              v-model="gasCosts"
-              class="accounting-settings__include-gas-costs"
-              :label="$t('accounting_settings.labels.gas_costs')"
-              :success-messages="settingsMessages['gasCostChange'].success"
-              :error-messages="settingsMessages['gasCostChange'].error"
-              color="primary"
-              @change="onGasCostChange($event)"
-            />
-            <v-switch
-              v-model="taxFreePeriod"
-              class="accounting-settings__taxfree-period"
-              :success-messages="settingsMessages['taxFreePeriod'].success"
-              :error-messages="settingsMessages['taxFreePeriod'].error"
-              :label="$t('accounting_settings.labels.tax_free')"
-              color="primary"
-              @change="onTaxFreeChange($event)"
-            />
-            <v-text-field
-              v-model="taxFreeAfterPeriod"
-              class="accounting-settings__taxfree-period-days"
-              :success-messages="settingsMessages['taxFreePeriodAfter'].success"
-              :error-messages="settingsMessages['taxFreePeriodAfter'].error"
-              :disabled="!taxFreePeriod"
-              :rules="taxFreeRules"
-              :label="$t('accounting_settings.labels.tax_free_period')"
-              type="number"
-              @change="onTaxFreePeriodChange($event)"
-            />
-            <v-switch
-              v-model="accountForAssetsMovements"
-              class="accounting-settings__account-for-assets-movements"
-              :success-messages="
-                settingsMessages['accountForAssetsMovements'].success
-              "
-              :error-messages="
-                settingsMessages['accountForAssetsMovements'].error
-              "
-              :label="
-                $t('accounting_settings.labels.account_for_assets_movements')
-              "
-              color="primary"
-              @change="onAccountForAssetsMovements($event)"
-            />
-            <v-switch
-              v-model="calculatePastCostBasis"
-              class="accounting-settings__past-cost-basis"
-              :success-messages="
-                settingsMessages['calculatePastCostBasis'].success
-              "
-              :error-messages="settingsMessages['calculatePastCostBasis'].error"
-              :label="
-                $t('accounting_settings.labels.calculate_past_cost_basis')
-              "
-              color="primary"
-              @change="onCalculatePastCostBasisChange($event)"
-            />
-          </v-card-text>
-        </v-card>
+        <card>
+          <template #title>
+            {{ $t('accounting_settings.title') }}
+          </template>
+
+          <v-switch
+            v-model="crypto2CryptoTrades"
+            class="accounting-settings__crypto2crypto"
+            :label="$t('accounting_settings.labels.crypto_to_crypto')"
+            color="primary"
+            :success-messages="settingsMessages['crypto2crypto'].success"
+            :error-messages="settingsMessages['crypto2crypto'].error"
+            @change="onCrypto2CryptoChange($event)"
+          />
+          <v-switch
+            v-model="gasCosts"
+            class="accounting-settings__include-gas-costs"
+            :label="$t('accounting_settings.labels.gas_costs')"
+            :success-messages="settingsMessages['gasCostChange'].success"
+            :error-messages="settingsMessages['gasCostChange'].error"
+            color="primary"
+            @change="onGasCostChange($event)"
+          />
+          <v-switch
+            v-model="taxFreePeriod"
+            class="accounting-settings__taxfree-period"
+            :success-messages="settingsMessages['taxFreePeriod'].success"
+            :error-messages="settingsMessages['taxFreePeriod'].error"
+            :label="$t('accounting_settings.labels.tax_free')"
+            color="primary"
+            @change="onTaxFreeChange($event)"
+          />
+          <v-text-field
+            v-model="taxFreeAfterPeriod"
+            outlined
+            class="accounting-settings__taxfree-period-days"
+            :success-messages="settingsMessages['taxFreePeriodAfter'].success"
+            :error-messages="settingsMessages['taxFreePeriodAfter'].error"
+            :disabled="!taxFreePeriod"
+            :rules="taxFreeRules"
+            :label="$t('accounting_settings.labels.tax_free_period')"
+            type="number"
+            @change="onTaxFreePeriodChange($event)"
+          />
+          <v-switch
+            v-model="accountForAssetsMovements"
+            class="accounting-settings__account-for-assets-movements"
+            :success-messages="
+              settingsMessages['accountForAssetsMovements'].success
+            "
+            :error-messages="
+              settingsMessages['accountForAssetsMovements'].error
+            "
+            :label="
+              $t('accounting_settings.labels.account_for_assets_movements')
+            "
+            color="primary"
+            @change="onAccountForAssetsMovements($event)"
+          />
+          <v-switch
+            v-model="calculatePastCostBasis"
+            class="accounting-settings__past-cost-basis"
+            :success-messages="
+              settingsMessages['calculatePastCostBasis'].success
+            "
+            :error-messages="settingsMessages['calculatePastCostBasis'].error"
+            :label="$t('accounting_settings.labels.calculate_past_cost_basis')"
+            color="primary"
+            @change="onCalculatePastCostBasisChange($event)"
+          />
+        </card>
       </v-col>
     </v-row>
     <v-row class="mt-8" no-gutters>
       <v-col>
-        <v-card>
-          <v-card-title>
-            <card-title>
-              {{ $t('account_settings.asset_settings.title') }}
-            </card-title>
-          </v-card-title>
-          <v-card-text>
-            <v-row>
-              <v-col cols="10">
-                <asset-select
-                  v-model="assetToIgnore"
-                  :label="$t('account_settings.asset_settings.labels.ignore')"
-                  :success-messages="settingsMessages['addIgnoreAsset'].success"
-                  :error-messages="settingsMessages['addIgnoreAsset'].error"
-                  :hint="$t('account_settings.asset_settings.ignore_tags_hint')"
-                  class="accounting-settings__asset-to-ignore"
-                />
-              </v-col>
-              <v-col cols="2">
-                <v-btn
-                  class="accounting-settings__buttons__add"
-                  text
-                  color="primary"
-                  :disabled="assetToIgnore === ''"
-                  @click="addAsset()"
-                >
-                  {{ $t('account_settings.asset_settings.actions.add') }}
-                </v-btn>
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="10" class="d-flex">
-                <asset-select
-                  v-model="assetToRemove"
-                  :label="$t('account_settings.asset_settings.labels.unignore')"
-                  value="test"
-                  :items="ignoredAssets"
-                  :success-messages="settingsMessages['remIgnoreAsset'].success"
-                  :error-messages="settingsMessages['remIgnoreAsset'].error"
-                  :hint="
-                    $t('account_settings.asset_settings.labels.unignore_hint')
-                  "
-                  class="accounting-settings__ignored-assets"
-                />
-                <div slot="append-outer">
-                  <v-badge>
-                    <template #badge>
-                      <span class="accounting-settings__ignored-assets__badge">
-                        {{ ignoredAssets.length }}
-                      </span>
-                    </template>
-                  </v-badge>
-                </div>
-              </v-col>
-              <v-col cols="2">
-                <v-btn
-                  class="accounting-settings__buttons__remove"
-                  text
-                  color="primary"
-                  :disabled="assetToRemove === ''"
-                  @click="removeAsset()"
-                >
-                  {{ $t('account_settings.asset_settings.actions.remove') }}
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
+        <card>
+          <template #title>
+            {{ $t('account_settings.asset_settings.title') }}
+          </template>
+
+          <v-row no-gutters>
+            <v-col>
+              <asset-select
+                v-model="assetToIgnore"
+                outlined
+                :label="$t('account_settings.asset_settings.labels.ignore')"
+                :success-messages="settingsMessages['addIgnoreAsset'].success"
+                :error-messages="settingsMessages['addIgnoreAsset'].error"
+                :hint="$t('account_settings.asset_settings.ignore_tags_hint')"
+                class="accounting-settings__asset-to-ignore"
+              />
+            </v-col>
+            <v-col cols="auto">
+              <v-btn
+                class="accounting-settings__buttons__add mt-3"
+                text
+                width="110px"
+                color="primary"
+                :disabled="assetToIgnore === ''"
+                @click="addAsset()"
+              >
+                {{ $t('account_settings.asset_settings.actions.add') }}
+              </v-btn>
+            </v-col>
+          </v-row>
+          <v-row no-gutters>
+            <v-col>
+              <asset-select
+                v-model="assetToRemove"
+                outlined
+                :label="$t('account_settings.asset_settings.labels.unignore')"
+                value="test"
+                :items="ignoredAssets"
+                :success-messages="settingsMessages['remIgnoreAsset'].success"
+                :error-messages="settingsMessages['remIgnoreAsset'].error"
+                :hint="
+                  $t('account_settings.asset_settings.labels.unignore_hint')
+                "
+                class="accounting-settings__ignored-assets"
+              />
+            </v-col>
+            <v-col cols="auto">
+              <v-btn
+                width="110px"
+                class="accounting-settings__buttons__remove mt-3"
+                text
+                color="primary"
+                :disabled="assetToRemove === ''"
+                @click="removeAsset()"
+              >
+                {{ $t('account_settings.asset_settings.actions.remove') }}
+              </v-btn>
+            </v-col>
+          </v-row>
+          <v-row no-gutters>
+            <v-col cols="auto">
+              {{ $t('accounting_settings.ignored_assets') }}
+            </v-col>
+            <v-col>
+              <v-badge class="pl-2">
+                <template #badge>
+                  <div class="accounting-settings__ignored-assets__badge">
+                    {{ ignoredAssets.length }}
+                  </div>
+                </template>
+              </v-badge>
+            </v-col>
+          </v-row>
+        </card>
       </v-col>
     </v-row>
     <ledger-action-settings class="mt-18" />
