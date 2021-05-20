@@ -1370,3 +1370,20 @@ def test_values_are_present_in_db(database, enum_class, table_name):
     for enum_class_entry in enum_class:
         r = cursor.execute(query, (enum_class_entry.value,))
         assert r.fetchone() == (1,)
+
+
+def test_binance_pairs(user_data_dir):
+    msg_aggregator = MessagesAggregator()
+    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
+
+    binance_api_key = ApiKey('binance_api_key')
+    binance_api_secret = ApiSecret(b'binance_api_secret')
+    db.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
+
+    db.set_binance_pairs('binance', ['ETHUSDC', 'ETHBTC', 'BNBBTC'], Location.BINANCE)
+    query = db.get_binance_pairs('binance', Location.BINANCE)
+    assert query == ['ETHUSDC', 'ETHBTC', 'BNBBTC']
+
+    db.set_binance_pairs('binance', [], Location.BINANCE)
+    query = db.get_binance_pairs('binance', Location.BINANCE)
+    assert query == []

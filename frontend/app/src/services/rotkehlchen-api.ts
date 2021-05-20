@@ -872,6 +872,22 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
+  queryBinanceMarkets(): Promise<string[]> {
+    return this.axios
+      .get<ActionResult<string[]>>('/exchanges/binance/pairs')
+      .then(handleResponse);
+  }
+
+  queryBinanceUserMarkets(name: string, location: string): Promise<string[]> {
+    return this.axios
+      .get<ActionResult<string[]>>(`/exchanges/binance/pairs/${name}`, {
+        params: axiosSnakeCaseTransformer({
+          location: location
+        })
+      })
+      .then(handleResponse);
+  }
+
   downloadCSV(): Promise<ActionStatus> {
     return this.axios
       .get('/history/download', {

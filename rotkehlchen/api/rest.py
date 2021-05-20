@@ -481,6 +481,7 @@ class RestAPI():
             api_secret: ApiSecret,
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
+            binance_markets: Optional[List[str]],
     ) -> Response:
         result = None
         status_code = HTTPStatus.OK
@@ -492,6 +493,7 @@ class RestAPI():
             api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
+            binance_markets=binance_markets,
         )
         if not result:
             result = None
@@ -509,6 +511,7 @@ class RestAPI():
             api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
+            binance_markets: Optional[List[str]],
     ) -> Response:
         result: Optional[bool] = True
         status_code = HTTPStatus.OK
@@ -522,6 +525,7 @@ class RestAPI():
                 api_secret=api_secret,
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
+                binance_markets=binance_markets,
             )
         except InputError as e:
             edited = False
@@ -3006,4 +3010,18 @@ class RestAPI():
         return api_response(
             result={'result': response['result'], 'message': response['message']},
             status_code=response.get('status_code', HTTPStatus.OK),
+        )
+
+    def get_all_binance_pairs(self) -> Response:
+        return api_response(
+            _wrap_in_ok_result(list(self.rotkehlchen.exchange_manager.get_all_binance_pairs())),
+            status_code=HTTPStatus.OK,
+        )
+
+    def get_user_binance_pairs(self, name: str, location: Location) -> Response:
+        return api_response(
+            _wrap_in_ok_result(
+                self.rotkehlchen.exchange_manager.get_user_binance_pairs(name, location),
+            ),
+            status_code=HTTPStatus.OK,
         )

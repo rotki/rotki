@@ -26,6 +26,7 @@ from rotkehlchen.api.v1.encoding import (
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
     BaseXpubSchema,
+    BinanceMarketsUserSchema,
     BlockchainAccountsDeleteSchema,
     BlockchainAccountsGetSchema,
     BlockchainAccountsPatchSchema,
@@ -252,6 +253,7 @@ class ExchangesResource(BaseResource):
             api_secret: ApiSecret,
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
+            binance_markets: Optional[List[str]],
     ) -> Response:
         return self.rest_api.setup_exchange(
             name=name,
@@ -260,6 +262,7 @@ class ExchangesResource(BaseResource):
             api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
+            binance_markets=binance_markets,
         )
 
     @use_kwargs(patch_schema, location='json')
@@ -272,6 +275,7 @@ class ExchangesResource(BaseResource):
             api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
+            binance_markets: Optional[List[str]],
     ) -> Response:
         return self.rest_api.edit_exchange(
             name=name,
@@ -281,6 +285,7 @@ class ExchangesResource(BaseResource):
             api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
+            binance_markets=binance_markets,
         )
 
     @use_kwargs(delete_schema, location='json')
@@ -1576,3 +1581,17 @@ class ERC20TokenInfo(BaseResource):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, address: ChecksumEthAddress, async_query: bool) -> Response:
         return self.rest_api.get_token_information(address, async_query)
+
+
+class BinanceAvailableMarkets(BaseResource):
+    def get(self) -> Response:
+        return self.rest_api.get_all_binance_pairs()
+
+
+class BinanceUserMarkets(BaseResource):
+
+    get_schema = BinanceMarketsUserSchema()
+
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(self, name: str, location: Location) -> Response:
+        return self.rest_api.get_user_binance_pairs(name, location)

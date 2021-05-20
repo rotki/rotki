@@ -1023,7 +1023,7 @@ Setup or remove an exchange
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "my kraken key", "location": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret"}
+      {"name": "my kraken key", "location": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret", "binance_markets": ["ETHUSDC", "BTCUSDC"]}
 
    :reqjson string name: A name to give to this exchange's key
    :reqjson string location: The location of the exchange to setup
@@ -1031,6 +1031,7 @@ Setup or remove an exchange
    :reqjson string api_secret: The api secret with which to setup the exchange
    :reqjson string passphrase: An optional passphrase, only for exchanges, like coinbase pro, which need a passphrase.
    :reqjson string kraken_account_type: An optional setting for kraken. The type of the user's kraken account. Valid values are "starter", "intermediate" and "pro".
+   :reqjson list binance_markets: An optional setting for binance and binanceus. A list of string for markets that should be queried.
 
    **Example Response**:
 
@@ -8106,3 +8107,58 @@ ERC20 token info
    :statuscode 200: No critical error found.
    :statuscode 409: There is an error with the address.
    :statuscode 500: Internal rotki error.
+
+All Binance markets
+======================
+
+.. http:get:: /api/(version)/exchanges/binance/pairs
+
+   Doing a GET to this endpoint will return all the market pairs available at binance.
+
+   .. note::
+      This endpoint will only return information if either Binance or Binance US are configured
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/exchanges/binance/pairs HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": ["BTCUSD", "ETHUSD", "XRPUSD"],
+          "message": ""
+      }
+
+User selected Binance markets
+================================
+
+.. http:get:: /api/(version)/exchanges/binance/pairs/(exchange account name)
+
+   Doing a GET to this endpoint will return the market pairs that the user has selected to be queried at binance.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/exchanges/binance/pairs/testExchange HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": ["BTCUSD", "ETHUSD"],
+          "message": ""
+      }

@@ -116,14 +116,25 @@
         @input="onUpdateExchange({ ...exchange, passphrase: $event })"
       />
     </div>
+
+    <binance-pairs-selector
+      v-if="isBinance & edit"
+      :value="binancePairs"
+      :name="exchange.name"
+      :location="exchange.location"
+      @input="onUpdateExchange({ ...exchange, binanceMarkets: $event })"
+    />
   </v-form>
 </template>
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
+import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import {
+  EXCHANGE_BINANCE,
+  EXCHANGE_BINANCEUS,
   EXCHANGE_COINBASEPRO,
   EXCHANGE_KRAKEN,
   EXCHANGE_KUCOIN,
@@ -136,7 +147,7 @@ import { trimOnPaste } from '@/utils/event';
 
 @Component({
   name: 'ExchangeKeysForm',
-  components: { RevealableInput, ExchangeDisplay }
+  components: { RevealableInput, ExchangeDisplay, BinancePairsSelector }
 })
 export default class ExchangeKeysForm extends Vue {
   readonly krakenAccountTypes = KRAKEN_ACCOUNT_TYPES;
@@ -157,6 +168,7 @@ export default class ExchangeKeysForm extends Vue {
   @Emit('update:exchange')
   onUpdateExchange(_exchange: ExchangePayload) {}
 
+  binancePairs: string[] = [];
   editKeys: boolean = false;
 
   toggleEdit() {
@@ -195,6 +207,11 @@ export default class ExchangeKeysForm extends Vue {
     return exchange === EXCHANGE_COINBASEPRO || exchange === EXCHANGE_KUCOIN;
   }
 
+  get isBinance(): boolean {
+    const exchange = this.exchange.location;
+    return exchange === EXCHANGE_BINANCE || exchange === EXCHANGE_BINANCEUS;
+  }
+
   onExchangeChange(exchange: SupportedExchange) {
     (this.$refs.form as any).reset();
     this.onUpdateExchange({
@@ -204,7 +221,8 @@ export default class ExchangeKeysForm extends Vue {
       apiKey: null,
       apiSecret: null,
       passphrase: null,
-      krakenAccountType: exchange === EXCHANGE_KRAKEN ? 'starter' : null
+      krakenAccountType: exchange === EXCHANGE_KRAKEN ? 'starter' : null,
+      binanceMarkets: null
     });
   }
 

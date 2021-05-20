@@ -4,7 +4,7 @@ from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
-from rotkehlchen.constants.misc import BINANCE_BASE_URL, BINANCEUS_BASE_URL
+from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
@@ -90,6 +90,7 @@ class ExchangeManager():
             api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
+            binance_markets: Optional[List[str]],
     ) -> Tuple[bool, str]:
         """Edits both the exchange object and the database entry
 
@@ -111,6 +112,7 @@ class ExchangeManager():
             api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
+            binance_markets=binance_markets,
             should_commit=False,
         )
 
@@ -121,6 +123,7 @@ class ExchangeManager():
             api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
+            binance_markets=binance_markets,
         )
         if success is False:
             self.database.conn.rollback()  # the database changes that happened need rollback
@@ -274,3 +277,18 @@ class ExchangeManager():
                     **extras,
                 )
                 self.connected_exchanges[location].append(exchange_obj)
+
+    def get_all_binance_pairs(self) -> List[str]:
+        if Location.BINANCE in self.connected_exchanges:
+            binance = self.connected_exchanges[Location.BINANCE][0]
+            return binance._symbols_to_pair.keys()  # type: ignore
+        if Location.BINANCEUS in self.connected_exchanges:
+            binance = self.connected_exchanges[Location.BINANCEUS][0]
+            return binance._symbols_to_pair.keys()  # type: ignore
+        return []
+
+    def get_user_binance_pairs(self, name: str, location: Location) -> List[str]:
+        is_connected = location in self.connected_exchanges
+        if is_connected:
+            return self.database.get_binance_pairs(name, location)
+        return []

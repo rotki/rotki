@@ -86,6 +86,7 @@ from rotkehlchen.errors import (
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.binance import BINANCE_MARKETS_KEY
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
@@ -2182,6 +2183,7 @@ class DBHandler:
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
             kraken_account_type: Optional[KrakenAccountType] = None,
+            binance_markets: Optional[List[str]] = None,
     ) -> None:
         if location not in SUPPORTED_EXCHANGES:
             raise InputError(f'Unsupported exchange {str(location)}')
@@ -2200,6 +2202,10 @@ class DBHandler:
                 'VALUES (?, ?, ?, ?)',
                 (name, location.serialize_for_db(), 'kraken_account_type', kraken_account_type.serialize()),  # noqa: E501
             )
+
+        if location in (Location.BINANCE, Location.BINANCEUS) and binance_markets is not None:
+            self.set_binance_pairs(name, binance_markets, location)
+
         self.conn.commit()
         self.update_last_write()
 
@@ -2212,6 +2218,7 @@ class DBHandler:
             api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
+            binance_markets: Optional[List[str]],
             should_commit: bool = False,
     ) -> None:
         """May raise InputError if something is wrong with editing the DB"""
@@ -2259,6 +2266,15 @@ class DBHandler:
                         kraken_account_type.serialize(),
                     ),
                 )
+            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                self.conn.rollback()
+                raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
+
+        location_is_binance = location in (Location.BINANCE, Location.BINANCEUS)
+        if location_is_binance and binance_markets is not None:
+            try:
+                exchange_name = new_name if new_name is not None else name
+                self.set_binance_pairs(exchange_name, binance_markets, location)
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 self.conn.rollback()
                 raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
@@ -2333,6 +2349,35 @@ class DBHandler:
                 continue
 
         return extras
+
+    def set_binance_pairs(self, name: str, pairs: List[str], location: Location) -> None:
+        cursor = self.conn.cursor()
+        data = json.dumps(pairs)
+        cursor.execute(
+            'INSERT OR REPLACE INTO user_credentials_mappings '
+            '(credential_name, credential_location, setting_name, setting_value) '
+            'VALUES (?, ?, ?, ?)',
+            (
+                name,
+                location.serialize_for_db(),
+                BINANCE_MARKETS_KEY,
+                data,
+            ),
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_binance_pairs(self, name: str, location: Location) -> List[str]:
+        cursor = self.conn.cursor()
+        result = cursor.execute(
+            'SELECT setting_value FROM user_credentials_mappings WHERE '
+            'credential_name=? AND credential_location=? AND setting_name=?',
+            (name, location.serialize_for_db(), BINANCE_MARKETS_KEY),  # noqa: E501
+        )
+        data = result.fetchone()
+        if data and data[0] != '':
+            return json.loads(data[0])
+        return []
 
     def write_tuples(
             self,

@@ -1146,6 +1146,7 @@ class ExchangesResourceEditSchema(Schema):
     api_secret = ApiSecretField(missing=None)
     passphrase = fields.String(missing=None)
     kraken_account_type = KrakenAccountTypeField(missing=None)
+    binance_markets = fields.List(fields.String(), missing=None)
 
 
 class ExchangesResourceAddSchema(Schema):
@@ -1155,6 +1156,7 @@ class ExchangesResourceAddSchema(Schema):
     api_secret = ApiSecretField(required=True)
     passphrase = fields.String(missing=None)
     kraken_account_type = KrakenAccountTypeField(missing=None)
+    binance_markets = fields.List(fields.String(), missing=None)
 
 
 class ExchangesDataResourceSchema(Schema):
@@ -1788,3 +1790,8 @@ class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
 class ERC20InfoSchema(Schema):
     address = EthereumAddressField(required=True)
     async_query = fields.Boolean(missing=False)
+
+
+class BinanceMarketsUserSchema(Schema):
+    name = fields.String(required=True)
+    location = LocationField(limit_to=[Location.BINANCEUS, Location.BINANCE], required=True)

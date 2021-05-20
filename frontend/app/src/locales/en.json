@@ -150,6 +150,17 @@
     "default_label": "Filter account(s)",
     "hint": "Showing results across {hintText} accounts."
   },
+  "binance_market_selector": {
+    "default_label": "Filter market pair(s)",
+    "query_all": {
+      "title": "Query Binance markets",
+      "error": "Couldn't get the list of markets for binance."
+    },
+    "query_user": {
+      "title": "Query selected Binance markets",
+      "error": "Couldn't get the list of markets selected to be queried for binance."
+    }
+  },
   "change_password": {
     "button": "Change Password",
     "labels": {

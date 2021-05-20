@@ -1049,6 +1049,7 @@ class Rotkehlchen():
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
             kraken_account_type: Optional['KrakenAccountType'] = None,
+            binance_markets: Optional[List[str]] = None,
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase
@@ -1071,6 +1072,7 @@ class Rotkehlchen():
                 api_secret=api_secret,
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
+                binance_markets=binance_markets,
             )
         return is_success, msg
 

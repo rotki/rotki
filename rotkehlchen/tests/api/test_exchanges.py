@@ -1015,3 +1015,18 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges):
             # all of the api keys end up in session headers. Check they are properly
             # updated there
             assert any(new_key in value for _, value in exchange.session.headers.items())
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
+def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
+    """Test that the binance endpoint returns some market pairs"""
+    server = rotkehlchen_api_server_with_exchanges
+    response = requests.get(
+        api_url_for(
+            server,
+            'binanceavailablemarkets',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    some_pairs = {'ETHUSDC', 'BTCUSDC', 'BNBBTC', 'FTTBNB'}
+    assert some_pairs.issubset(result)
