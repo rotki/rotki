@@ -3282,6 +3282,37 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
+    def replace_asset_identifier(self, source_identifier: str, target_asset: Asset) -> None:
+        """Replaces a given source identifier either both in the global or the local
+        user DB with another given asset.
+
+        May raise:
+        - UnknownAsset if the source_identifier can be found nowhere
+        - InputError if it's not possible to perform the replacement for some reason
+        """
+        globaldb = GlobalDBHandler()
+        globaldb_data = globaldb.get_asset_data(identifier=source_identifier, form_with_incomplete_data=True)  # noqa: E501
+
+        cursor = self.conn.cursor()
+        userdb_query = cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?;', source_identifier,
+        ).fetchone()
+
+        if userdb_query == 0 and globaldb_data is None:
+            raise UnknownAsset(source_identifier)
+
+        if globaldb_data is not None:
+            globaldb.delete_asset_by_identifer(source_identifier, globaldb_data.asset_type)
+
+        if userdb_query != 0:
+            cursor.execute(
+                'UPDATE assets SET identifier=? WHERE identifier=?;',
+                source_identifier, target_asset.identifier,
+            )
+
+        self.conn.commit()
+        self.update_last_write()
+
     def get_latest_location_value_distribution(self) -> List[LocationData]:
         """Gets the latest location data
 

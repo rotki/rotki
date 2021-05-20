@@ -67,6 +67,7 @@ from rotkehlchen.errors import (
     RotkehlchenPermissionError,
     SystemPermissionError,
     TagConstraintError,
+    UnknownAsset,
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import Trade
@@ -1370,6 +1371,17 @@ class RestAPI():
 
         # Also clear the in-memory cache of the asset resolver
         AssetResolver().assets_cache.pop(identifier, None)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def replace_asset(self, source_identifier: str, target_asset: Asset) -> Response:
+        try:
+            self.rotkehlchen.data.db.replace_asset_identifier(source_identifier, target_asset)
+        except (UnknownAsset, InputError) as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        # Also clear the in-memory cache of the asset resolver
+        AssetResolver().assets_cache.pop(source_identifier, None)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @staticmethod

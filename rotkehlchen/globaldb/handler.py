@@ -871,6 +871,33 @@ class GlobalDBHandler():
         connection.commit()
 
     @staticmethod
+    def delete_asset_by_identifer(identifier: str, asset_type: AssetType) -> None:
+        """Delete an asset by identifier EVEN if it's in the owned assets table
+
+        May raise InputError if there is a foreign key relation such as the asset
+        is a swapped_for or forked_for of another asset.
+        """
+        globaldb = GlobalDBHandler()
+        connection = globaldb._conn
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM user_owned_assets WHERE asset_id=?;', (identifier,))
+        cursor.execute(
+            'DELETE FROM price_history WHERE from_asset=? OR to_asset=? ;',
+            (identifier, identifier),
+        )
+
+        try:
+            if asset_type == AssetType.ETHEREUM_TOKEN:
+                globaldb.delete_ethereum_token(identifier[6:])  # type: ignore
+            else:
+                globaldb.delete_custom_asset(identifier)
+        except InputError:
+            connection.rollback()
+            raise
+
+        connection.commit()
+
+    @staticmethod
     def get_assets_with_symbol(symbol: str, asset_type: Optional[AssetType] = None) -> List[AssetData]:  # noqa: E501
         """Find all asset entries that have the given symbol"""
         connection = GlobalDBHandler()._conn

@@ -1614,6 +1614,11 @@ class ModifyAssetSchema(Schema):
     token = fields.Nested(AssetSchema, required=True)
 
 
+class AssetsReplaceSchema(Schema):
+    source_identifier = fields.String(required=True)
+    target_asset = AssetField(required=True, form_with_incomplete_data=True)
+
+
 class QueriedAddressesSchema(Schema):
     module = fields.String(
         required=True,
