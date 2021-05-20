@@ -402,6 +402,8 @@
   "asset_form": {
     "help_coingecko": "Click for help on how to locate the CoinGecko identifier",
     "help_cryptocompare": "Click for help on how to locate the CryptoCompare identifier",
+    "identifier": "Identifier",
+    "identifier_copy": "Copy the identifier",
     "labels": {
       "address": "Address",
       "asset_type": "Asset Type",
