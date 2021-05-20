@@ -14,6 +14,7 @@ export const VALUE_ROUNDING_MODE = 'valueRoundingMode' as const;
 export const DARK_MODE_ENABLED = 'darkModeEnabled' as const;
 export const LIGHT_THEME = 'lightTheme' as const;
 export const DARK_THEME = 'darkTheme' as const;
+export const GRAPH_ZERO_BASED = 'graphZeroBased' as const;
 
 export const TIMEFRAME_ALL = 'All';
 export const TIMEFRAME_YEAR = '1Y';

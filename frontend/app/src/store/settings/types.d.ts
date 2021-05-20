@@ -18,7 +18,8 @@ import {
   VALUE_ROUNDING_MODE,
   DARK_MODE_ENABLED,
   LIGHT_THEME,
-  DARK_THEME
+  DARK_THEME,
+  GRAPH_ZERO_BASED
 } from '@/store/settings/consts';
 import { CurrencyLocation } from '@/typing/types';
 import RoundingMode = BigNumber.RoundingMode;
@@ -75,8 +76,7 @@ export interface SettingsState {
   readonly [DARK_MODE_ENABLED]: boolean;
   readonly [LIGHT_THEME]: ThemeColors;
   readonly [DARK_THEME]: ThemeColors;
+  readonly [GRAPH_ZERO_BASED]: boolean;
 }
 
-export type FrontendSettingsPayload = {
-  +readonly [P in keyof SettingsState]+?: SettingsState[P];
-};
+export type FrontendSettingsPayload = Partial<SettingsState>;

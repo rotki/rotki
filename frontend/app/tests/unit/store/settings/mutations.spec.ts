@@ -18,7 +18,8 @@ import {
   AMOUNT_ROUNDING_MODE,
   DARK_MODE_ENABLED,
   LIGHT_THEME,
-  DARK_THEME
+  DARK_THEME,
+  GRAPH_ZERO_BASED
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 import store from '@/store/store';
@@ -57,7 +58,8 @@ describe('settings:mutations', () => {
         primary: '#ffffff',
         accent: '#000000',
         graph: '#555555'
-      }
+      },
+      [GRAPH_ZERO_BASED]: true
     };
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
@@ -92,5 +94,6 @@ describe('settings:mutations', () => {
       accent: '#000000',
       graph: '#555555'
     });
+    expect(settings[GRAPH_ZERO_BASED]).toBe(true);
   });
 });
