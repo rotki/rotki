@@ -30,7 +30,7 @@ export interface LocationBalance {
   readonly usdValue: BigNumber;
 }
 
-export interface ManualBalanceByLocation {
+export interface BalanceByLocation {
   [location: string]: BigNumber;
 }
 
@@ -57,7 +57,7 @@ export interface BalanceState {
   ksmAccounts: GeneralAccountData[];
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalanceWithValue[];
-  manualBalanceByLocation: ManualBalanceByLocation;
+  manualBalanceByLocation: BalanceByLocation;
   prices: AssetPrices;
 }
 

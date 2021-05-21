@@ -55,9 +55,11 @@ export const getters: Getters<
       netValue.data.push(convert(data[i]));
     }
 
+    const now = Math.floor(new Date().getTime() / 1000);
+    const netWorth = Math.floor(getters.totalNetWorth.toNumber());
     return {
-      times: [...netValue.times, new Date().getTime() / 1000],
-      data: [...netValue.data, getters.totalNetWorth.toNumber()]
+      times: netWorth > 0 ? [...netValue.times, now] : [...netValue.times],
+      data: netWorth > 0 ? [...netValue.data, netWorth] : [...netValue.data]
     };
   },
 

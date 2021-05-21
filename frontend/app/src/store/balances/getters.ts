@@ -1,6 +1,7 @@
 import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
+import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { BlockchainAssetBalances } from '@/services/balances/types';
 import { Balance, GeneralAccountData, HasBalance } from '@/services/types-api';
 import {
@@ -17,7 +18,7 @@ import {
   IdentifierForSymbolGetter,
   L2Totals,
   LocationBalance,
-  ManualBalanceByLocation
+  BalanceByLocation
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
@@ -65,6 +66,7 @@ export interface BalanceGetters {
   loopringBalances: (address: string) => AssetBalance[];
   blockchainAssets: AssetBalance[];
   getIdentifierForSymbol: IdentifierForSymbolGetter;
+  byLocation: BalanceByLocation;
 }
 
 function balances(
@@ -304,8 +306,8 @@ export const getters: Getters<
     });
 
     // Aggregate all balances per location
-    const aggregateManualBalancesByLocation: ManualBalanceByLocation = simplifyManualBalances.reduce(
-      (result: ManualBalanceByLocation, manualBalance: LocationBalance) => {
+    const aggregateManualBalancesByLocation: BalanceByLocation = simplifyManualBalances.reduce(
+      (result: BalanceByLocation, manualBalance: LocationBalance) => {
         if (result[manualBalance.location]) {
           // if the location exists on the reduced object, add the usdValue of the current item to the previous total
           result[manualBalance.location] = result[manualBalance.location].plus(
@@ -683,5 +685,33 @@ export const getters: Getters<
       return asset?.symbol ?? identifier;
     }
     return identifier.symbol;
+  },
+  byLocation: (
+    state,
+    { blockchainTotal, exchanges, manualBalanceByLocation: manual }
+  ) => {
+    const byLocation: BalanceByLocation = {};
+
+    for (const { location, usdValue } of manual) {
+      byLocation[location] = usdValue;
+    }
+
+    const blockchain = byLocation[TRADE_LOCATION_BLOCKCHAIN];
+    if (blockchain) {
+      byLocation[TRADE_LOCATION_BLOCKCHAIN] = blockchain.plus(blockchainTotal);
+    } else {
+      byLocation[TRADE_LOCATION_BLOCKCHAIN] = blockchainTotal;
+    }
+
+    for (const { location, total } of exchanges) {
+      const locationElement = byLocation[location];
+      if (locationElement) {
+        byLocation[location] = locationElement.plus(total);
+      } else {
+        byLocation[location] = total;
+      }
+    }
+
+    return byLocation;
   }
 };
