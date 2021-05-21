@@ -2051,6 +2051,9 @@ class DBHandler:
             ) from e
         insert_tag_mappings(cursor=cursor, data=data, object_reference_keys=['label'])
 
+        # make sure assets are included in the global db user owned assets
+        GlobalDBHandler().add_user_owned_assets([x.asset for x in data])
+
         self.conn.commit()
         self.update_last_write()
 
@@ -3295,8 +3298,8 @@ class DBHandler:
 
         cursor = self.conn.cursor()
         userdb_query = cursor.execute(
-            'SELECT COUNT(*) FROM assets WHERE identifier=?;', source_identifier,
-        ).fetchone()
+            'SELECT COUNT(*) FROM assets WHERE identifier=?;', (source_identifier,),
+        ).fetchone()[0]
 
         if userdb_query == 0 and globaldb_data is None:
             raise UnknownAsset(source_identifier)
@@ -3305,9 +3308,18 @@ class DBHandler:
             globaldb.delete_asset_by_identifer(source_identifier, globaldb_data.asset_type)
 
         if userdb_query != 0:
+            # the tricky part here is that we need to disable foreign keys for this
+            # approach and disabling foreign keys needs a commit. So rollback is impossible.
+            # But there is no way this can fail. (famous last words)
+            cursor.executescript('PRAGMA foreign_keys = OFF;')
+            cursor.execute(
+                'DELETE from assets WHERE identifier=?;',
+                (target_asset.identifier,),
+            )
+            cursor.executescript('PRAGMA foreign_keys = ON;')
             cursor.execute(
                 'UPDATE assets SET identifier=? WHERE identifier=?;',
-                source_identifier, target_asset.identifier,
+                (target_asset.identifier, source_identifier),
             )
 
         self.conn.commit()
@@ -3535,7 +3547,6 @@ class DBHandler:
         May raise:
         - InputError if the xpub data already exist
         """
-
         cursor = self.conn.cursor()
         try:
             cursor.execute(
