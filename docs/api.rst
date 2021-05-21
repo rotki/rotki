@@ -2711,6 +2711,44 @@ Performing an asset update
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error while trying to reach the remote for asset updates.
 
+Replacing an asset
+========================
+
+.. http:put:: /api/(version)/assets/replace
+
+   It's possible to replace an asset with another asset in both the global and the user DB. If the source asset identifier exists in the global DB it's removed in favor of the target asset. If not, the global DB is not touched. In both cases the user DB is touched and all appearances of the source asset identifier are replaced with target asset.
+   If the asset you are replacing is used as swapped_for, forked_for or underlying asset by another asset you will first have to manually delete it from there.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/replace HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"source_identifier": "4979582b-ee8c-4d45-b461-15c4220de666", "target_asset": "BTC"}
+
+   :reqjson string source_identifier: The identifier of the asset that will get replaced/removed. This asset does not need to exist in the global DB. If it does it will be removed.
+   :reqjson string target_asset: The identifier of the asset that will replace the source asset. This must be an existing asset.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :statuscode 200: Asset succesfully replaced.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: Some conflict at replacing or user is not loggged in.
+   :statuscode 500: Internal Rotki error
+
 Querying asset icons
 ======================
 

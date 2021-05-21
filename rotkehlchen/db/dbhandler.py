@@ -2051,6 +2051,9 @@ class DBHandler:
             ) from e
         insert_tag_mappings(cursor=cursor, data=data, object_reference_keys=['label'])
 
+        # make sure assets are included in the global db user owned assets
+        GlobalDBHandler().add_user_owned_assets([x.asset for x in data])
+
         self.conn.commit()
         self.update_last_write()
 
@@ -3282,6 +3285,46 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
+    def replace_asset_identifier(self, source_identifier: str, target_asset: Asset) -> None:
+        """Replaces a given source identifier either both in the global or the local
+        user DB with another given asset.
+
+        May raise:
+        - UnknownAsset if the source_identifier can be found nowhere
+        - InputError if it's not possible to perform the replacement for some reason
+        """
+        globaldb = GlobalDBHandler()
+        globaldb_data = globaldb.get_asset_data(identifier=source_identifier, form_with_incomplete_data=True)  # noqa: E501
+
+        cursor = self.conn.cursor()
+        userdb_query = cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?;', (source_identifier,),
+        ).fetchone()[0]
+
+        if userdb_query == 0 and globaldb_data is None:
+            raise UnknownAsset(source_identifier)
+
+        if globaldb_data is not None:
+            globaldb.delete_asset_by_identifer(source_identifier, globaldb_data.asset_type)
+
+        if userdb_query != 0:
+            # the tricky part here is that we need to disable foreign keys for this
+            # approach and disabling foreign keys needs a commit. So rollback is impossible.
+            # But there is no way this can fail. (famous last words)
+            cursor.executescript('PRAGMA foreign_keys = OFF;')
+            cursor.execute(
+                'DELETE from assets WHERE identifier=?;',
+                (target_asset.identifier,),
+            )
+            cursor.executescript('PRAGMA foreign_keys = ON;')
+            cursor.execute(
+                'UPDATE assets SET identifier=? WHERE identifier=?;',
+                (target_asset.identifier, source_identifier),
+            )
+
+        self.conn.commit()
+        self.update_last_write()
+
     def get_latest_location_value_distribution(self) -> List[LocationData]:
         """Gets the latest location data
 
@@ -3504,7 +3547,6 @@ class DBHandler:
         May raise:
         - InputError if the xpub data already exist
         """
-
         cursor = self.conn.cursor()
         try:
             cursor.execute(

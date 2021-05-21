@@ -20,6 +20,7 @@ from rotkehlchen.api.v1.encoding import (
     AssetIconUploadSchema,
     AssetSchema,
     AssetSchemaWithIdentifier,
+    AssetsReplaceSchema,
     AssetUpdatesRequestSchema,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
@@ -407,6 +408,15 @@ class AssetsTypesResource(BaseResource):
 
     def get(self) -> Response:
         return self.rest_api.get_asset_types()
+
+
+class AssetsReplaceResource(BaseResource):
+
+    put_schema = AssetsReplaceSchema()
+
+    @use_kwargs(put_schema, location='json')
+    def put(self, source_identifier: str, target_asset: Asset) -> Response:
+        return self.rest_api.replace_asset(source_identifier, target_asset)
 
 
 class EthereumAssetsResource(BaseResource):

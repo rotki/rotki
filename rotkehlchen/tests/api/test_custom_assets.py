@@ -1,4 +1,6 @@
+from copy import deepcopy
 from http import HTTPStatus
+from typing import Any, Dict, List
 
 import pytest
 import requests
@@ -6,11 +8,13 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
 )
 from rotkehlchen.typing import Location
 
@@ -437,3 +441,281 @@ def test_query_asset_types(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert result == [str(x) for x in AssetType]
     assert all(isinstance(AssetType.deserialize(x), AssetType) for x in result)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+@pytest.mark.parametrize('only_in_globaldb', [True, False])
+def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
+    """Test that the endpoint for replacing an asset identifier works
+
+    Test for both an asset owned by the user and not (the only_in_globaldb case)
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    cursor = rotki.data.db.conn.cursor()
+    custom1 = {
+        'asset_type': 'own chain',
+        'name': 'Dfinity token',
+        'symbol': 'ICP',
+        'started': 5,
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=custom1,
+    )
+    result = assert_proper_response_with_result(response)
+    custom1_id = result['identifier']
+
+    if only_in_globaldb:
+        cursor.execute('DELETE FROM assets where identifier=?', (custom1_id,))
+
+    balances: List[Dict[str, Any]] = [{
+        'asset': custom1_id,
+        'label': 'ICP account',
+        'amount': '50.315',
+        'location': 'blockchain',
+    }]
+    expected_balances = deepcopy(balances)
+    expected_balances[0]['usd_value'] = str(FVal(balances[0]['amount']) * FVal('1.5'))
+    expected_balances[0]['tags'] = None
+
+    if not only_in_globaldb:
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'manuallytrackedbalancesresource',
+            ), json={'async_query': False, 'balances': balances},
+        )
+        assert_proper_response_with_result(response)
+
+    # before the replacement. Check that we got a globaldb entry in owned assets
+    global_cursor = globaldb._conn.cursor()
+    if not only_in_globaldb:
+        assert global_cursor.execute(
+            'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (custom1_id,),
+        ).fetchone()[0] == 1
+        # check the custom asset is in user db
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (custom1_id,),
+        ).fetchone()[0] == 1
+        # Check that the manual balance is returned
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'manuallytrackedbalancesresource',
+            ), json={'async_query': False},
+        )
+        result = assert_proper_response_with_result(response)
+        assert result['balances'] == expected_balances
+
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': custom1_id, 'target_asset': 'ICP'},
+    )
+    assert_simple_ok_response(response)
+
+    # after the replacement. Check that the manual balance is changed
+    if not only_in_globaldb:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'manuallytrackedbalancesresource',
+            ), json={'async_query': False},
+        )
+        result = assert_proper_response_with_result(response)
+        expected_balances[0]['asset'] = 'ICP'
+        assert result['balances'] == expected_balances
+        # check the previous asset is not in userdb anymore
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (custom1_id,),
+        ).fetchone()[0] == 0
+
+    # check the previous asset is not in globaldb owned assets
+    assert global_cursor.execute(
+        'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (custom1_id,),
+    ).fetchone()[0] == 0
+    # check the previous asset is not in globaldb
+    assert global_cursor.execute(
+        'SELECT COUNT(*) FROM assets WHERE identifier=?', (custom1_id,),
+    ).fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_replace_asset_not_in_globaldb(rotkehlchen_api_server, globaldb):
+    """Test that the endpoint for replacing an asset identifier works even if
+    the source asset identifier is not in the global DB"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    # Emulate some custom state that can be reached if somehow you end up with a user
+    # DB asset that is not in the global DB
+    unknown_id = 'foo-boo-goo-doo'
+    cursor = rotki.data.db.conn.cursor()
+    cursor.execute('INSERT INTO assets VALUES(?)', (unknown_id,))
+    cursor.execute(
+        'INSERT INTO manually_tracked_balances(asset, label, amount, location) '
+        'VALUES (?, ?, ?, ?)',
+        (unknown_id, 'forgotten balance', '1', 'A'),
+    )
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM assets WHERE identifier=?', (unknown_id,),
+    ).fetchone()[0] == 1
+    # Check that the manual balance is there -- can't query normally due to unknown asset
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM manually_tracked_balances WHERE asset=?', (unknown_id,),
+    ).fetchone()[0] == 1
+
+    # now do the replacement
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': unknown_id, 'target_asset': 'ICP'},
+    )
+    assert_simple_ok_response(response)
+
+    # after the replacement. Check that the manual balance is changed an is now queriable
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'manuallytrackedbalancesresource',
+        ), json={'async_query': False},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['balances'] == [{
+        'asset': 'ICP',
+        'label': 'forgotten balance',
+        'amount': '1',
+        'usd_value': '1.5',
+        'tags': None,
+        'location': 'external',
+    }]
+    # check the previous asset is not in globaldb owned assets
+    global_cursor = globaldb._conn.cursor()
+    assert global_cursor.execute(
+        'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (unknown_id,),
+    ).fetchone()[0] == 0
+    # check the previous asset is not in globaldb
+    assert global_cursor.execute(
+        'SELECT COUNT(*) FROM assets WHERE identifier=?', (unknown_id,),
+    ).fetchone()[0] == 0
+    # check the previous asset is not in userdb anymore
+    assert cursor.execute(
+        'SELECT COUNT(*) FROM assets WHERE identifier=?', (unknown_id,),
+    ).fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
+    """Test that the edge cases/errors are treated properly in the replace assets endpoint"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    cursor = rotki.data.db.conn.cursor()
+
+    # Test that completely unknown source asset returns error
+    notexisting_id = 'boo-boo-ga-ga'
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': notexisting_id, 'target_asset': 'ICP'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Unknown asset {notexisting_id} provided',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # Test that trying to replace an asset that's used as a foreign key elsewhere in
+    # the global DB does not work, error is returned and no changes happen
+    # in the global DB and in the user DB
+    glm_id = strethaddress_to_identifier('0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429')
+    balances: List[Dict[str, Any]] = [{
+        'asset': glm_id,
+        'label': 'ICP account',
+        'amount': '50.315',
+        'location': 'blockchain',
+    }]
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'manuallytrackedbalancesresource',
+        ), json={'async_query': False, 'balances': balances},
+    )
+    assert_proper_response_with_result(response)
+    global_cursor = globaldb._conn.cursor()
+
+    def assert_db() -> None:
+        assert global_cursor.execute(
+            'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (glm_id,),
+        ).fetchone()[0] == 1
+        assert global_cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE swapped_for=?', (glm_id,),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (glm_id,),
+        ).fetchone()[0] == 1
+
+    assert_db()
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': glm_id, 'target_asset': 'ICP'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Tried to delete ethereum token with address',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    assert_db()
+
+    # Test non-string source identifier
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': 55.1, 'target_asset': 'ICP'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Not a valid string',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Test unknown target asset
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': 'ETH', 'target_asset': 'bobobobobo'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Unknown asset bobobobobo provided',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Test invalid target asset
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': 'ETH', 'target_asset': 55},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Tried to initialize an asset out of a non-string identifier',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
