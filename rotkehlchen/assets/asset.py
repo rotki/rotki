@@ -54,6 +54,9 @@ WORLD_TO_BITTREX = {
     # EDG renamed to EDGELESS
     strethaddress_to_identifier('0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c'): 'EDGELESS',
     strethaddress_to_identifier('0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6'): 'RCN',
+    strethaddress_to_identifier('0x6F919D67967a97EA36195A2346d9244E60FE0dDB'): 'BLOC',
+    strethaddress_to_identifier('0xc528c28FEC0A90C083328BC45f587eE215760A0F'): 'EDR',
+    strethaddress_to_identifier('0xfAE4Ee59CDd86e3Be9e8b90b53AA866327D7c090'): 'CPC',
 }
 
 WORLD_TO_FTX = {
@@ -187,6 +190,12 @@ WORLD_TO_KRAKEN = {
     'REN': 'REN',
     strethaddress_to_identifier('0xE41d2489571d322189246DaFA5ebDe1F4699F498'): 'ZRX',
     strethaddress_to_identifier('0x3F382DbD960E3a9bbCeaE22651E88158d2791550'): 'GHST',
+    strethaddress_to_identifier('0x6B3595068778DD592e39A122f4f5a5cF09C90fE2'): 'SUSHI',
+    strethaddress_to_identifier('0x8290333ceF9e6D528dD5618Fb97a76f268f3EDD4'): 'ANKR',
+    strethaddress_to_identifier('0x58b6A8A3302369DAEc383334672404Ee733aB239'): 'LPT',
+    strethaddress_to_identifier('0x3845badAde8e6dFF049820680d1F14bD3903a5d0'): 'SAND',
+    strethaddress_to_identifier('0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C'): 'BNT',
+    strethaddress_to_identifier('0xF629cBd94d3791C9250152BD8dfBDF380E2a3B9c'): 'ENJ',
 }
 
 WORLD_TO_BINANCE = {
@@ -271,11 +280,13 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0x2ef52Ed7De8c5ce03a4eF0efbe9B7450F2D7Edc9'): 'R',
     # FET is Fetch AI in Kucoin
     strethaddress_to_identifier('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'): 'FET',
-    # WINK is WINk in KUCOIN
-    'WIN-3': 'WINK',
     # As reported in #2805 CAPP refers to this token
     strethaddress_to_identifier('0x11613b1f840bb5A40F8866d857e24DA126B79D73'): 'CAPP',
-    'WIN-4': 'WIN',
+    strethaddress_to_identifier('0x6F919D67967a97EA36195A2346d9244E60FE0dDB'): 'BLOC',
+    'WIN-3': 'WIN',
+    'STX-2': 'STX',
+    strethaddress_to_identifier('0xfAE4Ee59CDd86e3Be9e8b90b53AA866327D7c090'): 'CPC',
+    'ONE-2': 'ONE',
 }
 
 WORLD_TO_ICONOMI = {
@@ -305,6 +316,7 @@ WORLD_TO_ICONOMI = {
 
 WORLD_TO_COINBASE_PRO = {
     strethaddress_to_identifier('0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0'): 'TRB',
+    'SOL-2': 'SOL',
 }
 
 

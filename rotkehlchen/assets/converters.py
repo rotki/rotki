@@ -225,6 +225,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # https://coinmarketcap.com/currencies/nas/
     # Note: This is not the Nebulas NAS token
     'NAS',
+    'NFT',  # Couldn't find any reference to this token
     # Nanolite. No data found except from here:
     # https://www.reddit.com/r/CryptoCurrency/comments/26neqz/nanolite_a_new_x11_cryptocurrency_which_launched/
     'NL',
@@ -417,6 +418,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'FOL',  # neither in coingecko nor cryptocompare
     'GET',  # couldn't find any reference
     'INX',
+    'JASMY',  # neither in coingecko nor cryptocompare
     'MFA',
     'FCT2',  # neither in coingecko nor cryptocompare
     'UPXAU',  # neither in coingecko nor cryptocompare
@@ -498,7 +500,8 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'B21X',  # no cryptocompare/coingecko data
     'GTX',  # no cryptocompare/coingecko data (GT, Gate.io token)
     'IQX',  # no cryptocompare/coingecko data (EOS token)
-    'ID',  # no cryptocompare/coingecko data
+    'IDX',  # no cryptocompare/coingecko data
+    'CHEX',  # no cryptocompare/coingecko data (chintai)
 )
 
 UNSUPPORTED_FTX_ASSETS = (
@@ -587,6 +590,10 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'TT',  # delisted
     'VNX',  # delisted and no cryptocompare/coingecko data
     'VOL',  # delisted
+    'ADA3S',  # no cryptocompare/coingecko data
+    'ADA3L',  # no cryptocompare/coingecko data
+    'FEAR',  # no cryptocompare/coingecko data
+    'DAPPX',  # no cryptocompare/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
