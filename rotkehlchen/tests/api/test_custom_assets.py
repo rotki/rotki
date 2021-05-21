@@ -8,6 +8,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -608,3 +609,113 @@ def test_replace_asset_not_in_globaldb(rotkehlchen_api_server, globaldb):
     assert cursor.execute(
         'SELECT COUNT(*) FROM assets WHERE identifier=?', (unknown_id,),
     ).fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
+    """Test that the edge cases/errors are treated properly in the replace assets endpoint"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    cursor = rotki.data.db.conn.cursor()
+
+    # Test that completely unknown source asset returns error
+    notexisting_id = 'boo-boo-ga-ga'
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': notexisting_id, 'target_asset': 'ICP'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Unknown asset {notexisting_id} provided',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # Test that trying to replace an asset that's used as a foreign key elsewhere in
+    # the global DB does not work, error is returned and no changes happen
+    # in the global DB and in the user DB
+    glm_id = strethaddress_to_identifier('0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429')
+    balances: List[Dict[str, Any]] = [{
+        'asset': glm_id,
+        'label': 'ICP account',
+        'amount': '50.315',
+        'location': 'blockchain',
+    }]
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'manuallytrackedbalancesresource',
+        ), json={'async_query': False, 'balances': balances},
+    )
+    assert_proper_response_with_result(response)
+    global_cursor = globaldb._conn.cursor()
+
+    def assert_db() -> None:
+        assert global_cursor.execute(
+            'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (glm_id,),
+        ).fetchone()[0] == 1
+        assert global_cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE swapped_for=?', (glm_id,),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', (glm_id,),
+        ).fetchone()[0] == 1
+
+    assert_db()
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': glm_id, 'target_asset': 'ICP'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Tried to delete ethereum token with address',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    assert_db()
+
+    # Test non-string source identifier
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': 55.1, 'target_asset': 'ICP'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Not a valid string',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Test unknown target asset
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': 'ETH', 'target_asset': 'bobobobobo'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Unknown asset bobobobobo provided',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Test invalid target asset
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetsreplaceresource',
+        ),
+        json={'source_identifier': 'ETH', 'target_asset': 55},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Tried to initialize an asset out of a non-string identifier',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
