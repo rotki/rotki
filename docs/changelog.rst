@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :feature:`2820` Users will now be able to select if they want to view graphs based at 0 instead of the minimum in the selected period.
+* :feature:`2820` Users will now be able to select if they want to view graphs based at a 0 y-axis start instead of the minimum in the selected period.
 * :feature:`2725` Users will now be able to view a small help dialog with the supported options for the date display format.
 * :feature:`1902` Users can now modify the backend settings (e.g. data directory, log directory) through the application.
 * :feature:`2584` Removed the option to anonymize the logs. Logs are off by default anyway and it was never possible to anonymize accurately and completely when activated so the setting was misleading.
