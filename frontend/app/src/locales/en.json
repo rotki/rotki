@@ -946,7 +946,7 @@
       "refresh": "Set the automatic refresh period",
       "refresh_enabled": "Enabled",
       "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
-      "zero_based": "Use zero as the lowest value for the graphs",
+      "zero_based": "Use zero as the lowest y-axis value for the graphs",
       "zero_based_hint": "By default the lowest value is the minimum in the selected period"
     },
     "subtitle": {
