@@ -3321,9 +3321,8 @@ class DBHandler:
                 'UPDATE assets SET identifier=? WHERE identifier=?;',
                 (target_asset.identifier, source_identifier),
             )
-
-        self.conn.commit()
-        self.update_last_write()
+            self.conn.commit()
+            self.update_last_write()
 
     def get_latest_location_value_distribution(self) -> List[LocationData]:
         """Gets the latest location data
