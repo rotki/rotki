@@ -219,6 +219,22 @@ export class AssetApi {
 
     return this.axios
       .post<ActionResult<PendingTask>>('/assets/updates', data, {
+        validateStatus: validStatus,
+        transformResponse: this.baseTransformer
+      })
+      .then(handleResponse);
+  }
+
+  mergeAssets(
+    sourceIdentifier: string,
+    targetIdentifier: string
+  ): Promise<boolean> {
+    const data = axiosSnakeCaseTransformer({
+      sourceIdentifier,
+      targetIdentifier
+    });
+    return this.axios
+      .put<ActionResult<boolean>>('/assets/replace', data, {
         validateStatus: validWithoutSessionStatus,
         transformResponse: this.baseTransformer
       })
