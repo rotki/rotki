@@ -62,6 +62,7 @@ def gemini_symbol_to_base_quote(symbol: str) -> Tuple[Asset, Asset]:
     - Can raise UnprocessableTradePair if symbol is in unexpected format
     - Case raise UnknownAsset if any of the pair assets are not known to Rotki
     """
+    five_letter_assets = ('sushi', '1inch', 'storj', 'matic')
     if len(symbol) == 6:
         base_asset = asset_from_gemini(symbol[:3].upper())
         quote_asset = asset_from_gemini(symbol[3:].upper())
@@ -73,7 +74,7 @@ def gemini_symbol_to_base_quote(symbol: str) -> Tuple[Asset, Asset]:
             base_asset = asset_from_gemini(symbol[:3].upper())
             quote_asset = asset_from_gemini(symbol[3:].upper())
     elif len(symbol) == 8:
-        if 'storj' in symbol or '1inch' in symbol:
+        if any([asset in symbol for asset in five_letter_assets]):
             base_asset = asset_from_gemini(symbol[:5].upper())
             quote_asset = asset_from_gemini(symbol[5:].upper())
         else:
