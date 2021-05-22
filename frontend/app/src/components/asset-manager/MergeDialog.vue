@@ -100,7 +100,9 @@ export default class MergeDialog extends Vue {
     if (success) {
       this.input(false);
     } else {
-      this.errorMessages.push(message ?? this.$t('merge_dialog.error').toString())
+      this.errorMessages.push(
+        message ?? this.$t('merge_dialog.error').toString()
+      );
     }
     this.pending = false;
   }

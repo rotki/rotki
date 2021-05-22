@@ -225,13 +225,10 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  mergeAssets(
-    sourceIdentifier: string,
-    targetIdentifier: string
-  ): Promise<boolean> {
+  mergeAssets(sourceIdentifier: string, targetAsset: string): Promise<boolean> {
     const data = axiosSnakeCaseTransformer({
       sourceIdentifier,
-      targetIdentifier
+      targetAsset
     });
     return this.axios
       .put<ActionResult<boolean>>('/assets/replace', data, {

@@ -361,7 +361,7 @@
     },
     "source_hint": "The asset identifier that wou want to merge into the target",
     "subtitle": "Merge two assets",
-    "target":  {
+    "target": {
       "label": "Target",
       "non_empty": "The target asset cannot be empty"
     },
