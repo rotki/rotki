@@ -17,6 +17,21 @@
       @timeframe-change="onTimeframeChange"
     />
 
+    <div class="text-h6 mt-4">
+      {{ $t('frontend_settings.subtitle.graph_basis') }}
+    </div>
+
+    <v-switch
+      v-model="zeroBased"
+      class="general-settings__fields__zero-base mb-4"
+      :label="$t('frontend_settings.label.zero_based')"
+      :hint="$t('frontend_settings.label.zero_based_hint')"
+      persistent-hint
+      :success-messages="settingsMessages[GRAPH_ZERO_BASED].success"
+      :error-messages="settingsMessages[GRAPH_ZERO_BASED].error"
+      @change="onZeroBasedUpdate($event)"
+    />
+
     <div class="text-h6">
       {{ $t('frontend_settings.subtitle.refresh') }}
     </div>
@@ -92,6 +107,7 @@ import SettingsMixin from '@/mixins/settings-mixin';
 import { ThemeManager } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import {
+  GRAPH_ZERO_BASED,
   QUERY_PERIOD,
   REFRESH_PERIOD,
   TIMEFRAME_ALL,
@@ -111,7 +127,8 @@ const SETTINGS = [
   SETTING_SCRAMBLE_DATA,
   SETTING_TIMEFRAME,
   SETTING_QUERY_PERIOD,
-  SETTING_REFRESH_PERIOD
+  SETTING_REFRESH_PERIOD,
+  GRAPH_ZERO_BASED
 ] as const;
 
 type SettingsEntries = typeof SETTINGS[number];
@@ -133,11 +150,26 @@ export default class FrontendSettings extends Mixins<
   defaultGraphTimeframe: TimeFrameSetting = TIMEFRAME_ALL;
   refreshPeriod: string = '';
   refreshEnabled: boolean = false;
+  zeroBased: boolean = false;
 
   readonly SCRAMBLE_DATA = SETTING_SCRAMBLE_DATA;
   readonly TIMEFRAME = SETTING_TIMEFRAME;
   readonly QUERY_PERIOD = SETTING_QUERY_PERIOD;
   readonly REFRESH_PERIOD = SETTING_REFRESH_PERIOD;
+  readonly GRAPH_ZERO_BASED = GRAPH_ZERO_BASED;
+
+  async onZeroBasedUpdate(enabled: boolean) {
+    const payload: FrontendSettingsPayload = {
+      [GRAPH_ZERO_BASED]: enabled
+    };
+
+    const messages: BaseMessage = {
+      success: '',
+      error: ''
+    };
+
+    await this.modifyFrontendSetting(payload, GRAPH_ZERO_BASED, messages);
+  }
 
   async onTimeframeChange(timeframe: TimeFrameSetting) {
     const payload: FrontendSettingsPayload = {
@@ -270,6 +302,7 @@ export default class FrontendSettings extends Mixins<
     this.defaultGraphTimeframe = state.settings![TIMEFRAME_SETTING];
     this.queryPeriod = state.settings![QUERY_PERIOD].toString();
     const period = state.settings![REFRESH_PERIOD];
+    this.zeroBased = state.settings![GRAPH_ZERO_BASED];
     this.refreshEnabled = period > 0;
     this.refreshPeriod = this.refreshEnabled ? period.toString() : '';
   }

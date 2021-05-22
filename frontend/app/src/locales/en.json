@@ -945,9 +945,12 @@
       "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
       "refresh": "Set the automatic refresh period",
       "refresh_enabled": "Enabled",
-      "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions."
+      "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
+      "zero_based": "Use zero as the lowest y-axis value for the graphs",
+      "zero_based_hint": "By default the lowest value is the minimum in the selected period"
     },
     "subtitle": {
+      "graph_basis": "Graph basis",
       "query": "Periodic status query",
       "refresh": "Automatic balance refresh"
     },
@@ -2262,6 +2265,7 @@
     "edit_tooltip": "Edit the label and tags of the xpub"
   },
   "accounting_settings": {
+    "ignored_assets": "Total number of ignored assets",
     "title": "Trade Settings",
     "labels": {
       "calculate_past_cost_basis": "Calculate past cost basis when creating the report",

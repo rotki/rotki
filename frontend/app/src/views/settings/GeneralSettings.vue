@@ -96,144 +96,142 @@
           />
           <date-format-help v-model="formatHelp" />
         </card>
-        <v-card class="mt-8">
-          <v-card-title>
-            <card-title>{{ $t('general_settings.amount.title') }}</card-title>
-          </v-card-title>
-          <v-card-text>
-            <v-text-field
-              v-model="floatingPrecision"
-              class="general-settings__fields__floating-precision"
-              :label="$t('general_settings.amount.labels.floating_precision')"
-              type="number"
-              :success-messages="settingsMessages[FLOATING_PRECISION].success"
-              :error-messages="settingsMessages[FLOATING_PRECISION].error"
-              @change="onFloatingPrecisionChange($event)"
-            />
+        <card class="mt-8">
+          <template #title>
+            {{ $t('general_settings.amount.title') }}
+          </template>
+          <v-text-field
+            v-model="floatingPrecision"
+            outlined
+            class="general-settings__fields__floating-precision"
+            :label="$t('general_settings.amount.labels.floating_precision')"
+            type="number"
+            :success-messages="settingsMessages[FLOATING_PRECISION].success"
+            :error-messages="settingsMessages[FLOATING_PRECISION].error"
+            @change="onFloatingPrecisionChange($event)"
+          />
 
-            <v-select
-              v-model="selectedCurrency"
-              class="general-settings__fields__currency-selector"
-              :label="$t('general_settings.amount.labels.main_currency')"
-              item-text="ticker_symbol"
-              return-object
-              :items="currencies"
-              :success-messages="settingsMessages[SELECTED_CURRENCY].success"
-              :error-messages="settingsMessages[SELECTED_CURRENCY].error"
-              @change="onSelectedCurrencyChange($event)"
-            >
-              <template #item="{ item, attrs, on }">
-                <v-list-item
-                  :id="`currency__${item.ticker_symbol.toLocaleLowerCase()}`"
-                  v-bind="attrs"
-                  v-on="on"
+          <v-select
+            v-model="selectedCurrency"
+            outlined
+            class="general-settings__fields__currency-selector"
+            :label="$t('general_settings.amount.labels.main_currency')"
+            item-text="ticker_symbol"
+            return-object
+            :items="currencies"
+            :success-messages="settingsMessages[SELECTED_CURRENCY].success"
+            :error-messages="settingsMessages[SELECTED_CURRENCY].error"
+            @change="onSelectedCurrencyChange($event)"
+          >
+            <template #item="{ item, attrs, on }">
+              <v-list-item
+                :id="`currency__${item.ticker_symbol.toLocaleLowerCase()}`"
+                v-bind="attrs"
+                v-on="on"
+              >
+                <v-list-item-avatar
+                  class="general-settings__currency-list primary--text"
                 >
-                  <v-list-item-avatar
-                    class="general-settings__currency-list primary--text"
-                  >
-                    {{ item.unicode_symbol }}
-                  </v-list-item-avatar>
-                  <v-list-item-content>
-                    <v-list-item-title>
-                      {{ item.name }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle>
-                      {{
-                        $t(
-                          'general_settings.amount.labels.main_currency_subtitle'
-                        )
-                      }}
-                    </v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-              </template>
-            </v-select>
+                  {{ item.unicode_symbol }}
+                </v-list-item-avatar>
+                <v-list-item-content>
+                  <v-list-item-title>
+                    {{ item.name }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle>
+                    {{
+                      $t(
+                        'general_settings.amount.labels.main_currency_subtitle'
+                      )
+                    }}
+                  </v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+            </template>
+          </v-select>
 
-            <v-text-field
-              v-model="thousandSeparator"
-              class="general-settings__fields__thousand-separator"
-              :label="$t('general_settings.amount.label.thousand_separator')"
-              type="text"
-              :success-messages="settingsMessages[THOUSAND_SEPARATOR].success"
-              :error-messages="settingsMessages[THOUSAND_SEPARATOR].error"
-              @change="onThousandSeparatorChange($event)"
+          <v-text-field
+            v-model="thousandSeparator"
+            outlined
+            class="general-settings__fields__thousand-separator"
+            :label="$t('general_settings.amount.label.thousand_separator')"
+            type="text"
+            :success-messages="settingsMessages[THOUSAND_SEPARATOR].success"
+            :error-messages="settingsMessages[THOUSAND_SEPARATOR].error"
+            @change="onThousandSeparatorChange($event)"
+          />
+
+          <v-text-field
+            v-model="decimalSeparator"
+            outlined
+            class="general-settings__fields__decimal-separator"
+            :label="$t('general_settings.amount.label.decimal_separator')"
+            type="text"
+            :success-messages="settingsMessages[DECIMAL_SEPARATOR].success"
+            :error-messages="settingsMessages[DECIMAL_SEPARATOR].error"
+            @change="onDecimalSeparatorChange($event)"
+          />
+
+          <v-radio-group
+            v-model="currencyLocation"
+            class="general-settings__fields__currency-location"
+            :label="$t('general_settings.amount.label.currency_location')"
+            row
+            :success-messages="settingsMessages[CURRENCY_LOCATION].success"
+            :error-messages="settingsMessages[CURRENCY_LOCATION].error"
+            @change="onCurrencyLocationChange($event)"
+          >
+            <v-radio
+              :label="$t('general_settings.amount.label.location_before')"
+              value="before"
             />
-
-            <v-text-field
-              v-model="decimalSeparator"
-              class="general-settings__fields__decimal-separator"
-              :label="$t('general_settings.amount.label.decimal_separator')"
-              type="text"
-              :success-messages="settingsMessages[DECIMAL_SEPARATOR].success"
-              :error-messages="settingsMessages[DECIMAL_SEPARATOR].error"
-              @change="onDecimalSeparatorChange($event)"
+            <v-radio
+              :label="$t('general_settings.amount.label.location_after')"
+              value="after"
             />
+          </v-radio-group>
 
-            <v-radio-group
-              v-model="currencyLocation"
-              class="general-settings__fields__currency-location"
-              :label="$t('general_settings.amount.label.currency_location')"
-              row
-              :success-messages="settingsMessages[CURRENCY_LOCATION].success"
-              :error-messages="settingsMessages[CURRENCY_LOCATION].error"
-              @change="onCurrencyLocationChange($event)"
-            >
-              <v-radio
-                :label="$t('general_settings.amount.label.location_before')"
-                value="before"
-              />
-              <v-radio
-                :label="$t('general_settings.amount.label.location_after')"
-                value="after"
-              />
-            </v-radio-group>
+          <strong>
+            {{ $t('general_settings.amount.label.resulting_format') }}
+          </strong>
+          <amount-display :value="amountExample" show-currency="symbol" />
 
-            <strong>
-              {{ $t('general_settings.amount.label.resulting_format') }}
-            </strong>
-            <amount-display :value="amountExample" show-currency="symbol" />
+          <rounding-settings />
+        </card>
+        <card class="mt-8">
+          <template #title>
+            {{ $t('general_settings.local_nodes.title') }}
+          </template>
+          <v-text-field
+            v-model="rpcEndpoint"
+            outlined
+            class="general-settings__fields__rpc-endpoint"
+            :label="$t('general_settings.labels.rpc_endpoint')"
+            type="text"
+            :success-messages="settingsMessages[RPC_ENDPOINT].success"
+            :error-messages="settingsMessages[RPC_ENDPOINT].error"
+            clearable
+            @paste="onRpcEndpointChange($event.clipboardData.getData('text'))"
+            @click:clear="onRpcEndpointChange('')"
+            @change="onRpcEndpointChange($event)"
+          />
 
-            <rounding-settings />
-          </v-card-text>
-        </v-card>
-        <v-card class="mt-8">
-          <v-card-title>
-            <card-title>
-              {{ $t('general_settings.local_nodes.title') }}
-            </card-title>
-          </v-card-title>
-          <v-card-text>
-            <v-text-field
-              v-model="rpcEndpoint"
-              class="general-settings__fields__rpc-endpoint"
-              :label="$t('general_settings.labels.rpc_endpoint')"
-              type="text"
-              data-vv-name="eth_rpc_endpoint"
-              :success-messages="settingsMessages[RPC_ENDPOINT].success"
-              :error-messages="settingsMessages[RPC_ENDPOINT].error"
-              clearable
-              @paste="onRpcEndpointChange($event.clipboardData.getData('text'))"
-              @click:clear="onRpcEndpointChange('')"
-              @change="onRpcEndpointChange($event)"
-            />
-
-            <v-text-field
-              v-model="ksmRpcEndpoint"
-              class="general-settings__fields__ksm-rpc-endpoint"
-              :label="$t('general_settings.labels.ksm_rpc_endpoint')"
-              type="text"
-              data-vv-name="eth_rpc_endpoint"
-              :success-messages="settingsMessages[KSM_RPC_ENDPOINT].success"
-              :error-messages="settingsMessages[KSM_RPC_ENDPOINT].error"
-              clearable
-              @paste="
-                onKsmRpcEndpointChange($event.clipboardData.getData('text'))
-              "
-              @click:clear="onKsmRpcEndpointChange('')"
-              @change="onKsmRpcEndpointChange($event)"
-            />
-          </v-card-text>
-        </v-card>
+          <v-text-field
+            v-model="ksmRpcEndpoint"
+            outlined
+            class="general-settings__fields__ksm-rpc-endpoint"
+            :label="$t('general_settings.labels.ksm_rpc_endpoint')"
+            type="text"
+            :success-messages="settingsMessages[KSM_RPC_ENDPOINT].success"
+            :error-messages="settingsMessages[KSM_RPC_ENDPOINT].error"
+            clearable
+            @paste="
+              onKsmRpcEndpointChange($event.clipboardData.getData('text'))
+            "
+            @click:clear="onKsmRpcEndpointChange('')"
+            @change="onKsmRpcEndpointChange($event)"
+          />
+        </card>
         <price-oracle-settings />
         <frontend-settings />
       </v-col>
