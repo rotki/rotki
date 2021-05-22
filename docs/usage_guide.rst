@@ -206,7 +206,7 @@ Here you can customize the precedence of querying that price oracles will have. 
 Frontend only settings
 -----------------------
 
-.. image:: images/sc_frontendonly_settings.png
+.. image:: images/sc_frontendonly_settings1.png
    :alt: Customizing the app's frontend only settings
    :align: center
 
@@ -220,6 +220,11 @@ Dashboard graph default timeframe
 
 Set the default time frame for the dashboard graph. This timeframe will be pre-selected upon login. By default it will remember the previous session's selection.
 
+Graph basis
+^^^^^^^^^^^^^^^^^^^^^
+
+Configure whether the graph y-axis will start at 0 or the minimum amount for the period.
+
 Automatic balance refresh
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -229,6 +234,20 @@ Periodic status query
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The rotki frontend continuously queries the backend for various data and updates. This is an inexpensive operation that is set by default to 5 seconds. You can customize the frequency of that query here.
+
+.. image:: images/sc_frontendonly_settings2.png
+   :alt: Customizing the app's frontend only settings
+   :align: center
+
+Blockchain explorer customization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can customize in which explorer the transaction and addresses links open.
+
+Theme [Premium]
+^^^^^^^^^^^^^^^^^^^^
+
+Premium users can customize the color them for either light or dark mode.
 
 
 Customizing the accounting settings
