@@ -116,26 +116,33 @@ class V25V26UpgradeHelper():
 
     def _process_asset_identifiers(
             self,
+            cursor: 'Cursor',
             asset_ids: Set[str],
             table_name: str,
-    ) -> bool:
+    ) -> None:
         """Processes the given asset ids of an entry and determines if the entry can be used.
 
         If an asset can't be found in the global db False is returned and warning logged.
         """
         asset_ids = asset_ids - {None}  # remove empty identifiers
         if asset_ids.issubset(self.all_asset_ids):
-            return True
+            return
 
         for asset_id in asset_ids:
             if asset_id not in self.all_asset_ids:
+                # Add it to the user DB assets, even though it's not in the global DB
+                # assets, so the entry is not deleted
+                cursor.execute(
+                    'INSERT OR IGNORE INTO assets(identifier) VALUES(?);',
+                    (asset_id,),
+                )
+                self.all_asset_ids.add(asset_id)
                 self.msg_aggregator.add_warning(
                     f'During v25 -> v26 DB upgrade found {table_name} entry of unknown asset '
-                    f'{asset_id}. This will not be in the upgraded DB.',
+                    f'{asset_id}. The entry is going to be transferred into the newDB '
+                    f'but will need to be fixed using the replace functionality.',
                 )
-            return False
-
-        return True
+                return
 
     def upgrade_timed_balances(self, cursor: 'Cursor') -> None:
         query = cursor.execute(
@@ -145,13 +152,11 @@ class V25V26UpgradeHelper():
         cursor.execute('DROP TABLE IF EXISTS timed_balances;')
         new_tuples = []
         for entry in old_tuples:
-            should_write = self._process_asset_identifiers(
+            self._process_asset_identifiers(
+                cursor=cursor,
                 asset_ids={entry[2]},
                 table_name='timed_balances',
             )
-            if not should_write:
-                continue
-
             new_tuples.append(entry)
 
         # create the new table and insert all values into it
@@ -180,13 +185,11 @@ class V25V26UpgradeHelper():
         cursor.execute('DROP TABLE IF EXISTS manually_tracked_balances;')
         new_tuples = []
         for entry in old_tuples:
-            should_write = self._process_asset_identifiers(
+            self._process_asset_identifiers(
+                cursor=cursor,
                 asset_ids={entry[0]},
                 table_name='manually_tracked_balances',
             )
-            if not should_write:
-                continue
-
             new_tuples.append(entry)
 
         # create the new table and insert all values into it
@@ -213,13 +216,11 @@ class V25V26UpgradeHelper():
         cursor.execute('DROP TABLE IF EXISTS margin_positions;')
         new_tuples = []
         for entry in old_tuples:
-            should_write = self._process_asset_identifiers(
+            self._process_asset_identifiers(
+                cursor=cursor,
                 asset_ids={entry[5], entry[7]},
                 table_name='margin_positions',
             )
-            if not should_write:
-                continue
-
             new_tuples.append(entry)
 
         # create the new table and insert all values into it
@@ -255,13 +256,11 @@ class V25V26UpgradeHelper():
         cursor.execute('DROP TABLE IF EXISTS asset_movements;')
         new_tuples = []
         for entry in old_tuples:
-            should_write = self._process_asset_identifiers(
+            self._process_asset_identifiers(
+                cursor=cursor,
                 asset_ids={entry[6], entry[8]},
                 table_name='asset_movements',
             )
-            if not should_write:
-                continue
-
             new_tuples.append(entry)
 
         # create the new table and insert all values into it
@@ -298,13 +297,11 @@ class V25V26UpgradeHelper():
         cursor.execute('DROP TABLE IF EXISTS ledger_actions;')
         new_tuples = []
         for entry in old_tuples:
-            should_write = self._process_asset_identifiers(
+            self._process_asset_identifiers(
+                cursor=cursor,
                 asset_ids={entry[5], entry[7]},
                 table_name='ledger_actions',
             )
-            if not should_write:
-                continue
-
             new_tuples.append(entry)
 
         # create the new table and insert all values into it
@@ -339,13 +336,11 @@ class V25V26UpgradeHelper():
         cursor.execute('DROP TABLE IF EXISTS trades;')
         new_tuples = []
         for entry in old_tuples:
-            should_write = self._process_asset_identifiers(
+            self._process_asset_identifiers(
+                cursor=cursor,
                 asset_ids={entry[3], entry[4], entry[9]},
                 table_name='trades',
             )
-            if not should_write:
-                continue
-
             new_tuples.append(entry)
 
         # create the new table and insert all values into it

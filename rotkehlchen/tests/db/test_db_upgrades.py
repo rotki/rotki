@@ -1887,7 +1887,7 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
         ('_ceth_0x111111111117dC0aa78b770fA6A738034120C302', 'test for duplication', '100000', 'J'),  # noqa: E501
         ('_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94', 'test custom token balance', '65', 'A'),  # noqa: E501
         ('_ceth_0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9', 'test_asset_with_same_symbol', '85', 'A'),  # noqa: E501
-        ('_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e', 'test_custom_token', '25', 'A'),  # since this token is not known this won't be here after the upgrade  # noqa: E501
+        ('_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e', 'test_custom_token', '25', 'A'),  # this token is not known but will still be here after the upgrade  # noqa: E501
     ]
     # Check ledger actions before upgrade
     query = cursor.execute('SELECT identifier, timestamp, type, location, amount, asset, rate, rate_asset, link, notes from ledger_actions;')  # noqa: E501
@@ -2020,6 +2020,7 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
         ('_ceth_0x111111111117dC0aa78b770fA6A738034120C302', 'test for duplication', '100000', 'J'),  # noqa: E501
         ('_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94', 'test custom token balance', '65', 'A'),  # noqa: E501
         ('_ceth_0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9', 'test_asset_with_same_symbol', '85', 'A'),  # noqa: E501
+        ('_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e', 'test_custom_token', '25', 'A'),  # this token is not known but will still be here after the upgrade  # noqa: E501
     ]
     # Check margin positions after upgrade
     query = cursor.execute('SELECT id, location, open_time, close_time, profit_loss, pl_currency, fee, fee_currency, link, notes from margin_positions;')  # noqa: E501
@@ -2039,9 +2040,8 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
     assert cursor.execute('SELECT COUNT(*) from aave_events;').fetchone()[0] == 0
     assert cursor.execute('SELECT COUNT(*) from yearn_vaults_events;').fetchone()[0] == 0
     assert cursor.execute('SELECT COUNT(*) from ethereum_accounts_details;').fetchone()[0] == 0
-    # check that the timed balances are still there and are correct.
-    # 3 balances of unknown tokens should be gone
-    assert cursor.execute('SELECT COUNT(*) from timed_balances;').fetchone()[0] == 389
+    # check that the timed balances are still there and have not changed
+    assert cursor.execute('SELECT COUNT(*) from timed_balances;').fetchone()[0] == 392
     query = cursor.execute('SELECT category, time, currency, amount, usd_value from timed_balances;')  # noqa: E501
     for idx, entry in enumerate(query):
         # the test DB also has some custom tokens which are not in the globalDB as of this writing
@@ -2056,17 +2056,17 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
             assert entry == (
                 'A',
                 1616766011,
-                '_ceth_0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9',
-                '85',
-                '2909.55',
+                'CNY',
+                '1',
+                '0.1528360528',
             )
         elif idx == 384:
             assert entry == (
                 'A',
                 1616766011,
-                '_ceth_0x8Ab7404063Ec4DBcfd4598215992DC3F8EC853d7',
-                '1500',
-                '76.986000',
+                '_ceth_0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643',
+                '1711.44952226',
+                '36.3901575584242602',
             )
         elif idx == 2:
             assert entry == (
@@ -2087,7 +2087,17 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
     userdb_assets_num = cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0]
     globaldb_cursor = globaldb._conn.cursor()
     globaldb_assets_num = globaldb_cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0]
-    assert globaldb_assets_num == userdb_assets_num
+    msg = 'User DB should contain 1 extra asset that is moved over without existing in the global DB'  # noqa: E501
+    assert globaldb_assets_num == userdb_assets_num - 1, msg
+
+    # Check errors/warnings
+    warnings = msg_aggregator.consume_warnings()
+    assert len(warnings) == 3
+    assert 'During v25 -> v26 DB upgrade found timed_balances entry of unknown asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e' in warnings[0]  # noqa: E501
+    for idx in (1, 2):
+        assert 'Unknown/unsupported asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e found in the database' in warnings[idx]  # noqa: E501
+    errors = msg_aggregator.consume_errors()
+    assert len(errors) == 0
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 26
