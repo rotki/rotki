@@ -353,13 +353,13 @@
   "merge_dialog": {
     "cancel": "Cancel",
     "error": "Merge was not successful",
-    "hint": "The source asset will be merged into the target assets and all it's usages will be updated.",
+    "hint": "The source asset will be merged into the target asset and all its usages will be updated.",
     "merge": "Merge",
     "source": {
       "label": "Source",
       "non_empty": "The source identifier cannot not be empty"
     },
-    "source_hint": "The asset identifier that wou want to merge into the target",
+    "source_hint": "The asset identifier that you want to merge into the target",
     "subtitle": "Merge two assets",
     "target": {
       "label": "Target",
