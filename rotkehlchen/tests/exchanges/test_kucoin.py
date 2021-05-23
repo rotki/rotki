@@ -77,7 +77,7 @@ def test_api_query_retries_request(mock_kucoin):
         for result_ in results:
             yield result_
 
-    def mock_api_query_response(url):  # pylint: disable=unused-argument
+    def mock_api_query_response(url, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, next(get_response))
 
     get_response = get_response()

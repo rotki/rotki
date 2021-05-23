@@ -20,7 +20,7 @@ def test_coinbase_query_balances(function_scope_coinbase):
     """Test that coinbase balance query works fine for the happy path"""
     coinbase = function_scope_coinbase
 
-    def mock_coinbase_accounts(url):  # pylint: disable=unused-argument
+    def mock_coinbase_accounts(url, timeout):  # pylint: disable=unused-argument
         response = MockResponse(
             200,
             """
@@ -132,7 +132,7 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
             expected_errors_num,
             contains_expected_msg=None,
     ):
-        def mock_coinbase_accounts(url):  # pylint: disable=unused-argument
+        def mock_coinbase_accounts(url, timeout):  # pylint: disable=unused-argument
             return MockResponse(200, response_str)
 
         with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_accounts):
@@ -413,7 +413,7 @@ TRANSACTIONS_RESPONSE = """{
 }]}"""
 
 
-def mock_normal_coinbase_query(url):  # pylint: disable=unused-argument
+def mock_normal_coinbase_query(url, **kwargs):  # pylint: disable=unused-argument
     if 'buys' in url:
         return MockResponse(200, BUYS_RESPONSE)
     if 'sells' in url:
@@ -503,7 +503,7 @@ def query_coinbase_and_test(
         # Since this test only mocks as breaking only one of the two actions by default
         expected_actions_num=1,
 ):
-    def mock_coinbase_query(url):  # pylint: disable=unused-argument
+    def mock_coinbase_query(url, **kwargs):  # pylint: disable=unused-argument
         if 'buys' in url:
             if 'next-page' in url:
                 return MockResponse(200, buys_paginated_end)

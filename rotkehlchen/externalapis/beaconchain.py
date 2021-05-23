@@ -15,13 +15,15 @@ from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
 MAX_WAIT_SECS = 60
+BEACONCHAIN_READ_TIMEOUT = 75
+BEACONCHAIN_TIMEOUT_TUPLE = (DEFAULT_CONNECT_TIMEOUT, BEACONCHAIN_READ_TIMEOUT)
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +67,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         logger.debug(f'Querying beaconcha.in API for {query_str}')
         while True:
             try:
-                response = self.session.get(query_str, timeout=DEFAULT_TIMEOUT_TUPLE)
+                response = self.session.get(query_str, timeout=BEACONCHAIN_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Querying {query_str} failed due to {str(e)}') from e
 

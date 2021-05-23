@@ -388,7 +388,7 @@ def assert_poloniex_balances_result(balances: Dict[str, Any]) -> None:
     assert balances['ETH']['usd_value'] is not None
 
 
-def mock_binance_balance_response(url):
+def mock_binance_balance_response(url, **kwargs):  # pylint: disable=unused-argument
     if 'futures' in url:
         return MockResponse(200, BINANCE_FUTURES_WALLET_RESPONSE)
     if 'lending' in url:
@@ -405,7 +405,7 @@ def mock_binance_balance_response(url):
 
 
 def patch_binance_balances_query(binance: 'Binance'):
-    def mock_binance_asset_return(url, *args):  # pylint: disable=unused-argument
+    def mock_binance_asset_return(url, timeout, *args):  # pylint: disable=unused-argument
         if 'futures' in url:
             response = '{"crossCollaterals":[]}'
         elif 'lending' in url:
@@ -425,7 +425,7 @@ def patch_binance_balances_query(binance: 'Binance'):
 
 
 def patch_poloniex_balances_query(poloniex: 'Poloniex'):
-    def mock_poloniex_asset_return(url, *args):  # pylint: disable=unused-argument
+    def mock_poloniex_asset_return(url, *args, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
 
     poloniex_patch = patch.object(poloniex.session, 'post', side_effect=mock_poloniex_asset_return)

@@ -11,6 +11,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
 from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_USDT, A_WBTC
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import (
     API_TIME_INTERVAL_CONSTRAINT_TS,
@@ -224,7 +225,7 @@ def test_binance_query_trade_history(function_scope_binance):
     """Test that turning a binance trade as returned by the server to our format works"""
     binance = function_scope_binance
 
-    def mock_my_trades(url):  # pylint: disable=unused-argument
+    def mock_my_trades(url, **kwargs):  # pylint: disable=unused-argument
         if 'symbol=BNBBTC' in url:
             text = BINANCE_MYTRADES_RESPONSE
         else:
@@ -257,7 +258,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     binance = function_scope_binance
     binance.cache_ttl_secs = 0
 
-    def mock_my_trades(url):  # pylint: disable=unused-argument
+    def mock_my_trades(url, **kwargs):  # pylint: disable=unused-argument
         if 'symbol=BNBBTC' in url or 'symbol=doesnotexist' in url:
             text = BINANCE_MYTRADES_RESPONSE
         else:
@@ -369,7 +370,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     end_ts = 1508540400  # 2017-10-21 (less than 90 days since `start_ts`)
     binance = function_scope_binance
 
-    def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
+    def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
         if 'deposit' in url:
             response_str = BINANCE_DEPOSITS_HISTORY_RESPONSE
         else:
@@ -402,7 +403,7 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
 
     def mock_binance_and_query(deposits, withdrawals, expected_warnings_num, expected_errors_num):
 
-        def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
+        def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
             if 'deposit' in url:
                 response_str = deposits
             else:
@@ -590,7 +591,7 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
         for result in results:
             yield result
 
-    def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
+    def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
         if 'deposit' in url:
             response_str = next(get_deposit_result)
         else:
@@ -682,7 +683,7 @@ def test_api_query_dict_calls_with_time_delta(function_scope_binance):
         for result in results:
             yield result
 
-    def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
+    def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
         if 'deposit' in url:
             response_str = next(get_deposit_result)
         else:
@@ -731,7 +732,11 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
     exp_request_url = base_url + urlencode(call_options)
 
     # NB: all calls must have the same signature (time frozen)
-    expected_calls = [call(exp_request_url), call(exp_request_url), call(exp_request_url)]
+    expected_calls = [
+        call(exp_request_url, timeout=DEFAULT_TIMEOUT_TUPLE),
+        call(exp_request_url, timeout=DEFAULT_TIMEOUT_TUPLE),
+        call(exp_request_url, timeout=DEFAULT_TIMEOUT_TUPLE),
+    ]
 
     def get_mocked_response():
         responses = [
@@ -742,7 +747,7 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
         for response in responses:
             yield response
 
-    def mock_response(url):  # pylint: disable=unused-argument
+    def mock_response(url, timeout):  # pylint: disable=unused-argument
         return next(get_response)
 
     get_response = get_mocked_response()

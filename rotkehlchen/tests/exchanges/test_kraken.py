@@ -409,7 +409,7 @@ def test_emptry_kraken_balance_response():
     """
     kraken = Kraken('kraken1', 'a', b'YW55IGNhcm5hbCBwbGVhc3VyZS4=', object(), object())
 
-    def mock_post(url, data):  # pylint: disable=unused-argument
+    def mock_post(url, data, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, '{"error":[]}')
 
     with patch.object(kraken.session, 'post', wraps=mock_post):

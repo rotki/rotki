@@ -69,7 +69,7 @@ def test_binanceus_trades_location(function_scope_binance):
     """
     binance = function_scope_binance
 
-    def mock_my_trades(url):  # pylint: disable=unused-argument
+    def mock_my_trades(url, **kwargs):  # pylint: disable=unused-argument
         if 'symbol=BNBBTC' in url:
             text = BINANCE_MYTRADES_RESPONSE
         else:
@@ -107,7 +107,7 @@ def test_binanceus_deposits_withdrawals_location(function_scope_binance):
     end_ts = 1508540400  # 2017-10-21 (less than 90 days since `start_ts`)
     binance = function_scope_binance
 
-    def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
+    def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
         if 'deposit' in url:
             response_str = BINANCE_DEPOSITS_HISTORY_RESPONSE
         else:

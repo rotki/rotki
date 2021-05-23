@@ -49,7 +49,7 @@ def test_bittrex_assets_are_known(bittrex):
 
 
 def test_bittrex_query_balances_unknown_asset(bittrex):
-    def mock_unknown_asset_return(method, url, json):  # pylint: disable=unused-argument
+    def mock_unknown_asset_return(method, url, json, **kwargs):  # pylint: disable=unused-argument
         response = MockResponse(
             200,
             """
@@ -309,7 +309,12 @@ BITTREX_WITHDRAWAL_HISTORY_RESPONSE = """
 def test_bittrex_query_deposits_withdrawals(bittrex):
     """Test the happy case of bittrex deposit withdrawal query"""
 
-    def mock_get_deposit_withdrawal(url, method, json):  # pylint: disable=unused-argument
+    def mock_get_deposit_withdrawal(
+        url,
+        method,
+        json,
+        **kwargs,
+    ):  # pylint: disable=unused-argument
         if 'deposit' in url:
             response_str = BITTREX_DEPOSIT_HISTORY_RESPONSE
         else:
@@ -386,7 +391,12 @@ def test_bittrex_query_asset_movement_int_transaction_id(bittrex):
 ]
 """
 
-    def mock_get_deposit_withdrawal(url, method, json):  # pylint: disable=unused-argument
+    def mock_get_deposit_withdrawal(
+        url,
+        method,
+        json,
+        **kwargs,
+    ):  # pylint: disable=unused-argument
         if 'deposit' in url:
             response_str = problematic_deposit
         else:
@@ -428,7 +438,12 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
 
     def mock_bittrex_and_query(deposits, withdrawals, expected_warnings_num, expected_errors_num):
 
-        def mock_get_deposit_withdrawal(url, method, json):  # pylint: disable=unused-argument
+        def mock_get_deposit_withdrawal(
+            url,
+            method,
+            json,
+            **kwargs,
+        ):  # pylint: disable=unused-argument
             if 'deposit' in url:
                 response_str = deposits
             else:

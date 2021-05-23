@@ -17,7 +17,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.assets import A_LEND
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
+from rotkehlchen.constants.timing import QUERY_RETRY_TIMES, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -289,7 +289,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         """
         if command in ('returnTicker', 'returnCurrencies'):
             log.debug(f'Querying poloniex for {command}')
-            response = self.session.get(self.public_uri + command)
+            response = self.session.get(self.public_uri + command, timeout=DEFAULT_TIMEOUT_TUPLE)
         else:
             req['command'] = command
             with self.nonce_lock:
@@ -301,7 +301,11 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                 sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
                 self.session.headers.update({'Sign': sign})
-                response = self.session.post('https://poloniex.com/tradingApi', req)
+                response = self.session.post(
+                    'https://poloniex.com/tradingApi',
+                    req,
+                    timeout=DEFAULT_TIMEOUT_TUPLE,
+                )
 
         if response.status_code == 504:
             # backoff and repeat
