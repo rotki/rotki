@@ -510,6 +510,10 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
         )
         result = assert_proper_response_with_result(response)
         assert result['balances'] == expected_balances
+        assert cursor.execute(
+            'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?;',
+            (custom1_id,),
+        ).fetchone()[0] == 1
 
     response = requests.put(
         api_url_for(
@@ -535,6 +539,17 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
         assert cursor.execute(
             'SELECT COUNT(*) FROM assets WHERE identifier=?', (custom1_id,),
         ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM assets WHERE identifier=?', ('ICP',),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?;',
+            (custom1_id,),
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?;',
+            ('ICP',),
+        ).fetchone()[0] == 1
 
     # check the previous asset is not in globaldb owned assets
     assert global_cursor.execute(
