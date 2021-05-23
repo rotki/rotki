@@ -15,6 +15,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.dataimport import (
     assert_cointracking_import_results,
     assert_cryptocom_import_results,
+    assert_cryptocom_special_events_import_results,
     assert_blockfi_transactions_import_results,
     assert_blockfi_trades_import_results,
     assert_nexo_results,
@@ -63,10 +64,10 @@ def test_data_import_cointracking(rotkehlchen_api_server, file_upload):
 def test_data_import_cryptocom(rotkehlchen_api_server):
     """Test that the data import endpoint works successfully for cryptocom"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    filepath = os.path.join(dir_path, 'data', 'cryptocom_trades_list.csv')
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'cryptocom_trades_list.csv'
 
-    json_data = {'source': 'cryptocom', 'file': filepath}
+    json_data = {'source': 'cryptocom', 'file': str(filepath)}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -80,13 +81,33 @@ def test_data_import_cryptocom(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_data_import_cryptocom_special_types(rotkehlchen_api_server):
+    """Test that the data import endpoint works successfully for cryptocom"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'cryptocom_special_events.csv'
+
+    json_data = {'source': 'cryptocom', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    result = assert_proper_response_with_result(response)
+    assert result is True
+    # And also assert data was imported succesfully
+    assert_cryptocom_special_events_import_results(rotki)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_data_import_blockfi_transactions(rotkehlchen_api_server):
     """Test that the data import endpoint works successfully for blockfi transactions"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    filepath = os.path.join(dir_path, 'data', 'blockfi-transactions.csv')
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'blockfi-transactions.csv'
 
-    json_data = {'source': 'blockfi-transactions', 'file': filepath}
+    json_data = {'source': 'blockfi-transactions', 'file': str(filepath)}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -103,10 +124,10 @@ def test_data_import_blockfi_transactions(rotkehlchen_api_server):
 def test_data_import_blockfi_trades(rotkehlchen_api_server):
     """Test that the data import endpoint works successfully for blockfi trades"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    filepath = os.path.join(dir_path, 'data', 'blockfi-trades.csv')
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'blockfi-trades.csv'
 
-    json_data = {'source': 'blockfi-trades', 'file': filepath}
+    json_data = {'source': 'blockfi-trades', 'file': str(filepath)}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -123,10 +144,10 @@ def test_data_import_blockfi_trades(rotkehlchen_api_server):
 def test_data_import_nexo(rotkehlchen_api_server):
     """Test that the data import endpoint works successfully for nexo"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    filepath = os.path.join(dir_path, 'data', 'nexo.csv')
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'nexo.csv'
 
-    json_data = {'source': 'nexo', 'file': filepath}
+    json_data = {'source': 'nexo', 'file': str(filepath)}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -144,7 +165,7 @@ def test_data_import_nexo(rotkehlchen_api_server):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_data_import_wrong_extension(rotkehlchen_api_server, file_upload):
     """Test that uploading a file without the proper extension fails"""
-    dir_path = Path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'cointracking_trades_list.csv'
 
     # Let's also try to upload a file without the csv prefix
@@ -180,8 +201,8 @@ def test_data_import_wrong_extension(rotkehlchen_api_server, file_upload):
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     """Test that errors in the data import endpoint are handled correctly"""
-    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    filepath = os.path.join(dir_path, 'data', 'cointracking_trades_list.csv')
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'cointracking_trades_list.csv'
 
     # Test that if filepath is missing, an error is returned
     json_data = {'source': 'cointracking.info'}
@@ -198,7 +219,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
 
     # Test that if source is missing, an error is returned
-    json_data = {'filepath': filepath}
+    json_data = {'filepath': str(filepath)}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -212,7 +233,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
 
     # Test that if source is an invalid type an error is returned
-    json_data = {'source': 55, 'filepath': filepath}
+    json_data = {'source': 55, 'filepath': str(filepath)}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -226,7 +247,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
     )
 
     # Test that if source is invalid an error is returned
-    json_data = {'source': 'somewhere', 'file': filepath}
+    json_data = {'source': 'somewhere', 'file': str(filepath)}
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,

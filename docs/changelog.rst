@@ -15,6 +15,7 @@ Changelog
 * :feature:`2803` Ethereum tokens that consist of underlying tokens will now see their price correctly fetched.
 * :feature:`2844` Premium users will now be able to fetch their Uniswap v3 swaps.
 * :feature:`2893` Users can now see if any of their addresses have CVX available to claim from the ConvexFinance airdrop.
+* :feature:`2529` Crypto.com CSV import functionality has been updated to allow more types of entries.
 * :bug:`2850` User will now see a consistent naming of exchanges across the application.
 * :bug:`367` Fixed edge cases where some tasks would run for hours due to the absence of timeouts.
 

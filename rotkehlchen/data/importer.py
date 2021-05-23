@@ -1,3 +1,4 @@
+from collections import defaultdict
 import csv
 import functools
 import logging
@@ -21,7 +22,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.typing import AssetAmount, Fee, Location, Price, TradeType
+from rotkehlchen.typing import AssetAmount, Fee, Location, Price, TradeType, Timestamp
 
 log = logging.getLogger(__name__)
 
@@ -297,7 +298,54 @@ class DataImporter():
                 link='',
             )
             self.db.add_asset_movements([asset_movement])
-
+        elif row_type in ('airdrop_to_exchange_transfer', 'mco_stake_reward'):
+            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            amount = deserialize_asset_amount(csv_row['Amount'])
+            action = LedgerAction(
+                identifier=0,  # whatever is not used at insertion
+                timestamp=timestamp,
+                action_type=LedgerActionType.INCOME,
+                location=Location.CRYPTOCOM,
+                amount=amount,
+                asset=asset,
+                rate=None,
+                rate_asset=None,
+                link=None,
+                notes=None,
+            )
+            self.db_ledger.add_ledger_action(action)
+        elif row_type == 'invest_deposit':
+            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            amount = deserialize_asset_amount(csv_row['Amount'])
+            asset_movement = AssetMovement(
+                location=Location.CRYPTOCOM,
+                category=AssetMovementCategory.DEPOSIT,
+                address=None,
+                transaction_id=None,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee=fee,
+                fee_asset=fee_currency,
+                link='',
+            )
+            self.db.add_asset_movements([asset_movement])
+        elif row_type == 'invest_withdrawal':
+            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            amount = deserialize_asset_amount(csv_row['Amount'])
+            asset_movement = AssetMovement(
+                location=Location.CRYPTOCOM,
+                category=AssetMovementCategory.WITHDRAWAL,
+                address=None,
+                transaction_id=None,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee=fee,
+                fee_asset=fee_currency,
+                link='',
+            )
+            self.db.add_asset_movements([asset_movement])
         elif row_type in (
             'crypto_earn_program_created',
             'crypto_earn_program_withdrawn',
@@ -321,6 +369,10 @@ class DataImporter():
             'dynamic_coin_swap_credited',
             'dust_conversion_debited',
             'dust_conversion_credited',
+            'interest_swap_credited',
+            'interest_swap_debited',
+            # The user has received an aidrop but can't claim it yet
+            'airdrop_locked',
         ):
             # those types are ignored because it doesn't affect the wallet balance
             # or are not handled here
@@ -344,6 +396,8 @@ class DataImporter():
         - KeyError if a row contains unexpected data entries
         """
         multiple_rows: Dict[Any, Dict[str, Any]] = {}
+        investments_deposits: Dict[str, List[Any]] = defaultdict(list)
+        investments_withdrawals: Dict[str, List[Any]] = defaultdict(list)
         debited_row = None
         credited_row = None
         for row in data:
@@ -368,6 +422,12 @@ class DataImporter():
                 if timestamp not in multiple_rows:
                     multiple_rows[timestamp] = {}
                 multiple_rows[timestamp]['credited'] = row
+            elif row['Transaction Kind'] == f'{tx_kind}_deposit':
+                asset = row['Currency']
+                investments_deposits[asset].append(row)
+            elif row['Transaction Kind'] == f'{tx_kind}_withdrawal':
+                asset = row['Currency']
+                investments_withdrawals[asset].append(row)
 
         for timestamp in multiple_rows:
             # When we convert multiple assets dust to CRO
@@ -380,7 +440,7 @@ class DataImporter():
                     acc +
                     deserialize_asset_amount(row['Native Amount (in USD)']),
                 debited_rows,
-                FVal('0'),
+                ZERO,
             )
 
             # If the value of the transaction is too small (< 0,01$),
@@ -430,6 +490,69 @@ class DataImporter():
                     )
                     self.db.add_trades([trade])
 
+        # Compute investments profit
+        if len(investments_withdrawals) != 0:
+            for asset in investments_withdrawals:
+                asset_object = symbol_to_asset_or_token(asset)
+                if asset not in investments_deposits:
+                    log.error(
+                        f'Investment withdrawal without deposit at crypto.com. Ignoring '
+                        f'staking info for asset {asset_object}',
+                    )
+                    continue
+                # Sort by date in ascending order
+                withdrawals_rows = sorted(
+                    investments_withdrawals[asset],
+                    key=lambda x: deserialize_timestamp_from_date(
+                        date=x['Timestamp (UTC)'],
+                        formatstr='%Y-%m-%d %H:%M:%S',
+                        location='cryptocom',
+                    ),
+                )
+                investments_rows = sorted(
+                    investments_deposits[asset],
+                    key=lambda x: deserialize_timestamp_from_date(
+                        date=x['Timestamp (UTC)'],
+                        formatstr='%Y-%m-%d %H:%M:%S',
+                        location='cryptocom',
+                    ),
+                )
+                last_date = Timestamp(0)
+                for withdrawal in withdrawals_rows:
+                    withdrawal_date = deserialize_timestamp_from_date(
+                        date=withdrawal['Timestamp (UTC)'],
+                        formatstr='%Y-%m-%d %H:%M:%S',
+                        location='cryptocom',
+                    )
+                    amount_deposited = ZERO
+                    for deposit in investments_rows:
+                        deposit_date = deserialize_timestamp_from_date(
+                            date=deposit['Timestamp (UTC)'],
+                            formatstr='%Y-%m-%d %H:%M:%S',
+                            location='cryptocom',
+                        )
+                        if last_date < deposit_date <= withdrawal_date:
+                            # Amount is negative
+                            amount_deposited += deserialize_asset_amount(deposit['Amount'])
+                    amount_withdrawal = deserialize_asset_amount(withdrawal['Amount'])
+                    # Compute profit
+                    profit = amount_withdrawal + amount_deposited
+                    if profit >= ZERO:
+                        last_date = withdrawal_date
+                        action = LedgerAction(
+                            identifier=0,  # whatever is not used at insertion
+                            timestamp=withdrawal_date,
+                            action_type=LedgerActionType.INCOME,
+                            location=Location.CRYPTOCOM,
+                            amount=AssetAmount(profit),
+                            asset=asset_object,
+                            rate=None,
+                            rate_asset=None,
+                            link=None,
+                            notes=f'Stake profit for asset {asset}',
+                        )
+                        self.db_ledger.add_ledger_action(action)
+
     def import_cryptocom_csv(self, filepath: Path) -> Tuple[bool, str]:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
@@ -443,6 +566,14 @@ class DataImporter():
                 next(data)
 
                 self._import_cryptocom_associated_entries(data, 'dust_conversion')
+                csvfile.seek(0)
+                next(data)
+
+                self._import_cryptocom_associated_entries(data, 'interest_swap')
+                csvfile.seek(0)
+                next(data)
+
+                self._import_cryptocom_associated_entries(data, 'invest')
                 csvfile.seek(0)
                 next(data)
             except KeyError as e:

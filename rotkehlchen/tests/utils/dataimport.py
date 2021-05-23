@@ -289,6 +289,90 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
     assert expected_movements == asset_movements
 
 
+def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
+    """A utility function to help assert on correctness of importing data from crypto.com"""
+    trades = rotki.data.db.get_trades()
+    ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
+    ledger_actions = ledger_db.get_ledger_actions(None, None, None)
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+    expected_actions = [LedgerAction(
+        identifier=5,
+        timestamp=Timestamp(1609884000),
+        action_type=LedgerActionType.INCOME,
+        location=Location.CRYPTOCOM,
+        amount=AssetAmount(FVal('1')),
+        asset=symbol_to_asset_or_token('CRO'),
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes=None,
+    ), LedgerAction(
+        identifier=4,
+        timestamp=Timestamp(1609884000),
+        action_type=LedgerActionType.INCOME,
+        location=Location.CRYPTOCOM,
+        amount=AssetAmount(FVal('0.5')),
+        asset=symbol_to_asset_or_token('MCO'),
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes=None,
+    ), LedgerAction(
+        identifier=3,
+        timestamp=Timestamp(1609884000),
+        action_type=LedgerActionType.INCOME,
+        location=Location.CRYPTOCOM,
+        amount=AssetAmount(FVal('1')),
+        asset=symbol_to_asset_or_token('CRO'),
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes=None,
+    ), LedgerAction(
+        identifier=2,
+        timestamp=Timestamp(1609797600),
+        action_type=LedgerActionType.INCOME,
+        location=Location.CRYPTOCOM,
+        amount=AssetAmount(FVal('0.02005')),
+        asset=A_BTC,
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes='Stake profit for asset BTC',
+    ), LedgerAction(
+        identifier=1,
+        timestamp=Timestamp(1609624800),
+        action_type=LedgerActionType.INCOME,
+        location=Location.CRYPTOCOM,
+        amount=AssetAmount(FVal('0.00005')),
+        asset=A_BTC,
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes='Stake profit for asset BTC',
+    )]
+    assert list(reversed(expected_actions)) == ledger_actions
+
+    expected_trades = [Trade(
+        timestamp=Timestamp(1609884000),
+        location=Location.CRYPTOCOM,
+        base_asset=symbol_to_asset_or_token('CRO'),
+        quote_asset=symbol_to_asset_or_token('MCO'),
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('1')),
+        rate=Price(FVal('10')),
+        fee=Fee(ZERO),
+        fee_currency=A_USD,
+        link='',
+        notes='MCO Earnings/Rewards Swap\nSource: crypto.com (CSV import)',
+    )]
+    assert trades == expected_trades
+
+
 def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from blockfi"""
     ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
