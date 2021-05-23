@@ -32,7 +32,7 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory):
 def patch_etherscan(etherscan):
     count = 0
 
-    def mock_requests_get(_url):
+    def mock_requests_get(_url, timeout):  # pylint: disable=unused-argument
         nonlocal count
         if count == 0:
             response = (
@@ -48,7 +48,7 @@ def patch_etherscan(etherscan):
     return patch.object(etherscan.session, 'get', wraps=mock_requests_get)
 
 
-def test_maximum_rate_limit_reached(temp_etherscan):
+def test_maximum_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: disable=unused-argument
     """
     Test that we can handle etherscan's rate limit repsponse properly
 

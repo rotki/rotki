@@ -30,7 +30,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import MONTH_IN_SECONDS, WEEK_IN_SECONDS
+from rotkehlchen.constants.timing import MONTH_IN_SECONDS, WEEK_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -268,7 +268,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             })
             log.debug('Kucoin API request', request_url=request_url)
             try:
-                response = self.session.get(url=request_url)
+                response = self.session.get(url=request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'Kucoin {method} request at {request_url} connection error: {str(e)}.',

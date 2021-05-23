@@ -11,7 +11,7 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
-from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -285,7 +285,10 @@ class Coingecko():
         tries = COINGECKO_QUERY_RETRY_TIMES
         while tries >= 0:
             try:
-                response = self.session.get(f'{url}?{urlencode(options)}')
+                response = self.session.get(
+                    f'{url}?{urlencode(options)}',
+                    timeout=DEFAULT_TIMEOUT_TUPLE,
+                )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Coingecko API request failed due to {str(e)}') from e
 

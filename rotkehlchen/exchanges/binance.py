@@ -28,6 +28,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade, TradeType
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
@@ -360,7 +361,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 request_url += urlencode(call_options)
                 log.debug(f'{self.name} API request', request_url=request_url)
                 try:
-                    response = self.session.get(request_url)
+                    response = self.session.get(request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
                 except requests.exceptions.RequestException as e:
                     raise RemoteError(
                         f'{self.name} API request failed due to {str(e)}',

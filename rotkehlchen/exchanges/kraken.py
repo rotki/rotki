@@ -22,6 +22,7 @@ from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -402,7 +403,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             req = {}
         urlpath = f'{KRAKEN_BASE_URL}/{KRAKEN_API_VERSION}/public/{method}'
         try:
-            response = self.session.post(urlpath, data=req)
+            response = self.session.post(urlpath, data=req, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Kraken API request failed due to {str(e)}') from e
 
@@ -490,6 +491,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 response = self.session.post(
                     KRAKEN_BASE_URL + urlpath,
                     data=post_data.encode(),
+                    timeout=DEFAULT_TIMEOUT_TUPLE,
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Kraken API request failed due to {str(e)}') from e

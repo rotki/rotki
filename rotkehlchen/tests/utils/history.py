@@ -178,7 +178,7 @@ def check_result_of_history_creation_for_remote_errors(
 def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
     invalid_payload = "[{"
 
-    def mock_binance_api_queries(url):
+    def mock_binance_api_queries(url, timeout):  # pylint: disable=unused-argument
         if remote_errors:
             payload = invalid_payload
         elif 'myTrades' in url:
@@ -222,7 +222,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
 
         return MockResponse(200, payload)
 
-    def mock_poloniex_api_queries(url, req):  # pylint: disable=unused-argument
+    def mock_poloniex_api_queries(url, req, timeout):  # pylint: disable=unused-argument
         payload = ''
         if remote_errors:
             payload = invalid_payload
