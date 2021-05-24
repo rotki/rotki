@@ -120,6 +120,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0xc7283b66Eb1EB5FB86327f08e1B5816b0720212B'),  # noqa: E501 # Tribe Token (FEI) but another TribeToken in CC
         ethaddress_to_identifier('0x16980b3B4a3f9D89E33311B5aa8f80303E5ca4F8'),  # noqa: E501 # Kira Network (KEX) but another KEX in CC
         'DON',     # Donnie Finance but Donation Coin in CC
+        'BAG',     # Baguette but not in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
