@@ -2644,10 +2644,9 @@ class RestAPI():
     def get_asset_icon(
             self,
             asset: Asset,
-            size: Literal['thumb', 'small', 'large'],
             match_header: Optional[str],
     ) -> Response:
-        file_md5 = self.rotkehlchen.icon_manager.iconfile_md5(asset, size)
+        file_md5 = self.rotkehlchen.icon_manager.iconfile_md5(asset)
         if file_md5 and match_header and match_header == file_md5:
             # Response content unmodified
             return make_response(
@@ -2658,7 +2657,7 @@ class RestAPI():
                 ),
             )
 
-        image_data = self.rotkehlchen.icon_manager.get_icon(asset, size)
+        image_data = self.rotkehlchen.icon_manager.get_icon(asset)
         if image_data is None:
             response = make_response(
                 (

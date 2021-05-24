@@ -2752,11 +2752,9 @@ Replacing an asset
 Querying asset icons
 ======================
 
-.. http:get:: /api/(version)/assets/(identifier)/icon/(size)
+.. http:get:: /api/(version)/assets/(identifier)/icon
 
-   Doing a GET on the asset icon endpoint will return the icon of the specified
-   size identified with the asset. If size is not provided then the thumb size icon is returned. Possible values for size are ``thumb``, ``small`` and ``large``.
-
+   Doing a GET on the asset icon endpoint will return the icon of the given asset.
    If we have no icon for an asset a 404 is returned.
 
 
@@ -2764,7 +2762,7 @@ Querying asset icons
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/assets/_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e/icon/large HTTP/1.1
+      GET /api/1/assets/_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e/icon HTTP/1.1
       Host: localhost:5042
 
    **Example Response**:
