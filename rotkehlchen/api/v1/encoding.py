@@ -1694,10 +1694,6 @@ class WatchersDeleteSchema(Schema):
 
 class AssetIconsSchema(Schema):
     asset = AssetField(required=True, form_with_incomplete_data=True)
-    size = fields.String(
-        validate=webargs.validate.OneOf(choices=('thumb', 'small', 'large')),
-        missing='thumb',
-    )
 
 
 class CurrentAssetsPriceSchema(Schema):

@@ -1459,7 +1459,7 @@ class AssetIconsResource(BaseResource):
     upload_schema = AssetIconUploadSchema()
 
     @use_kwargs(get_schema, location='view_args')
-    def get(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Response:
+    def get(self, asset: Asset) -> Response:
         # Process the if-match and if-none-match headers so that comparison with etag can be done
         match_header = flask_request.headers.get('If-Match', None)
         if not match_header:
@@ -1467,7 +1467,7 @@ class AssetIconsResource(BaseResource):
         if match_header:
             match_header = match_header[1:-1]  # remove enclosing quotes
 
-        return self.rest_api.get_asset_icon(asset, size, match_header)
+        return self.rest_api.get_asset_icon(asset, match_header)
 
     @use_kwargs(upload_schema, location='json_and_view_args')
     def put(self, asset: Asset, file: Path) -> Response:

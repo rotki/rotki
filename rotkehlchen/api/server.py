@@ -127,11 +127,6 @@ URLS_V1: URLS = [
         'named_exchanges_balances_resource',
     ),
     ('/assets/<string:asset>/icon', AssetIconsResource),
-    (
-        '/assets/<string:asset>/icon/<string:size>',
-        AssetIconsResource,
-        'specific_size_asset_icons_resource',
-    ),
     ('/trades', TradesResource),
     ('/ledgeractions', LedgerActionsResource),
     ('/asset_movements', AssetMovementsResource),

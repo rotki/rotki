@@ -26,18 +26,12 @@ log = RotkehlchenLogsAdapter(logger)
 COINGECKO_QUERY_RETRY_TIMES = 4
 
 
-class CoingeckoImageURLs(NamedTuple):
-    thumb: str
-    small: str
-    large: str
-
-
 class CoingeckoAssetData(NamedTuple):
     identifier: str
     symbol: str
     name: str
     description: str
-    images: CoingeckoImageURLs
+    image_url: str
 
 
 DELISTED_ASSETS = [
@@ -364,11 +358,7 @@ class Coingecko():
                 symbol=data['symbol'],
                 name=data['name'],
                 description=data['description']['en'],
-                images=CoingeckoImageURLs(
-                    thumb=data['image']['thumb'],
-                    small=data['image']['small'],
-                    large=data['image']['large'],
-                ),
+                image_url=data['image']['small'],
             )
         except KeyError as e:
             raise RemoteError(
