@@ -53,6 +53,9 @@
   },
   "asset_table": {
     "assets": "Assets",
+    "copy_identifier": {
+      "tooltip": "Copy the asset identifier to clipboard"
+    },
     "delete_tooltip": "Delete the asset",
     "edit_tooltip": "Edit the asset",
     "headers": {
