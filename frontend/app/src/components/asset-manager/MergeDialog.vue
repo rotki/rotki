@@ -1,15 +1,19 @@
 <template>
-  <v-dialog :value="value" max-width="500" @input="input">
+  <v-dialog :value="value" max-width="500" persistent @input="input">
     <card>
       <template #title>{{ $t('merge_dialog.title') }}</template>
       <template #subtitle>{{ $t('merge_dialog.subtitle') }}</template>
-      <template #hint>{{ $t('merge_dialog.hint') }}</template>
+      <template v-if="!done" #hint>{{ $t('merge_dialog.hint') }}</template>
       <template #buttons>
         <v-spacer />
         <v-btn depressed @click="input(false)">
-          {{ $t('merge_dialog.cancel') }}
+          <span v-if="done">{{ $t('merge_dialog.close') }}</span>
+          <span v-else>
+            {{ $t('merge_dialog.cancel') }}
+          </span>
         </v-btn>
         <v-btn
+          v-if="!done"
           depressed
           color="primary"
           :disabled="!valid || pending"
@@ -20,7 +24,9 @@
         </v-btn>
       </template>
 
-      <v-form v-model="valid">
+      <div v-if="done">{{ $t('merge_dialog.done') }}</div>
+
+      <v-form v-else v-model="valid">
         <v-text-field
           v-model="source"
           :label="$t('merge_dialog.source.label')"
@@ -65,9 +71,22 @@ export default class MergeDialog extends Vue {
   @Prop({ required: true, type: Boolean })
   value!: boolean;
   @Emit()
-  input(_value: boolean) {}
+  input(_value: boolean) {
+    setTimeout(() => this.reset(), 100);
+  }
+
+  private reset() {
+    this.done = false;
+    this.target = '';
+    this.source = '';
+    this.valid = false;
+    this.pending = false;
+    this.errorMessages = [];
+  }
+
   mergeAssets!: (payload: AssetMergePayload) => Promise<ActionStatus>;
 
+  done: boolean = false;
   valid: boolean = false;
   errorMessages: string[] = [];
 
@@ -98,7 +117,7 @@ export default class MergeDialog extends Vue {
     });
 
     if (success) {
-      this.input(false);
+      this.done = true;
     } else {
       this.errorMessages.push(
         message ?? this.$t('merge_dialog.error').toString()

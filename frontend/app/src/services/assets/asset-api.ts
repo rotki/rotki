@@ -232,7 +232,7 @@ export class AssetApi {
     });
     return this.axios
       .put<ActionResult<boolean>>('/assets/replace', data, {
-        validateStatus: validWithoutSessionStatus,
+        validateStatus: validStatus,
         transformResponse: this.baseTransformer
       })
       .then(handleResponse);
