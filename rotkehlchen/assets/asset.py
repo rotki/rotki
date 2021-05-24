@@ -237,6 +237,7 @@ WORLD_TO_BINANCE = {
     # WIN is WINk in Binance
     'WIN-3': 'WIN',
     strethaddress_to_identifier('0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6'): 'RCN',
+    strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
 }
 
 WORLD_TO_BITFINEX = {
