@@ -144,7 +144,7 @@ class Rotkehlchen():
         GlobalDBHandler(data_dir=self.data_dir)
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
-        self.coingecko = Coingecko(data_directory=self.data_dir)
+        self.coingecko = Coingecko()
         self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
         self.assets_updater = AssetsUpdater(self.msg_aggregator)
         # Initialize the Inquirer singleton

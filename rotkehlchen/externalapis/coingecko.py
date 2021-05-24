@@ -1,6 +1,5 @@
 import json
 import logging
-from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Union, overload
 from urllib.parse import urlencode
 
@@ -236,10 +235,9 @@ COINGECKO_SIMPLE_VS_CURRENCIES = [
 
 class Coingecko():
 
-    def __init__(self, data_directory: Path) -> None:
+    def __init__(self) -> None:
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
-        self.data_directory = data_directory
 
     @overload
     def _query(

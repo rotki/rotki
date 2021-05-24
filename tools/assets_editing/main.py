@@ -22,7 +22,7 @@ with open(ASSETS_FILE, 'r') as f:
     assets = json.loads(f.read())
 
 data_dir = default_data_directory()
-coingecko = Coingecko(data_directory=data_dir)
+coingecko = Coingecko()
 COINGECKO_COINS_FILE = data_dir / 'coingecko.json'
 
 if COINGECKO_COINS_FILE.exists():

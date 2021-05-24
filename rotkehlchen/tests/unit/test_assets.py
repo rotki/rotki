@@ -172,11 +172,11 @@ def test_case_does_not_matter_for_asset_constructor():
     assert a3.identifier == a4.identifier == ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7')  # noqa: E501
 
 
-def test_coingecko_identifiers_are_reachable(data_dir):
+def test_coingecko_identifiers_are_reachable():
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
-    coingecko = Coingecko(data_directory=data_dir)
+    coingecko = Coingecko()
     all_coins = coingecko.all_coins()
     # If coingecko identifier is missing test is trying to suggest possible assets.
     symbol_checked_exceptions = (  # This is the list of already checked assets
