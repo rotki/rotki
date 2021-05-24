@@ -6,13 +6,13 @@ from typing import Optional
 
 import pytest
 
-from rotkehlchen.premium.premium import Premium
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, Inquirer
+from rotkehlchen.premium.premium import Premium
 
 
 @pytest.fixture(name='use_clean_caching_directory')
@@ -174,7 +174,7 @@ def create_inquirer(
     # Get a cryptocompare without a DB since invoking DB fixture here causes problems
     # of existing user for some tests
     cryptocompare = Cryptocompare(data_directory=data_directory, database=None)
-    gecko = Coingecko(data_directory=data_directory)
+    gecko = Coingecko()
     inquirer = Inquirer(
         data_dir=data_directory,
         cryptocompare=cryptocompare,
