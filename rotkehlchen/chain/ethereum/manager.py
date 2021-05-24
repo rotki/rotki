@@ -87,7 +87,7 @@ def _query_web3_get_logs(
         event_name: str,
         argument_filters: Dict[str, Any],
 ) -> List[Dict[str, Any]]:
-    until_block = web3.eth.blockNumber if to_block == 'latest' else to_block
+    until_block = web3.eth.block_number if to_block == 'latest' else to_block
     events: List[Dict[str, Any]] = []
     start_block = from_block
     # we know that in most of its early life the Eth2 contract address returns a
@@ -116,7 +116,7 @@ def _query_web3_get_logs(
         # As seen in https://github.com/rotki/rotki/issues/1787, the json RPC, if it
         # is infura can throw an error here which we can only parse by catching the  exception
         try:
-            new_events_web3: List[Dict[str, Any]] = [dict(x) for x in web3.eth.getLogs(filter_args)]  # noqa: E501
+            new_events_web3: List[Dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
         except ValueError as e:
             try:
                 decoded_error = json.loads(str(e).replace("'", '"'))
@@ -329,7 +329,7 @@ class EthereumManager():
                         log.warning(message)
                         return False, message
 
-                    current_block = web3.eth.blockNumber  # pylint: disable=no-member
+                    current_block = web3.eth.block_number  # pylint: disable=no-member
                     try:
                         latest_block = self.query_eth_highest_block()
                     except RemoteError:
@@ -408,7 +408,7 @@ class EthereumManager():
 
     def _get_latest_block_number(self, web3: Optional[Web3]) -> int:
         if web3 is not None:
-            return web3.eth.blockNumber
+            return web3.eth.block_number
 
         # else
         return self.etherscan.get_latest_block_number()
@@ -717,7 +717,7 @@ class EthereumManager():
                 ) from e
             return tx_receipt
 
-        tx_receipt = web3.eth.getTransactionReceipt(tx_hash)
+        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
         return process_result(tx_receipt)
 
     def get_transaction_receipt(
