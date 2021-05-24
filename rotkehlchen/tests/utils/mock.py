@@ -27,7 +27,7 @@ class MockEth():
     syncing = False
 
     def __init__(self, block_number: int) -> None:
-        self.blockNumber = block_number
+        self.block_number = block_number
         self.chainId = 1
 
     def get_block(  # noqa: N802 pylint: disable=no-self-use
