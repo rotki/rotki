@@ -716,6 +716,31 @@ There is also some other fields that are completely optional and expand if you p
 5. And here add the underlying token's weight.
 6. Here you can edit or delete underlying token address/weights. Note: The weight of the underlying tokens should add up to 100%.
 
+Merging two assets
+=======================
+
+There are two possible situations where you might need to merge two assets into one.
+
+1. You added a custom asset that was later officially supported on rotki. In this case you should merge your
+custom asset to the the officially supported one. If you don't do this might split balances between entries,
+especially for supported exchanges that will use the officially supported entry.
+2. There was an issue and an Unknown asset notification is now visible.
+
+.. image:: images/rotki_merge_assets.png
+   :alt: Optional information when adding a custom token
+   :align: center
+
+To merge two assets you can use the merge dialog by pressing the Merge Asset button in the Asset Management screen.
+In the dialog you can put the identifier of your custom or missing asset in the source field. For a custom asset,
+you can get the identifier using the copy button in the asset table. If you have a missing asset then you can copy it
+from the notification message
+
+Then you can go to the target field and search for the asset into which the source will be merge to.
+When both the source identifier and target asset are selected you can press the merge button.
+
+On a successful merge you will be notified to to either re-login or refresh the balances manually to see the changes
+on the frontend.
+
 Decentralized Finance
 **********************
 
