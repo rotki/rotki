@@ -528,7 +528,7 @@ Adding and Removing Blockchain Accounts
 
 Rotki allows to track balances of blockchain accounts.
 
-To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin and Ethereum chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button.
+To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Ethereum and Kusama chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button.
 
 .. image:: images/add_blockchain_balance.gif
    :alt: Add a blockchain account
