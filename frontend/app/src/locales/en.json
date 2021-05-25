@@ -356,7 +356,7 @@
   "merge_dialog": {
     "cancel": "Cancel",
     "close": "Close",
-    "done": "The asset merge is complete. The old asset will still appear in the frontend until the next manual refresh or re-login.",
+    "done": "The asset merge is complete. The old asset will still appear in the frontend. To make sure the new one is shown everywhere either restart the application or manually refresh balances in each place the old asset appears.",
     "error": "Merge was not successful",
     "hint": "The source asset will be merged into the target asset and all its usages will be updated.",
     "merge": "Merge",
