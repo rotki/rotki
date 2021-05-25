@@ -57,7 +57,13 @@
           :delete-tooltip="$t('asset_table.delete_tooltip')"
           @edit-click="edit(item)"
           @delete-click="deleteAsset(item)"
-        />
+        >
+          <copy-button
+            class="mx-1"
+            :tooltip="$t('asset_table.copy_identifier.tooltip')"
+            :value="item.identifier"
+          />
+        </row-actions>
       </template>
       <template #expanded-item="{ item, headers }">
         <table-expand-container
@@ -108,6 +114,7 @@ import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { ManagedAsset } from '@/components/asset-manager/types';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
+import CopyButton from '@/components/helper/CopyButton.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
@@ -117,6 +124,7 @@ import { EthereumToken } from '@/services/assets/types';
 
 @Component({
   components: {
+    CopyButton,
     DataTable,
     TableExpandContainer,
     RowActions,

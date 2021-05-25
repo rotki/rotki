@@ -1,5 +1,21 @@
 <template>
   <fragment>
+    <v-row
+      v-if="!!edit"
+      class="text-caption text--secondary py-2"
+      align="center"
+    >
+      <v-col cols="auto" class="font-weight-medium">
+        {{ $t('asset_form.identifier') }}
+      </v-col>
+      <v-col>
+        {{ edit.identifier }}
+        <copy-button
+          :value="edit.identifier"
+          :tooltip="$t('asset_form.identifier_copy')"
+        />
+      </v-col>
+    </v-row>
     <v-form :value="value" class="pt-2" @input="input">
       <v-row>
         <v-col>
@@ -221,6 +237,7 @@
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
+import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
 import RowActions from '@/components/helper/RowActions.vue';
@@ -244,6 +261,7 @@ const ETHEREUM_TOKEN = 'ethereum token';
 
 @Component({
   components: {
+    CopyButton,
     HelpLink,
     Fragment,
     UnderlyingTokenManager,

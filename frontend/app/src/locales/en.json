@@ -53,6 +53,9 @@
   },
   "asset_table": {
     "assets": "Assets",
+    "copy_identifier": {
+      "tooltip": "Copy the asset identifier to clipboard"
+    },
     "delete_tooltip": "Delete the asset",
     "edit_tooltip": "Edit the asset",
     "headers": {
@@ -350,6 +353,25 @@
     "terminate": "Terminate",
     "message": "rotki's minimum supported macOs version is Mojave(10.14)"
   },
+  "merge_dialog": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "done": "The asset merge is complete. The old asset will still appear in the frontend. To make sure the new one is shown everywhere either restart the application or manually refresh balances in each place the old asset appears.",
+    "error": "Merge was not successful",
+    "hint": "The source asset will be merged into the target asset and all its usages will be updated.",
+    "merge": "Merge",
+    "source": {
+      "label": "Source",
+      "non_empty": "The source identifier cannot not be empty"
+    },
+    "source_hint": "The asset identifier that you want to merge into the target",
+    "subtitle": "Merge two assets",
+    "target": {
+      "label": "Target",
+      "non_empty": "The target asset cannot be empty"
+    },
+    "title": "Merge Assets"
+  },
   "notes_display": {
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
@@ -402,6 +424,8 @@
   "asset_form": {
     "help_coingecko": "Click for help on how to locate the CoinGecko identifier",
     "help_cryptocompare": "Click for help on how to locate the CryptoCompare identifier",
+    "identifier": "Identifier",
+    "identifier_copy": "Copy the identifier",
     "labels": {
       "address": "Address",
       "asset_type": "Asset Type",
@@ -518,6 +542,8 @@
       "title": "Delete asset"
     },
     "delete_error": "Could not delete {address}: {message}",
+    "merge_assets": "Merge Assets",
+    "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)",
     "title": "Asset Management",
     "add_title": "Add a new asset",
     "edit_title": "Edit an asset"
