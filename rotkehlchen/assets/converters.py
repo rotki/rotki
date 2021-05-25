@@ -347,6 +347,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # APM Coin. As of 16/11/2019 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-APM
     'APM',
+    'BST',  # No coingecko or cryptocompare yet. Beshare Token TODO: Review this one in a few days
     'CBC',  # neither in coingecko nor cryptocompare
     # Tether CNH. As of 30/09/2019 no data found outside of Bittrex for this token
     # https://medium.com/bittrex/new-bittrex-international-listing-tether-cnh-cnht-c9ad966ac303
@@ -512,6 +513,10 @@ UNSUPPORTED_FTX_ASSETS = (
     'AMD',
     'AMZN',
     'APHA',
+    'ASDBEAR',  # no cryptocompare/coingecko data TODO: Review this in a few days
+    'ASDBULL',  # no cryptocompare/coingecko data TODO: Review this in a few days
+    'ASDHALF',  # no cryptocompare/coingecko data TODO: Review this in a few days
+    'ASDHEDGE',  # no cryptocompare/coingecko data TODO: Review this in a few days
     'ARKK',
     'BABA',
     'BB',
