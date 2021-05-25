@@ -61,6 +61,7 @@ WORLD_TO_BITTREX = {
 
 WORLD_TO_FTX = {
     strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
+    strethaddress_to_identifier('0xcca0c9c383076649604eE31b20248BC04FdF61cA'): 'ASD',
     'SOL-2': 'SOL',
 }
 
