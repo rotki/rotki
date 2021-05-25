@@ -21,7 +21,7 @@
                 </i18n>
               </v-col>
             </v-row>
-            <v-divider class="mt-1" />
+            <v-divider class="mt-2 mb-4" />
             <v-row>
               <v-col cols="12">
                 <v-img
@@ -59,7 +59,7 @@
                 v-text="$t('import_data.cointracking.preferred')"
               />
             </v-row>
-            <v-divider class="mt-1" />
+            <v-divider class="mt-2 mb-4" />
             <v-row>
               <v-col cols="12">
                 <div class="import-data__crypto-com">
@@ -109,7 +109,7 @@
                 </ul>
               </v-col>
             </v-row>
-            <v-divider class="mt-1" />
+            <v-divider class="mt-2 mb-4" />
             <v-row>
               <v-col cols="12">
                 <div class="import-data__crypto-com">
@@ -125,7 +125,7 @@
                 <i18n tag="span" path="import_data.blockfi.import">
                   <strong v-text="$t('import_data.blockfi.import_trade')" />
                 </i18n>
-                <file-upload source="blockfi-trades" />
+                <file-upload source="blockfi-trades" class="mt-2" />
               </v-col>
               <v-col>
                 <i18n tag="span" path="import_data.blockfi.import">
@@ -133,7 +133,7 @@
                     v-text="$t('import_data.blockfi.import_transactions')"
                   />
                 </i18n>
-                <file-upload source="blockfi-transactions" />
+                <file-upload source="blockfi-transactions" class="mt-2" />
               </v-col>
             </v-row>
             <v-row>
@@ -147,7 +147,7 @@
                 </ul>
               </v-col>
             </v-row>
-            <v-divider class="mt-1" />
+            <v-divider class="mt-2 mb-4" />
             <v-row>
               <v-col cols="12">
                 <div class="import-data__crypto-com">
@@ -163,7 +163,7 @@
                 <i18n tag="span" path="import_data.nexo.import">
                   <strong v-text="$t('import_data.nexo.import_transactions')" />
                 </i18n>
-                <file-upload source="nexo" />
+                <file-upload source="nexo" class="mt-2" />
               </v-col>
             </v-row>
             <v-row>
