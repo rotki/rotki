@@ -24,9 +24,9 @@ copyright = '2018-2021, Rotki Solutions GmbH'
 author = 'The rotki team'
 
 # The short X.Y version
-version = '1.16.2'
+version = '1.17.0'
 # The full version, including alpha/beta/rc tags
-release = '1.16.2'
+release = '1.17.0'
 
 
 # -- General configuration ---------------------------------------------------
