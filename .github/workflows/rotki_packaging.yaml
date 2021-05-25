@@ -267,7 +267,7 @@ jobs:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SQLCIPHER_VERSION: 'v4.4.3'
-      PYSQLCIPHER3_VERSION: 'fd1b547407bcb7198107fe3c458105286a060b0d'
+      PYSQLCIPHER3_VERSION: 'c01b3bda144073eb34412ae64702fa2362a778e7'
       BUILD_DEPENDENCIES: "build-dependencies"
     strategy:
       matrix:
