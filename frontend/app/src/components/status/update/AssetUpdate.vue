@@ -227,7 +227,7 @@ export default class AssetUpdate extends Mixins(BackendMixin) {
 
   async updateComplete() {
     await this.logout();
-    this.$store.commit('connected', false);
+    this.$store.commit('setConnected', false);
     if (this.$interop.isPackaged) {
       await this.restartBackend();
     }
