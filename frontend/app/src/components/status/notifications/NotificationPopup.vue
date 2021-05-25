@@ -3,7 +3,6 @@
     v-model="notification.display"
     class="notification-popup"
     :timeout="notification.duration"
-    light
     top
     right
     app
