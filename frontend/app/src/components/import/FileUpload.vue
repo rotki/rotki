@@ -197,4 +197,14 @@ export default class FileUpload extends Vue {
     }
   }
 }
+
+.theme {
+  &--dark {
+    .file-upload {
+      &__drop {
+        border: thin solid rgba(255, 255, 255, 0.12);
+      }
+    }
+  }
+}
 </style>
