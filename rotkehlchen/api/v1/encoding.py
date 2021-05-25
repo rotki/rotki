@@ -30,7 +30,14 @@ from rotkehlchen.chain.substrate.utils import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors import DeserializationError, EncodingError, UnknownAsset, XPUBError
+from rotkehlchen.errors import (
+    DeserializationError,
+    EncodingError,
+    InputError,
+    RemoteError,
+    UnknownAsset,
+    XPUBError,
+)
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
@@ -1326,10 +1333,18 @@ def _transform_btc_address(
     if not given_address.endswith('.eth'):
         return BTCAddress(given_address)
 
-    resolved_address = ethereum.ens_lookup(
-        given_address,
-        blockchain=SupportedBlockchain.BITCOIN,
-    )
+    try:
+        resolved_address = ethereum.ens_lookup(
+            given_address,
+            blockchain=SupportedBlockchain.BITCOIN,
+        )
+    except (RemoteError, InputError) as e:
+        raise ValidationError(
+            f'Given ENS address {given_address} could not be resolved '
+            f'for Bitcoin due to: {str(e)}',
+            field_name='address',
+        ) from None
+
     if resolved_address is None:
         raise ValidationError(
             f'Given ENS address {given_address} could not be resolved for Bitcoin',
@@ -1357,10 +1372,18 @@ def _transform_eth_address(
     except ValueError:
         # Validation will only let .eth names come here.
         # So let's see if it resolves to anything
-        resolved_address = ethereum.ens_lookup(given_address)
+        try:
+            resolved_address = ethereum.ens_lookup(given_address)
+        except (RemoteError, InputError) as e:
+            raise ValidationError(
+                f'Given ENS address {given_address} could not be resolved for Ethereum'
+                f' due to: {str(e)}',
+                field_name='address',
+            ) from None
+
         if resolved_address is None:
             raise ValidationError(
-                f'Given ENS address {given_address} could not be resolved',
+                f'Given ENS address {given_address} could not be resolved for Ethereum',
                 field_name='address',
             ) from None
 
@@ -1391,10 +1414,18 @@ def _transform_ksm_address(
     if not given_address.endswith('.eth'):
         return KusamaAddress(given_address)
 
-    resolved_address = ethereum.ens_lookup(
-        given_address,
-        blockchain=SupportedBlockchain.KUSAMA,
-    )
+    try:
+        resolved_address = ethereum.ens_lookup(
+            given_address,
+            blockchain=SupportedBlockchain.KUSAMA,
+        )
+    except (RemoteError, InputError) as e:
+        raise ValidationError(
+            f'Given ENS address {given_address} could not be resolved '
+            f'for Kusama due to: {str(e)}',
+            field_name='address',
+        ) from None
+
     if resolved_address is None:
         raise ValidationError(
             f'Given ENS address {given_address} could not be resolved for Kusama',

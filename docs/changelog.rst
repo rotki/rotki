@@ -19,6 +19,8 @@ Changelog
 * :feature:`2529` Crypto.com CSV import functionality has been updated to allow more types of entries.
 * :bug:`2850` User will now see a consistent naming of exchanges across the application.
 * :bug:`367` Fixed edge cases where some tasks would run for hours due to the absence of timeouts.
+* :bug:`2875` Invalid ENS names should now provide a proper error when provided to rotki.
+* :bug:`2888` Ledger actions selected to be ignored in the profit and loss report will now be correctly ignored.
 
 * :release:`1.16.2 <2021-05-08>`
 * :bug:`-` If a DeFi event provides zero amount of an asset to a user the PnL report should now work properly again.
