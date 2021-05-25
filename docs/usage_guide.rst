@@ -423,7 +423,9 @@ Adding an exchange
    :alt: Add API keys for a new exchange
    :align: center
 
-You can integrate many different exchanges with Rotki. Currently supported exchanges are: Kraken, Poloniex, Bittrex, Bitmex, Binance, Coinbase, Coinbase Pro and Gemini.
+You can integrate many different exchanges with Rotki. Currently supported exchanges are:
+Kraken, Poloniex, Bittrex, Bitmex, Bitfinex, Binance, Binance US, bitcoin.de, Coinbase,
+Coinbase Pro, Gemini, Iconomi, Bitstamp, KuCoin, FTX.
 
 To do so you have to go to your exchange and create an API key (see the section :ref:`api-key-permissions`).
 
