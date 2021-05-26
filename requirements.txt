@@ -3,9 +3,9 @@ greenlet==1.1.0
 web3==5.19.0
 pysqlcipher3==1.0.4
 requests==2.25.1
-pycryptodome==3.10.1
-pycryptodomex==3.10.1
-coincurve==15.0.0
+pycryptodome==3.6.6
+pycryptodomex==3.6.6
+coincurve==13.0.0
 typing-extensions==3.10.0.0
 base58check==1.0.2
 bech32==1.2.0
