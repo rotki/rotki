@@ -19,6 +19,7 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_blockfi_transactions_import_results,
     assert_blockfi_trades_import_results,
     assert_nexo_results,
+    assert_binance_purchases_import_results,
 )
 
 
@@ -158,6 +159,29 @@ def test_data_import_nexo(rotkehlchen_api_server):
     assert result is True
     # And also assert data was imported succesfully
     assert_nexo_results(rotki)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_data_import_binance_purchases(rotkehlchen_api_server):
+    """Test that the data import endpoint works successfully for binance purchases
+
+    These purchases are made with debit or credit cards.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'binance-purchases.csv'
+
+    json_data = {'source': 'binance-purchases', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    result = assert_proper_response_with_result(response)
+    assert result is True
+    # And also assert data was imported succesfully
+    assert_binance_purchases_import_results(rotki)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

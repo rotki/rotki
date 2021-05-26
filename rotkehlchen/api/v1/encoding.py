@@ -1668,6 +1668,7 @@ class DataImportSchema(Schema):
                 'blockfi-transactions',
                 'blockfi-trades',
                 'nexo',
+                'binance-purchases',
             ),
         ),
     )

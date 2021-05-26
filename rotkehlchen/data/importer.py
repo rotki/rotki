@@ -781,6 +781,74 @@ class DataImporter():
                     return False, str(e)
         return True, ''
 
+    def _consume_binance_purchases(self, csv_row: Dict[str, Any]) -> None:
+        """
+        Consume the file containing only purchases by credit/debit card from Binance.
+        """
+        # TODO perhaps put the 'Completed' into a variable as it may change
+        if csv_row['Status'] != 'Completed':
+            log.debug(f'Ignoring not completed Binance purchase. {csv_row}')
+            return
+
+        timestamp = deserialize_timestamp_from_date(
+            date=csv_row['Date(UTC)'],
+            formatstr='%Y-%m-%d %H:%M:%S',
+            location='Binance',
+        )
+
+        amount, base_asset = csv_row['Final Amount'].split(' ')
+        base_asset = symbol_to_asset_or_token(base_asset)
+        amount = deserialize_asset_amount(amount)
+        quote_amount, quote_asset = csv_row['Amount'].split(' ')
+        quote_asset = symbol_to_asset_or_token(quote_asset)
+        quote_amount = deserialize_asset_amount(quote_amount)
+        fee, fee_currency = csv_row['Fees'].split(' ')
+        fee = deserialize_fee(fee)
+        fee_currency = symbol_to_asset_or_token(fee_currency)
+        rate = Price((quote_amount + fee) / amount)
+        trade = Trade(
+            timestamp=timestamp,
+            location=Location.BINANCE,
+            base_asset=base_asset,
+            quote_asset=quote_asset,
+            trade_type=TradeType.BUY,
+            amount=amount,
+            rate=rate,
+            fee=fee,
+            fee_currency=fee_currency,
+            link='',
+            notes=f"{csv_row['Method']} {csv_row['Status']} purchase",
+        )
+        self.db.add_trades([trade])
+
+    def import_binance_purchases_csv(self, filepath: Path) -> Tuple[bool, str]:
+        """
+        Addresses issue #2362 on GitHub
+        """
+        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+            data = csv.DictReader(csvfile)
+            for row in data:
+                try:
+                    self._consume_binance_purchases(row)
+                except UnknownAsset as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'During Binance CSV import found action with unknown '
+                        f'asset {e.asset_name}. Ignoring entry',
+                    )
+                    continue
+                except DeserializationError as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'Deserialization error during Binance CSV import. '
+                        f'{str(e)}. Ignoring entry',
+                    )
+                    continue
+                except UnsupportedCSVEntry as e:
+                    self.db.msg_aggregator.add_warning(str(e))
+                    continue
+                except KeyError as e:
+                    return False, str(e)
+        return True, ''
+
     def _consume_nexo(self, csv_row: Dict[str, Any]) -> None:
         """
         Consume CSV file from NEXO.

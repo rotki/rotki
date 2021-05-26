@@ -42,6 +42,7 @@ IMPORTABLE_LOCATIONS = Literal[
     'blockfi-transactions',
     'blockfi-trades',
     'nexo',
+    'binance-purchases',
 ]
 
 

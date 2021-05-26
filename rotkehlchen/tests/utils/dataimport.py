@@ -6,7 +6,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.tests.utils.constants import A_CRO, A_DOT, A_EUR, A_MCO, A_XMR
+from rotkehlchen.tests.utils.constants import A_CRO, A_DOT, A_EUR, A_MCO, A_XMR, A_CAD
 from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
@@ -529,3 +529,29 @@ def assert_nexo_results(rotki: Rotkehlchen):
 
     assert ledger_actions == expected_actions
     assert asset_movements == expected_movements
+
+
+def assert_binance_purchases_import_results(rotki: Rotkehlchen):
+    """A utility function to help assert on correctness of importing purchases from Binance"""
+    trades = rotki.data.db.get_trades()
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+    expected_trades = [
+        Trade(
+            timestamp=Timestamp(1612051199),
+            location=Location.BINANCE,
+            base_asset=symbol_to_asset_or_token("USDT"),
+            quote_asset=symbol_to_asset_or_token("CAD"),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal("753.84615384")),
+            rate=Price(FVal("1.353061224500841316118374215")),
+            fee=Fee(FVal("20.00")),
+            fee_currency=A_CAD,
+            link="",
+            notes="Credit Card Completed purchase",
+        ),
+    ]
+    assert trades == expected_trades
