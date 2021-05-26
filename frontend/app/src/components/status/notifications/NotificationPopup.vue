@@ -5,6 +5,7 @@
     :timeout="notification.duration"
     top
     right
+    :light="!$vuetify.theme.dark"
     app
     rounded
     width="400px"
