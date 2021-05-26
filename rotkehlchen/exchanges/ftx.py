@@ -102,6 +102,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.apiversion = 'v2'
         self.base_uri = 'https://ftx.com'
         self.msg_aggregator = msg_aggregator
+        self.session.headers.update({'FTX-KEY': self.api_key})
 
     def first_connection(self) -> None:
         self.first_connection_made = True

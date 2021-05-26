@@ -50,7 +50,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
-from rotkehlchen.exchanges.manager import ExchangeManager
+from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -165,7 +165,7 @@ class Rotkehlchen():
         """If the account creation or login failed make sure that the Rotki instance is clear
 
         Tricky instances are when after either failed premium credentials or user refusal
-        to sync premium databases we relogged in.
+        to sync premium databases we relogged in
         """
         self.cryptocompare.db = None
 
@@ -649,8 +649,13 @@ class Rotkehlchen():
         """
         trades: TRADES_LIST
         if location is not None:
+            # clear the trades queried for this location
+            self.actions_per_location['trade'][location] = 0
             trades = self.query_location_trades(from_ts, to_ts, location, only_cache)
         else:
+            for given_location in ALL_SUPPORTED_EXCHANGES + [Location.EXTERNAL]:
+                # clear the trades queried for this location
+                self.actions_per_location['trade'][given_location] = 0
             trades = self.query_location_trades(from_ts, to_ts, Location.EXTERNAL, only_cache)
             # Look for trades that might be imported from CSV files
             for csv_location in EXTERNAL_EXCHANGES:
@@ -660,12 +665,18 @@ class Rotkehlchen():
                     location=csv_location,
                     only_cache=only_cache,
                 ))
+
             for exchange in self.exchange_manager.iterate_exchanges():
+                all_set = {x.identifier for x in trades}
                 exchange_trades = exchange.query_trade_history(
                     start_ts=from_ts,
                     end_ts=to_ts,
                     only_cache=only_cache,
                 )
+                # TODO: Really dirty. Figure out a better way.
+                # Since some of the trades may already be in the DB if multiple
+                # keys are used for a single exchange.
+                exchange_trades = [x for x in exchange_trades if x.identifier not in all_set]
                 if self.premium is None:
                     trades = self._apply_actions_limit(
                         location=exchange.location,
@@ -701,9 +712,6 @@ class Rotkehlchen():
             location: Location,
             only_cache: bool,
     ) -> TRADES_LIST:
-        # clear the trades queried for this location
-        self.actions_per_location['trade'][location] = 0
-
         location_trades: TRADES_LIST
         if location in EXTERNAL_LOCATION:
             location_trades = self.data.db.get_trades(  # type: ignore  # list invariance
@@ -734,11 +742,17 @@ class Rotkehlchen():
 
             location_trades = []
             for exchange in exchanges_list:
-                location_trades.extend(exchange.query_trade_history(
+                all_set = {x.identifier for x in location_trades}
+                new_trades = exchange.query_trade_history(
                     start_ts=from_ts,
                     end_ts=to_ts,
                     only_cache=only_cache,
-                ))
+                )
+                # TODO: Really dirty. Figure out a better way.
+                # Since some of the trades may already be in the DB if multiple
+                # keys are used for a single exchange.
+                new_trades = [x for x in new_trades if x.identifier not in all_set]
+                location_trades.extend(new_trades)
 
         trades: TRADES_LIST = []
         if self.premium is None:
@@ -884,16 +898,19 @@ class Rotkehlchen():
             exchange: Union[ExchangeInterface, Location],
             only_cache: bool,
     ) -> List[AssetMovement]:
-        """Queryies exchange for asset movements and adds it to all_movements"""
+        """Queries exchange for asset movements and adds it to all_movements"""
+        all_set = {x.identifier for x in all_movements}
         if isinstance(exchange, ExchangeInterface):
             location = exchange.location
-            # clear the asset movements queried for this exchange
-            self.actions_per_location['asset_movement'][location] = 0
             location_movements = exchange.query_deposits_withdrawals(
                 start_ts=from_ts,
                 end_ts=to_ts,
                 only_cache=only_cache,
             )
+            # TODO: Really dirty. Figure out a better way.
+            # Since some of the asset movements may already be in the DB if multiple
+            # keys are used for a single exchange.
+            location_movements = [x for x in location_movements if x.identifier not in all_set]
         else:
             assert isinstance(exchange, Location), 'only a location should make it here'
             assert exchange in EXTERNAL_EXCHANGES, 'only csv supported exchanges should get here'  # noqa : E501
@@ -937,6 +954,8 @@ class Rotkehlchen():
         """
         movements: List[AssetMovement] = []
         if location is not None:
+            # clear the asset movements queried for this exchange
+            self.actions_per_location['asset_movement'][location] = 0
             if location in EXTERNAL_EXCHANGES:
                 movements = self._query_and_populate_exchange_asset_movements(
                     from_ts=from_ts,
@@ -954,6 +973,8 @@ class Rotkehlchen():
                     )
                     return []
 
+                # clear the asset movements queried for this exchange
+                self.actions_per_location['asset_movement'][location] = 0
                 for exchange in exchanges_list:
                     self._query_and_populate_exchange_asset_movements(
                         from_ts=from_ts,
@@ -963,8 +984,12 @@ class Rotkehlchen():
                         only_cache=only_cache,
                     )
         else:
+            for exchange_location in ALL_SUPPORTED_EXCHANGES:
+                # clear the asset movements queried for this exchange
+                self.actions_per_location['asset_movement'][exchange_location] = 0
             # we may have DB entries due to csv import from supported locations
             for external_location in EXTERNAL_EXCHANGES:
+
                 movements = self._query_and_populate_exchange_asset_movements(
                     from_ts=from_ts,
                     to_ts=to_ts,

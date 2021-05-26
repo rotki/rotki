@@ -398,7 +398,7 @@
     "title": "Theme"
   },
   "theme_switch_lock": {
-    "tooltip": "Switching to the dark mode is only available under a premium subscription"
+    "tooltip": "Switching to dark mode is only available under a premium subscription"
   },
   "underlying_token_manager": {
     "delete_tooltip": "Delete the underlying token",
