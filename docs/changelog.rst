@@ -2,7 +2,10 @@
 Changelog
 =========
 
-* :release:`1.17.0 <2021-05-26>`
+* :release:`1.17.1 <2021-05-26>`
+* :bug:`2982` Premium users of v1.17.0 who had DB syncing activated will now be able to open the app again.
+
+* :release:`1.17.0 <2021-05-25>`
 * :feature:`2898` Users are now able to see the asset identifiers in the asset management view and replace one asset and all its occurences with another.
 * :feature:`2820` Users will now be able to select if they want to view graphs based at a 0 y-axis start instead of the minimum in the selected period.
 * :feature:`2725` Users will now be able to view a small help dialog with the supported options for the date display format.
