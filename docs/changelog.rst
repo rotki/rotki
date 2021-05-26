@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :release:`1.17.1 <2021-05-26>`
+* :bug:`2984` The notification background will now properly adjust for users using the application in light mode.
 * :bug:`2982` Premium users of v1.17.0 who had DB syncing activated will now be able to open the app again.
 
 * :release:`1.17.0 <2021-05-25>`
