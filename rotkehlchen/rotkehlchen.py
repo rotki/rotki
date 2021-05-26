@@ -165,7 +165,7 @@ class Rotkehlchen():
         """If the account creation or login failed make sure that the Rotki instance is clear
 
         Tricky instances are when after either failed premium credentials or user refusal
-        to sync premium databases we relogged in.
+        to sync premium databases we relogged in
         """
         self.cryptocompare.db = None
 
