@@ -30,11 +30,13 @@
       single-expand
       :expanded="expanded"
       item-key="identifier"
-      sort-by="name"
+      sort-by="symbol"
       :sort-desc="false"
       :search.sync="search"
+      :custom-sort="sortItems"
+      :custom-filter="assetFilter"
     >
-      <template #item.name="{ item }">
+      <template #item.symbol="{ item }">
         <asset-details-base
           :changeable="change"
           opens-details
@@ -110,17 +112,18 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { DataTableHeader } from 'vuetify';
-import { ManagedAsset } from '@/components/asset-manager/types';
-import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import CopyButton from '@/components/helper/CopyButton.vue';
-import DataTable from '@/components/helper/DataTable.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import RowExpander from '@/components/helper/RowExpander.vue';
-import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
-import { capitalize } from '@/filters';
-import { EthereumToken } from '@/services/assets/types';
+import { Component, Emit, Prop, Vue } from "vue-property-decorator";
+import { DataTableHeader } from "vuetify";
+import { ManagedAsset } from "@/components/asset-manager/types";
+import AssetDetailsBase from "@/components/helper/AssetDetailsBase.vue";
+import CopyButton from "@/components/helper/CopyButton.vue";
+import DataTable from "@/components/helper/DataTable.vue";
+import RowActions from "@/components/helper/RowActions.vue";
+import RowExpander from "@/components/helper/RowExpander.vue";
+import TableExpandContainer from "@/components/helper/table/TableExpandContainer.vue";
+import { capitalize } from "@/filters";
+import { EthereumToken } from "@/services/assets/types";
+import { Nullable } from "@/types";
 
 @Component({
   components: {
@@ -164,10 +167,59 @@ export default class AssetTable extends Vue {
     );
   }
 
+  assetFilter(
+    _value: Nullable<string>,
+    search: Nullable<string>,
+    item: Nullable<ManagedAsset>
+  ) {
+    if (!search || !item) {
+      return true;
+    }
+    const keyword = search.toLocaleLowerCase();
+    const name = item.name.toLocaleLowerCase();
+    const symbol = item.symbol.toLocaleLowerCase();
+    return name.indexOf(keyword) >= 0 || symbol.indexOf(keyword) >= 0;
+  }
+
+  sortItems(
+    items: ManagedAsset[],
+    sortBy: (keyof ManagedAsset)[],
+    sortDesc: boolean[]
+  ): ManagedAsset[] {
+    const keyword = this.search.toLocaleLowerCase();
+    return items.sort((a, b) => {
+      const element = sortBy[0];
+      const desc = sortDesc[0];
+
+      if (keyword.length > 0 && element === 'symbol') {
+        const aSymbol = a.symbol.toLocaleLowerCase();
+        const bSymbol = b.symbol.toLocaleLowerCase();
+        const aIndex = aSymbol.indexOf(keyword);
+        const bIndex = bSymbol.indexOf(keyword);
+        console.log(aIndex, a.symbol, bIndex, b.symbol)
+        if (aIndex !== bIndex) {
+          return desc ? bIndex - aIndex : aIndex - bIndex;
+        }
+      }
+
+      const aElement = a[element];
+      const bElement = b[element];
+
+      if (typeof bElement === 'number' && typeof aElement === 'number') {
+        return desc ? bElement - aElement : aElement - bElement;
+      } else if (typeof bElement === 'string' && typeof aElement === 'string') {
+        return desc
+          ? bElement.localeCompare(aElement)
+          : aElement.localeCompare(bElement);
+      }
+      return 0;
+    });
+  }
+
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('asset_table.headers.asset').toString(),
-      value: 'name'
+      value: 'symbol'
     },
     {
       text: this.$t('asset_table.headers.type').toString(),
