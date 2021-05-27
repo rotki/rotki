@@ -65,6 +65,7 @@
       "started": "Started"
     },
     "search": "Filter",
+    "search_tooltip": "By default the search is by symbol. To search by name prefix the search term with 'n:' e.g. n: Bitcoin",
     "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts",
     "underlying_tokens": "Underlying Tokens"
   },
