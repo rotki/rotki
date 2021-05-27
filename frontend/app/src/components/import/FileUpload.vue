@@ -65,7 +65,8 @@ const SOURCES = [
   'icon',
   'nexo',
   'blockfi-transactions',
-  'blockfi-trades'
+  'blockfi-trades',
+  'binance-purchases'
 ];
 
 @Component({})

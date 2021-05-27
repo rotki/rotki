@@ -176,6 +176,35 @@
                 </ul>
               </v-col>
             </v-row>
+            <v-divider class="mt-2 mb-4" />
+            <v-row>
+              <v-col cols="12">
+                <div class="import-data__crypto-com">
+                  <v-img
+                    max-width="200"
+                    :src="require('@/assets/images/binance.png')"
+                  />
+                </div>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <i18n tag="span" path="import_data.binance.import">
+                  <strong v-text="$t('import_data.binance.import_purchases')" />
+                </i18n>
+                <file-upload source="binance-purchases" class="mt-2" />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <i18n tag="span" path="import_data.binance.note">
+                  <strong v-text="$t('import_data.binance.name')" />
+                </i18n>
+                <ul>
+                  <li>{{ $t('import_data.binance.line_one') }}</li>
+                </ul>
+              </v-col>
+            </v-row>
           </v-col>
         </v-row>
       </v-card-text>

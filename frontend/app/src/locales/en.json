@@ -2408,6 +2408,13 @@
       "line_one": "[Experimental] If you find an issue with the imported data let us know so we can adapt the code accordingly.",
       "note": "Important notes for importing data from {0}'s CSV exports."
     },
+    "binance": {
+      "import": "Import {0} from Binance",
+      "import_purchases": "purchases",
+      "name": "Binance",
+      "line_one": "[Experimental] If you find an issue with the imported data let us know so we can adapt the code accordingly.",
+      "note": "Important notes for importing data from {0}'s CSV exports."
+    },
     "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",
     "title": "Import Data",
     "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
