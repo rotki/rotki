@@ -61,6 +61,16 @@ jobs:
           path: |
             ${{ steps.packaging.outputs.binary }}
             ${{ steps.packaging.outputs.binary_checksum }}
+      - name: Notify On Failure
+        if: ${{ failure() }}
+        run: |
+          curl --request POST \
+            --url ${{ secrets.WEBHOOK }} \
+            --header 'Content-Type: application/json' \
+            --data '{
+          	"content": ":construction_site: **Github Actions:** ${{ github.job }} failed :x: \r\n\r\n  <@&735068019440615516> please have a look at [${{ github.run_id }}](https://github.com/rotki/rotki/actions/runs/${{ github.run_id }}) :cry:"
+          }'
+
 
   build-macos:
     env:
@@ -121,6 +131,15 @@ jobs:
           path: |
             ${{ steps.packaging.outputs.binary }}
             ${{ steps.packaging.outputs.binary_checksum }}
+      - name: Notify On Failure
+        if: ${{ failure() }}
+        run: |
+          curl --request POST \
+            --url ${{ secrets.WEBHOOK }} \
+            --header 'Content-Type: application/json' \
+            --data '{
+          	"content": ":construction_site: **Github Actions:** ${{ github.job }} failed :x: \r\n\r\n  <@&735068019440615516> please have a look at [${{ github.run_id }}](https://github.com/rotki/rotki/actions/runs/${{ github.run_id }}) :cry:"
+          }'
 
   build-windows:
     env:
@@ -183,6 +202,15 @@ jobs:
           path: |
             ${{ steps.packaging.outputs.binary }}
             ${{ steps.packaging.outputs.binary_checksum }}
+      - name: Notify On Failure
+        if: ${{ failure() }}
+        run: |
+          curl --request POST \
+            --url ${{ secrets.WEBHOOK }} \
+            --header 'Content-Type: application/json' \
+            --data '{
+          	"content": ":construction_site: **Github Actions:** ${{ github.job }} failed :x: \r\n\r\n  <@&735068019440615516> please have a look at [${{ github.run_id }}](https://github.com/rotki/rotki/actions/runs/${{ github.run_id }}) :cry:"
+          }'
 
   build-docker:
     runs-on: ubuntu-18.04
@@ -226,3 +254,12 @@ jobs:
             ROTKI_VERSION=${{ steps.rotki_version.outputs.version }}
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
+      - name: Notify On Failure
+        if: ${{ failure() }}
+        run: |
+          curl --request POST \
+            --url ${{ secrets.WEBHOOK }} \
+            --header 'Content-Type: application/json' \
+            --data '{
+          	"content": ":construction_site: **Github Actions:** ${{ github.job }} failed :x: \r\n\r\n  <@&735068019440615516> please have a look at [${{ github.run_id }}](https://github.com/rotki/rotki/actions/runs/${{ github.run_id }}) :cry:"
+          }'
