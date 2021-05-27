@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`2993` If a sell of FIAT for crypto is made, which is effectively a buy of crypto with FIAT, complaints about the source of funds should no longer be generated.
+
 * :release:`1.17.1 <2021-05-26>`
 * :bug:`2984` The notification background will now properly adjust for users using the application in light mode.
 * :bug:`2982` Premium users of v1.17.0 who had DB syncing activated will now be able to open the app again.
