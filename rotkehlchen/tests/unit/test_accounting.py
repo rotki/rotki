@@ -797,3 +797,43 @@ def test_defi_event_zero_amount(accountant):
         'time': 1467279735,
         'type': 'defi_event',
     }
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_sell_fiat_for_crypto(accountant):
+    """
+    Test for https://github.com/rotki/rotki/issues/2993
+    Make sure that selling fiat for crypto does not give warnings due to
+    inability to trace the source of the sold fiat.
+    """
+    history = [{
+        'timestamp': 1476979735,
+        'base_asset': 'EUR',
+        'quote_asset': 'BTC',
+        'trade_type': 'sell',
+        'rate': 578.505,
+        'fee': 0.0012,
+        'fee_currency': 'EUR',
+        'amount': 5,
+        'location': 'kraken',
+    }, {
+        'timestamp': 1496979735,
+        'base_asset': 'CHF',
+        'quote_asset': 'ETH',
+        'trade_type': 'sell',
+        'rate': 2519.62,
+        'fee': 0.02,
+        'fee_currency': 'CHF',
+        'amount': 1,
+        'location': 'kraken',
+    }]
+    accounting_history_process(
+        accountant,
+        1436979735,
+        1519693374,
+        history,
+    )
+    warnings = accountant.msg_aggregator.consume_warnings()
+    assert len(warnings) == 0
+    errors = accountant.msg_aggregator.consume_errors()
+    assert len(errors) == 0
