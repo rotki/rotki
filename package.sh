@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+: "${PYINSTALLER_VERSION:=3.5}"
 WORKDIR=$PWD
 BACKEND_DIST_DIR="rotkehlchen_py_dist"
 # cleanup before starting to package stuff
@@ -25,7 +26,7 @@ fi
 
 # Install the rotki package and pyinstaller. Needed by the pyinstaller
 pip install -e .
-pip install pyinstaller==3.5
+pip install pyinstaller==${PYINSTALLER_VERSION}
 
 if [[ -n "${CI-}" ]]; then
   echo "::endgroup::"

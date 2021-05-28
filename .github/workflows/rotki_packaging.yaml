@@ -3,6 +3,9 @@ on:
   push:
     tags:
       - 'v*'
+env:
+  PYINSTALLER_VERSION: 3.5
+
 jobs:
   create_draft:
     name: Create Draft
