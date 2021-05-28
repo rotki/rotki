@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2999` If a binance withdrawal is missing the txId field rotki will now still be able to process it correctly.
 * :bug:`2993` If a sell of FIAT for crypto is made, which is effectively a buy of crypto with FIAT, complaints about the source of funds should no longer be generated.
 
 * :release:`1.17.1 <2021-05-26>`
