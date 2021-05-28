@@ -797,3 +797,56 @@ def test_defi_event_zero_amount(accountant):
         'time': 1467279735,
         'type': 'defi_event',
     }
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_sell_fiat_for_crypto(accountant):
+    """
+    Test for https://github.com/rotki/rotki/issues/2993
+    Make sure that selling fiat for crypto does not give warnings due to
+    inability to trace the source of the sold fiat.
+    """
+    history = [{
+        'timestamp': 1476979735,
+        'base_asset': 'EUR',
+        'quote_asset': 'BTC',
+        'trade_type': 'sell',
+        'rate': 0.002,
+        'fee': 0.0012,
+        'fee_currency': 'EUR',
+        'amount': 2000,
+        'location': 'kraken',
+    }, {
+        'timestamp': 1496979735,
+        'base_asset': 'CHF',
+        'quote_asset': 'ETH',
+        'trade_type': 'sell',
+        'rate': 0.004,
+        'fee': 0.02,
+        'fee_currency': 'EUR',
+        'amount': 500,
+        'location': 'kraken',
+    }, {
+        'timestamp': 1506979735,
+        'base_asset': 'ETH',
+        'quote_asset': 'EUR',
+        'trade_type': 'sell',
+        'rate': 25000,
+        'fee': 0.02,
+        'fee_currency': 'EUR',
+        'amount': 1,
+        'location': 'kraken',
+    }]
+    result = accounting_history_process(
+        accountant,
+        1436979735,
+        1519693374,
+        history,
+    )
+    assert FVal(result['overview']['total_profit_loss']) == FVal(25000 - 0.02 - 250 * 1.001 - 0.01)
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_ETH) == FVal(1)
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC) == FVal(4)
+    warnings = accountant.msg_aggregator.consume_warnings()
+    assert len(warnings) == 0
+    errors = accountant.msg_aggregator.consume_errors()
+    assert len(errors) == 0

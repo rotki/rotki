@@ -480,6 +480,15 @@ class TaxableEvents():
             )
             return
 
+        if selling_asset.is_fiat():
+            # Should be handled by a virtual buy
+            logger.debug(
+                f'Skipping sell trade of {selling_asset.identifier} for '
+                f'{receiving_asset.identifier if receiving_asset else "nothing"} at {timestamp} '
+                f'since selling of FIAT of something will just be treated as a buy.',
+            )
+            return
+
         logger.debug(
             f'Processing sell trade of {selling_asset.identifier} for '
             f'{receiving_asset.identifier if receiving_asset else "nothing"} at {timestamp}',
