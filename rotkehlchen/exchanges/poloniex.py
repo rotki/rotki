@@ -9,7 +9,6 @@ from urllib.parse import urlencode
 
 import gevent
 import requests
-from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
@@ -17,7 +16,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.assets import A_LEND
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import QUERY_RETRY_TIMES, DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -236,7 +235,6 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.public_uri = self.uri + 'public?command='
         self.session.headers.update({'Key': self.api_key})
         self.msg_aggregator = msg_aggregator
-        self.nonce_lock = Semaphore()
 
     def first_connection(self) -> None:
         if self.first_connection_made:
@@ -292,20 +290,16 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             response = self.session.get(self.public_uri + command, timeout=DEFAULT_TIMEOUT_TUPLE)
         else:
             req['command'] = command
-            with self.nonce_lock:
-                # Protect this region with a lock since poloniex will reject
-                # non-increasing nonces. So if two greenlets come in here at
-                # the same time one of them will fail
-                req['nonce'] = ts_now_in_ms()
-                post_data = str.encode(urlencode(req))
+            req['nonce'] = ts_now_in_ms()
+            post_data = str.encode(urlencode(req))
 
-                sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
-                self.session.headers.update({'Sign': sign})
-                response = self.session.post(
-                    'https://poloniex.com/tradingApi',
-                    req,
-                    timeout=DEFAULT_TIMEOUT_TUPLE,
-                )
+            sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
+            self.session.headers.update({'Sign': sign})
+            response = self.session.post(
+                'https://poloniex.com/tradingApi',
+                req,
+                timeout=DEFAULT_TIMEOUT_TUPLE,
+            )
 
         if response.status_code == 504:
             # backoff and repeat

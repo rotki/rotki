@@ -20,7 +20,6 @@ from urllib.parse import urlencode
 
 import gevent
 import requests
-from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
@@ -241,7 +240,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             'X-MBX-APIKEY': self.api_key,
         })
         self.msg_aggregator = msg_aggregator
-        self.nonce_lock = Semaphore()
         self.offset_ms = 0
 
     def first_connection(self) -> None:
@@ -311,61 +309,57 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         call_options = options.copy() if options else {}
 
         while True:
-            with self.nonce_lock:
-                # Protect this region with a lock since binance will reject
-                # non-increasing nonces. So if two greenlets come in here at
-                # the same time one of them will fail
-                if 'signature' in call_options:
-                    del call_options['signature']
+            if 'signature' in call_options:
+                del call_options['signature']
 
-                is_v3_api_method = api_type == 'api' and method in V3_METHODS
-                is_new_futures_api = api_type in ('fapi', 'dapi')
-                call_needs_signature = (
-                    (api_type == 'fapi' and method in FAPI_METHODS) or
-                    (api_type == 'dapi' and method in FAPI_METHODS) or  # same as fapi
-                    (api_type == 'sapi' and method in SAPI_METHODS) or
-                    (api_type == 'wapi' and method in WAPI_METHODS) or
-                    is_v3_api_method
-                )
-                if call_needs_signature:
-                    if api_type in ('sapi', 'dapi'):
-                        api_version = 1
-                    elif api_type == 'fapi':
-                        api_version = 2
-                    elif api_type == 'wapi' or is_v3_api_method:
-                        api_version = 3
-                    else:
-                        raise AssertionError(
-                            f'Should never get to signed binance api call for '
-                            f'api_type: {api_type} and method {method}',
-                        )
-
-                    # Recommended recvWindows is 5000 but we get timeouts with it
-                    call_options['recvWindow'] = 10000
-                    call_options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
-                    signature = hmac.new(
-                        self.secret,
-                        urlencode(call_options).encode('utf-8'),
-                        hashlib.sha256,
-                    ).hexdigest()
-                    call_options['signature'] = signature
-                elif api_type == 'api' and method in V1_METHODS:
+            is_v3_api_method = api_type == 'api' and method in V3_METHODS
+            is_new_futures_api = api_type in ('fapi', 'dapi')
+            call_needs_signature = (
+                (api_type == 'fapi' and method in FAPI_METHODS) or
+                (api_type == 'dapi' and method in FAPI_METHODS) or  # same as fapi
+                (api_type == 'sapi' and method in SAPI_METHODS) or
+                (api_type == 'wapi' and method in WAPI_METHODS) or
+                is_v3_api_method
+            )
+            if call_needs_signature:
+                if api_type in ('sapi', 'dapi'):
                     api_version = 1
+                elif api_type == 'fapi':
+                    api_version = 2
+                elif api_type == 'wapi' or is_v3_api_method:
+                    api_version = 3
                 else:
-                    raise AssertionError(f'Unexpected {self.name} API method {method}')
+                    raise AssertionError(
+                        f'Should never get to signed binance api call for '
+                        f'api_type: {api_type} and method {method}',
+                    )
 
-                api_subdomain = api_type if is_new_futures_api else 'api'
-                request_url = (
-                    f'https://{api_subdomain}.{self.uri}{api_type}/v{str(api_version)}/{method}?'
-                )
-                request_url += urlencode(call_options)
-                log.debug(f'{self.name} API request', request_url=request_url)
-                try:
-                    response = self.session.get(request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
-                except requests.exceptions.RequestException as e:
-                    raise RemoteError(
-                        f'{self.name} API request failed due to {str(e)}',
-                    ) from e
+                # Recommended recvWindows is 5000 but we get timeouts with it
+                call_options['recvWindow'] = 10000
+                call_options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
+                signature = hmac.new(
+                    self.secret,
+                    urlencode(call_options).encode('utf-8'),
+                    hashlib.sha256,
+                ).hexdigest()
+                call_options['signature'] = signature
+            elif api_type == 'api' and method in V1_METHODS:
+                api_version = 1
+            else:
+                raise AssertionError(f'Unexpected {self.name} API method {method}')
+
+            api_subdomain = api_type if is_new_futures_api else 'api'
+            request_url = (
+                f'https://{api_subdomain}.{self.uri}{api_type}/v{str(api_version)}/{method}?'
+            )
+            request_url += urlencode(call_options)
+            log.debug(f'{self.name} API request', request_url=request_url)
+            try:
+                response = self.session.get(request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
+            except requests.exceptions.RequestException as e:
+                raise RemoteError(
+                    f'{self.name} API request failed due to {str(e)}',
+                ) from e
 
             if response.status_code not in (200, 418, 429):
                 code = 'no code found'
