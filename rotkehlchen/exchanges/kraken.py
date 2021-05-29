@@ -13,7 +13,6 @@ from urllib.parse import urlencode
 
 import gevent
 import requests
-from gevent.lock import Semaphore
 from requests import Response
 
 from rotkehlchen.accounting.structures import Balance
@@ -271,7 +270,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         )
         self.msg_aggregator = msg_aggregator
         self.session.headers.update({'API-Key': self.api_key})
-        self.nonce_lock = Semaphore()
         self.set_account_type(kraken_account_type)
         self.call_counter = 0
         self.last_query_ts = 0
@@ -471,31 +469,28 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             req = {}
 
         urlpath = '/' + KRAKEN_API_VERSION + '/private/' + method
-
-        with self.nonce_lock:
-            # Protect this section, or else, non increasing nonces will be rejected
-            req['nonce'] = int(1000 * time.time())
-            post_data = urlencode(req)
-            # any unicode strings must be turned to bytes
-            hashable = (str(req['nonce']) + post_data).encode()
-            message = urlpath.encode() + hashlib.sha256(hashable).digest()
-            signature = hmac.new(
-                base64.b64decode(self.secret),
-                message,
-                hashlib.sha512,
+        req['nonce'] = int(1000 * time.time())
+        post_data = urlencode(req)
+        # any unicode strings must be turned to bytes
+        hashable = (str(req['nonce']) + post_data).encode()
+        message = urlpath.encode() + hashlib.sha256(hashable).digest()
+        signature = hmac.new(
+            base64.b64decode(self.secret),
+            message,
+            hashlib.sha512,
+        )
+        self.session.headers.update({
+            'API-Sign': base64.b64encode(signature.digest()),  # type: ignore
+        })
+        try:
+            response = self.session.post(
+                KRAKEN_BASE_URL + urlpath,
+                data=post_data.encode(),
+                timeout=DEFAULT_TIMEOUT_TUPLE,
             )
-            self.session.headers.update({
-                'API-Sign': base64.b64encode(signature.digest()),  # type: ignore
-            })
-            try:
-                response = self.session.post(
-                    KRAKEN_BASE_URL + urlpath,
-                    data=post_data.encode(),
-                    timeout=DEFAULT_TIMEOUT_TUPLE,
-                )
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Kraken API request failed due to {str(e)}') from e
-            self._manage_call_counter(method)
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Kraken API request failed due to {str(e)}') from e
+        self._manage_call_counter(method)
 
         return _check_and_get_response(response, method)
 
