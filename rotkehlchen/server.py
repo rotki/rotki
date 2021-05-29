@@ -23,7 +23,7 @@ class RotkehlchenServer():
         arg_parser = app_args(
             prog='rotki',
             description=(
-                'Rotki, the portfolio tracker and accounting tool that respects your privacy'
+                'rotki, the portfolio tracker and accounting tool that respects your privacy'
             ),
         )
         self.args = arg_parser.parse_args()

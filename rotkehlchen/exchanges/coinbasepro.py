@@ -62,7 +62,7 @@ def coinbasepro_to_worldpair(product: str) -> Tuple[Asset, Asset]:
     """Turns a coinbasepro product into our base/quote assets
 
     - Can raise UnprocessableTradePair if product is in unexpected format
-    - Case raise UnknownAsset if any of the pair assets are not known to Rotki
+    - Case raise UnknownAsset if any of the pair assets are not known to rotki
     """
     parts = product.split('-')
     if len(parts) != 2:
@@ -138,7 +138,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return changed
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the Coinbase Pro API key is good for usage in Rotki
+        """Validates that the Coinbase Pro API key is good for usage in rotki
 
         Makes sure that the following permissions are given to the key:
         - View

@@ -1,4 +1,4 @@
-Rotki Usage Guide
+rotki Usage Guide
 #####################
 .. toctree::
   :maxdepth: 2
@@ -7,13 +7,13 @@ Rotki Usage Guide
 Introduction
 *************
 
-In this section we are going to see how to use various parts of the Rotki application.
+In this section we are going to see how to use various parts of the rotki application.
 
 
 First time sign-up
 ====================
 
-When you start Rotki you are greeted with a sign-in/signup prompt.
+When you start rotki you are greeted with a sign-in/signup prompt.
 
 .. image:: images/rotki_login_screen.png
    :alt: Creating a new account
@@ -29,7 +29,7 @@ For creating an account press "Create New Account" and provide a username and a 
 If you have purchased a premium subscription you can also add the **API Key** and the **secret** here. See the section :ref:`sync-data-with-rotki-server` to know how to sync your data with Roki Server (this option is disabled by default).
 
 .. image:: images/rotki_create_account.png
-   :alt: Creating a new account with a premium Rotki API key/secret pair
+   :alt: Creating a new account with a premium rotki API key/secret pair
    :align: center
 
 All accounts are created in the rotki directory, see the section :ref:`rotki_data_directory` to know where it is located.
@@ -53,33 +53,33 @@ Sign-in
 If you already have an account just write the name and the password at the sign in prompt.
 
 
-Set up Rotki Premium
+Set up rotki Premium
 ======================
 
-If you decide to purchase `Rotki Premium <https://rotki.com/products/>`_ at a later time, you can set it up via API Keys -> Rotki Premium.
+If you decide to purchase `rotki Premium <https://rotki.com/products/>`_ at a later time, you can set it up via API Keys -> rotki Premium.
 
 .. image:: images/rotki_premium_set.png
-   :alt: Set up Rotki premium API key/secret pair in an existing account
+   :alt: Set up rotki premium API key/secret pair in an existing account
    :align: center
 
 If after you have set up premium you wish to replace or disassociate keys with the currently logged-in account, you can do so via the same page.
 
 .. image:: images/rotki_premium_del.png
-   :alt: Delete up Rotki premium API key/secret pair in a premium account
+   :alt: Delete up rotki premium API key/secret pair in a premium account
    :align: center
 
 .. _sync-data-with-rotki-server:
 
-Sync data with Rotki Server
+Sync data with rotki Server
 -----------------------------
 
-To back up your data in the Rotki Server switch on "Allow data sync with Rotki Server". This allows you to restore it later on in any account/device as long as :red:`the same API Key/secret and account password are used`.
+To back up your data in the rotki Server switch on "Allow data sync with rotki Server". This allows you to restore it later on in any account/device as long as :red:`the same API Key/secret and account password are used`.
 
 .. image:: images/rotki_premium_set_sync_data.png
-   :alt: Sync data with Rotki Server
+   :alt: Sync data with rotki Server
    :align: center
 
-Bear in mind that in case of using multiple accounts/devices with the data sync enabled, the one with the most recent login will upload the most up-to-date data to Rotki Server. After that, using the same account from another device may ask you whether you want to replace your local database with the remote one.
+Bear in mind that in case of using multiple accounts/devices with the data sync enabled, the one with the most recent login will upload the most up-to-date data to rotki Server. After that, using the same account from another device may ask you whether you want to replace your local database with the remote one.
 
 .. image:: images/rotki_premium_replace_local_db_with_remote.png
    :alt: Replace local database with remote backup
@@ -97,7 +97,7 @@ This section contains information about how to customize the application through
 Changing the Profit Currency
 =============================
 
-Rotki calculates everything, including your total profit/loss during the PnL report into a given fiat currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
+rotki calculates everything, including your total profit/loss during the PnL report into a given fiat currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
 
 .. image:: images/profit_currency.gif
    :alt: Changing the profit currency
@@ -119,7 +119,7 @@ General Settings
 Anonymous usage analytics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Specify whether the application is allowed to submit anonymous usage analytics. As a local application Rotki has no other way to measure how many active users it has other than submitting some form of analytics. The data that are submitted are completely anonymized and contain no sensitive information.
+Specify whether the application is allowed to submit anonymous usage analytics. As a local application rotki has no other way to measure how many active users it has other than submitting some form of analytics. The data that are submitted are completely anonymized and contain no sensitive information.
 
 Balance data saving frequency
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -129,7 +129,7 @@ Set how often (in hours) the data of all balances will be saved. This data is us
 Date display format
 ^^^^^^^^^^^^^^^^^^^^
 
-Set the display format of the dates in the Rotki user interface. One such format is ``%m/%d/%Y %H:%M:%S``. That means month/day/year hour:minutes:seconds. For possible valid formats check `here <https://exchange.https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes/>`__.
+Set the display format of the dates in the rotki user interface. One such format is ``%m/%d/%Y %H:%M:%S``. That means month/day/year hour:minutes:seconds. For possible valid formats check `here <https://exchange.https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes/>`__.
 
 Display in local time
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -185,7 +185,7 @@ Local nodes
 Connecting to an Ethereum Client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When Rotki begins it tries to connect to a local ethereum node running with an rpc port set at the default port ``8545``. If no client is running then all blockchain queries will use an external service such as etherscan and this will be rather slower.
+When rotki begins it tries to connect to a local ethereum node running with an rpc port set at the default port ``8545``. If no client is running then all blockchain queries will use an external service such as etherscan and this will be rather slower.
 
 If you want to connect to another ethereum client you can set the URL and port through the settings. Click the person icon on the top right menu and select "Settings" from the drop down menu. This will take you to the settings page. Write the desired url/port in the ETH RPC endpoing textbox.
 
@@ -334,7 +334,7 @@ By choosing the "user & security" section of the settings you can change the use
 Purging data
 -----------------
 
-Rotki keeps a lot of data cached locally in the user's DB. There may be the need to clean some of these data from time to time. You can do so from the "Manage Data" section of the settings, by clicking on the dropdown list, selecting the type of data you want to delete and then pressing the Trash button.
+rotki keeps a lot of data cached locally in the user's DB. There may be the need to clean some of these data from time to time. You can do so from the "Manage Data" section of the settings, by clicking on the dropdown list, selecting the type of data you want to delete and then pressing the Trash button.
 
 .. image:: images/sc_purge_data.png
    :alt: Purging user data
@@ -423,7 +423,7 @@ Adding an exchange
    :alt: Add API keys for a new exchange
    :align: center
 
-You can integrate many different exchanges with Rotki. Currently supported exchanges are:
+You can integrate many different exchanges with rotki. Currently supported exchanges are:
 Kraken, Poloniex, Bittrex, Bitmex, Bitfinex, Binance, Binance US, bitcoin.de, Coinbase,
 Coinbase Pro, Gemini, Iconomi, Bitstamp, KuCoin, FTX.
 
@@ -438,7 +438,7 @@ If all went well, then you will get a confirmation that the connection was succe
 API key permissions
 --------------------
 
-Rotki only needs read-only permissions for your accounts. As a general rule, exchanges (e.g. Binance, Coinbase Pro) group all the read-only permissions as "read" or "view".
+rotki only needs read-only permissions for your accounts. As a general rule, exchanges (e.g. Binance, Coinbase Pro) group all the read-only permissions as "read" or "view".
 
 .. image:: images/add_exchange_api_keys_binance.png
    :alt: Simple API key permissions
@@ -450,12 +450,12 @@ In case of an exchange providing a more granular permissions scheme (e.g. Coinba
    :alt: Granular API key permissions
    :align: center
 
-You may as well try creating an API key with the minimum read-related permissions, then adding it in Rotki and finally checking that the connection was successful and data was loaded as expected. Otherwise, try again adding more read-related premissions.
+You may as well try creating an API key with the minimum read-related permissions, then adding it in rotki and finally checking that the connection was successful and data was loaded as expected. Otherwise, try again adding more read-related premissions.
 
 Adding an external service API Key
 =====================================
 
-Rotki relies on various external services for data such as historical crypto prices or ethereum transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the section of the API keys page.
+rotki relies on various external services for data such as historical crypto prices or ethereum transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the section of the API keys page.
 
 .. image:: images/add_external_service.gif
    :alt: Add API keys for an external service
@@ -466,9 +466,9 @@ At the moment there is no compulsory API key. But if you don't use your own node
 Cointracking.info
 ====================
 
-You can also import data from `cointracking.info <https://cointracking.info/>`_ into Rotki by clicking on "Import Data" on the left sidebard and then following the instructions.
+You can also import data from `cointracking.info <https://cointracking.info/>`_ into rotki by clicking on "Import Data" on the left sidebard and then following the instructions.
 
-Rotki can import any trade CSV data exported from cointracking.info. But in general it's not recommended to utilize cointracking as their exported data are missing a lot of information.
+rotki can import any trade CSV data exported from cointracking.info. But in general it's not recommended to utilize cointracking as their exported data are missing a lot of information.
 
 .. image:: images/sc_data_import.png
    :alt: Importing data from cointracking.info
@@ -516,7 +516,7 @@ To manage Accounts & Balances (Blockchain Balances, Exchange Balances, and Manua
 Adding Manual Balances
 ==================================
 
-With Rotki you can also add balances/accounts for any type of asset and location that may not be supported at the moment. For example real estate, equity holdings or holdings in a not yet supported blockchain or exchange.
+With rotki you can also add balances/accounts for any type of asset and location that may not be supported at the moment. For example real estate, equity holdings or holdings in a not yet supported blockchain or exchange.
 
 To add or modify a manually tracked balance navigate to the "Manual Balances" sub-page and click the large "+" icon. There choose the asset from the dropdown menu, input a unique label for the account, decorate it with any number of tags and choose an amount and location.
 
@@ -528,7 +528,7 @@ To add or modify a manually tracked balance navigate to the "Manual Balances" su
 Adding and Removing Blockchain Accounts
 ============================================
 
-Rotki allows to track balances of blockchain accounts.
+rotki allows to track balances of blockchain accounts.
 
 To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Ethereum and Kusama chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button.
 
@@ -629,7 +629,7 @@ Adding historical events
 Adding manual trades
 ====================
 
-Rotki will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
+rotki will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
 
 On the left sidebar click on History and then the Trade button from the dropdown menu. This will take you to the Trades page. Clicking on the ``+`` symbol will open a menu like the following.
 
@@ -809,10 +809,10 @@ Below you can see a small demonstration of the usage of makerdao vaults by a pre
 Creating a profit/loss report
 *****************************
 
-Rotki creates a profit/loss report for you based on your trades and other events and the provided accounting settings. This is essentially a calculation of profit or loss for all your events based on the given dates. Before getting into the details of generating a report, here's a few important details regarding the report generation algorithm:
+rotki creates a profit/loss report for you based on your trades and other events and the provided accounting settings. This is essentially a calculation of profit or loss for all your events based on the given dates. Before getting into the details of generating a report, here's a few important details regarding the report generation algorithm:
 
 - By default, rotki uses an accounting strategy called "First In - First Out" (short: FIFO). There are plans to implement other strategies (e.g. `"Last In - First Out" <https://github.com/rotki/rotki/issues/44>`_).
-- Rotki allows users in jurisdictions offering a tax free holding period (e.g. Germany with 1 year) to specify the period in days. To adjust this value, see the section `Customizing the account settings <#tax-free-period>`_.
+- rotki allows users in jurisdictions offering a tax free holding period (e.g. Germany with 1 year) to specify the period in days. To adjust this value, see the section `Customizing the account settings <#tax-free-period>`_.
 - When generating a report for a custom period, where rotki is aware of the user's previous crypto holdings (e.g. we trade BTC between the years 2017 - 2019 but we ask for a report between 2018 - 2019), it takes all prior crypto holdings into account to calculate a starting balance for the given period. For example, say you traded BTC between 2017 - 2019 with a balance of 0.1 BTC on December 31, 2017. When generating a pnl report for 2018 - 2019, rotki will take the 0.1 BTC from December 31, 2017 as a start balance for its calculations in the period of 2018.
 
 To create a profit loss report click on the "Profit and Loss Report" button from the left menu. Choose a period for the report (or click on Custom to set a custom time range) and press on "Generate" to start the report.
@@ -865,7 +865,7 @@ If you have a premium subscription you can get analytics on your all your assets
 
 Click on the analytics page on the left sidebar to go to your analytics page.
 
-Since Rotki is tracking all your assets over time the first thing you can see is a value/time graph of your entire net value.
+Since rotki is tracking all your assets over time the first thing you can see is a value/time graph of your entire net value.
 
 .. image:: images/sc_stats_netvalue.png
    :alt: Netvalue over time graph
@@ -894,7 +894,7 @@ Finally you can see a piechart of the distribution of your netvalue across all o
 Set the backend's arguments
 *******************************
 
-Rotki runs a python daemon on the backend. Most times you won't need to customize its arguments but if you need to do so, especially for debugging purposes this is how you can.
+rotki runs a python daemon on the backend. Most times you won't need to customize its arguments but if you need to do so, especially for debugging purposes this is how you can.
 
 Create or edit if it exists a file with the name ``rotki_config.json`` in the same directory as the rotki executable. Add to the json object any arguments that are also arguments of rotki. Then when rotki starts these will be passed as arguments to the backend. An example ``rotki_config.json`` follows::
 
@@ -917,16 +917,16 @@ The above arguments are:
 
 .. _rotki_data_directory:
 
-Rotki data directory
+rotki data directory
 ***********************
 
-Rotki saves user data by default in a different directory per OS. For each OS data is stored in the respective standards compliants equivalent directory.
+rotki saves user data by default in a different directory per OS. For each OS data is stored in the respective standards compliants equivalent directory.
 
 - **Linux**: ``~/.local/share/rotki/data/``
 - **OSX**: ``~/Library/Application Support/rotki/data``
 - **Windows**: ``%LOCALAPPDATA%/rotki/data``
 
-Before v1.6.0 Rotki was saving data in ``$USER/.rotkehlchen``. From v1.6.0 that directory got migrated to the OS equivalent standard directory and it should be safe for the users to delete the old directory as long as the new directory contains the migrated DB.
+Before v1.6.0 rotki was saving data in ``$USER/.rotkehlchen``. From v1.6.0 that directory got migrated to the OS equivalent standard directory and it should be safe for the users to delete the old directory as long as the new directory contains the migrated DB.
 
 A very good idea about the rotki data directory would be to be making frequent backups of it as it contains all of the data of all of your rotki accounts and cache data for historical price queries.
 
@@ -948,7 +948,7 @@ You can fix this by simply adding the ``--rpc.gascap 0`` argument to your geth n
 Local system clock is not synchronized
 ========================================
 
-Some remote servers (e.g. exchanges) require your local system clock synchronized with theirs. In case of not having it synchronized the request will fail and Rotki will either display a specific error message (i.e. 409 status code and a *local system clock is not sync* message) or the generic 500 error one (please, :ref:`report it to us <bug_reporting>`).
+Some remote servers (e.g. exchanges) require your local system clock synchronized with theirs. In case of not having it synchronized the request will fail and rotki will either display a specific error message (i.e. 409 status code and a *local system clock is not sync* message) or the generic 500 error one (please, :ref:`report it to us <bug_reporting>`).
 
 Follow your OS official guidelines about how to synchronize the clock with an Internet Time Server and try again.
 
@@ -960,7 +960,7 @@ Please, make sure you are using your premium subscription API keys/secret and th
 Data with multiple accounts/devices is not synced
 ===================================================
 
-Please, make sure all your accounts have the "Allow data sync with Rotki Server" switched on, and that on each log-in you make the appropriate choice when prompted to replace the local database. See the section :ref:`sync-data-with-rotki-server` for more information about how to sync data with multiple accounts/devices.
+Please, make sure all your accounts have the "Allow data sync with rotki Server" switched on, and that on each log-in you make the appropriate choice when prompted to replace the local database. See the section :ref:`sync-data-with-rotki-server` for more information about how to sync data with multiple accounts/devices.
 
 .. _troubleshooting-pnl-report:
 

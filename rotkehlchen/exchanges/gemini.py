@@ -60,7 +60,7 @@ def gemini_symbol_to_base_quote(symbol: str) -> Tuple[Asset, Asset]:
     """Turns a gemini symbol product into a base/quote asset tuple
 
     - Can raise UnprocessableTradePair if symbol is in unexpected format
-    - Case raise UnknownAsset if any of the pair assets are not known to Rotki
+    - Case raise UnknownAsset if any of the pair assets are not known to rotki
     """
     five_letter_assets = ('sushi', '1inch', 'storj', 'matic')
     if len(symbol) == 6:
@@ -135,7 +135,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return changed
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the Gemini API key is good for usage in Rotki
+        """Validates that the Gemini API key is good for usage in rotki
 
         Makes sure that the following permissions are given to the key:
         - Auditor

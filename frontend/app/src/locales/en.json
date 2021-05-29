@@ -23,7 +23,7 @@
     "loading": "Please wait while your AdEx staking details are getting loaded..."
   },
   "airdrops": {
-    "description": "* These are the airdrops Rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
+    "description": "* These are the airdrops rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
     "headers": {
       "address": "Address",
       "amount": "Amount",
@@ -215,7 +215,7 @@
       "label_username": "Username",
       "label_password": "Password",
       "label_password_repeat": "Repeat Password",
-      "label_password_backup_reminder": "Rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
+      "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
       "button_cancel": "Cancel",
       "button_continue": "Continue",
       "validation": {
@@ -530,7 +530,7 @@
     "backend_error": "There is a problem with the backend.",
     "copy_tooltip": "Copy the error text to the clipboard",
     "message": "Open an issue in Github and include rotki_electron.log and rotkehlchen.log. The backend's output follows below:",
-    "start_failure": "Rotki failed to start",
+    "start_failure": "rotki failed to start",
     "terminate": "Terminate"
   },
   "eth2page": {
@@ -558,7 +558,7 @@
   "external_services": {
     "beaconchain": {
       "delete_tooltip": "Deletes the Beaconcha.in API key",
-      "description": "Rotki uses Beaconchai.in to obtain information about eth2 staking in your portfolio. An API key is only needed if you are being rate-limited.",
+      "description": "rotki uses Beaconchai.in to obtain information about eth2 staking in your portfolio. An API key is only needed if you are being rate-limited.",
       "hint": "Enter your Beaconcha.in API key",
       "label": "API key",
       "title": "Beaconcha.in"
@@ -569,7 +569,7 @@
     },
     "cryptocompare": {
       "delete_tooltip": "Deletes the CryptoCompare API key",
-      "description": "Rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
+      "description": "rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
       "hint": "Enter your CryptoCompare API key",
       "label": "API key",
       "title": "CryptoCompare"
@@ -604,7 +604,7 @@
         "title": "Success"
       }
     },
-    "subtitle": "Rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases Rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
+    "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
     "title": "External Services"
   },
   "file_upload": {
@@ -1135,8 +1135,8 @@
   },
   "premium_credentials": {
     "label_enable": "Enable Premium",
-    "label_api_key": "Rotki API Key",
-    "label_api_secret": "Rotki API Secret",
+    "label_api_key": "rotki API Key",
+    "label_api_secret": "rotki API Secret",
     "tooltip": "Enabling premium for a new account will restore the database associated with these credentials from the server. Ensure that the account uses the same password as the database originally backed up.",
     "validation": {
       "non_empty_key": "The API key cannot be empty",
@@ -1284,7 +1284,7 @@
     "liquidity": "Liquidity"
   },
   "update_indicator": {
-    "version": "An Updated Version ({appVersion}) of Rotki is available"
+    "version": "An Updated Version ({appVersion}) of rotki is available"
   },
   "update_popup": {
     "action": {
@@ -2254,20 +2254,20 @@
     }
   },
   "premium_settings": {
-    "title": "Rotki Premium",
-    "subtitle": "Rotki Premium is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
-    "rotki_premium": "Rotki Premium",
+    "title": "rotki Premium",
+    "subtitle": "rotki Premium is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
+    "rotki_premium": "rotki Premium",
     "fields": {
       "api_key": "API Key",
       "api_secret": "API Secret"
     },
-    "premium_active": "Rotki Premium is active",
+    "premium_active": "rotki Premium is active",
     "actions": {
       "delete": "Delete Key",
       "cancel": "Cancel",
       "setup": "Setup",
       "replace": "Replace Key",
-      "sync": "Allow data sync with Rotki Server"
+      "sync": "Allow data sync with rotki Server"
     },
     "error": {
       "setting_failed": "Setting the keys was not successful",
@@ -2387,7 +2387,7 @@
       "line_two": "{0} If you want to connect your Crypto.com Exchange account, please wait until we support it and then connect to it as an exchange.",
       "line_two_warning": "It only concerns the Crypto.com mobile application.",
       "line_three": "Trades/deposits/withdrawals from crypto.com do not include fees details. They are waived at the moment (August 2020) or they are handled in the traded amount.",
-      "line_four": "Only transactions are imported here (for tax report), if you want the assets be displayed in your Rotki balances, you have to add them manually as manual balances: {0}",
+      "line_four": "Only transactions are imported here (for tax report), if you want the assets be displayed in your rotki balances, you have to add them manually as manual balances: {0}",
       "line_four_link": "Manual Accounts/Balances",
       "name": "crypto.com mobile app",
       "note": "Important notes for importing data from {0}'s CSV exports."
@@ -2457,7 +2457,7 @@
   "api_keys": {
     "title": "API Keys",
     "tabs": {
-      "premium": "Rotki Premium",
+      "premium": "rotki Premium",
       "exchanges": "Exchanges",
       "external_services": "External Services"
     }

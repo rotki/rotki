@@ -204,7 +204,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """
-        Validates that the ICONOMI API key is good for usage in Rotki
+        Validates that the ICONOMI API key is good for usage in rotki
         """
 
         try:

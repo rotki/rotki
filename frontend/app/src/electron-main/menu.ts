@@ -133,7 +133,7 @@ const viewMenu = {
   ]
 };
 const defaultMenuTemplate: any[] = [
-  // On a mac we want to show a "Rotki" menu item in the app bar
+  // On a mac we want to show a "rotki" menu item in the app bar
   ...(isMac
     ? [
         {
@@ -159,13 +159,13 @@ const defaultMenuTemplate: any[] = [
 
 export function getUserMenu(showPremium: boolean) {
   const getRotkiPremiumButton = {
-    label: '&Get Rotki Premium',
+    label: '&Get rotki Premium',
     ...(isMac
       ? {
           // submenu is mandatory to be displayed on macOS
           submenu: [
             {
-              label: 'Get Rotki Premium',
+              label: 'Get rotki Premium',
               id: 'premium-button',
               click: () => {
                 shell.openExternal('https://rotki.com/products/');
@@ -181,7 +181,7 @@ export function getUserMenu(showPremium: boolean) {
         })
   };
 
-  // Re-render the menu with the 'Get Rotki Premium' button if the user who just logged in
+  // Re-render the menu with the 'Get rotki Premium' button if the user who just logged in
   // is not a premium user, otherwise render the menu without the button. Since we are unable to just toggle
   // visibility on a top-level menu item, we instead have to add/remove it from the menu upon every login
   // (see https://github.com/electron/electron/issues/8703). TODO: if we move the menu to the render

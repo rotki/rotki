@@ -125,7 +125,7 @@ def pubkey_to_bech32_address(data: bytes, witver: int) -> BTCAddress:
 
 
 def is_valid_derivation_path(path: Any) -> Tuple[bool, str]:
-    """Check if a derivation path can be understood by Rotki
+    """Check if a derivation path can be understood by rotki
 
     Returns False, "error message" if not and True, "" if yes
     """

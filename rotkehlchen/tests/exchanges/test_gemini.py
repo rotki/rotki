@@ -58,7 +58,7 @@ def test_gemini_wrong_key(sandbox_gemini):
 
 @pytest.mark.parametrize('gemini_test_base_uri', ['https://api.gemini.com'])
 def test_gemini_all_symbols_are_known(sandbox_gemini):
-    """Test that the gemini trade pairs are all supported by Rotki
+    """Test that the gemini trade pairs are all supported by rotki
 
     Use the real gemini API
     """

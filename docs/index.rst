@@ -1,12 +1,12 @@
-Welcome to Rotki's documentation!
+Welcome to rotki's documentation!
 =======================================
 
-This is the documentation for the |version| version of `Rotki <http://rotki.com/>`_. The sourcecode along with the issue tracker is in the `Github Repository <https://github.com/rotki/rotki>`_.
+This is the documentation for the |version| version of `rotki <http://rotki.com/>`_. The sourcecode along with the issue tracker is in the `Github Repository <https://github.com/rotki/rotki>`_.
 
-What is Rotki?
+What is rotki?
 --------------------
 
-Rotki is an asset management and accounting application specializing in Crypto assets and aims to also help with tax reporting. It has integration for multiple exchanges with more coming soon. For more info check out our :doc:`FAQ<faq>`.
+rotki is an asset management and accounting application specializing in Crypto assets and aims to also help with tax reporting. It has integration for multiple exchanges with more coming soon. For more info check out our :doc:`FAQ<faq>`.
 
 Disclaimer
 ----------
@@ -20,7 +20,7 @@ THE SERVICE IS NOT INTENDED FOR CONTINUOUS MONITORING OF TRANSACTION DATA OR FOR
 Where to start?
 ---------------
 
-If this is the first time looking at Rotki you will probably want to visit the :doc:`Installation Guide<installation_guide>`. Once you have succesfully managed to install Rotki you can proceed to the :doc:`Usage Guide<usage_guide>`. If you wish to contribute to Rotkehlhen please check the :doc:`Contribution Guide<contribute>`.
+If this is the first time looking at rotki you will probably want to visit the :doc:`Installation Guide<installation_guide>`. Once you have succesfully managed to install rotki you can proceed to the :doc:`Usage Guide<usage_guide>`. If you wish to contribute to Rotkehlhen please check the :doc:`Contribution Guide<contribute>`.
 
 
 Contents

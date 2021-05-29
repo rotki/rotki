@@ -1,4 +1,4 @@
-# Rotki development proxy
+# rotki development proxy
 
 The proxy's purpose is to provide an easy way to develop the frontend in parallel
 with the backend, and provide an easy way to test the premium features.
@@ -33,7 +33,7 @@ npm ci
 npm run serve
 ```
 
-## Setup Rotki
+## Setup rotki
 
 In order to use rotki with this development proxy you need to create a `.env.development.local`
 environment file. Put the file in the frontend directory of rotki. (`frontend/app`).

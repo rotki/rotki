@@ -153,11 +153,11 @@ class Etherscan(ExternalServiceWithApiKey):
         if api_key is None:
             if not self.warning_given:
                 self.msg_aggregator.add_warning(
-                    'You do not have an Etherscan API key configured. Rotki '
+                    'You do not have an Etherscan API key configured. rotki '
                     'etherscan queries will still work but will be very slow. '
                     'If you are not using your own ethereum node, it is recommended '
                     'to go to https://etherscan.io/register, create an API '
-                    'key and then input it in the external service credentials setting of Rotki',
+                    'key and then input it in the external service credentials setting of trotki',
                 )
                 self.warning_given = True
         else:

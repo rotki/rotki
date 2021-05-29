@@ -988,7 +988,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return trades
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the Bitfinex API key is good for usage in Rotki.
+        """Validates that the Bitfinex API key is good for usage in rotki.
 
         Makes sure that the following permissions are given to the key:
         - Account History: get historical balances entries and trade information.

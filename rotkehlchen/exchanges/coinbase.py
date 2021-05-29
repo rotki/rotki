@@ -243,7 +243,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return result, ''
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the Coinbase API key is good for usage in Rotki
+        """Validates that the Coinbase API key is good for usage in rotki
 
         Makes sure that the following permissions are given to the key:
         wallet:accounts:read, wallet:transactions:read,

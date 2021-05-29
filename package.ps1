@@ -308,7 +308,7 @@ if ($Env:CI) {
     echo "::set-output name=backend_binary_checksum_name::$($BACKEND_BINARY_CHECKSUM_NAME)"
 }
 
-echo "Rotki $SETUP_VERSION was build successfully"
+echo "rotki $SETUP_VERSION was build successfully"
 
 if (($env:VIRTUAL_ENV) -and (-not ($Env:CI))) {
     deactivate

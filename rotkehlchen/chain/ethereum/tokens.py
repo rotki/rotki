@@ -35,7 +35,7 @@ TokensReturn = Tuple[
 # For all other nodes (mycrypto, avado cloud, blockscout) we have ran some benchmarks
 # with them being queried randomly with different chunk lenghts. They are all for an account with:
 # - 29 ethereum addresses
-# - Rotki knows of 1010 different ethereum tokens as of this writing
+# - rotki knows of 1010 different ethereum tokens as of this writing
 # Type        |  Chunk Length | Elapsed Seconds | Avg. secs per call
 # Open Nodes  |     300       |      105        |      2.379
 # Open Nodes  |     400       |      112        |      2.735
