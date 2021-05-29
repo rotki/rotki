@@ -1229,7 +1229,7 @@ def test_unlock_with_invalid_premium_data(data_dir, username):
 
     assert len(warnings) == 0
     assert len(errors) == 1
-    assert 'Incorrect Rotki API Key/Secret format found in the DB' in errors[0]
+    assert 'Incorrect rotki API Key/Secret format found in the DB' in errors[0]
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])

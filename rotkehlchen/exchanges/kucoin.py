@@ -814,7 +814,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return trades
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the KuCoin API key is good for usage in Rotki
+        """Validates that the KuCoin API key is good for usage in rotki
 
         May raise RemoteError
         """

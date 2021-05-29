@@ -25,7 +25,7 @@ class XpubData(NamedTuple):
 
     def serialize_derivation_path_for_db(self) -> str:
         """
-        In Rotki we store non-existing path as None but in sql it must be ''
+        In rotki we store non-existing path as None but in sql it must be ''
         https://stackoverflow.com/questions/43827629/why-does-sqlite-insert-duplicate-composite-primary-keys
         """
         return '' if self.derivation_path is None else self.derivation_path
@@ -49,7 +49,7 @@ class XpubData(NamedTuple):
 
 def deserialize_derivation_path_for_db(path: str) -> Optional[str]:
     """
-    In Rotki we store non-existing path as None but in sql it must be ''
+    In rotki we store non-existing path as None but in sql it must be ''
     https://stackoverflow.com/questions/43827629/why-does-sqlite-insert-duplicate-composite-primary-keys
     """
     return None if path == '' else path

@@ -176,7 +176,7 @@ def test_setup_exchange(rotkehlchen_api_server):
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
-    """Test that if Rotki gets a malformed response from Kraken it's handled properly
+    """Test that if rotki gets a malformed response from Kraken it's handled properly
 
     Regression test for the first part of https://github.com/rotki/rotki/issues/943
     and for https://github.com/rotki/rotki/issues/946
@@ -223,7 +223,7 @@ def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_setup_exchange_does_not_stay_in_mapping_after_500_error(rotkehlchen_api_server):
     """Test that if 500 error is returned during setup of an exchange and it's stuck
-    in the exchange mapping Rotki doesn't still think the exchange is registered.
+    in the exchange mapping rotki doesn't still think the exchange is registered.
 
     Regression test for the second part of https://github.com/rotki/rotki/issues/943
     """

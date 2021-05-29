@@ -7,7 +7,7 @@ System Requirements and Installation Guide
 Introduction
 *************
 
-The easiest way to start Rotki is to download the packaged binary for your Operating system. Linux, OSX and Windows is supported. To see how to do this go to the :ref:`next section <packaged_binaries>`.
+The easiest way to start rotki is to download the packaged binary for your Operating system. Linux, OSX and Windows is supported. To see how to do this go to the :ref:`next section <packaged_binaries>`.
 
 
 .. _packaged_binaries:
@@ -84,9 +84,9 @@ Manual installation
 
 Go to the `releases <https://github.com/rotki/rotki/releases>`_ page and download the darwin-x64 dmg package from the `latest release <https://github.com/rotki/rotki/releases/latest>`_.
 
-Click on the dmg installer and when prompted drag the Rotki logo to your Applications. This will install the application and once finished you can select Rotki from your applications folder and launch it.
+Click on the dmg installer and when prompted drag the rotki logo to your Applications. This will install the application and once finished you can select rotki from your applications folder and launch it.
 
-If your OSX version does not allow you to open the application you will have to go to your OS settings and insert an exception for Rotki to let it run. `Here <https://ccm.net/faq/29619-mac-os-x-run-apps-downloaded-from-unknown-sources>`__ is a guide.
+If your OSX version does not allow you to open the application you will have to go to your OS settings and insert an exception for rotki to let it run. `Here <https://ccm.net/faq/29619-mac-os-x-run-apps-downloaded-from-unknown-sources>`__ is a guide.
 
 Troubleshooting
 ----------------
@@ -278,7 +278,7 @@ The tl;dr version is:
 The following recipe has been tested using `Anaconda <https://conda.io>`_. `VirtualEnv <https://virtualenv.pypa.io>`_ works as well, refer to the documentations of those projects to install and use them.
 
 Install `Homebrew <https://brew.sh/>`_ first if not installed yet.
-Rotki uses an encrypted database called `SQLCipher <https://www.zetetic.net/sqlcipher/>`_. Before we can proceed, we need to install it. Homebrew makes it simple::
+rotki uses an encrypted database called `SQLCipher <https://www.zetetic.net/sqlcipher/>`_. Before we can proceed, we need to install it. Homebrew makes it simple::
 
     $ brew update
     $ cd "$(brew --repo homebrew/core)"
@@ -340,7 +340,7 @@ Since the electron application is located in a different directory you also need
 
     $ pip3 install -e .
 
-Rotki uses `Electron <https://electronjs.org>`, we need to install it. To do so you need ``Node.js`` and ``npm``. If you don't have it use Homebrew to install it::
+rotki uses `Electron <https://electronjs.org>`, we need to install it. To do so you need ``Node.js`` and ``npm``. If you don't have it use Homebrew to install it::
 
     $ brew install node
 
@@ -358,7 +358,7 @@ Almost there, we can now install all the Node.js dependencies of the frontend ap
     $ cd frontend/app
     $ npm ci
 
-You can now start Rotki, still from the ``frontend/app`` directory::
+You can now start rotki, still from the ``frontend/app`` directory::
 
     $ npm run electron:serve
 
@@ -498,7 +498,7 @@ In the terminal execute the two following commands in succession::
 
 If all went well, pysqlcipher3 should have successfuly built and installed. If it didn't, try going back and ensuring that you have properly built sqlcipher and pointed to the right directories in the setup.py file, or consult the troubleshooting section.
 
-Installing Electron and Running Rotki
+Installing Electron and Running rotki
 -------------------------------------
 
 1. In your terminal, navigate to your rotki development directory and enter the following commands to install electron and its dependencies::

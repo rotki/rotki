@@ -334,7 +334,7 @@ def test_assets_json_meta():
 }"""])
 @pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
 def test_asset_with_unknown_type_does_not_crash(asset_resolver):  # pylint: disable=unused-argument
-    """Test that finding an asset with an unknown type does not crash Rotki"""
+    """Test that finding an asset with an unknown type does not crash rotki"""
     with pytest.raises(UnknownAsset):
         Asset('COMPRLASSET2')
     # After the test runs we must reset the asset resolver so that it goes back to

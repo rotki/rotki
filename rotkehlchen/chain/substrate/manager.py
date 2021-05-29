@@ -117,7 +117,7 @@ class SubstrateManager():
             connect_on_startup: bool,
             own_rpc_endpoint: str,
     ) -> None:
-        """An interface to any Substrate chain supported by Rotki.
+        """An interface to any Substrate chain supported by rotki.
 
         It uses Polkascan py-substrate-interface for interacting with the
         substrate blockchains and the Subscan API as a chain explorer.

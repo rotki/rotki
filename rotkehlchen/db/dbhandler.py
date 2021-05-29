@@ -3109,7 +3109,7 @@ class DBHandler:
                 )
             except IncorrectApiKeyFormat:
                 self.msg_aggregator.add_error(
-                    'Incorrect Rotki API Key/Secret format found in the DB. Skipping ...',
+                    'Incorrect rotki API Key/Secret format found in the DB. Skipping ...',
                 )
                 return None
 

@@ -162,7 +162,7 @@ class Rotkehlchen():
         self.shutdown_event = gevent.event.Event()
 
     def reset_after_failed_account_creation_or_login(self) -> None:
-        """If the account creation or login failed make sure that the Rotki instance is clear
+        """If the account creation or login failed make sure that the rotki instance is clear
 
         Tricky instances are when after either failed premium credentials or user refusal
         to sync premium databases we relogged in
@@ -220,7 +220,7 @@ class Rotkehlchen():
             if create_new:
                 raise
             self.msg_aggregator.add_warning(
-                'Could not authenticate the Rotki premium API keys found in the DB.'
+                'Could not authenticate the rotki premium API keys found in the DB.'
                 ' Has your subscription expired?',
             )
             # else let's just continue. User signed in succesfully, but he just
@@ -356,7 +356,7 @@ class Rotkehlchen():
 
     def set_premium_credentials(self, credentials: PremiumCredentials) -> None:
         """
-        Sets the premium credentials for Rotki
+        Sets the premium credentials for rotki
 
         Raises PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
@@ -371,7 +371,7 @@ class Rotkehlchen():
         self.data.db.set_rotkehlchen_premium(credentials)
 
     def delete_premium_credentials(self) -> Tuple[bool, str]:
-        """Deletes the premium credentials for Rotki"""
+        """Deletes the premium credentials for rotki"""
         msg = ''
 
         success = self.data.db.del_rotkehlchen_premium()
@@ -394,7 +394,7 @@ class Rotkehlchen():
         return greenlet
 
     def main_loop(self) -> None:
-        """Rotki main loop that fires often and runs the task manager's scheduler"""
+        """rotki main loop that fires often and runs the task manager's scheduler"""
         while self.shutdown_event.wait(timeout=MAIN_LOOP_SECS_DELAY) is not True:
             if self.task_manager is not None:
                 self.task_manager.schedule()

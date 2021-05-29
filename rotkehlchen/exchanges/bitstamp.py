@@ -303,7 +303,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return trades
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the Bitstamp API key is good for usage in Rotki
+        """Validates that the Bitstamp API key is good for usage in rotki
 
         Makes sure that the following permissions are given to the key:
         - Account balance

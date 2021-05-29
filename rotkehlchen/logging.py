@@ -13,7 +13,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
 
     def process(self, msg: str, kwargs: MutableMapping[str, Any]) -> Tuple[str, Dict]:
         """
-        This is the main post-processing function for Rotki logs
+        This is the main post-processing function for rotki logs
 
         This function also appends all kwargs to the final message.
         """

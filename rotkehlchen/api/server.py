@@ -306,7 +306,7 @@ class APIServer():
             log=wsgi_logger,
             error_log=wsgi_logger,
         )
-        msg = f'Rotki API server is running at: {host}:{port}'
+        msg = f'rotki API server is running at: {host}:{port}'
         print(msg)
         log.info(msg)
         self.wsgiserver.start()

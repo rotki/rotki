@@ -120,7 +120,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return changed
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the FTX API key is good for usage in Rotki"""
+        """Validates that the FTX API key is good for usage in rotki"""
         try:
             self._api_query('wallet/all_balances', paginate=False)
         except RemoteError as e:

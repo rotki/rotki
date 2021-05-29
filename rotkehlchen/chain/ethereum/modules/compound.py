@@ -146,7 +146,7 @@ class Compound(EthereumModule):
             self.msg_aggregator.add_error(
                 f'Could not initialize the Compound subgraph due to {str(e)}. '
                 f' All compound historical queries are not functioning until this is fixed. '
-                f'Probably will get fixed with time. If not report it to Rotkis support channel ',
+                f'Probably will get fixed with time. If not report it to rotkis support channel ',
             )
 
     def _get_apy(self, address: ChecksumEthAddress, supply: bool) -> Optional[FVal]:

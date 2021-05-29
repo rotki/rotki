@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Rotki'
+project = 'rotki'
 copyright = '2018-2021, Rotki Solutions GmbH'
 author = 'The rotki team'
 
@@ -121,7 +121,7 @@ html_show_copyright = False
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Rotkidoc'
+htmlhelp_basename = 'rotkidoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -148,7 +148,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Rotki.tex', 'Rotki Documentation',
+    (master_doc, 'rotki.tex', 'rotki Documentation',
      'Lefteris Karapetsas', 'manual'),
 ]
 
@@ -158,7 +158,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'rotki', 'Rotki Documentation',
+    (master_doc, 'rotki', 'rotki Documentation',
      [author], 1)
 ]
 
@@ -169,8 +169,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Rotki', 'Rotki Documentation',
-     author, 'Rotki', 'One line description of project.',
+    (master_doc, 'rotki', 'rotki Documentation',
+     author, 'rotki', 'One line description of project.',
      'Miscellaneous'),
 ]
 

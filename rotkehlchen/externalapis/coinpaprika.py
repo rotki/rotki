@@ -244,7 +244,7 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen GLC is GoldCoin, and GLC-2 is GlobalCoin
     'GLC': 'gld-goldcoin',
     'GLC-2': 'glc-globalcoin',
-    # For Rotki MBL is Movieblock
+    # For rotki MBL is Movieblock
     'MBL': 'mbl-moviebloc',
     # For Rotkehlchen MORE is More coin and MORE-2 is Mithril Ore token
     'MORE': 'more-more-coin',
