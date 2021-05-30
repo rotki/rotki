@@ -1417,6 +1417,9 @@ class RestAPI():
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        cursor = self.rotkehlchen.data.db.conn.cursor()
+        # clean token detection cache. Next function will commit to the DB
+        cursor.execute('DELETE from ethereum_accounts_details;')
         self.rotkehlchen.data.db.add_asset_identifiers([identifier])
         return api_response(
             _wrap_in_ok_result({'identifier': identifier}),
@@ -2974,6 +2977,9 @@ class RestAPI():
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         if result is None:
+            cursor = self.rotkehlchen.data.db.conn.cursor()
+            # clean token detection cache. Next function will commit to the DB
+            cursor.execute('DELETE from ethereum_accounts_details;')
             self.rotkehlchen.data.db.add_globaldb_assetids()
             return OK_RESULT
 

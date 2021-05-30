@@ -355,7 +355,10 @@ class AssetsUpdater():
         """Performs an asset update by downloading new changes from the remote
 
         If `up_to_version` is given then changes up to and including that version are made.
-        If not all possible changes are applied
+        If not all possible changes are applied.
+
+        For success returns None. If there is conflicts a list of conflicting
+        assets identifiers is going to be returned.
 
         May raise:
             - RemoteError if there is a problem querying Github
