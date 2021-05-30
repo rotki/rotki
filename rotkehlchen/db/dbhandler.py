@@ -1763,9 +1763,8 @@ class DBHandler:
                 f'{blockchain.value} accounts that do not exist',
             )
 
-        # Also remove all ethereum address details saved in the D
+        # Also remove all ethereum address details saved in the DB
         if blockchain == SupportedBlockchain.ETHEREUM:
-
             for address in accounts:
                 self.delete_data_for_ethereum_address(address)  # type: ignore
 
