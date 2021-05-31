@@ -784,8 +784,12 @@ class DataImporter():
     def _consume_binance_purchases(self, csv_row: Dict[str, Any]) -> None:
         """
         Consume the file containing only purchases by credit/debit card from Binance.
+
+        Can raise:
+            - DeserializationError if something is wrong with the format of the expected values
+            - KeyError if an expected CSV key is missing
+            - UnknownAsset if one of the assets found in the entry is not supported
         """
-        # TODO perhaps put the 'Completed' into a variable as it may change
         if csv_row['Status'] != 'Completed':
             log.debug(f'Ignoring not completed Binance purchase. {csv_row}')
             return
@@ -796,16 +800,22 @@ class DataImporter():
             location='Binance',
         )
 
-        amount, base_asset = csv_row['Final Amount'].split(' ')
+        try:
+            amount, base_asset = csv_row['Final Amount'].split(' ')
+            quote_amount, quote_asset = csv_row['Amount'].split(' ')
+            fee, fee_currency = csv_row['Fees'].split(' ')
+        except ValueError as err:
+            raise DeserializationError(
+                f'Could not split amount/asset from entry {csv_row}',
+            ) from err
+
         base_asset = symbol_to_asset_or_token(base_asset)
         amount = deserialize_asset_amount(amount)
-        quote_amount, quote_asset = csv_row['Amount'].split(' ')
         quote_asset = symbol_to_asset_or_token(quote_asset)
         quote_amount = deserialize_asset_amount(quote_amount)
-        fee, fee_currency = csv_row['Fees'].split(' ')
         fee = deserialize_fee(fee)
         fee_currency = symbol_to_asset_or_token(fee_currency)
-        rate = Price((quote_amount + fee) / amount)
+        rate = Price(amount / quote_amount)
         trade = Trade(
             timestamp=timestamp,
             location=Location.BINANCE,
@@ -816,14 +826,15 @@ class DataImporter():
             rate=rate,
             fee=fee,
             fee_currency=fee_currency,
-            link='',
+            link=csv_row['Transaction ID'],
             notes=f"{csv_row['Method']} {csv_row['Status']} purchase",
         )
         self.db.add_trades([trade])
 
     def import_binance_purchases_csv(self, filepath: Path) -> Tuple[bool, str]:
         """
-        Addresses issue #2362 on GitHub
+        Import Binance "Buy Crypto History", which is the purchase history made
+        with credit/debit cards.
         """
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
@@ -841,9 +852,6 @@ class DataImporter():
                         f'Deserialization error during Binance CSV import. '
                         f'{str(e)}. Ignoring entry',
                     )
-                    continue
-                except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
                     continue
                 except KeyError as e:
                     return False, str(e)
