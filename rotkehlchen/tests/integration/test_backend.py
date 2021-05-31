@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from http import HTTPStatus
 
 import gevent
@@ -17,6 +18,8 @@ def test_backend():
         stderr=subprocess.STDOUT,
     )
     timeout = 10
+    if sys.platform == 'darwin':
+        timeout = 30  # in macos the backend may take a long time to start
     with gevent.Timeout(timeout):
         try:
             while True:
