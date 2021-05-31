@@ -815,7 +815,7 @@ class DataImporter():
         quote_amount = deserialize_asset_amount(quote_amount)
         fee = deserialize_fee(fee)
         fee_currency = symbol_to_asset_or_token(fee_currency)
-        rate = Price(amount / quote_amount)
+        rate = Price(quote_amount / amount)
         trade = Trade(
             timestamp=timestamp,
             location=Location.BINANCE,
