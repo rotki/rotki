@@ -38,7 +38,7 @@ class BalancesTestSetup(NamedTuple):
     beaconchain_patch: _patch
     ethtokens_max_chunks_patch: _patch
     bitcoin_patch: _patch
-    defi_balances_patch: _patch
+    defi_balances_patch: Optional[_patch]
 
     def enter_all_patches(self, stack: ExitStack):
         stack.enter_context(self.poloniex_patch)

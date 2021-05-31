@@ -1463,6 +1463,7 @@ def _remove_blockchain_accounts_test_start(
         eth_balances=eth_balances_after_removal,
         token_balances=token_balances_after_removal,
         also_btc=query_balances_before_first_modification,
+        expected_liabilities=after_liabilities,
     )
     # Also make sure they are removed from the DB
     accounts = rotki.data.db.get_blockchain_accounts()
@@ -1494,8 +1495,7 @@ def _remove_blockchain_accounts_test_start(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [4])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-# @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
-@pytest.mark.parametrize('query_balances_before_first_modification', [True])
+@pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
 def test_remove_blockchain_accounts(
         rotkehlchen_api_server,
         ethereum_accounts,
