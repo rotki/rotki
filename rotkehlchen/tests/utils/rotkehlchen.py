@@ -4,10 +4,11 @@ from unittest.mock import _patch, patch
 
 import requests
 
-from rotkehlchen.accounting.structures import BalanceType
+from rotkehlchen.accounting.structures import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import (
@@ -37,6 +38,7 @@ class BalancesTestSetup(NamedTuple):
     beaconchain_patch: _patch
     ethtokens_max_chunks_patch: _patch
     bitcoin_patch: _patch
+    defi_balances_patch: Optional[_patch]
 
     def enter_all_patches(self, stack: ExitStack):
         stack.enter_context(self.poloniex_patch)
@@ -53,6 +55,8 @@ class BalancesTestSetup(NamedTuple):
         stack.enter_context(self.etherscan_patch)
         stack.enter_context(self.ethtokens_max_chunks_patch)
         stack.enter_context(self.beaconchain_patch)
+        if self.defi_balances_patch is not None:
+            stack.enter_context(self.defi_balances_patch)
         return stack
 
 
@@ -62,6 +66,7 @@ def setup_balances(
         btc_accounts: Optional[List[BTCAddress]],
         eth_balances: Optional[List[str]] = None,
         token_balances: Optional[Dict[EthereumToken, List[str]]] = None,
+        liabilities: Optional[Dict[EthereumToken, List[str]]] = None,
         btc_balances: Optional[List[str]] = None,
         manually_tracked_balances: Optional[List[ManuallyTrackedBalance]] = None,
         original_queries: Optional[List[str]] = None,
@@ -124,6 +129,37 @@ def setup_balances(
         for token in token_balances:
             eth_map[acc][token] = token_balances[token][idx]
 
+    defi_balances_patch = None
+    if liabilities is not None:
+        def mock_add_defi_balances_to_token_and_totals():
+            # super hacky way of mocking this but well fuck it
+            if len(rotki.chain_manager.balances.eth) == 4:
+                d_liabilities = liabilities.copy()
+            else:  # we know the only test this is used removes index 0 and 2
+                msg = 'Should be at removal of accounts and only have 2 left'
+                assert len(rotki.chain_manager.balances.eth) == 2, msg
+                d_liabilities = {
+                    k: [
+                        x for idx, x in enumerate(v) if idx not in (0, 2)
+                    ] for k, v in liabilities.items()
+                }
+
+            for token, balances in d_liabilities.items():
+                for idx, balance in enumerate(balances):
+                    balance = FVal(balance)
+                    if balance == ZERO:
+                        continue
+
+                    account = ethereum_accounts[idx]
+                    rotki.chain_manager.balances.eth[account].liabilities[token] = Balance(balance)
+                    rotki.chain_manager.totals.liabilities[token] += Balance(balance)
+
+        defi_balances_patch = patch.object(
+            rotki.chain_manager,
+            'add_defi_balances_to_token_and_totals',
+            side_effect=mock_add_defi_balances_to_token_and_totals,
+        )
+
     btc_map: Dict[BTCAddress, str] = {}
     for idx, btc_acc in enumerate(btc_accounts):
         btc_map[btc_acc] = btc_balances[idx]
@@ -176,6 +212,7 @@ def setup_balances(
         ethtokens_max_chunks_patch=ethtokens_max_chunks_patch,
         bitcoin_patch=bitcoin_patch,
         beaconchain_patch=beaconchain_patch,
+        defi_balances_patch=defi_balances_patch,
     )
 
 

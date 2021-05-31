@@ -76,6 +76,7 @@ def assert_eth_balances_result(
         eth_balances: List[str],
         token_balances: Dict[EthereumToken, List[str]],
         also_btc: bool,
+        expected_liabilities: Dict[EthereumToken, List[str]] = None,
         totals_only: bool = False,
 ) -> None:
     """Asserts for correct ETH blockchain balances when mocked in tests
@@ -116,6 +117,17 @@ def assert_eth_balances_result(
         totals = result
     else:
         totals = result['totals']['assets']
+
+    if expected_liabilities is not None:
+        per_account = result['per_account']['ETH']
+        for token, balances in expected_liabilities.items():
+            total_amount = ZERO
+            for idx, account in enumerate(eth_accounts):
+                amount = FVal(per_account[account]['liabilities'][token.identifier]['amount'])
+                assert amount == FVal(balances[idx])
+                total_amount += amount
+
+            assert FVal(result['totals']['liabilities'][token.identifier]['amount']) == total_amount  # noqa: E501
 
     # Check our owned eth tokens here since the test may have changed their number
     owned_assets = set(rotki.chain_manager.totals.assets.keys())

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`1403` When removing an ethereum account that has liabilities, they should now also be removed from the dashboard and from the blockchain accounts view.
 * :bug:`2998` If a new token is added in the rotki list of assets then the token detection cache is now invalidated so it will be detected when refreshing balances.
 * :bug:`2999` If a binance withdrawal is missing the txId field rotki will now still be able to process it correctly.
 * :bug:`2993` If a sell of FIAT for crypto is made, which is effectively a buy of crypto with FIAT, complaints about the source of funds should no longer be generated.
