@@ -93,7 +93,7 @@ class DataImporter():
         """Consumes a cointracking entry row from the CSV and adds it into the database
         Can raise:
             - DeserializationError if something is wrong with the format of the expected values
-            - UnsupportedCointrackingEntry if importing of this entry is not supported.
+            - UnsupportedCSVEntry if importing of this entry is not supported.
             - IndexError if the CSV file is corrupt
             - KeyError if the an expected CSV key is missing
             - UnknownAsset if one of the assets founds in the entry are not supported
