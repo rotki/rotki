@@ -777,9 +777,6 @@ class DataImporter():
                         f'{str(e)}. Ignoring entry',
                     )
                     continue
-                except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
-                    continue
                 except KeyError as e:
                     return False, str(e)
         return True, ''
