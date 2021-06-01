@@ -42,6 +42,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
+    deserialize_int_from_str,
     deserialize_timestamp_from_bitstamp_date,
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, Location, Timestamp
@@ -472,10 +473,11 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             is_result_timestamp_gt_end_ts = False
             result: Union[Trade, AssetMovement]
             for raw_result in response_list:
-                if int(raw_result['type']) not in raw_result_type_filter:
-                    log.debug(f'Skipping entry {raw_result} due to type mismatch')
-                    continue
                 try:
+                    entry_type = deserialize_int_from_str(raw_result['type'], 'bitstamp event')
+                    if entry_type not in raw_result_type_filter:
+                        log.debug(f'Skipping entry {raw_result} due to type mismatch')
+                        continue
                     result_timestamp = deserialize_timestamp_from_bitstamp_date(
                         raw_result['datetime'],
                     )
@@ -535,7 +537,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         Endpoint docs:
         https://www.bitstamp.net/api/#user-transactions
         """
-        type_ = int(raw_movement['type'])
+        type_ = deserialize_int_from_str(raw_movement['type'], 'bitstamp asset movement')
         category: AssetMovementCategory
         if type_ == 0:
             category = AssetMovementCategory.DEPOSIT

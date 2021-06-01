@@ -506,7 +506,7 @@ def test_api_query_paginated_skips_different_type_result(mock_bitstamp):
     def mock_api_query_response(endpoint, method, options):  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.OK,
-            '[{"type": "whatever"}, {"type": 23}]',
+            '[{"type": "whatever"}, {"type": "23"}]',
         )
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
@@ -551,7 +551,7 @@ def test_api_query_paginated_stops_timestamp_gt_end_ts(mock_bitstamp):
     def mock_api_query_response(endpoint, method, options):  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.OK,
-            f'[{{"type": 14, "datetime": "{gt_now_iso}"}}]',
+            f'[{{"type": "14", "datetime": "{gt_now_iso}"}}]',
         )
 
     with patch(
@@ -587,7 +587,7 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
     user_transaction_1 = """
     {
         "id": 1,
-        "type": -1,
+        "type": "-1",
         "datetime": "2020-12-02 09:00:00"
     }
     """
@@ -595,7 +595,7 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
     user_transaction_2 = """
     {
         "id": 2,
-        "type": 2,
+        "type": "2",
         "datetime": "2020-12-02 09:30:00",
         "btc": "0.50000000",
         "usd": "-10000.00000000",
@@ -608,7 +608,7 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
     user_transaction_3 = """
     {
         "id": 3,
-        "type": -1,
+        "type": "-1",
         "datetime": "2020-12-02 18:00:00"
     }
     """
@@ -616,7 +616,7 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
     user_transaction_4 = """
     {
         "id": 4,
-        "type": -1,
+        "type": "-1",
         "datetime": "2020-12-03 9:00:00"
     }
     """
@@ -624,7 +624,7 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
     user_transaction_5 = """
     {
         "id": 5,
-        "type": 2,
+        "type": "2",
         "datetime": "2020-12-03 11:30:00",
         "eur": "-1.00000000",
         "usd": "1.22000000",
@@ -637,7 +637,7 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
     user_transaction_6 = """
     {
         "id": 6,
-        "type": 2,
+        "type": "2",
         "datetime": "2020-12-03 12:00:01",
         "eth": "1.00000000",
         "usdc": "-750.00000000",
@@ -809,7 +809,7 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
 def test_deserialize_asset_movement_deposit(mock_bitstamp):
     raw_movement = {
         'id': 2,
-        'type': 0,
+        'type': '0',
         'datetime': '2020-12-02 09:30:00',
         'btc': '0.50000000',
         'usd': '0.00000000',
@@ -836,7 +836,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
 
     raw_movement = {
         'id': 3,
-        'type': 0,
+        'type': '0',
         'datetime': '2018-03-21 06:46:06.559877',
         'btc': '0',
         'usd': '0.00000000',
@@ -865,7 +865,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
 def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
     raw_movement = {
         'id': 5,
-        'type': 1,
+        'type': '1',
         'datetime': '2020-12-02 09:30:00',
         'btc': '0.00000000',
         'usd': '-10000.00000000',
@@ -892,7 +892,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
 
     raw_movement = {
         'id': 5,
-        'type': 1,
+        'type': '1',
         'datetime': '2018-03-21 06:46:06.559877',
         'btc': '0',
         'usd': '0',
