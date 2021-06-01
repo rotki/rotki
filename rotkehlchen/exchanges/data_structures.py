@@ -38,14 +38,14 @@ AssetMovementDBTuple = Tuple[
     str,  # id
     str,  # location
     str,  # category
-    int,  # timestamp
+    str,  # address
+    str,  # transaction_id
+    int,  # time
     str,  # asset
     str,  # amount
     str,  # fee_asset
     str,  # fee
     str,  # link
-    str,  # address
-    str,  # transaction_id
 ]
 
 
@@ -103,16 +103,16 @@ class AssetMovement(NamedTuple):
         return AssetMovement(
             location=Location.deserialize_from_db(entry[1]),
             category=deserialize_asset_movement_category_from_db(entry[2]),
-            timestamp=Timestamp(entry[3]),
-            asset=Asset(entry[4]),
+            address=entry[3],
+            transaction_id=entry[4],
+            timestamp=Timestamp(entry[5]),
+            asset=Asset(entry[6]),
             # TODO: should we also _force_positive here? I guess not since
             # we always make sure to save it as positive
-            amount=deserialize_asset_amount(entry[5]),
-            fee_asset=Asset(entry[6]),
-            fee=deserialize_fee(entry[7]),
-            link=entry[8],
-            address=entry[9],
-            transaction_id=entry[10],
+            amount=deserialize_asset_amount(entry[7]),
+            fee_asset=Asset(entry[8]),
+            fee=deserialize_fee(entry[9]),
+            link=entry[10],
         )
 
 
