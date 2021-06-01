@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3033` Users of Bitstamp should be able to pull their trades, deposits and withdrawals history again.
 * :bug:`3030` Setting up a bitfinex api key should now work properly again.
 * :bug:`3010` Fixes a bug when editing a trade that had a modified/replaced asset could fail with a "trade identifier not found" error.
 * :bug:`1403` When removing an ethereum account that has liabilities, they should now also be removed from the dashboard and from the blockchain accounts view.
