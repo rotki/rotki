@@ -174,6 +174,10 @@ Currency location
 
 This setting chooses if the currency symbol will be shown before ($1,000) or after(1,000$) the number.
 
+Amount Rounding
+^^^^^^^^^^^^^^^^^^
+
+This setting modifies the rounding mechanism choosing from ``Round up``, ``Round down`` and ``Half even`` (rounds to the nearest value). It can be individually modified how amounts and values are rounded.
 
 Local nodes
 ------------
