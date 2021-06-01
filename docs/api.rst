@@ -8021,7 +8021,7 @@ Sending a Ping
 Data imports
 =============
 
-.. http:get:: /api/(version)/import
+.. http:put:: /api/(version)/import
 
    Doing a PUT on the data import endpoint will facilitate importing data from external sources. The arguments are the source of data import and the filepath to the data for importing.
 
