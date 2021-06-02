@@ -800,7 +800,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self.first_connection()
             returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
             returned_balances = self._query_spot_balances(returned_balances)
-            if self.name != str(Location.BINANCEUS):
+            if self.location != Location.BINANCEUS:
                 returned_balances = self._query_lending_balances(returned_balances)
                 returned_balances = self._query_cross_collateral_futures_balances(returned_balances)  # noqa: E501
                 returned_balances = self._query_margined_futures_balances('fapi', returned_balances)  # noqa: E501
