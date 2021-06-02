@@ -129,7 +129,7 @@ Set how often (in hours) the data of all balances will be saved. This data is us
 Date display format
 ^^^^^^^^^^^^^^^^^^^^
 
-Set the display format of the dates in the rotki user interface. One such format is ``%m/%d/%Y %H:%M:%S``. That means month/day/year hour:minutes:seconds. For possible valid formats check `here <https://exchange.https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes/>`__.
+Set the display format of the dates in the rotki user interface. One such format is ``%m/%d/%Y %H:%M:%S``. That means month/day/year hour:minutes:seconds. For possible valid formats check `here <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes/>`__.
 
 Display in local time
 ^^^^^^^^^^^^^^^^^^^^^^^
