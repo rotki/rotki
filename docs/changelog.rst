@@ -9,6 +9,7 @@ Changelog
 * :bug:`2998` If a new token is added in the rotki list of assets then the token detection cache is now invalidated so it will be detected when refreshing balances.
 * :bug:`2999` If a binance withdrawal is missing the txId field rotki will now still be able to process it correctly.
 * :bug:`2993` If a sell of FIAT for crypto is made, which is effectively a buy of crypto with FIAT, complaints about the source of funds should no longer be generated.
+* :bug:`2994` Nexo users will be able to correctly import their information from a CSV file.
 
 * :release:`1.17.1 <2021-05-26>`
 * :bug:`2984` The notification background will now properly adjust for users using the application in light mode.
