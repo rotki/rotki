@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3037` Querying a big number of legacy bitcoin addresses from an xpub should now work properly again.
 * :bug:`3038` Binance.us queries should now work properly again.
 * :bug:`3033` Users of Bitstamp should be able to pull their trades, deposits and withdrawals history again.
 * :bug:`3030` Setting up a bitfinex api key should now work properly again.
