@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.17.2 <2021-06-04>`
 * :bug:`3043` Collapsed xpubs should now be included in the totals in the btc accounts table.
 * :bug:`3029` Exchanges balances tab will properly adjust to a dark background on dark mode.
 * :bug:`3027` Day should now display properly under all circumstances when a custom date format is evaluated.
