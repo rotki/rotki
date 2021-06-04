@@ -14,7 +14,12 @@
         <span class="text-subtitle-2">{{ label }}</span>
       </div>
       <div>
-        <v-btn v-if="items.length > 0" small icon @click="expandClicked(xpub)">
+        <v-btn
+          v-if="items.length > 0"
+          small
+          icon
+          @click="expandClicked({ ...xpub, balance })"
+        >
           <v-icon v-if="expanded" small>mdi-chevron-up</v-icon>
           <v-icon v-else small>mdi-chevron-down</v-icon>
         </v-btn>
@@ -102,7 +107,8 @@ import Fragment from '@/components/helper/Fragment';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { balanceSum, truncateAddress, truncationPoints } from '@/filters';
 import PrivacyMixin from '@/mixins/privacy-mixin';
-import { XpubAccountWithBalance, XpubPayload } from '@/store/balances/types';
+import { Balance } from '@/services/types-api';
+import { XpubAccountWithBalance } from '@/store/balances/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';
 import { Tags } from '@/typing/types';
 
@@ -155,11 +161,15 @@ export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
     return balanceUsdValueSum(this.items);
   }
 
-  @Emit()
-  deleteClicked(_payload: XpubPayload) {}
+  get balance(): Balance {
+    return { amount: this.sum, usdValue: this.usdSum };
+  }
 
   @Emit()
-  expandClicked(_xpub: XpubPayload) {}
+  deleteClicked(_payload: XpubAccountWithBalance) {}
+
+  @Emit()
+  expandClicked(_xpub: XpubAccountWithBalance) {}
 
   @Emit()
   editClicked(_xpub: XpubAccountWithBalance) {}

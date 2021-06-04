@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3043` Collapsed xpubs should now be included in the totals in the btc accounts table.
 * :bug:`3029` Exchanges balances tab will properly adjust to a dark background on dark mode.
 * :bug:`3027` Day should now display properly under all circumstances when a custom date format is evaluated.
 * :bug:`81` Users with more than 10,000 trades in poloniex will now be able to properly pull their trading history.

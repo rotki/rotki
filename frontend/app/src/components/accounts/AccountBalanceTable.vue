@@ -111,9 +111,7 @@
           <td class="text-end" :class="mobileClass">
             <amount-display
               :loading="loading"
-              :value="
-                visibleBalances.map(val => val.balance.amount) | balanceSum
-              "
+              :value="total.amount"
               :asset="$vuetify.breakpoint.xsOnly ? blockchain : null"
             />
           </td>
@@ -122,9 +120,7 @@
               :loading="loading"
               fiat-currency="USD"
               show-currency="symbol"
-              :value="
-                visibleBalances.map(val => val.balance.usdValue) | balanceSum
-              "
+              :value="total.usdValue"
             />
           </td>
         </tr>
@@ -191,10 +187,12 @@ import { balanceSum } from '@/filters';
 import StatusMixin from '@/mixins/status-mixin';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
+import { Balance } from '@/services/types-api';
 import { chainSection } from '@/store/balances/const';
 import {
   AssetBalance,
   BlockchainAccountWithBalance,
+  XpubAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
 import { Properties } from '@/types';
@@ -254,7 +252,40 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
 
   expanded = [];
 
-  collapsedXpubs: XpubPayload[] = [];
+  collapsedXpubs: XpubAccountWithBalance[] = [];
+
+  get total(): Balance {
+    const balances = this.visibleBalances;
+    const collapsedAmount = this.collapsedXpubBalances.amount;
+    const collapsedUsd = this.collapsedXpubBalances.usdValue;
+    const amount = balanceSum(
+      balances.map(({ balance }) => balance.amount)
+    ).plus(collapsedAmount);
+    const usdValue = balanceSum(
+      balances.map(({ balance }) => balance.usdValue)
+    ).plus(collapsedUsd);
+    return {
+      amount,
+      usdValue
+    };
+  }
+
+  get collapsedXpubBalances(): Balance {
+    const balance: Balance = {
+      amount: Zero,
+      usdValue: Zero
+    };
+
+    return this.collapsedXpubs
+      .filter(({ tags }) => this.visibleTags.every(tag => tags.includes(tag)))
+      .reduce(
+        (previousValue, currentValue) => ({
+          amount: previousValue.amount.plus(currentValue.balance.amount),
+          usdValue: previousValue.usdValue.plus(currentValue.balance.usdValue)
+        }),
+        balance
+      );
+  }
 
   get mobileClass(): string | null {
     return this.$vuetify.breakpoint.xsOnly ? 'v-data-table__mobile-row' : null;
@@ -305,7 +336,11 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
     );
   }
 
-  expandXpub(isOpen: boolean, toggle: () => void, xpub: XpubPayload) {
+  expandXpub(
+    isOpen: boolean,
+    toggle: () => void,
+    xpub: XpubAccountWithBalance
+  ) {
     toggle();
     if (isOpen) {
       this.collapsedXpubs.push(xpub);
