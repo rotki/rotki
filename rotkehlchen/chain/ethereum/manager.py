@@ -17,6 +17,7 @@ from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
+from web3.exceptions import BadFunctionCallOutput
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 from web3.types import FilterParams
 
@@ -782,7 +783,7 @@ class EthereumManager():
         try:
             method = getattr(contract.caller, method_name)
             result = method(*arguments if arguments else [])
-        except ValueError as e:
+        except (ValueError, BadFunctionCallOutput) as e:
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address}: {str(e)}',
             ) from e
