@@ -197,6 +197,7 @@ WORLD_TO_KRAKEN = {
     strethaddress_to_identifier('0x3845badAde8e6dFF049820680d1F14bD3903a5d0'): 'SAND',
     strethaddress_to_identifier('0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C'): 'BNT',
     strethaddress_to_identifier('0xF629cBd94d3791C9250152BD8dfBDF380E2a3B9c'): 'ENJ',
+    'MINA': 'MINA',
 }
 
 WORLD_TO_BINANCE = {
