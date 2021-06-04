@@ -339,6 +339,5 @@ EXTERNAL_EXCHANGES: List = [
     Location.CRYPTOCOM,
     Location.BLOCKFI,
     Location.NEXO,
-    Location.BINANCE,
 ]
 EXTERNAL_LOCATION = [Location.EXTERNAL] + EXTERNAL_EXCHANGES
