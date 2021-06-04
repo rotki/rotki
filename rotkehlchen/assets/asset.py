@@ -108,6 +108,8 @@ WORLD_TO_POLONIEX = {
     strethaddress_to_identifier('0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0'): 'TRB',
     # WINK is WIN in poloniex
     'WIN-3': 'WIN',
+    # GTC is gitcoin in poloniex
+    strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
 }
 
 WORLD_TO_KRAKEN = {
