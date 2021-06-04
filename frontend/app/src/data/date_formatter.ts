@@ -113,12 +113,12 @@ export class DateFormatter {
     return !!matches && matches.length > 0;
   }
 
-  format(date: Date, format: string, resetIndex: boolean = false) {
+  format(date: Date, format: string) {
     let formattedString = format;
     let m;
 
     const regex = this.regex;
-    if (resetIndex) {
+    if (regex.lastIndex > 0) {
       regex.lastIndex = 0;
     }
     while ((m = regex.exec(format)) !== null) {

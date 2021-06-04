@@ -356,7 +356,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   amountExample = bigNumberify(123456.789);
 
   get dateFormat(): string {
-    return displayDateFormatter.format(this.now, this.dateDisplayFormat, true);
+    return displayDateFormatter.format(this.now, this.dateDisplayFormat);
   }
 
   resetDateFormat() {
