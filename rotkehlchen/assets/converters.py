@@ -496,6 +496,7 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'XLMDOWN',  # no cryptocompare/coingecko data
     'XLMUP',  # no cryptocompare/coingecko data
     'UAH',  # no cryptocompare/coingecko data
+    'AGIX',  # binance forked AGI to AGIX but is not in crytocompare/coingecko yet TODO: review
 )
 
 UNSUPPORTED_BITFINEX_ASSETS = (
@@ -505,6 +506,7 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'IQX',  # no cryptocompare/coingecko data (EOS token)
     'IDX',  # no cryptocompare/coingecko data
     'CHEX',  # no cryptocompare/coingecko data (chintai)
+    'PLANETS',  # PlanetWatch (PLANETS) but has no cryptocompare/coingecko
 )
 
 UNSUPPORTED_FTX_ASSETS = (
