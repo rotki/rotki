@@ -205,12 +205,11 @@ jobs:
       - name: Notify On Failure
         if: ${{ failure() }}
         run: |
-          curl --request POST \
-            --url ${{ secrets.WEBHOOK }} \
-            --header 'Content-Type: application/json' \
-            --data '{
-          	"content": ":construction_site: **Github Actions:** ${{ github.job }} failed :x: \r\n\r\n  <@&735068019440615516> please have a look at [${{ github.run_id }}](https://github.com/rotki/rotki/actions/runs/${{ github.run_id }}) :cry:"
-          }'
+          $uri="${{ secrets.WEBHOOK }}"
+          $body = @{
+            "content" = ":construction_site: **Github Actions:** ${{ github.job }} failed :x: <@&735068019440615516> please have a look at [${{ github.run_id }}](https://github.com/rotki/rotki/actions/runs/${{ github.run_id }}) :cry:"
+          } | ConvertTo-Json
+          Invoke-RestMethod -Method Post -Uri $uri -ContentType "application/json" -Body $body
 
   build-docker:
     runs-on: ubuntu-18.04
