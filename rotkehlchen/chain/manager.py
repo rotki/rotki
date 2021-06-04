@@ -658,6 +658,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     self.totals.assets[asset] -= balance
                     if self.totals.assets[asset].amount <= ZERO:
                         self.totals.assets[asset] = Balance()
+
+                for asset, balance in balances.liabilities.items():
+                    self.totals.liabilities[asset] -= balance
+                    if self.totals.liabilities[asset].amount <= ZERO:
+                        self.totals.assets[asset] = Balance()
             self.balances.eth.pop(account, None)
         else:
             raise AssertionError('Programmer error: Should be append or remove')

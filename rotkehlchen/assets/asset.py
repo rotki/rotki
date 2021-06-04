@@ -108,6 +108,8 @@ WORLD_TO_POLONIEX = {
     strethaddress_to_identifier('0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0'): 'TRB',
     # WINK is WIN in poloniex
     'WIN-3': 'WIN',
+    # GTC is gitcoin in poloniex
+    strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
 }
 
 WORLD_TO_KRAKEN = {
@@ -197,6 +199,7 @@ WORLD_TO_KRAKEN = {
     strethaddress_to_identifier('0x3845badAde8e6dFF049820680d1F14bD3903a5d0'): 'SAND',
     strethaddress_to_identifier('0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C'): 'BNT',
     strethaddress_to_identifier('0xF629cBd94d3791C9250152BD8dfBDF380E2a3B9c'): 'ENJ',
+    'MINA': 'MINA',
 }
 
 WORLD_TO_BINANCE = {

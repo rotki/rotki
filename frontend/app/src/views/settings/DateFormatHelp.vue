@@ -23,7 +23,7 @@
             <span class="ms-8">
               {{
                 $t('date_format_help.example', {
-                  example: formatter.format(now, directive, true)
+                  example: formatter.format(now, directive)
                 })
               }}
             </span>

@@ -256,6 +256,17 @@ export default class ExchangeBalances extends Vue {
         opacity: 1 !important;
       }
     }
+
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern, rule-empty-line-before */
+    .theme--dark &--active {
+      background-color: var(--v-dark-lighten1);
+      color: white;
+
+      &:hover {
+        background-color: var(--v-dark-base) !important;
+      }
+    }
+    /* stylelint-enable selector-class-pattern,selector-nested-pattern, rule-empty-line-before */
   }
 }
 </style>

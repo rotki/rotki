@@ -789,10 +789,12 @@ class DataImporter():
         - UnknownAsset
         - DeserializationError
         """
-        if 'rejected' not in csv_row['Description']:
+        ignored_entries = ('ExchangeToWithdraw', 'DepositToExchange')
+
+        if 'rejected' not in csv_row['Details']:
             timestamp = deserialize_timestamp_from_date(
-                date=csv_row['DateTime'],
-                formatstr='%Y-%m-%d %H:%M:%S',
+                date=csv_row['Date / Time'],
+                formatstr='%Y-%m-%d %H:%M',
                 location='NEXO',
             )
         else:
@@ -802,8 +804,9 @@ class DataImporter():
         asset = symbol_to_asset_or_token(csv_row['Currency'])
         amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
         entry_type = csv_row['Type']
+        transaction = csv_row['Transaction']
 
-        if entry_type in ('Deposit', 'ExchangeDepositedOn'):
+        if entry_type in ('Deposit', 'ExchangeDepositedOn', 'LockingTermDeposit'):
             asset_movement = AssetMovement(
                 location=Location.NEXO,
                 category=AssetMovementCategory.DEPOSIT,
@@ -814,7 +817,7 @@ class DataImporter():
                 amount=amount,
                 fee=Fee(ZERO),
                 fee_asset=A_USD,
-                link='',
+                link=transaction,
             )
             self.db.add_asset_movements([asset_movement])
         elif entry_type in ('Withdrawal', 'WithdrawExchanged'):
@@ -828,7 +831,7 @@ class DataImporter():
                 amount=amount,
                 fee=Fee(ZERO),
                 fee_asset=A_USD,
-                link='',
+                link=transaction,
             )
             self.db.add_asset_movements([asset_movement])
         elif entry_type == 'Withdrawal Fee':
@@ -845,7 +848,7 @@ class DataImporter():
                 notes=f'{entry_type} from Nexo',
             )
             self.db_ledger.add_ledger_action(action)
-        elif entry_type in ('Interest', 'Bonus'):
+        elif entry_type in ('Interest', 'Bonus', 'Dividend'):
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
                 timestamp=timestamp,
@@ -855,10 +858,12 @@ class DataImporter():
                 asset=asset,
                 rate=None,
                 rate_asset=None,
-                link=None,
+                link=transaction,
                 notes=f'{entry_type} from Nexo',
             )
             self.db_ledger.add_ledger_action(action)
+        elif entry_type in ignored_entries:
+            pass
         else:
             raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
 

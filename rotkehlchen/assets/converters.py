@@ -348,6 +348,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # https://global.bittrex.com/Market/Index?MarketName=BTC-APM
     'APM',
     'BST',  # No coingecko or cryptocompare yet. Beshare Token TODO: Review this one in a few days
+    'CADX',  # no cryptocompare/coingecko data TODO: Review this one
     'CBC',  # neither in coingecko nor cryptocompare
     # Tether CNH. As of 30/09/2019 no data found outside of Bittrex for this token
     # https://medium.com/bittrex/new-bittrex-international-listing-tether-cnh-cnht-c9ad966ac303
@@ -414,6 +415,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Ecochain. As of 22/07/2020 no data found outside of Bittrex for this token.
     # All ECOC data refer to a different coin called EcoCoin
     'ECOC',
+    'EDG',
     # As of 28/08/2020 the following assets don't have prices listed anywhere
     'FME',
     'FOL',  # neither in coingecko nor cryptocompare
@@ -494,6 +496,7 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'XLMDOWN',  # no cryptocompare/coingecko data
     'XLMUP',  # no cryptocompare/coingecko data
     'UAH',  # no cryptocompare/coingecko data
+    'AGIX',  # binance forked AGI to AGIX but is not in crytocompare/coingecko yet TODO: review
 )
 
 UNSUPPORTED_BITFINEX_ASSETS = (
@@ -503,6 +506,7 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'IQX',  # no cryptocompare/coingecko data (EOS token)
     'IDX',  # no cryptocompare/coingecko data
     'CHEX',  # no cryptocompare/coingecko data (chintai)
+    'PLANETS',  # PlanetWatch (PLANETS) but has no cryptocompare/coingecko
 )
 
 UNSUPPORTED_FTX_ASSETS = (
@@ -569,12 +573,17 @@ UNSUPPORTED_FTX_ASSETS = (
 
 # https://api.kucoin.com/api/v1/currencies
 UNSUPPORTED_KUCOIN_ASSETS = (
+    'AGIX',  # no cryptocompare/coingecko data
     'AXE',  # delisted
+    'BCH3L',  # no cryptocompare/coingecko data
+    'BCH3S',  # no cryptocompare/coingecko data
     'BTC3L',  # no cryptocompare/coingecko data
     'BTC3S',  # no cryptocompare/coingecko data
     'BTCP',  # delisted
     'CADH',  # no cryptocompare/coingecko data
     'CBC',  # neither in coingecko nor cryptocompare
+    'EOS3L',  # no cryptocompare/coingecko data
+    'EOS3S',  # no cryptocompare/coingecko data
     'EPRX',  # delisted and no cryptocompare/coingecko data
     'ETH3L',  # no cryptocompare/coingecko data
     'ETH3S',  # no cryptocompare/coingecko data
@@ -586,6 +595,9 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'HOTCROSS',  # no cryptocompare/coingecko data
     'KTS',  # delisted
     'LOL',  # delisted
+    'LSS',  # no cryptocompare/coingecko data
+    'LTC3L',  # no cryptocompare/coingecko data
+    'LTC3S',  # no cryptocompare/coingecko data
     'MAP2',  # delisted
     'SATT',  # delisted
     'SERO',  # delisted
@@ -593,6 +605,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'TCP',  # The Crypto Prophecies no cryptocompare/coingecko data
     'TNC2',  # delisted and no cryptocompare/coingecko data
     'TT',  # delisted
+    'VET3L',  # no cryptocompare/coingecko data
+    'VET3S',  # no cryptocompare/coingecko data
     'VNX',  # delisted and no cryptocompare/coingecko data
     'VOL',  # delisted
     'ADA3S',  # no cryptocompare/coingecko data

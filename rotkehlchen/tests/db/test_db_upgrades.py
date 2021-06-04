@@ -31,6 +31,7 @@ from rotkehlchen.db.upgrades.v13_v14 import REMOVED_ASSETS, REMOVED_ETH_TOKENS
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.database import (
     mock_dbhandler_add_globaldb_assetids,
+    mock_dbhandler_ensura_data_integrity,
     mock_dbhandler_update_owned_assets,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -322,7 +323,7 @@ def test_upgrade_db_1_to_2(data_dir, username):
     ethereum accounts are now checksummed"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch, target_patch(1), mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids():  # noqa: E501
+    with creation_patch, target_patch(1), mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         data.unlock(username, '123', create_new=True)
     # Manually input a non checksummed account
     data.db.conn.commit()
@@ -351,14 +352,14 @@ def test_upgrade_db_1_to_2(data_dir, username):
 def test_upgrade_db_2_to_3(user_data_dir):
     """Test upgrading the DB from version 2 to version 3, rename BCHSV to BSV"""
     msg_aggregator = MessagesAggregator()
-    with creation_patch, mock_dbhandler_add_globaldb_assetids():
+    with creation_patch, mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         db = _init_db_with_target_version(
             target_version=2,
             user_data_dir=user_data_dir,
             msg_aggregator=msg_aggregator,
         )
 
-    with mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids():
+    with mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         populate_db_and_check_for_asset_renaming(
             db=db,
             user_data_dir=user_data_dir,
@@ -375,7 +376,7 @@ def test_upgrade_db_3_to_4(data_dir, username):
     the eth_rpc_port setting is changed to eth_rpc_endpoint"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch, target_patch(3), mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids():  # noqa: E501
+    with creation_patch, target_patch(3), mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         data.unlock(username, '123', create_new=True)
     # Manually set version and input the old rpcport setting
     cursor = data.db.conn.cursor()
@@ -390,7 +391,7 @@ def test_upgrade_db_3_to_4(data_dir, username):
     data.db.conn.commit()
 
     # now relogin and check that the setting has been changed and the version bumped
-    with mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids():
+    with mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         del data
         data = DataHandler(data_dir, msg_aggregator)
         with target_patch(target_version=4):
@@ -412,14 +413,14 @@ def test_upgrade_db_3_to_4(data_dir, username):
 def test_upgrade_db_4_to_5(user_data_dir):
     """Test upgrading the DB from version 4 to version 5, rename BCC to BCH"""
     msg_aggregator = MessagesAggregator()
-    with creation_patch, mock_dbhandler_add_globaldb_assetids():
+    with creation_patch, mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         db = _init_db_with_target_version(
             target_version=4,
             user_data_dir=user_data_dir,
             msg_aggregator=msg_aggregator,
         )
 
-    with mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids():
+    with mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         populate_db_and_check_for_asset_renaming(
             db=db,
             user_data_dir=user_data_dir,
@@ -852,11 +853,12 @@ def test_upgrade_db_11_to_12(user_data_dir):
     Deleting all bittrex data from the DB"""
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v11_rotkehlchen.db')
-    db = _init_db_with_target_version(
-        target_version=12,
-        user_data_dir=user_data_dir,
-        msg_aggregator=msg_aggregator,
-    )
+    with mock_dbhandler_ensura_data_integrity():
+        db = _init_db_with_target_version(
+            target_version=12,
+            user_data_dir=user_data_dir,
+            msg_aggregator=msg_aggregator,
+        )
 
     # Make sure that only one trade is left
     cursor = db.conn.cursor()
@@ -1449,12 +1451,12 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v24_rotkehlchen.db')
-    db_v24 = _init_db_with_target_version(
-        target_version=24,
-        user_data_dir=user_data_dir,
-        msg_aggregator=msg_aggregator,
-
-    )
+    with mock_dbhandler_ensura_data_integrity():
+        db_v24 = _init_db_with_target_version(
+            target_version=24,
+            user_data_dir=user_data_dir,
+            msg_aggregator=msg_aggregator,
+        )
     # copy some test icons in the test directory
     icons_dir = user_data_dir.parent / 'icons'
     custom_icons_dir = icons_dir / 'custom'
@@ -1781,7 +1783,8 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
 def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_setting):  # pylint: disable=unused-argument  # noqa: E501
     """Test upgrading the DB from version 25 to version 26"""
     msg_aggregator = MessagesAggregator()
-    v25_conn = _init_prepared_db(user_data_dir, 'v25_rotkehlchen.db')
+    with mock_dbhandler_ensura_data_integrity():
+        v25_conn = _init_prepared_db(user_data_dir, 'v25_rotkehlchen.db')
     cursor = v25_conn.cursor()
 
     # make sure the globaldb has a custom token used in the DB
@@ -1921,11 +1924,12 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
     v25_conn.close()
 
     # Migrate to v26
-    db = _init_db_with_target_version(
-        target_version=26,
-        user_data_dir=user_data_dir,
-        msg_aggregator=msg_aggregator,
-    )
+    with mock_dbhandler_ensura_data_integrity():
+        db = _init_db_with_target_version(
+            target_version=26,
+            user_data_dir=user_data_dir,
+            msg_aggregator=msg_aggregator,
+        )
     cursor = db.conn.cursor()
 
     # Make sure that the user credentials have been upgraded

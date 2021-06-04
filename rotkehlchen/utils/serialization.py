@@ -1,4 +1,5 @@
 import json
+from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Union
 
 from rotkehlchen.assets.asset import Asset
@@ -35,14 +36,18 @@ class RKLEncoder(json.JSONEncoder):
 
 
 def jsonloads_dict(data: str) -> Dict[str, Any]:
+    """Just like jsonloads but forces the result to be a Dict"""
     value = json.loads(data)
-    assert isinstance(value, dict)
+    if not isinstance(value, dict):
+        raise JSONDecodeError(msg='Returned json is not a dict', doc='{}', pos=0)
     return value
 
 
 def jsonloads_list(data: str) -> List:
+    """Just like jsonloads but forces the result to be a List"""
     value = json.loads(data)
-    assert isinstance(value, list)
+    if not isinstance(value, list):
+        raise JSONDecodeError(msg='Returned json is not a list', doc='{}', pos=0)
     return value
 
 

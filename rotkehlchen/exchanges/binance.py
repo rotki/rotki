@@ -794,7 +794,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self.first_connection()
             returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
             returned_balances = self._query_spot_balances(returned_balances)
-            if self.name != str(Location.BINANCEUS):
+            if self.location != Location.BINANCEUS:
                 returned_balances = self._query_lending_balances(returned_balances)
                 returned_balances = self._query_cross_collateral_futures_balances(returned_balances)  # noqa: E501
                 returned_balances = self._query_margined_futures_balances('fapi', returned_balances)  # noqa: E501
@@ -933,17 +933,20 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             timestamp = deserialize_timestamp_from_binance(raw_data[time_key])
             asset = asset_from_binance(raw_data['asset'])
+            tx_id = get_key_if_has_val(raw_data, 'txId')
+            internal_id = get_key_if_has_val(raw_data, 'id')
+            link_str = str(internal_id) if internal_id else str(tx_id) if tx_id else ''
             return AssetMovement(
                 location=self.location,
                 category=category,
                 address=deserialize_asset_movement_address(raw_data, 'address', asset),
-                transaction_id=get_key_if_has_val(raw_data, 'txId'),
+                transaction_id=tx_id,
                 timestamp=timestamp,
                 asset=asset,
                 amount=deserialize_asset_amount_force_positive(raw_data['amount']),
                 fee_asset=asset,
                 fee=fee,
-                link=str(raw_data['txId']),
+                link=link_str,
             )
 
         except UnknownAsset as e:

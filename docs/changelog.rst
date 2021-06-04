@@ -2,6 +2,22 @@
 Changelog
 =========
 
+* :release:`1.17.2 <2021-06-04>`
+* :bug:`3043` Collapsed xpubs should now be included in the totals in the btc accounts table.
+* :bug:`3029` Exchanges balances tab will properly adjust to a dark background on dark mode.
+* :bug:`3027` Day should now display properly under all circumstances when a custom date format is evaluated.
+* :bug:`81` Users with more than 10,000 trades in poloniex will now be able to properly pull their trading history.
+* :bug:`3037` Querying a big number of legacy bitcoin addresses from an xpub should now work properly again.
+* :bug:`3038` Binance.us queries should now work properly again.
+* :bug:`3033` Users of Bitstamp should be able to pull their trades, deposits and withdrawals history again.
+* :bug:`3030` Setting up a bitfinex api key should now work properly again.
+* :bug:`3010` Fixes a bug when editing a trade that had a modified/replaced asset could fail with a "trade identifier not found" error.
+* :bug:`1403` When removing an ethereum account that has liabilities, they should now also be removed from the dashboard and from the blockchain accounts view.
+* :bug:`2998` If a new token is added in the rotki list of assets then the token detection cache is now invalidated so it will be detected when refreshing balances.
+* :bug:`2999` If a binance withdrawal is missing the txId field rotki will now still be able to process it correctly.
+* :bug:`2993` If a sell of FIAT for crypto is made, which is effectively a buy of crypto with FIAT, complaints about the source of funds should no longer be generated.
+* :bug:`2994` Nexo users will be able to correctly import their information from a CSV file.
+
 * :release:`1.17.1 <2021-05-26>`
 * :bug:`2984` The notification background will now properly adjust for users using the application in light mode.
 * :bug:`2982` Premium users of v1.17.0 who had DB syncing activated will now be able to open the app again.

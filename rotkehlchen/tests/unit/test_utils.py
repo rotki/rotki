@@ -1,5 +1,6 @@
 import json
 import time
+from json.decoder import JSONDecodeError
 from unittest.mock import patch
 
 import pytest
@@ -20,6 +21,7 @@ from rotkehlchen.utils.misc import (
     timestamp_to_date,
 )
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
+from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 
@@ -336,3 +338,19 @@ def test_generate_address_via_create2(
 def test_timestamp_to_date():
     date = timestamp_to_date(1611395717, formatstr='%d/%m/%Y %H:%M:%S %Z')
     assert not date.endswith(' '), 'Make sure %Z empty string is removed'
+
+
+def test_jsonloads_dict():
+    result = jsonloads_dict('{"foo": 1, "boo": "value"}')
+    assert result == {'foo': 1, 'boo': 'value'}
+    with pytest.raises(JSONDecodeError) as e:
+        jsonloads_dict('["foo", "boo", 3]')
+    assert 'Returned json is not a dict' in str(e.value)
+
+
+def test_jsonloads_list():
+    result = jsonloads_list('["foo", "boo", 3]')
+    assert result == ["foo", "boo", 3]
+    with pytest.raises(JSONDecodeError) as e:
+        jsonloads_list('{"foo": 1, "boo": "value"}')
+    assert 'Returned json is not a list' in str(e.value)

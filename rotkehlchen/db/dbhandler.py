@@ -7,7 +7,7 @@ import tempfile
 from collections import defaultdict
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
@@ -90,16 +90,12 @@ from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
     deserialize_action_type_from_db,
-    deserialize_asset_amount,
     deserialize_asset_movement_category_from_db,
-    deserialize_fee,
     deserialize_hex_color_code,
-    deserialize_optional,
     deserialize_timestamp,
     deserialize_trade_type_from_db,
 )
@@ -250,6 +246,7 @@ class DBHandler:
             self.set_settings(initial_settings)
         self.update_owned_assets_in_globaldb()
         self.add_globaldb_assetids()
+        self.ensure_data_integrity()
 
     def __del__(self) -> None:
         if hasattr(self, 'conn') and self.conn:
@@ -1763,9 +1760,8 @@ class DBHandler:
                 f'{blockchain.value} accounts that do not exist',
             )
 
-        # Also remove all ethereum address details saved in the D
+        # Also remove all ethereum address details saved in the DB
         if blockchain == SupportedBlockchain.ETHEREUM:
-
             for address in accounts:
                 self.delete_data_for_ethereum_address(address)  # type: ignore
 
@@ -2469,18 +2465,7 @@ class DBHandler:
         The returned list is ordered from oldest to newest
         """
         cursor = self.conn.cursor()
-        query = (
-            'SELECT id,'
-            '  location,'
-            '  open_time,'
-            '  close_time,'
-            '  profit_loss,'
-            '  pl_currency,'
-            '  fee,'
-            '  fee_currency,'
-            '  link,'
-            '  notes FROM margin_positions '
-        )
+        query = 'SELECT * FROM margin_positions '
         if location is not None:
             query += f'WHERE location="{location.serialize_for_db()}" '
         query, bindings = form_query_to_filter_timestamps(query, 'close_time', from_ts, to_ts)
@@ -2489,21 +2474,7 @@ class DBHandler:
         margin_positions = []
         for result in results:
             try:
-                if result[2] == 0:
-                    open_time = None
-                else:
-                    open_time = deserialize_timestamp(result[2])
-                margin = MarginPosition(
-                    location=Location.deserialize_from_db(result[1]),
-                    open_time=open_time,
-                    close_time=deserialize_timestamp(result[3]),
-                    profit_loss=deserialize_asset_amount(result[4]),
-                    pl_currency=Asset(result[5]),
-                    fee=deserialize_fee(result[6]),
-                    fee_currency=Asset(result[7]),
-                    link=result[8],
-                    notes=result[9],
-                )
+                margin = MarginPosition.deserialize_from_db(result)
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing margin position from the DB. '
@@ -2566,19 +2537,7 @@ class DBHandler:
         The returned list is ordered from oldest to newest
         """
         cursor = self.conn.cursor()
-        query = (
-            'SELECT id,'
-            '  location,'
-            '  category,'
-            '  time,'
-            '  asset,'
-            '  amount,'
-            '  fee_asset,'
-            '  fee,'
-            '  link,'
-            '  address,'
-            '  transaction_id FROM asset_movements '
-        )
+        query = 'SELECT * FROM asset_movements '
         if location is not None:
             query += f'WHERE location="{location.serialize_for_db()}" '
         query, bindings = form_query_to_filter_timestamps(query, 'time', from_ts, to_ts)
@@ -2587,20 +2546,7 @@ class DBHandler:
         asset_movements = []
         for result in results:
             try:
-                movement = AssetMovement(
-                    location=Location.deserialize_from_db(result[1]),
-                    category=deserialize_asset_movement_category_from_db(result[2]),
-                    timestamp=result[3],
-                    asset=Asset(result[4]),
-                    # TODO: should we also _force_positive here? I guess not since
-                    # we always make sure to save it as positive
-                    amount=deserialize_asset_amount(result[5]),
-                    fee_asset=Asset(result[6]),
-                    fee=deserialize_fee(result[7]),
-                    link=result[8],
-                    address=result[9],
-                    transaction_id=result[10],
-                )
+                movement = AssetMovement.deserialize_from_db(result)
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing asset movement from the DB. '
@@ -2896,20 +2842,7 @@ class DBHandler:
         The returned list is ordered from oldest to newest
         """
         cursor = self.conn.cursor()
-        query = (
-            'SELECT id,'
-            '  time,'
-            '  location,'
-            '  base_asset,'
-            '  quote_asset,'
-            '  type,'
-            '  amount,'
-            '  rate,'
-            '  fee,'
-            '  fee_currency,'
-            '  link,'
-            '  notes FROM trades '
-        )
+        query = 'SELECT * FROM trades '
         if location is not None:
             query += f'WHERE location="{location.serialize_for_db()}" '
         query, bindings = form_query_to_filter_timestamps(query, 'time', from_ts, to_ts)
@@ -2918,19 +2851,7 @@ class DBHandler:
         trades = []
         for result in results:
             try:
-                trade = Trade(
-                    timestamp=deserialize_timestamp(result[1]),
-                    location=Location.deserialize_from_db(result[2]),
-                    base_asset=Asset(result[3]),
-                    quote_asset=Asset(result[4]),
-                    trade_type=deserialize_trade_type_from_db(result[5]),
-                    amount=deserialize_asset_amount(result[6]),
-                    rate=deserialize_price(result[7]),
-                    fee=deserialize_optional(result[8], deserialize_fee),
-                    fee_currency=deserialize_optional(result[9], Asset),
-                    link=result[10],
-                    notes=result[11],
-                )
+                trade = Trade.deserialize_from_db(result)
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing trade from the DB. Skipping trade. Error was: {str(e)}',
@@ -3755,3 +3676,44 @@ class DBHandler:
 
         self.conn.commit()
         self.update_last_write()
+
+    def _ensure_data_integrity(
+            self,
+            table_name: str,
+            klass: Union[Type[Trade], Type[AssetMovement], Type[MarginPosition]],
+    ) -> None:
+        updates: List[Tuple[str, str]] = []
+        cursor = self.conn.cursor()
+        results = cursor.execute(f'SELECT * from {table_name};')
+        for result in results:
+            try:
+                obj = klass.deserialize_from_db(result)
+            except (DeserializationError, UnknownAsset):
+                continue
+
+            db_id = result[0]
+            actual_id = obj.identifier
+            if actual_id != db_id:
+                updates.append((actual_id, db_id))
+
+        if len(updates) != 0:
+            logger.debug(
+                f'Found {len(updates)} identifier discrepancies in the DB '
+                f'for {table_name}. Correcting...',
+            )
+            cursor.executemany(f'UPDATE {table_name} SET id = ? WHERE id =?;', updates)
+
+    def ensure_data_integrity(self) -> None:
+        """Runs some checks for data integrity of the DB that can't be verified by SQLite
+
+        For now it mostly tackles https://github.com/rotki/rotki/issues/3010 ,
+        the problem of identifiers of trades, asset movements and margin positions
+        changing and no longer corresponding to the calculated id.
+        """
+        start_time = ts_now()
+        logger.debug('Starting DB data integrity check')
+        self._ensure_data_integrity('trades', Trade)
+        self._ensure_data_integrity('asset_movements', AssetMovement)
+        self._ensure_data_integrity('margin_positions', MarginPosition)
+        self.conn.commit()
+        logger.debug(f'DB data integrity check finished after {ts_now() - start_time} seconds')

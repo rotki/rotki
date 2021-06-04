@@ -167,7 +167,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         """Request a Bitfinex API v2 endpoint (from `endpoint`).
         """
         call_options = options.copy() if options else {}
-        for header in ('Content-Type', 'bfx-apikey', 'bfx-nonce', 'bfx-signature'):
+        for header in ('Content-Type', 'bfx-nonce', 'bfx-signature'):
             self.session.headers.pop(header, None)
 
         if endpoint == 'configs_list_currency':
