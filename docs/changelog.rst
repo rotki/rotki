@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :bug:`3027` Day should now display properly in under all circumstances when a custom date format is evaluated.
+* :bug:`3027` Day should now display properly under all circumstances when a custom date format is evaluated.
+* :bug:`81` Users with more than 10,000 trades in poloniex will now be able to properly pull their trading history.
 * :bug:`3037` Querying a big number of legacy bitcoin addresses from an xpub should now work properly again.
 * :bug:`3038` Binance.us queries should now work properly again.
 * :bug:`3033` Users of Bitstamp should be able to pull their trades, deposits and withdrawals history again.
