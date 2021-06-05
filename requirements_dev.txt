@@ -3,6 +3,6 @@
 
 pytest==6.2.4
 bump2version==1.0.1
-pytest-cov==2.12.0
+pytest-cov==2.12.1
 psutil==5.8.0
 pytest-freezegun==0.4.2
