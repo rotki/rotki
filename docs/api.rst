@@ -1548,7 +1548,7 @@ Get locations with assets
 
 .. http:get:: /api/(version)/exchanges/connected/
 
-   Doing a GET on this endpoint will return a list of locations where the user has assets. It contains both connected exchanges as locations imported via CSV import.
+   Doing a GET on this endpoint will return a list of locations where the user has assets. It contains both connected exchanges and locations imported via CSV import.
 
    **Example Request**:
 

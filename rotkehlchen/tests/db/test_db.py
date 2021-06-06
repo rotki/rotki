@@ -1333,15 +1333,13 @@ def test_binance_pairs(user_data_dir):
 
 
 def test_known_locations(user_data_dir, rotkehlchen_api_server):
-    """
-    Test that locations imported in different places are correctly stored in database
-    """
+    """Test that locations imported in different places are correctly stored in database"""
 
     # Import from nexo
-    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    filepath = os.path.join(dir_path, 'data', 'nexo.csv')
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'nexo.csv'
 
-    json_data = {'source': 'nexo', 'file': filepath}
+    json_data = {'source': 'nexo', 'file': str(filepath)}
     requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -1350,10 +1348,9 @@ def test_known_locations(user_data_dir, rotkehlchen_api_server):
     )
 
     # Add transactions from blockfi
-    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    filepath = os.path.join(dir_path, 'data', 'blockfi-transactions.csv')
+    filepath = dir_path / 'data' / 'blockfi-transactions.csv'
 
-    json_data = {'source': 'blockfi-transactions', 'file': filepath}
+    json_data = {'source': 'blockfi-transactions', 'file': str(filepath)}
     requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -1362,8 +1359,8 @@ def test_known_locations(user_data_dir, rotkehlchen_api_server):
     )
 
     # Add cryptocom
-    filepath = os.path.join(dir_path, 'data', 'cryptocom_trades_list.csv')
-    json_data = {'source': 'cryptocom', 'file': filepath}
+    filepath = dir_path / 'data' / 'cryptocom_trades_list.csv'
+    json_data = {'source': 'cryptocom', 'file': str(filepath)}
     requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -1372,7 +1369,6 @@ def test_known_locations(user_data_dir, rotkehlchen_api_server):
     )
 
     # Add cointracking multiple exchanges
-    dir_path = Path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     filepath = dir_path / 'data' / 'cointracking_trades_list.csv'
     files = {'file': open(filepath, 'rb')}
     requests.post(
@@ -1409,4 +1405,4 @@ def test_known_locations(user_data_dir, rotkehlchen_api_server):
         Location.COINBASE,
     }
 
-    assert set(db.get_known_locations()) == expected_locations
+    assert set(db.get_connected_locations()) == expected_locations

@@ -1032,7 +1032,7 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
     assert some_pairs.issubset(result)
 
 
-def test_get_known_locations(rotkehlchen_api_server):
+def test_get_connected_locations(rotkehlchen_api_server):
     # Import from nexo
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     filepath = os.path.join(dir_path, 'data', 'nexo.csv')

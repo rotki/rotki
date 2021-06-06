@@ -2795,7 +2795,7 @@ class RestAPI():
 
     @require_loggedin_user()
     def get_connected_locations(self) -> Response:
-        locations = self.rotkehlchen.data.db.get_known_locations()
+        locations = self.rotkehlchen.data.db.get_connected_locations()
         return api_response(
             result=_wrap_in_ok_result([str(location) for location in locations]),
             status_code=HTTPStatus.OK,

@@ -1884,24 +1884,24 @@ class DBHandler:
         self.add_multiple_balances(balances)
         self.add_multiple_location_data(locations)
 
-    def add_known_location(self, location: Location) -> None:
+    def add_connected_location(self, location: Location) -> None:
         if location == Location.EXTERNAL:
             # Ignore external location that can appear while importing from
             # cointracking csv files
             return
         cursor = self.conn.cursor()
         cursor.execute(
-            'INSERT OR IGNORE INTO known_location (location) VALUES (?)',
+            'INSERT OR IGNORE INTO connected_location (location) VALUES (?)',
             (location.value,),
         )
         self.conn.commit()
         self.update_last_write()
 
-    def get_known_locations(self) -> List[Location]:
+    def get_connected_locations(self) -> List[Location]:
         cursor = self.conn.cursor()
         cursor.execute(
-            'SELECT * FROM location LEFT OUTER JOIN known_location WHERE '
-            'location.seq = known_location.location',
+            'SELECT * FROM location LEFT OUTER JOIN connected_location WHERE '
+            'location.seq = connected_location.location',
         )
         locations = cursor.fetchall()
         return [Location.deserialize_from_db(loc[0]) for loc in locations]
@@ -1928,7 +1928,7 @@ class DBHandler:
         )
 
         cursor.execute(
-            'INSERT OR IGNORE INTO known_location (location) VALUES (?)',
+            'INSERT OR IGNORE INTO connected_location (location) VALUES (?)',
             (location.value,),
         )
 

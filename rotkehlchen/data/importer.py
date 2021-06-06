@@ -177,7 +177,7 @@ class DataImporter():
                 f'Unknown entrype type "{row_type}" encountered during cointracking '
                 f'data import. Ignoring entry',
             )
-        self.db.add_known_location(location)
+        self.db.add_connected_location(location)
 
     def import_cointracking_csv(self, filepath: Path) -> Tuple[bool, str]:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
@@ -397,7 +397,7 @@ class DataImporter():
                 f'Unknown entrype type "{row_type}" encountered during '
                 f'cryptocom data import. Ignoring entry',
             )
-        self.db.add_known_location(Location.CRYPTOCOM)
+        self.db.add_connected_location(Location.CRYPTOCOM)
 
     def _import_cryptocom_associated_entries(self, data: Any, tx_kind: str) -> None:
         """Look for events that have associated entries and handle them as trades.
@@ -757,7 +757,7 @@ class DataImporter():
         else:
             raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
 
-        self.db.add_known_location(Location.BLOCKFI)
+        self.db.add_connected_location(Location.BLOCKFI)
 
     def import_blockfi_transactions_csv(self, filepath: Path) -> Tuple[bool, str]:
         """
@@ -831,7 +831,7 @@ class DataImporter():
             notes=csv_row['Type'],
         )
         self.db.add_trades([trade])
-        self.db.add_known_location(Location.BLOCKFI)
+        self.db.add_connected_location(Location.BLOCKFI)
 
     def import_blockfi_trades_csv(self, filepath: Path) -> Tuple[bool, str]:
         """
@@ -966,7 +966,7 @@ class DataImporter():
             pass
         else:
             raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
-        self.db.add_known_location(Location.NEXO)
+        self.db.add_connected_location(Location.NEXO)
 
     def import_nexo_csv(self, filepath: Path) -> Tuple[bool, str]:
         """
