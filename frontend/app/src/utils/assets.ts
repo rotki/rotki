@@ -69,8 +69,8 @@ export function compareAssets(
     return desc ? bElement - aElement : aElement - bElement;
   } else if (typeof bElement === 'string' && typeof aElement === 'string') {
     return desc
-      ? bElement.localeCompare(aElement)
-      : aElement.localeCompare(bElement);
+      ? bElement.toLocaleLowerCase().localeCompare(aElement)
+      : aElement.toLocaleLowerCase().localeCompare(bElement);
   }
   return 0;
 }
