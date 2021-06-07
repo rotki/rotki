@@ -48,12 +48,11 @@ import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import AssetFilterModeIndicator from '@/components/inputs/AssetFilterModeIndicator.vue';
 import { SupportedAsset } from '@/services/types-model';
 import { compareAssets } from '@/utils/assets';
 
 @Component({
-  components: { AssetFilterModeIndicator, AssetDetails, AssetIcon },
+  components: { AssetDetails, AssetIcon },
   computed: {
     ...mapState('balances', ['supportedAssets'])
   }

@@ -383,10 +383,6 @@
     },
     "title": "Merge Assets"
   },
-  "asset_filter_mode_indicator": {
-    "name_mode_hint": "Searching for assets by name. To search by symbol click here or remove the n: prefix",
-    "symbol_mode_hint": "Searching for assets by symbol. To search by name click here or prefix with n: e.g. n: Bitcoin"
-  },
   "notes_display": {
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
