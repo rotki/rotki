@@ -15,17 +15,11 @@
             prepend-inner-icon="mdi-magnify"
             :label="$t('asset_table.search')"
             outlined
+            clearable
             @input="onSearchTermChange($event)"
           >
-            <template #append>
-              <v-tooltip top open-delay="400" max-width="400">
-                <template #activator="{ on, attrs }">
-                  <v-icon small v-bind="attrs" class="mt-1" v-on="on">
-                    mdi-information
-                  </v-icon>
-                </template>
-                <span>{{ $t('asset_table.search_tooltip') }}</span>
-              </v-tooltip>
+            <template v-if="!!searchTimeout" #append>
+              <v-icon color="primary"> mdi-spin mdi-loading</v-icon>
             </template>
           </v-text-field>
         </v-col>
@@ -173,10 +167,10 @@ export default class AssetTable extends Vue {
       clearTimeout(this.searchTimeout);
       this.searchTimeout = null;
     }
-    this.searchTimeout = setTimeout(
-      () => (this.search = this.pendingSearch),
-      600
-    );
+    this.searchTimeout = setTimeout(() => {
+      this.search = this.pendingSearch;
+      this.searchTimeout = null;
+    }, 600);
   }
 
   assetFilter(
@@ -187,14 +181,10 @@ export default class AssetTable extends Vue {
     if (!search || !item) {
       return true;
     }
-    const keyword = search.toLocaleLowerCase();
-    if (keyword.startsWith('n:')) {
-      const name = item.name.toLocaleLowerCase();
-      const actualKeyword = keyword.substr(2).trim();
-      return name.indexOf(actualKeyword) >= 0;
-    }
-    const symbol = item.symbol.toLocaleLowerCase();
-    return symbol.indexOf(keyword) >= 0;
+    const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
+    const name = item.name.toLocaleLowerCase().trim();
+    const symbol = item.symbol.toLocaleLowerCase().trim();
+    return symbol.indexOf(keyword) >= 0 || name.indexOf(keyword) >= 0;
   }
 
   sortItems(
@@ -202,19 +192,10 @@ export default class AssetTable extends Vue {
     sortBy: (keyof ManagedAsset)[],
     sortDesc: boolean[]
   ): ManagedAsset[] {
-    const initialKeyword = this.search.toLocaleLowerCase().trim();
-    const keyword = initialKeyword.replace('n:', '').trim();
-    const nameSearch = initialKeyword.startsWith('n:');
-    const desc = sortDesc[0];
-
-    let element: keyof ManagedAsset;
-    if (sortBy[0] === 'symbol') {
-      element = nameSearch ? 'name' : 'symbol';
-    } else {
-      element = sortBy[0];
-    }
-
-    return items.sort((a, b) => compareAssets(a, b, element, keyword, desc));
+    const keyword = this.search.toLocaleLowerCase().trim();
+    return items.sort((a, b) =>
+      compareAssets(a, b, sortBy[0], keyword, sortDesc[0])
+    );
   }
 
   readonly headers: DataTableHeader[] = [

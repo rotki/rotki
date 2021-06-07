@@ -2,7 +2,7 @@
   <v-autocomplete
     :value="value"
     :disabled="disabled"
-    :items="assets"
+    :items="visibleAssets"
     class="asset-select"
     :hint="hint"
     single-line
@@ -40,17 +40,11 @@
         <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
       </v-list-item-content>
     </template>
-    <template #prepend-inner>
-      <asset-filter-mode-indicator
-        :name-mode="nameMode"
-        @mode:update="switchMode()"
-      />
-    </template>
   </v-autocomplete>
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
@@ -104,54 +98,43 @@ export default class AssetSelect extends Vue {
   input(_value: string) {}
 
   search: string = '';
+  visibleAssets: SupportedAsset[] = [];
 
-  switchMode() {
-    if (this.search?.toLocaleLowerCase()?.startsWith('n:')) {
-      this.search = this.search.replace('n:', '').trim();
-    } else {
-      this.search = `n: ${this.search?.trim() ?? ''}`;
+  mounted() {
+    this.visibleAssets = this.getAvailableAssets();
+  }
+
+  @Watch('search')
+  onSearchUpdate() {
+    const assets = this.getAvailableAssets();
+    this.visibleAssets = assets
+      .filter(value1 => this.customFilter(value1, this.search))
+      .sort((a, b) => compareAssets(a, b, 'name', this.keyword, false));
+  }
+
+  private getAvailableAssets() {
+    if (this.items) {
+      return this.supportedAssets.filter(asset =>
+        this.items!.includes(asset.identifier)
+      );
     }
+    return this.supportedAssets;
   }
 
   customFilter(item: SupportedAsset, queryText: string): boolean {
-    const lowerCaseQuery = queryText.toLocaleLowerCase() ?? '';
-    const nameSearch = lowerCaseQuery.includes('n:');
-    const keyword = lowerCaseQuery.replace('n:', '').trim();
-    if (nameSearch) {
-      const name = item.name.toLocaleLowerCase();
-      return name.indexOf(keyword) >= 0;
-    }
-    const symbol = item.symbol.toLocaleLowerCase();
-    return symbol.indexOf(keyword) >= 0;
+    const keyword = queryText.toLocaleLowerCase()?.trim() ?? '';
+    const name = item.name.trim().toLocaleLowerCase();
+    const symbol = item.symbol.trim().toLocaleLowerCase();
+    return name.indexOf(keyword) >= 0 || symbol.indexOf(keyword) >= 0;
   }
 
-  get nameMode(): boolean {
-    const search = this.search?.toLocaleLowerCase() ?? '';
-    return search.startsWith('n:');
-  }
-
-  get searchKeyword(): string {
+  get keyword(): string {
     const search = this.search;
     if (!search) {
       return '';
     }
 
-    return search.toLocaleLowerCase().replace('n:', '').trim();
-  }
-
-  get assets(): SupportedAsset[] {
-    let assets: SupportedAsset[];
-    if (this.items) {
-      assets = this.supportedAssets.filter(asset =>
-        this.items!.includes(asset.identifier)
-      );
-    } else {
-      assets = this.supportedAssets;
-    }
-
-    const element = this.nameMode ? 'name' : 'symbol';
-    const keyword = this.searchKeyword;
-    return assets.sort((a, b) => compareAssets(a, b, element, keyword, false));
+    return search.toLocaleLowerCase().trim();
   }
 
   assetText(asset: SupportedAsset): string {

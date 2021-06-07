@@ -1,4 +1,53 @@
 import { ManagedAsset } from '@/components/asset-manager/types';
+import { EthereumToken } from '@/services/assets/types';
+import { SupportedAsset } from '@/services/types-model';
+
+function levenshtein(a: string, b: string) {
+  let tmp;
+  if (a.length === 0) {
+    return b.length;
+  }
+  if (b.length === 0) {
+    return a.length;
+  }
+  if (a.length > b.length) {
+    tmp = a;
+    a = b;
+    b = tmp;
+  }
+
+  let i: number,
+    j: number,
+    res: number = 0;
+  const alen = a.length,
+    blen = b.length,
+    row = Array(alen);
+  for (i = 0; i <= alen; i++) {
+    row[i] = i;
+  }
+
+  for (i = 1; i <= blen; i++) {
+    res = i;
+    for (j = 1; j <= alen; j++) {
+      tmp = row[j - 1];
+      row[j - 1] = res;
+      res =
+        b[i - 1] === a[j - 1]
+          ? tmp
+          : Math.min(tmp + 1, Math.min(res + 1, row[j] + 1));
+    }
+  }
+  return res;
+}
+
+function score(
+  keyword: string,
+  { name, symbol }: SupportedAsset | EthereumToken
+): number {
+  const symbolScore = levenshtein(keyword, symbol.toLocaleLowerCase());
+  const nameScore = levenshtein(keyword, name.toLocaleLowerCase());
+  return Math.min(symbolScore, nameScore);
+}
 
 export function compareAssets(
   a: ManagedAsset,
@@ -7,14 +56,10 @@ export function compareAssets(
   keyword: string,
   desc: boolean
 ): number {
-  if (keyword.length > 0 && (element === 'symbol' || element === 'name')) {
-    const first = a[element].toLocaleLowerCase();
-    const second = b[element].toLocaleLowerCase();
-    const aIndex = first.indexOf(keyword);
-    const bIndex = second.indexOf(keyword);
-    if (aIndex !== bIndex) {
-      return desc ? bIndex - aIndex : aIndex - bIndex;
-    }
+  const fields = ['symbol', 'name'];
+  if (keyword.length > 0 && fields.includes(element)) {
+    const diff = score(keyword, a) - score(keyword, b);
+    return desc ? diff * -1 : diff;
   }
 
   const aElement = a[element];
