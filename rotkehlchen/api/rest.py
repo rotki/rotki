@@ -1396,7 +1396,7 @@ class RestAPI():
                 result = wrap_in_fail_result(f'Custom token with address {address} not found')
                 status_code = HTTPStatus.NOT_FOUND
             else:
-                result = _wrap_in_ok_result(token.serialize())
+                result = _wrap_in_ok_result(token.serialize_all_info())
                 status_code = HTTPStatus.OK
 
             return api_response(result, status_code)
@@ -1404,7 +1404,7 @@ class RestAPI():
         # else return all custom tokens
         tokens = GlobalDBHandler().get_ethereum_tokens()
         return api_response(
-            _wrap_in_ok_result([x.serialize() for x in tokens]),
+            _wrap_in_ok_result([x.serialize_all_info() for x in tokens]),
             status_code=HTTPStatus.OK,
             log_result=False,
         )

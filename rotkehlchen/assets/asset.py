@@ -547,6 +547,22 @@ class HasEthereumToken(Asset):
         underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(data.ethereum_address)
         object.__setattr__(self, 'underlying_tokens', underlying_tokens)
 
+    def serialize_all_info(self) -> Dict[str, Any]:
+        underlying_tokens = [x.serialize() for x in self.underlying_tokens] if self.underlying_tokens is not None else None  # noqa: E501
+        return {
+            'identifier': self.identifier,
+            'address': self.ethereum_address,
+            'decimals': self.decimals,
+            'name': self.name,
+            'symbol': self.symbol,
+            'started': self.started,
+            'swapped_for': self.swapped_for.identifier if self.swapped_for else None,
+            'coingecko': self.coingecko,
+            'cryptocompare': self.cryptocompare,
+            'protocol': self.protocol,
+            'underlying_tokens': underlying_tokens,
+        }
+
     @classmethod
     def initialize(
             cls: Type[Y],
