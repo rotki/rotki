@@ -121,7 +121,7 @@ export default class AssetSelect extends Vue {
   }
 
   customFilter(item: SupportedAsset, queryText: string): boolean {
-    const keyword = queryText.toLocaleLowerCase()?.trim() ?? '';
+    const keyword = queryText?.toLocaleLowerCase()?.trim() ?? '';
     const name = item.name.trim().toLocaleLowerCase();
     const symbol = item.symbol.trim().toLocaleLowerCase();
     return name.indexOf(keyword) >= 0 || symbol.indexOf(keyword) >= 0;

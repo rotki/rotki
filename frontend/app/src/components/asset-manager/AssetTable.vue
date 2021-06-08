@@ -192,7 +192,7 @@ export default class AssetTable extends Vue {
     sortBy: (keyof ManagedAsset)[],
     sortDesc: boolean[]
   ): ManagedAsset[] {
-    const keyword = this.search.toLocaleLowerCase().trim();
+    const keyword = this.search?.toLocaleLowerCase()?.trim() ?? '';
     return items.sort((a, b) =>
       compareAssets(a, b, sortBy[0], keyword, sortDesc[0])
     );
