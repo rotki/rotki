@@ -23,6 +23,7 @@
         class="binance-market-selector"
         :value="selection"
         @input="input($event)"
+        @change="search = ''"
       >
         <template #selection="data">
           <v-chip
