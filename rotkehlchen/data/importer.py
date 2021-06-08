@@ -797,7 +797,7 @@ class DataImporter():
         if 'rejected' not in csv_row['Details']:
             timestamp = deserialize_timestamp_from_date(
                 date=csv_row['Date / Time'],
-                formatstr='%Y-%m-%d %H:%M',
+                formatstr='%Y-%m-%d %H:%M:%S',
                 location='NEXO',
             )
         else:
