@@ -1294,6 +1294,10 @@
     "tooltip": "Show details about the pool assets",
     "liquidity": "Liquidity"
   },
+  "update_notifier": {
+    "update": "Update",
+    "update_available": "An updated version of the frontend is available."
+  },
   "update_indicator": {
     "version": "An Updated Version ({appVersion}) of rotki is available"
   },

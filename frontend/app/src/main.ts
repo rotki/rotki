@@ -7,6 +7,7 @@ import '@/main.scss';
 import { Api } from '@/plugins/api';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
+import './register-sw';
 import { Interop } from '@/plugins/interop';
 import vuetify from '@/plugins/vuetify';
 import { setupPremium } from '@/premium/setup-interface';
