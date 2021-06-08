@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`1073` Binance users will now be able to select which markets should be queried for trades history considerably improving the speed of binance history queries.
+
 * :release:`1.17.2 <2021-06-04>`
 * :bug:`3043` Collapsed xpubs should now be included in the totals in the btc accounts table.
 * :bug:`3029` Exchanges balances tab will properly adjust to a dark background on dark mode.

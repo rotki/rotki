@@ -25,7 +25,6 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.constants import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
@@ -96,6 +95,10 @@ REJECTED_MBX_KEY = -2015
 
 
 BINANCE_API_TYPE = Literal['api', 'sapi', 'wapi', 'dapi', 'fapi']
+
+BINANCE_BASE_URL = 'binance.com/'
+BINANCEUS_BASE_URL = 'binance.us/'
+BINANCE_MARKETS_KEY = 'PAIRS'
 
 
 class BinancePermissionError(RemoteError):
@@ -830,7 +833,9 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.first_connection()
 
         if not markets:
-            iter_markets = list(self._symbols_to_pair.keys())
+            iter_markets = self.get_selected_pairs()
+            if len(iter_markets) == 0:
+                iter_markets = list(self._symbols_to_pair.keys())
         else:
             iter_markets = markets
 
@@ -1078,3 +1083,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
         return []  # noop for binance
+
+    def get_selected_pairs(self) -> List[str]:
+        pairs = self.db.get_binance_pairs(self.name, self.location)
+        return list(set(pairs).intersection(set(self._symbols_to_pair.keys())))

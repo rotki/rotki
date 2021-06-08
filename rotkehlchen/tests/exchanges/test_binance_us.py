@@ -5,9 +5,8 @@ import pytest
 
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
 from rotkehlchen.constants.assets import A_BNB, A_BTC
-from rotkehlchen.constants.misc import BINANCEUS_BASE_URL
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.binance import Binance
+from rotkehlchen.exchanges.binance import Binance, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.exchanges import (

@@ -6,9 +6,14 @@ from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import BINANCE_BASE_URL, BINANCEUS_BASE_URL, ZERO
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.exchanges.binance import Binance, create_binance_symbols_to_pair
+from rotkehlchen.exchanges.binance import (
+    Binance,
+    create_binance_symbols_to_pair,
+    BINANCE_BASE_URL,
+    BINANCEUS_BASE_URL,
+)
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
 from rotkehlchen.exchanges.bitmex import Bitmex
