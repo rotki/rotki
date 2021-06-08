@@ -15,6 +15,7 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError, UnknownAsset
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.hashing import file_md5
 
 
@@ -374,3 +375,15 @@ def test_get_ethereum_token():
         symbol='DOT',
         ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
     ), 'symbol of normal chain (polkadot here) should result in unknown token'
+
+
+def test_intialize_token_from_fields():
+    token = EthereumToken.initialize(
+        address='0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        decimals=18,
+        name='Multi Collateral Dai',
+        symbol='DAI',
+        started=Timestamp(1573672677),
+        coingecko='dai',
+    )
+    assert token == A_DAI

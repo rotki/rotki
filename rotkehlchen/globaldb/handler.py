@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast,
 
 from typing_extensions import Literal
 
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.chain.ethereum.typing import (
     CustomEthereumToken,
-    CustomEthereumTokenWithIdentifier,
     UnderlyingToken,
     string_to_ethereum_address,
 )
@@ -382,7 +382,7 @@ class GlobalDBHandler():
         )
 
     @staticmethod
-    def _fetch_underlying_tokens(
+    def fetch_underlying_tokens(
             address: ChecksumEthAddress,
     ) -> Optional[List[UnderlyingToken]]:
         """Fetch underlying tokens for a token address if they exist"""
@@ -484,7 +484,7 @@ class GlobalDBHandler():
         return [x[0] for x in result]
 
     @staticmethod
-    def get_ethereum_token(address: ChecksumEthAddress) -> Optional[CustomEthereumTokenWithIdentifier]:  # noqa: E501
+    def get_ethereum_token(address: ChecksumEthAddress) -> Optional[EthereumToken]:  # noqa: E501
         """Gets all details for an ethereum token by its address
 
         If no token for the given address can be found None is returned.
@@ -502,22 +502,22 @@ class GlobalDBHandler():
             return None
 
         token_data = results[0]
-        underlying_tokens = GlobalDBHandler()._fetch_underlying_tokens(address)
+        underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(address)
 
         try:
-            return CustomEthereumTokenWithIdentifier.deserialize_from_db(
+            return EthereumToken.deserialize_from_db(
                 entry=token_data,
                 underlying_tokens=underlying_tokens,
             )
         except UnknownAsset as e:
             log.error(
                 f'Found unknown swapped_for asset {str(e)} in '
-                f'the DB when deserializing a CustomEthereumToken',
+                f'the DB when deserializing an EthereumToken',
             )
             return None
 
     @staticmethod
-    def get_ethereum_tokens(exceptions: Optional[List[ChecksumEthAddress]] = None) -> List[CustomEthereumTokenWithIdentifier]:  # noqa: E501
+    def get_ethereum_tokens(exceptions: Optional[List[ChecksumEthAddress]] = None) -> List[EthereumToken]:  # noqa: E501
         """Gets all ethereum tokens from the DB
 
         Can also accept a list of addresses to ignore
@@ -539,14 +539,14 @@ class GlobalDBHandler():
         query = cursor.execute(querystr, bindings)
         tokens = []
         for entry in query:
-            underlying_tokens = GlobalDBHandler()._fetch_underlying_tokens(entry[1])
+            underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(entry[1])
             try:
-                token = CustomEthereumTokenWithIdentifier.deserialize_from_db(entry, underlying_tokens)  # noqa: E501
+                token = EthereumToken.deserialize_from_db(entry, underlying_tokens)  # noqa: E501
                 tokens.append(token)
             except UnknownAsset as e:
                 log.error(
                     f'Found unknown swapped_for asset {str(e)} in '
-                    f'the DB when deserializing a CustomEthereumTokenWithIdentifier',
+                    f'the DB when deserializing an EthereumToken',
                 )
 
         return tokens

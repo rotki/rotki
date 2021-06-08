@@ -1,19 +1,40 @@
 from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
-from typing import TYPE_CHECKING, Any, Optional, Type, TypeVar
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type, TypeVar
 
 from rotkehlchen.constants.resolver import (
     ETHEREUM_DIRECTIVE,
     ETHEREUM_DIRECTIVE_LENGTH,
+    ethaddress_to_identifier,
     strethaddress_to_identifier,
 )
 from rotkehlchen.errors import DeserializationError, UnsupportedAsset
+from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 from .typing import AssetType
 
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.typing import CustomEthereumTokenWithIdentifier
+UnderlyingTokenDBTuple = Tuple[str, str]
+
+
+class UnderlyingToken(NamedTuple):
+    """Represents an underlying token of a token
+
+    Is used for pool tokens, tokensets etc.
+    """
+    address: ChecksumEthAddress
+    weight: FVal  # Floating percentage from 0 to 1
+
+    def serialize(self) -> Dict[str, Any]:
+        return {'address': self.address, 'weight': str(self.weight * 100)}
+
+    @classmethod
+    def deserialize_from_db(cls, entry: UnderlyingTokenDBTuple) -> 'UnderlyingToken':
+        return UnderlyingToken(
+            address=entry[0],  # type: ignore
+            weight=FVal(entry[1]),
+        )
+
 
 WORLD_TO_BITTREX = {
     # In Rotkehlchen Bitswift is BITS-2 but in Bittrex it's BITS
@@ -330,6 +351,7 @@ WORLD_TO_COINBASE_PRO = {
 class Asset():
     identifier: str
     form_with_incomplete_data: InitVar[bool] = field(default=False)
+    direct_field_initialization: InitVar[bool] = field(default=False)
     name: str = field(init=False)
     symbol: str = field(init=False)
     asset_type: AssetType = field(init=False)
@@ -340,7 +362,11 @@ class Asset():
     cryptocompare: Optional[str] = field(init=False)
     coingecko: Optional[str] = field(init=False)
 
-    def __post_init__(self, form_with_incomplete_data: bool = False) -> None:
+    def __post_init__(
+            self,
+            form_with_incomplete_data: bool = False,
+            direct_field_initialization: bool = False,
+    ) -> None:
         """
         Asset post initialization
 
@@ -361,6 +387,9 @@ class Asset():
             raise DeserializationError(
                 'Tried to initialize an asset out of a non-string identifier',
             )
+
+        if direct_field_initialization:
+            return
 
         # TODO: figure out a way to move this out. Moved in here due to cyclic imports
         from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
@@ -464,18 +493,45 @@ class Asset():
         raise ValueError(f'Invalid comparison of asset with {type(other)}')
 
 
+EthereumTokenDBTuple = Tuple[
+    str,                  # identifier
+    str,                  # address
+    Optional[int],        # decimals
+    Optional[str],        # name
+    Optional[str],        # symbol
+    Optional[int],        # started
+    Optional[str],        # swapped_for
+    Optional[str],        # coingecko
+    Optional[str],        # cryptocompare
+    Optional[str],        # protocol
+]
+
+
+# Create a generic variable that can be 'HasEthereumToken', or any subclass.
+Y = TypeVar('Y', bound='HasEthereumToken')
+
+
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class HasEthereumToken(Asset):
     """ Marker to denote assets having an Ethereum token address """
     ethereum_address: ChecksumEthAddress = field(init=False)
     decimals: int = field(init=False)
     protocol: str = field(init=False)
+    underlying_tokens: List[UnderlyingToken] = field(init=False)
 
-    def __post_init__(self, form_with_incomplete_data: bool = False) -> None:
+    def __post_init__(
+            self,
+            form_with_incomplete_data: bool = False,
+            direct_field_initialization: bool = False,
+    ) -> None:
+        if direct_field_initialization:
+            return
+
         object.__setattr__(self, 'identifier', ETHEREUM_DIRECTIVE + self.identifier)
         super().__post_init__(form_with_incomplete_data)
         # TODO: figure out a way to move this out. Moved in here due to cyclic imports
         from rotkehlchen.assets.resolver import AssetResolver  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
+        from rotkehlchen.globaldb import GlobalDBHandler  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
 
         data = AssetResolver().get_asset_data(self.identifier)  # pylint: disable=no-member
 
@@ -487,6 +543,64 @@ class HasEthereumToken(Asset):
         object.__setattr__(self, 'ethereum_address', data.ethereum_address)
         object.__setattr__(self, 'decimals', data.decimals)
         object.__setattr__(self, 'protocol', data.protocol)
+
+        underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(data.ethereum_address)
+        object.__setattr__(self, 'underlying_tokens', underlying_tokens)
+
+    @classmethod
+    def initialize(
+            cls: Type[Y],
+            address: ChecksumEthAddress,
+            decimals: Optional[int] = None,
+            name: Optional[str] = None,
+            symbol: Optional[str] = None,
+            started: Optional[Timestamp] = None,
+            swapped_for: Optional[Asset] = None,
+            coingecko: Optional[str] = None,
+            cryptocompare: Optional[str] = None,
+            protocol: Optional[str] = None,
+            underlying_tokens: Optional[List[UnderlyingToken]] = None,
+    ) -> Y:
+        """Initialize a token from fields"""
+        token = cls('whatever', direct_field_initialization=True)
+        object.__setattr__(token, 'identifier', ethaddress_to_identifier(address))
+        object.__setattr__(token, 'name', name)
+        object.__setattr__(token, 'symbol', symbol)
+        object.__setattr__(token, 'asset_type', AssetType.ETHEREUM_TOKEN)
+        object.__setattr__(token, 'started', started)
+        object.__setattr__(token, 'forked', None)
+        object.__setattr__(token, 'swapped_for', swapped_for)
+        object.__setattr__(token, 'cryptocompare', cryptocompare)
+        object.__setattr__(token, 'coingecko', coingecko)
+        object.__setattr__(token, 'ethereum_address', address)
+        object.__setattr__(token, 'decimals', decimals)
+        object.__setattr__(token, 'protocol', protocol)
+        object.__setattr__(token, 'underlying_tokens', underlying_tokens)
+        return token
+
+    @classmethod
+    def deserialize_from_db(
+            cls: Type[Y],
+            entry: EthereumTokenDBTuple,
+            underlying_tokens: Optional[List[UnderlyingToken]] = None,
+    ) -> Y:
+        """May raise UnknownAsset if the swapped for asset can't be recognized
+
+        That error would be bad because it would mean somehow an unknown id made it into the DB
+        """
+        swapped_for = Asset(entry[6]) if entry[6] is not None else None
+        return cls.initialize(
+            address=entry[1],  # type: ignore
+            decimals=entry[2],
+            name=entry[3],
+            symbol=entry[4],
+            started=Timestamp(entry[5]),  # type: ignore
+            swapped_for=swapped_for,
+            coingecko=entry[7],
+            cryptocompare=entry[8],
+            protocol=entry[9],
+            underlying_tokens=underlying_tokens,
+        )
 
 
 # Create a generic variable that can be 'EthereumToken', or any subclass.
@@ -514,24 +628,3 @@ class EthereumToken(HasEthereumToken):
             return cls(identifier[ETHEREUM_DIRECTIVE_LENGTH:])
         except DeserializationError:
             return None
-
-    def to_custom_ethereum_token(self) -> 'CustomEthereumTokenWithIdentifier':
-        """TODO:This is just to satisfy its use in one place
-
-        Eventually these two data structures should be consolidated."""
-        # TODO: figure out a way to move this out. Moved in here due to cyclic imports
-        from rotkehlchen.chain.ethereum.typing import CustomEthereumTokenWithIdentifier  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
-        swapped_for_asset = None if self.swapped_for is None else Asset(self.swapped_for)
-        return CustomEthereumTokenWithIdentifier(
-            identifier=self.identifier,
-            address=self.ethereum_address,
-            decimals=self.decimals,
-            name=self.name,
-            symbol=self.symbol,
-            started=self.started,
-            swapped_for=swapped_for_asset,
-            coingecko=self.coingecko,
-            cryptocompare=self.cryptocompare,
-            protocol=None,
-            underlying_tokens=None,
-        )

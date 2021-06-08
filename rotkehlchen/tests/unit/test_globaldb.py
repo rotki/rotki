@@ -1,21 +1,21 @@
 import itertools
+from pathlib import Path
+from shutil import copyfile
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, string_to_ethereum_address
 from rotkehlchen.constants.assets import A_BAT
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError
+from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
 from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import INITIAL_TOKENS
-from pathlib import Path
-from rotkehlchen.assets.resolver import AssetResolver
-from shutil import copyfile
-from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
-from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -85,7 +85,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
         )
 
     # now edit a new token with swapped_for pointing to a non existing token in the DB
-    bat_custom = A_BAT.to_custom_ethereum_token()
+    bat_custom = globaldb.get_ethereum_token(A_BAT.ethereum_address)
     bat_custom = CustomEthereumToken(
         address=A_BAT.ethereum_address,
         decimals=A_BAT.decimals,
