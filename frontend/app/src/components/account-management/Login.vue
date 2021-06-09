@@ -6,8 +6,8 @@
     <v-card-text>
       <v-form ref="form" v-model="valid">
         <v-text-field
+          ref="username"
           v-model="username"
-          autofocus
           class="login__fields__username"
           color="secondary"
           :label="$t('login.label_username')"
@@ -280,6 +280,34 @@ export default class Login extends Vue {
       form.reset();
     }
     this.loadSettings();
+    this.updateFocus();
+  }
+
+  getRef(prop: 'password' | 'username'): Promise<any> {
+    return new Promise<any>(resolve => {
+      let count = 0;
+      const interval = setInterval(() => {
+        count++;
+        if (count > 10) {
+          clearInterval(interval);
+          return;
+        }
+
+        const $ref = this.$refs[prop];
+        if (!$ref) {
+          return;
+        }
+        clearInterval(interval);
+        resolve($ref);
+      }, 500);
+    });
+  }
+
+  private updateFocus() {
+    const ref = this.getRef(this.username ? 'password' : 'username');
+    ref.then(value => {
+      this.focusElement(value);
+    });
   }
 
   username: string = '';
@@ -317,19 +345,16 @@ export default class Login extends Vue {
 
   mounted() {
     this.loadSettings();
-    if (this.username) {
-      this.focusPassword();
-    }
+    this.updateFocus();
   }
 
-  private focusPassword() {
-    this.$nextTick(() =>
-      setTimeout(() => {
-        (this.$refs.password as any).$el
-          .querySelector('input:not([type=hidden])')
-          .focus();
-      }, 100)
-    );
+  private focusElement(element: any) {
+    requestAnimationFrame(() => {
+      const input = element.$el.querySelector(
+        'input:not([type=hidden])'
+      ) as HTMLInputElement;
+      input.focus();
+    });
   }
 
   private saveCustomBackend() {
