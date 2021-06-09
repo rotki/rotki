@@ -2265,7 +2265,8 @@
       "api_key": "API Key",
       "api_secret": "API Secret",
       "passphrase": "Passphrase",
-      "kraken_account": "Select the type of your Kraken account"
+      "kraken_account": "Select the type of your Kraken account",
+      "ftx_subaccount": "[Optional] FTX subaccount name"
     },
     "confirmation": {
       "title": "Confirmation Required",

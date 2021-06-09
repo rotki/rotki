@@ -1146,6 +1146,7 @@ class ExchangesResourceEditSchema(Schema):
     passphrase = fields.String(missing=None)
     kraken_account_type = KrakenAccountTypeField(missing=None)
     binance_markets = fields.List(fields.String(), missing=None)
+    ftx_subaccount = fields.String(missing=None)
 
 
 class ExchangesResourceAddSchema(Schema):
@@ -1156,6 +1157,7 @@ class ExchangesResourceAddSchema(Schema):
     passphrase = fields.String(missing=None)
     kraken_account_type = KrakenAccountTypeField(missing=None)
     binance_markets = fields.List(fields.String(), missing=None)
+    ftx_subaccount = fields.String(missing=None)
 
 
 class ExchangesDataResourceSchema(Schema):

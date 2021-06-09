@@ -80,6 +80,7 @@ export interface ExchangePayload {
   readonly passphrase: Nullable<string>;
   readonly krakenAccountType: Nullable<KrakenAccountType>;
   readonly binanceMarkets: Nullable<string[]>;
+  readonly ftxSubaccount: Nullable<string>;
 }
 
 interface XpubPayload {

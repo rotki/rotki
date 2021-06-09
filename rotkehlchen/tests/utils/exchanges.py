@@ -578,6 +578,7 @@ def create_test_ftx(
         secret=make_api_secret(),
         database=database,
         msg_aggregator=msg_aggregator,
+        ftx_subaccount_name=None,
     )
     return mock
 

@@ -814,7 +814,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const exchangeEntry: Exchange = {
         name: exchange.name,
         location: exchange.location,
-        krakenAccountType: exchange.krakenAccountType ?? undefined
+        krakenAccountType: exchange.krakenAccountType ?? undefined,
+        ftxSubaccount: exchange.ftxSubaccount ?? undefined
       };
 
       if (!edit) {

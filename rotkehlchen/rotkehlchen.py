@@ -1050,6 +1050,7 @@ class Rotkehlchen():
             passphrase: Optional[str] = None,
             kraken_account_type: Optional['KrakenAccountType'] = None,
             binance_markets: Optional[List[str]] = None,
+            ftx_subaccount_name: Optional[str] = None,
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase
@@ -1061,6 +1062,7 @@ class Rotkehlchen():
             api_secret=api_secret,
             database=self.data.db,
             passphrase=passphrase,
+            ftx_subaccount_name=ftx_subaccount_name,
         )
 
         if is_success:
@@ -1073,6 +1075,7 @@ class Rotkehlchen():
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
                 binance_markets=binance_markets,
+                ftx_subaccount_name=ftx_subaccount_name,
             )
         return is_success, msg
 
