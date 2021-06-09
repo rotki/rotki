@@ -6,8 +6,8 @@
     <v-card-text>
       <v-form ref="form" v-model="valid">
         <v-text-field
+          ref="username"
           v-model="username"
-          autofocus
           class="login__fields__username"
           color="secondary"
           :label="$t('login.label_username')"
@@ -19,6 +19,7 @@
         />
 
         <revealable-input
+          ref="password"
           v-model="password"
           :rules="passwordRules"
           :disabled="loading || !!syncConflict.message || customBackendDisplay"
@@ -279,6 +280,34 @@ export default class Login extends Vue {
       form.reset();
     }
     this.loadSettings();
+    this.updateFocus();
+  }
+
+  getRef(prop: 'password' | 'username'): Promise<any> {
+    return new Promise<any>(resolve => {
+      let count = 0;
+      const interval = setInterval(() => {
+        count++;
+        if (count > 10) {
+          clearInterval(interval);
+          return;
+        }
+
+        const $ref = this.$refs[prop];
+        if (!$ref) {
+          return;
+        }
+        clearInterval(interval);
+        resolve($ref);
+      }, 500);
+    });
+  }
+
+  private updateFocus() {
+    const ref = this.getRef(this.username ? 'password' : 'username');
+    ref.then(value => {
+      this.focusElement(value);
+    });
   }
 
   username: string = '';
@@ -316,6 +345,16 @@ export default class Login extends Vue {
 
   mounted() {
     this.loadSettings();
+    this.updateFocus();
+  }
+
+  private focusElement(element: any) {
+    requestAnimationFrame(() => {
+      const input = element.$el.querySelector(
+        'input:not([type=hidden])'
+      ) as HTMLInputElement;
+      input.focus();
+    });
   }
 
   private saveCustomBackend() {
@@ -340,7 +379,6 @@ export default class Login extends Vue {
   private loadSettings() {
     this.rememberUser = !!localStorage.getItem(KEY_REMEMBER);
     this.username = localStorage.getItem(KEY_USERNAME) ?? '';
-
     const { sessionOnly, url } = getBackendUrl();
     this.customBackendUrl = url;
     this.customBackendSessionOnly = sessionOnly;
