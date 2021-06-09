@@ -5,6 +5,7 @@ Changelog
 * :feature:`2954` On login screen, the password field will now be focused for users that have remember user enabled.
 * :feature:`2670` Users will now get results in a better order when using the asset selector.
 * :feature:`2951` Users will now get results in a better order when searching for an asset in asset management. Search will now consider both name and symbol.
+* :feature:`3014` Users will now get a suggested name when adding a new exchange.
 * :feature:`1073` Binance users will now be able to select which markets should be queried for trades history considerably improving the speed of binance history queries.
 
 * :release:`1.17.2 <2021-06-04>`
