@@ -19,6 +19,7 @@
         />
 
         <revealable-input
+          ref="password"
           v-model="password"
           :rules="passwordRules"
           :disabled="loading || !!syncConflict.message || customBackendDisplay"
@@ -316,6 +317,19 @@ export default class Login extends Vue {
 
   mounted() {
     this.loadSettings();
+    if (this.username) {
+      this.focusPassword();
+    }
+  }
+
+  private focusPassword() {
+    this.$nextTick(() =>
+      setTimeout(() => {
+        (this.$refs.password as any).$el
+          .querySelector('input:not([type=hidden])')
+          .focus();
+      }, 100)
+    );
   }
 
   private saveCustomBackend() {
@@ -340,7 +354,6 @@ export default class Login extends Vue {
   private loadSettings() {
     this.rememberUser = !!localStorage.getItem(KEY_REMEMBER);
     this.username = localStorage.getItem(KEY_USERNAME) ?? '';
-
     const { sessionOnly, url } = getBackendUrl();
     this.customBackendUrl = url;
     this.customBackendSessionOnly = sessionOnly;
