@@ -1,11 +1,9 @@
-from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from eth_typing import HexAddress, HexStr
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import Asset, UnderlyingToken
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
@@ -336,51 +334,3 @@ class Eth2Deposit(NamedTuple):
             str(self.value.usd_value),
             self.deposit_index,
         )
-
-
-CustomEthereumTokenDBTuple = Tuple[
-    str,                  # address
-    Optional[int],        # decimals
-    Optional[str],        # name
-    Optional[str],        # symbol
-    Optional[int],        # started
-    Optional[str],        # swapped_for
-    Optional[str],        # coingecko
-    Optional[str],        # cryptocompare
-    Optional[str],        # protocol
-]
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class CustomEthereumToken:
-    address: ChecksumEthAddress
-    decimals: Optional[int] = None
-    name: Optional[str] = None
-    symbol: Optional[str] = None
-    started: Optional[Timestamp] = None
-    swapped_for: Optional[Asset] = None
-    coingecko: Optional[str] = None
-    cryptocompare: Optional[str] = None
-    protocol: Optional[str] = None
-    underlying_tokens: Optional[List[UnderlyingToken]] = None
-
-    def missing_basic_data(self) -> bool:
-        return self.name is None or self.symbol is None or self.decimals is None
-
-    def serialize(self) -> Dict[str, Any]:
-        result: Dict[str, Any] = {
-            'address': self.address,
-            'decimals': self.decimals,
-            'name': self.name,
-            'symbol': self.symbol,
-            'started': self.started,
-            'swapped_for': self.swapped_for.identifier if self.swapped_for else None,
-            'coingecko': self.coingecko,
-            'cryptocompare': self.cryptocompare,
-            'protocol': self.protocol,
-            'underlying_tokens': None,
-        }
-        if self.underlying_tokens:
-            result['underlying_tokens'] = [x.serialize() for x in self.underlying_tokens]
-
-        return result

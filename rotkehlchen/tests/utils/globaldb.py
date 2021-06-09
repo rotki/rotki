@@ -1,4 +1,4 @@
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
+from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_MKR
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -11,7 +11,7 @@ underlying_address3 = make_ethereum_address()
 custom_address1 = make_ethereum_address()
 custom_address2 = make_ethereum_address()
 INITIAL_TOKENS = [
-    CustomEthereumToken(
+    EthereumToken.initialize(
         address=custom_address1,
         decimals=4,
         name='Custom 1',
@@ -27,7 +27,7 @@ INITIAL_TOKENS = [
             UnderlyingToken(address=underlying_address3, weight=FVal('0.34')),
         ],
     ),
-    CustomEthereumToken(
+    EthereumToken.initialize(
         address=custom_address2,
         decimals=18,
         name='Custom 2',
@@ -36,15 +36,15 @@ INITIAL_TOKENS = [
 ]
 
 INITIAL_EXPECTED_TOKENS = [INITIAL_TOKENS[0]] + [
-    CustomEthereumToken(underlying_address1),
-    CustomEthereumToken(underlying_address2),
-    CustomEthereumToken(underlying_address3),
+    EthereumToken.initialize(underlying_address1),
+    EthereumToken.initialize(underlying_address2),
+    EthereumToken.initialize(underlying_address3),
 ] + [INITIAL_TOKENS[1]]
 
 
 underlying_address4 = make_ethereum_address()
 custom_address3 = make_ethereum_address()
-CUSTOM_TOKEN3 = CustomEthereumToken(
+CUSTOM_TOKEN3 = EthereumToken.initialize(
     address=custom_address3,
     decimals=15,
     name='Custom 3',

@@ -4,10 +4,10 @@ from shutil import copyfile
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetData, AssetType
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, string_to_ethereum_address
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_BAT
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError
@@ -22,8 +22,8 @@ from rotkehlchen.tests.utils.globaldb import INITIAL_TOKENS
 @pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
 def test_get_ethereum_token_identifier(globaldb):
     assert globaldb.get_ethereum_token_identifier('0xnotexistingaddress') is None
-    token_0_id = globaldb.get_ethereum_token_identifier(INITIAL_TOKENS[0].address)
-    assert token_0_id == ethaddress_to_identifier(INITIAL_TOKENS[0].address)
+    token_0_id = globaldb.get_ethereum_token_identifier(INITIAL_TOKENS[0].ethereum_address)
+    assert token_0_id == ethaddress_to_identifier(INITIAL_TOKENS[0].ethereum_address)
 
 
 def test_open_new_globaldb_with_old_rotki(tmpdir_factory):
@@ -56,9 +56,9 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
     """
     # To unit test it we need to even hack it a bit. Make a new token, add it in the DB
     # then delete it and then try to add a new one referencing the old one. Since we
-    # need to obtain a valid CustomEthereumToken object
+    # need to obtain a valid EthereumToken object
     address_to_delete = make_ethereum_address()
-    token_to_delete = CustomEthereumToken(
+    token_to_delete = EthereumToken.initialize(
         address=address_to_delete,
         decimals=18,
         name='willdell',
@@ -78,7 +78,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
         globaldb.add_asset(
             asset_id='NEWID',
             asset_type=AssetType.ETHEREUM_TOKEN,
-            data=CustomEthereumToken(
+            data=EthereumToken.initialize(
                 address=make_ethereum_address(),
                 swapped_for=asset_to_delete,
             ),
@@ -86,7 +86,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
 
     # now edit a new token with swapped_for pointing to a non existing token in the DB
     bat_custom = globaldb.get_ethereum_token(A_BAT.ethereum_address)
-    bat_custom = CustomEthereumToken(
+    bat_custom = EthereumToken.initialize(
         address=A_BAT.ethereum_address,
         decimals=A_BAT.decimals,
         name=A_BAT.name,

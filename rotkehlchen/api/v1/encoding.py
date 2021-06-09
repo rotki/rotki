@@ -12,7 +12,7 @@ from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures import ActionType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
@@ -22,7 +22,6 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_btc_address,
 )
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
 from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_kusama_address_from_public_key,
@@ -1625,7 +1624,7 @@ class EthereumTokenSchema(Schema):
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
-    ) -> CustomEthereumToken:
+    ) -> EthereumToken:
         given_underlying_tokens = data.pop('underlying_tokens', None)
         underlying_tokens = None
         if given_underlying_tokens is not None:
@@ -1635,8 +1634,7 @@ class EthereumTokenSchema(Schema):
                     address=entry['address'],
                     weight=entry['weight'],
                 ))
-        # TODO: How to give identifier here?
-        return CustomEthereumToken(**data, underlying_tokens=underlying_tokens)
+        return EthereumToken.initialize(**data, underlying_tokens=underlying_tokens)
 
 
 class ModifyEthereumTokenSchema(Schema):

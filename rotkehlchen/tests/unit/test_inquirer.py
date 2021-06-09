@@ -5,11 +5,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, A_AAVE, A_LINK, A_CRV
+from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_CRV, A_ETH, A_LINK, A_USD
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -28,7 +27,6 @@ from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import ts_now
-
 
 UNDERLAYING_ASSET_PRICES = {
     A_AAVE: FVal('100'),
@@ -298,7 +296,7 @@ def test_find_usd_price_via_second_oracle(inquirer):
 def test_price_underlying_tokens(inquirer, globaldb):
     aave_weight, link_weight, crv_weight = FVal('0.6'), FVal('0.2'), FVal('0.2')
     address = make_ethereum_address()
-    token = CustomEthereumToken(
+    token = EthereumToken.initialize(
         address=address,
         decimals=18,
         name='Test',
@@ -324,7 +322,7 @@ def test_price_underlying_tokens(inquirer, globaldb):
 def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
     addess = '0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'
     inquirer.inject_ethereum(ethereum_manager)
-    token = CustomEthereumToken(
+    token = EthereumToken.initialize(
         address=addess,
         decimals=18,
         name='Uniswap LINK/ETH',

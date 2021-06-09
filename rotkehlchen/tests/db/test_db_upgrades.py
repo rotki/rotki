@@ -9,9 +9,8 @@ import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures import BalanceType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
@@ -1791,7 +1790,7 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
     globaldb.add_asset(
         asset_id='_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94',
         asset_type=AssetType.ETHEREUM_TOKEN,
-        data=CustomEthereumToken(
+        data=EthereumToken.initialize(
             address=ChecksumEthAddress('0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94'),
             decimals=18,
             name='foo',

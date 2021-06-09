@@ -1,3 +1,4 @@
+import logging
 from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type, TypeVar
@@ -8,11 +9,13 @@ from rotkehlchen.constants.resolver import (
     ethaddress_to_identifier,
     strethaddress_to_identifier,
 )
-from rotkehlchen.errors import DeserializationError, UnsupportedAsset
+from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 from .typing import AssetType
+
+log = logging.getLogger(__name__)
 
 UnderlyingTokenDBTuple = Tuple[str, str]
 
@@ -356,8 +359,8 @@ class Asset():
     symbol: str = field(init=False)
     asset_type: AssetType = field(init=False)
     started: Timestamp = field(init=False)
-    forked: Optional[str] = field(init=False)
-    swapped_for: Optional[str] = field(init=False)
+    forked: Optional['Asset'] = field(init=False)
+    swapped_for: Optional['Asset'] = field(init=False)
     # None means no special mapping. '' means not supported
     cryptocompare: Optional[str] = field(init=False)
     coingecko: Optional[str] = field(init=False)
@@ -402,8 +405,20 @@ class Asset():
         object.__setattr__(self, 'symbol', data.symbol)
         object.__setattr__(self, 'asset_type', data.asset_type)
         object.__setattr__(self, 'started', data.started)
-        object.__setattr__(self, 'forked', data.forked)
-        object.__setattr__(self, 'swapped_for', data.swapped_for)
+        forked = None
+        if data.forked is not None:
+            try:
+                forked = Asset(data.forked)
+            except UnknownAsset:  # should not happen due to foreign keys
+                log.error(f'Forked asset {data.forked} for {self.identifier} could not be found')
+        object.__setattr__(self, 'forked', forked)
+        swapped_for = None
+        if data.swapped_for is not None:
+            try:
+                swapped_for = Asset(data.swapped_for)
+            except UnknownAsset:  # should not happen due to foreign keys
+                log.error(f'Swapped for asset {data.swapped_for} for {self.identifier} could not be found')  # noqa: E501
+        object.__setattr__(self, 'swapped_for', swapped_for)
         object.__setattr__(self, 'cryptocompare', data.cryptocompare)
         object.__setattr__(self, 'coingecko', data.coingecko)
 
