@@ -21,6 +21,11 @@ export class HistoryPage {
       force: true
     });
     cy.get('[data-cy=amount]').type(trade.amount);
+    cy.get('[data-cy=rate]')
+      .parent()
+      .parent()
+      .find('.v-progress-linear')
+      .should('not.be.visible');
     cy.get('[data-cy=rate]').type(`{selectall}{backspace}${trade.rate}`);
     cy.get('[data-cy=fee]').type(trade.fee);
     selectAsset('[data-cy=fee-currency]', trade.fee_currency, trade.fee_id);

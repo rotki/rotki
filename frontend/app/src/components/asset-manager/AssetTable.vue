@@ -15,8 +15,13 @@
             prepend-inner-icon="mdi-magnify"
             :label="$t('asset_table.search')"
             outlined
+            clearable
             @input="onSearchTermChange($event)"
-          />
+          >
+            <template v-if="!!searchTimeout" #append>
+              <v-icon color="primary"> mdi-spin mdi-loading</v-icon>
+            </template>
+          </v-text-field>
         </v-col>
       </v-row>
     </template>
@@ -30,11 +35,13 @@
       single-expand
       :expanded="expanded"
       item-key="identifier"
-      sort-by="name"
+      sort-by="symbol"
       :sort-desc="false"
-      :search.sync="search"
+      :search="search"
+      :custom-sort="sortItems"
+      :custom-filter="assetFilter"
     >
-      <template #item.name="{ item }">
+      <template #item.symbol="{ item }">
         <asset-details-base
           :changeable="change"
           opens-details
@@ -121,6 +128,8 @@ import RowExpander from '@/components/helper/RowExpander.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { capitalize } from '@/filters';
 import { EthereumToken } from '@/services/assets/types';
+import { Nullable } from '@/types';
+import { compareAssets } from '@/utils/assets';
 
 @Component({
   components: {
@@ -158,16 +167,41 @@ export default class AssetTable extends Vue {
       clearTimeout(this.searchTimeout);
       this.searchTimeout = null;
     }
-    this.searchTimeout = setTimeout(
-      () => (this.search = this.pendingSearch),
-      400
+    this.searchTimeout = setTimeout(() => {
+      this.search = this.pendingSearch;
+      this.searchTimeout = null;
+    }, 600);
+  }
+
+  assetFilter(
+    _value: Nullable<string>,
+    search: Nullable<string>,
+    item: Nullable<ManagedAsset>
+  ) {
+    if (!search || !item) {
+      return true;
+    }
+    const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
+    const name = item.name.toLocaleLowerCase().trim();
+    const symbol = item.symbol.toLocaleLowerCase().trim();
+    return symbol.indexOf(keyword) >= 0 || name.indexOf(keyword) >= 0;
+  }
+
+  sortItems(
+    items: ManagedAsset[],
+    sortBy: (keyof ManagedAsset)[],
+    sortDesc: boolean[]
+  ): ManagedAsset[] {
+    const keyword = this.search?.toLocaleLowerCase()?.trim() ?? '';
+    return items.sort((a, b) =>
+      compareAssets(a, b, sortBy[0], keyword, sortDesc[0])
     );
   }
 
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('asset_table.headers.asset').toString(),
-      value: 'name'
+      value: 'symbol'
     },
     {
       text: this.$t('asset_table.headers.type').toString(),

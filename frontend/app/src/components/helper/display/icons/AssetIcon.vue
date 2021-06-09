@@ -48,6 +48,11 @@ export default class AssetIcon extends Mixins(AssetMixin) {
     this.error = false;
   }
 
+  @Watch('identifier')
+  onIdentifierChange() {
+    this.error = false;
+  }
+
   get isUnknown(): boolean {
     return typeof this.identifier !== 'string';
   }

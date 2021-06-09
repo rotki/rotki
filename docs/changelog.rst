@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`2670` Users will now get results in a better order when using the asset selector.
+* :feature:`2951` Users will now get results in a better order when searching for an asset in asset management. Search will now consider both name and symbol.
 * :feature:`1073` Binance users will now be able to select which markets should be queried for trades history considerably improving the speed of binance history queries.
 
 * :release:`1.17.2 <2021-06-04>`

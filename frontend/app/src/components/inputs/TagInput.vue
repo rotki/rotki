@@ -7,6 +7,7 @@
       class="tag-input"
       small-chips
       :label="label"
+      :outlined="outlined"
       item-text="name"
       :menu-props="{ closeOnContentClick: true }"
       item-value="name"
@@ -86,6 +87,8 @@ export default class TagInput extends Vue {
   disabled!: boolean;
   @Prop({ required: false, type: String, default: 'Tags' })
   label!: string;
+  @Prop({ required: false, type: Boolean, default: false })
+  outlined!: boolean;
   tags!: Tag[];
   manageTags: boolean = false;
 
@@ -114,6 +117,16 @@ export default class TagInput extends Vue {
   .v-dialog {
     &--active {
       height: 100%;
+    }
+  }
+
+  .v-text-field {
+    &--outlined {
+      .v-btn {
+        &--icon {
+          margin-top: -8px;
+        }
+      }
     }
   }
 }
