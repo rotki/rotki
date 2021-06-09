@@ -1,5 +1,5 @@
 import { BigNumber } from 'bignumber.js';
-import { PriceOracles } from '@/model/action-result';
+import { Exchange, PriceOracles } from '@/model/action-result';
 import {
   BlockchainAssetBalances,
   BtcBalances,
@@ -14,7 +14,9 @@ import {
   HasBalance
 } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
+import { KRAKEN_ACCOUNT_TYPES } from '@/store/balances/const';
 import { Section } from '@/store/const';
+import { Nullable } from '@/types';
 import {
   Blockchain,
   ExchangeData,
@@ -28,7 +30,7 @@ export interface LocationBalance {
   readonly usdValue: BigNumber;
 }
 
-export interface ManualBalanceByLocation {
+export interface BalanceByLocation {
   [location: string]: BigNumber;
 }
 
@@ -48,22 +50,36 @@ export interface BalanceState {
   totals: AssetBalances;
   liabilities: AssetBalances;
   usdToFiatExchangeRates: ExchangeRates;
-  connectedExchanges: SupportedExchange[];
+  connectedExchanges: Exchange[];
   exchangeBalances: ExchangeData;
   ethAccounts: GeneralAccountData[];
   btcAccounts: BtcAccountData;
   ksmAccounts: GeneralAccountData[];
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalanceWithValue[];
-  manualBalanceByLocation: ManualBalanceByLocation;
+  manualBalanceByLocation: BalanceByLocation;
   prices: AssetPrices;
 }
 
+export interface EditExchange {
+  readonly exchange: Exchange;
+  readonly newName: Nullable<string>;
+}
+
+export interface ExchangeSetupPayload {
+  readonly edit: Boolean;
+  readonly exchange: ExchangePayload;
+}
+
 export interface ExchangePayload {
-  readonly exchange: string;
-  readonly apiKey: string;
-  readonly apiSecret: string;
-  readonly passphrase: string | null;
+  readonly name: string;
+  readonly newName: Nullable<string>;
+  readonly location: SupportedExchange;
+  readonly apiKey: Nullable<string>;
+  readonly apiSecret: Nullable<string>;
+  readonly passphrase: Nullable<string>;
+  readonly krakenAccountType: Nullable<KrakenAccountType>;
+  readonly binanceMarkets: Nullable<string[]>;
 }
 
 interface XpubPayload {
@@ -85,7 +101,7 @@ export interface AccountPayload {
 }
 
 export interface ExchangeBalancePayload {
-  readonly name: string;
+  readonly location: string;
   readonly ignoreCache: boolean;
 }
 
@@ -193,3 +209,5 @@ export type AssetInfoGetter = (
 
 export type IdentifierForSymbolGetter = (symbol: string) => string | undefined;
 export type AssetSymbolGetter = (identifier: TokenDetails) => string;
+
+export type KrakenAccountType = typeof KRAKEN_ACCOUNT_TYPES[number];

@@ -1,6 +1,5 @@
 import json
 import logging
-from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Union, overload
 from urllib.parse import urlencode
 
@@ -11,7 +10,7 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
-from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -26,18 +25,12 @@ log = RotkehlchenLogsAdapter(logger)
 COINGECKO_QUERY_RETRY_TIMES = 4
 
 
-class CoingeckoImageURLs(NamedTuple):
-    thumb: str
-    small: str
-    large: str
-
-
 class CoingeckoAssetData(NamedTuple):
     identifier: str
     symbol: str
     name: str
     description: str
-    images: CoingeckoImageURLs
+    image_url: str
 
 
 DELISTED_ASSETS = [
@@ -175,6 +168,7 @@ DELISTED_ASSETS = [
     strethaddress_to_identifier('0x851017523AE205adc9195e7F97D029f4Cfe7794c'),
     strethaddress_to_identifier('0x7f65BE7FAd0c22813e51746E7e8f13a20bAa9411'),
     strethaddress_to_identifier('0xe431a4c5DB8B73c773e06cf2587dA1EB53c41373'),
+    strethaddress_to_identifier('0xAef38fBFBF932D1AeF3B808Bc8fBd8Cd8E1f8BC5'),
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [
@@ -241,10 +235,9 @@ COINGECKO_SIMPLE_VS_CURRENCIES = [
 
 class Coingecko():
 
-    def __init__(self, data_directory: Path) -> None:
+    def __init__(self) -> None:
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
-        self.data_directory = data_directory
 
     @overload
     def _query(
@@ -285,7 +278,10 @@ class Coingecko():
         tries = COINGECKO_QUERY_RETRY_TIMES
         while tries >= 0:
             try:
-                response = self.session.get(f'{url}?{urlencode(options)}')
+                response = self.session.get(
+                    f'{url}?{urlencode(options)}',
+                    timeout=DEFAULT_TIMEOUT_TUPLE,
+                )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Coingecko API request failed due to {str(e)}') from e
 
@@ -361,11 +357,7 @@ class Coingecko():
                 symbol=data['symbol'],
                 name=data['name'],
                 description=data['description']['en'],
-                images=CoingeckoImageURLs(
-                    thumb=data['image']['thumb'],
-                    small=data['image']['small'],
-                    large=data['image']['large'],
-                ),
+                image_url=data['image']['small'],
             )
         except KeyError as e:
             raise RemoteError(

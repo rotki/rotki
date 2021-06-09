@@ -3,21 +3,20 @@ import hashlib
 import hmac
 import logging
 import os
+from collections import defaultdict
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 import gevent
 import requests
-from gevent.lock import Semaphore
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.assets import A_LEND
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -36,7 +35,7 @@ from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalan
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
@@ -109,7 +108,6 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
 
     log.debug(
         'Processing poloniex Trade',
-        sensitive_log=True,
         timestamp=timestamp,
         order_type=trade_type,
         base_currency=base_currency,
@@ -148,7 +146,7 @@ def process_polo_loans(
     new_data = []
 
     for loan in reversed(data):
-        log.debug('processing poloniex loan', **make_sensitive(loan))
+        log.debug('processing poloniex loan', **loan)
         try:
             close_time = deserialize_timestamp_from_poloniex_date(loan['close'])
             open_time = deserialize_timestamp_from_poloniex_date(loan['open'])
@@ -235,17 +233,26 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='
-        self.session.headers.update({
-            'Key': self.api_key,
-        })
+        self.session.headers.update({'Key': self.api_key})
         self.msg_aggregator = msg_aggregator
-        self.nonce_lock = Semaphore()
 
     def first_connection(self) -> None:
         if self.first_connection_made:
             return
 
         self.first_connection_made = True
+
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'Key': self.api_key})
+
+        return changed
 
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
@@ -260,12 +267,18 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def api_query_dict(self, command: str, req: Optional[Dict] = None) -> Dict:
         result = self._api_query(command, req)
-        assert isinstance(result, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+        if not isinstance(result, Dict):
+            raise RemoteError(
+                f'Poloniex query for {command} did not return a dict result. Result: {result}',
+            )
         return result
 
     def api_query_list(self, command: str, req: Optional[Dict] = None) -> List:
         result = self._api_query(command, req)
-        assert isinstance(result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+        if not isinstance(result, List):
+            raise RemoteError(
+                f'Poloniex query for {command} did not return a list result. Result: {result}',
+            )
         return result
 
     def _single_query(self, command: str, req: Dict[str, Any]) -> Optional[requests.Response]:
@@ -280,19 +293,19 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         """
         if command in ('returnTicker', 'returnCurrencies'):
             log.debug(f'Querying poloniex for {command}')
-            response = self.session.get(self.public_uri + command)
+            response = self.session.get(self.public_uri + command, timeout=DEFAULT_TIMEOUT_TUPLE)
         else:
             req['command'] = command
-            with self.nonce_lock:
-                # Protect this region with a lock since poloniex will reject
-                # non-increasing nonces. So if two greenlets come in here at
-                # the same time one of them will fail
-                req['nonce'] = ts_now_in_ms()
-                post_data = str.encode(urlencode(req))
+            req['nonce'] = ts_now_in_ms()
+            post_data = str.encode(urlencode(req))
 
-                sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
-                self.session.headers.update({'Sign': sign})
-                response = self.session.post('https://poloniex.com/tradingApi', req)
+            sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
+            self.session.headers.update({'Sign': sign})
+            response = self.session.post(
+                'https://poloniex.com/tradingApi',
+                req,
+                timeout=DEFAULT_TIMEOUT_TUPLE,
+            )
 
         if response.status_code == 504:
             # backoff and repeat
@@ -401,39 +414,64 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         response = self.api_query_list('returnLendingHistory', req)
         return response
 
-    @overload
-    def return_trade_history(  # pylint: disable=unused-argument, no-self-use
-            self,
-            currency_pair: Literal['all'],
-            start: Timestamp,
-            end: Timestamp,
-    ) -> Dict:
-        ...
-
-    @overload
-    def return_trade_history(  # pylint: disable=unused-argument, no-self-use
-            self,
-            currency_pair: Union[TradePair, str],
-            start: Timestamp,
-            end: Timestamp,
-    ) -> Union[Dict, List]:
-        ...
-
     def return_trade_history(
             self,
-            currency_pair: Union[TradePair, str],
             start: Timestamp,
             end: Timestamp,
-    ) -> Union[Dict, List]:
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """If `currency_pair` is all, then it returns a dictionary with each key
         being a pair and each value a list of trades. If `currency_pair` is a specific
         pair then a list is returned"""
-        return self._api_query('returnTradeHistory', {
-            'currencyPair': currency_pair,
-            'start': start,
-            'end': end,
-            'limit': 10000,
-        })
+        limit = 10000
+        pair = 'all'
+        data: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
+        while True:
+            new_data = self.api_query_dict('returnTradeHistory', {
+                'currencyPair': pair,
+                'start': start,
+                'end': end,
+                'limit': limit,
+            })
+            results_length = 0
+            for _, v in new_data.items():
+                results_length += len(v)
+
+            if data == {} and results_length < limit:
+                return new_data  # simple case - only one query needed
+
+            latest_ts = start
+            # add results to data and prepare for next query
+            for market, trades in new_data.items():
+                existing_ids = {x['globalTradeID'] for x in data['market']}
+                for trade in trades:
+                    try:
+                        timestamp = deserialize_timestamp_from_poloniex_date(trade['date'])
+                        latest_ts = max(latest_ts, timestamp)
+                        # since we query again from last ts seen make sure no duplicates make it in
+                        if trade['globalTradeID'] not in existing_ids:
+                            data[market].append(trade)
+                    except (DeserializationError, KeyError) as e:
+                        msg = str(e)
+                        if isinstance(e, KeyError):
+                            msg = f'Missing key entry for {msg}.'
+                        self.msg_aggregator.add_warning(
+                            'Error deserializing a poloniex trade. Check the logs for details',
+                        )
+                        log.error(
+                            'Error deserializing poloniex trade',
+                            trade=trade,
+                            error=msg,
+                        )
+                        continue
+
+            if results_length < limit:
+                break  # last query has less than limit. We are done.
+
+            # otherwise we query again from the last ts seen in the last result
+            start = latest_ts
+            continue
+
+        return data
 
     def return_deposits_withdrawals(
             self,
@@ -518,7 +556,6 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 log.debug(
                     'Poloniex balance query',
-                    sensitive_log=True,
                     currency=asset,
                     amount=amount,
                     usd_value=usd_value,
@@ -532,7 +569,6 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts: Timestamp,
     ) -> List[Trade]:
         raw_data = self.return_trade_history(
-            currency_pair='all',
             start=start_ts,
             end=end_ts,
         )
@@ -542,13 +578,6 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             results_length += len(v)
 
         log.debug('Poloniex trade history query', results_num=results_length)
-
-        if results_length >= 10000:
-            raise ValueError(
-                'Poloniex api has a 10k limit to trade history. Have not implemented'
-                ' a solution for more than 10k trades at the moment',
-            )
-
         our_trades = []
         for pair, trades in raw_data.items():
             for trade in trades:
@@ -755,7 +784,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             log.error(
                 f'Unexpected data encountered during deserialization of poloniex '
-                f'{str(movement_type)}: {movement_data}. Error was: {str(e)}',
+                f'{str(movement_type)}: {movement_data}. Error was: {msg}',
             )
 
         return None

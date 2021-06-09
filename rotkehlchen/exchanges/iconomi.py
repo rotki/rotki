@@ -109,6 +109,15 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.uri = 'https://api.iconomi.com'
         self.msg_aggregator = msg_aggregator
 
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        return changed
+
     def _generate_signature(self, request_type: str, request_path: str, timestamp: str) -> str:
         signed_data = ''.join([timestamp, request_type.upper(), request_path, '']).encode()
         signature = hmac.new(
@@ -152,8 +161,9 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             headers.update({
                 'ICN-SIGN': signature,
-                'ICN-TIMESTAMP': timestamp,
+                # set api key only here since if given in non authenticated endpoint gives 400
                 'ICN-API-KEY': self.api_key,
+                'ICN-TIMESTAMP': timestamp,
             })
 
         if data != '':
@@ -194,7 +204,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """
-        Validates that the ICONOMI API key is good for usage in Rotki
+        Validates that the ICONOMI API key is good for usage in rotki
         """
 
         try:

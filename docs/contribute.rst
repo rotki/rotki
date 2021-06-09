@@ -1,7 +1,7 @@
-Rotki Contribution Guide
+rotki Contribution Guide
 ##############################
 
-Rotki is an opensource project so help is really appreciated.
+rotki is an opensource project so help is really appreciated.
 
 .. _bug_reporting:
 
@@ -11,22 +11,22 @@ Bug Reporting
 Before reporting an issue, make sure to check the issue tracker for similar ones. If this is a new issue then use the `proper template <https://github.com/rotki/rotki/issues/new?template=bug_report.md>`_ providing a detailed description about:
 
 - **Problem**: what happened and what you were expecting to happen instead.
-- **Logs**: run Rotki in debug mode, replicate the issue and attach the logs (see the section `Run Rotki in debug mode <#run-rotki-in-debug-mode>`_).
-- **Environment**: the operating system and the Rotki version.
+- **Logs**: run rotki in debug mode, replicate the issue and attach the logs (see the section `Run rotki in debug mode <#run-rotki-in-debug-mode>`_).
+- **Environment**: the operating system and the rotki version.
 
-Run Rotki in debug mode
+Run rotki in debug mode
 =========================
 
-For running Rotki in debug mode, you can do it either via a config file or the app UI:
+For running rotki in debug mode, you can do it either via a config file or the app UI:
 
 - **Config file**: see the section :ref:`set-the-backend-s-arguments`.
-- **App UI**: before log in, click the cog wheel at the bottom right corner and select "Debug" (image below). Then log in as usual.
+- **App UI**: before log in, click the cog wheel at the bottom right corner and select "Debug" (image below). Press the save button and proceed to log in as usual.
 
 .. image:: images/rotki_debug_mode_set.png
-   :alt: Run Rotki in debug mode via app UI
+   :alt: Run rotki in debug mode via app UI
    :align: center
 
-You can find the app logs location by going to "Help" menu at the top and then choosing "Logs Directory".
+You can open the app logs location by going to "Help" menu at the top and then choosing "Logs Directory".
 
 Feature Requests
 ******************
@@ -69,7 +69,7 @@ Our releases work like this:
 - We release patches merging the `bugfixes` branch to master and adding a new tag.
 - Normal releases are created by merging the `develop` branch to master and adding a new tag.
 
-Adding new assets to Rotki
+Adding new assets to rotki
 ============================
 
 To add new assets to rotki you need to edit `all assets file <https://github.com/rotki/rotki/blob/239552b843cd8ad99d02855ff95393d6032dbc57/rotkehlchen/data/all_assets.json>`__.

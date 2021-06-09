@@ -117,7 +117,7 @@ class SubstrateManager():
             connect_on_startup: bool,
             own_rpc_endpoint: str,
     ) -> None:
-        """An interface to any Substrate chain supported by Rotki.
+        """An interface to any Substrate chain supported by rotki.
 
         It uses Polkascan py-substrate-interface for interacting with the
         substrate blockchains and the Subscan API as a chain explorer.
@@ -433,7 +433,7 @@ class SubstrateManager():
                 type_registry_preset=si_attributes.type_registry_preset,
                 use_remote_preset=True,
             )
-        except (requests.exceptions.RequestException, WebSocketException) as e:
+        except (requests.exceptions.RequestException, WebSocketException, SubstrateRequestException) as e:  # noqa: E501
             message = (
                 f'{self.chain} could not connect to node at endpoint: {endpoint}. '
                 f'Connection error: {str(e)}.'

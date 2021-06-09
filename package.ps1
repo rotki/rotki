@@ -1,5 +1,5 @@
 $SQLCIPHER_VERSION = if ($env:SQLCIPHER_VERSION) { $env:SQLCIPHER_VERSION } else { 'v4.4.0' }
-$PYSQLCIPHER3_VERSION = if ($env:PYSQLCIPHER3_VERSION) { $env:PYSQLCIPHER3_VERSION } else { 'fd1b547407bcb7198107fe3c458105286a060b0d' }
+$PYSQLCIPHER3_VERSION = if ($env:PYSQLCIPHER3_VERSION) { $env:PYSQLCIPHER3_VERSION } else { 'c01b3bda144073eb34412ae64702fa2362a778e7' }
 $BUILD_DEPENDENCIES = if ($env:BUILD_DEPENDENCIES) { $env:BUILD_DEPENDENCIES } else { 'rotki-build-dependencies' }
 
 # Setup constants
@@ -308,7 +308,7 @@ if ($Env:CI) {
     echo "::set-output name=backend_binary_checksum_name::$($BACKEND_BINARY_CHECKSUM_NAME)"
 }
 
-echo "Rotki $SETUP_VERSION was build successfully"
+echo "rotki $SETUP_VERSION was build successfully"
 
 if (($env:VIRTUAL_ENV) -and (-not ($Env:CI))) {
     deactivate

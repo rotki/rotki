@@ -29,8 +29,8 @@
         <v-card-text>
           {{
             !value
-              ? $t('trade_location_selector.selection-none')
-              : $t('trade_location_selector.selection-single', {
+              ? $t('trade_location_selector.selection_none')
+              : $t('trade_location_selector.selection_single', {
                   location: name
                 })
           }}

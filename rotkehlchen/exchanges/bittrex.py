@@ -124,7 +124,6 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     base_asset, quote_asset = bittrex_pair_to_world(bittrex_trade['marketSymbol'])
     log.debug(
         'Processing bittrex Trade',
-        sensitive_log=True,
         amount=amount,
         rate=rate,
         order_type=order_type,
@@ -177,6 +176,17 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def first_connection(self) -> None:
         self.first_connection_made = True
+
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'Api-Key': self.api_key})
+        return changed
 
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
@@ -266,7 +276,6 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 hashlib.sha512,
             ).hexdigest()
             self.session.headers.update({
-                'Api-Key': self.api_key,
                 'Api-Timestamp': api_timestamp,
                 'Api-Content-Hash': api_content_hash,
                 'Api-Signature': signature,
@@ -354,7 +363,6 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             log.debug(
                 'bittrex balance query result',
-                sensitive_log=True,
                 currency=asset,
                 amount=amount,
                 usd_value=usd_value,

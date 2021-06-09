@@ -37,7 +37,7 @@ import {
 
 import moment from 'moment';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import { Timeframe, Timeframes } from '@/components/dashboard/types';
 import { Currency } from '@/model/currency';
 import { NetValue } from '@/services/types-api';
@@ -58,7 +58,8 @@ export interface ValueOverTime {
 
 @Component({
   computed: {
-    ...mapGetters('session', ['currency'])
+    ...mapGetters('session', ['currency']),
+    ...mapState('settings', ['graphZeroBased'])
   }
 })
 export default class NetWorthChart extends Vue {
@@ -74,6 +75,7 @@ export default class NetWorthChart extends Vue {
   chartData!: NetValue;
 
   currency!: Currency;
+  graphZeroBased!: boolean;
 
   get darkModeEnabled(): boolean {
     return this.$vuetify.theme.dark;
@@ -204,7 +206,10 @@ export default class NetWorthChart extends Vue {
     };
 
     const yAxes: ChartYAxe = {
-      display: false
+      display: false,
+      ticks: {
+        beginAtZero: this.graphZeroBased
+      }
     };
 
     return {

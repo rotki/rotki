@@ -73,7 +73,12 @@ describe('balances:getters', () => {
           location: TRADE_LOCATION_BANKS
         }
       ],
-      connectedExchanges: ['bittrex']
+      connectedExchanges: [
+        {
+          location: 'bittrex',
+          name: 'Bitrex Acc'
+        }
+      ]
     });
 
     const actualResult = sortBy(

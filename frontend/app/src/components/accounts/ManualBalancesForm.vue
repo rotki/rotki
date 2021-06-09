@@ -3,6 +3,7 @@
     <v-text-field
       v-model="label"
       class="manual-balances-form__label"
+      outlined
       :label="$t('manual_balances_form.fields.label')"
       :error-messages="errors['label']"
       :rules="labelRules"
@@ -14,6 +15,7 @@
       :label="$t('manual_balances_form.fields.asset')"
       :error-messages="errors['asset']"
       class="manual-balances-form__asset"
+      outlined
       :rules="assetRules"
       :disabled="pending"
       @focus="delete errors['asset']"
@@ -23,6 +25,7 @@
       :label="$t('manual_balances_form.fields.amount')"
       :error-messages="errors['amount']"
       class="manual-balances-form__amount"
+      outlined
       type="number"
       autocomplete="off"
       :disabled="pending"
@@ -33,11 +36,13 @@
       v-model="tags"
       :label="$t('manual_balances_form.fields.tags')"
       :disabled="pending"
+      outlined
       class="manual-balances-form__tags"
     />
     <location-selector
       v-model="location"
       class="manual-balances-form__location"
+      outlined
       :error-messages="errors['location']"
       :disabled="pending"
       :label="$t('manual_balances_form.fields.location')"
@@ -176,6 +181,8 @@ export default class ManualBalancesForm extends Vue {
 
 <style scoped lang="scss">
 .manual-balances-form {
+  padding-top: 12px;
+
   &__save {
     margin-right: 8px;
   }

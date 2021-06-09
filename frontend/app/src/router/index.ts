@@ -128,12 +128,13 @@ export default new Router({
         },
         {
           path: 'exchange-balances/',
-          component: () => import('../components/accounts/ExchangeBalances.vue')
+          component: () =>
+            import('../components/accounts/exchanges/ExchangeBalances.vue')
         },
         {
           path: 'exchange-balances/:exchange',
           component: () =>
-            import('../components/accounts/ExchangeBalances.vue'),
+            import('../components/accounts/exchanges/ExchangeBalances.vue'),
           props: true
         },
         {

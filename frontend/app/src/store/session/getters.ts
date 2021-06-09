@@ -7,19 +7,15 @@ import {
 import { SessionState } from '@/store/session/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
-import { CurrencyLocation, Tag } from '@/typing/types';
+import { Tag } from '@/typing/types';
 
 interface SessionGetters {
   floatingPrecision: number;
   dateDisplayFormat: string;
   currency: Currency;
   tags: Tag[];
-  krakenAccountType: string;
   loanWatchers: Watcher<WatcherType>[];
   activeModules: SupportedModules[];
-  thousandSeparator: string;
-  decimalSeparator: string;
-  currencyLocation: CurrencyLocation;
   currencySymbol: string;
 }
 
@@ -37,18 +33,6 @@ export const getters: Getters<
     return state.generalSettings.dateDisplayFormat;
   },
 
-  thousandSeparator: (state: SessionState) => {
-    return state.generalSettings.thousandSeparator;
-  },
-
-  decimalSeparator: (state: SessionState) => {
-    return state.generalSettings.decimalSeparator;
-  },
-
-  currencyLocation: (state: SessionState) => {
-    return state.generalSettings.currencyLocation;
-  },
-
   currency: (state: SessionState) => {
     return state.generalSettings.selectedCurrency;
   },
@@ -59,10 +43,6 @@ export const getters: Getters<
 
   tags: (state: SessionState) => {
     return Object.values(state.tags);
-  },
-
-  krakenAccountType: (state: SessionState) => {
-    return state.generalSettings.krakenAccountType;
   },
 
   loanWatchers: ({ watchers }) => {

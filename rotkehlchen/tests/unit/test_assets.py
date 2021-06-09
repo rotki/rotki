@@ -118,7 +118,13 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0xe2DA716381d7E0032CECaA5046b34223fC3f218D'),  # noqa: E501 # Carbon Utility Token but CUTCoin in CC
         ethaddress_to_identifier('0x1FA3bc860bF823d792f04F662f3AA3a500a68814'),  # noqa: E501 # 1X Short Bitcoin Token but Hedgecoin in CC
         ethaddress_to_identifier('0xc7283b66Eb1EB5FB86327f08e1B5816b0720212B'),  # noqa: E501 # Tribe Token (FEI) but another TribeToken in CC
+        ethaddress_to_identifier('0x16980b3B4a3f9D89E33311B5aa8f80303E5ca4F8'),  # noqa: E501 # Kira Network (KEX) but another KEX in CC
         'DON',     # Donnie Finance but Donation Coin in CC
+        'BAG',     # Baguette but not in CC
+        ethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'),  # noqa: E501 # Gitcoin (GTC) but another GTC in CC
+        ethaddress_to_identifier('0x6D0F5149c502faf215C89ab306ec3E50b15e2892'),  # noqa: E501 # Portion (PRT) but another PRT in CC
+        'ANI',     # Animecoin (ANI) but another ANI in CC
+        'XEP',     # Electra Protocol (XEP) but another XEP in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -170,11 +176,11 @@ def test_case_does_not_matter_for_asset_constructor():
     assert a3.identifier == a4.identifier == ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7')  # noqa: E501
 
 
-def test_coingecko_identifiers_are_reachable(data_dir):
+def test_coingecko_identifiers_are_reachable():
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
-    coingecko = Coingecko(data_directory=data_dir)
+    coingecko = Coingecko()
     all_coins = coingecko.all_coins()
     # If coingecko identifier is missing test is trying to suggest possible assets.
     symbol_checked_exceptions = (  # This is the list of already checked assets
@@ -222,6 +228,22 @@ def test_coingecko_identifiers_are_reachable(data_dir):
         ethaddress_to_identifier('0xBfaA8cF522136C6FAfC1D53Fe4b85b4603c765b8'),
         # no Snowball in coingecko. Got other SNBL symbol token
         ethaddress_to_identifier('0x198A87b3114143913d4229Fb0f6D4BCb44aa8AFF'),
+        # Token suggestion doesn't match token in db
+        ethaddress_to_identifier('0xFD25676Fc2c4421778B18Ec7Ab86E7C5701DF187'),
+        # Token suggestion doesn't match token in db
+        ethaddress_to_identifier('0xcca0c9c383076649604eE31b20248BC04FdF61cA'),
+        # Token suggestion doesn't match token in db
+        ethaddress_to_identifier('0xAef38fBFBF932D1AeF3B808Bc8fBd8Cd8E1f8BC5'),
+        # Token suggestion doesn't match token in db
+        ethaddress_to_identifier('0x662aBcAd0b7f345AB7FfB1b1fbb9Df7894f18e66'),
+        # Token suggestion doesn't match token in db
+        ethaddress_to_identifier('0x497bAEF294c11a5f0f5Bea3f2AdB3073DB448B56'),
+        # Token suggestion doesn't match token in db
+        ethaddress_to_identifier('0xAbdf147870235FcFC34153828c769A70B3FAe01F'),
+        # Token suggestion doesn't match token in db
+        ethaddress_to_identifier('0x4DF47B4969B2911C966506E3592c41389493953b'),
+        # Token suggestion doesn't match token in db
+        ethaddress_to_identifier('0xB563300A3BAc79FC09B93b6F84CE0d4465A2AC27'),
         'ACC',  # no Adcoin in Coingecko. Got other ACC symbol token
         'APH',  # no Aphelion in Coingecko. Got other APH symbol token
         'ARCH',  # no ARCH in Coingecko. Got other ARCH symbol token
@@ -235,12 +257,19 @@ def test_coingecko_identifiers_are_reachable(data_dir):
         'FLAP',  # no FlappyCoin coin in Coingecko. Got other FLAP symbol token
         'HC-2',  # no Harvest Masternode Coin in Coingecko. Got other HC symbol token
         'KEY-3',  # no KeyCoin Coin in Coingecko. Got other KEY symbol token
+        'NAUT',  # Token suggestion doesn't match token in db
         'OCC',  # no Octoin Coin in Coingecko. Got other OCC symbol token
         'SPA',  # no SpainCoin Coin in Coingecko. Got other SPA symbol token
         'WEB-2',  # no Webchain in Coingecko. Got other WEB symbol token
         'WOLF',  # no Insanity Coin in Coingecko. Got other WOLF symbol token
+        'XAI',  # Token suggestion doesn't match token in db
         'XPB',  # no Pebble Coin in Coingecko. Got other XPB symbol token
         'XNS',  # no Insolar in Coingecko. Got other XNS symbol token
+        'PIGGY',  # Coingecko listed another asset PIGGY that is not Piggy Coin
+        # coingecko listed CAR that is not our token CarBlock.io
+        ethaddress_to_identifier('0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B'),
+        # coingecko listed newb farm with symbol NEWB that is not our newb
+        ethaddress_to_identifier('0x5A63Eb358a751b76e58325eadD86c2473fC40e87'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
@@ -314,7 +343,7 @@ def test_assets_json_meta():
 }"""])
 @pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
 def test_asset_with_unknown_type_does_not_crash(asset_resolver):  # pylint: disable=unused-argument
-    """Test that finding an asset with an unknown type does not crash Rotki"""
+    """Test that finding an asset with an unknown type does not crash rotki"""
     with pytest.raises(UnknownAsset):
         Asset('COMPRLASSET2')
     # After the test runs we must reset the asset resolver so that it goes back to

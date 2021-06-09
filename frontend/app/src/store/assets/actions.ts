@@ -7,13 +7,14 @@ import { api } from '@/services/rotkehlchen-api';
 import {
   ApplyUpdateResult,
   AssetDBVersion,
+  AssetMergePayload,
   AssetState,
   AssetUpdateCheckResult,
   AssetUpdateResult
 } from '@/store/assets/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { RotkehlchenState } from '@/store/types';
+import { ActionStatus, RotkehlchenState } from '@/store/types';
 
 export const actions: ActionTree<AssetState, RotkehlchenState> = {
   async checkForUpdate({ commit }): Promise<AssetUpdateCheckResult> {
@@ -80,6 +81,26 @@ export const actions: ActionTree<AssetState, RotkehlchenState> = {
       notify(description, title, Severity.ERROR, true);
       return {
         done: false
+      };
+    }
+  },
+
+  async mergeAssets(
+    _,
+    { sourceIdentifier, targetIdentifier }: AssetMergePayload
+  ): Promise<ActionStatus> {
+    try {
+      const success = await api.assets.mergeAssets(
+        sourceIdentifier,
+        targetIdentifier
+      );
+      return {
+        success
+      };
+    } catch (e) {
+      return {
+        success: false,
+        message: e.message
       };
     }
   }

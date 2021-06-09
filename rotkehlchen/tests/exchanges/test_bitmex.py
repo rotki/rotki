@@ -134,7 +134,7 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex):
     now = ts_now()
 
     def query_bitmex_and_test(input_str, expected_warnings_num, expected_errors_num):
-        def mock_get_deposit_withdrawal(url, data):  # pylint: disable=unused-argument
+        def mock_get_deposit_withdrawal(url, data, **kwargs):  # pylint: disable=unused-argument
             return MockResponse(200, input_str)
         with patch.object(sandbox_bitmex.session, 'get', side_effect=mock_get_deposit_withdrawal):
             movements = sandbox_bitmex.query_online_deposits_withdrawals(

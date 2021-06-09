@@ -20,14 +20,13 @@ from urllib.parse import urlencode
 
 import gevent
 import requests
-from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.constants import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade, TradeType
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
@@ -97,6 +96,10 @@ REJECTED_MBX_KEY = -2015
 
 BINANCE_API_TYPE = Literal['api', 'sapi', 'wapi', 'dapi', 'fapi']
 
+BINANCE_BASE_URL = 'binance.com/'
+BINANCEUS_BASE_URL = 'binance.us/'
+BINANCE_MARKETS_KEY = 'PAIRS'
+
 
 class BinancePermissionError(RemoteError):
     """Exception raised when a binance permission problem is detected
@@ -116,7 +119,7 @@ class BinancePair(NamedTuple):
 def trade_from_binance(
         binance_trade: Dict,
         binance_symbols_to_pair: Dict[str, BinancePair],
-        name: str = 'binance',
+        location: Location,
 ) -> Trade:
     """Turn a binance trade returned from trade history to our common trade
     history format
@@ -136,7 +139,7 @@ def trade_from_binance(
     rate = deserialize_price(binance_trade['price'])
     if binance_trade['symbol'] not in binance_symbols_to_pair:
         raise DeserializationError(
-            f'Error reading a {name} trade. Could not find '
+            f'Error reading a {str(location)} trade. Could not find '
             f'{binance_trade["symbol"]} in binance_symbols_to_pair',
         )
 
@@ -156,8 +159,7 @@ def trade_from_binance(
     fee = deserialize_fee(binance_trade['commission'])
 
     log.debug(
-        f'Processing {name} Trade',
-        sensitive_log=True,
+        f'Processing {str(location)} Trade',
         amount=amount,
         rate=rate,
         timestamp=timestamp,
@@ -168,10 +170,9 @@ def trade_from_binance(
         commision_asset=binance_trade['commissionAsset'],
         fee=fee,
     )
-
     return Trade(
         timestamp=timestamp,
-        location=Location.BINANCE,
+        location=location,
         base_asset=base_asset,
         quote_asset=quote_asset,
         trade_type=order_type,
@@ -242,7 +243,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             'X-MBX-APIKEY': self.api_key,
         })
         self.msg_aggregator = msg_aggregator
-        self.nonce_lock = Semaphore()
         self.offset_ms = 0
 
     def first_connection(self) -> None:
@@ -258,6 +258,17 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.offset_ms = server_time['serverTime'] - ts_now_in_ms()
 
         self.first_connection_made = True
+
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'X-MBX-APIKEY': api_key})
+        return changed
 
     @property
     def symbols_to_pair(self) -> Dict[str, BinancePair]:
@@ -301,61 +312,57 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         call_options = options.copy() if options else {}
 
         while True:
-            with self.nonce_lock:
-                # Protect this region with a lock since binance will reject
-                # non-increasing nonces. So if two greenlets come in here at
-                # the same time one of them will fail
-                if 'signature' in call_options:
-                    del call_options['signature']
+            if 'signature' in call_options:
+                del call_options['signature']
 
-                is_v3_api_method = api_type == 'api' and method in V3_METHODS
-                is_new_futures_api = api_type in ('fapi', 'dapi')
-                call_needs_signature = (
-                    (api_type == 'fapi' and method in FAPI_METHODS) or
-                    (api_type == 'dapi' and method in FAPI_METHODS) or  # same as fapi
-                    (api_type == 'sapi' and method in SAPI_METHODS) or
-                    (api_type == 'wapi' and method in WAPI_METHODS) or
-                    is_v3_api_method
-                )
-                if call_needs_signature:
-                    if api_type in ('sapi', 'dapi'):
-                        api_version = 1
-                    elif api_type == 'fapi':
-                        api_version = 2
-                    elif api_type == 'wapi' or is_v3_api_method:
-                        api_version = 3
-                    else:
-                        raise AssertionError(
-                            f'Should never get to signed binance api call for '
-                            f'api_type: {api_type} and method {method}',
-                        )
-
-                    # Recommended recvWindows is 5000 but we get timeouts with it
-                    call_options['recvWindow'] = 10000
-                    call_options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
-                    signature = hmac.new(
-                        self.secret,
-                        urlencode(call_options).encode('utf-8'),
-                        hashlib.sha256,
-                    ).hexdigest()
-                    call_options['signature'] = signature
-                elif api_type == 'api' and method in V1_METHODS:
+            is_v3_api_method = api_type == 'api' and method in V3_METHODS
+            is_new_futures_api = api_type in ('fapi', 'dapi')
+            call_needs_signature = (
+                (api_type == 'fapi' and method in FAPI_METHODS) or
+                (api_type == 'dapi' and method in FAPI_METHODS) or  # same as fapi
+                (api_type == 'sapi' and method in SAPI_METHODS) or
+                (api_type == 'wapi' and method in WAPI_METHODS) or
+                is_v3_api_method
+            )
+            if call_needs_signature:
+                if api_type in ('sapi', 'dapi'):
                     api_version = 1
+                elif api_type == 'fapi':
+                    api_version = 2
+                elif api_type == 'wapi' or is_v3_api_method:
+                    api_version = 3
                 else:
-                    raise AssertionError(f'Unexpected {self.name} API method {method}')
+                    raise AssertionError(
+                        f'Should never get to signed binance api call for '
+                        f'api_type: {api_type} and method {method}',
+                    )
 
-                api_subdomain = api_type if is_new_futures_api else 'api'
-                request_url = (
-                    f'https://{api_subdomain}.{self.uri}{api_type}/v{str(api_version)}/{method}?'
-                )
-                request_url += urlencode(call_options)
-                log.debug(f'{self.name} API request', request_url=request_url)
-                try:
-                    response = self.session.get(request_url)
-                except requests.exceptions.RequestException as e:
-                    raise RemoteError(
-                        f'{self.name} API request failed due to {str(e)}',
-                    ) from e
+                # Recommended recvWindows is 5000 but we get timeouts with it
+                call_options['recvWindow'] = 10000
+                call_options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
+                signature = hmac.new(
+                    self.secret,
+                    urlencode(call_options).encode('utf-8'),
+                    hashlib.sha256,
+                ).hexdigest()
+                call_options['signature'] = signature
+            elif api_type == 'api' and method in V1_METHODS:
+                api_version = 1
+            else:
+                raise AssertionError(f'Unexpected {self.name} API method {method}')
+
+            api_subdomain = api_type if is_new_futures_api else 'api'
+            request_url = (
+                f'https://{api_subdomain}.{self.uri}{api_type}/v{str(api_version)}/{method}?'
+            )
+            request_url += urlencode(call_options)
+            log.debug(f'{self.name} API request', request_url=request_url)
+            try:
+                response = self.session.get(request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
+            except requests.exceptions.RequestException as e:
+                raise RemoteError(
+                    f'{self.name} API request failed due to {str(e)}',
+                ) from e
 
             if response.status_code not in (200, 418, 429):
                 code = 'no code found'
@@ -790,7 +797,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self.first_connection()
             returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
             returned_balances = self._query_spot_balances(returned_balances)
-            if self.name != str(Location.BINANCEUS):
+            if self.location != Location.BINANCEUS:
                 returned_balances = self._query_lending_balances(returned_balances)
                 returned_balances = self._query_cross_collateral_futures_balances(returned_balances)  # noqa: E501
                 returned_balances = self._query_margined_futures_balances('fapi', returned_balances)  # noqa: E501
@@ -807,7 +814,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         log.debug(
             f'{self.name} balance query result',
-            sensitive_log=True,
             balances=returned_balances,
         )
         return dict(returned_balances), ''
@@ -827,7 +833,9 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.first_connection()
 
         if not markets:
-            iter_markets = list(self._symbols_to_pair.keys())
+            iter_markets = self.get_selected_pairs()
+            if len(iter_markets) == 0:
+                iter_markets = list(self._symbols_to_pair.keys())
         else:
             iter_markets = markets
 
@@ -873,7 +881,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 trade = trade_from_binance(
                     binance_trade=raw_trade,
                     binance_symbols_to_pair=self.symbols_to_pair,
-                    name=self.name,
+                    location=self.location,
                 )
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
@@ -922,34 +930,38 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if 'insertTime' in raw_data:
                 category = AssetMovementCategory.DEPOSIT
                 time_key = 'insertTime'
+                fee = Fee(ZERO)
             else:
                 category = AssetMovementCategory.WITHDRAWAL
                 time_key = 'applyTime'
+                fee = Fee(deserialize_asset_amount(raw_data['transactionFee']))
 
             timestamp = deserialize_timestamp_from_binance(raw_data[time_key])
             asset = asset_from_binance(raw_data['asset'])
+            tx_id = get_key_if_has_val(raw_data, 'txId')
+            internal_id = get_key_if_has_val(raw_data, 'id')
+            link_str = str(internal_id) if internal_id else str(tx_id) if tx_id else ''
             return AssetMovement(
-                location=Location.BINANCE,
+                location=self.location,
                 category=category,
                 address=deserialize_asset_movement_address(raw_data, 'address', asset),
-                transaction_id=get_key_if_has_val(raw_data, 'txId'),
+                transaction_id=tx_id,
                 timestamp=timestamp,
                 asset=asset,
                 amount=deserialize_asset_amount_force_positive(raw_data['amount']),
                 fee_asset=asset,
-                # Binance does not include withdrawal fees neither in the API nor in their UI
-                fee=Fee(ZERO),
-                link=str(raw_data['txId']),
+                fee=fee,
+                link=link_str,
             )
 
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {self.name} deposit/withdrawal with unknown asset '
+                f'Found {str(self.location)} deposit/withdrawal with unknown asset '
                 f'{e.asset_name}. Ignoring it.',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {self.name} deposit/withdrawal with unsupported asset '
+                f'Found {str(self.location)} deposit/withdrawal with unsupported asset '
                 f'{e.asset_name}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
@@ -957,11 +969,11 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if isinstance(e, KeyError):
                 msg = f'Missing key entry for {msg}.'
             self.msg_aggregator.add_error(
-                f'Error processing a {self.name} deposit/withdrawal. Check logs '
+                f'Error processing a {str(self.location)} deposit/withdrawal. Check logs '
                 f'for details. Ignoring it.',
             )
             log.error(
-                f'Error processing a {self.name} deposit_withdrawal',
+                f'Error processing a {str(self.location)} deposit/withdrawal',
                 asset_movement=raw_data,
                 error=msg,
             )
@@ -1071,3 +1083,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
         return []  # noop for binance
+
+    def get_selected_pairs(self) -> List[str]:
+        pairs = self.db.get_binance_pairs(self.name, self.location)
+        return list(set(pairs).intersection(set(self._symbols_to_pair.keys())))

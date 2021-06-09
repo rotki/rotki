@@ -5,24 +5,14 @@
     "baseUrl": "../../node_modules",
     "module": "commonjs",
     "target": "es5",
-    "lib": [
-      "dom",
-      "es6"
-    ],
+    "lib": ["dom", "es6"],
     "types": ["cypress"],
     "paths": {
-      "@/*": [
-        "../src/*"
-      ]
+      "@/*": ["../src/*"]
     },
     "experimentalDecorators": true
   },
-  "include": [
-    "**/*.ts"
-  ],
-  "exclude": [
-    "../unit/**/*.ts",
-    "../spectron/**/*.ts"
-  ],
+  "include": ["**/*.ts"],
+  "exclude": ["../unit/**/*.ts", "../spectron/**/*.ts"],
   "compileOnSave": false
 }

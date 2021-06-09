@@ -141,6 +141,17 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.session.headers.update({'x-api-key': api_key})
         self.msg_aggregator = msg_aggregator
 
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'x-api-key': api_key})
+        return changed
+
     def _generate_signature(self, request_type: str, url: str, nonce: str) -> str:
         signed_data = '#'.join([request_type, url, self.api_key, nonce, MD5_EMPTY_STR]).encode()
         signature = hmac.new(
@@ -229,7 +240,7 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """
-        Validates that the Bitcoin.de API key is good for usage in Rotki
+        Validates that the Bitcoin.de API key is good for usage in rotki
         """
 
         try:

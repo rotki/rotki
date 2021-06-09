@@ -4,9 +4,7 @@
     "keyword": "XMR",
     "label": "My monero wallet",
     "amount": "50.315",
-    "tags": [
-      "public"
-    ],
+    "tags": ["public"],
     "location": "blockchain"
   },
   {
@@ -24,5 +22,5 @@
     "amount": "100",
     "tags": [],
     "location": "banks"
-  }  
+  }
 ]

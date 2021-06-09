@@ -5,25 +5,16 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.eth2 import (
-    REQUEST_DELTA_TS,
-    _get_eth2_staking_deposits_onchain,
-    get_eth2_balances,
-    get_eth2_details,
-    get_eth2_staking_deposits,
-)
-from rotkehlchen.chain.ethereum.eth2_utils import (
-    _scrape_validator_daily_stats,
-    get_validator_daily_stats,
-)
+from rotkehlchen.chain.ethereum.eth2_utils import scrape_validator_daily_stats
+from rotkehlchen.chain.ethereum.modules.eth2 import REQUEST_DELTA_TS
 from rotkehlchen.chain.ethereum.typing import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
     Eth2Deposit,
     ValidatorDailyStats,
     ValidatorDetails,
     ValidatorPerformance,
+    string_to_ethereum_address,
 )
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
@@ -235,6 +226,7 @@ def test_get_eth2_staking_deposits_onchain(  # pylint: disable=unused-argument
         ethereum_manager_connect_at_start,
         inquirer,
         price_historian,
+        eth2,
 ):
     """
     Test on-chain request of deposit events for ADDR1, ADDR2 and ADDR3 in a
@@ -252,8 +244,7 @@ def test_get_eth2_staking_deposits_onchain(  # pylint: disable=unused-argument
         ethereum=ethereum_manager,
     )
     # Main call
-    deposits = _get_eth2_staking_deposits_onchain(
-        ethereum=ethereum_manager,
+    deposits = eth2._get_eth2_staking_deposits_onchain(
         addresses=[ADDR1, ADDR2, ADDR3],
         msg_aggregator=MessagesAggregator(),
         from_ts=from_ts,
@@ -293,6 +284,7 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         inquirer,
         price_historian,
         freezer,
+        eth2,
 ):
     """
     Test new on-chain requests for existing addresses requires a difference of
@@ -313,10 +305,10 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         [],  # no on-chain request, nothing in DB
         [EXPECTED_DEPOSITS[0]],  # on-chain request, deposit in DB
     ]
-    dbeth2_mock = patch('rotkehlchen.chain.ethereum.eth2.DBEth2', return_value=dbeth2)
-    with dbeth2_mock, patch(
-        'rotkehlchen.chain.ethereum.eth2._get_eth2_staking_deposits_onchain',
-    ) as mock_get_eth2_staking_deposits_onchain:
+    dbeth2_mock = patch('rotkehlchen.chain.ethereum.modules.eth2.DBEth2', return_value=dbeth2)
+    with dbeth2_mock, patch.object(
+            eth2, '_get_eth2_staking_deposits_onchain',
+    )as mock_get_eth2_staking_deposits_onchain:
         # 3rd call return
         mock_get_eth2_staking_deposits_onchain.return_value = [EXPECTED_DEPOSITS[0]]
 
@@ -327,8 +319,7 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         message_aggregator = MessagesAggregator()
 
         # First call
-        deposit_results_onchain = get_eth2_staking_deposits(
-            ethereum=ethereum_manager,
+        deposit_results_onchain = eth2.get_staking_deposits(
             addresses=[ADDR1],
             msg_aggregator=message_aggregator,
             database=database,
@@ -340,8 +331,7 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         freezer.move_to(datetime.fromtimestamp(ts_now + REQUEST_DELTA_TS - 1))
 
         # Second call
-        deposit_results_onchain = get_eth2_staking_deposits(
-            ethereum=ethereum_manager,
+        deposit_results_onchain = eth2.get_staking_deposits(
             addresses=[ADDR1],
             msg_aggregator=message_aggregator,
             database=database,
@@ -353,15 +343,13 @@ def test_get_eth2_staking_deposits_fetch_from_db(  # pylint: disable=unused-argu
         freezer.move_to(datetime.fromtimestamp(ts_now + REQUEST_DELTA_TS))
 
         # Third call
-        deposit_results_onchain = get_eth2_staking_deposits(
-            ethereum=ethereum_manager,
+        deposit_results_onchain = eth2.get_staking_deposits(
             addresses=[ADDR1],
             msg_aggregator=message_aggregator,
             database=database,
         )
         assert deposit_results_onchain == [EXPECTED_DEPOSITS[0]]
         mock_get_eth2_staking_deposits_onchain.assert_called_with(
-            ethereum=ethereum_manager,
             addresses=[ADDR1],
             msg_aggregator=message_aggregator,
             from_ts=Timestamp(ts_now),
@@ -431,13 +419,13 @@ def _create_beacon_mock(beaconchain):
     return patch.object(beaconchain.session, 'get', wraps=mock_requests_get)
 
 
-def test_get_eth2_balances_validator_not_yet_active(beaconchain, inquirer):  # pylint: disable=unused-argument  # noqa: E501
+def test_get_eth2_balances_validator_not_yet_active(beaconchain, inquirer, eth2):  # pylint: disable=unused-argument  # noqa: E501
     """Test that if a validator is detected but is not yet active the balance is shown properly
 
     Test for: https://github.com/rotki/rotki/issues/1888
     """
-    with _create_beacon_mock(beaconchain):
-        mapping = get_eth2_balances(beaconchain, [ADDR1])
+    with _create_beacon_mock(eth2.beaconchain):
+        mapping = eth2.get_balances([ADDR1])
 
     assert len(mapping) == 1
     amount = FVal('64.143716247')
@@ -445,13 +433,13 @@ def test_get_eth2_balances_validator_not_yet_active(beaconchain, inquirer):  # p
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer, price_historian):  # pylint: disable=unused-argument  # noqa: E501
+def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer, price_historian, eth2):  # pylint: disable=unused-argument  # noqa: E501
     """Test that if a validator is detected but is not yet active the balance is shown properly
 
     Test for: https://github.com/rotki/rotki/issues/1888
     """
-    with _create_beacon_mock(beaconchain):
-        details = get_eth2_details(beaconchain=beaconchain, addresses=[ADDR1])
+    with _create_beacon_mock(eth2.beaconchain):
+        details = eth2.get_details(addresses=[ADDR1])
 
     for idx in range(0, 2):
         # basic check about daily stats but then delete since this is not what this test checks
@@ -486,7 +474,7 @@ def test_get_eth2_details_validator_not_yet_active(beaconchain, inquirer, price_
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
 def test_validator_daily_stats(price_historian, function_scope_messages_aggregator):  # pylint: disable=unused-argument  # noqa: E501
     validator_index = 33710
-    stats = _scrape_validator_daily_stats(
+    stats = scrape_validator_daily_stats(
         validator_index=validator_index,
         last_known_timestamp=0,
         msg_aggregator=function_scope_messages_aggregator,
@@ -580,7 +568,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1607990400,  # 2020/12/15
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0120'),
+        pnl=FVal('0.01196'),
         start_amount=FVal(32),
         end_amount=FVal('32.01'),
         proposed_blocks=1,
@@ -589,7 +577,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608076800,  # 2020/12/16
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0132'),
+        pnl=FVal('0.01318'),
         start_amount=FVal('32.01'),
         end_amount=FVal('32.03'),
     ), ValidatorDailyStats(
@@ -597,7 +585,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608163200,  # 2020/12/17
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('-0.0001'),
+        pnl=FVal('-0.00006'),
         start_amount=FVal('32.03'),
         end_amount=FVal('32.03'),
         missed_attestations=126,
@@ -606,7 +594,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608249600,  # 2020/12/18
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0129'),
+        pnl=FVal('0.01286'),
         start_amount=FVal('32.03'),
         end_amount=FVal('32.04'),
     ), ValidatorDailyStats(
@@ -614,7 +602,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608336000,  # 2020/12/19
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0127'),
+        pnl=FVal('0.01267'),
         start_amount=FVal('32.04'),
         end_amount=FVal('32.05'),
     ), ValidatorDailyStats(
@@ -622,7 +610,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608422400,  # 2020/12/20
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0144'),
+        pnl=FVal('0.01442'),
         start_amount=FVal('32.05'),
         end_amount=FVal('32.07'),
         missed_attestations=1,
@@ -632,7 +620,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608508800,  # 2020/12/21
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0124'),
+        pnl=FVal('0.01237'),
         start_amount=FVal('32.07'),
         end_amount=FVal('32.08'),
     ), ValidatorDailyStats(
@@ -640,7 +628,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608595200,  # 2020/12/22
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0121'),
+        pnl=FVal('0.01213'),
         start_amount=FVal('32.08'),
         end_amount=FVal('32.09'),
         missed_attestations=1,
@@ -649,7 +637,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608681600,  # 2020/12/23
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0120'),
+        pnl=FVal('0.01199'),
         start_amount=FVal('32.09'),
         end_amount=FVal('32.10'),
     ), ValidatorDailyStats(
@@ -657,7 +645,7 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608768000,  # 2020/12/24
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0119'),
+        pnl=FVal('0.01194'),
         start_amount=FVal('32.1'),
         end_amount=FVal('32.11'),
     ), ValidatorDailyStats(
@@ -665,11 +653,10 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         timestamp=1608854400,  # 2020/12/25
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0117'),
+        pnl=FVal('0.01174'),
         start_amount=FVal('32.11'),
         end_amount=FVal('32.13'),
     )]
-
     stats.reverse()
     assert stats[:len(expected_stats)] == expected_stats
 
@@ -680,7 +667,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         function_scope_messages_aggregator,
 ):
     validator_index = 33710
-    stats = _scrape_validator_daily_stats(
+    stats = scrape_validator_daily_stats(
         validator_index=validator_index,
         last_known_timestamp=1613520000,
         msg_aggregator=function_scope_messages_aggregator,
@@ -692,7 +679,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         timestamp=1613606400,    # 2021/02/18
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0078'),
+        pnl=FVal('0.00784'),
         start_amount=FVal('32.66'),
         end_amount=FVal('32.67'),
         missed_attestations=1,
@@ -701,7 +688,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         timestamp=1613692800,    # 2021/02/19
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0068'),
+        pnl=FVal('0.00683'),
         start_amount=FVal('32.67'),
         end_amount=FVal('32.68'),
         missed_attestations=19,
@@ -710,7 +697,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         timestamp=1613779200,    # 2021/02/20
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0080'),
+        pnl=FVal('0.00798'),
         start_amount=FVal('32.68'),
         end_amount=FVal('32.68'),
     ), ValidatorDailyStats(
@@ -718,7 +705,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         timestamp=1613865600,    # 2021/02/21
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0111'),
+        pnl=FVal('0.01114'),
         start_amount=FVal('32.68'),
         end_amount=FVal('32.69'),
         missed_attestations=3,
@@ -728,7 +715,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         timestamp=1613952000,    # 2021/02/22
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0078'),
+        pnl=FVal('0.00782'),
         start_amount=FVal('32.69'),
         end_amount=FVal('32.7'),
         missed_attestations=1,
@@ -737,7 +724,7 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         timestamp=1614038400,    # 2021/02/23
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
-        pnl=FVal('0.0077'),
+        pnl=FVal('0.00772'),
         start_amount=FVal('32.7'),
         end_amount=FVal('32.71'),
         missed_attestations=1,
@@ -752,6 +739,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         price_historian,
         database,
         function_scope_messages_aggregator,
+        eth2,
 ):
     stats_call_patch = patch(
         'requests.get',
@@ -760,8 +748,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
 
     validator_index = 33710
     with stats_call_patch as stats_call:
-        stats = get_validator_daily_stats(
-            db=database,
+        stats = eth2.get_validator_daily_stats(
             validator_index=validator_index,
             msg_aggregator=function_scope_messages_aggregator,
             from_timestamp=1613606300,
@@ -775,7 +762,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1613606400,    # 2021/02/18
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
-            pnl=FVal('0.0078'),
+            pnl=FVal('0.00784'),
             start_amount=FVal('32.66'),
             end_amount=FVal('32.67'),
             missed_attestations=1,
@@ -784,7 +771,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1613692800,    # 2021/02/19
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
-            pnl=FVal('0.0068'),
+            pnl=FVal('0.00683'),
             start_amount=FVal('32.67'),
             end_amount=FVal('32.68'),
             missed_attestations=19,
@@ -793,7 +780,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1613779200,    # 2021/02/20
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
-            pnl=FVal('0.0080'),
+            pnl=FVal('0.00798'),
             start_amount=FVal('32.68'),
             end_amount=FVal('32.68'),
         ), ValidatorDailyStats(
@@ -801,7 +788,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1613865600,    # 2021/02/21
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
-            pnl=FVal('0.0111'),
+            pnl=FVal('0.01114'),
             start_amount=FVal('32.68'),
             end_amount=FVal('32.69'),
             missed_attestations=3,
@@ -811,7 +798,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1613952000,    # 2021/02/22
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
-            pnl=FVal('0.0078'),
+            pnl=FVal('0.00782'),
             start_amount=FVal('32.69'),
             end_amount=FVal('32.7'),
             missed_attestations=1,
@@ -820,7 +807,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             timestamp=1614038400,    # 2021/02/23
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
-            pnl=FVal('0.0077'),
+            pnl=FVal('0.00772'),
             start_amount=FVal('32.7'),
             end_amount=FVal('32.71'),
             missed_attestations=1,
@@ -828,8 +815,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         assert stats[:len(expected_stats)] == expected_stats
 
         # Make sure that calling it again does not make an external call
-        stats = get_validator_daily_stats(
-            db=database,
+        stats = eth2.get_validator_daily_stats(
             validator_index=33710,
             msg_aggregator=function_scope_messages_aggregator,
             from_timestamp=1613606300,

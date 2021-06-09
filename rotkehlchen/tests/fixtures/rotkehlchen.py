@@ -6,10 +6,10 @@ import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.db.settings import DBSettings
+from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.database import (
     add_blockchain_accounts_to_db,
@@ -131,8 +131,11 @@ def initialize_mock_rotkehlchen_instance(
         '_connect_ksm_manager_on_startup',
         return_value=bool(blockchain_accounts.ksm),
     )
-
-    with settings_patch, eth_rpcconnect_patch, ksm_rpcconnect_patch, ksm_connect_on_startup_patch:
+    # patch the constants to make sure that the periodic query for icons
+    # does not run during tests
+    size_patch = patch('rotkehlchen.rotkehlchen.ICONS_BATCH_SIZE', new=0)
+    sleep_patch = patch('rotkehlchen.rotkehlchen.ICONS_QUERY_SLEEP', new=999999)
+    with settings_patch, eth_rpcconnect_patch, ksm_rpcconnect_patch, ksm_connect_on_startup_patch, size_patch, sleep_patch:  # noqa: E501
         rotki.unlock_user(
             user=username,
             password=db_password,
@@ -188,12 +191,7 @@ def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, global
 
     Adding the AssetResolver as a requirement so that the first initialization happens here
     """
-    # patch the constants to make sure that the periodic query for icons
-    # does not run during tests
-    size_patch = patch('rotkehlchen.rotkehlchen.ICONS_BATCH_SIZE', new=0)
-    sleep_patch = patch('rotkehlchen.rotkehlchen.ICONS_QUERY_SLEEP', new=999999)
-    with size_patch, sleep_patch:
-        rotki = Rotkehlchen(cli_args)
+    rotki = Rotkehlchen(cli_args)
     return rotki
 
 
@@ -325,7 +323,10 @@ def rotkehlchen_api_server_with_exchanges(
     exchanges = rotkehlchen_api_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     for exchange_location in added_exchanges:
-        create_fn = getattr(exchange_tests, f'create_test_{str(exchange_location)}')
+        name = str(exchange_location)
+        if exchange_location == Location.BINANCEUS:
+            name = 'binance'
+        create_fn = getattr(exchange_tests, f'create_test_{name}')
         passphrase = None
         kwargs = {}
         if exchange_location in EXCHANGES_WITH_PASSPHRASE:

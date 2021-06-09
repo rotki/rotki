@@ -51,7 +51,7 @@ def _initialize_temp_db_directory() -> TemporaryDirectory:
     return tempdir
 
 
-def _initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
+def initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
     connection = sqlite3.connect(dbpath)
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
     cursor = connection.cursor()
@@ -81,7 +81,7 @@ def _initialize_global_db_directory(data_dir: Path) -> sqlite3.Connection:
         root_dir = Path(__file__).resolve().parent.parent
         builtin_data_dir = root_dir / 'data'
         shutil.copyfile(builtin_data_dir / 'global.db', global_dir / 'global.db')
-    return _initialize_globaldb(dbname)
+    return initialize_globaldb(dbname)
 
 
 class GlobalDBHandler():
@@ -123,7 +123,7 @@ class GlobalDBHandler():
             tempdir = _initialize_temp_db_directory()
             GlobalDBHandler.__instance._temp_db_directory = tempdir
             dbname = Path(tempdir.name) / 'global.db'
-            GlobalDBHandler.__instance._conn = _initialize_globaldb(dbname)
+            GlobalDBHandler.__instance._conn = initialize_globaldb(dbname)
         else:  # probably tests
             GlobalDBHandler.__instance._data_directory = data_dir
             GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
@@ -867,6 +867,33 @@ class GlobalDBHandler():
             )  # should not ever happen but need to handle with informative log if it does
             connection.rollback()
             return
+
+        connection.commit()
+
+    @staticmethod
+    def delete_asset_by_identifer(identifier: str, asset_type: AssetType) -> None:
+        """Delete an asset by identifier EVEN if it's in the owned assets table
+
+        May raise InputError if there is a foreign key relation such as the asset
+        is a swapped_for or forked_for of another asset.
+        """
+        globaldb = GlobalDBHandler()
+        connection = globaldb._conn
+        cursor = connection.cursor()
+        cursor.execute('DELETE FROM user_owned_assets WHERE asset_id=?;', (identifier,))
+        cursor.execute(
+            'DELETE FROM price_history WHERE from_asset=? OR to_asset=? ;',
+            (identifier, identifier),
+        )
+
+        try:
+            if asset_type == AssetType.ETHEREUM_TOKEN:
+                globaldb.delete_ethereum_token(identifier[6:])  # type: ignore
+            else:
+                globaldb.delete_custom_asset(identifier)
+        except InputError:
+            connection.rollback()
+            raise
 
         connection.commit()
 

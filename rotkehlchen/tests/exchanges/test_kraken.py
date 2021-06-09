@@ -60,6 +60,7 @@ def test_coverage_of_kraken_balances(kraken):
     got_assets.remove('FLOW.S')
     got_assets.remove('FLOWH.S')
     got_assets.remove('FLOWH')  # what is FLOWH?
+    got_assets.remove('ADA.S')
 
     diff = expected_assets.symmetric_difference(got_assets)
     if len(diff) != 0:
@@ -74,6 +75,7 @@ def test_coverage_of_kraken_balances(kraken):
     # also check that staked assets are properly processed
     assert asset_from_kraken('XTZ.S') == Asset('XTZ')
     assert asset_from_kraken('EUR.M') == Asset('EUR')
+    assert asset_from_kraken('ADA.S') == Asset('ADA')
 
 
 def test_querying_balances(function_scope_kraken):
@@ -407,7 +409,7 @@ def test_emptry_kraken_balance_response():
     """
     kraken = Kraken('kraken1', 'a', b'YW55IGNhcm5hbCBwbGVhc3VyZS4=', object(), object())
 
-    def mock_post(url, data):  # pylint: disable=unused-argument
+    def mock_post(url, data, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, '{"error":[]}')
 
     with patch.object(kraken.session, 'post', wraps=mock_post):

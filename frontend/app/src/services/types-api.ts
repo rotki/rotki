@@ -85,10 +85,15 @@ export interface SingleAssetBalance {
   readonly usd_value: string;
 }
 
-export interface VersionCheck {
-  readonly our_version?: string;
-  readonly latest_version?: string;
-  readonly download_url?: string;
+export interface BackendVersion {
+  readonly ourVersion?: string;
+  readonly latestVersion?: string;
+  readonly downloadUrl?: string;
+}
+
+export interface BackendInfo {
+  readonly version: BackendVersion;
+  readonly dataDirectory: string;
 }
 
 export interface GeneralAccountData {

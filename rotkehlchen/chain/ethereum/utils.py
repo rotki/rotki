@@ -103,7 +103,7 @@ def multicall_2(
     """
     return ETH_MULTICALL_2.call(
         ethereum=ethereum,
-        method_name='try_aggregate',
+        method_name='tryAggregate',
         arguments=[require_success, calls],
         call_order=call_order,
     )

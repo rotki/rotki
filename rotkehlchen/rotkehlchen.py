@@ -20,7 +20,6 @@ from typing import (
 )
 
 import gevent
-from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import Accountant
@@ -51,7 +50,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
-from rotkehlchen.exchanges.manager import ExchangeManager
+from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -65,16 +64,13 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.logging import (
-    DEFAULT_ANONYMIZED_LOGS,
-    LoggingSettings,
-    RotkehlchenLogsAdapter,
-    configure_logging,
-)
+from rotkehlchen.logging import RotkehlchenLogsAdapter, configure_logging
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.typing import (
+    EXTERNAL_EXCHANGES,
+    EXTERNAL_LOCATION,
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
@@ -104,8 +100,8 @@ LIMITS_MAPPING = {
     'ledger_action': FREE_LEDGER_ACTIONS_LIMIT,
 }
 
-ICONS_BATCH_SIZE = 5
-ICONS_QUERY_SLEEP = 10
+ICONS_BATCH_SIZE = 3
+ICONS_QUERY_SLEEP = 60
 
 
 TRADES_LIST = List[Union[Trade, AMMTrade]]
@@ -115,13 +111,12 @@ class Rotkehlchen():
     def __init__(self, args: argparse.Namespace) -> None:
         """Initialize the Rotkehlchen object
 
+        This runs during backend initialization so it should be as light as possible.
+
         May Raise:
         - SystemPermissionError if the given data directory's permissions
         are not correct.
         """
-        self.lock = Semaphore()
-        self.lock.acquire()
-
         # Can also be None after unlock if premium credentials did not
         # authenticate or premium server temporarily offline
         self.premium: Optional[Premium] = None
@@ -133,6 +128,7 @@ class Rotkehlchen():
             self.data_dir = default_data_directory()
         else:
             self.data_dir = Path(args.data_dir)
+            self.data_dir.mkdir(parents=True, exist_ok=True)
 
         if not os.access(self.data_dir, os.W_OK | os.R_OK):
             raise SystemPermissionError(
@@ -148,17 +144,9 @@ class Rotkehlchen():
         GlobalDBHandler(data_dir=self.data_dir)
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
-        self.coingecko = Coingecko(data_directory=self.data_dir)
+        self.coingecko = Coingecko()
         self.icon_manager = IconManager(data_dir=self.data_dir, coingecko=self.coingecko)
         self.assets_updater = AssetsUpdater(self.msg_aggregator)
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='periodically_query_icons_until_all_cached',
-            exception_is_error=False,
-            method=self.icon_manager.periodically_query_icons_until_all_cached,
-            batch_size=ICONS_BATCH_SIZE,
-            sleep_time_secs=ICONS_QUERY_SLEEP,
-        )
         # Initialize the Inquirer singleton
         Inquirer(
             data_dir=self.data_dir,
@@ -170,16 +158,14 @@ class Rotkehlchen():
             'trade': defaultdict(int),
             'asset_movement': defaultdict(int),
         }
-
-        self.lock.release()
         self.task_manager: Optional[TaskManager] = None
         self.shutdown_event = gevent.event.Event()
 
     def reset_after_failed_account_creation_or_login(self) -> None:
-        """If the account creation or login failed make sure that the Rotki instance is clear
+        """If the account creation or login failed make sure that the rotki instance is clear
 
         Tricky instances are when after either failed premium credentials or user refusal
-        to sync premium databases we relogged in.
+        to sync premium databases we relogged in
         """
         self.cryptocompare.db = None
 
@@ -234,7 +220,7 @@ class Rotkehlchen():
             if create_new:
                 raise
             self.msg_aggregator.add_warning(
-                'Could not authenticate the Rotki premium API keys found in the DB.'
+                'Could not authenticate the rotki premium API keys found in the DB.'
                 ' Has your subscription expired?',
             )
             # else let's just continue. User signed in succesfully, but he just
@@ -267,8 +253,6 @@ class Rotkehlchen():
             premium=self.premium,
         )
 
-        # Initialize the rotkehlchen logger
-        LoggingSettings(anonymized_logs=settings.anonymized_logs)
         exchange_credentials = self.data.db.get_exchange_credentials()
         self.exchange_manager.initialize_exchanges(
             exchange_credentials=exchange_credentials,
@@ -326,6 +310,14 @@ class Rotkehlchen():
             chain_manager=self.chain_manager,
             exchange_manager=self.exchange_manager,
         )
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=5,
+            task_name='periodically_query_icons_until_all_cached',
+            exception_is_error=False,
+            method=self.icon_manager.periodically_query_icons_until_all_cached,
+            batch_size=ICONS_BATCH_SIZE,
+            sleep_time_secs=ICONS_QUERY_SLEEP,
+        )
         self.user_is_logged_in = True
         log.debug('User unlocking complete')
 
@@ -342,9 +334,6 @@ class Rotkehlchen():
         self.greenlet_manager.clear()
         del self.chain_manager
         self.exchange_manager.delete_all_exchanges()
-
-        # Reset rotkehlchen logger to default
-        LoggingSettings(anonymized_logs=DEFAULT_ANONYMIZED_LOGS)
 
         del self.accountant
         del self.events_historian
@@ -367,7 +356,7 @@ class Rotkehlchen():
 
     def set_premium_credentials(self, credentials: PremiumCredentials) -> None:
         """
-        Sets the premium credentials for Rotki
+        Sets the premium credentials for rotki
 
         Raises PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
@@ -382,7 +371,7 @@ class Rotkehlchen():
         self.data.db.set_rotkehlchen_premium(credentials)
 
     def delete_premium_credentials(self) -> Tuple[bool, str]:
-        """Deletes the premium credentials for Rotki"""
+        """Deletes the premium credentials for rotki"""
         msg = ''
 
         success = self.data.db.del_rotkehlchen_premium()
@@ -405,7 +394,7 @@ class Rotkehlchen():
         return greenlet
 
     def main_loop(self) -> None:
-        """Rotki main loop that fires often and runs the task manager's scheduler"""
+        """rotki main loop that fires often and runs the task manager's scheduler"""
         while self.shutdown_event.wait(timeout=MAIN_LOOP_SECS_DELAY) is not True:
             if self.task_manager is not None:
                 self.task_manager.schedule()
@@ -660,22 +649,34 @@ class Rotkehlchen():
         """
         trades: TRADES_LIST
         if location is not None:
+            # clear the trades queried for this location
+            self.actions_per_location['trade'][location] = 0
             trades = self.query_location_trades(from_ts, to_ts, location, only_cache)
         else:
+            for given_location in ALL_SUPPORTED_EXCHANGES + [Location.EXTERNAL]:
+                # clear the trades queried for this location
+                self.actions_per_location['trade'][given_location] = 0
             trades = self.query_location_trades(from_ts, to_ts, Location.EXTERNAL, only_cache)
-            # crypto.com is not an API key supported exchange but user can import from CSV
-            trades.extend(self.query_location_trades(
-                from_ts=from_ts,
-                to_ts=to_ts,
-                location=Location.CRYPTOCOM,
-                only_cache=only_cache,
-            ))
+            # Look for trades that might be imported from CSV files
+            for csv_location in EXTERNAL_EXCHANGES:
+                trades.extend(self.query_location_trades(
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                    location=csv_location,
+                    only_cache=only_cache,
+                ))
+
             for exchange in self.exchange_manager.iterate_exchanges():
+                all_set = {x.identifier for x in trades}
                 exchange_trades = exchange.query_trade_history(
                     start_ts=from_ts,
                     end_ts=to_ts,
                     only_cache=only_cache,
                 )
+                # TODO: Really dirty. Figure out a better way.
+                # Since some of the trades may already be in the DB if multiple
+                # keys are used for a single exchange.
+                exchange_trades = [x for x in exchange_trades if x.identifier not in all_set]
                 if self.premium is None:
                     trades = self._apply_actions_limit(
                         location=exchange.location,
@@ -711,11 +712,8 @@ class Rotkehlchen():
             location: Location,
             only_cache: bool,
     ) -> TRADES_LIST:
-        # clear the trades queried for this location
-        self.actions_per_location['trade'][location] = 0
-
         location_trades: TRADES_LIST
-        if location in (Location.EXTERNAL, Location.CRYPTOCOM):
+        if location in EXTERNAL_LOCATION:
             location_trades = self.data.db.get_trades(  # type: ignore  # list invariance
                 from_ts=from_ts,
                 to_ts=to_ts,
@@ -744,11 +742,17 @@ class Rotkehlchen():
 
             location_trades = []
             for exchange in exchanges_list:
-                location_trades.extend(exchange.query_trade_history(
+                all_set = {x.identifier for x in location_trades}
+                new_trades = exchange.query_trade_history(
                     start_ts=from_ts,
                     end_ts=to_ts,
                     only_cache=only_cache,
-                ))
+                )
+                # TODO: Really dirty. Figure out a better way.
+                # Since some of the trades may already be in the DB if multiple
+                # keys are used for a single exchange.
+                new_trades = [x for x in new_trades if x.identifier not in all_set]
+                location_trades.extend(new_trades)
 
         trades: TRADES_LIST = []
         if self.premium is None:
@@ -894,21 +898,24 @@ class Rotkehlchen():
             exchange: Union[ExchangeInterface, Location],
             only_cache: bool,
     ) -> List[AssetMovement]:
-        """Queryies exchange for asset movements and adds it to all_movements"""
+        """Queries exchange for asset movements and adds it to all_movements"""
+        all_set = {x.identifier for x in all_movements}
         if isinstance(exchange, ExchangeInterface):
             location = exchange.location
-            # clear the asset movements queried for this exchange
-            self.actions_per_location['asset_movement'][location] = 0
             location_movements = exchange.query_deposits_withdrawals(
                 start_ts=from_ts,
                 end_ts=to_ts,
                 only_cache=only_cache,
             )
+            # TODO: Really dirty. Figure out a better way.
+            # Since some of the asset movements may already be in the DB if multiple
+            # keys are used for a single exchange.
+            location_movements = [x for x in location_movements if x.identifier not in all_set]
         else:
             assert isinstance(exchange, Location), 'only a location should make it here'
-            assert exchange == Location.CRYPTOCOM, 'only cryptocom should make it here'
+            assert exchange in EXTERNAL_EXCHANGES, 'only csv supported exchanges should get here'  # noqa : E501
             location = exchange
-            # cryptocom has no exchange integration but we may have DB entries
+            # We might have no exchange information but CSV imported information
             self.actions_per_location['asset_movement'][location] = 0
             location_movements = self.data.db.get_asset_movements(
                 from_ts=from_ts,
@@ -947,12 +954,14 @@ class Rotkehlchen():
         """
         movements: List[AssetMovement] = []
         if location is not None:
-            if location == Location.CRYPTOCOM:
+            # clear the asset movements queried for this exchange
+            self.actions_per_location['asset_movement'][location] = 0
+            if location in EXTERNAL_EXCHANGES:
                 movements = self._query_and_populate_exchange_asset_movements(
                     from_ts=from_ts,
                     to_ts=to_ts,
                     all_movements=movements,
-                    exchange=Location.CRYPTOCOM,
+                    exchange=location,
                     only_cache=only_cache,
                 )
             else:
@@ -964,6 +973,8 @@ class Rotkehlchen():
                     )
                     return []
 
+                # clear the asset movements queried for this exchange
+                self.actions_per_location['asset_movement'][location] = 0
                 for exchange in exchanges_list:
                     self._query_and_populate_exchange_asset_movements(
                         from_ts=from_ts,
@@ -973,14 +984,19 @@ class Rotkehlchen():
                         only_cache=only_cache,
                     )
         else:
-            # cryptocom has no exchange integration but we may have DB entries due to csv import
-            movements = self._query_and_populate_exchange_asset_movements(
-                from_ts=from_ts,
-                to_ts=to_ts,
-                all_movements=movements,
-                exchange=Location.CRYPTOCOM,
-                only_cache=only_cache,
-            )
+            for exchange_location in ALL_SUPPORTED_EXCHANGES:
+                # clear the asset movements queried for this exchange
+                self.actions_per_location['asset_movement'][exchange_location] = 0
+            # we may have DB entries due to csv import from supported locations
+            for external_location in EXTERNAL_EXCHANGES:
+
+                movements = self._query_and_populate_exchange_asset_movements(
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                    all_movements=movements,
+                    exchange=external_location,
+                    only_cache=only_cache,
+                )
             for exchange in self.exchange_manager.iterate_exchanges():
                 self._query_and_populate_exchange_asset_movements(
                     from_ts=from_ts,
@@ -996,30 +1012,29 @@ class Rotkehlchen():
 
     def set_settings(self, settings: ModifiableDBSettings) -> Tuple[bool, str]:
         """Tries to set new settings. Returns True in success or False with message if error"""
-        with self.lock:
-            if settings.eth_rpc_endpoint is not None:
-                result, msg = self.chain_manager.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
-                if not result:
-                    return False, msg
+        if settings.eth_rpc_endpoint is not None:
+            result, msg = self.chain_manager.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
+            if not result:
+                return False, msg
 
-            if settings.ksm_rpc_endpoint is not None:
-                result, msg = self.chain_manager.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
-                if not result:
-                    return False, msg
+        if settings.ksm_rpc_endpoint is not None:
+            result, msg = self.chain_manager.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
+            if not result:
+                return False, msg
 
-            if settings.btc_derivation_gap_limit is not None:
-                self.chain_manager.btc_derivation_gap_limit = settings.btc_derivation_gap_limit
+        if settings.btc_derivation_gap_limit is not None:
+            self.chain_manager.btc_derivation_gap_limit = settings.btc_derivation_gap_limit
 
-            if settings.current_price_oracles is not None:
-                Inquirer().set_oracles_order(settings.current_price_oracles)
+        if settings.current_price_oracles is not None:
+            Inquirer().set_oracles_order(settings.current_price_oracles)
 
-            if settings.historical_price_oracles is not None:
-                PriceHistorian().set_oracles_order(settings.historical_price_oracles)
-            if settings.active_modules is not None:
-                self.chain_manager.process_new_modules_list(settings.active_modules)
+        if settings.historical_price_oracles is not None:
+            PriceHistorian().set_oracles_order(settings.historical_price_oracles)
+        if settings.active_modules is not None:
+            self.chain_manager.process_new_modules_list(settings.active_modules)
 
-            self.data.db.set_settings(settings)
-            return True, ''
+        self.data.db.set_settings(settings)
+        return True, ''
 
     def get_settings(self) -> DBSettings:
         """Returns the db settings with a check whether premium is active or not"""
@@ -1034,6 +1049,7 @@ class Rotkehlchen():
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
             kraken_account_type: Optional['KrakenAccountType'] = None,
+            binance_markets: Optional[List[str]] = None,
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase
@@ -1056,6 +1072,7 @@ class Rotkehlchen():
                 api_secret=api_secret,
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
+                binance_markets=binance_markets,
             )
         return is_success, msg
 

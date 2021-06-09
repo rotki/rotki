@@ -58,7 +58,7 @@ def test_gemini_wrong_key(sandbox_gemini):
 
 @pytest.mark.parametrize('gemini_test_base_uri', ['https://api.gemini.com'])
 def test_gemini_all_symbols_are_known(sandbox_gemini):
-    """Test that the gemini trade pairs are all supported by Rotki
+    """Test that the gemini trade pairs are all supported by rotki
 
     Use the real gemini API
     """
@@ -97,17 +97,17 @@ def test_gemini_query_balances(sandbox_gemini):
     assert msg == ''
     assert len(balances) == 6
 
-    assert balances[A_USD].amount == FVal('623384.71365986583339')
+    assert balances[A_USD].amount == FVal('723384.71365986583339')
     assert balances[A_USD].usd_value == balances[A_USD].amount
-    assert balances[A_ETH].amount == FVal('39985.07921584')
+    assert balances[A_ETH].amount == FVal('59985.07921584')
     assert balances[A_ETH].usd_value > ZERO
-    assert balances[A_LTC].amount == FVal('40000')
+    assert balances[A_LTC].amount == FVal('60000')
     assert balances[A_LTC].usd_value > ZERO
-    assert balances[A_BTC].amount == FVal('1888.7177526197')
+    assert balances[A_BTC].amount == FVal('2888.7177526197')
     assert balances[A_BTC].usd_value > ZERO
-    assert balances[A_ZEC].amount == FVal('40000')
+    assert balances[A_ZEC].amount == FVal('60000')
     assert balances[A_ZEC].usd_value > ZERO
-    assert balances[A_BCH].amount == FVal('40000')
+    assert balances[A_BCH].amount == FVal('60000')
     assert balances[A_BCH].usd_value > ZERO
 
 

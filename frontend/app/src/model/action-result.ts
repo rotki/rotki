@@ -1,14 +1,21 @@
+import { SupportedExchange } from '@/services/balances/types';
 import { SupportedModules } from '@/services/session/types';
+import { KrakenAccountType } from '@/store/balances/types';
 import { LedgerActionType } from '@/store/history/types';
-import { GeneralSettings } from '@/typing/types';
 
 const PRICE_ORACLES = ['cryptocompare', 'coingecko'] as const;
 export type PriceOracles = typeof PRICE_ORACLES[number];
 
+export interface Exchange {
+  readonly location: SupportedExchange;
+  readonly name: string;
+  readonly krakenAccountType?: KrakenAccountType;
+}
+
 export interface AccountState {
   readonly premium: boolean;
   readonly settings: DBSettings;
-  readonly exchanges: string[];
+  readonly exchanges: Exchange[];
 }
 
 export interface DBSettings {
@@ -28,11 +35,7 @@ export interface DBSettings {
   readonly ksm_rpc_endpoint: string;
   readonly main_currency: string;
   readonly last_balance_save: number;
-  readonly anonymized_logs: boolean;
   readonly date_display_format: string;
-  readonly thousand_separator: string;
-  readonly decimal_separator: string;
-  readonly currency_location: GeneralSettings['currencyLocation'];
   readonly kraken_account_type: string;
   readonly active_modules: SupportedModules[];
   readonly frontend_settings: string;

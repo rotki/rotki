@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
@@ -175,9 +176,21 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
         self.msg_aggregator = msg_aggregator
+        self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
 
     def first_connection(self) -> None:
         self.first_connection_made = True
+
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
+        return changed
 
     def _validate_single_api_key_action(
             self,
@@ -230,7 +243,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return result, ''
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the Coinbase API key is good for usage in Rotki
+        """Validates that the Coinbase API key is good for usage in rotki
 
         Makes sure that the following permissions are given to the key:
         wallet:accounts:read, wallet:transactions:read,
@@ -331,14 +344,13 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.session.headers.update({
             'CB-ACCESS-SIGN': signature,
             'CB-ACCESS-TIMESTAMP': timestamp,
-            'CB-ACCESS-KEY': self.api_key,
             # This is needed to guarantee the up to the given date
             # API version response.
             'CB-VERSION': '2019-08-25',
         })
         full_url = self.base_uri + request_url
         try:
-            response = self.session.get(full_url)
+            response = self.session.get(full_url, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Coinbase API request failed due to {str(e)}') from e
 

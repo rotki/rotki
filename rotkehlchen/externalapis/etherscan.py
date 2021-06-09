@@ -6,6 +6,7 @@ import gevent
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import ConversionError, DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -152,11 +153,11 @@ class Etherscan(ExternalServiceWithApiKey):
         if api_key is None:
             if not self.warning_given:
                 self.msg_aggregator.add_warning(
-                    'You do not have an Etherscan API key configured. Rotki '
+                    'You do not have an Etherscan API key configured. rotki '
                     'etherscan queries will still work but will be very slow. '
                     'If you are not using your own ethereum node, it is recommended '
                     'to go to https://etherscan.io/register, create an API '
-                    'key and then input it in the external service credentials setting of Rotki',
+                    'key and then input it in the external service credentials setting of trotki',
                 )
                 self.warning_given = True
         else:
@@ -167,7 +168,7 @@ class Etherscan(ExternalServiceWithApiKey):
         while backoff < backoff_limit:
             logger.debug(f'Querying etherscan: {query_str}')
             try:
-                response = self.session.get(query_str)
+                response = self.session.get(query_str, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 if 'Max retries exceeded with url' in str(e):
                     log.debug(

@@ -98,3 +98,19 @@ def mock_dbhandler_update_owned_assets() -> _patch:
         'rotkehlchen.db.dbhandler.DBHandler.update_owned_assets_in_globaldb',
         lambda x: None,
     )
+
+
+def mock_dbhandler_add_globaldb_assetids() -> _patch:
+    """Just make sure add globalds assetids does nothing for older DB tests"""
+    return patch(
+        'rotkehlchen.db.dbhandler.DBHandler.add_globaldb_assetids',
+        lambda x: None,
+    )
+
+
+def mock_dbhandler_ensura_data_integrity() -> _patch:
+    """Just make sure ensure_data_integrity oes nothing for older DB tests"""
+    return patch(
+        'rotkehlchen.db.dbhandler.DBHandler.ensure_data_integrity',
+        lambda x: None,
+    )

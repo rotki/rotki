@@ -52,6 +52,11 @@ prices = {
             1467279735: FVal('0.9004'),
         },
     },
+    'EUR': {
+        'USD': {
+            1467279735: FVal('1.1001'),
+        },
+    },
     'BTC': {
         'EUR': {
             1428994442: FVal(210.865),
@@ -109,6 +114,7 @@ prices = {
             1491062063: FVal(47.865),
             1493291104: FVal(53.175),
             1493737200: FVal(69.505),
+            1496979735: FVal(251.36),
             1501062063: FVal(175.44),
             1511626623: FVal(396.56),
             1512561941: FVal(380.34),
@@ -121,6 +127,11 @@ prices = {
     strethaddress_to_identifier('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'): {
         'EUR': {
             1512561942: ZERO,
+        },
+    },
+    'CHF': {
+        'EUR': {
+            1496979735: FVal(1.001),
         },
     },
     'LTC': {
@@ -173,7 +184,7 @@ def check_result_of_history_creation_for_remote_errors(
 def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
     invalid_payload = "[{"
 
-    def mock_binance_api_queries(url):
+    def mock_binance_api_queries(url, timeout):  # pylint: disable=unused-argument
         if remote_errors:
             payload = invalid_payload
         elif 'myTrades' in url:
@@ -217,7 +228,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
 
         return MockResponse(200, payload)
 
-    def mock_poloniex_api_queries(url, req):  # pylint: disable=unused-argument
+    def mock_poloniex_api_queries(url, req, timeout):  # pylint: disable=unused-argument
         payload = ''
         if remote_errors:
             payload = invalid_payload

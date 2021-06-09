@@ -48,7 +48,7 @@ from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -59,6 +59,7 @@ from rotkehlchen.errors import (
     EthSyncError,
     IncorrectApiKeyFormat,
     InputError,
+    ModuleInactive,
     NoPriceForGivenTimestamp,
     PremiumApiError,
     PremiumAuthenticationError,
@@ -66,6 +67,7 @@ from rotkehlchen.errors import (
     RotkehlchenPermissionError,
     SystemPermissionError,
     TagConstraintError,
+    UnknownAsset,
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import Trade
@@ -82,6 +84,7 @@ from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMI
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
     AVAILABLE_MODULES_MAP,
+    IMPORTABLE_LOCATIONS,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -478,6 +481,7 @@ class RestAPI():
             api_secret: ApiSecret,
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
+            binance_markets: Optional[List[str]],
     ) -> Response:
         result = None
         status_code = HTTPStatus.OK
@@ -489,6 +493,7 @@ class RestAPI():
             api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
+            binance_markets=binance_markets,
         )
         if not result:
             result = None
@@ -502,22 +507,26 @@ class RestAPI():
             name: str,
             location: Location,
             new_name: Optional[str],
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
+            binance_markets: Optional[List[str]],
     ) -> Response:
         result: Optional[bool] = True
         status_code = HTTPStatus.OK
         msg = ''
         try:
-            edited = self.rotkehlchen.exchange_manager.edit_exchange(
+            edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
                 name=name,
                 location=location,
                 new_name=new_name,
+                api_key=api_key,
+                api_secret=api_secret,
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
+                binance_markets=binance_markets,
             )
-            if edited is False:
-                msg = f'Could not find {str(location)} exchange {name} for editing'
         except InputError as e:
             edited = False
             msg = str(e)
@@ -1307,8 +1316,8 @@ class RestAPI():
         types = [str(x) for x in AssetType]
         return api_response(_wrap_in_ok_result(types), status_code=HTTPStatus.OK)
 
-    @staticmethod
-    def add_custom_asset(asset_type: AssetType, **kwargs: Any) -> Response:
+    @require_loggedin_user()
+    def add_custom_asset(self, asset_type: AssetType, **kwargs: Any) -> Response:
         globaldb = GlobalDBHandler()
         # There is no good way to figure out if an asset already exists in the DB
         # Best approximation we can do is this.
@@ -1337,6 +1346,7 @@ class RestAPI():
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        self.rotkehlchen.data.db.add_asset_identifiers([asset_id])
         return api_response(
             _wrap_in_ok_result({'identifier': asset_id}),
             status_code=HTTPStatus.OK,
@@ -1358,12 +1368,24 @@ class RestAPI():
         # Before deleting, also make sure we have up to date global DB owned data
         self.rotkehlchen.data.db.update_owned_assets_in_globaldb()
         try:
+            self.rotkehlchen.data.db.delete_asset_identifier(identifier)
             GlobalDBHandler().delete_custom_asset(identifier)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         # Also clear the in-memory cache of the asset resolver
         AssetResolver().assets_cache.pop(identifier, None)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def replace_asset(self, source_identifier: str, target_asset: Asset) -> Response:
+        try:
+            self.rotkehlchen.data.db.replace_asset_identifier(source_identifier, target_asset)
+        except (UnknownAsset, InputError) as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        # Also clear the in-memory cache of the asset resolver
+        AssetResolver().assets_cache.pop(source_identifier, None)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @staticmethod
@@ -1387,10 +1409,9 @@ class RestAPI():
             log_result=False,
         )
 
-    @staticmethod
-    def add_custom_ethereum_token(token: CustomEthereumToken) -> Response:
-        # TODO: hacky. Clean this up when we allow addition of all assets
-        identifier = ETHEREUM_DIRECTIVE + token.address
+    @require_loggedin_user()
+    def add_custom_ethereum_token(self, token: CustomEthereumToken) -> Response:
+        identifier = ethaddress_to_identifier(token.address)
         try:
             GlobalDBHandler().add_asset(
                 asset_id=identifier,
@@ -1400,6 +1421,10 @@ class RestAPI():
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        cursor = self.rotkehlchen.data.db.conn.cursor()
+        # clean token detection cache. Next function will commit to the DB
+        cursor.execute('DELETE from ethereum_accounts_details;')
+        self.rotkehlchen.data.db.add_asset_identifiers([identifier])
         return api_response(
             _wrap_in_ok_result({'identifier': identifier}),
             status_code=HTTPStatus.OK,
@@ -1424,7 +1449,9 @@ class RestAPI():
     def delete_custom_ethereum_token(self, address: ChecksumEthAddress) -> Response:
         # Before deleting, also make sure we have up to date global DB owned data
         self.rotkehlchen.data.db.update_owned_assets_in_globaldb()
+
         try:
+            self.rotkehlchen.data.db.delete_asset_identifier(ethaddress_to_identifier(address))
             identifier = GlobalDBHandler().delete_ethereum_token(address=address)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
@@ -1557,7 +1584,7 @@ class RestAPI():
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
         try:
-            return send_file(
+            return send_file(  # type: ignore
                 self.rotkehlchen.accountant.csvexporter.create_zip(),
                 mimetype='application/zip',
                 as_attachment=True,
@@ -1974,10 +2001,10 @@ class RestAPI():
 
         return self.get_queried_addresses_per_module()
 
-    @staticmethod
-    def version_check() -> Response:
-        result = _wrap_in_ok_result(check_if_version_up_to_date())
-        return api_response(process_result(result), status_code=HTTPStatus.OK)
+    def get_info(self) -> Response:
+        version = check_if_version_up_to_date()
+        result = {'version': process_result(version), 'data_directory': str(self.rotkehlchen.data_dir)}  # noqa: E501
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @staticmethod
     def ping() -> Response:
@@ -1986,7 +2013,7 @@ class RestAPI():
     @require_loggedin_user()
     def import_data(
             self,
-            source: Literal['cointracking.info', 'cryptocom'],
+            source: IMPORTABLE_LOCATIONS,
             filepath: Path,
     ) -> Response:
         if source == 'cointracking.info':
@@ -1999,6 +2026,22 @@ class RestAPI():
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+        elif source == 'blockfi-transactions':
+            success, msg = self.rotkehlchen.data_importer.import_blockfi_transactions_csv(filepath)
+            if not success:
+                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
+                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+        elif source == 'blockfi-trades':
+            success, msg = self.rotkehlchen.data_importer.import_blockfi_trades_csv(filepath)
+            if not success:
+                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
+                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+        elif source == 'nexo':
+            success, msg = self.rotkehlchen.data_importer.import_nexo_csv(filepath)
+            if not success:
+                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
+                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _get_eth2_stake_deposits(self) -> Dict[str, Any]:
@@ -2006,6 +2049,8 @@ class RestAPI():
             result = self.rotkehlchen.chain_manager.get_eth2_staking_deposits()
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+        except ModuleInactive as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
         return {'result': process_result_list([x._asdict() for x in result]), 'message': ''}
 
@@ -2030,6 +2075,8 @@ class RestAPI():
             result = self.rotkehlchen.chain_manager.get_eth2_staking_details()
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+        except ModuleInactive as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
         current_usd_price = Inquirer().find_usd_price(A_ETH)
         return {
@@ -2604,10 +2651,9 @@ class RestAPI():
     def get_asset_icon(
             self,
             asset: Asset,
-            size: Literal['thumb', 'small', 'large'],
             match_header: Optional[str],
     ) -> Response:
-        file_md5 = self.rotkehlchen.icon_manager.iconfile_md5(asset, size)
+        file_md5 = self.rotkehlchen.icon_manager.iconfile_md5(asset)
         if file_md5 and match_header and match_header == file_md5:
             # Response content unmodified
             return make_response(
@@ -2618,7 +2664,7 @@ class RestAPI():
                 ),
             )
 
-        image_data = self.rotkehlchen.icon_manager.get_icon(asset, size)
+        image_data = self.rotkehlchen.icon_manager.get_icon(asset)
         if image_data is None:
             response = make_response(
                 (
@@ -2935,6 +2981,10 @@ class RestAPI():
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         if result is None:
+            cursor = self.rotkehlchen.data.db.conn.cursor()
+            # clean token detection cache. Next function will commit to the DB
+            cursor.execute('DELETE from ethereum_accounts_details;')
+            self.rotkehlchen.data.db.add_globaldb_assetids()
             return OK_RESULT
 
         return {
@@ -2960,4 +3010,18 @@ class RestAPI():
         return api_response(
             result={'result': response['result'], 'message': response['message']},
             status_code=response.get('status_code', HTTPStatus.OK),
+        )
+
+    def get_all_binance_pairs(self) -> Response:
+        return api_response(
+            _wrap_in_ok_result(list(self.rotkehlchen.exchange_manager.get_all_binance_pairs())),
+            status_code=HTTPStatus.OK,
+        )
+
+    def get_user_binance_pairs(self, name: str, location: Location) -> Response:
+        return api_response(
+            _wrap_in_ok_result(
+                self.rotkehlchen.exchange_manager.get_user_binance_pairs(name, location),
+            ),
+            status_code=HTTPStatus.OK,
         )

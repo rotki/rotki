@@ -1,6 +1,7 @@
 import { BackendCode } from '@/electron-main/backend-code';
+import { BackendOptions, SystemVersion } from '@/electron-main/ipc';
+import { WebVersion } from '@/types';
 import { assert } from '@/utils/assertions';
-import { Level } from '@/utils/log-level';
 
 export class ElectronInterop {
   private packagedApp: boolean = !!window.interop;
@@ -38,6 +39,10 @@ export class ElectronInterop {
     window.interop?.openUrl(url);
   }
 
+  openPath(path: string) {
+    window.interop?.openPath(path);
+  }
+
   premiumUserLoggedIn(premiumUser: boolean) {
     window.interop?.premiumUserLoggedIn(premiumUser);
   }
@@ -58,9 +63,28 @@ export class ElectronInterop {
     });
   }
 
-  async restartBackend(logLevel: Level): Promise<boolean> {
+  async restartBackend(options: Partial<BackendOptions>): Promise<boolean> {
     assert(window.interop);
-    return await window.interop.restartBackend(logLevel);
+    return await window.interop.restartBackend(options);
+  }
+
+  async config(defaults: boolean): Promise<Partial<BackendOptions>> {
+    assert(window.interop);
+    return await window.interop.config(defaults);
+  }
+
+  async version(): Promise<SystemVersion | WebVersion> {
+    if (!window.interop) {
+      return {
+        platform: navigator.platform,
+        userAgent: navigator.userAgent
+      };
+    }
+    return window.interop?.version();
+  }
+
+  onAbout(cb: () => void) {
+    window.interop?.onAbout(cb);
   }
 }
 

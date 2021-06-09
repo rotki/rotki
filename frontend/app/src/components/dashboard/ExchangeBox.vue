@@ -1,17 +1,17 @@
 <template>
   <v-list-item
-    :id="`${name}_box`"
-    :to="`/accounts-balances/exchange-balances/${name}`"
+    :id="`${location}_box`"
+    :to="`/accounts-balances/exchange-balances/${location}`"
     :ripple="false"
     class="exchange-box__item"
   >
     <v-list-item-avatar tile class="exchange-box__icon">
-      <location-display :identifier="name" icon />
+      <location-display :identifier="location" icon />
     </v-list-item-avatar>
     <v-list-item-content>
       <v-list-item-title class="d-flex justify-space-between">
         <span>
-          {{ name | capitalize }}
+          {{ exchangeName(location) }}
         </span>
         <span class="text-end">
           <amount-display
@@ -29,13 +29,16 @@
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import { exchangeName } from '@/components/history/consts';
 
 @Component({
   components: { AmountDisplay }
 })
 export default class ExchangeBox extends Vue {
+  readonly exchangeName = exchangeName;
+
   @Prop({ required: true })
-  name!: string;
+  location!: string;
   @Prop({ required: true })
   amount!: BigNumber;
 }

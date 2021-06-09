@@ -25,3 +25,8 @@ export interface ApplyUpdateResult {
   readonly done: boolean;
   readonly conflicts?: AssetUpdateConflictResult[];
 }
+
+export type AssetMergePayload = {
+  readonly sourceIdentifier: string;
+  readonly targetIdentifier: string;
+};

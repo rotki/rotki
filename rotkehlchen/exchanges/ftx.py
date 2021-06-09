@@ -15,6 +15,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_ftx
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
@@ -101,12 +102,25 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.apiversion = 'v2'
         self.base_uri = 'https://ftx.com'
         self.msg_aggregator = msg_aggregator
+        self.session.headers.update({'FTX-KEY': self.api_key})
 
     def first_connection(self) -> None:
         self.first_connection_made = True
 
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'FTX-KEY': self.api_key})
+
+        return changed
+
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the FTX API key is good for usage in Rotki"""
+        """Validates that the FTX API key is good for usage in rotki"""
         try:
             self._api_query('wallet/all_balances', paginate=False)
         except RemoteError as e:
@@ -148,14 +162,13 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             signature = hmac.new(self.secret, signature_payload, 'sha256').hexdigest()
             log.debug('FTX API query', request_url=request_url)
             self.session.headers.update({
-                'FTX-KEY': self.api_key,
                 'FTX-SIGN': signature,
                 'FTX-TS': str(timestamp),
             })
 
             full_url = self.base_uri + request_url
             try:
-                response = self.session.get(full_url)
+                response = self.session.get(full_url, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'FTX API request {full_url} failed due to {str(e)}') from e
 

@@ -6,7 +6,6 @@ from typing import Optional, Set
 
 import gevent
 import requests
-from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.typing import AssetType
@@ -39,8 +38,8 @@ class IconManager():
         self.custom_icons_dir.mkdir(parents=True, exist_ok=True)
         self.failed_asset_ids: Set[str] = set()
 
-    def iconfile_path(self, asset: Asset, size: Literal['thumb', 'small', 'large']) -> Path:
-        return self.icons_dir / f'{asset.identifier}_{size}.png'
+    def iconfile_path(self, asset: Asset) -> Path:
+        return self.icons_dir / f'{asset.identifier}_small.png'
 
     def custom_iconfile_path(self, asset: Asset) -> Optional[Path]:
         for suffix in ALLOWED_ICON_EXTENSIONS:
@@ -53,14 +52,13 @@ class IconManager():
     def iconfile_md5(
             self,
             asset: Asset,
-            size: Literal['thumb', 'small', 'large'],
     ) -> Optional[str]:
         # First try with the custom icon path
         custom_icon_path = self.custom_iconfile_path(asset)
         if custom_icon_path is not None:
             return file_md5(custom_icon_path)
 
-        path = self.iconfile_path(asset, size)
+        path = self.iconfile_path(asset)
         if not path.is_file():
             return None
 
@@ -88,23 +86,20 @@ class IconManager():
             self.failed_asset_ids.add(asset.identifier)
             return False
 
-        for size in ('thumb', 'small', 'large'):
-            url = getattr(data.images, size)
-            try:
-                response = requests.get(url, timeout=DEFAULT_TIMEOUT_TUPLE)
-            except requests.exceptions.RequestException:
-                # Any problem getting the image skip it: https://github.com/rotki/rotki/issues/1370
-                continue
+        try:
+            response = requests.get(data.image_url, timeout=DEFAULT_TIMEOUT_TUPLE)
+        except requests.exceptions.RequestException:
+            # Any problem getting the image skip it: https://github.com/rotki/rotki/issues/1370
+            return False
 
-            with open(self.iconfile_path(asset, size), 'wb') as f:  # type: ignore
-                f.write(response.content)
+        with open(self.iconfile_path(asset), 'wb') as f:
+            f.write(response.content)
 
         return True
 
     def get_icon(
             self,
             asset: Asset,
-            given_size: Literal['thumb', 'small', 'large'],
     ) -> Optional[bytes]:
         """Returns the byte data of the requested icon
 
@@ -126,7 +121,7 @@ class IconManager():
         if not asset.has_coingecko():
             return None
 
-        needed_path = self.iconfile_path(asset, given_size)
+        needed_path = self.iconfile_path(asset)
         if needed_path.is_file():
             with open(needed_path, 'rb') as f:
                 image_data = f.read()
@@ -162,7 +157,7 @@ class IconManager():
                 continue
 
         cached_asset_ids = [
-            str(x.name)[:-10] for x in self.icons_dir.glob('*_thumb.png') if x.is_file()
+            str(x.name)[:-10] for x in self.icons_dir.glob('*_small.png') if x.is_file()
         ]
         uncached_asset_ids = (
             set(coingecko_integrated_asset_ids) - set(cached_asset_ids) - self.failed_asset_ids

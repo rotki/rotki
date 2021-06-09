@@ -8,7 +8,6 @@ from eth_utils import to_checksum_address
 from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from typing_extensions import Literal
-from webargs.compat import MARSHMALLOW_VERSION_INFO
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
@@ -31,7 +30,14 @@ from rotkehlchen.chain.substrate.utils import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors import DeserializationError, EncodingError, UnknownAsset, XPUBError
+from rotkehlchen.errors import (
+    DeserializationError,
+    EncodingError,
+    InputError,
+    RemoteError,
+    UnknownAsset,
+    XPUBError,
+)
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
@@ -86,7 +92,7 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
     ) -> None:
         super().__init__(cls_or_instance, **kwargs)
 
-    def _deserialize(
+    def _deserialize(  # type: ignore  # we may get a list in value
             self,
             value: Union[List[str], str],
             attr: str,
@@ -108,12 +114,9 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
                 else value.split(self.delimiter)  # type: ignore
             )
         except AttributeError as e:
-            if MARSHMALLOW_VERSION_INFO[0] < 3:
-                self.fail("invalid")
-            else:
-                raise self.make_error("invalid") from e
+            raise self.make_error("invalid") from e
         # purposefully skip the superclass here
-        return super(webargs.fields.DelimitedList, self)._deserialize(ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
+        return marshmallow.fields.List._deserialize(self, ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
 
 
 class TimestampField(fields.Field):
@@ -843,7 +846,7 @@ class LedgerActionSchema(Schema):
 class LedgerActionWithIdentifierSchema(LedgerActionSchema):
     identifier = fields.Integer(required=True)
 
-    @post_load  # type: ignore
+    @post_load
     def make_ledger_action(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -871,7 +874,7 @@ class ManuallyTrackedBalanceSchema(Schema):
     location = LocationField(required=True)
     tags = fields.List(fields.String(), missing=None)
 
-    @post_load  # type: ignore
+    @post_load
     def make_manually_tracked_balances(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -952,7 +955,6 @@ class ModifiableSettingsSchema(Schema):
     """This is the Schema for the settings that can be modified via the API"""
     premium_should_sync = fields.Bool(missing=None)
     include_crypto2crypto = fields.Bool(missing=None)
-    anonymized_logs = fields.Bool(missing=None)
     submit_usage_analytics = fields.Bool(missing=None)
     ui_floating_precision = fields.Integer(
         strict=True,
@@ -1005,7 +1007,7 @@ class ModifiableSettingsSchema(Schema):
     )
     taxable_ledger_actions = fields.List(LedgerActionTypeField, missing=None)
 
-    @validates_schema  # type: ignore
+    @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1019,7 +1021,7 @@ class ModifiableSettingsSchema(Schema):
                         field_name='active_modules',
                     )
 
-    @post_load  # type: ignore
+    @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1028,7 +1030,6 @@ class ModifiableSettingsSchema(Schema):
         return ModifiableDBSettings(
             premium_should_sync=data['premium_should_sync'],
             include_crypto2crypto=data['include_crypto2crypto'],
-            anonymized_logs=data['anonymized_logs'],
             ui_floating_precision=data['ui_floating_precision'],
             taxfree_after_period=data['taxfree_after_period'],
             balance_save_frequency=data['balance_save_frequency'],
@@ -1074,7 +1075,7 @@ class UserActionSchema(Schema):
     premium_api_key = fields.String(missing='')
     premium_api_secret = fields.String(missing='')
 
-    @validates_schema  # type: ignore
+    @validates_schema
     def validate_user_action_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1119,7 +1120,7 @@ class ExternalServiceSchema(Schema):
     name = ExternalServiceNameField(required=True)
     api_key = fields.String(required=True)
 
-    @post_load  # type: ignore
+    @post_load
     def make_external_service(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1141,8 +1142,11 @@ class ExchangesResourceEditSchema(Schema):
     name = fields.String(required=True)
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
     new_name = fields.String(missing=None)
+    api_key = ApiKeyField(missing=None)
+    api_secret = ApiSecretField(missing=None)
     passphrase = fields.String(missing=None)
     kraken_account_type = KrakenAccountTypeField(missing=None)
+    binance_markets = fields.List(fields.String(), missing=None)
 
 
 class ExchangesResourceAddSchema(Schema):
@@ -1152,6 +1156,7 @@ class ExchangesResourceAddSchema(Schema):
     api_secret = ApiSecretField(required=True)
     passphrase = fields.String(missing=None)
     kraken_account_type = KrakenAccountTypeField(missing=None)
+    binance_markets = fields.List(fields.String(), missing=None)
 
 
 class ExchangesDataResourceSchema(Schema):
@@ -1222,7 +1227,7 @@ class XpubAddSchema(Schema):
     )
     tags = fields.List(fields.String(), missing=None)
 
-    @post_load  # type: ignore
+    @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1330,10 +1335,18 @@ def _transform_btc_address(
     if not given_address.endswith('.eth'):
         return BTCAddress(given_address)
 
-    resolved_address = ethereum.ens_lookup(
-        given_address,
-        blockchain=SupportedBlockchain.BITCOIN,
-    )
+    try:
+        resolved_address = ethereum.ens_lookup(
+            given_address,
+            blockchain=SupportedBlockchain.BITCOIN,
+        )
+    except (RemoteError, InputError) as e:
+        raise ValidationError(
+            f'Given ENS address {given_address} could not be resolved '
+            f'for Bitcoin due to: {str(e)}',
+            field_name='address',
+        ) from None
+
     if resolved_address is None:
         raise ValidationError(
             f'Given ENS address {given_address} could not be resolved for Bitcoin',
@@ -1361,10 +1374,18 @@ def _transform_eth_address(
     except ValueError:
         # Validation will only let .eth names come here.
         # So let's see if it resolves to anything
-        resolved_address = ethereum.ens_lookup(given_address)
+        try:
+            resolved_address = ethereum.ens_lookup(given_address)
+        except (RemoteError, InputError) as e:
+            raise ValidationError(
+                f'Given ENS address {given_address} could not be resolved for Ethereum'
+                f' due to: {str(e)}',
+                field_name='address',
+            ) from None
+
         if resolved_address is None:
             raise ValidationError(
-                f'Given ENS address {given_address} could not be resolved',
+                f'Given ENS address {given_address} could not be resolved for Ethereum',
                 field_name='address',
             ) from None
 
@@ -1395,10 +1416,18 @@ def _transform_ksm_address(
     if not given_address.endswith('.eth'):
         return KusamaAddress(given_address)
 
-    resolved_address = ethereum.ens_lookup(
-        given_address,
-        blockchain=SupportedBlockchain.KUSAMA,
-    )
+    try:
+        resolved_address = ethereum.ens_lookup(
+            given_address,
+            blockchain=SupportedBlockchain.KUSAMA,
+        )
+    except (RemoteError, InputError) as e:
+        raise ValidationError(
+            f'Given ENS address {given_address} could not be resolved '
+            f'for Kusama due to: {str(e)}',
+            field_name='address',
+        ) from None
+
     if resolved_address is None:
         raise ValidationError(
             f'Given ENS address {given_address} could not be resolved for Kusama',
@@ -1427,7 +1456,7 @@ class BlockchainAccountsPatchSchema(Schema):
         super().__init__()
         self.ethereum_manager = ethereum_manager
 
-    @validates_schema  # type: ignore
+    @validates_schema
     def validate_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1435,7 +1464,7 @@ class BlockchainAccountsPatchSchema(Schema):
     ) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x['address'])
 
-    @post_load  # type: ignore
+    @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1476,7 +1505,7 @@ class BlockchainAccountsDeleteSchema(Schema):
         super().__init__()
         self.ethereum_manager = ethereum_manager
 
-    @validates_schema  # type: ignore
+    @validates_schema
     def validate_blockchain_accounts_delete_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1484,7 +1513,7 @@ class BlockchainAccountsDeleteSchema(Schema):
     ) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x)
 
-    @post_load  # type: ignore
+    @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1566,7 +1595,7 @@ class EthereumTokenSchema(Schema):
     protocol = fields.String(missing=None)
     underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), missing=None)
 
-    @validates_schema  # type: ignore
+    @validates_schema
     def validate_ethereum_token_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1591,7 +1620,7 @@ class EthereumTokenSchema(Schema):
                     f'is {weight_sum * 100} and does not add up to 100%',
                 )
 
-    @post_load  # type: ignore
+    @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
@@ -1618,6 +1647,11 @@ class ModifyAssetSchema(Schema):
     token = fields.Nested(AssetSchema, required=True)
 
 
+class AssetsReplaceSchema(Schema):
+    source_identifier = fields.String(required=True)
+    target_asset = AssetField(required=True, form_with_incomplete_data=True)
+
+
 class QueriedAddressesSchema(Schema):
     module = fields.String(
         required=True,
@@ -1629,7 +1663,15 @@ class QueriedAddressesSchema(Schema):
 class DataImportSchema(Schema):
     source = fields.String(
         required=True,
-        validate=webargs.validate.OneOf(choices=('cointracking.info', 'cryptocom')),
+        validate=webargs.validate.OneOf(
+            choices=(
+                'cointracking.info',
+                'cryptocom',
+                'blockfi-transactions',
+                'blockfi-trades',
+                'nexo',
+            ),
+        ),
     )
     file = FileField(required=True, allowed_extensions=('.csv',))
 
@@ -1685,10 +1727,6 @@ class WatchersDeleteSchema(Schema):
 
 class AssetIconsSchema(Schema):
     asset = AssetField(required=True, form_with_incomplete_data=True)
-    size = fields.String(
-        validate=webargs.validate.OneOf(choices=('thumb', 'small', 'large')),
-        missing='thumb',
-    )
 
 
 class CurrentAssetsPriceSchema(Schema):
@@ -1752,3 +1790,8 @@ class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
 class ERC20InfoSchema(Schema):
     address = EthereumAddressField(required=True)
     async_query = fields.Boolean(missing=False)
+
+
+class BinanceMarketsUserSchema(Schema):
+    name = fields.String(required=True)
+    location = LocationField(limit_to=[Location.BINANCEUS, Location.BINANCE], required=True)

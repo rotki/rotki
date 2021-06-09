@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 import gevent
 import requests
 
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
@@ -904,7 +905,7 @@ class Coinmarketcap():
     def _query(self, path: str) -> str:
         backoff = INITIAL_BACKOFF
         while True:
-            response = self.session.get(f'{self.prefix}{path}')
+            response = self.session.get(f'{self.prefix}{path}', timeout=DEFAULT_TIMEOUT_TUPLE)
             if response.status_code == 429 and backoff < self.backoff_limit:
                 gevent.sleep(backoff)
                 backoff *= 2

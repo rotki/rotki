@@ -211,7 +211,7 @@ DEPOSITS_RESPONSE = """
 """
 
 
-def mock_normal_ftx_query(url: str):  # pylint: disable=unused-argument
+def mock_normal_ftx_query(url: str, **kwargs):  # pylint: disable=unused-argument
     if 'fills' in url:
         return MockResponse(200, FILLS_RESPONSE)
     if 'deposits' in url:
@@ -235,7 +235,7 @@ def query_ftx_and_test(
         # Since this test only mocks as breaking only one of the two actions by default
         expected_actions_num: int = 1,
 ):
-    def mock_ftx_query(url):  # pylint: disable=unused-argument
+    def mock_ftx_query(url, **kwargs):  # pylint: disable=unused-argument
         if 'fills' in url:
             return MockResponse(200, fills_response)
         if 'deposits' in url:

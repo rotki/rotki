@@ -3,12 +3,15 @@ import {
   convertToAccountingSettings,
   convertToGeneralSettings
 } from '@/data/converters';
-import { EXCHANGE_CRYPTOCOM, SUPPORTED_EXCHANGES } from '@/data/defaults';
+import { EXTERNAL_EXCHANGES, SUPPORTED_EXCHANGES } from '@/data/defaults';
 import i18n from '@/i18n';
-import { DBSettings } from '@/model/action-result';
+import { DBSettings, Exchange } from '@/model/action-result';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
-import { SupportedExchange } from '@/services/balances/types';
+import {
+  SupportedExchange,
+  SupportedExternalExchanges
+} from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
@@ -81,7 +84,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     payload: UnlockPayload
   ): Promise<ActionStatus> {
     let settings: DBSettings;
-    let exchanges: string[];
+    let exchanges: Exchange[];
 
     try {
       const { username, create } = payload;
@@ -123,14 +126,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         dispatch('session/fetchWatchers', null, options),
         dispatch('balances/fetchManualBalances', null, options),
         dispatch('statistics/fetchNetValue', null, options),
-        dispatch(
-          'balances/fetch',
-          {
-            newUser: create,
-            exchanges
-          },
-          options
-        ),
+        dispatch('balances/fetch', exchanges, options),
         dispatch('balances/fetchLoopringBalances', false, options)
       ];
 
@@ -552,7 +548,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, ALL_MODULES, opts);
     } else if (
       SUPPORTED_EXCHANGES.includes(purgable as SupportedExchange) ||
-      purgable === EXCHANGE_CRYPTOCOM
+      EXTERNAL_EXCHANGES.includes(purgable as SupportedExternalExchanges)
     ) {
       await dispatch(`history/${ACTION_PURGE_EXCHANGE}`, purgable, opts);
     } else if (MODULES.includes(purgable as SupportedModules)) {

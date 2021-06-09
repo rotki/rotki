@@ -6,8 +6,11 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, A_AAVE, A_LINK, A_CRV
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -21,9 +24,18 @@ from rotkehlchen.inquirer import (
     _query_currency_converterapi,
 )
 from rotkehlchen.tests.utils.constants import A_CNY, A_EUR, A_JPY
+from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import ts_now
+
+
+UNDERLAYING_ASSET_PRICES = {
+    A_AAVE: FVal('100'),
+    A_LINK: FVal('25'),
+    A_CRV: FVal('10'),
+    A_USD: FVal('1'),
+}
 
 
 @pytest.mark.skipif(
@@ -277,3 +289,53 @@ def test_find_usd_price_via_second_oracle(inquirer):
     assert price == expected_price
     for oracle_instance in inquirer._oracle_instances[0:2]:
         assert oracle_instance.query_current_price.call_count == 1
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+@pytest.mark.parametrize('mocked_current_prices', [UNDERLAYING_ASSET_PRICES])
+@pytest.mark.parametrize('ignore_mocked_prices_for', [['YAB', 'USD']])
+def test_price_underlying_tokens(inquirer, globaldb):
+    aave_weight, link_weight, crv_weight = FVal('0.6'), FVal('0.2'), FVal('0.2')
+    address = make_ethereum_address()
+    token = CustomEthereumToken(
+        address=address,
+        decimals=18,
+        name='Test',
+        symbol='YAB',
+        underlying_tokens=[
+            UnderlyingToken(address=A_AAVE.ethereum_address, weight=aave_weight),
+            UnderlyingToken(address=A_LINK.ethereum_address, weight=link_weight),
+            UnderlyingToken(address=A_CRV.ethereum_address, weight=crv_weight),
+        ],
+    )
+    globaldb.add_asset(
+        asset_id=ethaddress_to_identifier(address),
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        data=token,
+    )
+
+    price = inquirer.find_price(EthereumToken(address), A_USD)
+    assert price == FVal(67)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
+    addess = '0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'
+    inquirer.inject_ethereum(ethereum_manager)
+    token = CustomEthereumToken(
+        address=addess,
+        decimals=18,
+        name='Uniswap LINK/ETH',
+        symbol='UNI-V2',
+        protocol='UNI-V2',
+    )
+    globaldb.add_asset(
+        asset_id=ethaddress_to_identifier(addess),
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        data=token,
+    )
+
+    price = inquirer.find_uniswap_v2_lp_price(EthereumToken(addess))
+    assert price is not None

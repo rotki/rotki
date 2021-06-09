@@ -30,7 +30,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import MONTH_IN_SECONDS, WEEK_IN_SECONDS
+from rotkehlchen.constants.timing import MONTH_IN_SECONDS, WEEK_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -185,6 +185,20 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def update_passphrase(self, new_passphrase: str) -> None:
         self.api_passphrase = new_passphrase
 
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'KC-API-KEY': self.api_key})
+        if passphrase is not None:
+            self.update_passphrase(passphrase)
+
+        return changed
+
     def _api_query(
             self,
             case: KucoinCase,
@@ -254,7 +268,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             })
             log.debug('Kucoin API request', request_url=request_url)
             try:
-                response = self.session.get(url=request_url)
+                response = self.session.get(url=request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'Kucoin {method} request at {request_url} connection error: {str(e)}.',
@@ -800,7 +814,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return trades
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the KuCoin API key is good for usage in Rotki
+        """Validates that the KuCoin API key is good for usage in rotki
 
         May raise RemoteError
         """

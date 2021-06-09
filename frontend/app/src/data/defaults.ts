@@ -9,9 +9,7 @@ export class Defaults {
   static RPC_ENDPOINT = 'http://localhost:8545';
   static KSM_RPC_ENDPOINT = 'http://localhost:9933';
   static BALANCE_SAVE_FREQUENCY = 24;
-  static ANONYMIZED_LOGS = false;
   static ANONYMOUS_USAGE_ANALYTICS = true;
-  static KRAKEN_DEFAULT_ACCOUNT_TYPE = 'starter';
   static DEFAULT_QUERY_PERIOD = 5;
   static BTC_DERIVATION_GAP_LIMIT = 20;
   static DISPLAY_DATE_IN_LOCALTIME = true;
@@ -33,6 +31,8 @@ export const EXCHANGE_BITCOIN_DE = 'bitcoinde';
 export const EXCHANGE_ICONOMI = 'iconomi';
 export const EXCHANGE_KUCOIN = 'kucoin';
 export const EXCHANGE_FTX = 'ftx';
+export const EXCHANGE_BLOCKFI = 'blockfi';
+export const EXCHANGE_NEXO = 'nexo';
 
 export const EXCHANGE_UNISWAP = 'uniswap';
 export const EXCHANGE_BALANCER = 'balancer';
@@ -69,6 +69,8 @@ export const SUPPORTED_TRADE_LOCATIONS = [
   EXCHANGE_UNISWAP,
   EXCHANGE_BALANCER,
   EXCHANGE_CRYPTOCOM,
+  EXCHANGE_BLOCKFI,
+  EXCHANGE_NEXO,
   TRADE_LOCATION_EXTERNAL,
   TRADE_LOCATION_BANKS,
   TRADE_LOCATION_EQUITIES,
@@ -81,3 +83,9 @@ export const ALL_TRADE_LOCATIONS = [
   ...SUPPORTED_TRADE_LOCATIONS,
   ...SUPPORTED_EXCHANGES
 ] as const;
+
+export const EXTERNAL_EXCHANGES = [
+  EXCHANGE_CRYPTOCOM,
+  EXCHANGE_BLOCKFI,
+  EXCHANGE_NEXO
+];

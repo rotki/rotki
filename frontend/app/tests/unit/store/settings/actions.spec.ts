@@ -22,7 +22,8 @@ import {
   VALUE_ROUNDING_MODE,
   DARK_MODE_ENABLED,
   LIGHT_THEME,
-  DARK_THEME
+  DARK_THEME,
+  GRAPH_ZERO_BASED
 } from '@/store/settings/consts';
 import { FrontendSettingsPayload } from '@/store/settings/types';
 import store from '@/store/store';
@@ -61,7 +62,8 @@ describe('settings:actions', () => {
             [VALUE_ROUNDING_MODE]: BigNumber.ROUND_DOWN,
             [DARK_MODE_ENABLED]: false,
             [LIGHT_THEME]: LIGHT_COLORS,
-            [DARK_THEME]: DARK_COLORS
+            [DARK_THEME]: DARK_COLORS,
+            [GRAPH_ZERO_BASED]: false
           })
         )
       })

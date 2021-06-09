@@ -23,7 +23,7 @@ from rotkehlchen.constants import (
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
@@ -162,7 +162,7 @@ class CSVExporter():
         exported_received_asset = (
             received_asset if isinstance(received_asset, str) else str(received_asset)
         )
-        entry = {
+        entry: Dict[str, Any] = {
             'type': event_type,
             'location': str(location),
             'paid_in_profit_currency': paid_in_profit_currency,
@@ -178,7 +178,7 @@ class CSVExporter():
             'cost_basis': cost_basis_info.serialize() if cost_basis_info else None,
             'is_virtual': is_virtual,
         }
-        log.debug('csv event', **make_sensitive(entry))
+        log.debug('csv event', **entry)
         self.all_events.append(entry)
         new_entry = entry.copy()
         new_entry['net_profit_or_loss'] = net_profit_or_loss_csv

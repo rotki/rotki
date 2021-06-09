@@ -1,20 +1,24 @@
 <template>
   <span
-    class="d-flex align-center py-4"
-    :class="horizontal ? 'flex-row' : 'flex-column'"
+    class="d-flex align-center"
+    :class="{
+      'flex-row': horizontal,
+      'flex-column': !horizontal,
+      'py-4': !noPadding
+    }"
   >
     <span>
       <v-img
         v-if="item.imageIcon"
-        width="24px"
+        :width="size"
         contain
         position="left"
-        max-height="24px"
+        :max-height="size"
         :src="item.icon"
       />
       <v-icon v-else color="accent"> {{ item.icon }} </v-icon>
     </span>
-    <span v-if="!icon" :class="horizontal ? 'ml-2' : null" class="mt-2">
+    <span v-if="!icon" :class="horizontal ? 'ml-3' : null" class="mt-1">
       {{ item.name }}
     </span>
   </span>
@@ -31,5 +35,9 @@ export default class LocationIcon extends Vue {
   horizontal!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   icon!: boolean;
+  @Prop({ required: false, type: String, default: '24px' })
+  size!: string;
+  @Prop({ required: false, type: Boolean, default: false })
+  noPadding!: boolean;
 }
 </script>

@@ -1,10 +1,10 @@
 import { MutationTree } from 'vuex';
+import { Exchange } from '@/model/action-result';
 import {
   Balances,
   BtcBalances,
   BlockchainAssetBalances,
-  ManualBalanceWithValue,
-  SupportedExchange
+  ManualBalanceWithValue
 } from '@/services/balances/types';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { SupportedAsset } from '@/services/types-model';
@@ -16,7 +16,8 @@ import { defaultState } from '@/store/balances/state';
 import {
   AccountAssetBalances,
   AssetPrices,
-  BalanceState
+  BalanceState,
+  EditExchange
 } from '@/store/balances/types';
 import { ExchangeData, ExchangeInfo, ExchangeRates } from '@/typing/types';
 
@@ -42,22 +43,41 @@ export const mutations: MutationTree<BalanceState> = {
   ) {
     state.usdToFiatExchangeRates = usdToFiatExchangeRates;
   },
-  connectedExchanges(
-    state: BalanceState,
-    connectedExchanges: SupportedExchange[]
-  ) {
+  connectedExchanges(state: BalanceState, connectedExchanges: Exchange[]) {
     state.connectedExchanges = connectedExchanges;
   },
-  addExchange(state: BalanceState, exchangeName: SupportedExchange) {
-    state.connectedExchanges.push(exchangeName);
+  addExchange(state: BalanceState, exchange: Exchange) {
+    state.connectedExchanges.push(exchange);
   },
-  removeExchange(state: BalanceState, exchangeName: string) {
+  editExchange(
+    state: BalanceState,
+    {
+      exchange: { location, name: oldName, krakenAccountType },
+      newName
+    }: EditExchange
+  ) {
+    const exchanges = [...state.connectedExchanges];
+    const name = newName ?? oldName;
+    const index = exchanges.findIndex(
+      value => value.name === oldName && value.location === location
+    );
+    exchanges[index] = Object.assign(exchanges[index], {
+      name,
+      location,
+      krakenAccountType
+    });
+    state.connectedExchanges = exchanges;
+  },
+  removeExchange(state: BalanceState, exchange: Exchange) {
     const exchanges = [...state.connectedExchanges];
     const balances = { ...state.exchangeBalances };
-    const index = exchanges.findIndex(value => value === exchangeName);
+    const index = exchanges.findIndex(
+      ({ location, name }) =>
+        name === exchange.name && location === exchange.location
+    );
     // can't modify in place or else the vue reactivity does not work
     exchanges.splice(index, 1);
-    delete balances[exchangeName];
+    delete balances[exchange.location];
     state.connectedExchanges = exchanges;
     state.exchangeBalances = balances;
   },
@@ -66,7 +86,7 @@ export const mutations: MutationTree<BalanceState> = {
   },
   addExchangeBalances(state: BalanceState, data: ExchangeInfo) {
     const update: ExchangeData = {};
-    update[data.name] = data.balances;
+    update[data.location] = data.balances;
     state.exchangeBalances = { ...state.exchangeBalances, ...update };
   },
   ethAccounts(state: BalanceState, accounts: GeneralAccountData[]) {

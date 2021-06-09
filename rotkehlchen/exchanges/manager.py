@@ -4,10 +4,16 @@ from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
-from rotkehlchen.constants.misc import BINANCE_BASE_URL, BINANCEUS_BASE_URL
+from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiKey, ApiSecret, ExchangeApiCredentials, Location
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    ExchangeApiCredentials,
+    Location,
+    EXTERNAL_EXCHANGES,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -38,7 +44,6 @@ SUPPORTED_EXCHANGES = [
 ]
 EXCHANGES_WITH_PASSPHRASE = (Location.COINBASEPRO, Location.KUCOIN)
 # Exchanges for which we allow import via CSV
-EXTERNAL_EXCHANGES = [Location.CRYPTOCOM]
 ALL_SUPPORTED_EXCHANGES = SUPPORTED_EXCHANGES + EXTERNAL_EXCHANGES
 
 
@@ -81,9 +86,12 @@ class ExchangeManager():
             name: str,
             location: Location,
             new_name: Optional[str],
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
-    ) -> bool:
+            binance_markets: Optional[List[str]],
+    ) -> Tuple[bool, str]:
         """Edits both the exchange object and the database entry
 
         Returns True if an entry was found and edited and false otherwise
@@ -93,26 +101,39 @@ class ExchangeManager():
         """
         exchangeobj = self.get_exchange(name=name, location=location)
         if not exchangeobj:
-            return False
+            return False, f'Could not find {str(location)} exchange {name} for editing'
 
         # First edit the database entries. This may raise InputError
         self.database.edit_exchange(
             name=name,
             location=location,
             new_name=new_name,
+            api_key=api_key,
+            api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
+            binance_markets=binance_markets,
+            should_commit=False,
         )
 
         # Edit the exchange object
-        if new_name is not None:
-            exchangeobj.name = new_name
-        if passphrase is not None and location in (Location.KUCOIN, Location.COINBASEPRO):
-            exchangeobj.update_passphrase(passphrase)  # type: ignore  # kucoin and coinbasepro have this function  # noqa: E501
-        if kraken_account_type is not None and location == Location.KRAKEN:
-            exchangeobj.set_account_type(kraken_account_type)  # type: ignore  # kraken has this function  # noqa: E501
+        success, msg = exchangeobj.edit_exchange(
+            name=new_name,
+            api_key=api_key,
+            api_secret=api_secret,
+            passphrase=passphrase,
+            kraken_account_type=kraken_account_type,
+            binance_markets=binance_markets,
+        )
+        if success is False:
+            self.database.conn.rollback()  # the database changes that happened need rollback
+            return False, msg
 
-        return True
+        # At this point all is great so we should also commit to the database
+        self.database.conn.commit()
+        self.database.update_last_write()
+
+        return True, ''
 
     def delete_exchange(self, name: str, location: Location) -> None:
         """Deletes exchange only from the manager. Not from the DB"""
@@ -256,3 +277,18 @@ class ExchangeManager():
                     **extras,
                 )
                 self.connected_exchanges[location].append(exchange_obj)
+
+    def get_all_binance_pairs(self) -> List[str]:
+        if Location.BINANCE in self.connected_exchanges:
+            binance = self.connected_exchanges[Location.BINANCE][0]
+            return binance._symbols_to_pair.keys()  # type: ignore
+        if Location.BINANCEUS in self.connected_exchanges:
+            binance = self.connected_exchanges[Location.BINANCEUS][0]
+            return binance._symbols_to_pair.keys()  # type: ignore
+        return []
+
+    def get_user_binance_pairs(self, name: str, location: Location) -> List[str]:
+        is_connected = location in self.connected_exchanges
+        if is_connected:
+            return self.database.get_binance_pairs(name, location)
+        return []

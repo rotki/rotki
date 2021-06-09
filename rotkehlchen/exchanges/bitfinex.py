@@ -137,8 +137,20 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             database=database,
         )
         self.base_uri = 'https://api.bitfinex.com'
+        self.session.headers.update({'bfx-apikey': self.api_key})
         self.msg_aggregator = msg_aggregator
         self.nonce_lock = Semaphore()
+
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'bfx-apikey': self.api_key})
+        return changed
 
     def _api_query(
             self,
@@ -155,7 +167,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         """Request a Bitfinex API v2 endpoint (from `endpoint`).
         """
         call_options = options.copy() if options else {}
-        for header in ('Content-Type', 'bfx-apikey', 'bfx-nonce', 'bfx-signature'):
+        for header in ('Content-Type', 'bfx-nonce', 'bfx-signature'):
             self.session.headers.pop(header, None)
 
         if endpoint == 'configs_list_currency':
@@ -198,7 +210,6 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 ).hexdigest()
                 self.session.headers.update({
                     'Content-Type': 'application/json',
-                    'bfx-apikey': self.api_key,
                     'bfx-nonce': nonce,
                     'bfx-signature': signature,
                 })
@@ -977,7 +988,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return trades
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the Bitfinex API key is good for usage in Rotki.
+        """Validates that the Bitfinex API key is good for usage in rotki.
 
         Makes sure that the following permissions are given to the key:
         - Account History: get historical balances entries and trade information.

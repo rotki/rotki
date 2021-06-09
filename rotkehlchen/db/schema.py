@@ -72,6 +72,10 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('X', 24);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('Y', 25);
 /* FTX */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('Z', 26);
+/* NEXO */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('[', 27);
+/* BlockFI */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('\\', 28);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
@@ -138,6 +142,12 @@ INSERT OR IGNORE INTO action_type(type, seq) VALUES ('C', 3);
 INSERT OR IGNORE INTO action_type(type, seq) VALUES ('D', 4);
 """
 
+DB_CREATE_ASSETS = """
+CREATE TABLE IF NOT EXISTS assets (
+    identifier TEXT NOT NULL PRIMARY KEY
+);
+"""
+
 DB_CREATE_IGNORED_ACTIONS = """
 CREATE TABLE IF NOT EXISTS ignored_actions (
     type CHAR(1) NOT NULL DEFAULT('A') REFERENCES action_type(type),
@@ -150,9 +160,10 @@ DB_CREATE_TIMED_BALANCES = """
 CREATE TABLE IF NOT EXISTS timed_balances (
     category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
     time INTEGER,
-    currency VARCHAR[12],
+    currency TEXT,
     amount TEXT,
     usd_value TEXT,
+    FOREIGN KEY(currency) REFERENCES assets(identifier) ON UPDATE CASCADE,
     PRIMARY KEY (time, currency, category)
 );
 """
@@ -196,13 +207,15 @@ CREATE TABLE IF NOT EXISTS aave_events (
     timestamp INTEGER NOT NULL,
     tx_hash VARCHAR[66] NOT NULL,
     log_index INTEGER NOT NULL,
-    asset1 VARCHAR[12] NOT NULL,
+    asset1 TEXT NOT NULL,
     asset1_amount TEXT NOT NULL,
     asset1_usd_value TEXT NOT NULL,
-    asset2 VARCHAR[12],
+    asset2 TEXT,
     asset2amount_borrowrate_feeamount TEXT,
     asset2usd_value_accruedinterest_feeusdvalue TEXT,
     borrow_rate_mode VARCHAR[10],
+    FOREIGN KEY(asset1) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(asset2) REFERENCES assets(identifier) ON UPDATE CASCADE,
     PRIMARY KEY (event_type, tx_hash, log_index)
 );
 """
@@ -211,10 +224,10 @@ DB_CREATE_YEARN_VAULT_EVENTS = """
 CREATE TABLE IF NOT EXISTS yearn_vaults_events (
     address VARCHAR[42] NOT NULL,
     event_type VARCHAR[10] NOT NULL,
-    from_asset VARCHAR[44] NOT NULL,
+    from_asset TEXT NOT NULL,
     from_amount TEXT NOT NULL,
     from_usd_value TEXT NOT NULL,
-    to_asset VARCHAR[44] NOT NULL,
+    to_asset TEXT NOT NULL,
     to_amount TEXT NOT NULL,
     to_usd_value TEXT NOT NULL,
     pnl_amount TEXT,
@@ -223,6 +236,8 @@ CREATE TABLE IF NOT EXISTS yearn_vaults_events (
     timestamp INTEGER NOT NULL,
     tx_hash VARCHAR[66] NOT NULL,
     log_index INTEGER NOT NULL,
+    FOREIGN KEY(from_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     PRIMARY KEY (event_type, tx_hash, log_index)
 );
 """
@@ -283,10 +298,11 @@ CREATE TABLE IF NOT EXISTS ethereum_accounts_details (
 
 DB_CREATE_MANUALLY_TRACKED_BALANCES = """
 CREATE TABLE IF NOT EXISTS manually_tracked_balances (
-    asset VARCHAR[24] NOT NULL,
+    asset TEXT NOT NULL,
     label TEXT NOT NULL PRIMARY KEY,
     amount TEXT,
-    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location)
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
 
@@ -320,9 +336,12 @@ CREATE TABLE IF NOT EXISTS trades (
     amount TEXT NOT NULL,
     rate TEXT NOT NULL,
     fee TEXT,
-    fee_currency TEXT[10],
+    fee_currency TEXT,
     link TEXT,
-    notes TEXT
+    notes TEXT,
+    FOREIGN KEY(base_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(quote_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(fee_currency) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
 
@@ -333,11 +352,13 @@ CREATE TABLE IF NOT EXISTS margin_positions (
     open_time INTEGER,
     close_time INTEGER,
     profit_loss TEXT,
-    pl_currency VARCHAR[10],
+    pl_currency TEXT NOT NULL,
     fee TEXT,
-    fee_currency VARCHAR[10],
+    fee_currency TEXT,
     link TEXT,
-    notes TEXT
+    notes TEXT,
+    FOREIGN KEY(pl_currency) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(fee_currency) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
 
@@ -349,11 +370,13 @@ CREATE TABLE IF NOT EXISTS asset_movements (
     address TEXT,
     transaction_id TEXT,
     time INTEGER,
-    asset VARCHAR[10],
+    asset TEXT NOT NULL,
     amount TEXT,
-    fee_asset VARCHAR[10],
+    fee_asset TEXT,
     fee TEXT,
-    link TEXT
+    link TEXT,
+    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(fee_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
 
@@ -368,7 +391,9 @@ CREATE TABLE IF NOT EXISTS ledger_actions (
     rate TEXT,
     rate_asset TEXT,
     link TEXT,
-    notes TEXT
+    notes TEXT,
+    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(rate_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
 
@@ -513,6 +538,7 @@ CREATE TABLE IF NOT EXISTS adex_events (
     channel_id TEXT,
     token TEXT,
     log_index INTEGER,
+    FOREIGN KEY(token) REFERENCES assets(identifier) ON UPDATE CASCADE,
     PRIMARY KEY (tx_hash, address, type, log_index)
 );
 """
@@ -599,7 +625,7 @@ CREATE TABLE IF NOT EXISTS balancer_events (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -607,6 +633,7 @@ PRAGMA foreign_keys=on;
     DB_CREATE_LOCATION,
     DB_CREATE_ASSET_MOVEMENT_CATEGORY,
     DB_CREATE_BALANCE_CATEGORY,
+    DB_CREATE_ASSETS,
     DB_CREATE_TIMED_BALANCES,
     DB_CREATE_TIMED_LOCATION_DATA,
     DB_CREATE_USER_CREDENTIALS,

@@ -38,6 +38,7 @@ from rotkehlchen.constants.assets import (
     A_YFII,
     A_ZRX,
 )
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import (
     DeserializationError,
     NoPriceForGivenTimestamp,
@@ -313,7 +314,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         tries = CRYPTOCOMPARE_QUERY_RETRY_TIMES
         while tries >= 0:
             try:
-                response = self.session.get(querystr)
+                response = self.session.get(querystr, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Cryptocompare API request failed due to {str(e)}') from e
 

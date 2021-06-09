@@ -3,9 +3,9 @@
     v-model="notification.display"
     class="notification-popup"
     :timeout="notification.duration"
-    light
     top
     right
+    :light="!$vuetify.theme.dark"
     app
     rounded
     width="400px"

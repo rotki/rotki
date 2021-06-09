@@ -59,7 +59,14 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 
-const SOURCES = ['cointracking.info', 'cryptocom', 'icon'];
+const SOURCES = [
+  'cointracking.info',
+  'cryptocom',
+  'icon',
+  'nexo',
+  'blockfi-transactions',
+  'blockfi-trades'
+];
 
 @Component({})
 export default class FileUpload extends Vue {
@@ -187,6 +194,16 @@ export default class FileUpload extends Vue {
 
     &--active {
       background-color: #f9f9f9;
+    }
+  }
+}
+
+.theme {
+  &--dark {
+    .file-upload {
+      &__drop {
+        border: thin solid rgba(255, 255, 255, 0.12);
+      }
     }
   }
 }

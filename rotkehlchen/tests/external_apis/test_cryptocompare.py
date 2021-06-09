@@ -30,7 +30,7 @@ from rotkehlchen.externalapis.cryptocompare import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.tests.utils.constants import A_CHI, A_DAO, A_EUR, A_SNGLS, A_XMR
+from rotkehlchen.tests.utils.constants import A_DAO, A_EUR, A_SNGLS, A_XMR
 from rotkehlchen.typing import Price, Timestamp
 
 
@@ -186,27 +186,6 @@ def test_cryptocompare_histohour_data_going_backward(data_dir, database, freezer
     data_range = globaldb.get_historical_price_range(A_BTC, A_USD, HistoricalPriceOracle.CRYPTOCOMPARE)  # noqa: E501
     assert data_range[0] == btc_start_ts
     assert data_range[1] == 1301540400  # that's the closest ts to now_ts cc returns
-
-
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_empty_histohour(data_dir, database, freezer):
-    """Histohour can be empty and can have also floating point zeros like in CHI/EUR
-
-    This test makes sure that an empty list is returned at the very first all zeros
-    result that also has floating point and querying stops.
-
-    If cryptocompare actually fixes their zero historical price problem this test can go away
-    """
-    now_ts = 1610365553
-    freezer.move_to(datetime.fromtimestamp(now_ts))
-    cc = Cryptocompare(data_directory=data_dir, database=database)
-    cc.query_and_store_historical_data(
-        from_asset=A_CHI,
-        to_asset=A_EUR,
-        timestamp=now_ts,
-    )
-    result = get_globaldb_cache_entries(from_asset=A_CHI, to_asset=A_EUR)
-    assert len(result) == 0
 
 
 def test_cryptocompare_dao_query(cryptocompare):

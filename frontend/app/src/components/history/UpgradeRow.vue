@@ -5,8 +5,32 @@
       class="upgrade-row font-weight-medium"
     >
       <i18n
+        v-if="events"
         tag="span"
-        :path="events ? 'upgrade_row.events' : 'upgrade_row.upgrade'"
+        path="upgrade_row.events"
+        class="d-flex flex-row justify-center align-end"
+      >
+        <template #total>
+          {{ total }}
+        </template>
+        <template #limit>
+          {{ limit }}
+        </template>
+        <template #label>
+          {{ label }}
+        </template>
+        <template #link>
+          <base-external-link
+            class="ml-1"
+            :text="$t('upgrade_row.rotki_premium')"
+            :href="$interop.premiumURL"
+          />
+        </template>
+      </i18n>
+      <i18n
+        v-else
+        tag="span"
+        path="upgrade_row.upgrade"
         class="d-flex flex-row justify-center align-end"
       >
         <template #total>

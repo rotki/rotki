@@ -294,17 +294,6 @@ def test_set_settings_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # Invalid type for anonymized_logs
-    data = {
-        'settings': {'anonymized_logs': 555.1},
-    }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Not a valid boolean',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
     # Invalid range for ui_floating_precision
     data = {
         'settings': {'ui_floating_precision': -1},

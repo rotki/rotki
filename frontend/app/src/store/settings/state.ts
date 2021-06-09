@@ -20,7 +20,8 @@ import {
   VALUE_ROUNDING_MODE,
   DARK_MODE_ENABLED,
   DARK_THEME,
-  LIGHT_THEME
+  LIGHT_THEME,
+  GRAPH_ZERO_BASED
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 
@@ -43,7 +44,8 @@ export const defaultState: () => SettingsState = () => ({
   [VALUE_ROUNDING_MODE]: BigNumber.ROUND_DOWN,
   [DARK_MODE_ENABLED]: false,
   [LIGHT_THEME]: LIGHT_COLORS,
-  [DARK_THEME]: DARK_COLORS
+  [DARK_THEME]: DARK_COLORS,
+  [GRAPH_ZERO_BASED]: false
 });
 
 export const state: SettingsState = defaultState();

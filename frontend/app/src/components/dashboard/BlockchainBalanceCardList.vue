@@ -155,4 +155,21 @@ export default class BlockchainBalanceCardList extends Mixins(AssetMixin) {
     }
   }
 }
+
+.theme {
+  &--dark {
+    .sub-item {
+      &:before {
+        color: var(--v-dark-base);
+        border-bottom: 1px solid rgb(200, 200, 200);
+      }
+
+      &:last-child {
+        &:before {
+          border-left: 1px solid rgb(200, 200, 200);
+        }
+      }
+    }
+  }
+}
 </style>

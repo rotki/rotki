@@ -60,6 +60,70 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         """Returns unique location identifier for this exchange object (name + location)"""
         return self.name, self.location
 
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        """Edits the exchange object with new credentials given from the API
+        Returns true if an edit happened and false otherwise.
+
+        Needs to be implemented for each subclass
+        """
+        if api_key is not None:
+            self.api_key = api_key
+        if api_secret is not None:
+            self.secret = api_secret
+
+        return api_key is not None or api_secret is not None or passphrase is not None
+
+    def edit_exchange(
+            self,
+            name: Optional[str],
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            **kwargs: Any,
+    ) -> Tuple[bool, str]:
+        """Edits the exchange object with new info given from the API
+
+        Returns False and error message in case of problems
+
+        If extra exchange info should be edited this needs to also be implemented by the subclass.
+        """
+        passphrase = kwargs.get('passphrase')
+        old_passphrase = None
+        if passphrase is not None:  # backup old passphrase
+            mapping = self.db.get_exchange_credentials(name=self.name, location=self.location)
+            credentials = mapping.get(self.location)
+            if not credentials or len(credentials) == 0 or credentials[0].passphrase is None:
+                old_passphrase = None  # should not happen, unless passphrase is optional
+                log.warning(
+                    f'When updating the passphrase for {self.name} {str(self.location)} '
+                    f'exchange, could not find an old passphrase to restore.',
+                )
+            else:
+                old_passphrase = credentials[0].passphrase
+
+        old_api_key = self.api_key
+        old_api_secret = self.secret
+        changed = self.edit_exchange_credentials(api_key, api_secret, passphrase)
+        if changed is True:
+            try:
+                success, message = self.validate_api_key()
+            except Exception as e:  # pylint: disable=broad-except
+                success = False
+                message = str(e)
+
+            if success is False:
+                self.edit_exchange_credentials(old_api_key, old_api_secret, old_passphrase)
+                return False, message
+
+        if name is not None:
+            self.name = name
+
+        return True, ''
+
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """Returns the balances held in the exchange in the following format:
 

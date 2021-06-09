@@ -12,6 +12,8 @@ const PICKLE_FINANCE_STAKING = 'Pickle Finance • Staking';
 const DODO = 'DODO';
 const BEREZKA = 'Berezka';
 const BZX = 'bZx';
+const BZX_STAKING = 'bZx • Staking';
+const BZX_VESTED_STAKING = 'bZx • Vested Staking';
 const CREAM = 'C.R.E.A.M.';
 const CREAM_STAKING = 'C.R.E.A.M. • Staking';
 const SWERVE = 'Swerve';
@@ -34,12 +36,16 @@ const COMPOUND_GOVERNANCE = 'Compound Governance';
 const CURVE = 'Curve';
 const CURVE_VESTING = 'Curve • Vesting';
 const CURVE_LIQUIDITY_GAUGES = 'Curve • Liquidity Gauges';
+const CURVE_VECRV = 'Curve • Vote Escrowed CRV';
 const DYDX = 'dYdX';
 const MELON = 'Melon';
+const ENZYME = 'Enzyme';
 export const YEARN_FINANCE_VAULTS = 'yearn.finance • Vaults';
+const YEARN_TOKEN_VAULTS = 'Yearn Token Vaults';
 const KEEPERDAO = 'KeeperDAO';
 const MSTABLE = 'mStable';
 const MSTABLE_STAKING = 'mStable • Staking';
+const MSTABLE_V2 = 'mStable V2';
 const KYBERDAO = 'KyberDAO';
 const DDEX_SPOT = 'DDEX • Spot';
 const DDEX_MARGIN = 'DDEX • Margin';
@@ -61,6 +67,7 @@ const TOKENSETS = 'TokenSets';
 const UNISWAPV1 = 'Uniswap V1';
 const SYNTHETIX = 'Synthetix';
 const POOLTOGETHER = 'PoolTogether';
+const POOLTOGETHER_V3 = 'PoolTogether V3';
 const DAI_SAVINGS_RATE = 'Dai Savings Rate';
 const CHAI = 'Chai';
 const IEARNFINANCEV3 = 'iearn.finance (v3)';
@@ -70,6 +77,7 @@ const YGOVFINANCEV2 = 'ygov.finance (v2)';
 const ZEROX_STAKING = '0x Staking';
 const CHIGASTOKEN = 'Chi Gastoken by 1inch';
 const ONEINCH_LIQUIDITY = '1inch Liquidity Protocol';
+const ONEINCH_LP_STAKING = '1inch LP • Staking';
 const ZLOTFINANCE = 'zlot.finance';
 export const MAKERDAO = 'MakerDAO';
 const AAVE_V2 = 'Aave V2';
@@ -82,6 +90,15 @@ const MUSHROOMS_FINANCE = 'Mushrooms Finance';
 const MUSHROOMS_FINANCE_STAKING = 'Mushrooms Finance • Staking';
 const AKROPOLIS_AKRO_STAKING = 'Akropolis • AKRO Staking';
 const AKROPOLIS_ADEL_STAKING = 'Akropolis • ADEL Staking';
+const LIQUITY = 'LIQUITY';
+const ALPHA_HOMORA = 'Alpha Homora';
+const ALPHA_HOMORA_V2 = 'Alpha Homora V2';
+const STAKE_DAO = 'Stake DAO';
+const SADDLE = 'Saddle';
+const REFLEXER = 'Reflexer';
+const COMETH_TUBE = 'Cometh • Tube';
+const COMETH_STAKING = 'Cometh • Staking';
+const LIVEPEER = 'Livepeer';
 
 export const OVERVIEW_PROTOCOLS = [
   YGOVFINANCEV1,
@@ -94,6 +111,8 @@ export const OVERVIEW_PROTOCOLS = [
   DODO,
   BEREZKA,
   BZX,
+  BZX_STAKING,
+  BZX_VESTED_STAKING,
   CREAM,
   CREAM_STAKING,
   SWERVE,
@@ -108,10 +127,13 @@ export const OVERVIEW_PROTOCOLS = [
   MATIC,
   ARAGON,
   MELON,
+  ENZYME,
   YEARN_FINANCE_VAULTS,
+  YEARN_TOKEN_VAULTS,
   KEEPERDAO,
   MSTABLE,
   MSTABLE_STAKING,
+  MSTABLE_V2,
   KYBERDAO,
   DDEX_SPOT,
   DDEX_MARGIN,
@@ -133,6 +155,7 @@ export const OVERVIEW_PROTOCOLS = [
   UNISWAPV1,
   SYNTHETIX,
   POOLTOGETHER,
+  POOLTOGETHER_V3,
   DAI_SAVINGS_RATE,
   CHAI,
   IEARNFINANCEV3,
@@ -143,6 +166,7 @@ export const OVERVIEW_PROTOCOLS = [
   CURVE,
   CURVE_VESTING,
   CURVE_LIQUIDITY_GAUGES,
+  CURVE_VECRV,
   COMPOUND,
   COMPOUND_GOVERNANCE,
   BALANCER,
@@ -157,14 +181,25 @@ export const OVERVIEW_PROTOCOLS = [
   HARVEST_PROFIT_SHARING,
   IDLE_EARLY_REWARDS,
   ONEINCH_LIQUIDITY,
+  ONEINCH_LP_STAKING,
   MUSHROOMS_FINANCE,
   MUSHROOMS_FINANCE_STAKING,
   AKROPOLIS_AKRO_STAKING,
-  AKROPOLIS_ADEL_STAKING
+  AKROPOLIS_ADEL_STAKING,
+  LIQUITY,
+  ALPHA_HOMORA_V2,
+  ALPHA_HOMORA,
+  STAKE_DAO,
+  SADDLE,
+  REFLEXER,
+  COMETH_TUBE,
+  COMETH_STAKING,
+  LIVEPEER
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [ONEINCH_LIQUIDITY]: '1inch.svg',
+  [ONEINCH_LP_STAKING]: '1inch.svg',
   [MUSHROOMS_FINANCE]: 'mushroom.png',
   [MUSHROOMS_FINANCE_STAKING]: 'mushroom.png',
   [AKROPOLIS_AKRO_STAKING]: 'acropolis.svg',
@@ -185,6 +220,8 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [BANCOR_LIQUIDITY_PROTECTION]: 'bancor.svg',
   [BEREZKA]: 'berezka.png',
   [BZX]: 'bzx.svg',
+  [BZX_STAKING]: 'bzx.svg',
+  [BZX_VESTED_STAKING]: 'bzx.svg',
   [CHAI]: 'chai.png',
   [CHIGASTOKEN]: 'chi.png',
   [COMPOUND]: 'compound.svg',
@@ -194,6 +231,7 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [CURVE]: 'curve.svg',
   [CURVE_VESTING]: 'curve.svg',
   [CURVE_LIQUIDITY_GAUGES]: 'curve.svg',
+  [CURVE_VECRV]: 'curve.svg',
   [MULTICOLLATERAL_DAI]: 'dai.svg',
   [DDEX_LENDING]: 'ddex.svg',
   [DDEX_SPOT]: 'ddex.svg',
@@ -215,9 +253,11 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [MAKER_GOVERNANCE]: 'makerdao.svg',
   [MATIC]: 'matic.svg',
   [MELON]: 'melon.svg',
+  [ENZYME]: 'enzyme.svg',
   [MOONISWAP]: 'mooniswap.svg',
   [MSTABLE]: 'mstable.png',
   [MSTABLE_STAKING]: 'mstable.png',
+  [MSTABLE_V2]: 'mstable.png',
   [NEXUS_MUTUAL]: 'nexusmutual.svg',
   [PICKLE_FINANCE]: 'pickle.png',
   [PICKLE_FINANCE_FARMS]: 'pickle.png',
@@ -225,6 +265,7 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [PIEDAO]: 'piedao.png',
   [PIEDAO_EXPERIPIES]: 'piedao.png',
   [POOLTOGETHER]: 'pooltogether.svg',
+  [POOLTOGETHER_V3]: 'pooltogether.svg',
   [SASHIMISWAP]: 'sashimi.png',
   [TOKENSETS]: 'set.svg',
   [SUSHISWAP]: 'sushi.png',
@@ -235,12 +276,22 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [UNISWAPV1]: 'uniswap.svg',
   [UNISWAPV2]: 'uniswap.svg',
   [YEARN_FINANCE_VAULTS]: 'yearn_vaults.svg',
+  [YEARN_TOKEN_VAULTS]: 'yearn_vaults.svg',
   [MAKERDAO]: 'makerdao.svg',
   [AAVE_V2_VARIABLE_DEBT]: 'aave.svg',
   [AAVE_V2_STABLE_DEBT]: 'aave.svg',
   [SNOW_SWAP]: 'snowswap.svg',
   [HARVEST_PROFIT_SHARING]: 'harvest.gif',
-  [IDLE_EARLY_REWARDS]: 'idle.svg'
+  [IDLE_EARLY_REWARDS]: 'idle.svg',
+  [LIQUITY]: 'liquity.png',
+  [ALPHA_HOMORA]: 'alphahomorav2.png',
+  [ALPHA_HOMORA_V2]: 'alphahomorav2.png',
+  [STAKE_DAO]: 'stakedao.png',
+  [SADDLE]: 'saddle.svg',
+  [REFLEXER]: 'reflexer.png',
+  [COMETH_TUBE]: 'cometh.jpg',
+  [COMETH_STAKING]: 'cometh.jpg',
+  [LIVEPEER]: 'livepeer.svg'
 };
 
 export function getProtcolIcon(name: OverviewDefiProtocol): string {
@@ -291,6 +342,7 @@ export const AIRDROP_LIDO = 'lido';
 export const AIRDROP_FURUCOMBO = 'furucombo';
 export const AIRDROP_CURVE = 'curve';
 export const AIRDROP_POAP = 'poap';
+export const AIRDROP_CONVEX = 'convex';
 
 export const AIRDROPS = [
   AIRDROP_1INCH,
@@ -301,5 +353,6 @@ export const AIRDROPS = [
   AIRDROP_LIDO,
   AIRDROP_FURUCOMBO,
   AIRDROP_CURVE,
-  AIRDROP_POAP
+  AIRDROP_POAP,
+  AIRDROP_CONVEX
 ] as const;

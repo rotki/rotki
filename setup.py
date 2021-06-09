@@ -13,14 +13,14 @@ directory = pathlib.Path(__file__).parent
 requirements = directory.joinpath('requirements.txt').read_text()
 requirements = [str(r) for r in parse_requirements(requirements)]
 
-version = '1.16.1'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
+version = '1.17.2'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
 
 setup(
     name='rotkehlchen',
     author='Rotki Solutions GmbH',
     author_email='info@rotki.com',
     description='Acccounting, asset management and tax report helper for cryptocurrencies',
-    license='BSD-3',
+    license='AGPL-3',
     keywords='accounting tax-report portfolio asset-management cryptocurrencies',
     url='https://github.com/rotki/rotki',
     packages=find_packages('.'),

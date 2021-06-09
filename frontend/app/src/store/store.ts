@@ -1,7 +1,7 @@
 ﻿import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
-import { VersionCheck } from '@/services/types-api';
+import { BackendVersion } from '@/services/types-api';
 import { assets } from '@/store/assets';
 import { balances } from '@/store/balances';
 import { defiSections, Section, Status } from '@/store/const';
@@ -16,7 +16,6 @@ import { staking } from '@/store/staking';
 import { statistics } from '@/store/statistics';
 import { tasks } from '@/store/tasks';
 import {
-  ActionStatus,
   Message,
   RotkehlchenState,
   StatusPayload,
@@ -25,6 +24,8 @@ import {
 import { isLoading } from '@/store/utils';
 
 Vue.use(Vuex);
+
+let intervalId: any = null;
 
 const emptyMessage = (): Message => ({
   title: '',
@@ -43,7 +44,9 @@ const defaultState = () => ({
   message: emptyMessage(),
   version: defaultVersion(),
   connected: false,
-  status: {}
+  connectionFailure: false,
+  status: {},
+  dataDirectory: ''
 });
 
 const store: StoreOptions<RotkehlchenState> = {
@@ -55,18 +58,27 @@ const store: StoreOptions<RotkehlchenState> = {
     resetMessage: (state: RotkehlchenState) => {
       state.message = emptyMessage();
     },
-    versions: (state: RotkehlchenState, version: VersionCheck) => {
+    versions: (state: RotkehlchenState, version: BackendVersion) => {
       state.version = {
-        version: version.our_version || '',
-        latestVersion: version.latest_version || '',
-        downloadUrl: version.download_url || ''
+        version: version.ourVersion || '',
+        latestVersion: version.latestVersion || '',
+        downloadUrl: version.downloadUrl || ''
       };
+    },
+    dataDirectory(state: RotkehlchenState, directory: string) {
+      state.dataDirectory = directory;
     },
     setConnected: (state: RotkehlchenState, connected: boolean) => {
       state.connected = connected;
     },
     setStatus: (state: RotkehlchenState, status: StatusPayload) => {
       state.status = { ...state.status, [status.section]: status.status };
+    },
+    connectionFailure: (
+      state: RotkehlchenState,
+      connectionFailure: boolean
+    ) => {
+      state.connectionFailure = connectionFailure;
     },
     reset: (state: RotkehlchenState) => {
       Object.assign(state, defaultState(), {
@@ -77,46 +89,52 @@ const store: StoreOptions<RotkehlchenState> = {
   },
   actions: {
     async version({ commit }): Promise<void> {
-      const version = await api.checkVersion();
+      const { version, dataDirectory } = await api.info();
       if (version) {
         commit('versions', version);
+        commit('dataDirectory', dataDirectory);
       }
     },
-    async connect({ commit }, payload: string | null): Promise<ActionStatus> {
-      return new Promise<ActionStatus>(resolve => {
-        let count = 0;
+    async connect({ commit, dispatch }, payload: string | null): Promise<void> {
+      let count = 0;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
 
-        function connectToDefault() {
-          const serverUrl = window.interop?.serverUrl();
-          const defaultServerUrl = process.env.VUE_APP_BACKEND_URL;
-          if (serverUrl && serverUrl !== defaultServerUrl) {
-            api.setup(serverUrl);
+      function connectToDefaultBackend() {
+        const serverUrl = window.interop?.serverUrl();
+        const defaultServerUrl = process.env.VUE_APP_BACKEND_URL;
+        if (serverUrl && serverUrl !== defaultServerUrl) {
+          api.setup(serverUrl);
+        }
+      }
+
+      const attemptConnect = async function () {
+        try {
+          if (!payload) {
+            connectToDefaultBackend();
+          } else {
+            api.setup(payload);
+          }
+
+          const connected = await api.ping();
+          if (connected) {
+            clearInterval(intervalId);
+            commit('setConnected', connected);
+            await dispatch('version');
+          }
+          // eslint-disable-next-line no-empty
+        } catch (e) {
+        } finally {
+          count++;
+          if (count > 20) {
+            clearInterval(intervalId);
+            commit('connectionFailure', true);
           }
         }
-
-        const timerId = setInterval(async function () {
-          try {
-            if (!payload) {
-              connectToDefault();
-            } else {
-              api.setup(payload);
-            }
-
-            const connected = await api.ping();
-            if (connected) {
-              commit('setConnected', connected);
-              clearInterval(timerId);
-              resolve({ success: true });
-            }
-            // eslint-disable-next-line no-empty
-          } catch (e) {}
-          count++;
-          if (count > 5) {
-            clearInterval(timerId);
-            resolve({ success: false });
-          }
-        }, 1000);
-      });
+      };
+      intervalId = setInterval(attemptConnect, 2000);
+      commit('connectionFailure', false);
     },
     async resetDefiStatus({ commit }): Promise<void> {
       const status = Status.NONE;

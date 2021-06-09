@@ -19,7 +19,6 @@ from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
     DEFAULT_ACTIVE_MODULES,
-    DEFAULT_ANONYMIZED_LOGS,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_BTC_DERIVATION_GAP_LIMIT,
     DEFAULT_CALCULATE_PAST_COST_BASIS,
@@ -87,6 +86,7 @@ from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 TABLES_AT_INIT = [
+    'assets',
     'aave_events',
     'yearn_vaults_events',
     'timed_balances',
@@ -329,7 +329,6 @@ def test_writing_fetching_data(data_dir, username):
         'balance_save_frequency': DEFAULT_BALANCE_SAVE_FREQUENCY,
         'last_balance_save': 0,
         'main_currency': DEFAULT_MAIN_CURRENCY.identifier,
-        'anonymized_logs': DEFAULT_ANONYMIZED_LOGS,
         'date_display_format': DEFAULT_DATE_DISPLAY_FORMAT,
         'last_data_upload_ts': 0,
         'premium_should_sync': False,
@@ -360,7 +359,6 @@ def test_settings_entry_types(database):
     database.set_settings(ModifiableDBSettings(
         premium_should_sync=True,
         include_crypto2crypto=True,
-        anonymized_logs=True,
         ui_floating_precision=1,
         taxfree_after_period=1,
         include_gas_costs=True,
@@ -391,8 +389,6 @@ def test_settings_entry_types(database):
     assert res.last_balance_save == 0
     assert isinstance(res.main_currency, Asset)
     assert res.main_currency == DEFAULT_TESTS_MAIN_CURRENCY
-    assert isinstance(res.anonymized_logs, bool)
-    assert res.anonymized_logs is True
     assert isinstance(res.date_display_format, str)
     assert res.date_display_format == '%d/%m/%Y %H:%M:%S %z'
     assert isinstance(res.submit_usage_analytics, bool)
@@ -624,13 +620,6 @@ def test_query_owned_assets(data_dir, username):
         ),
     ])
     data.db.add_multiple_balances(balances)
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT INTO timed_balances('
-        '    time, currency, amount, usd_value, category) '
-        ' VALUES(?, ?, ?, ?, ?)',
-        (1469326500, 'ADSADX', '10.1', '100.5', 'A'),
-    )
     data.db.conn.commit()
 
     # also make sure that assets from trades are included
@@ -702,8 +691,7 @@ def test_query_owned_assets(data_dir, username):
     assert set(assets_list) == {A_USD, A_ETH, A_DAI, A_BTC, A_XMR, A_SDC, A_SDT2, A_SUSHI, A_1INCH}  # noqa: E501
     assert all(isinstance(x, Asset) for x in assets_list)
     warnings = data.db.msg_aggregator.consume_warnings()
-    assert len(warnings) == 1
-    assert 'Unknown/unsupported asset ADSADX' in warnings[0]
+    assert len(warnings) == 0
 
 
 def test_get_latest_location_value_distribution(data_dir, username):
@@ -1241,7 +1229,7 @@ def test_unlock_with_invalid_premium_data(data_dir, username):
 
     assert len(warnings) == 0
     assert len(errors) == 1
-    assert 'Incorrect Rotki API Key/Secret format found in the DB' in errors[0]
+    assert 'Incorrect rotki API Key/Secret format found in the DB' in errors[0]
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
@@ -1382,3 +1370,20 @@ def test_values_are_present_in_db(database, enum_class, table_name):
     for enum_class_entry in enum_class:
         r = cursor.execute(query, (enum_class_entry.value,))
         assert r.fetchone() == (1,)
+
+
+def test_binance_pairs(user_data_dir):
+    msg_aggregator = MessagesAggregator()
+    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
+
+    binance_api_key = ApiKey('binance_api_key')
+    binance_api_secret = ApiSecret(b'binance_api_secret')
+    db.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
+
+    db.set_binance_pairs('binance', ['ETHUSDC', 'ETHBTC', 'BNBBTC'], Location.BINANCE)
+    query = db.get_binance_pairs('binance', Location.BINANCE)
+    assert query == ['ETHUSDC', 'ETHBTC', 'BNBBTC']
+
+    db.set_binance_pairs('binance', [], Location.BINANCE)
+    query = db.get_binance_pairs('binance', Location.BINANCE)
+    assert query == []

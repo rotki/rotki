@@ -7,6 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.modules.uniswap import UniswapPoolEvent, UniswapPoolEventsBalance
 from rotkehlchen.chain.ethereum.modules.uniswap.typing import UNISWAP_EVENTS_PREFIX, EventType
@@ -1213,3 +1214,91 @@ def test_get_events_history_get_all_events_empty(
             result = assert_proper_response_with_result(response)
 
     assert result == {}
+
+
+@pytest.mark.parametrize('ethereum_accounts', [["0x3ba6eb0e4327b96ade6d4f3b578724208a590cef"]])
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_get_uniswap_trades_history_v3(rotkehlchen_api_server):
+    """Test that the last 11/23 uniswap trades of the account since 1605437542
+    are parsed and returned correctly
+
+    Also test that data are written in the DB and properly retrieved afterwards
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    trades = rotki.chain_manager.get_module('uniswap').get_trades_history(
+        addresses=['0x000e62ea8bf5f69e1e32920600839f56313c490f'],
+        reset_db_data=True,
+        from_timestamp=1620065527,
+        to_timestamp=1620670327,
+    )
+    expected_trades = [AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=EthereumToken('0x467Bccd9d29f223BcE8043b84E8C8B282827790F'),
+        quote_asset=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+        amount=AssetAmount(FVal('22504.57')),
+        rate=Price(FVal('0.00001404159244100198315275519594')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0xbfb58e9f11484d1cdf0a6f13fe437c2db273663f8711586ca81f2c43cfafef52',
+            log_index=375,
+            address=string_to_ethereum_address('0x000e62eA8Bf5F69E1e32920600839f56313C490F'),
+            from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+            to_address=string_to_ethereum_address('0x000e62eA8Bf5F69E1e32920600839f56313C490F'),
+            timestamp=Timestamp(1620606134),
+            location=Location.UNISWAP,
+            token0=EthereumToken('0x467Bccd9d29f223BcE8043b84E8C8B282827790F'),
+            token1=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('0.316')),
+            amount0_out=AssetAmount(FVal('22504.57')),
+            amount1_out=AssetAmount(ZERO),
+        )],
+    ), AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=EthereumToken('0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE'),
+        quote_asset=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+        amount=AssetAmount(FVal('19902976.398493988867801422')),
+        rate=Price(FVal('3.768280607802713997319461775E-9')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0x6c94a0c25739863fd4cfc40cacf32b5a74d9d4a04b675e72c01dd71e4b3113d1',
+            log_index=133,
+            address=string_to_ethereum_address('0x000e62eA8Bf5F69E1e32920600839f56313C490F'),
+            from_address=string_to_ethereum_address('0xE592427A0AEce92De3Edee1F18E0157C05861564'),
+            to_address=string_to_ethereum_address('0x000e62eA8Bf5F69E1e32920600839f56313C490F'),
+            timestamp=Timestamp(1620516124),
+            location=Location.UNISWAP,
+            token0=EthereumToken('0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE'),
+            token1=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('0.075')),
+            amount0_out=AssetAmount(FVal('19902976.398493988867801422')),
+            amount1_out=AssetAmount(ZERO),
+        )],
+    ), AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=EthereumToken('0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE'),
+        quote_asset=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+        amount=AssetAmount(FVal('56219942.782018870681977432')),
+        rate=Price(FVal('3.913202132791280491969510435E-9')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0x0007999335475071899b18de7226d32b5ff83a182d37485faac0e8050e2fec14',
+            log_index=179,
+            address=string_to_ethereum_address('0x000e62eA8Bf5F69E1e32920600839f56313C490F'),
+            from_address=string_to_ethereum_address('0xE592427A0AEce92De3Edee1F18E0157C05861564'),
+            to_address=string_to_ethereum_address('0x000e62eA8Bf5F69E1e32920600839f56313C490F'),
+            timestamp=Timestamp(1620515287),
+            location=Location.UNISWAP,
+            token0=EthereumToken('0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE'),
+            token1=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('0.22')),
+            amount0_out=AssetAmount(FVal('56219942.782018870681977432')),
+            amount1_out=AssetAmount(ZERO),
+        )],
+    )]
+    assert len(trades) == 1
+    assert '0x000e62ea8bf5f69e1e32920600839f56313c490f' in trades.keys()
+    assert trades['0x000e62ea8bf5f69e1e32920600839f56313c490f'] == expected_trades

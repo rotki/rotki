@@ -15,7 +15,8 @@ import {
   VALUE_ROUNDING_MODE,
   DARK_MODE_ENABLED,
   LIGHT_THEME,
-  DARK_THEME
+  DARK_THEME,
+  GRAPH_ZERO_BASED
 } from '@/store/settings/consts';
 import { defaultState } from '@/store/settings/state';
 import {
@@ -48,6 +49,7 @@ type Mutations<S = SettingsState> = {
   [DARK_MODE_ENABLED](state: S, enabled: boolean): void;
   [LIGHT_THEME](state: S, theme: ThemeColors): void;
   [DARK_THEME](state: S, theme: ThemeColors): void;
+  [GRAPH_ZERO_BASED](state: S, enabled: Boolean): void;
   restore(state: S, persisted: S): void;
   reset(state: S): void;
 };
@@ -118,6 +120,9 @@ export const mutations: Mutations = {
   },
   [DARK_THEME](state: Writeable<SettingsState>, theme: ThemeColors) {
     state[DARK_THEME] = theme;
+  },
+  [GRAPH_ZERO_BASED](state: Writeable<SettingsState>, enabled: boolean) {
+    state[GRAPH_ZERO_BASED] = enabled;
   },
   restore(state: SettingsState, persisted: SettingsState) {
     Object.assign(state, persisted);

@@ -13,7 +13,7 @@ if (!fs.existsSync(tempPath)) {
 } else {
   const contents = fs.readdirSync(tempPath);
   for (const name of contents) {
-    if (['assets', 'icons', 'price_history'].includes(name)) {
+    if (['icons', 'price_history', 'global_data'].includes(name)) {
       continue;
     }
 

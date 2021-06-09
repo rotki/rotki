@@ -24,12 +24,15 @@ from rotkehlchen.api.v1.resources import (
     AllBalancesResource,
     AssetIconsResource,
     AssetMovementsResource,
+    AssetsReplaceResource,
     AssetsTypesResource,
     AssetUpdatesResource,
     AsyncTasksResource,
     BalancerBalancesResource,
     BalancerEventsHistoryResource,
     BalancerTradesHistoryResource,
+    BinanceAvailableMarkets,
+    BinanceUserMarkets,
     BlockchainBalancesResource,
     BlockchainsAccountsResource,
     BTCXpubResource,
@@ -58,6 +61,7 @@ from rotkehlchen.api.v1.resources import (
     HistoryStatusResource,
     IgnoredActionsResource,
     IgnoredAssetsResource,
+    InfoResource,
     LedgerActionsResource,
     LoopringBalancesResource,
     MakerdaoDSRBalanceResource,
@@ -88,7 +92,6 @@ from rotkehlchen.api.v1.resources import (
     UserPremiumSyncResource,
     UsersByNameResource,
     UsersResource,
-    VersionResource,
     WatchersResource,
     YearnVaultsBalancesResource,
     YearnVaultsHistoryResource,
@@ -126,15 +129,12 @@ URLS_V1: URLS = [
         'named_exchanges_balances_resource',
     ),
     ('/assets/<string:asset>/icon', AssetIconsResource),
-    (
-        '/assets/<string:asset>/icon/<string:size>',
-        AssetIconsResource,
-        'specific_size_asset_icons_resource',
-    ),
     ('/trades', TradesResource),
     ('/ledgeractions', LedgerActionsResource),
     ('/asset_movements', AssetMovementsResource),
     ('/tags', TagsResource),
+    ('/exchanges/binance/pairs', BinanceAvailableMarkets),
+    ('/exchanges/binance/pairs/<string:name>', BinanceUserMarkets),
     ('/exchanges/data/', ExchangesDataResource),
     ('/exchanges/data/<string:location>', ExchangesDataResource, 'named_exchanges_data_resource'),
     ('/balances/blockchains', BlockchainBalancesResource),
@@ -193,6 +193,7 @@ URLS_V1: URLS = [
     ('/blockchains/BTC/xpub', BTCXpubResource),
     ('/assets', OwnedAssetsResource),
     ('/assets/types', AssetsTypesResource),
+    ('/assets/replace', AssetsReplaceResource),
     ('/assets/all', AllAssetsResource),
     ('/assets/ethereum', EthereumAssetsResource),
     ('/assets/prices/current', CurrentAssetsPriceResource),
@@ -200,7 +201,7 @@ URLS_V1: URLS = [
     ('/assets/ignored', IgnoredAssetsResource),
     ('/assets/updates', AssetUpdatesResource),
     ('/actions/ignored', IgnoredActionsResource),
-    ('/version', VersionResource),
+    ('/info', InfoResource),
     ('/ping', PingResource),
     ('/import', DataImportResource),
 ]
@@ -240,7 +241,7 @@ def endpoint_not_found(e: NotFound) -> Response:
 
 
 @parser.error_handler  # type: ignore
-@resource_parser.error_handler  # type: ignore
+@resource_parser.error_handler
 def handle_request_parsing_error(
         err: ValidationError,
         _request: werkzeug.local.LocalProxy,
@@ -309,7 +310,7 @@ class APIServer():
             log=wsgi_logger,
             error_log=wsgi_logger,
         )
-        msg = f'Rotki API server is running at: {host}:{port}'
+        msg = f'rotki API server is running at: {host}:{port}'
         print(msg)
         log.info(msg)
         self.wsgiserver.start()

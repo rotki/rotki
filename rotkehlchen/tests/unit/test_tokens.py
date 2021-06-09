@@ -85,3 +85,28 @@ def test_detected_tokens_cache(ethtokens, inquirer):  # pylint: disable=unused-a
             assert len(entry) == len(eth_map_entry)
             for token, val in entry.items():
                 assert token_normalized_value(eth_map_entry[token], token) == val
+
+
+@pytest.mark.parametrize('ignored_assets', [[A_GNO]])
+def test_ignored_tokens_in_query(ethtokens, inquirer):  # pylint: disable=unused-argument
+    """Test that if a token is ignored it's not included in the query"""
+    addr1 = make_ethereum_address()
+    addr2 = make_ethereum_address()
+    eth_map = {addr1: {A_GNO: 5000, A_MKR: 4000}, addr2: {A_MKR: 6000}}
+    etherscan_patch = mock_etherscan_query(
+        eth_map=eth_map,
+        etherscan=ethtokens.ethereum.etherscan,
+        original_queries=None,
+        original_requests_get=requests.get,
+        extra_flags=None,
+    )
+    ethtokens_max_chunks_patch = patch(
+        'rotkehlchen.chain.ethereum.tokens.ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH',
+        new=800,
+    )
+
+    with ethtokens_max_chunks_patch, etherscan_patch:
+        result, _ = ethtokens.query_tokens_for_addresses([addr1, addr2], False)
+        assert len(result[addr1]) == 1
+        assert result[addr1][A_MKR] == FVal('4E-15')
+        assert len(result[addr2]) == 1

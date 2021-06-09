@@ -1,8 +1,9 @@
 import subprocess
+import sys
+from http import HTTPStatus
+
 import gevent
 import requests
-
-from http import HTTPStatus
 
 
 def test_backend():
@@ -17,17 +18,19 @@ def test_backend():
         stderr=subprocess.STDOUT,
     )
     timeout = 10
+    if sys.platform == 'darwin':
+        timeout = 30  # in macos the backend may take a long time to start
     with gevent.Timeout(timeout):
         try:
             while True:
                 output = proc.stdout.readline().decode('utf-8')
-                if 'Rotki API server is running at' in output:
+                if 'rotki API server is running at' in output:
                     break
 
-            url = f'http://{output.split()[-1]}/api/1/version'
+            url = f'http://{output.split()[-1]}/api/1/info'
             response = requests.get(url)
             assert response.status_code == HTTPStatus.OK
-            assert 'latest_version' in response.json()['result']
+            assert 'data_directory' in response.json()['result']
 
         except gevent.Timeout as e:
             raise AssertionError(

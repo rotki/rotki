@@ -15,11 +15,18 @@
         v-bind="attrs"
         horizontal
         :item="item"
+        no-padding
         v-on="on"
       />
     </template>
     <template #selection="{ item, attrs, on }">
-      <location-icon v-bind="attrs" horizontal :item="item" v-on="on" />
+      <location-icon
+        v-bind="attrs"
+        horizontal
+        :item="item"
+        no-padding
+        v-on="on"
+      />
     </template>
   </v-autocomplete>
 </template>

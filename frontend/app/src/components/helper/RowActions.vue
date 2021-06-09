@@ -32,6 +32,7 @@
       </template>
       <span>{{ deleteTooltip }}</span>
     </v-tooltip>
+    <slot />
   </span>
 </template>
 

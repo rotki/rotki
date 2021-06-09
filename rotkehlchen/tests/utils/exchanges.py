@@ -1,11 +1,19 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from unittest.mock import patch
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.exchanges.binance import Binance, create_binance_symbols_to_pair
+from rotkehlchen.exchanges.binance import (
+    Binance,
+    create_binance_symbols_to_pair,
+    BINANCE_BASE_URL,
+    BINANCEUS_BASE_URL,
+)
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
 from rotkehlchen.exchanges.bitmex import Bitmex
@@ -13,6 +21,7 @@ from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro
+from rotkehlchen.exchanges.data_structures import AssetMovement
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.exchanges.gemini import Gemini
@@ -20,6 +29,8 @@ from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.exchanges.kucoin import Kucoin
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import Poloniex
+from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.factories import (
     make_api_key,
     make_api_secret,
@@ -27,7 +38,7 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import ApiKey, ApiSecret, Location
+from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Location
 from rotkehlchen.user_messages import MessagesAggregator
 
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
@@ -280,12 +291,99 @@ BINANCE_MYTRADES_RESPONSE = """
     "isBestMatch": true
     }]"""
 
+BINANCE_DEPOSITS_HISTORY_RESPONSE = """{
+    "depositList": [
+        {
+            "insertTime": 1508198532000,
+            "amount": 0.04670582,
+            "asset": "ETH",
+            "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
+            "txId": "0xef33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
+            "status": 1
+        },
+        {
+            "insertTime": 1508398632000,
+            "amount": 1000,
+            "asset": "XMR",
+            "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvV38",
+            "addressTag": "342341222",
+            "txId": "c3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
+            "status": 1
+        }
+    ],
+    "success": true
+}"""
+
+BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """{
+    "withdrawList": [
+        {
+            "id":"7213fea8e94b4a5593d507237e5a555b",
+            "withdrawOrderId": null,
+            "amount": 0.99,
+            "transactionFee": 0.01,
+            "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
+            "asset": "ETH",
+            "txId": "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
+            "applyTime": 1508198532000,
+            "status": 4
+        },
+        {
+            "id":"7213fea8e94b4a5534ggsd237e5a555b",
+            "withdrawOrderId": "withdrawtest",
+            "amount": 999.9999,
+            "transactionFee": 0.0001,
+            "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvyV3z8zctJLPCZy24jvb3NiTcTJ",
+            "addressTag": "342341222",
+            "txId": "b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
+            "asset": "XMR",
+            "applyTime": 1508198532000,
+            "status": 4
+        }
+    ],
+    "success": true
+}"""  # noqa: E501
+
 
 def assert_binance_balances_result(balances: Dict[str, Any]) -> None:
     assert balances['BTC']['amount'] == '4723846.89208129'
     assert balances['BTC']['usd_value'] is not None
     assert balances['ETH']['amount'] == '4763368.68006011'
     assert balances['ETH']['usd_value'] is not None
+
+
+def assert_binance_asset_movements_result(movements: List[AssetMovement], location: Location) -> None:  # noqa: E501
+    assert len(movements) == 4
+    assert movements[0].location == location
+    assert movements[0].category == AssetMovementCategory.DEPOSIT
+    assert movements[0].timestamp == 1508198532
+    assert isinstance(movements[0].asset, Asset)
+    assert movements[0].asset == A_ETH
+    assert movements[0].amount == FVal('0.04670582')
+    assert movements[0].fee == ZERO
+
+    assert movements[1].location == location
+    assert movements[1].category == AssetMovementCategory.DEPOSIT
+    assert movements[1].timestamp == 1508398632
+    assert isinstance(movements[1].asset, Asset)
+    assert movements[1].asset == A_XMR
+    assert movements[1].amount == FVal('1000')
+    assert movements[1].fee == ZERO
+
+    assert movements[2].location == location
+    assert movements[2].category == AssetMovementCategory.WITHDRAWAL
+    assert movements[2].timestamp == 1508198532
+    assert isinstance(movements[2].asset, Asset)
+    assert movements[2].asset == A_ETH
+    assert movements[2].amount == FVal('0.99')
+    assert movements[2].fee == FVal('0.01')
+
+    assert movements[3].location == location
+    assert movements[3].category == AssetMovementCategory.WITHDRAWAL
+    assert movements[3].timestamp == 1508198532
+    assert isinstance(movements[3].asset, Asset)
+    assert movements[3].asset == A_XMR
+    assert movements[3].amount == FVal('999.9999')
+    assert movements[3].fee == FVal('0.0001')
 
 
 def assert_poloniex_balances_result(balances: Dict[str, Any]) -> None:
@@ -295,7 +393,7 @@ def assert_poloniex_balances_result(balances: Dict[str, Any]) -> None:
     assert balances['ETH']['usd_value'] is not None
 
 
-def mock_binance_balance_response(url):
+def mock_binance_balance_response(url, **kwargs):  # pylint: disable=unused-argument
     if 'futures' in url:
         return MockResponse(200, BINANCE_FUTURES_WALLET_RESPONSE)
     if 'lending' in url:
@@ -312,7 +410,7 @@ def mock_binance_balance_response(url):
 
 
 def patch_binance_balances_query(binance: 'Binance'):
-    def mock_binance_asset_return(url, *args):  # pylint: disable=unused-argument
+    def mock_binance_asset_return(url, timeout, *args):  # pylint: disable=unused-argument
         if 'futures' in url:
             response = '{"crossCollaterals":[]}'
         elif 'lending' in url:
@@ -332,7 +430,7 @@ def patch_binance_balances_query(binance: 'Binance'):
 
 
 def patch_poloniex_balances_query(poloniex: 'Poloniex'):
-    def mock_poloniex_asset_return(url, *args):  # pylint: disable=unused-argument
+    def mock_poloniex_asset_return(url, *args, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
 
     poloniex_patch = patch.object(poloniex.session, 'post', side_effect=mock_poloniex_asset_return)
@@ -358,13 +456,21 @@ def create_test_coinbase(
 def create_test_binance(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
+        location: Location = Location.BINANCE,
 ) -> Binance:
+    if location == Location.BINANCE:
+        uri = BINANCE_BASE_URL
+    elif location == Location.BINANCEUS:
+        uri = BINANCEUS_BASE_URL
+    else:
+        raise AssertionError(f'Tried to create binance exchange with location {location}')
     binance = Binance(
         name='binance',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
         msg_aggregator=msg_aggregator,
+        uri=uri,
     )
     this_dir = os.path.dirname(os.path.abspath(__file__))
     json_path = Path(this_dir) / 'data' / 'binance_exchange_info.json'

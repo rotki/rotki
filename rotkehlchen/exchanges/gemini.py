@@ -60,8 +60,9 @@ def gemini_symbol_to_base_quote(symbol: str) -> Tuple[Asset, Asset]:
     """Turns a gemini symbol product into a base/quote asset tuple
 
     - Can raise UnprocessableTradePair if symbol is in unexpected format
-    - Case raise UnknownAsset if any of the pair assets are not known to Rotki
+    - Case raise UnknownAsset if any of the pair assets are not known to rotki
     """
+    five_letter_assets = ('sushi', '1inch', 'storj', 'matic')
     if len(symbol) == 6:
         base_asset = asset_from_gemini(symbol[:3].upper())
         quote_asset = asset_from_gemini(symbol[3:].upper())
@@ -73,7 +74,7 @@ def gemini_symbol_to_base_quote(symbol: str) -> Tuple[Asset, Asset]:
             base_asset = asset_from_gemini(symbol[:3].upper())
             quote_asset = asset_from_gemini(symbol[3:].upper())
     elif len(symbol) == 8:
-        if 'storj' in symbol or '1inch' in symbol:
+        if any([asset in symbol for asset in five_letter_assets]):
             base_asset = asset_from_gemini(symbol[:5].upper())
             quote_asset = asset_from_gemini(symbol[5:].upper())
         else:
@@ -121,8 +122,20 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self._symbols = self._public_api_query('symbols')
         self.first_connection_made = True
 
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'X-GEMINI-APIKEY': self.api_key})
+
+        return changed
+
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the Gemini API key is good for usage in Rotki
+        """Validates that the Gemini API key is good for usage in rotki
 
         Makes sure that the following permissions are given to the key:
         - Auditor

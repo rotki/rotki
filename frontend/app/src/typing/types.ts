@@ -15,17 +15,12 @@ export type CurrencyLocation = typeof CURRENCY_LOCATION[number];
 
 export interface GeneralSettings {
   readonly floatingPrecision: number;
-  readonly anonymizedLogs: boolean;
   readonly anonymousUsageAnalytics: boolean;
   readonly ethRpcEndpoint: string;
   readonly ksmRpcEndpoint: string;
   readonly balanceSaveFrequency: number;
   readonly dateDisplayFormat: string;
-  readonly thousandSeparator: string;
-  readonly decimalSeparator: string;
-  readonly currencyLocation: CurrencyLocation;
   readonly selectedCurrency: Currency;
-  readonly krakenAccountType: string;
   readonly activeModules: SupportedModules[];
   readonly btcDerivationGapLimit: number;
   readonly displayDateInLocaltime: boolean;
@@ -58,8 +53,9 @@ export interface Credentials {
 export type ExchangeRates = { [key: string]: BigNumber };
 
 export interface ExchangeInfo {
-  readonly name: string;
+  readonly location: string;
   readonly balances: AssetBalances;
+  readonly total: BigNumber;
 }
 
 export type ExchangeData = { [exchange: string]: AssetBalances };
@@ -118,7 +114,6 @@ export type SettingsUpdate = {
 interface SettingsPayload {
   balance_save_frequency: number;
   main_currency: string;
-  anonymized_logs: boolean;
   submit_usage_analytics: boolean;
   eth_rpc_endpoint: string;
   ksm_rpc_endpoint: string;

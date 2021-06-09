@@ -1,15 +1,15 @@
 import functools
-import warnings
-from collections.abc import Mapping
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Mapping, Optional
 
-from flask import Request
 from flask_restful import Resource
 from marshmallow import Schema, exceptions as ma_exceptions
-from marshmallow.fields import Field
-from webargs.compat import MARSHMALLOW_VERSION_INFO
-from webargs.core import _ensure_list_of_callables
-from webargs.dict2schema import dict2schema
+from webargs.core import (
+    _UNKNOWN_DEFAULT_PARAM,
+    ArgMap,
+    Request,
+    ValidateArg,
+    _ensure_list_of_callables,
+)
 from webargs.flaskparser import FlaskParser
 
 
@@ -18,14 +18,15 @@ class ResourceReadingParser(FlaskParser):
 
     def use_args(
             self,
-            argmap: Union[Schema, Dict[str, Field], Callable],
+            argmap: ArgMap,
             req: Optional[Request] = None,
             *,
             location: Optional[str] = None,
+            unknown: Optional[str] = _UNKNOWN_DEFAULT_PARAM,  # pylint: disable=unused-argument
             as_kwargs: bool = False,
-            validate: Optional[Callable[[Dict[str, Any]], bool]] = None,
+            validate: ValidateArg = None,
             error_status_code: Optional[int] = None,
-            error_headers: Optional[Dict[str, Any]] = None,
+            error_headers: Optional[Mapping[str, str]] = None,
     ) -> Callable:
         """Decorator that injects parsed arguments into a view function or method.
 
@@ -36,7 +37,7 @@ class ResourceReadingParser(FlaskParser):
         # Optimization: If argmap is passed as a dictionary, we only need
         # to generate a Schema once
         if isinstance(argmap, Mapping):
-            argmap = dict2schema(argmap, schema_class=self.schema_class)()
+            argmap = Schema.from_dict(argmap)()  # type: ignore
 
         def decorator(func: Callable) -> Callable:
             req_ = request_obj
@@ -58,8 +59,8 @@ class ResourceReadingParser(FlaskParser):
                     error_status_code=error_status_code,
                     error_headers=error_headers,
                 )
-                args, kwargs = self._update_args_kwargs(
-                    args, kwargs, parsed_args, as_kwargs,
+                args, kwargs = self._update_args_kwargs(  # type: ignore
+                    args, kwargs, parsed_args, as_kwargs,  # type: ignore
                 )
                 return func(*args, **kwargs)
 
@@ -68,23 +69,25 @@ class ResourceReadingParser(FlaskParser):
 
         return decorator
 
-    def parse(
+    def parse(  # type: ignore  # we have added the resource_object on top of parse
             self,
             resource_object: Resource,
-            argmap: Union[Schema, Dict[str, Field], Callable],
+            argmap: ArgMap,
             req: Optional[Request] = None,
             *,
             location: Optional[str] = None,
-            validate: Optional[Callable[[Dict[str, Any]], bool]] = None,
+            unknown: Optional[str] = _UNKNOWN_DEFAULT_PARAM,  # pylint: disable=unused-argument
+            validate: ValidateArg = None,
             error_status_code: Optional[int] = None,
-            error_headers: Optional[Dict[str, Any]] = None,
-    ) -> Optional[Any]:
+            error_headers: Optional[Mapping[str, str]] = None,
+    ) -> Dict[str, Any]:
         """Main request parsing method.
 
         Different from core parser is that we also get the resource object and
         pass it to the schema
         """
-        req = req if req is not None else self.get_default_request()
+        # __import__("pdb").set_trace()
+        req = req if req is not None else self.get_default_request()  # type: ignore
         location = location or self.location
         if req is None:
             raise ValueError("Must pass req object")
@@ -95,8 +98,7 @@ class ResourceReadingParser(FlaskParser):
             location_data = self._load_location_data(
                 schema=schema, req=req, location=location,
             )
-            result = schema.load(location_data)
-            data = result.data if MARSHMALLOW_VERSION_INFO[0] < 3 else result
+            data = schema.load(location_data)
             self._validate_arguments(data, validators)
         except ma_exceptions.ValidationError as error:
             self._on_validation_error(
@@ -111,21 +113,16 @@ class ResourceReadingParser(FlaskParser):
 
     def _get_schema(
             self,
-            argmap: Union[Schema, Dict[str, Field], Callable],
+            argmap: ArgMap,
             resource_object: Resource,
     ) -> Schema:
         """Override the behaviour of the standard parser.
 
         Initialize Schema with a callable that gets the resource object as argument"""
+        # __import__("pdb").set_trace()
         assert callable(argmap), "Snould only use this parser with a callable"
         schema = argmap(resource_object)
 
-        if MARSHMALLOW_VERSION_INFO[0] < 3 and not schema.strict:
-            warnings.warn(
-                "It is highly recommended that you set strict=True on your schema "
-                "so that the parser's error handler will be invoked when expected.",
-                UserWarning,
-            )
         return schema
 
 

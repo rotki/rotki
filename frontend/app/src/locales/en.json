@@ -1,4 +1,14 @@
 {
+  "about": {
+    "copy_tooltip": "Copy the application information",
+    "data_directory": "Data Directory:",
+    "electron": "Electron:",
+    "frontend_version": "Frontend Version:",
+    "open_data_dir_tooltip": "Open the data directory",
+    "platform": "Platform:",
+    "release_notes": "What's new",
+    "user_agent": "User Agent:"
+  },
   "account_settings_display": {
     "account_asset_movement": "Account asset movement fees were taken into account:",
     "crypto2crypto": "Crypto to crypto trades were taken into account:",
@@ -13,7 +23,7 @@
     "loading": "Please wait while your AdEx staking details are getting loaded..."
   },
   "airdrops": {
-    "description": "* These are the airdrops Rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
+    "description": "* These are the airdrops rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
     "headers": {
       "address": "Address",
       "amount": "Amount",
@@ -21,9 +31,6 @@
     },
     "loading": "Please wait while rotki queries the airdrops for your addresses...",
     "title": "Airdrops"
-  },
-  "asset-locations": {
-    "title": "Asset Locations"
   },
   "asset_balances": {
     "headers": {
@@ -36,6 +43,7 @@
     "total": "Total"
   },
   "asset_locations": {
+    "title": "Asset Locations",
     "header": {
       "account": "Account",
       "amount": "Amount",
@@ -45,6 +53,9 @@
   },
   "asset_table": {
     "assets": "Assets",
+    "copy_identifier": {
+      "tooltip": "Copy the asset identifier to clipboard"
+    },
     "delete_tooltip": "Delete the asset",
     "edit_tooltip": "Edit the asset",
     "headers": {
@@ -61,7 +72,7 @@
     "advanced": "Advanced",
     "buttons": {
       "skip": "Skip",
-      "update":"Update"
+      "update": "Update"
     },
     "description": "Version {remote} of the asset database is available. Would you like to update from version {local}?",
     "manual": {
@@ -89,6 +100,47 @@
   "back_button": {
     "tooltip": "Navigate back to the previous page."
   },
+  "backend_settings": {
+    "actions": {
+      "cancel": "Cancel",
+      "reset": "Reset to default",
+      "save": "Save"
+    },
+    "advanced": "Advanced",
+    "config_file_disabled": "This parameter is already set in the rotki_config.json",
+    "confirm": {
+      "message": "Are you sure you want to rest the backend settings to default?",
+      "title": "Rest backend settings"
+    },
+    "data_directory": {
+      "select": "Select where rotki will store the data"
+    },
+    "log_directory": {
+      "select": "bSelect where rotki will store the logs"
+    },
+    "log_from_other_modules": {
+      "hint": "Enables logging from third party libraries (useful for debugging)",
+      "label": "Log from other modules"
+    },
+    "main_loop_sleep": {
+      "hint": "The main event loop sleep duration. (Don't modify unless you know what you are doing)",
+      "label": "Main Loop Sleep"
+    },
+    "settings": {
+      "data_directory": {
+        "hint": "By changing the data directory, data in the old directory will have to be manually moved to the new one.",
+        "label": "Data Directory"
+      },
+      "log_directory": {
+        "label": "Log Directory"
+      },
+      "log_level": {
+        "label": "Log Level"
+      }
+    },
+    "subtitle": "Modify the backend settings",
+    "title": "Backend Settings"
+  },
   "balancer": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "premium": "Balancer feature "
@@ -97,6 +149,17 @@
     "all": "all",
     "default_label": "Filter account(s)",
     "hint": "Showing results across {hintText} accounts."
+  },
+  "binance_market_selector": {
+    "default_label": "Filter market pair(s)",
+    "query_all": {
+      "title": "Query Binance markets",
+      "error": "Couldn't get the list of markets for binance."
+    },
+    "query_user": {
+      "title": "Query selected Binance markets",
+      "error": "Couldn't get the list of markets selected to be queried for binance."
+    }
   },
   "change_password": {
     "button": "Change Password",
@@ -136,6 +199,12 @@
     "keep_remote": "Keep Remote",
     "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input."
   },
+  "connection_failure": {
+    "message": "A connection to the rotki backend was not possible, would you like to retry again?",
+    "retry": "Retry",
+    "terminate": "Terminate",
+    "title": "Connection failure"
+  },
   "cost_basis_table": {
     "complete": "(Complete)",
     "cost_basis": "Cost Basis",
@@ -157,7 +226,7 @@
       "label_username": "Username",
       "label_password": "Password",
       "label_password_repeat": "Repeat Password",
-      "label_password_backup_reminder": "Rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
+      "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
       "button_cancel": "Cancel",
       "button_continue": "Continue",
       "validation": {
@@ -200,6 +269,61 @@
     "hint": "Select as the main currency",
     "profit_currency": "Profit Currency"
   },
+  "date_format_help": {
+    "close": "Close",
+    "directive": {
+      "ampm": "morning or afternoon marker",
+      "day_numeric": "Day (numeric)",
+      "day_of_the_week": "Day of the week numeric",
+      "day_of_year": "Day of the year",
+      "day_of_year_padded": "Three-digit day of the year (with leading zeroes)",
+      "day_two_digit": "Two-digit day",
+      "hour": "Hour 24h",
+      "hour_padded": "Two-digit hour (with leading zeroes) 24h",
+      "hour_twelve": "Two-digit hour (with leading zeroes) 12h",
+      "hour_twelve_padded": "Hour 12h",
+      "locale_date": "Date in the locale format",
+      "locale_datetime": "Date and time in the locale format",
+      "locale_time": "Time in the locale format",
+      "minutes": "Minutes",
+      "minutes_padded": "Two-digit minutes (with leading zeroes)",
+      "month": "Full month name",
+      "month_numeric": "Month (numeric)",
+      "month_short": "Abbreviated month name",
+      "month_two_digit": "Two-digit month",
+      "seconds": "Seconds",
+      "seconds_padded": "Two-digit seconds (with leading zeroes)",
+      "timezone": "Time zone",
+      "timezone_offset": "RFC 822 numeric offset from GMT",
+      "week_day": "Full weekday name",
+      "week_day_short": "Abbreviated weekday name",
+      "year": "Four-digit year",
+      "year_two_digit": "Last two digits of the year"
+    },
+    "example": "Resulting date ({example})",
+    "subtitle": "These are the supported date formatting options",
+    "title": "Date Format"
+  },
+  "exchange_keys_form": {
+    "api_key": {
+      "non_empty": "The api key field cannot be empty."
+    },
+    "api_secret": {
+      "non_empty": "The api secret field cannot be empty."
+    },
+    "edit": {
+      "activate_tooltip": "Edit the api keys for the exchange.",
+      "deactivate_tooltip": "Cancel the edit of the api keys for the exchange."
+    },
+    "exchange": "Exchange",
+    "name": {
+      "label": "Name",
+      "non_empty": "The name field cannot be empty."
+    },
+    "passphrase": {
+      "non_empty": "The passphrase field cannot be empty."
+    }
+  },
   "explorers": {
     "title": "Blockchain explorers",
     "address_url": "Addresses will open at {addressUrl}",
@@ -210,6 +334,8 @@
     "chain_selector": "Blockchain"
   },
   "help_sidebar": {
+    "about": "About",
+    "about_subtitle": "About the application",
     "faq": {
       "subtitle": "Questions on the application",
       "title": "FAQ"
@@ -238,6 +364,25 @@
     "terminate": "Terminate",
     "message": "rotki's minimum supported macOs version is Mojave(10.14)"
   },
+  "merge_dialog": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "done": "The asset merge is complete. The old asset will still appear in the frontend. To make sure the new one is shown everywhere either restart the application or manually refresh balances in each place the old asset appears.",
+    "error": "Merge was not successful",
+    "hint": "The source asset will be merged into the target asset and all its usages will be updated.",
+    "merge": "Merge",
+    "source": {
+      "label": "Source",
+      "non_empty": "The source identifier cannot not be empty"
+    },
+    "source_hint": "The asset identifier that you want to merge into the target",
+    "subtitle": "Merge two assets",
+    "target": {
+      "label": "Target",
+      "non_empty": "The target asset cannot be empty"
+    },
+    "title": "Merge Assets"
+  },
   "notes_display": {
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
@@ -264,7 +409,7 @@
     "title": "Theme"
   },
   "theme_switch_lock": {
-    "tooltip": "Switching to the dark mode is only available under a premium subscription"
+    "tooltip": "Switching to dark mode is only available under a premium subscription"
   },
   "underlying_token_manager": {
     "delete_tooltip": "Delete the underlying token",
@@ -290,6 +435,8 @@
   "asset_form": {
     "help_coingecko": "Click for help on how to locate the CoinGecko identifier",
     "help_cryptocompare": "Click for help on how to locate the CryptoCompare identifier",
+    "identifier": "Identifier",
+    "identifier_copy": "Copy the identifier",
     "labels": {
       "address": "Address",
       "asset_type": "Asset Type",
@@ -394,7 +541,7 @@
     "backend_error": "There is a problem with the backend.",
     "copy_tooltip": "Copy the error text to the clipboard",
     "message": "Open an issue in Github and include rotki_electron.log and rotkehlchen.log. The backend's output follows below:",
-    "start_failure": "Rotki failed to start",
+    "start_failure": "rotki failed to start",
     "terminate": "Terminate"
   },
   "eth2page": {
@@ -406,6 +553,8 @@
       "title": "Delete asset"
     },
     "delete_error": "Could not delete {address}: {message}",
+    "merge_assets": "Merge Assets",
+    "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)",
     "title": "Asset Management",
     "add_title": "Add a new asset",
     "edit_title": "Edit an asset"
@@ -420,7 +569,7 @@
   "external_services": {
     "beaconchain": {
       "delete_tooltip": "Deletes the Beaconcha.in API key",
-      "description": "Rotki uses Beaconchai.in to obtain information about eth2 staking in your portfolio. An API key is only needed if you are being rate-limited.",
+      "description": "rotki uses Beaconchai.in to obtain information about eth2 staking in your portfolio. An API key is only needed if you are being rate-limited.",
       "hint": "Enter your Beaconcha.in API key",
       "label": "API key",
       "title": "Beaconcha.in"
@@ -431,7 +580,7 @@
     },
     "cryptocompare": {
       "delete_tooltip": "Deletes the CryptoCompare API key",
-      "description": "Rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
+      "description": "rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
       "hint": "Enter your CryptoCompare API key",
       "label": "API key",
       "title": "CryptoCompare"
@@ -466,7 +615,7 @@
         "title": "Success"
       }
     },
-    "subtitle": "Rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases Rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
+    "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
     "title": "External Services"
   },
   "file_upload": {
@@ -788,10 +937,8 @@
   "profit_loss_events": {
     "headers": {
       "location": "Location",
-      "paid_asset": "Paid Asset",
       "paid_in": "Paid in {currency}",
       "paid_in_asset": "Paid in Asset",
-      "received_asset": "Received Asset",
       "received_in_asset": "Received in Asset",
       "taxable_amount": "Taxable Amount",
       "taxable_bought_cost_in": "Taxable Bought Cost in {currency}",
@@ -835,15 +982,12 @@
       "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
       "refresh": "Set the automatic refresh period",
       "refresh_enabled": "Enabled",
-      "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions."
-    },
-    "refresh": {
-      "1h": "1 hour",
-      "2h": "2 hours",
-      "30min": "30 minutes",
-      "none": "None"
+      "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
+      "zero_based": "Use zero as the lowest y-axis value for the graphs",
+      "zero_based_hint": "By default the lowest value is the minimum in the selected period"
     },
     "subtitle": {
+      "graph_basis": "Graph basis",
       "query": "Periodic status query",
       "refresh": "Automatic balance refresh"
     },
@@ -885,8 +1029,15 @@
         "main_currency_subtitle": "Select as the main currency"
       }
     },
+    "date_display": {
+      "validation": {
+        "empty": "The date display format cannot be empty",
+        "invalid": "No valid pattern detected in the date display format"
+      }
+    },
+    "date_display_format_hint": "Resulting date: {format}",
+    "date_display_tooltip": "Restore the default date display format",
     "labels": {
-      "anonymized_logs": "Should logs be anonymized?",
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
       "btc_derivation_gap": "BTC derivation gap limit",
@@ -907,11 +1058,7 @@
       "analytics": {
         "error": "Error setting anonymous usage analytics"
       },
-      "anonymized_logs": {
-        "error": "Error setting anonymized logs"
-      },
       "display_date_in_localtime": {
-        "success": "Succesfully set the display date in local time setting",
         "error": "Error setting the display date in local time setting"
       },
       "balance_frequency": {
@@ -999,8 +1146,8 @@
   },
   "premium_credentials": {
     "label_enable": "Enable Premium",
-    "label_api_key": "Rotki API Key",
-    "label_api_secret": "Rotki API Secret",
+    "label_api_key": "rotki API Key",
+    "label_api_secret": "rotki API Secret",
     "tooltip": "Enabling premium for a new account will restore the database associated with these credentials from the server. Ensure that the account uses the same password as the database originally backed up.",
     "validation": {
       "non_empty_key": "The API key cannot be empty",
@@ -1076,8 +1223,8 @@
     "real_estate": "Real Estate"
   },
   "trade_location_selector": {
-    "selection-none": "Showing results across all locations",
-    "selection-single": "Showing results for {location}",
+    "selection_none": "Showing results across all locations",
+    "selection_single": "Showing results for {location}",
     "label": "Filter location"
   },
   "deposits_withdrawals": {
@@ -1148,7 +1295,7 @@
     "liquidity": "Liquidity"
   },
   "update_indicator": {
-    "version": "An Updated Version ({appVersion}) of Rotki is available"
+    "version": "An Updated Version ({appVersion}) of rotki is available"
   },
   "update_popup": {
     "action": {
@@ -1311,8 +1458,7 @@
       },
       "generate": {
         "error": {
-          "description": "An unexpected response was received while generating the profit and loss report. This might indicate an issue with the generation mechanism. Please check the logs for any error messages (you might have to enable debug logging first) and create an issue.",
-          "title": "Trade History Report"
+          "description": "An unexpected response was received while generating the profit and loss report. This might indicate an issue with the generation mechanism. Please check the logs for any error messages (you might have to enable debug logging first) and create an issue."
         },
         "task": {
           "title": "Create tax report"
@@ -1565,11 +1711,11 @@
       },
       "exchange_balances": {
         "task": {
-          "title": "Retrieving {name} balances"
+          "title": "Retrieving {location} balances"
         },
         "error": {
-          "title": "{name} balance query",
-          "message": "Failed to query {name} balances: {error}"
+          "title": "{location} balance query",
+          "message": "Failed to query {location} balances: {error}"
         }
       },
       "historic_fetch_price": {
@@ -1587,11 +1733,6 @@
           "title": "Querying Loopring balances"
         }
       },
-      "manual_add": {
-        "error": {
-          "title": "Adding Manual Balance"
-        }
-      },
       "manual_balances": {
         "error": {
           "message": "Failed: {message}",
@@ -1601,11 +1742,6 @@
       "manual_delete": {
         "error": {
           "title": "Deleting Manual Balance"
-        }
-      },
-      "manual_edit": {
-        "error": {
-          "title": "Editing Manual Balance"
         }
       },
       "net_value": {
@@ -2079,7 +2215,6 @@
     }
   },
   "task_manager": {
-    "not_found": "The backend responded with a 404 not found error for task {taskId}: {title}",
     "error": "An error occurred while processing task [{taskId}] '{title}': {error}"
   },
   "confirmable_reset": {
@@ -2091,7 +2226,31 @@
     }
   },
   "exchange_settings": {
-    "title": "Exchanges",
+    "button": {
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "delete": {
+      "tooltip": "Delete the exchange account"
+    },
+    "dialog": {
+      "add": {
+        "title": "Add an exchange"
+      },
+      "edit": {
+        "title": "Edit an exchange"
+      }
+    },
+    "edit": {
+      "tooltip": "Edit the exchange account"
+    },
+    "header": {
+      "actions": "Actions",
+      "location": "Location",
+      "name": "Name"
+    },
+    "keys": "Keys",
+    "title": "Connected Exchanges",
     "subtitle": "rotki can connect to supported exchanges and automatically pull your trades and balances from them. See the {0} for more information.",
     "usage_guide": "Usage Guide",
     "inputs": {
@@ -2100,35 +2259,26 @@
       "passphrase": "Passphrase",
       "kraken_account": "Select the type of your Kraken account"
     },
-    "actions": {
-      "setup": "Setup"
-    },
     "confirmation": {
       "title": "Confirmation Required",
-      "message": "Are you sure you want to delete the API key and secret for {exchange} from rotki? This action can not be undone and you will need to obtain the key and secret again from the exchange."
-    },
-    "connected_exchanges": "Connected Exchanges",
-    "setup_exchange": "Setup Exchange"
-  },
-  "exchange_badge": {
-    "remove_tooltip": "Remove the exchange",
-    "icon_alt": "Exchange icon"
+      "message": "Are you sure you want to delete the API key and secret for the {location} entry named {name} from rotki? This action can not be undone and you will need to obtain the key and secret again from the exchange."
+    }
   },
   "premium_settings": {
-    "title": "Rotki Premium",
-    "subtitle": "Rotki Premium is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
-    "rotki_premium": "Rotki Premium",
+    "title": "rotki Premium",
+    "subtitle": "rotki Premium is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
+    "rotki_premium": "rotki Premium",
     "fields": {
       "api_key": "API Key",
       "api_secret": "API Secret"
     },
-    "premium_active": "Rotki Premium is active",
+    "premium_active": "rotki Premium is active",
     "actions": {
       "delete": "Delete Key",
       "cancel": "Cancel",
       "setup": "Setup",
       "replace": "Replace Key",
-      "sync": "Allow data sync with Rotki Server"
+      "sync": "Allow data sync with rotki Server"
     },
     "error": {
       "setting_failed": "Setting the keys was not successful",
@@ -2152,6 +2302,7 @@
     "edit_tooltip": "Edit the label and tags of the xpub"
   },
   "accounting_settings": {
+    "ignored_assets": "Total number of ignored assets",
     "title": "Trade Settings",
     "labels": {
       "calculate_past_cost_basis": "Calculate past cost basis when creating the report",
@@ -2247,9 +2398,25 @@
       "line_two": "{0} If you want to connect your Crypto.com Exchange account, please wait until we support it and then connect to it as an exchange.",
       "line_two_warning": "It only concerns the Crypto.com mobile application.",
       "line_three": "Trades/deposits/withdrawals from crypto.com do not include fees details. They are waived at the moment (August 2020) or they are handled in the traded amount.",
-      "line_four": "Only transactions are imported here (for tax report), if you want the assets be displayed in your Rotki balances, you have to add them manually as manual balances: {0}",
+      "line_four": "Only transactions are imported here (for tax report), if you want the assets be displayed in your rotki balances, you have to add them manually as manual balances: {0}",
       "line_four_link": "Manual Accounts/Balances",
       "name": "crypto.com mobile app",
+      "note": "Important notes for importing data from {0}'s CSV exports."
+    },
+    "blockfi": {
+      "import": "Import {0} from BlockFi",
+      "import_trade": "trades",
+      "import_transactions": "transactions",
+      "name": "BlockFi",
+      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
+      "line_two": "BlockFi lets you export two different files. Trades will be imported from the file that only contains trades.",
+      "note": "Important notes for importing data from {0}'s CSV exports."
+    },
+    "nexo": {
+      "import": "Import {0} from Nexo",
+      "import_transactions": "transactions",
+      "name": "Nexo",
+      "line_one": "[Experimental] If you find an issue with the imported data let us know so we can adapt the code accordingly.",
       "note": "Important notes for importing data from {0}'s CSV exports."
     },
     "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",
@@ -2301,7 +2468,7 @@
   "api_keys": {
     "title": "API Keys",
     "tabs": {
-      "premium": "Rotki Premium",
+      "premium": "rotki Premium",
       "exchanges": "Exchanges",
       "external_services": "External Services"
     }
@@ -2336,8 +2503,8 @@
       "label": "XPUB"
     }
   },
-  "loglevel": {
-    "tooltip": "Change the backend loglevel. This action will restart the rotki backend"
+  "backend_settings_button": {
+    "tooltip": "Change the backend settings. Changing the settings will restart the rotki backend"
   },
   "premium_reminder": {
     "title": "Upgrade to Premium",
@@ -2351,8 +2518,12 @@
     "message": "Connecting to rotki backend"
   },
   "account_management": {
+    "about_tooltip": "Show the application's about modal",
+    "creation": {
+      "error": "Account creation failed"
+    },
     "custom_backend": {
-      "failed":  {
+      "failed": {
         "title": "Could not connect to custom backend",
         "description": "Connection to {url} failed after 5 attempts"
       }
@@ -2364,7 +2535,7 @@
   },
   "app": {
     "name": "rotki",
-    "moto": "the opensource portfolio manager that respects your privacy"
+    "moto": "the opensource portfolio manager that protects your privacy"
   },
   "blockchains": {
     "eth": "Ethereum",
@@ -2405,9 +2576,7 @@
     "title": "Uniswap Pools",
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "pool_header": "UNIv2 {asset1}/{asset2}",
-    "balance": "Balance",
-    "asset_supply": "{asset} supply:",
-    "asset_price": "({asset} price: {price})"
+    "balance": "Balance"
   },
   "staking": {
     "title": "Staking",

@@ -21,7 +21,7 @@ def mock_loopring(function_scope_messages_aggregator, database, ethereum_manager
 
 
 def patch_loopring(loopring):
-    def mock_requests_get(_url):
+    def mock_requests_get(_url, **kwargs):  # pylint: disable=unused-argument
         response = (
             '[{"tokenId":0,"total":"8427006149700000000","locked":"0",'
             '"pending":{"withdraw":"0","deposit":"0"}},'

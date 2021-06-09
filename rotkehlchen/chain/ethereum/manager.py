@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 import requests
 from ens import ENS
 from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
+from ens.exceptions import InvalidName
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import BlockNumber, HexStr
@@ -16,19 +17,21 @@ from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
+from web3.exceptions import BadFunctionCallOutput
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 from web3.types import FilterParams
 
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.chain.ethereum.eth2 import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.graph import Graph
+from rotkehlchen.chain.ethereum.modules.eth2 import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.utils import multicall_2
-from rotkehlchen.constants.ethereum import ETH_SCAN, ERC20TOKEN_ABI
+from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     BlockchainQueryError,
     DeserializationError,
+    InputError,
     RemoteError,
     UnableToDecryptRemoteData,
 )
@@ -37,8 +40,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_int_from_hex,
     deserialize_ethereum_address,
+    deserialize_int_from_hex,
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.typing import ChecksumEthAddress, SupportedBlockchain, Timestamp
@@ -87,7 +90,7 @@ def _query_web3_get_logs(
         event_name: str,
         argument_filters: Dict[str, Any],
 ) -> List[Dict[str, Any]]:
-    until_block = web3.eth.blockNumber if to_block == 'latest' else to_block
+    until_block = web3.eth.block_number if to_block == 'latest' else to_block
     events: List[Dict[str, Any]] = []
     start_block = from_block
     # we know that in most of its early life the Eth2 contract address returns a
@@ -116,7 +119,7 @@ def _query_web3_get_logs(
         # As seen in https://github.com/rotki/rotki/issues/1787, the json RPC, if it
         # is infura can throw an error here which we can only parse by catching the  exception
         try:
-            new_events_web3: List[Dict[str, Any]] = [dict(x) for x in web3.eth.getLogs(filter_args)]  # noqa: E501
+            new_events_web3: List[Dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
         except ValueError as e:
             try:
                 decoded_error = json.loads(str(e).replace("'", '"'))
@@ -329,7 +332,7 @@ class EthereumManager():
                         log.warning(message)
                         return False, message
 
-                    current_block = web3.eth.blockNumber  # pylint: disable=no-member
+                    current_block = web3.eth.block_number  # pylint: disable=no-member
                     try:
                         latest_block = self.query_eth_highest_block()
                     except RemoteError:
@@ -408,7 +411,7 @@ class EthereumManager():
 
     def _get_latest_block_number(self, web3: Optional[Web3]) -> int:
         if web3 is not None:
-            return web3.eth.blockNumber
+            return web3.eth.block_number
 
         # else
         return self.etherscan.get_latest_block_number()
@@ -604,8 +607,13 @@ class EthereumManager():
         May raise:
         - RemoteError if Etherscan is used and there is a problem querying it or
         parsing its response
+        - InputError if the given name is not a valid ENS name
         """
-        normal_name = normalize_name(name)
+        try:
+            normal_name = normalize_name(name)
+        except InvalidName as e:
+            raise InputError(str(e)) from e
+
         resolver_addr = self._call_contract(
             web3=web3,
             contract_address=ENS_MAINNET_ADDR,
@@ -717,7 +725,7 @@ class EthereumManager():
                 ) from e
             return tx_receipt
 
-        tx_receipt = web3.eth.getTransactionReceipt(tx_hash)  # type: ignore
+        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
         return process_result(tx_receipt)
 
     def get_transaction_receipt(
@@ -775,7 +783,7 @@ class EthereumManager():
         try:
             method = getattr(contract.caller, method_name)
             result = method(*arguments if arguments else [])
-        except ValueError as e:
+        except (ValueError, BadFunctionCallOutput) as e:
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address}: {str(e)}',
             ) from e

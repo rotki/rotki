@@ -1,8 +1,8 @@
 [
   {
     "time": "08/10/2015 10:48:55",
-    "base": "DAI",
-    "base_id": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    "base": "ETH",
+    "base_id": "ETH",
     "quote": "EUR",
     "quote_id": "EUR",
     "rate": "268.678317859",
@@ -16,8 +16,8 @@
   },
   {
     "time": "08/10/2015 10:48:55",
-    "base": "DAI",
-    "base_id": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    "base": "BTC",
+    "base_id": "BTC",
     "quote": "EUR",
     "quote_id": "EUR",
     "rate": "278.678317859",

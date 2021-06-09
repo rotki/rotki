@@ -2,221 +2,236 @@
   <v-container class="general-settings">
     <v-row no-gutters>
       <v-col>
-        <v-card>
-          <v-card-title>
-            <card-title>{{ $t('general_settings.title') }}</card-title>
-          </v-card-title>
-          <v-card-text>
-            <v-switch
-              v-model="anonymizedLogs"
-              class="general-settings__fields__anonymized-logs"
-              :label="$t('general_settings.labels.anonymized_logs')"
-              color="primary"
-              :success-messages="settingsMessages[ANONYMIZED_LOGS].success"
-              :error-messages="settingsMessages[ANONYMIZED_LOGS].error"
-              @change="onAnonymizedLogsChange($event)"
-            />
-            <v-switch
-              v-model="anonymousUsageAnalytics"
-              class="general-settings__fields__anonymous-usage-statistics"
-              color="primary"
-              :label="$t('general_settings.labels.anonymous_analytics')"
-              :success-messages="
-                settingsMessages[ANONYMOUS_USAGE_ANALYTICS].success
-              "
-              :error-messages="
-                settingsMessages[ANONYMOUS_USAGE_ANALYTICS].error
-              "
-              @change="onAnonymousUsageAnalyticsChange($event)"
-            />
+        <card>
+          <template #title>
+            {{ $t('general_settings.title') }}
+          </template>
 
-            <v-text-field
-              v-model="balanceSaveFrequency"
-              class="general-settings__fields__balance-save-frequency"
-              :label="$t('general_settings.labels.balance_saving_frequency')"
-              type="number"
-              :success-messages="
-                settingsMessages[BALANCE_SAVE_FREQUENCY].success
-              "
-              :error-messages="settingsMessages[BALANCE_SAVE_FREQUENCY].error"
-              @change="onBalanceSaveFrequencyChange($event)"
-            />
+          <v-switch
+            v-model="anonymousUsageAnalytics"
+            class="general-settings__fields__anonymous-usage-statistics"
+            color="primary"
+            :label="$t('general_settings.labels.anonymous_analytics')"
+            :success-messages="
+              settingsMessages[ANONYMOUS_USAGE_ANALYTICS].success
+            "
+            :error-messages="settingsMessages[ANONYMOUS_USAGE_ANALYTICS].error"
+            @change="onAnonymousUsageAnalyticsChange($event)"
+          />
 
-            <v-text-field
-              v-model="dateDisplayFormat"
-              class="general-settings__fields__date-display-format"
-              :label="$t('general_settings.labels.date_display_format')"
-              type="text"
-              :success-messages="settingsMessages[DATE_DISPLAY_FORMAT].success"
-              :error-messages="settingsMessages[DATE_DISPLAY_FORMAT].error"
-              @change="onDateDisplayFormatChange($event)"
-            />
+          <v-text-field
+            v-model="balanceSaveFrequency"
+            outlined
+            class="general-settings__fields__balance-save-frequency"
+            :label="$t('general_settings.labels.balance_saving_frequency')"
+            type="number"
+            :success-messages="settingsMessages[BALANCE_SAVE_FREQUENCY].success"
+            :error-messages="settingsMessages[BALANCE_SAVE_FREQUENCY].error"
+            @change="onBalanceSaveFrequencyChange($event)"
+          />
 
-            <v-switch
-              v-model="displayDateInLocaltime"
-              class="general-settings__fields__display-date-in-localtime"
-              color="primary"
-              :label="$t('general_settings.labels.display_date_in_localtime')"
-              :success-messages="
-                settingsMessages[DISPLAY_DATE_IN_LOCALTIME].success
-              "
-              :error-messages="
-                settingsMessages[DISPLAY_DATE_IN_LOCALTIME].error
-              "
-              @change="onDisplayDateInLocaltimeChange($event)"
-            />
-
-            <v-text-field
-              v-model="btcDerivationGapLimit"
-              class="general-settings__fields__btc-derivation-gap"
-              :label="$t('general_settings.labels.btc_derivation_gap')"
-              type="number"
-              :success-messages="
-                settingsMessages[BTC_DERIVATION_GAP_LIMIT].success
-              "
-              :error-messages="settingsMessages[BTC_DERIVATION_GAP_LIMIT].error"
-              @change="onBtcDerivationGapLimitChanged($event)"
-            />
-          </v-card-text>
-        </v-card>
-        <v-card class="mt-8">
-          <v-card-title>
-            <card-title>{{ $t('general_settings.amount.title') }}</card-title>
-          </v-card-title>
-          <v-card-text>
-            <v-text-field
-              v-model="floatingPrecision"
-              class="general-settings__fields__floating-precision"
-              :label="$t('general_settings.amount.labels.floating_precision')"
-              type="number"
-              :success-messages="settingsMessages[FLOATING_PRECISION].success"
-              :error-messages="settingsMessages[FLOATING_PRECISION].error"
-              @change="onFloatingPrecisionChange($event)"
-            />
-
-            <v-select
-              v-model="selectedCurrency"
-              class="general-settings__fields__currency-selector"
-              :label="$t('general_settings.amount.labels.main_currency')"
-              item-text="ticker_symbol"
-              return-object
-              :items="currencies"
-              :success-messages="settingsMessages[SELECTED_CURRENCY].success"
-              :error-messages="settingsMessages[SELECTED_CURRENCY].error"
-              @change="onSelectedCurrencyChange($event)"
-            >
-              <template #item="{ item, attrs, on }">
-                <v-list-item
-                  :id="`currency__${item.ticker_symbol.toLocaleLowerCase()}`"
-                  v-bind="attrs"
-                  v-on="on"
-                >
-                  <v-list-item-avatar
-                    class="general-settings__currency-list primary--text"
+          <v-text-field
+            v-model="dateDisplayFormat"
+            outlined
+            class="general-settings__fields__date-display-format"
+            :label="$t('general_settings.labels.date_display_format')"
+            type="text"
+            :rules="dateDisplayFormatRules"
+            :success-messages="settingsMessages[DATE_DISPLAY_FORMAT].success"
+            :error-messages="settingsMessages[DATE_DISPLAY_FORMAT].error"
+            :hint="
+              $t('general_settings.date_display_format_hint', {
+                format: dateFormat
+              })
+            "
+            persistent-hint
+            @change="onDateDisplayFormatChange($event)"
+          >
+            <template #append>
+              <v-btn small icon @click="formatHelp = true">
+                <v-icon small> mdi-information </v-icon>
+              </v-btn>
+            </template>
+            <template #append-outer>
+              <v-tooltip top open-delay="400">
+                <template #activator="{ on, attrs }">
+                  <v-btn
+                    class="general-settings__date-restore"
+                    icon
+                    v-bind="attrs"
+                    @click="resetDateFormat()"
+                    v-on="on"
                   >
-                    {{ item.unicode_symbol }}
-                  </v-list-item-avatar>
-                  <v-list-item-content>
-                    <v-list-item-title>
-                      {{ item.name }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle>
-                      {{
-                        $t(
-                          'general_settings.amount.labels.main_currency_subtitle'
-                        )
-                      }}
-                    </v-list-item-subtitle>
-                  </v-list-item-content>
-                </v-list-item>
-              </template>
-            </v-select>
+                    <v-icon> mdi-backup-restore </v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('general_settings.date_display_tooltip') }}</span>
+              </v-tooltip>
+            </template>
+          </v-text-field>
 
-            <v-text-field
-              v-model="thousandSeparator"
-              class="general-settings__fields__thousand-separator"
-              :label="$t('general_settings.amount.label.thousand_separator')"
-              type="text"
-              :success-messages="settingsMessages[THOUSAND_SEPARATOR].success"
-              :error-messages="settingsMessages[THOUSAND_SEPARATOR].error"
-              @change="onThousandSeparatorChange($event)"
+          <v-switch
+            v-model="displayDateInLocaltime"
+            class="general-settings__fields__display-date-in-localtime"
+            color="primary"
+            :label="$t('general_settings.labels.display_date_in_localtime')"
+            :success-messages="
+              settingsMessages[DISPLAY_DATE_IN_LOCALTIME].success
+            "
+            :error-messages="settingsMessages[DISPLAY_DATE_IN_LOCALTIME].error"
+            @change="onDisplayDateInLocaltimeChange($event)"
+          />
+
+          <v-text-field
+            v-model="btcDerivationGapLimit"
+            outlined
+            class="general-settings__fields__btc-derivation-gap"
+            :label="$t('general_settings.labels.btc_derivation_gap')"
+            type="number"
+            :success-messages="
+              settingsMessages[BTC_DERIVATION_GAP_LIMIT].success
+            "
+            :error-messages="settingsMessages[BTC_DERIVATION_GAP_LIMIT].error"
+            @change="onBtcDerivationGapLimitChanged($event)"
+          />
+          <date-format-help v-model="formatHelp" />
+        </card>
+        <card class="mt-8">
+          <template #title>
+            {{ $t('general_settings.amount.title') }}
+          </template>
+          <v-text-field
+            v-model="floatingPrecision"
+            outlined
+            class="general-settings__fields__floating-precision"
+            :label="$t('general_settings.amount.labels.floating_precision')"
+            type="number"
+            :success-messages="settingsMessages[FLOATING_PRECISION].success"
+            :error-messages="settingsMessages[FLOATING_PRECISION].error"
+            @change="onFloatingPrecisionChange($event)"
+          />
+
+          <v-select
+            v-model="selectedCurrency"
+            outlined
+            class="general-settings__fields__currency-selector"
+            :label="$t('general_settings.amount.labels.main_currency')"
+            item-text="ticker_symbol"
+            return-object
+            :items="currencies"
+            :success-messages="settingsMessages[SELECTED_CURRENCY].success"
+            :error-messages="settingsMessages[SELECTED_CURRENCY].error"
+            @change="onSelectedCurrencyChange($event)"
+          >
+            <template #item="{ item, attrs, on }">
+              <v-list-item
+                :id="`currency__${item.ticker_symbol.toLocaleLowerCase()}`"
+                v-bind="attrs"
+                v-on="on"
+              >
+                <v-list-item-avatar
+                  class="general-settings__currency-list primary--text"
+                >
+                  {{ item.unicode_symbol }}
+                </v-list-item-avatar>
+                <v-list-item-content>
+                  <v-list-item-title>
+                    {{ item.name }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle>
+                    {{
+                      $t(
+                        'general_settings.amount.labels.main_currency_subtitle'
+                      )
+                    }}
+                  </v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+            </template>
+          </v-select>
+
+          <v-text-field
+            v-model="thousandSeparator"
+            outlined
+            class="general-settings__fields__thousand-separator"
+            :label="$t('general_settings.amount.label.thousand_separator')"
+            type="text"
+            :success-messages="settingsMessages[THOUSAND_SEPARATOR].success"
+            :error-messages="settingsMessages[THOUSAND_SEPARATOR].error"
+            @change="onThousandSeparatorChange($event)"
+          />
+
+          <v-text-field
+            v-model="decimalSeparator"
+            outlined
+            class="general-settings__fields__decimal-separator"
+            :label="$t('general_settings.amount.label.decimal_separator')"
+            type="text"
+            :success-messages="settingsMessages[DECIMAL_SEPARATOR].success"
+            :error-messages="settingsMessages[DECIMAL_SEPARATOR].error"
+            @change="onDecimalSeparatorChange($event)"
+          />
+
+          <v-radio-group
+            v-model="currencyLocation"
+            class="general-settings__fields__currency-location"
+            :label="$t('general_settings.amount.label.currency_location')"
+            row
+            :success-messages="settingsMessages[CURRENCY_LOCATION].success"
+            :error-messages="settingsMessages[CURRENCY_LOCATION].error"
+            @change="onCurrencyLocationChange($event)"
+          >
+            <v-radio
+              :label="$t('general_settings.amount.label.location_before')"
+              value="before"
             />
-
-            <v-text-field
-              v-model="decimalSeparator"
-              class="general-settings__fields__decimal-separator"
-              :label="$t('general_settings.amount.label.decimal_separator')"
-              type="text"
-              :success-messages="settingsMessages[DECIMAL_SEPARATOR].success"
-              :error-messages="settingsMessages[DECIMAL_SEPARATOR].error"
-              @change="onDecimalSeparatorChange($event)"
+            <v-radio
+              :label="$t('general_settings.amount.label.location_after')"
+              value="after"
             />
+          </v-radio-group>
 
-            <v-radio-group
-              v-model="currencyLocation"
-              class="general-settings__fields__currency-location"
-              :label="$t('general_settings.amount.label.currency_location')"
-              row
-              :success-messages="settingsMessages[CURRENCY_LOCATION].success"
-              :error-messages="settingsMessages[CURRENCY_LOCATION].error"
-              @change="onCurrencyLocationChange($event)"
-            >
-              <v-radio
-                :label="$t('general_settings.amount.label.location_before')"
-                value="before"
-              />
-              <v-radio
-                :label="$t('general_settings.amount.label.location_after')"
-                value="after"
-              />
-            </v-radio-group>
+          <strong>
+            {{ $t('general_settings.amount.label.resulting_format') }}
+          </strong>
+          <amount-display :value="amountExample" show-currency="symbol" />
 
-            <strong>
-              {{ $t('general_settings.amount.label.resulting_format') }}
-            </strong>
-            <amount-display :value="amountExample" show-currency="symbol" />
+          <rounding-settings />
+        </card>
+        <card class="mt-8">
+          <template #title>
+            {{ $t('general_settings.local_nodes.title') }}
+          </template>
+          <v-text-field
+            v-model="rpcEndpoint"
+            outlined
+            class="general-settings__fields__rpc-endpoint"
+            :label="$t('general_settings.labels.rpc_endpoint')"
+            type="text"
+            :success-messages="settingsMessages[RPC_ENDPOINT].success"
+            :error-messages="settingsMessages[RPC_ENDPOINT].error"
+            clearable
+            @paste="onRpcEndpointChange($event.clipboardData.getData('text'))"
+            @click:clear="onRpcEndpointChange('')"
+            @change="onRpcEndpointChange($event)"
+          />
 
-            <rounding-settings />
-          </v-card-text>
-        </v-card>
-        <v-card class="mt-8">
-          <v-card-title>
-            <card-title>
-              {{ $t('general_settings.local_nodes.title') }}
-            </card-title>
-          </v-card-title>
-          <v-card-text>
-            <v-text-field
-              v-model="rpcEndpoint"
-              class="general-settings__fields__rpc-endpoint"
-              :label="$t('general_settings.labels.rpc_endpoint')"
-              type="text"
-              data-vv-name="eth_rpc_endpoint"
-              :success-messages="settingsMessages[RPC_ENDPOINT].success"
-              :error-messages="settingsMessages[RPC_ENDPOINT].error"
-              clearable
-              @paste="onRpcEndpointChange($event.clipboardData.getData('text'))"
-              @click:clear="onRpcEndpointChange('')"
-              @change="onRpcEndpointChange($event)"
-            />
-
-            <v-text-field
-              v-model="ksmRpcEndpoint"
-              class="general-settings__fields__ksm-rpc-endpoint"
-              :label="$t('general_settings.labels.ksm_rpc_endpoint')"
-              type="text"
-              data-vv-name="eth_rpc_endpoint"
-              :success-messages="settingsMessages[KSM_RPC_ENDPOINT].success"
-              :error-messages="settingsMessages[KSM_RPC_ENDPOINT].error"
-              clearable
-              @paste="
-                onKsmRpcEndpointChange($event.clipboardData.getData('text'))
-              "
-              @click:clear="onKsmRpcEndpointChange('')"
-              @change="onKsmRpcEndpointChange($event)"
-            />
-          </v-card-text>
-        </v-card>
+          <v-text-field
+            v-model="ksmRpcEndpoint"
+            outlined
+            class="general-settings__fields__ksm-rpc-endpoint"
+            :label="$t('general_settings.labels.ksm_rpc_endpoint')"
+            type="text"
+            :success-messages="settingsMessages[KSM_RPC_ENDPOINT].success"
+            :error-messages="settingsMessages[KSM_RPC_ENDPOINT].error"
+            clearable
+            @paste="
+              onKsmRpcEndpointChange($event.clipboardData.getData('text'))
+            "
+            @click:clear="onKsmRpcEndpointChange('')"
+            @change="onKsmRpcEndpointChange($event)"
+          />
+        </card>
         <price-oracle-settings />
         <frontend-settings />
       </v-col>
@@ -239,6 +254,7 @@ import {
   settingsMessages
 } from '@/components/settings/utils';
 import { currencies } from '@/data/currencies';
+import { displayDateFormatter } from '@/data/date_formatter';
 import { Defaults } from '@/data/defaults';
 import SettingsMixin from '@/mixins/settings-mixin';
 import { Currency } from '@/model/currency';
@@ -255,9 +271,9 @@ import {
   SettingsUpdate
 } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
+import DateFormatHelp from '@/views/settings/DateFormatHelp.vue';
 
 const SETTING_FLOATING_PRECISION = 'floatingPrecision';
-const SETTING_ANONYMIZED_LOGS = 'anonymizedLogs';
 const SETTING_ANONYMOUS_USAGE_ANALYTICS = 'anonymousUsageAnalytics';
 const SETTING_RPC_ENDPOINT = 'rpcEndpoint';
 const SETTING_KSM_RPC_ENDPOINT = 'ksmRpcEndpoint';
@@ -272,7 +288,6 @@ const SETTING_DISPLAY_DATE_IN_LOCALTIME = 'displayDateInLocaltime';
 
 const SETTINGS = [
   SETTING_FLOATING_PRECISION,
-  SETTING_ANONYMIZED_LOGS,
   SETTING_ANONYMOUS_USAGE_ANALYTICS,
   SETTING_RPC_ENDPOINT,
   SETTING_KSM_RPC_ENDPOINT,
@@ -290,6 +305,7 @@ type SettingsEntries = typeof SETTINGS[number];
 
 @Component({
   components: {
+    DateFormatHelp,
     RoundingSettings,
     FrontendSettings,
     PriceOracleSettings,
@@ -307,7 +323,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   currency!: Currency;
 
   floatingPrecision: string = '0';
-  anonymizedLogs: boolean = false;
   anonymousUsageAnalytics: boolean = false;
   rpcEndpoint: string = Defaults.RPC_ENDPOINT;
   ksmRpcEndpoint: string = Defaults.KSM_RPC_ENDPOINT;
@@ -320,8 +335,10 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   btcDerivationGapLimit: string = '20';
   displayDateInLocaltime: boolean = true;
 
+  formatHelp: boolean = false;
+  readonly now = new Date();
+
   readonly FLOATING_PRECISION = SETTING_FLOATING_PRECISION;
-  readonly ANONYMIZED_LOGS = SETTING_ANONYMIZED_LOGS;
   readonly ANONYMOUS_USAGE_ANALYTICS = SETTING_ANONYMOUS_USAGE_ANALYTICS;
   readonly RPC_ENDPOINT = SETTING_RPC_ENDPOINT;
   readonly KSM_RPC_ENDPOINT = SETTING_KSM_RPC_ENDPOINT;
@@ -337,6 +354,29 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   historicDateMenu: boolean = false;
   date: string = '';
   amountExample = bigNumberify(123456.789);
+
+  get dateFormat(): string {
+    return displayDateFormatter.format(this.now, this.dateDisplayFormat);
+  }
+
+  resetDateFormat() {
+    this.dateDisplayFormat = Defaults.DEFAULT_DATE_DISPLAY_FORMAT;
+    this.onDateDisplayFormatChange(this.dateDisplayFormat);
+  }
+
+  readonly dateDisplayFormatRules = [
+    (v: string) => {
+      if (!v) {
+        return this.$t('general_settings.date_display.validation.empty');
+      }
+      if (!displayDateFormatter.containsValidDirectives(v)) {
+        return this.$t(
+          'general_settings.date_display.validation.invalid'
+        ).toString();
+      }
+      return true;
+    }
+  ];
 
   async onBtcDerivationGapLimitChanged(limit: string) {
     const message = makeMessage(
@@ -480,14 +520,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     }
   }
 
-  async onAnonymizedLogsChange(enabled: boolean) {
-    const message = makeMessage(
-      `${this.$t('general_settings.validation.anonymized_logs.error')}`
-    );
-
-    await this.update({ anonymized_logs: enabled }, 'anonymizedLogs', message);
-  }
-
   async onAnonymousUsageAnalyticsChange(enabled: boolean) {
     const message = makeMessage(
       `${this.$t('general_settings.validation.analytics.error')}`
@@ -547,6 +579,10 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   }
 
   async onDateDisplayFormatChange(dateFormat: string) {
+    if (!displayDateFormatter.containsValidDirectives(dateFormat)) {
+      return;
+    }
+
     const message = makeMessage(
       `${this.$t('general_settings.validation.date_format.error')}`,
       `${this.$t('general_settings.validation.date_format.success', {
@@ -652,7 +688,6 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     this.selectedCurrency = this.currency;
     const settings = this.generalSettings;
     this.floatingPrecision = settings.floatingPrecision.toString();
-    this.anonymizedLogs = settings.anonymizedLogs;
     this.anonymousUsageAnalytics = settings.anonymousUsageAnalytics;
     this.rpcEndpoint = settings.ethRpcEndpoint;
     this.ksmRpcEndpoint = settings.ksmRpcEndpoint;
@@ -679,6 +714,10 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
 
   &__timeframe {
     min-height: 55px;
+  }
+
+  &__date-restore {
+    margin-top: -6px;
   }
 }
 </style>

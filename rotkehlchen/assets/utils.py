@@ -95,8 +95,8 @@ def symbol_to_asset_or_token(symbol: str) -> Asset:
     try:
         asset = Asset(symbol)
     except UnknownAsset:
-        # may be an ethereum token so let's search by symbol
-        maybe_asset = get_asset_by_symbol(symbol, asset_type=AssetType.ETHEREUM_TOKEN)
+        # Let's search by symbol if a single asset matches
+        maybe_asset = get_asset_by_symbol(symbol)
         if maybe_asset is None:
             raise
         asset = maybe_asset

@@ -48,6 +48,11 @@ export default class AssetIcon extends Mixins(AssetMixin) {
     this.error = false;
   }
 
+  @Watch('identifier')
+  onIdentifierChange() {
+    this.error = false;
+  }
+
   get isUnknown(): boolean {
     return typeof this.identifier !== 'string';
   }
@@ -83,7 +88,7 @@ export default class AssetIcon extends Mixins(AssetMixin) {
     ) {
       return require(`@/assets/images/defi/weth.svg`);
     }
-    const url = `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.asset}/icon/small`;
+    const url = `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.asset}/icon`;
     return this.changeable ? `${url}?t=${Date.now()}` : url;
   }
 }

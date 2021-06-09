@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 # The most common keys for serializing an <UnknownEthereumToken> via
 # `serialize_as_dict()`
-UNKNOWN_TOKEN_KEYS = ('ethereum_address', 'name', 'symbol')
+UNKNOWN_TOKEN_KEYS: Tuple[str, str, str] = ('ethereum_address', 'name', 'symbol')
 
 SerializeAsDictKeys = Union[List[str], Tuple[str, ...], Set[str]]
 

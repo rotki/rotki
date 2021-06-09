@@ -1,12 +1,10 @@
-import axios from 'axios';
-import { ActionResult } from '@/services/types-api';
-
 export class RotkiApp {
   visit() {
     cy.visit('/?skip_update=1');
   }
 
   createAccount(username: string, password: string = '1234') {
+    cy.logout();
     // simulate high scaling / low res by making a very small viewpoirt
     cy.get('.login__button__new-account').click();
     cy.get('.create-account__fields__username').type(username);
@@ -47,19 +45,6 @@ export class RotkiApp {
   togglePrivacyMode() {
     cy.get('.user-dropdown').click();
     cy.get('.user-dropdown__privacy-mode').click();
-  }
-
-  logoutApi(username: string, cb: () => void) {
-    axios
-      .create({
-        baseURL: `http://localhost:4242/api/1/`,
-        timeout: 30000
-      })
-      .patch<ActionResult<boolean>>(`/users/${username}`, {
-        action: 'logout'
-      })
-      .then(() => cb())
-      .catch(() => cb());
   }
 
   drawerIsVisible(isVisible: boolean) {

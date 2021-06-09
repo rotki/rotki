@@ -82,11 +82,11 @@ class PremiumCredentials():
             ) from e
 
     def serialize_key(self) -> str:
-        """Turn the API key into the format to send outside Rotki (network, DB e.t.c.)"""
+        """Turn the API key into the format to send outside rotki (network, DB e.t.c.)"""
         return self.api_key
 
     def serialize_secret(self) -> str:
-        """Turn the API secret into the format to send outside Rotki (network, DB e.t.c.)"""
+        """Turn the API secret into the format to send outside rotki (network, DB e.t.c.)"""
         return b64encode(self.api_secret).decode()
 
     def __eq__(self, other: object) -> bool:

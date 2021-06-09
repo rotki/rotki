@@ -92,7 +92,7 @@ def test_query_custom_tokens(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('start_with_logged_in_user', [False])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
 def test_adding_custom_tokens(rotkehlchen_api_server):
     """Test that the endpoint for adding a custom ethereum token works"""
@@ -233,7 +233,7 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('start_with_logged_in_user', [False])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('custom_ethereum_tokens', [INITIAL_TOKENS])
 def test_editing_custom_tokens(rotkehlchen_api_server):
     """Test that the endpoint for editing a custom ethereum token works"""
@@ -348,7 +348,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     )
     expected_msg = (
         f'Tried to delete ethereum token with address {non_existing_address} '
-        f'but it was not found in the DB',
+        f'but it was not found in the DB'
     )
     assert_error_response(
         response=response,
@@ -462,10 +462,7 @@ def test_custom_tokens_delete_guard(rotkehlchen_api_server):
         ),
         json={'address': INITIAL_TOKENS[0].address},
     )
-    expected_msg = (
-        f'Tried to delete ethereum token with address {INITIAL_TOKENS[0].address} '
-        f'but its deletion would violate a constraint so deletion failed.'
-    )
+    expected_msg = 'Failed to delete asset with id'
     assert_error_response(
         response=response,
         contained_in_msg=expected_msg,

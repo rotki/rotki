@@ -480,6 +480,15 @@ class TaxableEvents():
             )
             return
 
+        if selling_asset.is_fiat():
+            # Should be handled by a virtual buy
+            logger.debug(
+                f'Skipping sell trade of {selling_asset.identifier} for '
+                f'{receiving_asset.identifier if receiving_asset else "nothing"} at {timestamp} '
+                f'since selling of FIAT of something will just be treated as a buy.',
+            )
+            return
+
         logger.debug(
             f'Processing sell trade of {selling_asset.identifier} for '
             f'{receiving_asset.identifier if receiving_asset else "nothing"} at {timestamp}',
@@ -548,14 +557,12 @@ class TaxableEvents():
                 self.settlement_losses += settlement_loss
                 log.debug(
                     'Loan Settlement Loss',
-                    sensitive_log=True,
                     settlement_loss=settlement_loss,
                     profit_currency=self.profit_currency,
                 )
             else:
                 log.debug(
                     "After Sell Profit/Loss",
-                    sensitive_log=True,
                     taxable_profit_loss=taxable_profit_loss,
                     general_profit_loss=general_profit_loss,
                     profit_currency=self.profit_currency,
@@ -635,7 +642,6 @@ class TaxableEvents():
         if timestamp >= self.query_start_ts:
             log.debug(
                 'Accounting for loan profit',
-                sensitive_log=True,
                 location=location,
                 gained_asset=gained_asset,
                 gained_amount=gained_amount,
@@ -708,7 +714,6 @@ class TaxableEvents():
 
             log.debug(
                 'Accounting for margin position',
-                sensitive_log=True,
                 notes=margin.notes,
                 gain_loss_asset=margin.pl_currency,
                 gain_loss_amount=margin.profit_loss,
@@ -729,7 +734,6 @@ class TaxableEvents():
         event_description = str(event)
         log.debug(
             'Processing DeFi event',
-            sensitive_log=True,
             event=event_description,
         )
 
@@ -811,7 +815,6 @@ class TaxableEvents():
         profit_loss_list = []
         log.debug(
             'Accounting for DeFi event',
-            sensitive_log=True,
             event=event_description,
         )
 
@@ -860,7 +863,6 @@ class TaxableEvents():
         )
         log.debug(
             'Processing LedgerAction',
-            sensitive_log=True,
             action=action,
             rate_used=rate,
             account_for_action=account_for_action,

@@ -6,6 +6,29 @@
       :loading="loading"
       @refresh="refresh"
     />
+
+    <v-row class="mt-2">
+      <v-col>
+        <v-tooltip open-delay="400" top>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              outlined
+              color="primary"
+              v-bind="attrs"
+              v-on="on"
+              @click="mergeTool = true"
+            >
+              <v-icon>mdi-merge</v-icon>
+              <span>{{ $t('asset_management.merge_assets') }}</span>
+            </v-btn>
+          </template>
+          <span>{{ $t('asset_management.merge_assets_tooltip') }}</span>
+        </v-tooltip>
+      </v-col>
+    </v-row>
+
+    <merge-dialog v-model="mergeTool" />
+
     <asset-table
       class="mt-12"
       :tokens="tokens"
@@ -51,6 +74,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import AssetForm from '@/components/asset-manager/AssetForm.vue';
 import AssetTable from '@/components/asset-manager/AssetTable.vue';
+import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import { ManagedAsset } from '@/components/asset-manager/types';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -61,7 +85,7 @@ import { Nullable } from '@/types';
 import { assert } from '@/utils/assertions';
 
 @Component({
-  components: { ConfirmDialog, AssetForm, BigDialog, AssetTable },
+  components: { MergeDialog, ConfirmDialog, AssetForm, BigDialog, AssetTable },
   computed: {
     ...mapState('balances', ['supportedAssets'])
   }
@@ -75,6 +99,7 @@ export default class AssetManagement extends Vue {
   token: Nullable<ManagedAsset> = null;
   supportedAssets!: SupportedAsset[];
   toDeleteAsset: Nullable<ManagedAsset> = null;
+  mergeTool: boolean = false;
 
   get deleteAssetSymbol(): string {
     return this.toDeleteAsset?.symbol ?? '';

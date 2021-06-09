@@ -35,6 +35,19 @@ AVAILABLE_MODULES_MAP = {
     'eth2': 'Eth2',
 }
 
+
+IMPORTABLE_LOCATIONS = Literal[
+    'cointracking.info',
+    'cryptocom',
+    'blockfi-transactions',
+    'blockfi-trades',
+    'nexo',
+]
+
+
+KnownProtocolsAssets = ('UNI-V2', )
+
+
 T_BinaryEthAddress = bytes
 BinaryEthAddress = NewType('BinaryEthAddress', T_BinaryEthAddress)
 
@@ -273,6 +286,8 @@ class Location(DBEnumMixIn):
     BALANCER = 24
     LOOPRING = 25
     FTX = 26
+    NEXO = 27
+    BLOCKFI = 28
 
 
 class AssetMovementCategory(Enum):
@@ -317,3 +332,7 @@ class ExchangeApiCredentials(NamedTuple):
     api_key: ApiKey
     api_secret: ApiSecret
     passphrase: Optional[str] = None
+
+
+EXTERNAL_EXCHANGES: List = [Location.CRYPTOCOM, Location.BLOCKFI, Location.NEXO]
+EXTERNAL_LOCATION = [Location.EXTERNAL] + EXTERNAL_EXCHANGES

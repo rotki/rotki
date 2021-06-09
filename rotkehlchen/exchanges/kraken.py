@@ -13,7 +13,6 @@ from urllib.parse import urlencode
 
 import gevent
 import requests
-from gevent.lock import Semaphore
 from requests import Response
 
 from rotkehlchen.accounting.structures import Balance
@@ -22,6 +21,7 @@ from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -130,7 +130,6 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
 
     log.debug(
         'Processing kraken Trade',
-        sensitive_log=True,
         timestamp=timestamp,
         order_type=order_type,
         kraken_pair=kraken_trade['pair'],
@@ -270,10 +269,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             database=database,
         )
         self.msg_aggregator = msg_aggregator
-        self.session.headers.update({
-            'API-Key': self.api_key,
-        })
-        self.nonce_lock = Semaphore()
+        self.session.headers.update({'API-Key': self.api_key})
         self.set_account_type(kraken_account_type)
         self.call_counter = 0
         self.last_query_ts = 0
@@ -292,6 +288,42 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         else:  # Pro
             self.call_limit = 20
             self.reduction_every_secs = 1
+
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'API-Key': self.api_key})
+
+        return changed
+
+    def edit_exchange(
+            self,
+            name: Optional[str],
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            **kwargs: Any,
+    ) -> Tuple[bool, str]:
+        success, msg = super().edit_exchange(
+            name=name,
+            api_key=api_key,
+            api_secret=api_secret,
+            **kwargs,
+        )
+        if success is False:
+            return success, msg
+
+        account_type = kwargs.get('kraken_account_type')
+        if account_type is None:
+            return success, msg
+
+        # here we can finally update the account type
+        self.set_account_type(account_type)
+        return True, ''
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Kraken API Key is good for usage in Rotkehlchen
@@ -369,7 +401,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             req = {}
         urlpath = f'{KRAKEN_BASE_URL}/{KRAKEN_API_VERSION}/public/{method}'
         try:
-            response = self.session.post(urlpath, data=req)
+            response = self.session.post(urlpath, data=req, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Kraken API request failed due to {str(e)}') from e
 
@@ -437,30 +469,28 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             req = {}
 
         urlpath = '/' + KRAKEN_API_VERSION + '/private/' + method
-
-        with self.nonce_lock:
-            # Protect this section, or else, non increasing nonces will be rejected
-            req['nonce'] = int(1000 * time.time())
-            post_data = urlencode(req)
-            # any unicode strings must be turned to bytes
-            hashable = (str(req['nonce']) + post_data).encode()
-            message = urlpath.encode() + hashlib.sha256(hashable).digest()
-            signature = hmac.new(
-                base64.b64decode(self.secret),
-                message,
-                hashlib.sha512,
+        req['nonce'] = int(1000 * time.time())
+        post_data = urlencode(req)
+        # any unicode strings must be turned to bytes
+        hashable = (str(req['nonce']) + post_data).encode()
+        message = urlpath.encode() + hashlib.sha256(hashable).digest()
+        signature = hmac.new(
+            base64.b64decode(self.secret),
+            message,
+            hashlib.sha512,
+        )
+        self.session.headers.update({
+            'API-Sign': base64.b64encode(signature.digest()),  # type: ignore
+        })
+        try:
+            response = self.session.post(
+                KRAKEN_BASE_URL + urlpath,
+                data=post_data.encode(),
+                timeout=DEFAULT_TIMEOUT_TUPLE,
             )
-            self.session.headers.update({
-                'API-Sign': base64.b64encode(signature.digest()),  # type: ignore
-            })
-            try:
-                response = self.session.post(
-                    KRAKEN_BASE_URL + urlpath,
-                    data=post_data.encode(),
-                )
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Kraken API request failed due to {str(e)}') from e
-            self._manage_call_counter(method)
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Kraken API request failed due to {str(e)}') from e
+        self._manage_call_counter(method)
 
         return _check_and_get_response(response, method)
 
@@ -527,7 +557,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             assets_balance[our_asset] += balance
             log.debug(
                 'kraken balance query result',
-                sensitive_log=True,
                 currency=our_asset,
                 amount=balance.amount,
                 usd_value=balance.usd_value,

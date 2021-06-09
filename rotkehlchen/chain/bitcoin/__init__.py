@@ -33,16 +33,20 @@ def get_bitcoin_addresses_balances(accounts: List[BTCAddress]) -> Dict[BTCAddres
                 balance = int(stats['funded_txo_sum']) - int(stats['spent_txo_sum'])
                 balances[account] = satoshis_to_btc(balance)
         else:
-            params = '|'.join(accounts)
-            btc_resp = request_get_dict(
-                url=f'https://blockchain.info/multiaddr?active={params}',
-                handle_429=True,
-                # If we get a 429 then their docs suggest 10 seconds
-                # https://blockchain.info/q
-                backoff_in_seconds=10,
-            )
-            for entry in btc_resp['addresses']:
-                balances[entry['address']] = satoshis_to_btc(FVal(entry['final_balance']))
+            # split the list of accounts into sublists of 80 addresses per list to overcome:
+            # https://github.com/rotki/rotki/issues/3037
+            accounts_chunks = [accounts[x:x + 80] for x in range(0, len(accounts), 80)]
+            for accounts_chunk in accounts_chunks:
+                params = '|'.join(accounts_chunk)
+                btc_resp = request_get_dict(
+                    url=f'https://blockchain.info/multiaddr?active={params}',
+                    handle_429=True,
+                    # If we get a 429 then their docs suggest 10 seconds
+                    # https://blockchain.info/q
+                    backoff_in_seconds=10,
+                )
+                for entry in btc_resp['addresses']:
+                    balances[entry['address']] = satoshis_to_btc(FVal(entry['final_balance']))
     except (
             requests.exceptions.RequestException,
             UnableToDecryptRemoteData,

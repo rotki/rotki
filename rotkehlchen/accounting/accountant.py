@@ -161,7 +161,6 @@ class Accountant():
         self.asset_movement_fees += cost
         log.debug(
             'Accounting for asset movement',
-            sensitive_log=True,
             category=movement.category,
             asset=movement.asset,
             cost_in_profit_currency=cost,
@@ -211,7 +210,6 @@ class Accountant():
 
         log.debug(
             'Accounting for ethereum transaction gas cost',
-            sensitive_log=True,
             gas_used=transaction.gas_used,
             gas_price=gas_price,
             timestamp=transaction.timestamp,
@@ -450,12 +448,12 @@ class Accountant():
             action: TaxableAction,
             action_type: str,
             ignored_actionids_mapping: Dict[ActionType, List[str]],
-    ) -> Tuple[bool, Any]:
+    ) -> Tuple[bool, Optional[str]]:
         # TODO: These ifs/mappings of action type str to the enum
         # are only due to mix of new and old code. They should be removed and only
         # the enum should be used everywhere eventually
         should_ignore = False
-        identifier: Optional[Any] = None
+        identifier: Optional[str] = None
         if action_type == 'trade':
             trade = cast(Trade, action)
             identifier = trade.identifier
@@ -477,7 +475,9 @@ class Accountant():
 
         elif action_type == 'ledger_action':
             ledger_action = cast(LedgerAction, action)
-            identifier = ledger_action.identifier
+            # Ignored actions have TEXT type in the database but
+            # ledger actions have int as type for identifier
+            identifier = str(ledger_action.identifier)
             should_ignore = identifier in ignored_actionids_mapping.get(
                 ActionType.LEDGER_ACTION, [],
             )

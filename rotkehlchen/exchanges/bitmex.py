@@ -72,7 +72,6 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
 
     log.debug(
         'Processing Bitmex Trade',
-        sensitive_log=True,
         timestamp=close_time,
         profit_loss=profit_loss,
         currency=currency,
@@ -112,6 +111,17 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.uri = 'https://bitmex.com'
         self.session.headers.update({'api-key': api_key})
         self.msg_aggregator = msg_aggregator
+
+    def edit_exchange_credentials(
+            self,
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            passphrase: Optional[str],
+    ) -> bool:
+        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        if api_key is not None:
+            self.session.headers.update({'api-key': api_key})
+        return changed
 
     def first_connection(self) -> None:
         self.first_connection_made = True
@@ -256,7 +266,6 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         )
         log.debug(
             'Bitmex balance query result',
-            sensitive_log=True,
             currency='BTC',
             amount=amount,
             usd_value=usd_value,
