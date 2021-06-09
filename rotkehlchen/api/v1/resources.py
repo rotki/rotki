@@ -86,7 +86,7 @@ from rotkehlchen.api.v1.encoding import (
     XpubPatchSchema,
 )
 from rotkehlchen.api.v1.parser import resource_parser
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -114,7 +114,6 @@ from rotkehlchen.typing import (
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
-    from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 
@@ -435,11 +434,11 @@ class EthereumAssetsResource(BaseResource):
         return self.rest_api.get_custom_ethereum_tokens(address=address)
 
     @use_kwargs(edit_schema, location='json')
-    def put(self, token: 'CustomEthereumToken') -> Response:
+    def put(self, token: EthereumToken) -> Response:
         return self.rest_api.add_custom_ethereum_token(token=token)
 
     @use_kwargs(edit_schema, location='json')
-    def patch(self, token: 'CustomEthereumToken') -> Response:
+    def patch(self, token: EthereumToken) -> Response:
         return self.rest_api.edit_custom_ethereum_token(token=token)
 
     @use_kwargs(delete_schema, location='json')

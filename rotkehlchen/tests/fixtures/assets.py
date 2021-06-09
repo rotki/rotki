@@ -72,7 +72,7 @@ def asset_resolver(
     # add any custom ethereum tokens given by the fixtures for a test
     if custom_ethereum_tokens is not None:
         for entry in custom_ethereum_tokens:
-            asset_id = ETHEREUM_DIRECTIVE + entry.address
+            asset_id = ETHEREUM_DIRECTIVE + entry.ethereum_address
             globaldb.add_asset(asset_id=asset_id, asset_type=AssetType.ETHEREUM_TOKEN, data=entry)
 
     return resolver

@@ -31,7 +31,7 @@ from web3.exceptions import BadFunctionCallOutput
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType
 from rotkehlchen.api.v1.encoding import TradeSchema
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import (
@@ -45,7 +45,6 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -1396,7 +1395,7 @@ class RestAPI():
                 result = wrap_in_fail_result(f'Custom token with address {address} not found')
                 status_code = HTTPStatus.NOT_FOUND
             else:
-                result = _wrap_in_ok_result(token.serialize())
+                result = _wrap_in_ok_result(token.serialize_all_info())
                 status_code = HTTPStatus.OK
 
             return api_response(result, status_code)
@@ -1404,14 +1403,14 @@ class RestAPI():
         # else return all custom tokens
         tokens = GlobalDBHandler().get_ethereum_tokens()
         return api_response(
-            _wrap_in_ok_result([x.serialize() for x in tokens]),
+            _wrap_in_ok_result([x.serialize_all_info() for x in tokens]),
             status_code=HTTPStatus.OK,
             log_result=False,
         )
 
     @require_loggedin_user()
-    def add_custom_ethereum_token(self, token: CustomEthereumToken) -> Response:
-        identifier = ethaddress_to_identifier(token.address)
+    def add_custom_ethereum_token(self, token: EthereumToken) -> Response:
+        identifier = ethaddress_to_identifier(token.ethereum_address)
         try:
             GlobalDBHandler().add_asset(
                 asset_id=identifier,
@@ -1431,7 +1430,7 @@ class RestAPI():
         )
 
     @staticmethod
-    def edit_custom_ethereum_token(token: CustomEthereumToken) -> Response:
+    def edit_custom_ethereum_token(token: EthereumToken) -> Response:
         try:
             identifier = GlobalDBHandler().edit_ethereum_token(token)
         except InputError as e:
