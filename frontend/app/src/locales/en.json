@@ -919,6 +919,9 @@
   "tag_filter": {
     "label": "Filter by tag(s)"
   },
+  "tag_input": {
+    "create_tag": "Create"
+  },
   "tag_manager": {
     "confirmation": {
       "message": "Are you sure you want to delete {tagToDelete}? This will also remove all mappings of this tag.",
