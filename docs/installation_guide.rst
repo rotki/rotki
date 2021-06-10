@@ -151,6 +151,20 @@ At this point the rotki docker container should be running and you
 should be able to access rotki frontend, open your browser and go to
 it at ``http://localhost:8084``. You should be able to see the rotki login screen.
 
+Time in Profit / Loss Report is in wrong.
+---------------------------
+To set the timezone in the docker environment you can use the option ``-e TZ=Timezone`` when starting the container:
+
+   docker run -d --name rotki \
+       -p 8084:80 \
+       -v $HOME/.rotki/data:/data \
+       -v $HOME/.rotki/logs:/logs \
+       -e TZ=America/New_York
+       rotki/rotki:latest
+       
+You can find all TimeZone Databases on Wikipedia:
+https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+
 Updating to a newer version
 ---------------------------
 
