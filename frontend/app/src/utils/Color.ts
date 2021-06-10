@@ -26,9 +26,45 @@ export function invertColor(color: string, bw: boolean = true) {
   return `${rInv}${gInv}${bInv}`;
 }
 
-export function randomColor(): string {
-  return Math.floor(Math.random() * 16777215)
+const randomInt = (min: number, max: number): number => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
+function toHex(value: number): string {
+  return Math.round(value * 255)
     .toString(16)
-    .padStart(6, '0')
+    .padStart(2, '0')
     .toUpperCase();
+}
+
+function hslToRgb(h: number, s: number, l: number): string {
+  let r: number, g: number, b: number;
+
+  if (s === 0) {
+    r = g = b = l; // achromatic
+  } else {
+    const hue2rgb = function hue2rgb(p: number, q: number, t: number) {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+
+  return `${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+export function randomColor(): string {
+  const h = randomInt(0, 360);
+  const s = randomInt(42, 98);
+  const l = randomInt(40, 90);
+  return hslToRgb((1 / 360) * h, s / 100, l / 100);
 }

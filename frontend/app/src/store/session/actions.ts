@@ -214,14 +214,21 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('reset', payload, opts);
   },
 
-  async addTag({ commit }, tag: Tag) {
+  async addTag({ commit }, tag: Tag): Promise<ActionStatus> {
     try {
       commit('tags', await api.addTag(tag));
+      return {
+        success: true
+      };
     } catch (e) {
       showError(
         e.message,
         i18n.t('actions.session.tag_add.error.title').toString()
       );
+      return {
+        success: false,
+        message: e.message
+      };
     }
   },
 
