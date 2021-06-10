@@ -97,6 +97,7 @@
     <v-dialog v-if="showAbout" v-model="showAbout" max-width="500">
       <about />
     </v-dialog>
+    <update-notifier />
   </v-app>
   <dev-app v-else />
 </template>
@@ -126,6 +127,7 @@ import '@/services/task-manager';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
 import UpdatePopup from '@/components/status/update/UpdatePopup.vue';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
+import UpdateNotifier from '@/components/status/UpdateNotifier.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import DevApp from '@/DevApp.vue';
 import { BackendCode } from '@/electron-main/backend-code';
@@ -137,6 +139,7 @@ import { Message } from '@/store/types';
 
 @Component({
   components: {
+    UpdateNotifier,
     About,
     ThemeSwitchLock,
     MacOsVersionUnsupported,
