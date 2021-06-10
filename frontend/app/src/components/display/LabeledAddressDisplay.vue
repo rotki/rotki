@@ -34,9 +34,7 @@
           </v-chip>
         </span>
       </template>
-      <span v-if="$vuetify.breakpoint.mobile && !!label">
-        {{ account.label }} <br />
-      </span>
+      <span v-if="!!label"> {{ account.label }} <br /> </span>
       <span> {{ address }} </span>
     </v-tooltip>
     <div class="labeled-address-display__actions">
@@ -75,7 +73,11 @@ export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
   }
 
   get truncationLength(): number {
-    return truncationPoints[this.breakpoint] ?? 4;
+    let truncationPoint = truncationPoints[this.breakpoint];
+    if (truncationPoint && this.account.label) {
+      return 4;
+    }
+    return truncationPoint ?? 4;
   }
 
   get displayAddress(): string {

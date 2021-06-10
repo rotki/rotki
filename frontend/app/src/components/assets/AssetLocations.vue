@@ -88,7 +88,8 @@ export default class AssetLocations extends Vue {
       {
         text: this.$t('asset_locations.header.percentage').toString(),
         value: 'percentage',
-        sortable: false
+        sortable: false,
+        align: 'end'
       }
     ];
   }
