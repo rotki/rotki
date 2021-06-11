@@ -135,6 +135,7 @@ import PremiumMixin from '@/mixins/premium-mixin';
 import ThemeMixin from '@/mixins/theme-mixin';
 import { ThemeSwitch } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
+import { OverallPerformance } from '@/store/statistics/types';
 import { Message } from '@/store/types';
 
 @Component({
@@ -250,6 +251,17 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
     if (process.env.NODE_ENV === 'development' && this.logged) {
       monitor.start();
     }
+    this.$store.watch(
+      (state, getters) => {
+        return getters['statistics/overall'];
+      },
+      (value: OverallPerformance) => {
+        if (value.percentage === '-') {
+          return;
+        }
+        this.$interop.updateTray(value);
+      }
+    );
   }
 
   get isPlayground(): boolean {

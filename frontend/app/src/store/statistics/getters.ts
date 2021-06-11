@@ -1,8 +1,9 @@
 import { default as BigNumber } from 'bignumber.js';
+import { timeframes } from '@/components/dashboard/const';
 import { aggregateTotal } from '@/filters';
 import { NetValue } from '@/services/types-api';
 import { AssetBalance } from '@/store/balances/types';
-import { StatisticsState } from '@/store/statistics/types';
+import { OverallPerformance, StatisticsState } from '@/store/statistics/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
@@ -11,6 +12,7 @@ interface StatisticsGetters {
   netValue: (startingDate: number) => NetValue;
   totalNetWorth: BigNumber;
   totalNetWorthUsd: BigNumber;
+  overall: OverallPerformance;
 }
 
 export const getters: Getters<
@@ -116,5 +118,49 @@ export const getters: Getters<
     );
 
     return assetValue.minus(liabilityValue);
+  },
+  overall: (
+    state,
+    { totalNetWorth, netValue },
+    rootState,
+    {
+      'balances/exchangeRate': exchangeRate,
+      'session/currencySymbol': currency
+    }
+  ) => {
+    const timeframe = rootState.session!!.timeframe;
+    const startingDate = timeframes[timeframe].startingDate();
+    const startingValue: () => BigNumber = () => {
+      const data = netValue(startingDate).data;
+      let start = data[0];
+      if (start === 0) {
+        for (let i = 1; i < data.length; i++) {
+          if (data[i] > 0) {
+            start = data[i];
+            break;
+          }
+        }
+      }
+      return bigNumberify(start);
+    };
+
+    const starting = startingValue();
+    const balanceDelta = totalNetWorth.minus(starting);
+    const percentage = balanceDelta.div(starting).multipliedBy(100);
+
+    let up: boolean | undefined = undefined;
+    if (balanceDelta.isGreaterThan(0)) {
+      up = true;
+    } else if (balanceDelta.isLessThan(0)) {
+      up = false;
+    }
+
+    return {
+      period: timeframe,
+      currency,
+      delta: balanceDelta.multipliedBy(exchangeRate(currency)).toString(),
+      percentage: percentage.isFinite() ? percentage.toFormat(2) : '-',
+      up
+    };
   }
 };

@@ -5,10 +5,14 @@ import windowStateKeeper from 'electron-window-state';
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import { ipcSetup } from '@/electron-main/ipc-setup';
 import { getUserMenu } from '@/electron-main/menu';
+import { TrayManager } from '@/electron-main/tray-manager';
+import { Nullable } from '@/types';
 import PyHandler from './py-handler';
 import { assert } from './utils/assertions';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
+
+let trayManager: Nullable<TrayManager> = null;
 
 const onActivate = async () => {
   // On macOS it's common to re-create a window in the app when the
@@ -37,7 +41,8 @@ const onReady = async () => {
     return window;
   };
 
-  ipcSetup(pyHandler, getWindow, closeApp);
+  trayManager = new TrayManager(getWindow, closeApp);
+  ipcSetup(pyHandler, getWindow, closeApp, trayManager);
   await createWindow();
 };
 
@@ -125,6 +130,7 @@ async function createWindow() {
 }
 
 async function closeApp() {
+  trayManager?.destroy();
   await pyHandler.exitPyProc();
   if (process.platform !== 'win32') {
     app.exit();

@@ -28,6 +28,14 @@ export type BackendOptions = {
   readonly logFromOtherModules: boolean;
 };
 
+export type TrayUpdate = {
+  readonly percentage?: string;
+  readonly delta?: string;
+  readonly up?: boolean;
+  readonly currency?: string;
+  readonly period?: string;
+};
+
 export interface Interop {
   openUrl(url: string): Promise<void>;
   openPath(path: string): Promise<void>;
@@ -49,4 +57,5 @@ export interface Interop {
   version(): Promise<SystemVersion>;
   onAbout(callback: () => void): void;
   config(defaults: boolean): Promise<Partial<BackendOptions>>;
+  updateTray(trayUpdate: TrayUpdate): Promise<void>;
 }
