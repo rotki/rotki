@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`3025` Users will now see the percentage of each location when looking into an asset's details.
 * :feature:`2596` Users will now be able to create new tags directly from the tag selection input.
 * :feature:`2954` On login screen, the password field will now be focused for users that have remember user enabled.
 * :feature:`2670` Users will now get results in a better order when using the asset selector.

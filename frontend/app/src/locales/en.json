@@ -48,7 +48,8 @@
       "account": "Account",
       "amount": "Amount",
       "location": "Location",
-      "value": "{symbol} value"
+      "value": "{symbol} value",
+      "percentage": "Percentage"
     }
   },
   "asset_table": {
