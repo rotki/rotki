@@ -9,7 +9,7 @@ import gevent
 import requests
 from requests.adapters import Response
 from substrateinterface import SubstrateInterface
-from substrateinterface.exceptions import SubstrateRequestException
+from substrateinterface.exceptions import BlockNotFound, SubstrateRequestException
 from typing_extensions import Literal
 from websocket import WebSocketException
 
@@ -297,6 +297,7 @@ class SubstrateManager():
                 ValueError,
                 WebSocketException,
                 gevent.Timeout,
+                BlockNotFound,
         ) as e:
             msg = str(e)
             if isinstance(e, gevent.Timeout):
