@@ -767,7 +767,7 @@ class Balancer(EthereumModule):
         for event_type in BalancerBPTEventType:
             self._get_balancer_aggregated_events_data_by_event_type(
                 address_to_events_data=address_to_events_data,
-                event_type=event_type,  # type: ignore # looping enum members and literals
+                event_type=event_type,
                 balancer_pools=balancer_pools,
                 balancer_events=balancer_events,
                 pool_addr_to_token_addr_to_index=pool_addr_to_token_addr_to_index,
