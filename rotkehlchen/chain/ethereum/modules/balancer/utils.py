@@ -1,13 +1,14 @@
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.utils import get_ethereum_token
+from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
+from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -19,13 +20,15 @@ from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Location, Price,
 
 from .typing import (
     BalancerBPTEvent,
-    BalancerBPTEventPoolToken,
     BalancerBPTEventType,
     BalancerInvestEvent,
     BalancerInvestEventType,
     BalancerPoolBalance,
     BalancerPoolTokenBalance,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 SUBGRAPH_REMOTE_ERROR_MSG = (
     "Failed to request the Balancer subgraph due to {error_msg}. "
@@ -45,6 +48,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def deserialize_bpt_event(
+        userdb: 'DBHandler',
         raw_event: Dict[str, Any],
         event_type: Literal[BalancerBPTEventType.MINT, BalancerBPTEventType.BURN],
 ) -> BalancerBPTEvent:
@@ -66,7 +70,7 @@ def deserialize_bpt_event(
     user_address = deserialize_ethereum_address(raw_user_address)
     pool_address = deserialize_ethereum_address(raw_pool_address)
 
-    pool_tokens = []
+    underlying_tokens = []
     for raw_token in raw_pool_tokens:
         try:
             raw_token_address = raw_token['address']
@@ -79,26 +83,32 @@ def deserialize_bpt_event(
 
         token_address = deserialize_ethereum_address(raw_token_address)
 
-        token = get_ethereum_token(
+        token = get_or_create_ethereum_token(
+            userdb=userdb,
             symbol=token_symbol,
             ethereum_address=token_address,
             name=token_name,
             decimals=token_decimals,
         )
-        pool_token = BalancerBPTEventPoolToken(
-            token=token,
-            weight=token_weight * 100 / total_weight,
-        )
-        pool_tokens.append(pool_token)
+        underlying_tokens.append(UnderlyingToken(
+            address=token.ethereum_address,
+            weight=token_weight / total_weight,
+        ))
 
-    pool_tokens.sort(key=lambda pool_token: pool_token.token.ethereum_address)
+    underlying_tokens.sort(key=lambda x: x.address)
+    pool_address_token = get_or_create_ethereum_token(
+        userdb=userdb,
+        ethereum_address=pool_address,
+        symbol='BPT',
+        protocol='balancer',
+        underlying_tokens=underlying_tokens,
+    )
     bpt_event = BalancerBPTEvent(
         tx_hash=tx_hash,
         log_index=log_index,
         address=user_address,
         event_type=event_type,
-        pool_address=pool_address,
-        pool_tokens=pool_tokens,
+        pool_address_token=pool_address_token,
         amount=amount,
     )
     return bpt_event
@@ -131,6 +141,12 @@ def deserialize_invest_event(
 
     user_address = deserialize_ethereum_address(raw_user_address)
     pool_address = deserialize_ethereum_address(raw_pool_address)
+    try:
+        pool_address_token = EthereumToken(pool_address)
+    except UnknownAsset as e:
+        raise DeserializationError(
+            f'Balancer pool token with address {pool_address} should have been in the DB',
+        ) from e
     token_address = deserialize_ethereum_address(raw_token_address)
 
     invest_event = BalancerInvestEvent(
@@ -139,7 +155,7 @@ def deserialize_invest_event(
         address=user_address,
         timestamp=timestamp,
         event_type=event_type,
-        pool_address=pool_address,
+        pool_address_token=pool_address_token,
         token_address=token_address,
         amount=amount,
     )
@@ -147,6 +163,7 @@ def deserialize_invest_event(
 
 
 def deserialize_pool_share(
+        userdb: 'DBHandler',
         raw_pool_share: Dict[str, Any],
 ) -> Tuple[ChecksumEthAddress, BalancerPoolBalance]:
     """May raise DeserializationError"""
@@ -165,9 +182,10 @@ def deserialize_pool_share(
         raise DeserializationError('Pool weight is zero.')
 
     user_address = deserialize_ethereum_address(raw_user_address)
-    address = deserialize_ethereum_address(raw_address)
+    pool_address = deserialize_ethereum_address(raw_address)
 
     pool_tokens = []
+    pool_token_balances = []
     for raw_token in raw_tokens:
         try:
             raw_token_address = raw_token['address']
@@ -181,7 +199,8 @@ def deserialize_pool_share(
 
         token_address = deserialize_ethereum_address(raw_token_address)
 
-        token = get_ethereum_token(
+        token = get_or_create_ethereum_token(
+            userdb=userdb,
             symbol=token_symbol,
             ethereum_address=token_address,
             name=token_name,
@@ -190,20 +209,30 @@ def deserialize_pool_share(
         if token_total_amount == ZERO:
             raise DeserializationError(f'Token {token.identifier} balance is zero.')
 
-        token_user_amount = user_amount / total_amount * token_total_amount
         weight = token_weight * 100 / total_weight
-        pool_token = BalancerPoolTokenBalance(
+        token_user_amount = user_amount / total_amount * token_total_amount
+        pool_token_balance = BalancerPoolTokenBalance(
             token=token,
             total_amount=token_total_amount,
             user_balance=Balance(amount=token_user_amount),
             weight=weight,
         )
+        pool_token_balances.append(pool_token_balance)
+        pool_token = UnderlyingToken(address=token.ethereum_address, weight=weight / 100)
         pool_tokens.append(pool_token)
 
-    pool_tokens.sort(key=lambda pool_token: pool_token.token.ethereum_address)
+    pool_tokens.sort(key=lambda x: x.address)
+    pool_token_balances.sort(key=lambda x: x.token.ethereum_address)
+    balancer_pool_token = get_or_create_ethereum_token(
+        userdb=userdb,
+        symbol='BPT',
+        ethereum_address=pool_address,
+        protocol='balancer',
+        underlying_tokens=pool_tokens,
+    )
     pool = BalancerPoolBalance(
-        address=address,
-        tokens=pool_tokens,
+        pool_token=balancer_pool_token,
+        underlying_tokens_balance=pool_token_balances,
         total_amount=total_amount,
         user_balance=Balance(amount=user_amount),
     )
@@ -219,7 +248,7 @@ def deserialize_transaction_id(raw_tx_id: str) -> Tuple[str, int]:
     return tx_hash, log_index
 
 
-def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
+def deserialize_swap(userdb: 'DBHandler', raw_swap: Dict[str, Any]) -> AMMSwap:
     """May raise DeserializationError"""
     try:
         tx_hash, log_index = deserialize_transaction_id(raw_swap['id'])
@@ -251,8 +280,7 @@ def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
     # Get token0 and token1
     # When the controller removes all the tokens from a pool, `raw_tokens` will
     # be an empty list. Therefore it won't be possible to get their names and
-    # decimals. In case of having to instantiate an UnknownEthereumToken both
-    # params will be None.
+    # decimals.
     if len(raw_tokens) != 0:
         try:
             raw_address_tokens = {raw_token['address']: raw_token for raw_token in raw_tokens}
@@ -270,13 +298,15 @@ def deserialize_swap(raw_swap: Dict[str, Any]) -> AMMSwap:
         token1_name = None
         token1_decimals = None
 
-    token0 = get_ethereum_token(
+    token0 = get_or_create_ethereum_token(
+        userdb=userdb,
         symbol=token0_symbol,
         ethereum_address=token_in_address,
         name=token0_name,
         decimals=token0_decimals,
     )
-    token1 = get_ethereum_token(
+    token1 = get_or_create_ethereum_token(
+        userdb=userdb,
         symbol=token1_symbol,
         ethereum_address=token_out_address,
         name=token1_name,

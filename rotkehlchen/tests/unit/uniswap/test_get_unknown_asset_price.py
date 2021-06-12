@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Price
 
-from .utils import ASSET_SHUF, ASSET_TGX, TOKEN_DAY_DATA_SHUF, TOKEN_DAY_DATA_TGX, store_call_args
+from .utils import A_CAR, A_SHL, TOKEN_DAY_DATA_CAR, TOKEN_DAY_DATA_SHL, store_call_args
 
 
 def test_unknown_asset_does_not_have_usd_price(mock_uniswap):
@@ -11,7 +11,7 @@ def test_unknown_asset_does_not_have_usd_price(mock_uniswap):
     not found via subgraph.
     """
     mock_uniswap.graph.query.return_value = {'tokenDayDatas': []}
-    unknown_assets = {ASSET_TGX}
+    unknown_assets = {A_CAR}
 
     asset_price = mock_uniswap._get_unknown_asset_price_graph(unknown_assets=unknown_assets)
 
@@ -22,13 +22,13 @@ def test_unknown_asset_has_usd_price(mock_uniswap):
     """Test returned `asset_price` contains the unknown token address and
     its USD price when the price is found via subgraph.
     """
-    mock_uniswap.graph.query.return_value = {'tokenDayDatas': [TOKEN_DAY_DATA_TGX]}
-    unknown_assets = {ASSET_TGX}
+    mock_uniswap.graph.query.return_value = {'tokenDayDatas': [TOKEN_DAY_DATA_CAR]}
+    unknown_assets = {A_CAR}
 
     asset_price = mock_uniswap._get_unknown_asset_price_graph(unknown_assets=unknown_assets)
 
     exp_asset_price = {
-        ASSET_TGX.ethereum_address: Price(FVal(TOKEN_DAY_DATA_TGX['priceUSD'])),
+        A_CAR.ethereum_address: Price(FVal(TOKEN_DAY_DATA_CAR['priceUSD'])),
     }
     assert asset_price == exp_asset_price
 
@@ -46,7 +46,7 @@ def test_pagination(
     def get_graph_response():
         responses = [
             # First response
-            {'tokenDayDatas': [TOKEN_DAY_DATA_TGX, TOKEN_DAY_DATA_SHUF]},
+            {'tokenDayDatas': [TOKEN_DAY_DATA_CAR, TOKEN_DAY_DATA_SHL]},
             # Second response
             {'tokenDayDatas': []},
         ]
@@ -62,7 +62,7 @@ def test_pagination(
 
     get_response = get_graph_response()
     mock_uniswap.graph.query.side_effect = mock_response
-    unknown_assets = {ASSET_TGX, ASSET_SHUF}
+    unknown_assets = {A_CAR, A_SHL}
 
     mock_uniswap._get_unknown_asset_price_graph(unknown_assets=unknown_assets)
 

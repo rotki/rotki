@@ -16,7 +16,6 @@ from .typing import (
     BALANCER_TRADES_PREFIX,
     BalancerBPTEventPoolToken,
     BalancerEvent,
-    BalancerEventPool,
     BalancerPoolBalance,
     BalancerPoolEventsBalance,
     BalancerPoolTokenBalance,

@@ -1,13 +1,8 @@
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Tuple
 
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import (
-    UNKNOWN_TOKEN_KEYS,
-    UnknownEthereumToken,
-    ethereum_knownornot_token_parts,
-)
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.serialization.deserialize import (
@@ -15,7 +10,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_ethereum_token_from_db,
     deserialize_timestamp,
-    deserialize_unknown_ethereum_token_from_db,
 )
 from rotkehlchen.typing import (
     AssetAmount,
@@ -39,32 +33,14 @@ AMMSwapDBTuple = (
         str,  # to_address
         int,  # timestamp
         str,  # location
-        int,  # is_token0_unknown
-        str,  # token0_address
-        str,  # token0_symbol
-        Optional[str],  # token0_name
-        Optional[int],  # token0_decimals
-        int,  # is_token1_unknown
-        str,  # token1_address
-        str,  # token1_symbol
-        Optional[str],  # token1_name
-        Optional[int],  # token1_decimals
+        str,  # token0_identifier
+        str,  # token1_identifier
         str,  # amount0_in
         str,  # amount1_in
         str,  # amount0_out
         str,  # amount1_out
     ]
 )
-
-
-def serialize_known_or_unknown_token(
-        token: Union[EthereumToken, UnknownEthereumToken],
-) -> Union[str, Dict[str, Any]]:
-    return (
-        token.serialize()
-        if isinstance(token, EthereumToken)
-        else token.serialize_as_dict(keys=UNKNOWN_TOKEN_KEYS)
-    )
 
 
 class AMMSwap(NamedTuple):
@@ -79,8 +55,8 @@ class AMMSwap(NamedTuple):
     to_address: ChecksumEthAddress
     timestamp: Timestamp
     location: Location
-    token0: Union[EthereumToken, UnknownEthereumToken]
-    token1: Union[EthereumToken, UnknownEthereumToken]
+    token0: EthereumToken
+    token1: EthereumToken
     amount0_in: AssetAmount
     amount1_in: AssetAmount
     amount0_out: AssetAmount
@@ -113,48 +89,19 @@ class AMMSwap(NamedTuple):
         4 - to_address
         5 - timestamp
         6 - location
-        7 - is_token0_unknown
-        8 - token0_address
-        9 - token0_symbol
-        10 - token0_name
-        11 - token0_decimals
-        12 - is_token1_unknown
-        13 - token1_address
-        14 - token1_symbol
-        15 - token1_name
-        16 - token1_decimals
-        17 - amount0_in
-        18 - amount1_in
-        19 - amount0_out
-        20 - amount1_out
+        7 - token0_identifier
+        8 - token1_identifier
+        9 - amount0_in
+        10 - amount1_in
+        11 - amount0_out
+        12 - amount1_out
         """
         address = deserialize_ethereum_address(trade_tuple[2])
         from_address = deserialize_ethereum_address(trade_tuple[3])
         to_address = deserialize_ethereum_address(trade_tuple[4])
-        is_token0_unknown = trade_tuple[7]
-        is_token1_unknown = trade_tuple[12]
 
-        token0: Union[EthereumToken, UnknownEthereumToken]
-        token1: Union[EthereumToken, UnknownEthereumToken]
-        if is_token0_unknown:
-            token0 = deserialize_unknown_ethereum_token_from_db(
-                ethereum_address=trade_tuple[8],
-                symbol=trade_tuple[9],
-                name=trade_tuple[10],
-                decimals=trade_tuple[11],
-            )
-        else:
-            token0 = deserialize_ethereum_token_from_db(identifier=trade_tuple[9])
-
-        if is_token1_unknown:
-            token1 = deserialize_unknown_ethereum_token_from_db(
-                ethereum_address=trade_tuple[13],
-                symbol=trade_tuple[14],
-                name=trade_tuple[15],
-                decimals=trade_tuple[16],
-            )
-        else:
-            token1 = deserialize_ethereum_token_from_db(identifier=trade_tuple[14])
+        token0 = deserialize_ethereum_token_from_db(identifier=trade_tuple[7])
+        token1 = deserialize_ethereum_token_from_db(identifier=trade_tuple[8])
 
         return cls(
             tx_hash=trade_tuple[0],
@@ -166,10 +113,10 @@ class AMMSwap(NamedTuple):
             location=Location.deserialize_from_db(trade_tuple[6]),
             token0=token0,
             token1=token1,
-            amount0_in=deserialize_asset_amount(trade_tuple[17]),
-            amount1_in=deserialize_asset_amount(trade_tuple[18]),
-            amount0_out=deserialize_asset_amount(trade_tuple[19]),
-            amount1_out=deserialize_asset_amount(trade_tuple[20]),
+            amount0_in=deserialize_asset_amount(trade_tuple[9]),
+            amount1_in=deserialize_asset_amount(trade_tuple[10]),
+            amount0_out=deserialize_asset_amount(trade_tuple[11]),
+            amount1_out=deserialize_asset_amount(trade_tuple[12]),
         )
 
     def serialize(self) -> Dict[str, Any]:
@@ -179,8 +126,8 @@ class AMMSwap(NamedTuple):
             'log_index': self.log_index,
             'from_address': self.from_address,
             'to_address': self.to_address,
-            'token0': serialize_known_or_unknown_token(self.token0),
-            'token1': serialize_known_or_unknown_token(self.token1),
+            'token0': self.token0.serialize(),
+            'token1': self.token1.serialize(),
             'amount0_in': str(self.amount0_in),
             'amount1_in': str(self.amount1_in),
             'amount0_out': str(self.amount0_out),
@@ -188,8 +135,6 @@ class AMMSwap(NamedTuple):
         }
 
     def to_db_tuple(self) -> AMMSwapDBTuple:
-        is_token0_unknown, token0_symbol_or_id = ethereum_knownornot_token_parts(self.token0)
-        is_token1_unknown, token1_symbol_or_id = ethereum_knownornot_token_parts(self.token1)
         db_tuple = (
             self.tx_hash,
             self.log_index,
@@ -198,16 +143,8 @@ class AMMSwap(NamedTuple):
             str(self.to_address),
             int(self.timestamp),
             self.location.serialize_for_db(),
-            is_token0_unknown,
-            str(self.token0.ethereum_address),
-            token0_symbol_or_id,
-            self.token0.name,
-            self.token0.decimals,
-            is_token1_unknown,
-            str(self.token1.ethereum_address),
-            token1_symbol_or_id,
-            self.token1.name,
-            self.token1.decimals,
+            self.token0.identifier,
+            self.token1.identifier,
             str(self.amount0_in),
             str(self.amount1_in),
             str(self.amount0_out),
@@ -221,8 +158,8 @@ class AMMTrade(NamedTuple):
     in AMMs protocols.
     """
     trade_type: TradeType
-    base_asset: Union[EthereumToken, UnknownEthereumToken]
-    quote_asset: Union[EthereumToken, UnknownEthereumToken]
+    base_asset: EthereumToken
+    quote_asset: EthereumToken
     amount: AssetAmount
     rate: Price
     swaps: List[AMMSwap]
@@ -268,11 +205,6 @@ class AMMTrade(NamedTuple):
         """Serialize the trade into a dict matching Trade serialization from
         `data_structures.py` and adding: address, base_asset, quote_asset,
         """
-        fee_symbol = (
-            self.quote_asset.identifier
-            if isinstance(self.quote_asset, EthereumToken)
-            else self.quote_asset.symbol
-        )
         return {
             # Shared attributes with Trade
             'trade_id': self.trade_id,  # PK
@@ -282,11 +214,11 @@ class AMMTrade(NamedTuple):
             'amount': str(self.amount),
             'rate': str(self.rate),
             'fee': '0',  # Don't bother with a fee at the moment -- too complicated
-            'fee_currency': fee_symbol,
+            'fee_currency': self.quote_asset.identifier,
             # AMMTrade attributes
             'address': self.address,
-            'base_asset': serialize_known_or_unknown_token(self.base_asset),
-            'quote_asset': serialize_known_or_unknown_token(self.quote_asset),
+            'base_asset': self.base_asset.identifier,
+            'quote_asset': self.quote_asset.identifier,
             'tx_hash': self.tx_hash,
             'swaps': [x.serialize() for x in self.swaps],
         }

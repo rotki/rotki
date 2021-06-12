@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import multicall_2
@@ -69,7 +68,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Price, Timestamp, KnownProtocolsAssets
+from rotkehlchen.typing import KnownProtocolsAssets, Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.network import request_get_dict
 
@@ -437,7 +436,7 @@ class Inquirer():
 
     def find_uniswap_v2_lp_price(
         self,
-        token: Union[EthereumToken, UnknownEthereumToken],
+        token: EthereumToken,
     ) -> Optional[Price]:
         """
         Calculate the price for a uniswap v2 LP token. That is

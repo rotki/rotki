@@ -8,14 +8,12 @@ from eth_utils import is_checksum_address
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
-from rotkehlchen.assets.utils import get_ethereum_token, symbol_to_ethereum_token
-from rotkehlchen.constants.assets import A_DAI
+from rotkehlchen.assets.utils import get_or_create_ethereum_token, symbol_to_ethereum_token
+from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError, UnknownAsset
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.hashing import file_md5
 
 
@@ -352,38 +350,38 @@ def test_asset_with_unknown_type_does_not_crash(asset_resolver):  # pylint: disa
     AssetResolver._AssetResolver__instance = None
 
 
-def test_get_ethereum_token():
-    assert A_DAI == get_ethereum_token(
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
+def test_get_or_create_ethereum_token(globaldb, database):
+    cursor = globaldb._conn.cursor()
+    assets_num = cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0]
+    assert A_DAI == get_or_create_ethereum_token(
+        userdb=database,
         symbol='DAI',
         ethereum_address='0x6B175474E89094C44Da98b954EedeAC495271d0F',
     )
-    unknown_token = UnknownEthereumToken(
+    # Try getting a DAI token of a different address. Shold add new token to DB
+    new_token = get_or_create_ethereum_token(
+        userdb=database,
         symbol='DAI',
         ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
-        decimals=18,
     )
-    assert unknown_token == get_ethereum_token(
-        symbol='DAI',
-        ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
-    ), 'correct symbol but wrong address should result in unknown token'
-    unknown_token = UnknownEthereumToken(
+    assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 1
+    assert new_token.symbol == 'DAI'
+    assert new_token.ethereum_address == '0xA379B8204A49A72FF9703e18eE61402FAfCCdD60'
+    # Try getting a symbol of normal chain with different address. Should add new token to DB
+    new_token = get_or_create_ethereum_token(
+        userdb=database,
         symbol='DOT',
-        ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
-        decimals=18,
+        ethereum_address='0xB179B8204A49672FF9703e18eE61402FAfCCdD60',
     )
-    assert unknown_token == get_ethereum_token(
-        symbol='DOT',
-        ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
-    ), 'symbol of normal chain (polkadot here) should result in unknown token'
-
-
-def test_intialize_token_from_fields():
-    token = EthereumToken.initialize(
-        address='0x6B175474E89094C44Da98b954EedeAC495271d0F',
-        decimals=18,
-        name='Multi Collateral Dai',
-        symbol='DAI',
-        started=Timestamp(1573672677),
-        coingecko='dai',
+    assert new_token.symbol == 'DOT'
+    assert new_token.ethereum_address == '0xB179B8204A49672FF9703e18eE61402FAfCCdD60'
+    assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 2
+    # Check that token with wrong symbol but existing address is returned
+    assert A_USDT == get_or_create_ethereum_token(
+        userdb=database,
+        symbol='ROFL',
+        ethereum_address='0xdAC17F958D2ee523a2206206994597C13D831ec7',
     )
-    assert token == A_DAI
+    assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 2

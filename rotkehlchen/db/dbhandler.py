@@ -35,7 +35,6 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
     BALANCER_EVENTS_PREFIX,
     BALANCER_TRADES_PREFIX,
     BalancerEvent,
-    BalancerEventPool,
 )
 from rotkehlchen.chain.ethereum.modules.uniswap import (
     UNISWAP_EVENTS_PREFIX,
@@ -85,8 +84,8 @@ from rotkehlchen.errors import (
     UnknownAsset,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.binance import BINANCE_MARKETS_KEY
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
@@ -977,7 +976,7 @@ class DBHandler:
                 address,
                 timestamp,
                 type,
-                pool_address,
+                pool_address_token,
                 lp_amount,
                 usd_value,
                 amount0,
@@ -1007,92 +1006,6 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def add_balancer_pools(
-            self,
-            pools: Sequence[BalancerEventPool],
-    ) -> None:
-        query = (
-            """
-            INSERT INTO balancer_pools (
-                address,
-                tokens_number,
-                is_token0_unknown,
-                token0_address,
-                token0_symbol,
-                token0_name,
-                token0_decimals,
-                token0_weight,
-                is_token1_unknown,
-                token1_address,
-                token1_symbol,
-                token1_name,
-                token1_decimals,
-                token1_weight,
-                is_token2_unknown,
-                token2_address,
-                token2_symbol,
-                token2_name,
-                token2_decimals,
-                token2_weight,
-                is_token3_unknown,
-                token3_address,
-                token3_symbol,
-                token3_name,
-                token3_decimals,
-                token3_weight,
-                is_token4_unknown,
-                token4_address,
-                token4_symbol,
-                token4_name,
-                token4_decimals,
-                token4_weight,
-                is_token5_unknown,
-                token5_address,
-                token5_symbol,
-                token5_name,
-                token5_decimals,
-                token5_weight,
-                is_token6_unknown,
-                token6_address,
-                token6_symbol,
-                token6_name,
-                token6_decimals,
-                token6_weight,
-                is_token7_unknown,
-                token7_address,
-                token7_symbol,
-                token7_name,
-                token7_decimals,
-                token7_weight
-            )
-            VALUES (
-                ?,?,
-                ?,?,?,?,?,?,
-                ?,?,?,?,?,?,
-                ?,?,?,?,?,?,
-                ?,?,?,?,?,?,
-                ?,?,?,?,?,?,
-                ?,?,?,?,?,?,
-                ?,?,?,?,?,?,
-                ?,?,?,?,?,?
-            )
-            """
-        )
-        cursor = self.conn.cursor()
-        for pool in pools:
-            pool_tuple = pool.to_db_tuple()
-            try:
-                cursor.execute(query, pool_tuple)
-            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                self.msg_aggregator.add_warning(
-                    f'Tried to add a Balancer pool that already exists in the DB. '
-                    f'Pool data: {pool_tuple}. Skipping pool.',
-                )
-                continue
-
-        self.conn.commit()
-        self.update_last_write()
-
     def get_balancer_events(
             self,
             from_timestamp: Optional[Timestamp] = None,
@@ -1101,26 +1014,7 @@ class DBHandler:
     ) -> List[BalancerEvent]:
         """Returns a list of Balancer events optionally filtered by time and address"""
         cursor = self.conn.cursor()
-        query = (
-            'SELECT '
-            'tx_hash, '
-            'log_index, '
-            'address, '
-            'timestamp, '
-            'type, '
-            'pool_address, '
-            'lp_amount, '
-            'usd_value, '
-            'amount0, '
-            'amount1, '
-            'amount2, '
-            'amount3, '
-            'amount4, '
-            'amount5, '
-            'amount6, '
-            'amount7 '
-            'FROM balancer_events '
-        )
+        query = 'SELECT * FROM balancer_events '
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
         filters = []
         if address is not None:
@@ -1151,90 +1045,6 @@ class DBHandler:
             events.append(event)
 
         return events
-
-    def get_balancer_pools(
-            self,
-            addresses: Optional[List[ChecksumEthAddress]] = None,
-    ) -> List[BalancerEventPool]:
-        """Returns a list of Balancer pools optionally filtered by addresses"""
-        cursor = self.conn.cursor()
-        query = (
-            'SELECT '
-            'address, '
-            'tokens_number, '
-            'is_token0_unknown, '
-            'token0_address, '
-            'token0_symbol, '
-            'token0_name, '
-            'token0_decimals, '
-            'token0_weight, '
-            'is_token1_unknown, '
-            'token1_address, '
-            'token1_symbol, '
-            'token1_name, '
-            'token1_decimals, '
-            'token1_weight, '
-            'is_token2_unknown, '
-            'token2_address, '
-            'token2_symbol, '
-            'token2_name, '
-            'token2_decimals, '
-            'token2_weight, '
-            'is_token3_unknown, '
-            'token3_address, '
-            'token3_symbol, '
-            'token3_name, '
-            'token3_decimals, '
-            'token3_weight, '
-            'is_token4_unknown, '
-            'token4_address, '
-            'token4_symbol, '
-            'token4_name, '
-            'token4_decimals, '
-            'token4_weight, '
-            'is_token5_unknown, '
-            'token5_address, '
-            'token5_symbol, '
-            'token5_name, '
-            'token5_decimals, '
-            'token5_weight, '
-            'is_token6_unknown, '
-            'token6_address, '
-            'token6_symbol, '
-            'token6_name, '
-            'token6_decimals, '
-            'token6_weight, '
-            'is_token7_unknown, '
-            'token7_address, '
-            'token7_symbol, '
-            'token7_name, '
-            'token7_decimals, '
-            'token7_weight '
-            'FROM balancer_pools '
-        )
-        bindings = []
-        if addresses is not None and len(addresses) != 0:
-            questionmarks = '?' * len(addresses)
-            query += f'WHERE address IN ({",".join(questionmarks)});'
-            bindings.extend(addresses)
-        else:
-            query += ';'
-
-        results = cursor.execute(query, bindings)
-
-        pools = []
-        for pool_tuple in results:
-            try:
-                pool = BalancerEventPool.deserialize_from_db(pool_tuple)
-            except DeserializationError as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing Balancer pool from the DB. Skipping pool. '
-                    f'Error was: {str(e)}',
-                )
-                continue
-            pools.append(pool)
-
-        return pools
 
     def delete_balancer_trades_data(self) -> None:
         """Delete all historical Balancer trades data"""
@@ -1327,30 +1137,7 @@ class DBHandler:
         and address
         """
         cursor = self.conn.cursor()
-        query = (
-            'SELECT '
-            'tx_hash, '
-            'log_index, '
-            'address, '
-            'timestamp, '
-            'type, '
-            'pool_address, '
-            'is_token0_unknown, '
-            'token0_address, '
-            'token0_symbol, '
-            'token0_name, '
-            'token0_decimals, '
-            'is_token1_unknown, '
-            'token1_address, '
-            'token1_symbol, '
-            'token1_name, '
-            'token1_decimals, '
-            'amount0, '
-            'amount1, '
-            'usd_price, '
-            'lp_amount '
-            'FROM uniswap_events '
-        )
+        query = 'SELECT * FROM uniswap_events '
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
         filters = []
         if address is not None:
@@ -2401,7 +2188,7 @@ class DBHandler:
             for entry in tuples:
                 try:
                     cursor.execute(query, entry)
-                except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                     if tuple_type == 'ethereum_transaction':
                         nonce = entry[10]
                         # If it's not an internal transaction with the same hash
@@ -2441,14 +2228,15 @@ class DBHandler:
                         # other and both accounts are being tracked.
                         string_repr = db_tuple_to_str(entry, tuple_type)
                         logger.debug(
-                            f'Did not add "{string_repr}" to the DB since'
-                            f'it already exists.',
+                            f'Did not add "{string_repr}" to the DB due to "{str(e)}".'
+                            f'Either it already exists or some constraint was hit.',
                         )
                         continue
 
                     string_repr = db_tuple_to_str(entry, tuple_type)
                     logger.warning(
-                        f'Did not add "{string_repr}" to the DB. It already exists.',
+                        f'Did not add "{string_repr}" to the DB due to "{str(e)}".'
+                        f'It either already exists or some other constraint was hit.',
                     )
                 except sqlcipher.InterfaceError:  # pylint: disable=no-member
                     log.critical(f'Interface error with tuple: {entry}')
@@ -2935,24 +2723,17 @@ class DBHandler:
                 to_address,
                 timestamp,
                 location,
-                is_token0_unknown,
-                token0_address,
-                token0_symbol,
-                token0_name,
-                token0_decimals,
-                is_token1_unknown,
-                token1_address,
-                token1_symbol,
-                token1_name,
-                token1_decimals,
+                token0_identifier,
+                token1_identifier,
                 amount0_in,
                 amount1_in,
                 amount0_out,
                 amount1_out
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         )
+        # __import__("pdb").set_trace()
         self.write_tuples(tuple_type='amm_swap', query=query, tuples=swap_tuples)
 
     def get_amm_swaps(
@@ -2966,31 +2747,7 @@ class DBHandler:
         and address
         """
         cursor = self.conn.cursor()
-        query = (
-            'SELECT '
-            'tx_hash, '
-            'log_index, '
-            'address, '
-            'from_address, '
-            'to_address, '
-            'timestamp, '
-            'location, '
-            'is_token0_unknown, '
-            'token0_address, '
-            'token0_symbol, '
-            'token0_name, '
-            'token0_decimals, '
-            'is_token1_unknown, '
-            'token1_address, '
-            'token1_symbol, '
-            'token1_name, '
-            'token1_decimals, '
-            'amount0_in, '
-            'amount1_in, '
-            'amount0_out, '
-            'amount1_out '
-            'FROM amm_swaps '
-        )
+        query = 'SELECT * FROM amm_swaps '
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
         filters = []
         if location is not None:

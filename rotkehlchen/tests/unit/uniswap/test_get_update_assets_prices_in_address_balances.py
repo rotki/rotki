@@ -1,8 +1,8 @@
 from rotkehlchen.constants.assets import A_USDT, A_WETH
 
 from .utils import (
-    ASSET_SHUF,
-    ASSET_TGX,
+    A_CAR,
+    A_SHL,
     EXP_LIQUIDITY_POOL_1,
     EXP_LIQUIDITY_POOL_2,
     TEST_ADDRESS_1,
@@ -10,8 +10,8 @@ from .utils import (
     UPDATED_LIQUIDITY_POOL_1,
     UPDATED_LIQUIDITY_POOL_2,
     UPDATED_LIQUIDITY_POOL_2_ONLY_USDT,
-    USD_PRICE_SHUF,
-    USD_PRICE_TGX,
+    USD_PRICE_CAR,
+    USD_PRICE_SHL,
     USD_PRICE_USDT,
     USD_PRICE_WETH,
 )
@@ -24,12 +24,12 @@ def test_half_asset_prices_are_updated(mock_uniswap):
 
     Expected updates:
         - USDT pool asset is updated
-        - TGX pool asset is not updated
+        - CAR pool asset is not updated
         - Liquidity pool only counts USDT USD value
     """
     address_balances = {TEST_ADDRESS_2: [EXP_LIQUIDITY_POOL_2]}
     known_asset_price = {A_USDT.ethereum_address: USD_PRICE_USDT}
-    unknown_asset_price = {}  # TGX not in it
+    unknown_asset_price = {}  # CAR not in it
 
     # Main call
     mock_uniswap._update_assets_prices_in_address_balances(
@@ -59,8 +59,8 @@ def test_all_asset_prices_are_updated(mock_uniswap):
         A_USDT.ethereum_address: USD_PRICE_USDT,
     }
     unknown_asset_price = {
-        ASSET_SHUF.ethereum_address: USD_PRICE_SHUF,
-        ASSET_TGX.ethereum_address: USD_PRICE_TGX,
+        A_SHL.ethereum_address: USD_PRICE_SHL,
+        A_CAR.ethereum_address: USD_PRICE_CAR,
     }
 
     # Main call
