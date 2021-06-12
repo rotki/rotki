@@ -41,13 +41,6 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def _atoken_to_reserve_asset(atoken: EthereumToken) -> Asset:
-    reserve_symbol = atoken.identifier[1:]
-    if reserve_symbol == 'SUSD':
-        reserve_symbol = 'sUSD'
-    return Asset(reserve_symbol)
-
-
 class Aave(EthereumModule):
     """Aave integration module
 

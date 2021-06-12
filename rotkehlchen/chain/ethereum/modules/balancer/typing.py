@@ -20,8 +20,6 @@ from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Price, Timestamp
 BALANCER_EVENTS_PREFIX = 'balancer_events'
 BALANCER_TRADES_PREFIX = 'balancer_trades'
 POOL_MAX_NUMBER_TOKENS = 8
-DB_TOKEN_NUMBER_COLUMNS = 6
-NONE_TOKEN_SERIALIZED_FOR_DB = [None] * DB_TOKEN_NUMBER_COLUMNS
 
 
 @dataclass(init=True, repr=True)
@@ -316,6 +314,5 @@ class BalancerPoolEventsBalance(NamedTuple):
         }
 
 
-AddressToEventPool = Dict[ChecksumAddress, EthereumToken]
 AddressToPoolEventsBalances = Dict[ChecksumEthAddress, List[BalancerPoolEventsBalance]]
 DDAddressToProfitLossAmounts = DefaultDict[EthereumToken, List[AssetAmount]]

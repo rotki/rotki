@@ -65,7 +65,6 @@ from rotkehlchen.externalapis.xratescom import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import KnownProtocolsAssets, Price, Timestamp
@@ -563,31 +562,6 @@ class Inquirer():
                 rate = asset_price
 
         log.debug('Historical fiat exchange rate query succesful', rate=rate)
-        return rate
-
-    @staticmethod
-    def _get_cached_forex_data(
-            date: str,
-            from_currency: Asset,
-            to_currency: Asset,
-    ) -> Optional[Price]:
-        instance = Inquirer()
-        rate = None
-        if date in instance._cached_forex_data:
-            if from_currency in instance._cached_forex_data[date]:
-                rate = instance._cached_forex_data[date][from_currency].get(to_currency)
-                if rate:
-                    log.debug(
-                        'Got cached forex rate',
-                        from_currency=from_currency.identifier,
-                        to_currency=to_currency.identifier,
-                        rate=rate,
-                    )
-                    try:
-                        rate = deserialize_price(rate)
-                    except DeserializationError as e:
-                        log.error(f'Could not read cached forex entry due to {str(e)}')
-
         return rate
 
     @staticmethod

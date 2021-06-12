@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tuple
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
@@ -20,7 +20,6 @@ from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Price, Timestamp
 
 log = logging.getLogger(__name__)
 
-SWAP_FEE = FVal('0.003')  # 0.3% fee for swapping tokens
 UNISWAP_EVENTS_PREFIX = 'uniswap_events'
 UNISWAP_TRADES_PREFIX = 'uniswap_trades'
 
@@ -75,13 +74,7 @@ class ProtocolBalance(NamedTuple):
     unknown_assets: Set[EthereumToken]
 
 
-# Get trades history
-
 AddressTrades = Dict[ChecksumEthAddress, List[AMMTrade]]
-ProtocolHistory = Dict[str, Union[AddressTrades]]
-
-
-# Get events history
 
 
 class EventType(Enum):
@@ -114,7 +107,6 @@ LiquidityPoolEventDBTuple = (
         str,  # lp_amount
     ]
 )
-SerializeAsDictKeys = Union[List[str], Tuple[str, ...], Set[str]]
 
 
 class LiquidityPoolEvent(NamedTuple):

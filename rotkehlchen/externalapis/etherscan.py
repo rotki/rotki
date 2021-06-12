@@ -367,25 +367,6 @@ class Etherscan(ExternalServiceWithApiKey):
         )
         return result
 
-    def get_token_transfers(
-            self,
-            from_address: ChecksumEthAddress,
-            token_address: ChecksumEthAddress,
-    ) -> List[Dict[str, Any]]:
-        """Gets the token transfers associated with from_address
-
-        May raise:
-        - RemoteError if there are any problems with reaching Etherscan or if
-        an unexpected response is returned
-        """
-        options = {'address': from_address, 'contractaddress': token_address, 'sort': 'asc'}
-        result = self._query(
-            module='account',
-            action='tokentx',
-            options=options,
-        )
-        return result
-
     def get_logs(
             self,
             contract_address: ChecksumEthAddress,

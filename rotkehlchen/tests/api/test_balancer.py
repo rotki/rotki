@@ -66,22 +66,6 @@ BALANCER_TEST_ADDR3_POOL2 = EthereumToken.initialize(
         UnderlyingToken(address=string_to_ethereum_address('0xdd974D5C2e2928deA5F71b9825b8b646686BD200'), weight=FVal(0.1)),  # noqa: E501  # KNC
     ],
 )
-BALANCER_TEST_ADDR3_POOL3 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x01d5314Ca775a0Ec2Ed11b19Ff745a08d9D3C7F9'),
-    symbol='BPT',
-    protocol='balancer',
-    underlying_tokens=[
-        UnderlyingToken(address=string_to_ethereum_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), weight=FVal(0.25)),  # noqa: E501  # WETH
-        UnderlyingToken(address=string_to_ethereum_address('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'), weight=FVal(0.25)),  # noqa: E501  # WBTC
-        UnderlyingToken(address=string_to_ethereum_address('0x514910771AF9Ca656af840dff83E8264EcF986CA'), weight=FVal(0.1)),  # noqa: E501  # LINK
-        UnderlyingToken(address=string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'), weight=FVal(0.1)),  # noqa: E501  # AAVE
-        UnderlyingToken(address=string_to_ethereum_address('0xc00e94Cb662C3520282E6f5717214004A7f26888'), weight=FVal(0.1)),  # noqa: E501  # COMP
-        UnderlyingToken(address=string_to_ethereum_address('0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'), weight=FVal(0.07)),  # noqa: E501  # MKR
-        UnderlyingToken(address=string_to_ethereum_address('0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'), weight=FVal(0.07)),  # noqa: E501  # MKR
-        UnderlyingToken(address=string_to_ethereum_address('0xBA11D00c5f74255f56a5E366F4F77f5A186d7f55'), weight=FVal(0.07)),  # noqa: E501  # BAND
-        UnderlyingToken(address=string_to_ethereum_address('0xE41d2489571d322189246DaFA5ebDe1F4699F498'), weight=FVal(0.05)),  # noqa: E501  # ZRX
-    ],
-)
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR1]])

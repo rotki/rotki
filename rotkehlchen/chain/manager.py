@@ -108,7 +108,6 @@ def _module_name_to_class(module_name: ModuleName) -> EthereumModule:
 
 
 DEFI_BALANCES_REQUERY_SECONDS = 600
-ETH2_DETAILS_REQUERY_SECONDS = 600
 
 # Mapping to token symbols to ignore. True means all
 DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
@@ -277,11 +276,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.defi_balances_last_query_ts = Timestamp(0)
         self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
 
-        self.eth2_details_last_query_ts = Timestamp(0)
         self.eth2_details: List['ValidatorDetails'] = []
 
         self.defi_lock = Semaphore()
-        self.eth2_lock = Semaphore()
         self.btc_lock = Semaphore()
         self.eth_lock = Semaphore()
         self.ksm_lock = Semaphore()

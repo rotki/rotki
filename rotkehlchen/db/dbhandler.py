@@ -1629,32 +1629,6 @@ class DBHandler:
 
         return returned_list
 
-    def get_univ2_lp_tokens_for_address_if_time(
-            self,
-            address: ChecksumEthAddress,
-            current_time: Timestamp,
-    ) -> Optional[List[ChecksumEthAddress]]:
-        """Gets the detected uniswap v2 lp tokens for the given address if the
-        given current time is recent enough.
-
-        If not, or if there is no saved entry, return None
-        """
-        json_ret = self._get_address_details_if_time(address, current_time)
-        if json_ret is None:
-            return None
-        addresses_list = json_ret.get('univ2_lp_tokens', None)
-        if addresses_list is None:
-            return None
-
-        if not isinstance(addresses_list, list):
-            # This should never happen
-            self.msg_aggregator.add_warning(
-                f'Found non-list univ2_lp_tokens {json_ret} in the DB for {address}.',
-            )
-            return None
-
-        return addresses_list  # Should we check everything is an address?
-
     def _get_address_details_json(self, address: ChecksumEthAddress) -> Optional[Dict[str, Any]]:
         cursor = self.conn.cursor()
         query = cursor.execute(
@@ -1688,27 +1662,6 @@ class DBHandler:
         if old_details and 'univ2_lp_tokens' in old_details:
             new_details['univ2_lp_tokens'] = old_details['univ2_lp_tokens']
         new_details['tokens'] = [x.identifier for x in tokens]
-        now = ts_now()
-        cursor = self.conn.cursor()
-        cursor.execute(
-            'INSERT OR REPLACE INTO ethereum_accounts_details '
-            '(account, tokens_list, time) VALUES (?, ?, ?)',
-            (address, json.dumps(new_details), now),
-        )
-        self.conn.commit()
-        self.update_last_write()
-
-    def save_univ2_lp_tokens_for_address(
-            self,
-            address: ChecksumEthAddress,
-            tokens: List[ChecksumEthAddress],
-    ) -> None:
-        """Saves detected univ2 lp tokens for an address"""
-        old_details = self._get_address_details_json(address)
-        new_details = {}
-        if old_details and 'tokens' in old_details:
-            new_details['tokens'] = old_details['tokens']
-        new_details['univ2_lp_tokens'] = tokens
         now = ts_now()
         cursor = self.conn.cursor()
         cursor.execute(
@@ -2781,14 +2734,6 @@ class DBHandler:
             swaps.append(swap)
 
         return swaps
-
-    def delete_amm_swap(self, swap_id: str) -> Tuple[bool, str]:
-        cursor = self.conn.cursor()
-        cursor.execute('DELETE FROM amm_swaps WHERE id=?', (swap_id,))
-        if cursor.rowcount == 0:
-            return False, 'Tried to delete non-existing AMM swap'
-        self.conn.commit()
-        return True, ''
 
     def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
         """Save the rotki premium credentials in the DB"""

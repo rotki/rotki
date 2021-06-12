@@ -10,7 +10,7 @@ from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import MAKERDAO_DAI_JOIN, MAKERDAO_POT
-from rotkehlchen.errors import BlockchainQueryError, ConversionError, RemoteError
+from rotkehlchen.errors import ConversionError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
@@ -710,38 +710,6 @@ class MakerdaoDsr(MakerdaoCommon):
             to_timestamp=last_timestamp,
             tx_hashes=tx_hashes,
         )
-
-    def get_dsr_gains_in_period(
-            self,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-    ) -> List[DSRGain]:
-        """Get DSR gains for all accounts in a given period
-
-        This is a best effort attempt and may also fail due to inability to find
-        the required data via logs
-        """
-        history = self.get_historical_dsr()
-
-        gains = []
-        for account, report in history.items():
-            try:
-                gain = self._get_dsr_account_gain_in_period(
-                    movements=report.movements,
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                )
-                if gain is not None:
-                    gains.append(gain)
-
-            except (ChiRetrievalError, RemoteError, BlockchainQueryError) as e:
-                self.msg_aggregator.add_warning(
-                    f'Failed to get DSR gains for {account} between '
-                    f'{from_ts} and {to_ts}: {str(e)}',
-                )
-                continue
-
-        return gains
 
     # -- Methods following the EthereumModule interface -- #
     def on_account_removal(self, address: ChecksumEthAddress) -> None:

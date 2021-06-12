@@ -405,17 +405,6 @@ class HDKey():
         )
         return self._child_from_xpub(index=index, child_xpub=child_xpub)
 
-    def generate_specific_address(self, addr_type: BTCAddressType) -> str:
-        if addr_type == BTCAddressType.BASE58:
-            return pubkey_to_base58_address(self.pubkey.format(COMPRESSED_PUBKEY))
-        if addr_type == BTCAddressType.P2SH_P2WPKH:
-            return pubkey_to_p2sh_p2wpkh_address(self.pubkey.format(COMPRESSED_PUBKEY))
-        # else
-        return pubkey_to_bech32_address(
-            data=self.pubkey.format(COMPRESSED_PUBKEY),
-            witver=0,
-        )
-
     def address(self) -> BTCAddress:
         if self.hint == 'xpub':
             return pubkey_to_base58_address(self.pubkey.format(COMPRESSED_PUBKEY))
