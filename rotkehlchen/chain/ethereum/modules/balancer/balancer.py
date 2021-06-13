@@ -763,8 +763,7 @@ class Balancer(EthereumModule):
             balancer_events: List[BalancerEvent],
             pool_addr_to_token_addr_to_index: PoolAddrToTokenAddrToIndex,
     ) -> None:
-        """Insert into `balancer_pools` and `balancer_events` the new pools and
-        events to be stored in the DB.
+        """Store pools and events in the DB
 
         The `event_type` (MINT or BURN) determines from which type of events the
         <BalancerEvent> is built:

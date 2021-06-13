@@ -1062,7 +1062,6 @@ class DBHandler:
         """Delete all historical Balancer events data"""
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM balancer_events;')
-        cursor.execute('DELETE FROM balancer_pools;')
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_EVENTS_PREFIX}%";',
         )
@@ -1094,22 +1093,14 @@ class DBHandler:
                 timestamp,
                 type,
                 pool_address,
-                is_token0_unknown,
-                token0_address,
-                token0_symbol,
-                token0_name,
-                token0_decimals,
-                is_token1_unknown,
-                token1_address,
-                token1_symbol,
-                token1_name,
-                token1_decimals,
+                token0_identifier,
+                token1_identifier,
                 amount0,
                 amount1,
                 usd_price,
                 lp_amount
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         )
         cursor = self.conn.cursor()
