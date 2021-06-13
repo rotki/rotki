@@ -214,7 +214,7 @@ if __name__ == "__main__":
             write_result_to_file(result, 'uniswap_lp_tokens_ethereum.json')
 
         if args.no_query_balances is False:
-            database = DBHandler('fill', 'me', ethereum.msg_aggregator)
+            database = DBHandler('fill', 'me', ethereum.msg_aggregator, None)
             start = ts_now()
             known_assets: Set[EthereumToken] = set()
             unknown_assets: Set[EthereumToken] = set()

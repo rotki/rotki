@@ -3,7 +3,6 @@ __all__ = [
     'BALANCER_TRADES_PREFIX',
     'BalancerBPTEventPoolToken',
     'BalancerEvent',
-    'BalancerEventPool',
     'BalancerPoolBalance',
     'BalancerPoolEventsBalance',
     'BalancerPoolTokenBalance',
