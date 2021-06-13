@@ -100,7 +100,6 @@ class TaskManager():
         if len(self.cryptocompare_queries) != 0:
             return
 
-        self.preparing_cryptocompare_query = True
         assets = self.database.query_owned_assets()
         main_currency = self.database.get_main_currency()
         for asset in assets:

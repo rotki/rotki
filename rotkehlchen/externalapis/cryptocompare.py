@@ -200,15 +200,6 @@ def _dict_history_to_entries(data: List[Dict[str, Any]]) -> List[PriceHistoryEnt
     ]
 
 
-def _dict_history_to_data(data: Dict[str, Any]) -> PriceHistoryData:
-    """Turns a price history data dict entry into a proper object"""
-    return PriceHistoryData(
-        data=_dict_history_to_entries(data['data']),
-        start_time=Timestamp(data['start_time']),
-        end_time=Timestamp(data['end_time']),
-    )
-
-
 def _multiply_str_nums(a: str, b: str) -> str:
     """Multiplies two string numbers and returns the result as a string"""
     return str(FVal(a) * FVal(b))

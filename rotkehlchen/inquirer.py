@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import multicall_2
@@ -66,10 +65,9 @@ from rotkehlchen.externalapis.xratescom import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Price, Timestamp, KnownProtocolsAssets
+from rotkehlchen.typing import KnownProtocolsAssets, Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.network import request_get_dict
 
@@ -437,7 +435,7 @@ class Inquirer():
 
     def find_uniswap_v2_lp_price(
         self,
-        token: Union[EthereumToken, UnknownEthereumToken],
+        token: EthereumToken,
     ) -> Optional[Price]:
         """
         Calculate the price for a uniswap v2 LP token. That is
@@ -564,31 +562,6 @@ class Inquirer():
                 rate = asset_price
 
         log.debug('Historical fiat exchange rate query succesful', rate=rate)
-        return rate
-
-    @staticmethod
-    def _get_cached_forex_data(
-            date: str,
-            from_currency: Asset,
-            to_currency: Asset,
-    ) -> Optional[Price]:
-        instance = Inquirer()
-        rate = None
-        if date in instance._cached_forex_data:
-            if from_currency in instance._cached_forex_data[date]:
-                rate = instance._cached_forex_data[date][from_currency].get(to_currency)
-                if rate:
-                    log.debug(
-                        'Got cached forex rate',
-                        from_currency=from_currency.identifier,
-                        to_currency=to_currency.identifier,
-                        rate=rate,
-                    )
-                    try:
-                        rate = deserialize_price(rate)
-                    except DeserializationError as e:
-                        log.error(f'Could not read cached forex entry due to {str(e)}')
-
         return rate
 
     @staticmethod

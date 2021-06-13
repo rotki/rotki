@@ -2106,6 +2106,42 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
     assert db.get_version() == 26
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 26 to version 27.
+
+    - Recreates balancer events, uniswap events, amm_swaps. Deletes balancer pools
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v26_rotkehlchen.db')
+    db_v26 = _init_db_with_target_version(
+        target_version=26,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    # Checks before migration
+    cursor = db_v26.conn.cursor()
+    assert cursor.execute(
+        'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "uniswap%";',
+    ).fetchone()[0] == 2
+    assert cursor.execute(
+        'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "balancer%";',
+    ).fetchone()[0] == 2
+    assert cursor.execute('SELECT COUNT(*) from used_query_ranges;').fetchone()[0] == 6
+
+    # Migrate to v27
+    db = _init_db_with_target_version(
+        target_version=27,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+    assert cursor.execute('SELECT COUNT(*) from used_query_ranges;').fetchone()[0] == 2
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 27
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the

@@ -1,5 +1,4 @@
 import base64
-from binascii import hexlify
 
 from coincurve import PrivateKey
 from Crypto import Random
@@ -7,7 +6,7 @@ from Crypto.Cipher import AES
 from Crypto.Hash import SHA3_256, SHA256
 
 from rotkehlchen.errors import UnableToDecryptRemoteData
-from rotkehlchen.typing import BinaryEthAddress, EthAddress
+from rotkehlchen.typing import BinaryEthAddress
 
 
 # AES encrypt/decrypt taken from here: https://stackoverflow.com/a/44212550/110395
@@ -73,12 +72,3 @@ def privatekey_to_publickey(private_key_bin: bytes) -> bytes:
 
 def publickey_to_address(publickey: bytes) -> BinaryEthAddress:
     return BinaryEthAddress(sha3(publickey[1:])[12:])
-
-
-def privatekey_to_address(private_key_bin: bytes) -> BinaryEthAddress:
-    return publickey_to_address(privatekey_to_publickey(private_key_bin))
-
-
-def address_encoder(address: BinaryEthAddress) -> EthAddress:
-    assert len(address) in (20, 0)
-    return EthAddress('0x' + hexlify(address).decode())

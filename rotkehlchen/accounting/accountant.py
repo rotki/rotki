@@ -7,7 +7,6 @@ import gevent
 from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import ActionType, DefiEvent
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -543,14 +542,6 @@ class Accountant():
                 f'Ignoring the trade.',
             )
             return True, prev_time
-
-        for x in action_assets:
-            if isinstance(x, UnknownEthereumToken):
-                self.msg_aggregator.add_error(
-                    f'Ignoring action {action_type} with unknown token asset {x}. '
-                    f'Add it as a token in rotki manually with a working price oracle to fix this',
-                )
-                return True, prev_time
 
         if any(x in ignored_assets for x in action_assets):
             log.debug(

@@ -194,42 +194,6 @@ class EthTokens():
                 usd_price = Price(ZERO)
             token_usd_price[token] = usd_price
 
-    def _get_multitoken_multiaccount_balance(
-            self,
-            tokens: List[EthereumToken],
-            accounts: List[ChecksumEthAddress],
-    ) -> Dict[str, Dict[ChecksumEthAddress, FVal]]:
-        """Queries a list of accounts for balances of multiple tokens
-
-        Return a dictionary with keys being tokens and value a dictionary of
-        account to balances
-
-        May raise:
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
-        - BadFunctionCallOutput if a local node is used and the contract for the
-          token has no code. That means the chain is not synced
-        """
-        log.debug(
-            'Querying ethereum chain for multi token multi account balances',
-            eth_addresses=accounts,
-            tokens_num=len(tokens),
-        )
-        balances: Dict[str, Dict[ChecksumEthAddress, FVal]] = defaultdict(dict)
-        result = ETH_SCAN.call(
-            ethereum=self.ethereum,
-            method_name='tokensBalances',
-            arguments=[accounts, [x.ethereum_address for x in tokens]],
-        )
-        for acc_idx, account in enumerate(accounts):
-            for tk_idx, token in enumerate(tokens):
-                token_amount = result[acc_idx][tk_idx]
-                if token_amount != 0:
-                    balances[token.identifier][account] = token_normalized_value(
-                        token_amount=token_amount, token=token,
-                    )
-        return balances
-
     def _get_multitoken_account_balance(
             self,
             tokens: List[EthereumToken],

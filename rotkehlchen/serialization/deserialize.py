@@ -4,9 +4,7 @@ from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     ConversionError,
@@ -568,32 +566,6 @@ def deserialize_ethereum_token_from_db(identifier: str) -> EthereumToken:
         )
 
     return ethereum_token
-
-
-def deserialize_unknown_ethereum_token_from_db(
-        ethereum_address: str,
-        symbol: str,
-        name: Optional[str],
-        decimals: Optional[int],
-) -> UnknownEthereumToken:
-    """Takes at least an ethereum address and a symbol, and returns an
-    <UnknownEthereumToken>
-    """
-    try:
-        unknown_ethereum_token = UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address(ethereum_address),
-            symbol=symbol,
-            name=name,
-            decimals=decimals,
-        )
-    except Exception as e:
-        raise DeserializationError(
-            f'Failed deserializing an unknown ethereum token with '
-            f'address {ethereum_address}, symbol {symbol}, name {name}, '
-            f'decimals {decimals}.',
-        ) from e
-
-    return unknown_ethereum_token
 
 
 X = TypeVar('X')

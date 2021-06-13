@@ -5859,11 +5859,7 @@ Getting Uniswap events
                       "pool_address": "0x2C7a51A357d5739C5C74Bf3C96816849d2c9F726",
                       "profit_loss0": "264.089867496935331902",
                       "profit_loss1": "88.677078283001177264",
-                      "token0": {
-                          "ethereum_address": "0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16",
-                          "name": "YAM",
-                          "symbol": "YAM"
-                      },
+                      "token0": "_ceth_0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16",
                       "token1": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
                       "usd_profit_loss": "162.1876736563418464415499063"
                   }
@@ -5888,8 +5884,8 @@ Getting Uniswap events
    :resjson string pool_address: The contract address of the pool.
    :resjson string profit_loss0: The token0 profit/loss.
    :resjson string profit_loss1: The token1 profit/loss.
-   :resjson object token0: The pool's pair left token. Either an identifier if it's a known token or the address/symbol/name object.
-   :resjson object token1: The pool's pair right token. Either an identifier if it's a known token or the address/symbol/name object.
+   :resjson object token0: The pool's pair left token identifier
+   :resjson object token1: The pool's pair right token identifier.
    :resjson string usd_profit_loss: The total profit/loss in USD.
 
 
@@ -5959,11 +5955,7 @@ Getting Uniswap trades
               "fee": "0",
               "fee_currency": "ALEPH",
               "location": "uniswap",
-              "quote_asset": {
-                  "ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
-                  "name": "aleph.im v2",
-                  "symbol": "ALEPH"
-              },
+              "quote_asset": "_ceth_0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
               "rate": "0.1604821621994156262081817395",
               "swaps": [{
                   "amount0_in": "5634.092979176915803392",
@@ -5973,7 +5965,7 @@ Getting Uniswap trades
                   "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
                   "log_index": 98,
                   "to_address": "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11",
-                  "token0": {"ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628", "name": "aleph.im v2", "symbol": "ALEPH"},
+                  "token0": "_ceth_0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
                   "token1": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                   "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}, {
                   "amount0_in": "0",
@@ -6010,8 +6002,8 @@ Getting Uniswap trades
    :resjson string tx_hash: The transaction hash
    :resjson list[object] swaps: A list of all the swaps that the trade is made of. Each swap is an object with the following attributes:
 
-       - token0: Either an identifier if it's a known token or the address/symbol/name object for token0 of the swap.
-       - token1: Either an identifier if it's a known token or the address/symbol/name object for token1 of the swap.
+       - token0: The identifier of the token.
+       - token1: The identifier of the token.
        - amount0_in: The amount (can be zero) of token0 that the user is putting in the swap.
        - amount1_in: The amount (can be zero) of token1 that the user is putting in the swap.
        - amount0_out: The amount (can be zero) of token0 that the user is getting out of the swap.

@@ -24,6 +24,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from sqlite3 import Cursor
+
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -460,7 +461,11 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
         f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_TRADES_PREFIX}%";',
     )
     cursor.execute('DELETE FROM balancer_events;')
-    cursor.execute('DELETE FROM balancer_pools;')
+    have_balancer_pools = cursor.execute(
+        'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name="balancer_pools"',
+    ).fetchone()[0] == 1
+    if have_balancer_pools:
+        cursor.execute('DELETE FROM balancer_pools;')
     cursor.execute(
         f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_EVENTS_PREFIX}%";',
     )

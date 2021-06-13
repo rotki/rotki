@@ -517,10 +517,15 @@ class GlobalDBHandler():
             return None
 
     @staticmethod
-    def get_ethereum_tokens(exceptions: Optional[List[ChecksumEthAddress]] = None) -> List[EthereumToken]:  # noqa: E501
+    def get_ethereum_tokens(
+            exceptions: Optional[List[ChecksumEthAddress]] = None,
+            protocol: Optional[str] = None,
+    ) -> List[EthereumToken]:
         """Gets all ethereum tokens from the DB
 
-        Can also accept a list of addresses to ignore
+        Can also accept filtering parameters.
+        - List of addresses to ignore via exceptions
+        - Protocol for which to return tokens
         """
         cursor = GlobalDBHandler()._conn.cursor()
         querystr = (
@@ -529,10 +534,19 @@ class GlobalDBHandler():
             'FROM ethereum_tokens as B LEFT OUTER JOIN '
             'assets AS A on B.address = A.details_reference '
         )
-        if exceptions is not None:
-            questionmarks = '?' * len(exceptions)
-            querystr += f'WHERE B.address NOT IN ({",".join(questionmarks)});'
-            bindings = tuple(exceptions)
+        if exceptions is not None or protocol is not None:
+            bindings_list: List[Union[str, ChecksumEthAddress]] = []
+            querystr_additions = []
+            if exceptions is not None:
+                questionmarks = '?' * len(exceptions)
+                querystr_additions.append(f'WHERE B.address NOT IN ({",".join(questionmarks)}) ')
+                bindings_list.extend(exceptions)
+            if protocol is not None:
+                querystr_additions.append('WHERE B.protocol=? ')
+                bindings_list.append(protocol)
+
+            querystr += 'AND '.join(querystr_additions) + ';'
+            bindings = tuple(bindings_list)
         else:
             querystr += ';'
             bindings = ()

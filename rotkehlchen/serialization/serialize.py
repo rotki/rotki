@@ -6,7 +6,6 @@ from web3.datastructures import AttributeDict
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.defi.structures import (
@@ -124,7 +123,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             AaveEvent,
             UniswapPool,
             UniswapPoolAsset,
-            UnknownEthereumToken,
             AMMTrade,
             UniswapPoolEventsBalance,
             ADXStakingHistory,

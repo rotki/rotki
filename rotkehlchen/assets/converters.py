@@ -659,12 +659,6 @@ RENAMED_BINANCE_ASSETS = {
     'RPX': 'PHX',
 }
 
-ETH_TOKENS_MOVED_TO_OWN_CHAIN = {
-    'NET': 'NIM',
-    'EOS': 'EOS',
-    'META': 'META',
-}
-
 
 def asset_from_kraken(kraken_name: str) -> Asset:
     """May raise:

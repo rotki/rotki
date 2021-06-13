@@ -7,9 +7,8 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
 from rotkehlchen.chain.ethereum.modules.balancer.typing import (
-    BalancerBPTEventPoolToken,
     BalancerBPTEventType,
     BalancerEvent,
     BalancerPoolEventsBalance,
@@ -20,13 +19,10 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_BAL,
-    A_BAT,
     A_COMP,
-    A_KNC,
     A_LEND,
     A_LINK,
     A_MKR,
-    A_SNX,
     A_WBTC,
     A_WETH,
     A_ZRX,
@@ -47,9 +43,29 @@ from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeTyp
 BALANCER_TEST_ADDR1 = string_to_ethereum_address('0x49a2DcC237a65Cc1F412ed47E0594602f6141936')
 BALANCER_TEST_ADDR2 = string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b')
 BALANCER_TEST_ADDR3 = string_to_ethereum_address('0x7716a99194d758c8537F056825b75Dd0C8FDD89f')
-BALANCER_TEST_ADDR3_POOL1 = string_to_ethereum_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4')  # noqa: E501
-BALANCER_TEST_ADDR3_POOL2 = string_to_ethereum_address('0x574FdB861a0247401B317a3E68a83aDEAF758cf6')  # noqa: E501
-BALANCER_TEST_ADDR3_POOL3 = string_to_ethereum_address('0x01d5314Ca775a0Ec2Ed11b19Ff745a08d9D3C7F9')  # noqa: E501
+BALANCER_TEST_ADDR3_POOL1 = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
+    symbol='BPT',
+    protocol='balancer',
+    underlying_tokens=[
+        UnderlyingToken(address=string_to_ethereum_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), weight=FVal(0.2)),  # noqa: E501  # WETH
+        UnderlyingToken(address=string_to_ethereum_address('0xba100000625a3754423978a60c9317c58a424e3D'), weight=FVal(0.8)),  # noqa: E501  # BAL
+    ],
+)
+BALANCER_TEST_ADDR3_POOL2 = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x574FdB861a0247401B317a3E68a83aDEAF758cf6'),
+    symbol='BPT',
+    protocol='balancer',
+    underlying_tokens=[
+        UnderlyingToken(address=string_to_ethereum_address('0x0D8775F648430679A709E98d2b0Cb6250d2887EF'), weight=FVal(0.1)),  # noqa: E501  # BAT
+        UnderlyingToken(address=string_to_ethereum_address('0x514910771AF9Ca656af840dff83E8264EcF986CA'), weight=FVal(0.35)),  # noqa: E501  # LINK
+        UnderlyingToken(address=string_to_ethereum_address('0x80fB784B7eD66730e8b1DBd9820aFD29931aab03'), weight=FVal(0.1)),  # noqa: E501  # LEND
+        UnderlyingToken(address=string_to_ethereum_address('0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'), weight=FVal(0.1)),  # noqa: E501  # MKR
+        UnderlyingToken(address=string_to_ethereum_address('0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F'), weight=FVal(0.1)),  # noqa: E501  # SNX
+        UnderlyingToken(address=string_to_ethereum_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'), weight=FVal(0.15)),  # noqa: E501  # WETH
+        UnderlyingToken(address=string_to_ethereum_address('0xdd974D5C2e2928deA5F71b9825b8b646686BD200'), weight=FVal(0.1)),  # noqa: E501  # KNC
+    ],
+)
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR1]])
@@ -116,12 +132,6 @@ def test_get_balances(
 
         for pool_token in pool_share['tokens']:
             assert pool_token['token'] is not None
-            # UnknownEthereumToken
-            if isinstance(pool_token['token'], dict):
-                assert pool_token['token']['ethereum_address'] is not None
-                assert pool_token['token']['name'] is not None
-                assert pool_token['token']['symbol'] is not None
-
             assert pool_token['total_amount'] is not None
             assert FVal(pool_token['user_balance']['amount']) >= ZERO
             assert FVal(pool_token['user_balance']['usd_value']) >= ZERO
@@ -129,218 +139,215 @@ def test_get_balances(
             assert FVal(pool_token['weight']) >= ZERO
 
 
-BALANCER_TEST_ADDR2_EXPECTED_TRADES = [
-    AMMTrade(
-        trade_type=TradeType.BUY,
-        base_asset=A_WETH,
-        quote_asset=A_AAVE,
-        amount=AssetAmount(FVal('1.616934038985744521')),
-        rate=Price(FVal('6.963972908793392530935439799')),
-        trade_index=1,
-        swaps=[
-            AMMSwap(
-                tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
-                log_index=24,
-                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=string_to_ethereum_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
-                timestamp=Timestamp(1607008178),
-                location=Location.BALANCER,
-                token0=A_AAVE,
-                token1=A_WETH,
-                amount0_in=AssetAmount(FVal('11.260284842802604032')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('1.616934038985744521')),
-            ),
-        ],
-    ),
-    AMMTrade(
-        trade_type=TradeType.BUY,
-        base_asset=A_AAVE,
-        quote_asset=A_WETH,
-        amount=AssetAmount(FVal('11.260286362820602094')),
-        rate=Price(FVal('0.1416068599966922676173010716')),
-        trade_index=0,
-        swaps=[
-            AMMSwap(
-                tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
-                log_index=18,
-                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=string_to_ethereum_address('0x70985E557aE0CD6dC88189a532e54FbC61927BAd'),  # noqa: E501
-                timestamp=Timestamp(1607008178),
-                location=Location.BALANCER,
-                token0=A_WETH,
-                token1=A_AAVE,
-                amount0_in=AssetAmount(FVal('1.594533794502600192')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('11.260286362820602094')),
-            ),
-        ],
-    ),
-    AMMTrade(
-        trade_type=TradeType.BUY,
-        base_asset=A_WETH,
-        quote_asset=A_SYN,
-        amount=AssetAmount(FVal('1.352902561458047718')),
-        rate=Price(FVal('724.4303350385182691258363763')),
-        trade_index=0,
-        swaps=[
-            AMMSwap(
-                tx_hash='0x5e235216cb03e4eb234014f5ccf3efbfddd40c4576424e2a8204f1d12b96ed35',  # noqa: E501
-                log_index=143,
-                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=string_to_ethereum_address('0x8982E9bBf7AC6A49c434aD81D2fF8e16895318e5'),  # noqa: E501
-                timestamp=Timestamp(1607008218),
-                location=Location.BALANCER,
-                token0=A_SYN,
-                token1=A_WETH,
-                amount0_in=AssetAmount(FVal('980.08365587152306176')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('1.352902561458047718')),
-            ),
-        ],
-    ),
-    AMMTrade(
-        trade_type=TradeType.BUY,
-        base_asset=A_WETH,
-        quote_asset=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0xa0afAA285Ce85974c3C881256cB7F225e3A1178a'),  # noqa: E501
-            symbol='wCRES',
-            name='Wrapped CRES',
-            decimals=18,
-        ),
-        amount=AssetAmount(FVal('0.205709519074945018')),
-        rate=Price(FVal('232.7409943164679514496089589')),
-        trade_index=0,
-        swaps=[
-            AMMSwap(
-                tx_hash='0xf54be824b4619777f1db0e3da91b0cd52f6dba730c95a75644e2b085e6ab9824',  # noqa: E501
-                log_index=300,
-                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=string_to_ethereum_address('0x10996eC4f3E7A1b314EbD966Fa8b1ad0fE0f8307'),  # noqa: E501
-                timestamp=Timestamp(1607009877),
-                location=Location.BALANCER,
-                token0=UnknownEthereumToken(
-                    ethereum_address=string_to_ethereum_address('0xa0afAA285Ce85974c3C881256cB7F225e3A1178a'),  # noqa: E501
-                    symbol='wCRES',
-                    name='Wrapped CRES',
-                    decimals=18,
+def get_balancer_test_addr2_expected_trades():
+    """In a function since the new(unknown) assets needs to have been loaded in the DB"""
+    A_WCRES = EthereumToken.initialize(  # noqa: N806
+        address=string_to_ethereum_address('0xa0afAA285Ce85974c3C881256cB7F225e3A1178a'),
+        decimals=18,
+        symbol='wCRES',
+    )
+    return [
+        AMMTrade(
+            trade_type=TradeType.BUY,
+            base_asset=A_WETH,
+            quote_asset=A_AAVE,
+            amount=AssetAmount(FVal('1.616934038985744521')),
+            rate=Price(FVal('6.963972908793392530935439799')),
+            trade_index=1,
+            swaps=[
+                AMMSwap(
+                    tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
+                    log_index=24,
+                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_ethereum_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
+                    timestamp=Timestamp(1607008178),
+                    location=Location.BALANCER,
+                    token0=A_AAVE,
+                    token1=A_WETH,
+                    amount0_in=AssetAmount(FVal('11.260284842802604032')),
+                    amount1_in=AssetAmount(ZERO),
+                    amount0_out=AssetAmount(ZERO),
+                    amount1_out=AssetAmount(FVal('1.616934038985744521')),
                 ),
-                token1=A_WETH,
-                amount0_in=AssetAmount(FVal('47.87703800986513408')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('0.205709519074945018')),
-            ),
-        ],
-    ),
-    AMMTrade(
-        trade_type=TradeType.BUY,
-        base_asset=A_API3,
-        quote_asset=A_WETH,
-        amount=AssetAmount(FVal('295.881648100500428692')),
-        rate=Price(FVal('0.003346787723157288562491614498')),
-        trade_index=0,
-        swaps=[
-            AMMSwap(
-                tx_hash='0xfed4e15051e3ce4dc0d2816f719701e5920e40bf41614b5feaa3c5a6a0186c03',  # noqa: E501
-                log_index=22,
-                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=string_to_ethereum_address('0x997c0fc9578a8194EFDdE2E0cD7aa6A69cFCD7c1'),  # noqa: E501
-                timestamp=Timestamp(1607010888),
-                location=Location.BALANCER,
-                token0=A_WETH,
-                token1=A_API3,
-                amount0_in=AssetAmount(FVal('0.990253067370299904')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('295.881648100500428692')),
-            ),
-        ],
-    ),
-    AMMTrade(
-        trade_type=TradeType.BUY,
-        base_asset=A_WETH,
-        quote_asset=A_MFT,
-        amount=AssetAmount(FVal('0.686544199299304057')),
-        rate=Price(FVal('243775.0324093115004367119900')),
-        trade_index=0,
-        swaps=[
-            AMMSwap(
-                tx_hash='0xf0147c4b81098676c08ae20ae5bf8f8b60d0ad79eec484f3f93ac6ab49a3c51c',  # noqa: E501
-                log_index=97,
-                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=string_to_ethereum_address('0x2Eb6CfbFFC8785Cd0D9f2d233d0a617bF4269eeF'),  # noqa: E501
-                timestamp=Timestamp(1607015059),
-                location=Location.BALANCER,
-                token0=A_MFT,
-                token1=A_WETH,
-                amount0_in=AssetAmount(FVal('167362.334434612660404224')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('0.686544199299304057')),
-            ),
-        ],
-    ),
-    AMMTrade(
-        trade_type=TradeType.BUY,
-        base_asset=A_WETH,
-        quote_asset=A_AAVE,
-        amount=AssetAmount(FVal('3.055412574642681758')),
-        rate=Price(FVal('6.916116208273240607778771150')),
-        trade_index=1,
-        swaps=[
-            AMMSwap(
-                tx_hash='0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',  # noqa: E501
-                log_index=37,
-                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=string_to_ethereum_address('0x0E552307659E70bF61f918f96AA880Cdec40d7E2'),  # noqa: E501
-                timestamp=Timestamp(1607015339),
-                location=Location.BALANCER,
-                token0=A_AAVE,
-                token1=A_WETH,
-                amount0_in=AssetAmount(FVal('21.131588430448123904')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('3.055412574642681758')),
-            ),
-        ],
-    ),
-    AMMTrade(
-        trade_type=TradeType.BUY,
-        base_asset=A_AAVE,
-        quote_asset=A_WETH,
-        amount=AssetAmount(FVal('21.131588567541018817')),
-        rate=Price(FVal('0.1435213742524287826717337545')),
-        trade_index=0,
-        swaps=[
-            AMMSwap(
-                tx_hash='0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',  # noqa: E501
-                log_index=31,
-                address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
-                from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
-                to_address=string_to_ethereum_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
-                timestamp=Timestamp(1607015339),
-                location=Location.BALANCER,
-                token0=A_WETH,
-                token1=A_AAVE,
-                amount0_in=AssetAmount(FVal('3.0328346313504')),
-                amount1_in=AssetAmount(ZERO),
-                amount0_out=AssetAmount(ZERO),
-                amount1_out=AssetAmount(FVal('21.131588567541018817')),
-            ),
-        ],
-    ),
-]
+            ],
+        ),
+        AMMTrade(
+            trade_type=TradeType.BUY,
+            base_asset=A_AAVE,
+            quote_asset=A_WETH,
+            amount=AssetAmount(FVal('11.260286362820602094')),
+            rate=Price(FVal('0.1416068599966922676173010716')),
+            trade_index=0,
+            swaps=[
+                AMMSwap(
+                    tx_hash='0x3c457da9b541ae39a7dc781ab04a03938b98b5649512aec2a2d32635c9bbf589',  # noqa: E501
+                    log_index=18,
+                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_ethereum_address('0x70985E557aE0CD6dC88189a532e54FbC61927BAd'),  # noqa: E501
+                    timestamp=Timestamp(1607008178),
+                    location=Location.BALANCER,
+                    token0=A_WETH,
+                    token1=A_AAVE,
+                    amount0_in=AssetAmount(FVal('1.594533794502600192')),
+                    amount1_in=AssetAmount(ZERO),
+                    amount0_out=AssetAmount(ZERO),
+                    amount1_out=AssetAmount(FVal('11.260286362820602094')),
+                ),
+            ],
+        ),
+        AMMTrade(
+            trade_type=TradeType.BUY,
+            base_asset=A_WETH,
+            quote_asset=A_SYN,
+            amount=AssetAmount(FVal('1.352902561458047718')),
+            rate=Price(FVal('724.4303350385182691258363763')),
+            trade_index=0,
+            swaps=[
+                AMMSwap(
+                    tx_hash='0x5e235216cb03e4eb234014f5ccf3efbfddd40c4576424e2a8204f1d12b96ed35',  # noqa: E501
+                    log_index=143,
+                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_ethereum_address('0x8982E9bBf7AC6A49c434aD81D2fF8e16895318e5'),  # noqa: E501
+                    timestamp=Timestamp(1607008218),
+                    location=Location.BALANCER,
+                    token0=A_SYN,
+                    token1=A_WETH,
+                    amount0_in=AssetAmount(FVal('980.08365587152306176')),
+                    amount1_in=AssetAmount(ZERO),
+                    amount0_out=AssetAmount(ZERO),
+                    amount1_out=AssetAmount(FVal('1.352902561458047718')),
+                ),
+            ],
+        ),
+        AMMTrade(
+            trade_type=TradeType.BUY,
+            base_asset=A_WETH,
+            quote_asset=A_WCRES,
+            amount=AssetAmount(FVal('0.205709519074945018')),
+            rate=Price(FVal('232.7409943164679514496089589')),
+            trade_index=0,
+            swaps=[
+                AMMSwap(
+                    tx_hash='0xf54be824b4619777f1db0e3da91b0cd52f6dba730c95a75644e2b085e6ab9824',  # noqa: E501
+                    log_index=300,
+                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_ethereum_address('0x10996eC4f3E7A1b314EbD966Fa8b1ad0fE0f8307'),  # noqa: E501
+                    timestamp=Timestamp(1607009877),
+                    location=Location.BALANCER,
+                    token0=A_WCRES,
+                    token1=A_WETH,
+                    amount0_in=AssetAmount(FVal('47.87703800986513408')),
+                    amount1_in=AssetAmount(ZERO),
+                    amount0_out=AssetAmount(ZERO),
+                    amount1_out=AssetAmount(FVal('0.205709519074945018')),
+                ),
+            ],
+        ),
+        AMMTrade(
+            trade_type=TradeType.BUY,
+            base_asset=A_API3,
+            quote_asset=A_WETH,
+            amount=AssetAmount(FVal('295.881648100500428692')),
+            rate=Price(FVal('0.003346787723157288562491614498')),
+            trade_index=0,
+            swaps=[
+                AMMSwap(
+                    tx_hash='0xfed4e15051e3ce4dc0d2816f719701e5920e40bf41614b5feaa3c5a6a0186c03',  # noqa: E501
+                    log_index=22,
+                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_ethereum_address('0x997c0fc9578a8194EFDdE2E0cD7aa6A69cFCD7c1'),  # noqa: E501
+                    timestamp=Timestamp(1607010888),
+                    location=Location.BALANCER,
+                    token0=A_WETH,
+                    token1=A_API3,
+                    amount0_in=AssetAmount(FVal('0.990253067370299904')),
+                    amount1_in=AssetAmount(ZERO),
+                    amount0_out=AssetAmount(ZERO),
+                    amount1_out=AssetAmount(FVal('295.881648100500428692')),
+                ),
+            ],
+        ),
+        AMMTrade(
+            trade_type=TradeType.BUY,
+            base_asset=A_WETH,
+            quote_asset=A_MFT,
+            amount=AssetAmount(FVal('0.686544199299304057')),
+            rate=Price(FVal('243775.0324093115004367119900')),
+            trade_index=0,
+            swaps=[
+                AMMSwap(
+                    tx_hash='0xf0147c4b81098676c08ae20ae5bf8f8b60d0ad79eec484f3f93ac6ab49a3c51c',  # noqa: E501
+                    log_index=97,
+                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_ethereum_address('0x2Eb6CfbFFC8785Cd0D9f2d233d0a617bF4269eeF'),  # noqa: E501
+                    timestamp=Timestamp(1607015059),
+                    location=Location.BALANCER,
+                    token0=A_MFT,
+                    token1=A_WETH,
+                    amount0_in=AssetAmount(FVal('167362.334434612660404224')),
+                    amount1_in=AssetAmount(ZERO),
+                    amount0_out=AssetAmount(ZERO),
+                    amount1_out=AssetAmount(FVal('0.686544199299304057')),
+                ),
+            ],
+        ),
+        AMMTrade(
+            trade_type=TradeType.BUY,
+            base_asset=A_WETH,
+            quote_asset=A_AAVE,
+            amount=AssetAmount(FVal('3.055412574642681758')),
+            rate=Price(FVal('6.916116208273240607778771150')),
+            trade_index=1,
+            swaps=[
+                AMMSwap(
+                    tx_hash='0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',  # noqa: E501
+                    log_index=37,
+                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_ethereum_address('0x0E552307659E70bF61f918f96AA880Cdec40d7E2'),  # noqa: E501
+                    timestamp=Timestamp(1607015339),
+                    location=Location.BALANCER,
+                    token0=A_AAVE,
+                    token1=A_WETH,
+                    amount0_in=AssetAmount(FVal('21.131588430448123904')),
+                    amount1_in=AssetAmount(ZERO),
+                    amount0_out=AssetAmount(ZERO),
+                    amount1_out=AssetAmount(FVal('3.055412574642681758')),
+                ),
+            ],
+        ),
+        AMMTrade(
+            trade_type=TradeType.BUY,
+            base_asset=A_AAVE,
+            quote_asset=A_WETH,
+            amount=AssetAmount(FVal('21.131588567541018817')),
+            rate=Price(FVal('0.1435213742524287826717337545')),
+            trade_index=0,
+            swaps=[
+                AMMSwap(
+                    tx_hash='0x67c0e9a0fdd002d0b9d1cca0c8e4ca4d30435bbf57bbf0091396275efaea414b',  # noqa: E501
+                    log_index=31,
+                    address=string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b'),  # noqa: E501
+                    from_address=string_to_ethereum_address('0x0000000000007F150Bd6f54c40A34d7C3d5e9f56'),  # noqa: E501
+                    to_address=string_to_ethereum_address('0x7c90a3cd7Ec80dd2F633ed562480AbbEEd3bE546'),  # noqa: E501
+                    timestamp=Timestamp(1607015339),
+                    location=Location.BALANCER,
+                    token0=A_WETH,
+                    token1=A_AAVE,
+                    amount0_in=AssetAmount(FVal('3.0328346313504')),
+                    amount1_in=AssetAmount(ZERO),
+                    amount0_out=AssetAmount(ZERO),
+                    amount1_out=AssetAmount(FVal('21.131588567541018817')),
+                ),
+            ],
+        ),
+    ]
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR2]])
@@ -366,7 +373,7 @@ def test_get_trades_history(
         1607010888 - Trade 5
         1607015059 - Trade 6
         1607015339 - Trade 7
-        1607015339 - Trade 7
+        1607015339 - Trade 8
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -401,7 +408,7 @@ def test_get_trades_history(
     address_trades = result[BALANCER_TEST_ADDR2]
     assert len(address_trades) == 75
 
-    expected_trades = BALANCER_TEST_ADDR2_EXPECTED_TRADES[::-1]
+    expected_trades = get_balancer_test_addr2_expected_trades()[::-1]
     filtered_trades = address_trades[:len(expected_trades)]
     for trade, expected_trade in zip(filtered_trades, expected_trades):
         assert trade == expected_trade.serialize()
@@ -410,17 +417,7 @@ def test_get_trades_history(
 BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL1 = (
     BalancerPoolEventsBalance(
         address=BALANCER_TEST_ADDR3,
-        pool_address=BALANCER_TEST_ADDR3_POOL1,
-        pool_tokens=[
-            BalancerBPTEventPoolToken(
-                token=A_WETH,
-                weight=FVal('20'),
-            ),
-            BalancerBPTEventPoolToken(
-                token=A_BAL,
-                weight=FVal('80'),
-            ),
-        ],
+        pool_address_token=BALANCER_TEST_ADDR3_POOL1,
         profit_loss_amounts=[
             AssetAmount(FVal('-0.039312851799093402')),
             AssetAmount(FVal('0.744372160905819159')),
@@ -433,7 +430,7 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL1 = (
                 address=BALANCER_TEST_ADDR3,
                 timestamp=Timestamp(1597144247),
                 event_type=BalancerBPTEventType.MINT,
-                pool_address=BALANCER_TEST_ADDR3_POOL1,
+                pool_address_token=BALANCER_TEST_ADDR3_POOL1,
                 lp_balance=Balance(
                     amount=FVal('0.042569019597126949'),
                     usd_value=FVal('19.779488662371895'),
@@ -449,7 +446,7 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL1 = (
                 address=BALANCER_TEST_ADDR3,
                 timestamp=Timestamp(1597243001),
                 event_type=BalancerBPTEventType.BURN,
-                pool_address=BALANCER_TEST_ADDR3_POOL1,
+                pool_address_token=BALANCER_TEST_ADDR3_POOL1,
                 lp_balance=Balance(
                     amount=FVal('0.042569019597126949'),
                     usd_value=FVal('19.01364749076136579119809947'),
@@ -465,37 +462,7 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL1 = (
 BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL2 = (
     BalancerPoolEventsBalance(
         address=BALANCER_TEST_ADDR3,
-        pool_address=BALANCER_TEST_ADDR3_POOL2,
-        pool_tokens=[
-            BalancerBPTEventPoolToken(
-                token=A_BAT,
-                weight=FVal('10'),
-            ),
-            BalancerBPTEventPoolToken(
-                token=A_LINK,
-                weight=FVal('35.0'),
-            ),
-            BalancerBPTEventPoolToken(
-                token=A_LEND,
-                weight=FVal('10'),
-            ),
-            BalancerBPTEventPoolToken(
-                token=A_MKR,
-                weight=FVal('10'),
-            ),
-            BalancerBPTEventPoolToken(
-                token=A_SNX,
-                weight=FVal('10'),
-            ),
-            BalancerBPTEventPoolToken(
-                token=A_WETH,
-                weight=FVal('15.0'),
-            ),
-            BalancerBPTEventPoolToken(
-                token=A_KNC,
-                weight=FVal('10'),
-            ),
-        ],
+        pool_address_token=BALANCER_TEST_ADDR3_POOL2,
         profit_loss_amounts=[
             AssetAmount(FVal('0')),
             AssetAmount(FVal('0')),
@@ -513,7 +480,7 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL2 = (
                 address=BALANCER_TEST_ADDR3,
                 timestamp=Timestamp(1598376244),
                 event_type=BalancerBPTEventType.MINT,
-                pool_address=BALANCER_TEST_ADDR3_POOL2,
+                pool_address_token=BALANCER_TEST_ADDR3_POOL2,
                 lp_balance=Balance(
                     amount=FVal('1289.21726317692448827'),
                     usd_value=FVal('3833.40'),
@@ -534,7 +501,7 @@ BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL2 = (
                 address=BALANCER_TEST_ADDR3,
                 timestamp=Timestamp(1598377474),
                 event_type=BalancerBPTEventType.BURN,
-                pool_address=BALANCER_TEST_ADDR3_POOL2,
+                pool_address_token=BALANCER_TEST_ADDR3_POOL2,
                 lp_balance=Balance(
                     amount=FVal('1289.21726317692448827'),
                     usd_value=FVal('2960.665604109508525164251425'),
@@ -661,7 +628,7 @@ def test_get_events_history_1(
     pool_event_balances = [
         pool_events_balance
         for pool_events_balance in address_pool_events_balances
-        if pool_events_balance['pool_address'] == BALANCER_TEST_ADDR3_POOL1
+        if pool_events_balance['pool_address'] == BALANCER_TEST_ADDR3_POOL1.ethereum_address
     ]
 
     assert len(pool_event_balances) == 1
@@ -715,7 +682,7 @@ def test_get_events_history_2(
     pool_event_balances = [
         pool_events_balance
         for pool_events_balance in address_pool_events_balances
-        if pool_events_balance['pool_address'] == BALANCER_TEST_ADDR3_POOL2
+        if pool_events_balance['pool_address'] == BALANCER_TEST_ADDR3_POOL2.ethereum_address
     ]
 
     assert len(pool_event_balances) == 1

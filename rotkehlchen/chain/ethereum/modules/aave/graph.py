@@ -60,23 +60,6 @@ USER_RESERVES_QUERY = """
 }}"""
 
 
-DEPOSIT_EVENTS_QUERY = """
-  deposits (orderBy: timestamp, orderDirection: asc, where: {
-   user: $address, timestamp_lte: $end_ts, timestamp_gte: $start_ts
-  }) {
-    id
-    amount
-    referrer {
-      id
-    }
-    reserve {
-      id
-    }
-    timestamp
-  }
-}
-"""
-
 USER_EVENTS_QUERY = """
   users (where: {id: $address}) {
     id

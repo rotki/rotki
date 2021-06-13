@@ -121,7 +121,6 @@ TABLES_AT_INIT = [
     'ledger_action_type',
     'ignored_actions',
     'action_type',
-    'balancer_pools',
     'balancer_events',
 ]
 
