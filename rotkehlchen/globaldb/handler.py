@@ -208,7 +208,7 @@ class GlobalDBHandler():
         except sqlite3.IntegrityError as e:
             connection.rollback()
             raise InputError(
-                f'Failed to add asset {asset_id} into the assets table for details id {details_id}',  # noqa: E501
+                f'Failed to add asset {asset_id} into the assets table for details id {details_id} due to {str(e)}',  # noqa: E501
             ) from e
 
         # for common asset details we have to add them after the addition of the main asset table

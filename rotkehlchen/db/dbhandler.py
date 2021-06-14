@@ -2677,7 +2677,6 @@ class DBHandler:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         )
-        # __import__("pdb").set_trace()
         self.write_tuples(tuple_type='amm_swap', query=query, tuples=swap_tuples)
 
     def get_amm_swaps(
