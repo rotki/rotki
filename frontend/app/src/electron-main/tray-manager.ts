@@ -26,7 +26,7 @@ export class TrayManager {
     return Menu.buildFromTemplate([
       {
         label: 'rotki',
-        icon: path.join(TrayManager.iconPath, 'favicon-16x16.png')
+        icon: path.join(TrayManager.iconPath, 'rotki_tray.png')
       },
       { type: 'separator' },
       {
@@ -43,17 +43,17 @@ export class TrayManager {
 
   update({ currency, delta, percentage, up, period }: TrayUpdate) {
     if (up === undefined) {
-      this.setIcon('android-chrome-192x192.png');
+      this.setIcon('rotki_tray.png');
       this.tray?.setToolTip('rotki is running');
       return;
     }
 
     let indicator: string;
     if (up) {
-      this.setIcon('rotki_up-64x64.png');
+      this.setIcon('rotki_up.png');
       indicator = '▲';
     } else {
-      this.setIcon('rotki_down-64x64.png');
+      this.setIcon('rotki_down.png');
       indicator = '▼';
     }
 
