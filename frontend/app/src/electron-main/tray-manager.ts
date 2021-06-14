@@ -58,7 +58,7 @@ export class TrayManager {
     }
 
     this.tray?.setToolTip(
-      `rotki: ${netWorth} ${currency}. Change in ${period} period ${indicator} ${percentage}% (${delta} ${currency})`
+      `rotki: ${netWorth} ${currency}.\nChange in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`
     );
   }
 
@@ -68,12 +68,10 @@ export class TrayManager {
   }
 
   build() {
-    const iconPath = path.join(
-      TrayManager.iconPath,
-      'android-chrome-192x192.png'
-    );
+    const isMac = process.platform === 'darwin';
+    const iconPath = path.join(TrayManager.iconPath, 'rotki_tray.png');
     this.tray = new Tray(iconPath);
-    this.tray.setTitle('rotki');
+    this.tray.setTitle(isMac ? '' : 'rotki');
     this.tray.setToolTip('rotki is running');
 
     const showHide = () => {
