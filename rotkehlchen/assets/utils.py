@@ -61,7 +61,7 @@ def get_or_create_ethereum_token(
             protocol=protocol,
             underlying_tokens=underlying_tokens,
         )
-        # This can but should not raise InputError since it should not already exists
+        # This can but should not raise InputError since it should not already exist
         ethereum_token = add_ethereum_token_to_db(token_data)
         userdb.add_asset_identifiers([ethereum_token.identifier])
 
