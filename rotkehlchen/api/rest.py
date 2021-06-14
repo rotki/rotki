@@ -1507,18 +1507,22 @@ class RestAPI():
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @require_premium_user(active_check=True)
-    def query_statistics_renderer(self) -> Response:
+    def query_premium_components(self) -> Response:
         result_dict = {'result': None, 'message': ''}
         try:
             # Here we ignore mypy error since we use @require_premium_user() decorator
-            result = self.rotkehlchen.premium.query_statistics_renderer()  # type: ignore
+            result = self.rotkehlchen.premium.query_premium_components()  # type: ignore
             result_dict['result'] = result
             status_code = HTTPStatus.OK
         except RemoteError as e:
             result_dict['message'] = str(e)
             status_code = HTTPStatus.CONFLICT
 
-        return api_response(process_result(result_dict), status_code=status_code)
+        return api_response(
+            result=process_result(result_dict),
+            status_code=status_code,
+            log_result=False,
+        )
 
     def get_messages(self) -> Response:
         warnings = self.rotkehlchen.msg_aggregator.consume_warnings()

@@ -848,7 +848,7 @@ class StatisticsValueDistributionResource(BaseResource):
 class StatisticsRendererResource(BaseResource):
 
     def get(self) -> Response:
-        return self.rest_api.query_statistics_renderer()
+        return self.rest_api.query_premium_components()
 
 
 class MessagesResource(BaseResource):
