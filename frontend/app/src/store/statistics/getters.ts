@@ -125,7 +125,8 @@ export const getters: Getters<
     rootState,
     {
       'balances/exchangeRate': exchangeRate,
-      'session/currencySymbol': currency
+      'session/currencySymbol': currency,
+      'session/floatingPrecision': floatingPrecision
     }
   ) => {
     const timeframe = rootState.session!!.timeframe;
@@ -155,10 +156,15 @@ export const getters: Getters<
       up = false;
     }
 
+    const delta = balanceDelta
+      .multipliedBy(exchangeRate(currency))
+      .toFormat(floatingPrecision);
+
     return {
       period: timeframe,
       currency,
-      delta: balanceDelta.multipliedBy(exchangeRate(currency)).toString(),
+      netWorth: totalNetWorth.toFormat(floatingPrecision),
+      delta: delta,
       percentage: percentage.isFinite() ? percentage.toFormat(2) : '-',
       up
     };

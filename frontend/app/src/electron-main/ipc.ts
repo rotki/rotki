@@ -31,6 +31,7 @@ export type BackendOptions = {
 export type TrayUpdate = {
   readonly percentage?: string;
   readonly delta?: string;
+  readonly netWorth?: string;
   readonly up?: boolean;
   readonly currency?: string;
   readonly period?: string;

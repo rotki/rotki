@@ -41,7 +41,7 @@ export class TrayManager {
     ]);
   }
 
-  update({ currency, delta, percentage, up, period }: TrayUpdate) {
+  update({ currency, delta, percentage, up, period, netWorth }: TrayUpdate) {
     if (up === undefined) {
       this.setIcon('rotki_tray.png');
       this.tray?.setToolTip('rotki is running');
@@ -58,7 +58,7 @@ export class TrayManager {
     }
 
     this.tray?.setToolTip(
-      `rotki: ${period} ${indicator} ${percentage}% (${delta} ${currency})`
+      `rotki: ${netWorth} ${currency}. Change in ${period} period ${indicator} ${percentage}% (${delta} ${currency})`
     );
   }
 
