@@ -58,7 +58,7 @@
           </template>
           <template #icon>
             <uniswap-pool-asset
-              :assets="entry.assets.map(({ asset }) => getIdentifier(asset))"
+              :assets="entry.assets.map(({ asset }) => asset)"
             />
           </template>
           <v-row align="center">
@@ -81,7 +81,7 @@
 
           <v-row
             v-for="asset in entry.assets"
-            :key="`${getIdentifier(asset.asset)}-${entry.poolAddress}-balances`"
+            :key="`${asset.asset}-${entry.poolAddress}-balances`"
             class="uniswap__tokens"
             align="center"
             justify="end"

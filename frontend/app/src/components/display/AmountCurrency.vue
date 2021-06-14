@@ -36,7 +36,9 @@
         {{ asset }}
       </span>
     </template>
-    <span v-text="asset" />
+    <span>
+      {{ asset }}
+    </span>
   </v-tooltip>
 
   <span v-else class="amount-currency" :style="assetStyle" />

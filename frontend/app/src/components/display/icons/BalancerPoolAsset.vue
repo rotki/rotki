@@ -28,7 +28,7 @@ export default class BalancerPoolAsset extends Mixins(AssetMixin) {
     if (typeof token === 'string') {
       return token;
     }
-    return this.getIdentifier(token.token);
+    return token.token;
   }
 
   getTokenSymbol(token: BalancerUnderlyingToken | string): string {

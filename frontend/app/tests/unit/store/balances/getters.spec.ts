@@ -1,8 +1,8 @@
 import sortBy from 'lodash/sortBy';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
+import { SupportedAsset } from '@/services/assets/types';
 import { BtcBalances } from '@/services/balances/types';
 import { BtcAccountData } from '@/services/types-api';
-import { SupportedAsset } from '@/services/types-model';
 import { BalanceGetters, getters } from '@/store/balances/getters';
 import { AssetBalance, BalanceState } from '@/store/balances/types';
 import { SessionState } from '@/store/session/types';

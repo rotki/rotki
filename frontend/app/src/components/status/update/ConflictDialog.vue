@@ -98,9 +98,9 @@ import { DataTableHeader } from 'vuetify';
 import ConflictRow from '@/components/status/update/ConflictRow.vue';
 import {
   ConflictResolution,
-  ConflictResolutionStrategy
+  ConflictResolutionStrategy,
+  SupportedAsset
 } from '@/services/assets/types';
-import { SupportedAsset } from '@/services/types-model';
 import { AssetUpdateConflictResult } from '@/store/assets/types';
 import { Writeable } from '@/types';
 import { uniqueStrings } from '@/utils/data';
