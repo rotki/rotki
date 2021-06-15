@@ -162,7 +162,7 @@ def _trade_from_independentreserve(raw_trade: Dict) -> Trade:
     )
 
 
-def _asset_movement_from_independentreserve(raw_tx: Dict) -> AssetMovement:
+def _asset_movement_from_independentreserve(raw_tx: Dict) -> Optional[AssetMovement]:
     """Convert IndependentReserve raw data to an AssetMovement
 
     https://www.independentreserve.com/products/api#GetTransactions
@@ -182,21 +182,28 @@ def _asset_movement_from_independentreserve(raw_tx: Dict) -> AssetMovement:
         transaction_id = eth_tx_id
     else:
         transaction_id = None
+
     timestamp = deserialize_timestamp_from_date(
         date=raw_tx['CreatedTimestampUtc'],
         formatstr='iso8601',
         location='IndependentReserve',
     )
 
-    if movement_type == AssetMovementCategory.DEPOSIT:
-        amount = deserialize_asset_amount(raw_tx['Credit'])
-    else:
-        amount = deserialize_asset_amount(raw_tx['Debit'])
+    comment = raw_tx.get('Comment')
+    address = None
+    if comment is not None and comment.startswith('Withdrawing to'):
+        address = comment.rsplit()[-1]
+
+    raw_amount = raw_tx.get('Credit') if movement_type == AssetMovementCategory.DEPOSIT else raw_tx.get('Debit')  # noqa: E501
+
+    if raw_amount is None:  # skip
+        return None   # Can end up being None for some things like this: 'Comment': 'Initial balance after Bitcoin fork'  # noqa: E501
+    amount = deserialize_asset_amount(raw_amount)
 
     return AssetMovement(
         location=Location.INDEPENDENTRESERVE,
         category=movement_type,
-        address=None,  # not possible to get
+        address=address,
         transaction_id=transaction_id,
         timestamp=timestamp,
         asset=asset,
@@ -255,6 +262,12 @@ class Independentreserve(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         tries = QUERY_RETRY_TIMES
         while True:
             data = None
+            log.debug(
+                'IndependentReserve API Query',
+                verb=verb,
+                url=url,
+                options=options,
+            )
             if method_type == 'Private':
                 nonce = int(time.time() * 1000)
                 call_options = OrderedDict(options.copy()) if options else OrderedDict()
@@ -278,13 +291,6 @@ class Independentreserve(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 call_options.move_to_end('nonce', last=False)
                 call_options.move_to_end('apiKey', last=False)
                 data = json.dumps(call_options, sort_keys=False)
-
-            log.debug(
-                'IndependentReserve API Query',
-                verb=verb,
-                url=url,
-                options=options,
-            )
             try:
                 response = self.session.request(
                     method=verb,
@@ -420,7 +426,10 @@ class Independentreserve(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         trades = []
         for raw_trade in resp_trades:
             try:
-                trades.append(_trade_from_independentreserve(raw_trade))
+                trade = _trade_from_independentreserve(raw_trade)
+                if trade.timestamp < start_ts or trade.timestamp > end_ts:
+                    continue
+                trades.append(trade)
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found IndependentReserve trade with unknown asset '
@@ -478,7 +487,9 @@ class Independentreserve(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     continue
 
                 try:
-                    movements.append(_asset_movement_from_independentreserve(entry))
+                    movement = _asset_movement_from_independentreserve(entry)
+                    if movement:
+                        movements.append(movement)
                 except UnknownAsset as e:
                     self.msg_aggregator.add_warning(
                         f'Found unknown IndependentReserve asset {e.asset_name}. '
