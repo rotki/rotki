@@ -684,11 +684,8 @@ export const getters: Getters<
     return asset?.identifier;
   },
   assetSymbol: (_bs, { assetInfo }) => identifier => {
-    if (typeof identifier === 'string') {
-      const asset = assetInfo(identifier);
-      return asset?.symbol ?? identifier;
-    }
-    return identifier.symbol;
+    const asset = assetInfo(identifier);
+    return asset?.symbol ?? identifier;
   },
   byLocation: (
     state,

@@ -1,6 +1,5 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
-import { TokenDetails } from '@/services/defi/types';
 import {
   AssetInfoGetter,
   AssetSymbolGetter,
@@ -21,22 +20,12 @@ export default class AssetMixin extends Vue {
   assetInfo!: AssetInfoGetter;
   assetSymbol!: AssetSymbolGetter;
 
-  getSymbol(details: TokenDetails): string {
-    return this.assetSymbol(details);
+  getSymbol(identifier: string): string {
+    return this.assetSymbol(identifier);
   }
 
-  getIdentifier(details: TokenDetails): string {
-    if (typeof details === 'string') {
-      return details;
-    }
-    return `_ceth_${details.ethereumAddress}`;
-  }
-
-  getTokenAddress(details: TokenDetails): string {
-    if (typeof details === 'string') {
-      return this.assetInfo(details)?.ethereumAddress ?? '';
-    }
-    return details.ethereumAddress;
+  getTokenAddress(identifier: string): string {
+    return this.assetInfo(identifier)?.ethereumAddress ?? '';
   }
 
   getAssetName(identifier: string): string {

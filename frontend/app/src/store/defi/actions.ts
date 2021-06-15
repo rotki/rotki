@@ -778,7 +778,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
   },
 
   async fetchUniswapBalances(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { dispatch, commit, rootGetters: { status }, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -826,10 +826,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       );
     }
     setStatus(Status.LOADED, section, status, commit);
+    await dispatch('balances/fetchSupportedAssets', true, { root: true });
   },
 
   async fetchUniswapTrades(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { dispatch, commit, rootGetters: { status }, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -875,10 +876,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       );
     }
     setStatus(Status.LOADED, section, status, commit);
+    await dispatch('balances/fetchSupportedAssets', true, { root: true });
   },
 
   async fetchUniswapEvents(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { dispatch, commit, rootGetters: { status }, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -926,6 +928,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       );
     }
     setStatus(Status.LOADED, section, status, commit);
+    await dispatch('balances/fetchSupportedAssets', true, { root: true });
   },
 
   async fetchAirdrops(
@@ -1002,6 +1005,9 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
             .toString()
       }
     });
+    await context.dispatch('balances/fetchSupportedAssets', true, {
+      root: true
+    });
   },
   async fetchBalancerTrades(
     context: ActionContext<DefiState, RotkehlchenState>,
@@ -1031,6 +1037,9 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
             })
             .toString()
       }
+    });
+    await context.dispatch('balances/fetchSupportedAssets', true, {
+      root: true
     });
   },
   async fetchBalancerEvents(
@@ -1066,6 +1075,9 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
             })
             .toString()
       }
+    });
+    await context.dispatch('balances/fetchSupportedAssets', true, {
+      root: true
     });
   },
   async [ACTION_PURGE_PROTOCOL](

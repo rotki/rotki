@@ -1,6 +1,6 @@
 import { TimeUnit } from '@/components/dashboard/types';
 import { DebugSettings } from '@/electron-main/ipc';
-import { SupportedAsset } from '@/services/types-model';
+import { SupportedAsset } from '@/services/assets/types';
 import { FrontendSettingsPayload, Themes } from '@/store/settings/types';
 
 export interface RotkiPremiumInterface {

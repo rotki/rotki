@@ -1,6 +1,6 @@
 <template>
   <generated-icon
-    v-if="!!currency || error || isUnknown"
+    v-if="!!currency || error"
     :asset="displayAsset"
     :currency="!!currency"
     :size="size"
@@ -20,7 +20,6 @@ import { Component, Mixins, Prop, Watch } from 'vue-property-decorator';
 import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import { currencies } from '@/data/currencies';
 import AssetMixin from '@/mixins/asset-mixin';
-import { TokenDetails } from '@/services/defi/types';
 import { BTC, ETH } from '@/typing/types';
 
 @Component({
@@ -28,7 +27,7 @@ import { BTC, ETH } from '@/typing/types';
 })
 export default class AssetIcon extends Mixins(AssetMixin) {
   @Prop({ required: true })
-  identifier!: TokenDetails;
+  identifier!: string;
   @Prop({ required: false, type: String, default: '' })
   symbol!: string;
   @Prop({ required: true, type: String })
@@ -53,20 +52,12 @@ export default class AssetIcon extends Mixins(AssetMixin) {
     this.error = false;
   }
 
-  get isUnknown(): boolean {
-    return typeof this.identifier !== 'string';
-  }
-
   get asset(): string {
-    return this.getIdentifier(this.identifier);
+    return this.identifier;
   }
 
   get displayAsset(): string {
-    if (typeof this.identifier !== 'string') {
-      return this.identifier.symbol ?? '';
-    }
-
-    const symbol = this.symbol;
+    const symbol = this.symbol ? this.symbol : this.getSymbol(this.identifier);
     if (this.error && symbol) {
       return symbol;
     }

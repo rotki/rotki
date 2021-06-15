@@ -2,7 +2,8 @@ import { AxiosInstance, AxiosTransformer } from 'axios';
 import {
   AssetIdResponse,
   ConflictResolution,
-  EthereumToken
+  EthereumToken,
+  SupportedAsset
 } from '@/services/assets/types';
 import {
   axiosSnakeCaseTransformer,
@@ -13,7 +14,6 @@ import {
   PendingTask,
   SupportedAssets
 } from '@/services/types-api';
-import { SupportedAsset } from '@/services/types-model';
 import {
   handleResponse,
   validStatus,
@@ -40,7 +40,9 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  addEthereumToken(token: EthereumToken): Promise<AssetIdResponse> {
+  addEthereumToken(
+    token: Omit<EthereumToken, 'identifier'>
+  ): Promise<AssetIdResponse> {
     return this.axios
       .put<ActionResult<AssetIdResponse>>(
         '/assets/ethereum',

@@ -1,5 +1,5 @@
+import { SupportedAsset } from '@/services/assets/types';
 import { SupportedAssets } from '@/services/types-api';
-import { SupportedAsset } from '@/services/types-model';
 
 export function convertSupportedAssets(
   supportedAssets: SupportedAssets

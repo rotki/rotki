@@ -1,4 +1,4 @@
-import { SupportedAsset } from '@/services/types-model';
+import { SupportedAsset } from '@/services/assets/types';
 
 export interface AssetState {}
 

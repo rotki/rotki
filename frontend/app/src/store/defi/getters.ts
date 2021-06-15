@@ -11,7 +11,7 @@ import {
   DEFI_MAKERDAO,
   DEFI_YEARN_VAULTS
 } from '@/services/defi/consts';
-import { SupportedDefiProtocols, TokenDetails } from '@/services/defi/types';
+import { SupportedDefiProtocols } from '@/services/defi/types';
 import {
   AaveEvent,
   AaveHistoryEvents,
@@ -45,6 +45,8 @@ import {
   AirdropDetail,
   AirdropType,
   BalancerBalanceWithOwner,
+  BalancerEvent,
+  BalancerProfitLoss,
   BaseDefiBalance,
   Collateral,
   DefiBalance,
@@ -52,21 +54,19 @@ import {
   DefiLoan,
   DefiProtocolSummary,
   DefiState,
+  DexTrade,
+  DexTrades,
   LoanSummary,
   MakerDAOVaultModel,
   OverviewDefiProtocol,
   PoapDelivery,
+  Pool,
   ProfitLossModel,
   TokenInfo,
   UniswapBalance,
   UniswapEventDetails,
   UniswapPool,
-  UniswapPoolProfit,
-  DexTrade,
-  DexTrades,
-  BalancerEvent,
-  Pool,
-  BalancerProfitLoss
+  UniswapPoolProfit
 } from '@/store/defi/types';
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
 import { RotkehlchenState } from '@/store/types';
@@ -81,13 +81,6 @@ import { uniqueStrings } from '@/utils/data';
 function isLendingEvent(value: AaveHistoryEvents): value is AaveEvent {
   const lending: string[] = [...AAVE_LENDING_EVENTS];
   return lending.indexOf(value.eventType) !== -1;
-}
-
-function assetIdentifier(details: TokenDetails) {
-  if (typeof details === 'string') {
-    return details;
-  }
-  return `_ceth_${details.ethereumAddress}`;
 }
 
 interface DefiGetters {
@@ -1556,7 +1549,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
                 .map(token => assetSymbol(token.token))
                 .join('/')
             },
-            tokens: entry.poolTokens.map(token => assetIdentifier(token.token)),
+            tokens: entry.poolTokens.map(token => token.token),
             profitLossAmount: entry.profitLossAmounts,
             usdProfitLoss: entry.usdProfitLoss
           };

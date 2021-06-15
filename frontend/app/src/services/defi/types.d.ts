@@ -39,11 +39,3 @@ export interface ApiMakerDAOVault {
   readonly liquidationPrice: BigNumber | null;
   readonly stabilityFee: string;
 }
-
-interface UnknownToken {
-  readonly ethereumAddress: string;
-  readonly name: string;
-  readonly symbol: string;
-}
-
-export type TokenDetails = UnknownToken | string;

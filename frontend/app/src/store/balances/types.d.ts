@@ -1,19 +1,18 @@
 import { BigNumber } from 'bignumber.js';
 import { Exchange, PriceOracles } from '@/model/action-result';
+import { SupportedAsset } from '@/services/assets/types';
 import {
   BlockchainAssetBalances,
   BtcBalances,
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
-import { TokenDetails } from '@/services/defi/types';
 import {
   Balance,
   BtcAccountData,
   GeneralAccountData,
   HasBalance
 } from '@/services/types-api';
-import { SupportedAsset } from '@/services/types-model';
 import { KRAKEN_ACCOUNT_TYPES } from '@/store/balances/const';
 import { Section } from '@/store/const';
 import { Nullable } from '@/types';
@@ -209,6 +208,6 @@ export type AssetInfoGetter = (
 ) => SupportedAsset | undefined;
 
 export type IdentifierForSymbolGetter = (symbol: string) => string | undefined;
-export type AssetSymbolGetter = (identifier: TokenDetails) => string;
+export type AssetSymbolGetter = (identifier: string) => string;
 
 export type KrakenAccountType = typeof KRAKEN_ACCOUNT_TYPES[number];
