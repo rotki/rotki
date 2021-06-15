@@ -20,6 +20,7 @@ import {
   EXCHANGE_NEXO,
   EXCHANGE_POLONIEX,
   EXCHANGE_UNISWAP,
+  EXCHANGE_INDEPENDENTRESERVE,
   TRADE_LOCATION_BANKS,
   TRADE_LOCATION_BLOCKCHAIN,
   TRADE_LOCATION_COMMODITIES,
@@ -169,6 +170,13 @@ export const tradeLocations: TradeLocationData[] = [
     identifier: EXCHANGE_FTX,
     name: 'FTX',
     icon: require('@/assets/images/exchanges/ftx.png'),
+    imageIcon: true,
+    exchange: true
+  },
+  {
+    identifier: EXCHANGE_INDEPENDENTRESERVE,
+    name: 'IndepentReserve',
+    icon: require('@/assets/images/exchanges/independentreserve.png'),
     imageIcon: true,
     exchange: true
   },
