@@ -6,7 +6,7 @@
     <div class="module-not-active__container">
       <v-row align="center" justify="center">
         <v-col v-for="module in modules" :key="module" cols="auto">
-          <v-img max-width="82px" contain :src="icon(module)" />
+          <v-img width="82px" contain :src="icon(module)" />
         </v-col>
       </v-row>
       <v-row align="center" justify="center" class="mt-16">
