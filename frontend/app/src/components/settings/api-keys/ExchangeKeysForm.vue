@@ -117,6 +117,25 @@
       />
     </div>
 
+    <div v-if="exchange.location === 'ftx'">
+      <v-text-field
+        v-if="edit"
+        outlined
+        :value="exchange.ftxSubaccount"
+        data-cy="ftxSubaccount"
+        :label="$t('exchange_settings.inputs.ftx_subaccount')"
+        @input="onUpdateExchange({ ...exchange, ftxSubaccount: $event })"
+      />
+      <v-text-field
+        v-else
+        outlined
+        :value="exchange.ftxSubaccount"
+        data-cy="ftxSubaccount"
+        :label="$t('exchange_settings.inputs.ftx_subaccount')"
+        @input="onUpdateExchange({ ...exchange, ftxSubaccount: $event })"
+      />
+    </div>
+
     <binance-pairs-selector
       v-if="isBinance & edit"
       :value="binancePairs"
@@ -239,7 +258,8 @@ export default class ExchangeKeysForm extends Vue {
       apiSecret: null,
       passphrase: null,
       krakenAccountType: exchange === EXCHANGE_KRAKEN ? 'starter' : null,
-      binanceMarkets: null
+      binanceMarkets: null,
+      ftxSubaccount: null
     });
   }
 

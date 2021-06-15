@@ -481,6 +481,7 @@ class RestAPI():
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[List[str]],
+            ftx_subaccount_name: Optional[str],
     ) -> Response:
         result = None
         status_code = HTTPStatus.OK
@@ -493,6 +494,7 @@ class RestAPI():
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
+            ftx_subaccount_name=ftx_subaccount_name,
         )
         if not result:
             result = None
@@ -511,6 +513,7 @@ class RestAPI():
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[List[str]],
+            ftx_subaccount_name: Optional[str],
     ) -> Response:
         result: Optional[bool] = True
         status_code = HTTPStatus.OK
@@ -525,6 +528,7 @@ class RestAPI():
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
                 binance_markets=binance_markets,
+                ftx_subaccount_name=ftx_subaccount_name,
             )
         except InputError as e:
             edited = False

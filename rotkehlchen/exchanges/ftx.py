@@ -5,7 +5,7 @@ from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union, overload
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 
 import gevent
 import requests
@@ -43,6 +43,8 @@ log = RotkehlchenLogsAdapter(logger)
 INITIAL_BACKOFF_TIME = 2
 BACKOFF_LIMIT = 60
 PAGINATION_LIMIT = 100
+
+FTX_SUBACCOUNT_DB_SETTING = 'ftx_subaccount'
 
 
 def trade_from_ftx(raw_trade: Dict[str, Any]) -> Optional[Trade]:
@@ -91,6 +93,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
+            ftx_subaccount_name: Optional[str] = None,
     ):
         super().__init__(
             name=name,
@@ -103,6 +106,12 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.base_uri = 'https://ftx.com'
         self.msg_aggregator = msg_aggregator
         self.session.headers.update({'FTX-KEY': self.api_key})
+        self.subaccount = ftx_subaccount_name
+        if self.subaccount is None:
+            self.subaccount = self.db.get_ftx_subaccount(self.name)
+
+        if self.subaccount is not None:
+            self.session.headers.update({'FTX-SUBACCOUNT': quote(self.subaccount)})
 
     def first_connection(self) -> None:
         self.first_connection_made = True
@@ -116,6 +125,12 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
         if api_key is not None:
             self.session.headers.update({'FTX-KEY': self.api_key})
+            subaccount = self.db.get_ftx_subaccount(self.name)
+            if subaccount is not None:
+                self.session.headers.update({'FTX-SUBACCOUNT': quote(subaccount)})
+                self.subaccount = subaccount
+            else:
+                self.session.headers.pop('FTX-SUBACCOUNT', None)
 
         return changed
 
@@ -209,6 +224,17 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             limit: int = PAGINATION_LIMIT,
             paginate: bool = True,
     ) -> Dict[str, List[Any]]:
+        ...
+
+    @overload
+    def _api_query(  # pylint: disable=no-self-use
+            self,
+            endpoint: Literal['wallet/balances'],
+            start_time: Optional[Timestamp] = None,
+            end_time: Optional[Timestamp] = None,
+            limit: int = PAGINATION_LIMIT,
+            paginate: bool = True,
+    ) -> List[Dict[str, Any]]:
         ...
 
     @overload
@@ -309,15 +335,23 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> ExchangeQueryBalances:
+        resp_dict, resp_lst = None, None
         try:
-            resp = self._api_query('wallet/all_balances', paginate=False)
+            if self.subaccount is not None:
+                resp_lst = self._api_query('wallet/balances', paginate=False)
+            else:
+                resp_dict = self._api_query('wallet/all_balances', paginate=False)
         except RemoteError as e:
             msg = f'FTX API request failed. Could not reach FTX due to {str(e)}'
             log.error(msg)
             return None, msg
 
-        # flatten the list that maps accounts to balances
-        balances = [x for _, bal in resp.items() for x in bal]
+        if resp_dict is not None:
+            # flatten the list that maps accounts to balances
+            balances: List[Dict[str, Any]] = [x for _, bal in resp_dict.items() for x in bal]
+        elif resp_lst is not None:
+            # When querying for a subaccount we get a list instead of a dict
+            balances = resp_lst
 
         # extract the balances and aggregate them
         returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
@@ -367,7 +401,6 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     error=msg,
                 )
                 continue
-
         return dict(returned_balances), ''
 
     def query_online_trade_history(

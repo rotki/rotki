@@ -97,7 +97,8 @@ const placeholder: () => ExchangePayload = () => ({
   apiSecret: null,
   passphrase: null,
   krakenAccountType: 'starter',
-  binanceMarkets: null
+  binanceMarkets: null,
+  ftxSubaccount: null
 });
 
 @Component({

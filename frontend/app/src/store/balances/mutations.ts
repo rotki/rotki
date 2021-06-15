@@ -52,7 +52,7 @@ export const mutations: MutationTree<BalanceState> = {
   editExchange(
     state: BalanceState,
     {
-      exchange: { location, name: oldName, krakenAccountType },
+      exchange: { location, name: oldName, krakenAccountType, ftxSubaccount },
       newName
     }: EditExchange
   ) {
@@ -64,7 +64,8 @@ export const mutations: MutationTree<BalanceState> = {
     exchanges[index] = Object.assign(exchanges[index], {
       name,
       location,
-      krakenAccountType
+      krakenAccountType,
+      ftxSubaccount
     });
     state.connectedExchanges = exchanges;
   },

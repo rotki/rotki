@@ -10,6 +10,7 @@ export interface Exchange {
   readonly location: SupportedExchange;
   readonly name: string;
   readonly krakenAccountType?: KrakenAccountType;
+  readonly ftxSubaccount?: string;
 }
 
 export interface AccountState {

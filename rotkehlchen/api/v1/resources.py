@@ -253,6 +253,7 @@ class ExchangesResource(BaseResource):
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[List[str]],
+            ftx_subaccount: Optional[str],
     ) -> Response:
         return self.rest_api.setup_exchange(
             name=name,
@@ -262,6 +263,7 @@ class ExchangesResource(BaseResource):
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
+            ftx_subaccount_name=ftx_subaccount,
         )
 
     @use_kwargs(patch_schema, location='json')
@@ -275,6 +277,7 @@ class ExchangesResource(BaseResource):
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[List[str]],
+            ftx_subaccount: Optional[str],
     ) -> Response:
         return self.rest_api.edit_exchange(
             name=name,
@@ -285,6 +288,7 @@ class ExchangesResource(BaseResource):
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
+            ftx_subaccount_name=ftx_subaccount,
         )
 
     @use_kwargs(delete_schema, location='json')
