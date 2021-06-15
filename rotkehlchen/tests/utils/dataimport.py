@@ -1,12 +1,12 @@
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.db.ledger_actions import DBLedgerActions
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_UNI, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_DOT, A_ETH, A_UNI, A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.tests.utils.constants import A_CRO, A_DOT, A_EUR, A_MCO, A_XMR
+from rotkehlchen.tests.utils.constants import A_CRO, A_EUR, A_MCO, A_XMR
 from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,

@@ -9,10 +9,10 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.binance import (
-    Binance,
-    create_binance_symbols_to_pair,
     BINANCE_BASE_URL,
     BINANCEUS_BASE_URL,
+    Binance,
+    create_binance_symbols_to_pair,
 )
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
@@ -26,6 +26,7 @@ from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.iconomi import Iconomi
+from rotkehlchen.exchanges.independentreserve import Independentreserve
 from rotkehlchen.exchanges.kucoin import Kucoin
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import Poloniex
@@ -669,6 +670,19 @@ def create_test_poloniex(
 ) -> Poloniex:
     return Poloniex(
         name='poloniex',
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_independentreserve(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Independentreserve:
+    return Independentreserve(
+        name='independentreserve',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,

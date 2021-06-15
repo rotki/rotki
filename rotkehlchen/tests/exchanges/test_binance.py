@@ -1,17 +1,17 @@
 import hashlib
 import hmac
+import re
 import warnings as test_warnings
 from contextlib import ExitStack
 from datetime import datetime
 from unittest.mock import call, patch
 from urllib.parse import urlencode
-import re
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
-from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_USDT, A_WBTC
+from rotkehlchen.constants.assets import A_ADA, A_BNB, A_BTC, A_DOT, A_ETH, A_USDT, A_WBTC
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
@@ -24,7 +24,7 @@ from rotkehlchen.exchanges.binance import (
 )
 from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_ADA, A_BUSD, A_DOT, A_RDN
+from rotkehlchen.tests.utils.constants import A_BUSD, A_RDN
 from rotkehlchen.tests.utils.exchanges import (
     BINANCE_DEPOSITS_HISTORY_RESPONSE,
     BINANCE_MYTRADES_RESPONSE,
@@ -34,7 +34,7 @@ from rotkehlchen.tests.utils.exchanges import (
 )
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Timestamp, ApiKey, ApiSecret
+from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms
 
