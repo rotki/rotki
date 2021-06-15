@@ -4,6 +4,7 @@ import { TrayUpdate } from '@/electron-main/ipc';
 import { Nullable } from '@/types';
 
 type WindowProvider = () => BrowserWindow;
+const isMac = process.platform === 'darwin';
 
 export class TrayManager {
   private readonly getWindow: WindowProvider;
@@ -43,20 +44,30 @@ export class TrayManager {
 
   update({ currency, delta, percentage, up, period, netWorth }: TrayUpdate) {
     if (up === undefined) {
-      this.setIcon('rotki_tray.png');
+      this.setIcon(isMac ? 'rotki-trayTemplate.png' : 'rotki_tray.png');
+      this.tray?.setTitle('');
       this.tray?.setToolTip('rotki is running');
       return;
     }
 
     let indicator: string;
+    let color: string;
+    let icon: string;
     if (up) {
-      this.setIcon('rotki_up.png');
+      icon = 'rotki_up.png';
+      color = '\x1b[32m';
       indicator = '▲';
     } else {
-      this.setIcon('rotki_down.png');
+      icon = 'rotki_down.png';
+      color = '\x1b[31m';
       indicator = '▼';
     }
 
+    if (!isMac) {
+      this.setIcon(icon);
+    }
+
+    this.tray?.setTitle(color + indicator);
     this.tray?.setToolTip(
       `rotki: ${netWorth} ${currency}.\nChange in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`
     );
@@ -68,10 +79,8 @@ export class TrayManager {
   }
 
   build() {
-    const isMac = process.platform === 'darwin';
-    const iconPath = path.join(TrayManager.iconPath, 'rotki_tray.png');
+    const iconPath = path.join(TrayManager.iconPath, 'rotki-trayTemplate.png');
     this.tray = new Tray(iconPath);
-    this.tray.setTitle(isMac ? '' : 'rotki');
     this.tray.setToolTip('rotki is running');
 
     const showHide = () => {
