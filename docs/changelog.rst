@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1800` Users will now get greeted with a informational page when trying to access a page that requires a module to be activated.
 * :feature:`1692` IndependentReserve users will now be able to see their balances and have their deposit/withdrawal/trade history taken into account during profit/loss calculation.
 * :feature:`3025` Users will now see the percentage of each location when looking into an asset's details.
 * :feature:`2596` Users will now be able to create new tags directly from the tag selection input.
