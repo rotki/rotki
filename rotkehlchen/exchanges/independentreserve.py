@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import json
-import logging
+import logging  # lgtm [py/import-and-import-from]  # https://github.com/github/codeql/issues/6088
 import time
 from collections import OrderedDict
 from json.decoder import JSONDecodeError
