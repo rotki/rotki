@@ -125,3 +125,19 @@ A_FARM_WETH = EthereumToken('0xFE09e53A81Fe2808bc493ea64319109B5bAa573e')
 A_FARM_WBTC = EthereumToken('0x5d9d25c7C457dD82fc8668FFC6B9746b674d4EcB')
 A_FARM_RENBTC = EthereumToken('0xC391d1b08c1403313B0c28D47202DFDA015633C4')
 A_FARM_CRVRENWBTC = EthereumToken('0x9aA8F427A17d6B0d91B6262989EdC7D45d6aEdf8')
+
+
+# Needed by independentreserve
+A_XRP = Asset('XRP')
+A_ADA = Asset('ADA')
+A_DOT = Asset('DOT')
+A_LTC = Asset('LTC')
+A_EOS = Asset('EOS')
+A_XLM = Asset('XLM')
+A_GRT = EthereumToken('0xc944E90C64B2c07662A292be6244BDf05Cda44a7')
+A_PMGT = EthereumToken('0xAFFCDd96531bCd66faED95FC61e443D08F79eFEf')
+A_OMG = EthereumToken('0xd26114cd6EE289AccF82350c8d8487fedB8A0C07')
+
+A_AUD = Asset('AUD')
+A_NZD = Asset('NZD')
+A_SGD = Asset('SGD')
