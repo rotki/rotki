@@ -44,6 +44,7 @@ const onReady = async () => {
   trayManager = new TrayManager(getWindow, closeApp);
   ipcSetup(pyHandler, getWindow, closeApp, trayManager);
   await createWindow();
+  trayManager.listen();
 };
 
 const lock = app.requestSingleInstanceLock();

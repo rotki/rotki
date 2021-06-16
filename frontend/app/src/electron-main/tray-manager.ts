@@ -10,6 +10,7 @@ const isMac = process.platform === 'darwin';
 export class TrayManager {
   private readonly getWindow: WindowProvider;
   private readonly closeApp: () => void;
+  private tooltip: string = '';
   private _tray: Nullable<Tray> = null;
 
   private get tray(): Tray {
@@ -83,11 +84,11 @@ export class TrayManager {
     }
 
     this.tray.setTitle(color + indicator);
-    const toolTip = `Net worth ${netWorth} ${currency}.\nChange in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`;
-    this.tray.setToolTip(toolTip);
+    this.tooltip = `Net worth ${netWorth} ${currency}.\nChange in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`;
+    this.tray.setToolTip(this.tooltip);
 
     const visible = this.getWindow().isVisible();
-    this.tray.setContextMenu(this.buildMenu(visible, toolTip));
+    this.tray.setContextMenu(this.buildMenu(visible, this.tooltip));
   }
 
   private setIcon(iconName: string) {
@@ -106,6 +107,14 @@ export class TrayManager {
     this.tray.setContextMenu(this.buildMenu(win.isVisible()));
   }
 
+  private hidden = () => {
+    this.tray.setContextMenu(this.buildMenu(false, this.tooltip));
+  };
+
+  private shown = () => {
+    this.tray.setContextMenu(this.buildMenu(true, this.tooltip));
+  };
+
   build() {
     const icon = isMac ? 'rotki-trayTemplate.png' : 'rotki_tray.png';
     const iconPath = path.join(TrayManager.iconPath, icon);
@@ -119,6 +128,15 @@ export class TrayManager {
 
   destroy() {
     this.tray.destroy();
+    const window = this.getWindow();
+    window.off('hide', this.hidden);
+    window.off('show', this.shown);
     this._tray = null;
+  }
+
+  listen() {
+    const window = this.getWindow();
+    window.on('hide', this.hidden);
+    window.on('show', this.shown);
   }
 }

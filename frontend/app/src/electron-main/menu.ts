@@ -129,7 +129,13 @@ const viewMenu = {
     { role: 'zoomIn' },
     { role: 'zoomOut' },
     separator,
-    { role: 'togglefullscreen' }
+    { role: 'togglefullscreen' },
+    {
+      label: 'Minimize to tray',
+      click: (_: KeyboardEvent, window: BrowserWindow) => {
+        window.hide();
+      }
+    }
   ]
 };
 const defaultMenuTemplate: any[] = [
