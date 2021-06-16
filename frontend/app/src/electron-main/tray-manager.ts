@@ -2,6 +2,7 @@ import path from 'path';
 import { app, BrowserWindow, Menu, Tray } from 'electron';
 import { TrayUpdate } from '@/electron-main/ipc';
 import { Nullable } from '@/types';
+import { assert } from '@/utils/assertions';
 
 type WindowProvider = () => BrowserWindow;
 const isMac = process.platform === 'darwin';
@@ -9,7 +10,12 @@ const isMac = process.platform === 'darwin';
 export class TrayManager {
   private readonly getWindow: WindowProvider;
   private readonly closeApp: () => void;
-  private tray: Nullable<Tray> = null;
+  private _tray: Nullable<Tray> = null;
+
+  private get tray(): Tray {
+    assert(this._tray);
+    return this._tray;
+  }
 
   constructor(getWindow: WindowProvider, closeApp: () => void) {
     this.getWindow = getWindow;
@@ -23,16 +29,25 @@ export class TrayManager {
       : __dirname;
   }
 
-  private buildMenu(visible: boolean, showHide: () => void) {
+  private buildMenu(visible: boolean, info: string = '') {
     return Menu.buildFromTemplate([
       {
         label: 'rotki',
+        enabled: false,
         icon: path.join(TrayManager.iconPath, 'rotki_tray.png')
       },
+      ...(info
+        ? [
+            {
+              label: info,
+              enabled: false
+            }
+          ]
+        : []),
       { type: 'separator' },
       {
         label: visible ? 'Minimize to tray' : 'Restore from tray',
-        click: showHide
+        click: () => this.showHide(this.getWindow())
       },
       { type: 'separator' },
       {
@@ -45,8 +60,8 @@ export class TrayManager {
   update({ currency, delta, percentage, up, period, netWorth }: TrayUpdate) {
     if (up === undefined) {
       this.setIcon(isMac ? 'rotki-trayTemplate.png' : 'rotki_tray.png');
-      this.tray?.setTitle('');
-      this.tray?.setToolTip('rotki is running');
+      this.tray.setTitle('');
+      this.tray.setToolTip('rotki is running');
       return;
     }
 
@@ -67,41 +82,43 @@ export class TrayManager {
       this.setIcon(icon);
     }
 
-    this.tray?.setTitle(color + indicator);
-    this.tray?.setToolTip(
-      `rotki: ${netWorth} ${currency}.\nChange in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`
-    );
+    this.tray.setTitle(color + indicator);
+    const toolTip = `Net worth ${netWorth} ${currency}.\nChange in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`;
+    this.tray.setToolTip(toolTip);
+
+    const visible = this.getWindow().isVisible();
+    this.tray.setContextMenu(this.buildMenu(visible, toolTip));
   }
 
   private setIcon(iconName: string) {
     const iconPath = path.join(TrayManager.iconPath, iconName);
-    this.tray?.setImage(iconPath);
+    this.tray.setImage(iconPath);
+  }
+
+  private showHide(win: BrowserWindow) {
+    if (win.isVisible()) {
+      win.hide();
+    } else {
+      win.show();
+      app.focus();
+    }
+
+    this.tray.setContextMenu(this.buildMenu(win.isVisible()));
   }
 
   build() {
-    const iconPath = path.join(TrayManager.iconPath, 'rotki-trayTemplate.png');
-    this.tray = new Tray(iconPath);
+    const icon = isMac ? 'rotki-trayTemplate.png' : 'rotki_tray.png';
+    const iconPath = path.join(TrayManager.iconPath, icon);
+    this._tray = new Tray(iconPath);
     this.tray.setToolTip('rotki is running');
 
-    const showHide = () => {
-      const win = this.getWindow();
-      if (win.isVisible()) {
-        win.hide();
-      } else {
-        win.show();
-        app.focus();
-      }
-
-      this.tray?.setContextMenu(this.buildMenu(win.isVisible(), showHide));
-    };
-
-    this.tray.setContextMenu(this.buildMenu(true, showHide));
-    this.tray.on('double-click', showHide);
-    this.tray.on('click', showHide);
+    this.tray.setContextMenu(this.buildMenu(true));
+    this.tray.on('double-click', () => this.showHide(this.getWindow()));
+    this.tray.on('click', () => this.showHide(this.getWindow()));
   }
 
   destroy() {
-    this.tray?.destroy();
-    this.tray = null;
+    this.tray.destroy();
+    this._tray = null;
   }
 }
