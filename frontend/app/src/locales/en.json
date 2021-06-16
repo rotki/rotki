@@ -1145,8 +1145,9 @@
     }
   },
   "module_not_active": {
-    "not_active": "{module} module(s) is/are not activated. Please visit the {link} to activate it/them",
-    "settings_link": "Defi settings"
+    "not_active": "{module} module(s) not active. Please visit the {link}. {text}",
+    "settings_link": "Defi settings",
+    "at_least_one": "You need to activate at least one of them."
   },
   "premium_credentials": {
     "label_enable": "Enable Premium",

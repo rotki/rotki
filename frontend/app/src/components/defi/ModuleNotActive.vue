@@ -6,21 +6,30 @@
     <div class="module-not-active__container">
       <v-row align="center" justify="center">
         <v-col v-for="module in modules" :key="module" cols="auto">
-          <v-img max-width="82px" contain :src="icon(module)" />
+          <v-img width="82px" contain :src="icon(module)" />
         </v-col>
       </v-row>
       <v-row align="center" justify="center" class="mt-16">
         <v-col cols="auto" class="text--secondary">
-          <i18n tag="span" path="module_not_active.not_active">
+          <i18n
+            tag="span"
+            path="module_not_active.not_active"
+            class="text-center"
+          >
             <template #link>
-              <v-btn
-                class="module-not-active__link font-weight-regular text-body-1"
+              <router-link
+                class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
                 text
                 to="/settings/defi"
                 small
               >
                 {{ $t('module_not_active.settings_link') }}
-              </v-btn>
+              </router-link>
+            </template>
+            <template #text>
+              <div v-if="modules.length > 1">
+                {{ $t('module_not_active.at_least_one') }}
+              </div>
             </template>
             <template #module>
               <span

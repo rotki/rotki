@@ -20,10 +20,20 @@ export default class DefiModuleMixin extends Vue {
   }
 
   get isUniswapEnabled(): boolean {
-    return this.activeModules.includes(MODULE_UNISWAP);
+    return this.isModuleEnabled(MODULE_UNISWAP);
   }
 
   get isBalancerEnabled(): boolean {
-    return this.activeModules.includes(MODULE_BALANCER);
+    return this.isModuleEnabled(MODULE_BALANCER);
+  }
+
+  isModuleEnabled(module: SupportedModules): boolean {
+    return this.activeModules.includes(module);
+  }
+
+  isAnyModuleEnabled(modules: SupportedModules[]): boolean {
+    return (
+      this.activeModules.filter(module => modules.includes(module)).length > 0
+    );
   }
 }
