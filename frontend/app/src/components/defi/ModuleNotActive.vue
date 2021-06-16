@@ -25,6 +25,8 @@
               >
                 {{ $t('module_not_active.settings_link') }}
               </router-link>
+            </template>
+            <template #text>
               <div v-if="modules.length > 1">
                 {{ $t('module_not_active.at_least_one') }}
               </div>
