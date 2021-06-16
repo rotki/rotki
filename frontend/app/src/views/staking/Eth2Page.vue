@@ -43,6 +43,9 @@ export default class Eth2Page extends Mixins(StatusMixin, DefiModuleMixin) {
   }
 
   async mounted() {
+    if (!this.moduleEnabled) {
+      return;
+    }
     await this.fetchStakingDetails(false);
   }
 }

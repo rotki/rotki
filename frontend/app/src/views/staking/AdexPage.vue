@@ -41,6 +41,9 @@ export default class AdexPage extends Mixins(StatusMixin, DefiModuleMixin) {
   }
 
   async mounted() {
+    if (!this.moduleEnabled) {
+      return;
+    }
     await this.fetchAdex(false);
   }
 }
