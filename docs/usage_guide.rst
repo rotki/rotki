@@ -906,8 +906,10 @@ Create or edit if it exists a file with the name ``rotki_config.json`` in the sa
       "loglevel": "debug",
       "logfromothermodules": false,
       "log-dir": "/path/to/dir",
-      "data-dir": "/path/to/dir"
-      "sleep-secs": 20
+      "data-dir": "/path/to/dir",
+      "sleep-secs": 20,
+      "max_size_in_mb_all_logs": 500,
+      "max_logfiles_num": 2
   }
 
 The above arguments are:
@@ -917,6 +919,8 @@ The above arguments are:
 - **log-dir**: The name for the log directory.
 - **data-dir**: The path to the directory where all rotki data will be saved. Default depends on the user's OS. Check next section
 - **sleep-secs**: This is the amount of seconds that the main loop of rotki sleeps for. Default is 20.
+- **max_size_in_mb_all_logs**: This is the maximum size in megabytes all logs of a single run can have
+- **max_logfiles_num**: This is the maximum number of backup (rotated) logs a single run can have.
 
 
 .. _rotki_data_directory:
