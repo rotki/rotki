@@ -76,6 +76,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('Z', 26);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('[', 27);
 /* BlockFI */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('\\', 28);
+/* IndependentrReserve */
+INSERT OR IGNORE INTO location(location, seq) VALUES (']', 29);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

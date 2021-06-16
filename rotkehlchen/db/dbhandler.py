@@ -2124,7 +2124,7 @@ class DBHandler:
         return []
 
     def set_ftx_subaccount(self, ftx_name: str, subaccount_name: str) -> None:
-        """This function may rise sqlcipher.DatabaseError"""
+        """This function may raise sqlcipher.DatabaseError"""
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT OR REPLACE INTO user_credentials_mappings '

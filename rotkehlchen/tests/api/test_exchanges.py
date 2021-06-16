@@ -108,6 +108,7 @@ def test_setup_exchange(rotkehlchen_api_server):
                 BITFINEX_API_KEY_ERROR_MESSAGE,
                 KUCOIN_API_KEY_ERROR_CODE[400003],
                 'Bad combination of API Keys',
+                'ApiKey has invalid value',
             ],
             status_code=HTTPStatus.CONFLICT,
         )

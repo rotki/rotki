@@ -288,6 +288,7 @@ class Location(DBEnumMixIn):
     FTX = 26
     NEXO = 27
     BLOCKFI = 28
+    INDEPENDENTRESERVE = 29
 
 
 class AssetMovementCategory(Enum):

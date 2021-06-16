@@ -7317,7 +7317,7 @@ Adding manually tracked balances
    :reqjsonarr string label: A label to describe where is this balance stored. Must be unique between all manually tracked balance labels.
    :reqjsonarr string amount: The amount of asset that is stored.
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the this manually tracked balance.
-   :reqjsonarr string location: The location where the balance is saved. Can be one of: ["external", "kraken", "poloniex", "bittrex", "binance", "bitmex", "coinbase", "banks", "blockchain", "coinbasepro", "gemini"]
+   :reqjsonarr string location: The location where the balance is saved. Can be one of: ["external", "kraken", "poloniex", "bittrex", "binance", "bitmex", "coinbase", "banks", "blockchain", "coinbasepro", "gemini", "ftx", "independentreserve"]
 
    **Example Response**:
 

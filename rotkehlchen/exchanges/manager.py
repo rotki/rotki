@@ -8,11 +8,11 @@ from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
+    EXTERNAL_EXCHANGES,
     ApiKey,
     ApiSecret,
     ExchangeApiCredentials,
     Location,
-    EXTERNAL_EXCHANGES,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -41,6 +41,7 @@ SUPPORTED_EXCHANGES = [
     Location.ICONOMI,
     Location.KUCOIN,
     Location.FTX,
+    Location.INDEPENDENTRESERVE,
 ]
 EXCHANGES_WITH_PASSPHRASE = (Location.COINBASEPRO, Location.KUCOIN)
 # Exchanges for which we allow import via CSV

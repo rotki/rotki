@@ -31,6 +31,7 @@ export const EXCHANGE_BITCOIN_DE = 'bitcoinde';
 export const EXCHANGE_ICONOMI = 'iconomi';
 export const EXCHANGE_KUCOIN = 'kucoin';
 export const EXCHANGE_FTX = 'ftx';
+export const EXCHANGE_INDEPENDENTRESERVE = 'independentreserve';
 export const EXCHANGE_BLOCKFI = 'blockfi';
 export const EXCHANGE_NEXO = 'nexo';
 
@@ -62,7 +63,8 @@ export const SUPPORTED_EXCHANGES = [
   EXCHANGE_ICONOMI,
   EXCHANGE_BITSTAMP,
   EXCHANGE_KUCOIN,
-  EXCHANGE_FTX
+  EXCHANGE_FTX,
+  EXCHANGE_INDEPENDENTRESERVE
 ] as const;
 
 export const SUPPORTED_TRADE_LOCATIONS = [
