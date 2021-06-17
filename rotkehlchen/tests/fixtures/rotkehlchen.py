@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
+from rotkehlchen.args import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
@@ -69,12 +70,16 @@ def fixture_cli_args(data_dir, ethrpc_endpoint):
         'logtarget',
         'loglevel',
         'logfromothermodules',
+        'max_size_in_mb_all_logs',
+        'max_logfiles_num',
     ])
     args.loglevel = 'debug'
     args.logfromothermodules = False
     args.sleep_secs = 60
     args.data_dir = data_dir
     args.ethrpc_endpoint = ethrpc_endpoint
+    args.max_size_in_mb_all_logs = DEFAULT_MAX_LOG_SIZE_IN_MB
+    args.max_logfiles_num = DEFAULT_MAX_LOG_BACKUP_FILES
     return args
 
 

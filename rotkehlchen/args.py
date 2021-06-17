@@ -4,6 +4,9 @@ from typing import Any, List, Sequence, Union
 
 from rotkehlchen.utils.misc import get_system_spec
 
+DEFAULT_MAX_LOG_SIZE_IN_MB = 300
+DEFAULT_MAX_LOG_BACKUP_FILES = 3
+
 
 class CommandAction(argparse.Action):
     """Interprets the positional argument as a command if that command exists"""
@@ -97,6 +100,18 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
             'logging system will also be visible.'
         ),
         action='store_true',
+    )
+    p.add_argument(
+        '--max-size-in-mb-all-logs',
+        help='This is the maximum size in megabytes that will be used for all rotki logs',
+        default=DEFAULT_MAX_LOG_SIZE_IN_MB,
+        type=int,
+    )
+    p.add_argument(
+        '--max-logfiles-num',
+        help='This is the maximum number of logfiles to keep',
+        default=DEFAULT_MAX_LOG_BACKUP_FILES,
+        type=int,
     )
     p.add_argument(
         'version',

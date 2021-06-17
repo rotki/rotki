@@ -1,7 +1,6 @@
 import calendar
 import datetime
 import functools
-import logging
 import operator
 import platform
 import re
@@ -14,11 +13,7 @@ from eth_utils.address import to_checksum_address
 
 from rotkehlchen.errors import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Fee, Timestamp, TimestampMS
-
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
 
 
 def ts_now() -> Timestamp:
