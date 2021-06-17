@@ -1,10 +1,11 @@
 <template>
-  <card>
+  <card contained>
     <template #title>{{ $t('backend_settings.title') }}</template>
     <template #subtitle>{{ $t('backend_settings.subtitle') }}</template>
 
     <v-text-field
       v-model="userDataDirectory"
+      class="pt-2"
       outlined
       :disabled="!!fileConfig.dataDirectory"
       persistent-hint
@@ -82,6 +83,34 @@
           {{ $t('backend_settings.advanced') }}
         </v-expansion-panel-header>
         <v-expansion-panel-content>
+          <v-text-field
+            v-model="maxLogSize"
+            outlined
+            :hint="
+              !!fileConfig.maxSizeInMbAllLogs
+                ? $t('backend_settings.config_file_disabled')
+                : $t('backend_settings.max_log_size.hint')
+            "
+            :label="$t('backend_settings.max_log_size.label')"
+            :disabled="fileConfig.maxSizeInMbAllLogs"
+            :persistent-hint="!!fileConfig.maxSizeInMbAllLogs"
+            clearable
+            type="number"
+          />
+          <v-text-field
+            v-model="maxLogFiles"
+            outlined
+            :hint="$t('backend_settings.max_log_files.hint')"
+            :label="
+              !!fileConfig.maxSizeInMbAllLogs
+                ? $t('backend_settings.config_file_disabled')
+                : $t('backend_settings.max_log_files.label')
+            "
+            :disabled="fileConfig.maxSizeInMbAllLogs"
+            :persistent-hint="!!fileConfig.maxSizeInMbAllLogs"
+            clearable
+            type="number"
+          />
           <v-text-field
             v-model="mainLoopSleep"
             outlined
@@ -165,6 +194,8 @@ export default class BackendSettings extends Mixins(BackendMixin) {
   userLogDirectory: string = '';
   logFromOtherModules: boolean = false;
   mainLoopSleep: string = '';
+  maxLogSize: string = '';
+  maxLogFiles: string = '';
 
   readonly levels = levels;
   selecting: boolean = false;
@@ -202,6 +233,20 @@ export default class BackendSettings extends Mixins(BackendMixin) {
       options.dataDirectory = this.userDataDirectory;
     }
 
+    if (this.maxLogFiles) {
+      const files = parseInt(this.maxLogFiles);
+      if (isFinite(files) && !isNaN(files)) {
+        options.maxLogfilesNum = files;
+      }
+    }
+
+    if (this.maxLogSize) {
+      const mb = parseInt(this.maxLogSize);
+      if (isFinite(mb) && !isNaN(mb)) {
+        options.maxSizeInMbAllLogs = mb;
+      }
+    }
+
     return options;
   }
 
@@ -227,6 +272,8 @@ export default class BackendSettings extends Mixins(BackendMixin) {
     this.loglevel = this.options.loglevel ?? this.defaultLogLevel;
     this.mainLoopSleep = this.options.sleepSeconds?.toString() ?? '';
     this.logFromOtherModules = this.options.logFromOtherModules ?? false;
+    this.maxLogFiles = this.options.maxLogfilesNum?.toString() ?? '';
+    this.maxLogSize = this.options.maxSizeInMbAllLogs?.toString() ?? '';
   }
 
   async save() {

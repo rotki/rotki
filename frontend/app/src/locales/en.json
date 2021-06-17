@@ -107,6 +107,14 @@
       "reset": "Reset to default",
       "save": "Save"
     },
+    "max_log_size": {
+      "label": "Max log size",
+      "hint": "This is the maximum size in megabytes that will be used for all rotki logs"
+    },
+    "max_log_files": {
+      "label": "Max num of log files",
+      "hint": "This is the maximum number of logfiles to keep"
+    },
     "advanced": "Advanced",
     "config_file_disabled": "This parameter is already set in the rotki_config.json",
     "confirm": {

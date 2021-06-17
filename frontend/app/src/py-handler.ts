@@ -52,6 +52,15 @@ function getBackendArguments(options: Partial<BackendOptions>): string[] {
   if (options.sleepSeconds) {
     args.push('--sleep-secs', options.sleepSeconds.toString());
   }
+  if (options.maxLogfilesNum) {
+    args.push('--max-logfiles-num', options.maxLogfilesNum.toString());
+  }
+  if (options.maxSizeInMbAllLogs) {
+    args.push(
+      '--max-size-in-mb-all-logs',
+      options.maxSizeInMbAllLogs.toString()
+    );
+  }
   return args;
 }
 
