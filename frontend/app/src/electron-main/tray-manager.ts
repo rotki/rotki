@@ -128,9 +128,6 @@ export class TrayManager {
 
   destroy() {
     this.tray.destroy();
-    const window = this.getWindow();
-    window.off('hide', this.hidden);
-    window.off('show', this.shown);
     this._tray = null;
   }
 
