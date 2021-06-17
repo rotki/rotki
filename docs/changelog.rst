@@ -15,6 +15,7 @@ Changelog
 * :feature:`3014` Users will now get a suggested name when adding a new exchange.
 * :feature:`1073` Binance users will now be able to select which markets should be queried for trades history considerably improving the speed of binance history queries.
 * :feature:`3058` Docker users will now get notified when running an outdated version of the frontend cached in their browser.
+* :bug:`3057` Nexo CSV importer will now use the correct time format.
 
 * :release:`1.17.2 <2021-06-04>`
 * :bug:`3043` Collapsed xpubs should now be included in the totals in the btc accounts table.

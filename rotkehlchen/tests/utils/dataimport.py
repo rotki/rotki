@@ -481,7 +481,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
 
     expected_actions = [LedgerAction(
         identifier=3,
-        timestamp=Timestamp(1565888460),
+        timestamp=Timestamp(1565888464),
         action_type=LedgerActionType.INCOME,
         location=Location.NEXO,
         amount=AssetAmount(FVal('22.5653042')),
@@ -492,7 +492,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
         notes='Dividend from Nexo',
     ), LedgerAction(
         identifier=2,
-        timestamp=Timestamp(1597492860),
+        timestamp=Timestamp(1597492915),
         action_type=LedgerActionType.INCOME,
         location=Location.NEXO,
         amount=AssetAmount(FVal('10.3585507')),
@@ -503,7 +503,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
         notes='Dividend from Nexo',
     ), LedgerAction(
         identifier=1,
-        timestamp=Timestamp(1614993600),
+        timestamp=Timestamp(1614993620),
         action_type=LedgerActionType.INCOME,
         location=Location.NEXO,
         amount=AssetAmount(FVal('1')),
@@ -517,7 +517,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
     expected_movements = [AssetMovement(
         location=Location.NEXO,
         category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1556116920),
+        timestamp=Timestamp(1556116964),
         address=None,
         transaction_id=None,
         asset=A_BTC,
@@ -528,7 +528,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
     ), AssetMovement(
         location=Location.NEXO,
         category=AssetMovementCategory.WITHDRAWAL,
-        timestamp=Timestamp(1556122680),
+        timestamp=Timestamp(1556122699),
         address=None,
         transaction_id=None,
         asset=A_BTC,
@@ -539,7 +539,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
     ), AssetMovement(
         location=Location.NEXO,
         category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1558720200),
+        timestamp=Timestamp(1558720210),
         address=None,
         transaction_id=None,
         asset=symbol_to_asset_or_token('NEXO'),
@@ -550,7 +550,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
     ), AssetMovement(
         location=Location.NEXO,
         category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1565912820),
+        timestamp=Timestamp(1565912821),
         address=None,
         transaction_id=None,
         asset=A_EUR,
@@ -561,7 +561,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
     ), AssetMovement(
         location=Location.NEXO,
         category=AssetMovementCategory.WITHDRAWAL,
-        timestamp=Timestamp(1608131340),
+        timestamp=Timestamp(1608131364),
         address=None,
         transaction_id=None,
         asset=A_EUR,
@@ -583,7 +583,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
     ), AssetMovement(
         location=Location.NEXO,
         category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1615024260),
+        timestamp=Timestamp(1615024314),
         address=None,
         transaction_id=None,
         asset=symbol_to_asset_or_token('USDC'),
@@ -592,5 +592,6 @@ def assert_nexo_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         link='NXT0000000001',
     )]
+
     assert ledger_actions == expected_actions
     assert asset_movements == expected_movements
