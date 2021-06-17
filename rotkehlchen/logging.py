@@ -1,6 +1,7 @@
 import argparse
 import logging
 import re
+import sys
 from pathlib import Path
 from typing import Any, Dict, MutableMapping, Tuple
 
@@ -65,19 +66,24 @@ def configure_logging(args: argparse.Namespace) -> None:
         backups_num = args.max_logfiles_num - 1
 
     if args.logtarget == 'file':
+        given_filepath = Path(args.logfile)
+        filepath = given_filepath
+        if not getattr(sys, 'frozen', False):
+            # not packaged -- must be in develop mode. Append date to each file
+            date = timestamp_to_date(
+                ts=ts_now(),
+                formatstr='%Y%m%d_%H%M%S',
+                treat_as_local=True,
+            )
+            filepath = given_filepath.parent / f'{date}_{given_filepath.name}'
+
         selected_handlers = ['file']
         single_log_max_bytes = int(
             (args.max_size_in_mb_all_logs * 1024 * 1000) / args.max_logfiles_num,
         )
-        date = timestamp_to_date(
-            ts=ts_now(),
-            formatstr='%Y%m%d_%H%M%S',
-            treat_as_local=True,
-        )
-        given_filepath = Path(args.logfile)
         handlers['file'] = {
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': given_filepath.parent / f'{date}_{given_filepath.name}',
+            'filename': filepath,
             'mode': 'a',
             'maxBytes': single_log_max_bytes,
             'backupCount': backups_num,
