@@ -270,13 +270,13 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B'),
         # coingecko listed newb farm with symbol NEWB that is not our newb
         ethaddress_to_identifier('0x5A63Eb358a751b76e58325eadD86c2473fC40e87'),
-        # coingecko has BBC that is not tradove
+        # coingecko has BigBang Core (BBC) that is not tradove
         ethaddress_to_identifier('0xe7D3e4413E29ae35B0893140F4500965c74365e5'),
         # MNT is Meownaut in coingecko and not media network token
         ethaddress_to_identifier('0xA9877b1e05D035899131DBd1e403825166D09f92'),
         # Project quantum in coingecko but we have Qubitica
         ethaddress_to_identifier('0xCb5ea3c190d8f82DEADF7ce5Af855dDbf33e3962'),
-        # We have Cashbery Coin that is not listed in the coingecko list
+        # We have Cashbery Coin for symbol CBC that is not listed in the coingecko list
         'CBC-2',
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):

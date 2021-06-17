@@ -70,7 +70,7 @@ def test_coverage_of_kraken_balances(kraken):
     got_assets.remove('FLOWH')  # what is FLOWH?
     got_assets.remove('ADA.S')
     got_assets.remove('SOL.S')
-    got_assets.remove('KSM.P')  # Couldn't find what this is
+    got_assets.remove('KSM.P')  # kusama bonded for parachains
 
     diff = expected_assets.symmetric_difference(got_assets)
     if len(diff) != 0:
