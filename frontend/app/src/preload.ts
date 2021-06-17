@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { BackendCode } from '@/electron-main/backend-code';
-import { Interop } from '@/electron-main/ipc';
+import { Interop, TrayUpdate } from '@/electron-main/ipc';
 import {
   IPC_ABOUT,
   IPC_CHECK_FOR_UPDATES,
@@ -19,6 +19,7 @@ import {
   IPC_PREMIUM_LOGIN,
   IPC_RESTART_BACKEND,
   IPC_SERVER_URL,
+  IPC_TRAY_UPDATE,
   IPC_VERSION
 } from '@/electron-main/ipc-commands';
 
@@ -82,5 +83,7 @@ contextBridge.exposeInMainWorld('interop', {
     });
   },
   openPath: (path: string) => ipcRenderer.send(IPC_OPEN_PATH, path),
-  config: (defaults: boolean) => ipcAction(IPC_CONFIG, defaults)
+  config: (defaults: boolean) => ipcAction(IPC_CONFIG, defaults),
+  updateTray: (trayUpdate: TrayUpdate) =>
+    ipcRenderer.send(IPC_TRAY_UPDATE, trayUpdate)
 } as Interop);

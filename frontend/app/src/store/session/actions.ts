@@ -4,6 +4,7 @@ import {
   convertToGeneralSettings
 } from '@/data/converters';
 import { EXTERNAL_EXCHANGES, SUPPORTED_EXCHANGES } from '@/data/defaults';
+import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { DBSettings, Exchange } from '@/model/action-result';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
@@ -190,6 +191,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   },
   async logout({ dispatch, state }) {
+    interop.resetTray();
     try {
       await api.logout(state.username);
       await dispatch('stop');
