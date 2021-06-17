@@ -224,6 +224,8 @@ WORLD_TO_KRAKEN = {
     strethaddress_to_identifier('0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C'): 'BNT',
     strethaddress_to_identifier('0xF629cBd94d3791C9250152BD8dfBDF380E2a3B9c'): 'ENJ',
     'MINA': 'MINA',
+    'SRM': 'SRM',
+    'SOL-2': 'SOL',
 }
 
 WORLD_TO_BINANCE = {
@@ -266,6 +268,7 @@ WORLD_TO_BINANCE = {
     'WIN-3': 'WIN',
     strethaddress_to_identifier('0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6'): 'RCN',
     strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
+    strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
 }
 
 WORLD_TO_BITFINEX = {
@@ -316,6 +319,7 @@ WORLD_TO_KUCOIN = {
     'STX-2': 'STX',
     strethaddress_to_identifier('0xfAE4Ee59CDd86e3Be9e8b90b53AA866327D7c090'): 'CPC',
     'ONE-2': 'ONE',
+    strethaddress_to_identifier('0xf4CD3d3Fda8d7Fd6C5a500203e38640A70Bf9577'): 'YFDAI',
 }
 
 WORLD_TO_ICONOMI = {
@@ -345,6 +349,7 @@ WORLD_TO_ICONOMI = {
 
 WORLD_TO_COINBASE_PRO = {
     strethaddress_to_identifier('0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0'): 'TRB',
+    strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
     'SOL-2': 'SOL',
 }
 

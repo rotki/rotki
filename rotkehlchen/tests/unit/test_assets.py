@@ -256,6 +256,7 @@ def test_coingecko_identifiers_are_reachable():
         'FLAP',  # no FlappyCoin coin in Coingecko. Got other FLAP symbol token
         'HC-2',  # no Harvest Masternode Coin in Coingecko. Got other HC symbol token
         'KEY-3',  # no KeyCoin Coin in Coingecko. Got other KEY symbol token
+        'MUSIC',  # Music in coingecko is nftmusic and not our MUSIC
         'NAUT',  # Token suggestion doesn't match token in db
         'OCC',  # no Octoin Coin in Coingecko. Got other OCC symbol token
         'SPA',  # no SpainCoin Coin in Coingecko. Got other SPA symbol token
@@ -269,6 +270,14 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B'),
         # coingecko listed newb farm with symbol NEWB that is not our newb
         ethaddress_to_identifier('0x5A63Eb358a751b76e58325eadD86c2473fC40e87'),
+        # coingecko has BBC that is not tradove
+        ethaddress_to_identifier('0xe7D3e4413E29ae35B0893140F4500965c74365e5'),
+        # MNT is Meownaut in coingecko and not media network token
+        ethaddress_to_identifier('0xA9877b1e05D035899131DBd1e403825166D09f92'),
+        # Project quantum in coingecko but we have Qubitica
+        ethaddress_to_identifier('0xCb5ea3c190d8f82DEADF7ce5Af855dDbf33e3962'),
+        # We have Cashbery Coin that is not listed in the coingecko list
+        'CBC-2',
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
