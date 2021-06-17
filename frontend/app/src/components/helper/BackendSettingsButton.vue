@@ -1,5 +1,5 @@
 <template>
-  <v-bottom-sheet v-model="visible" width="98%">
+  <v-bottom-sheet v-model="visible" width="98%" class="backend-settings-button">
     <template #activator="{ on: menu, attrs }">
       <v-tooltip left max-width="280">
         <template #activator="{ on: tooltip }">
@@ -33,10 +33,16 @@ export default class BackendSettingsButton extends Vue {
 </script>
 
 <style scoped lang="scss">
+@import '~@/scss/scroll';
+
 ::v-deep {
   .v-card {
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
   }
+}
+
+.backend-settings-button {
+  height: calc(100vh - 80px);
 }
 </style>

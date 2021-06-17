@@ -26,6 +26,8 @@ export type BackendOptions = {
   readonly logDirectory: string;
   readonly sleepSeconds: number;
   readonly logFromOtherModules: boolean;
+  readonly maxSizeInMbAllLogs: number;
+  readonly maxLogfilesNum: number;
 };
 
 export interface Interop {

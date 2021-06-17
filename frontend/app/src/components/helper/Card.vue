@@ -13,7 +13,7 @@
         <slot name="subtitle" />
       </div>
     </v-card-subtitle>
-    <v-card-text>
+    <v-card-text :class="contained ? 'card__contained' : null">
       <slot name="search" />
       <v-sheet v-if="$slots.actions" outlined rounded class="pa-3 mb-4">
         <slot name="actions" />
@@ -46,10 +46,14 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 export default class Card extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
   outlinedBody!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  contained!: boolean;
 }
 </script>
 
 <style scoped lang="scss">
+@import '~@/scss/scroll';
+
 .card {
   &__title {
     margin-top: -22px;
@@ -61,6 +65,13 @@ export default class Card extends Vue {
 
   &__options {
     margin-bottom: -36px;
+  }
+
+  &__contained {
+    max-height: calc(100vh - 200px);
+    overflow-y: scroll;
+
+    @extend .themed-scrollbar;
   }
 }
 </style>
