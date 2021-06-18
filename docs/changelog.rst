@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.18.0 <2021-06-18>`
 * :feature:`2064` Users will now be able to close rotki to tray. When logged the tray icon will update based on the net worth value during the selected period (week, two weeks etc).
 * :feature:`2939` Rotki logs will now persist after restart. Number of logs and maximum size for all logs of a run can be now specified.
 * :feature:`1800` Users will now be greeted with an informational notice when trying to access a page that requires a module to be activated.
