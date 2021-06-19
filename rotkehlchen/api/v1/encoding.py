@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Sequence, Union
 
 import marshmallow
 import webargs
@@ -70,6 +70,10 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.externalapis.coingecko import Coingecko
+    from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
 log = logging.getLogger(__name__)
 
@@ -1561,6 +1565,28 @@ class UnderlyingTokenInfoSchema(Schema):
     weight = FloatingPercentageField(required=True)
 
 
+def _validate_external_ids(
+        data: Dict[str, Any],
+        coingecko_obj: 'Coingecko',
+        cryptocompare_obj: 'Cryptocompare',
+) -> None:
+    coingecko = data.get('coingecko')
+    if coingecko and coingecko not in coingecko_obj.all_coins():
+        raise ValidationError(
+            f'Given coingecko identifier {coingecko} is not valid. Make sure the identifier '
+            f'is correct and in this list https://api.coingecko.com/api/v3/coins/list',
+            field_name='coingecko',
+        )
+
+    cryptocompare = data.get('cryptocompare')
+    if cryptocompare and cryptocompare not in cryptocompare_obj.all_coins():
+        raise ValidationError(
+            f'Given cryptocompare identifier {cryptocompare} isnt valid. Make sure the identifier '
+            f'is correct and in this list https://min-api.cryptocompare.com/data/all/coinlist',
+            field_name='cryptocompare',
+        )
+
+
 class AssetSchema(Schema):
     asset_type = AssetTypeField(required=True, exclude_types=(AssetType.ETHEREUM_TOKEN,))
     name = fields.String(required=True)
@@ -1570,6 +1596,19 @@ class AssetSchema(Schema):
     swapped_for = AssetField(missing=None)
     coingecko = fields.String(missing=None)
     cryptocompare = fields.String(missing=None)
+
+    def __init__(self, coingecko: 'Coingecko', cryptocompare: 'Cryptocompare'):
+        super().__init__()
+        self.coingecko_obj = coingecko
+        self.cryptocompare_obj = cryptocompare
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        _validate_external_ids(data, self.coingecko_obj, self.cryptocompare_obj)
 
 
 class AssetSchemaWithIdentifier(AssetSchema):
@@ -1596,6 +1635,16 @@ class EthereumTokenSchema(Schema):
     protocol = fields.String(missing=None)
     underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), missing=None)
 
+    def __init__(
+            self,
+            coingecko: 'Coingecko' = None,
+            cryptocompare: 'Cryptocompare' = None,
+            **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.coingecko_obj = coingecko
+        self.cryptocompare_obj = cryptocompare
+
     @validates_schema
     def validate_ethereum_token_schema(  # pylint: disable=no-self-use
             self,
@@ -1621,6 +1670,12 @@ class EthereumTokenSchema(Schema):
                     f'is {weight_sum * 100} and does not add up to 100%',
                 )
 
+        if self.coingecko_obj is not None:
+            # most probably validation happens at ModifyEthereumTokenSchema
+            # so this is not needed. Kind of an ugly way to do this but can't
+            # find a way around it at the moment
+            _validate_external_ids(data, self.coingecko_obj, self.cryptocompare_obj)  # type: ignore  # noqa:E501
+
     @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
@@ -1640,11 +1695,32 @@ class EthereumTokenSchema(Schema):
 
 
 class ModifyEthereumTokenSchema(Schema):
-    token = fields.Nested(EthereumTokenSchema, required=True)
+    token = fields.Nested('EthereumTokenSchema', required=True)
 
+    def __init__(
+            self,
+            coingecko: 'Coingecko',
+            cryptocompare: 'Cryptocompare',
+            **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.token.schema.coingecko_obj = coingecko
+        self.token.schema.cryptocompare_obj = cryptocompare
 
-class ModifyAssetSchema(Schema):
-    token = fields.Nested(AssetSchema, required=True)
+    @validates_schema
+    def validate_modify_ethereum_token_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        # Not the best way to do it. Need to manually validate, coingecko/cryptocompare id here
+        serialized_token = data['token'].serialize_all_info()
+        serialized_token.pop('identifier')
+        _validate_external_ids(
+            data=serialized_token,
+            coingecko_obj=self.token.schema.coingecko_obj,
+            cryptocompare_obj=self.token.schema.cryptocompare_obj,
+        )
 
 
 class AssetsReplaceSchema(Schema):

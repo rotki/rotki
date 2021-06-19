@@ -238,6 +238,42 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    # test that adding invalid coingecko fails
+    bad_identifier = 'INVALIDID'
+    bad_token = {
+        'address': make_ethereum_address(),
+        'decimals': 18,
+        'name': 'Bad token',
+        'symbol': 'NAUGHTY',
+        'coingecko': bad_identifier,
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumassetsresource',
+        ),
+        json={'token': bad_token},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Given coingecko identifier {bad_identifier} is not valid',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # test that adding invalid cryptocompare fails
+    bad_token['cryptocompare'] = bad_identifier
+    bad_token['coingecko'] = None
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumassetsresource',
+        ),
+        json={'token': bad_token},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Given cryptocompare identifier {bad_identifier} isnt valid',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -301,6 +337,40 @@ def test_editing_custom_tokens(rotkehlchen_api_server):
         response=response,
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.CONFLICT,
+    )
+
+    # test that editing with an invalid coingecko identifier is handled
+    bad_token = new_token1.copy()
+    bad_identifier = 'INVALIDID'
+    bad_token['coingecko'] = bad_identifier
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumassetsresource',
+        ),
+        json={'token': bad_token},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Given coingecko identifier {bad_identifier} is not valid',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # test that editing with an invalid cryptocompare identifier is handled
+    bad_token = new_token1.copy()
+    bad_identifier = 'INVALIDID'
+    bad_token['cryptocompare'] = bad_identifier
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumassetsresource',
+        ),
+        json={'token': bad_token},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Given cryptocompare identifier {bad_identifier} isnt valid',
+        status_code=HTTPStatus.BAD_REQUEST,
     )
 
 

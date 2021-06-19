@@ -293,21 +293,17 @@ def test_coingecko_identifiers_are_reachable():
         have_id = True
         if coingecko_str is not None or coingecko_str != '':
             have_id = False
-            found = False
-            for entry in all_coins:
-                if coingecko_str == entry['id']:
-                    found = True
-                    break
+            found = coingecko_str in all_coins
 
         suggestions = []
         if not found:
-            for entry in all_coins:
+            for cc_id, entry in all_coins.items():
                 if entry['symbol'].upper() == asset_data.symbol.upper():
-                    suggestions.append((entry['id'], entry['name'], entry['symbol']))
+                    suggestions.append((cc_id, entry['name'], entry['symbol']))
                     continue
 
                 if entry['name'].upper() == asset_data.symbol.upper():
-                    suggestions.append((entry['id'], entry['name'], entry['symbol']))
+                    suggestions.append((cc_id, entry['name'], entry['symbol']))
                     continue
 
         if have_id is False and (len(suggestions) == 0 or identifier in symbol_checked_exceptions):

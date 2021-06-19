@@ -18,8 +18,8 @@ INITIAL_TOKENS = [
         symbol='CST1',
         started=Timestamp(0),
         swapped_for=A_MKR,
-        coingecko='foo',
-        cryptocompare='boo',
+        coingecko='internet-computer',
+        cryptocompare='ICP',
         protocol='uniswap',
         underlying_tokens=[
             UnderlyingToken(address=underlying_address1, weight=FVal('0.5055')),
@@ -49,7 +49,7 @@ CUSTOM_TOKEN3 = EthereumToken.initialize(
     decimals=15,
     name='Custom 3',
     symbol='CST3',
-    cryptocompare='goo',
+    cryptocompare='ICP',
     protocol='aave',
     underlying_tokens=[
         UnderlyingToken(address=custom_address1, weight=FVal('0.55')),
