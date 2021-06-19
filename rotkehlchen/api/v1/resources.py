@@ -392,18 +392,28 @@ class OwnedAssetsResource(BaseResource):
 
 class AllAssetsResource(BaseResource):
 
-    add_schema = AssetSchema()
-    edit_schema = AssetSchemaWithIdentifier()
     delete_schema = StringIdentifierSchema()
+
+    def make_add_schema(self) -> AssetSchema:
+        return AssetSchema(
+            coingecko=self.rest_api.rotkehlchen.coingecko,
+            cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
+        )
+
+    def make_edit_schema(self) -> AssetSchemaWithIdentifier:
+        return AssetSchemaWithIdentifier(
+            coingecko=self.rest_api.rotkehlchen.coingecko,
+            cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
+        )
 
     def get(self) -> Response:
         return self.rest_api.query_all_assets()
 
-    @use_kwargs(add_schema, location='json')
+    @resource_parser.use_kwargs(make_add_schema, location='json')
     def put(self, asset_type: AssetType, **kwargs: Any) -> Response:
         return self.rest_api.add_custom_asset(asset_type, **kwargs)
 
-    @use_kwargs(edit_schema, location='json')
+    @resource_parser.use_kwargs(make_edit_schema, location='json')
     def patch(self, **kwargs: Any) -> Response:
         return self.rest_api.edit_custom_asset(kwargs)
 
@@ -430,18 +440,24 @@ class AssetsReplaceResource(BaseResource):
 class EthereumAssetsResource(BaseResource):
 
     get_schema = OptionalEthereumAddressSchema()
+    # edit_schema = ModifyEthereumTokenSchema()
     delete_schema = RequiredEthereumAddressSchema()
-    edit_schema = ModifyEthereumTokenSchema()
+
+    def make_edit_schema(self) -> ModifyEthereumTokenSchema:
+        return ModifyEthereumTokenSchema(
+            coingecko=self.rest_api.rotkehlchen.coingecko,
+            cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
+        )
 
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, address: Optional[ChecksumEthAddress]) -> Response:
         return self.rest_api.get_custom_ethereum_tokens(address=address)
 
-    @use_kwargs(edit_schema, location='json')
+    @resource_parser.use_kwargs(make_edit_schema, location='json')
     def put(self, token: EthereumToken) -> Response:
         return self.rest_api.add_custom_ethereum_token(token=token)
 
-    @use_kwargs(edit_schema, location='json')
+    @resource_parser.use_kwargs(make_edit_schema, location='json')
     def patch(self, token: EthereumToken) -> Response:
         return self.rest_api.edit_custom_ethereum_token(token=token)
 

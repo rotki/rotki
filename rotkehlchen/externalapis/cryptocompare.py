@@ -871,7 +871,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
     def all_coins(self) -> Dict[str, Any]:
         """
-        Gets the list of all the cryptocompare coins
+        Gets the mapping of all the cryptocompare coins
 
         May raise:
         - RemoteError if there is a problem reaching the cryptocompare server
