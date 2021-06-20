@@ -4,6 +4,11 @@ import sys
 import py
 import pytest
 
+from rotkehlchen.config import default_data_directory
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+
+GlobalDBHandler(default_data_directory())
+
 from rotkehlchen.tests.fixtures import *  # noqa: F401,F403
 
 # monkey patch web3's non-thread safe lru cache with our own version

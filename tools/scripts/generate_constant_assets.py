@@ -1,16 +1,18 @@
 from pathlib import Path
 from typing import Dict
 
+from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 
 class ContextManager():
+    """Manages the parsing context of the assets template"""
 
     def __init__(self) -> None:
         self.id_to_variable: Dict[str, str] = {}
-        self.globaldb = GlobalDBHandler()
+        self.globaldb = GlobalDBHandler(default_data_directory())
 
     def add_asset_initialization(self, var_name: str, identifier: str) -> str:
         generated_text = ''
@@ -48,6 +50,9 @@ class ContextManager():
             f'    cryptocompare={cryptocompare},\n'
             f')\n'
         )
+
+        if identifier in self.id_to_variable:
+            raise ValueError(f'Asset with identifier {identifier} and var_name {var_name} is defined twice')  # noqa: E501
         self.id_to_variable[identifier] = var_name
         return generated_text
 
@@ -86,11 +91,16 @@ class ContextManager():
             f'    protocol={protocol},\n'
             f')\n'
         )
-        self.id_to_variable[strethaddress_to_identifier(address)] = var_name
+        identifier = strethaddress_to_identifier(address)
+        if identifier in self.id_to_variable:
+            raise ValueError(f'Token with identifier {identifier} and varname {var_name} is defined twice')  # noqa: E501
+        self.id_to_variable[identifier] = var_name
         return generated_text
 
 
 def main() -> None:
+    """Goes through the assets template, reads the built-in assets DB and generates
+    assets.py with initialization of all constant assets"""
     root_dir = Path(__file__).resolve().parent.parent.parent
     constants_dir = root_dir / 'rotkehlchen' / 'constants'
     template_file = constants_dir / 'assets.py.template'

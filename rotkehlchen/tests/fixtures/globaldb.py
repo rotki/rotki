@@ -26,8 +26,6 @@ def create_globaldb(
     GlobalDBHandler._GlobalDBHandler__instance = None  # type: ignore
 
     handler = GlobalDBHandler(data_dir=data_directory)
-    # note: the addition of custom ethereum tokens is moved after resolver initialization
-    # so that DB can be primed with all assets.json
     return handler
 
 

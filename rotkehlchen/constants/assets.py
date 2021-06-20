@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 20/06/2021 12:40:37.
+# tools/scripts/generate_constant_assets.py at 20/06/2021 14:33:34.
 # Do not edit manually!
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
@@ -1593,28 +1593,6 @@ A_VBZRX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
-A_CETH = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
-    decimals=8,
-    name="Compound ETH",
-    symbol='cETH',
-    started=Timestamp(1557192318),
-    swapped_for=None,
-    coingecko='compound-ether',
-    cryptocompare=None,
-    protocol=None,
-)
-A_AUSDC = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x9bA00D6856a4eDF4665BcA2C2309936572473B7E'),
-    decimals=6,
-    name="Aave Interest bearing USDC",
-    symbol='aUSDC',
-    started=Timestamp(1578501407),
-    swapped_for=None,
-    coingecko='aave-usdc',
-    cryptocompare='USDC',
-    protocol=None,
-)
 A_NMR = EthereumToken.initialize(
     address=string_to_ethereum_address('0x1776e1F26f98b1A5dF9cD347953a26dd3Cb46671'),
     decimals=18,
@@ -2140,96 +2118,6 @@ A_RSPT = EthereumToken.initialize(
     started=Timestamp(1600740632),
     swapped_for=None,
     coingecko='rari-stable-pool-token',
-    cryptocompare=None,
-    protocol=None,
-)
-
-# Needed by yearn vaults
-A_YV1_DAI = EthereumToken.initialize(
-    address=string_to_ethereum_address('0xACd43E627e64355f1861cEC6d3a6688B31a6F952'),
-    decimals=18,
-    name="yearn Dai Stablecoin",
-    symbol='yDAI',
-    started=Timestamp(1597301808),
-    swapped_for=None,
-    coingecko='dai',
-    cryptocompare=None,
-    protocol=None,
-)
-A_YV1_WETH = EthereumToken.initialize(
-    address=string_to_ethereum_address('0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7'),
-    decimals=18,
-    name="yearn Wrapped Ether",
-    symbol='yWETH',
-    started=Timestamp(1598952738),
-    swapped_for=None,
-    coingecko='weth',
-    cryptocompare=None,
-    protocol=None,
-)
-A_YV1_YFI = EthereumToken.initialize(
-    address=string_to_ethereum_address('0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7'),
-    decimals=18,
-    name="yearn Wrapped Ether",
-    symbol='yWETH',
-    started=Timestamp(1598952738),
-    swapped_for=None,
-    coingecko='weth',
-    cryptocompare=None,
-    protocol=None,
-)
-A_YV1_ALINK = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x29E240CFD7946BA20895a7a02eDb25C210f9f324'),
-    decimals=18,
-    name="yearn Aave Interest bearing LINK",
-    symbol='yaLINK',
-    started=Timestamp(1596628700),
-    swapped_for=None,
-    coingecko='aave-link',
-    cryptocompare=None,
-    protocol=None,
-)
-A_YV1_USDT = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x2f08119C6f07c006695E079AAFc638b8789FAf18'),
-    decimals=6,
-    name="yearn Tether USD",
-    symbol='yUSDT',
-    started=Timestamp(1597318993),
-    swapped_for=None,
-    coingecko='tether',
-    cryptocompare=None,
-    protocol=None,
-)
-A_YV1_USDC = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e'),
-    decimals=6,
-    name="yearn USD//C",
-    symbol='yUSDC',
-    started=Timestamp(1595721600),
-    swapped_for=None,
-    coingecko='usd-coin',
-    cryptocompare=None,
-    protocol=None,
-)
-A_YV1_TUSD = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x37d19d1c4E1fa9DC47bD1eA12f742a0887eDa74a'),
-    decimals=18,
-    name="yearn TrueUSD",
-    symbol='yTUSD',
-    started=Timestamp(1596678980),
-    swapped_for=None,
-    coingecko='true-usd',
-    cryptocompare=None,
-    protocol=None,
-)
-A_YV1_GUSD = EthereumToken.initialize(
-    address=string_to_ethereum_address('0xec0d8D3ED5477106c6D4ea27D90a60e594693C90'),
-    decimals=2,
-    name="yearn Gemini dollar",
-    symbol='yGUSD',
-    started=Timestamp(1602827638),
-    swapped_for=None,
-    coingecko='gemini-dollar',
     cryptocompare=None,
     protocol=None,
 )

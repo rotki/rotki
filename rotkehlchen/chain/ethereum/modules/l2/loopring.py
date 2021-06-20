@@ -19,7 +19,7 @@ from rotkehlchen.constants.assets import (
     A_ADX,
     A_AMP,
     A_AUC,
-    A_AUSDC,
+    A_AUSDC_V1,
     A_BADGER,
     A_BAL,
     A_BAND,
@@ -189,7 +189,7 @@ TOKENID_TO_ASSET = {
     41: A_CUSDC,
     # 42: aLEND delisted
     43: A_ALINK_V1,
-    44: A_AUSDC,
+    44: A_AUSDC_V1,
     45: A_OMG,
     46: A_ENJ,
     47: A_NMR,
