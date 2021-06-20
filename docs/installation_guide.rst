@@ -153,14 +153,14 @@ it at ``http://localhost:8084``. You should be able to see the rotki login scree
 
 Time in Profit / Loss Report is in wrong.
 ---------------------------
-To set the timezone in the docker environment you can use the option ``-e TZ=Timezone`` when starting the container:
+To set the timezone in the docker environment you can use the option ``-e TZ=Timezone`` when starting the container::
 
-   docker run -d --name rotki \
-       -p 8084:80 \
-       -v $HOME/.rotki/data:/data \
-       -v $HOME/.rotki/logs:/logs \
-       -e TZ=America/New_York
-       rotki/rotki:latest
+    docker run -d --name rotki \
+        -p 8084:80 \
+        -v $HOME/.rotki/data:/data \
+        -v $HOME/.rotki/logs:/logs \
+        -e TZ=America/New_York \
+        rotki/rotki:latest
        
 You can find all TimeZone Databases on Wikipedia:
 https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
