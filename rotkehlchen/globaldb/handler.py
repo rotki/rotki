@@ -84,7 +84,6 @@ class GlobalDBHandler():
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
     _data_directory: Optional[Path] = None
-    _temp_db_directory: Optional[TemporaryDirectory] = None
     _conn: sqlite3.Connection
 
     def __new__(
@@ -92,38 +91,18 @@ class GlobalDBHandler():
             data_dir: Path = None,
     ) -> 'GlobalDBHandler':
         """
-        Lazily initializes the GlobalDB.
+        Initializes the GlobalDB.
 
-        If the data dir is not given it uses a copy of the built-in global DB copied
-        in a temporary directory.
-
-        If the data dir is given it used the already existing global DB in that directory,
+        If the data dir is given it uses the already existing global DB in that directory,
         of if there is none copies the built-in one there.
         """
         if GlobalDBHandler.__instance is not None:
-            if GlobalDBHandler.__instance._data_directory is None and data_dir is not None:
-                if GlobalDBHandler.__instance._temp_db_directory is not None:
-                    # we now know datadir. Cleanup temporary DB
-                    GlobalDBHandler.__instance._conn.close()
-                    GlobalDBHandler.__instance._temp_db_directory.cleanup()
-                    GlobalDBHandler.__instance._temp_db_directory = None
-                    GlobalDBHandler.__instance._data_directory = data_dir
-                    # and initialize it in the proper place
-                    GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
-
             return GlobalDBHandler.__instance
 
+        assert data_dir, 'First instantiation of GlobalDBHandler should have a data_dir'
         GlobalDBHandler.__instance = object.__new__(cls)
-        if data_dir is None:
-            # rotki not fully initialized yet. We don't know the data directory. Use temporary DB
-            tempdir = _initialize_temp_db_directory()
-            GlobalDBHandler.__instance._temp_db_directory = tempdir
-            dbname = Path(tempdir.name) / 'global.db'
-            GlobalDBHandler.__instance._conn = initialize_globaldb(dbname)
-        else:  # probably tests
-            GlobalDBHandler.__instance._data_directory = data_dir
-            GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
-
+        GlobalDBHandler.__instance._data_directory = data_dir
+        GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
         return GlobalDBHandler.__instance
 
     @staticmethod
