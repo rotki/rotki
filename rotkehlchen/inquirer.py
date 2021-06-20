@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
 from rotkehlchen.constants.assets import (
+    A_3CRV,
     A_ALINK_V1,
     A_BTC,
     A_CRV_3CRV,
@@ -262,16 +263,10 @@ class Inquirer():
             A_FARM_WBTC,
             A_FARM_RENBTC,
             A_FARM_CRVRENWBTC,
+            A_3CRV,
         ]
 
         Inquirer.special_protocols = KnownProtocolsAssets
-
-        # This asset may be missing if user has not yet updated their DB
-        try:
-            a3crv = EthereumToken('0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900')
-            Inquirer.special_tokens.append(a3crv)
-        except UnknownAsset:
-            pass
 
         return Inquirer.__instance
 

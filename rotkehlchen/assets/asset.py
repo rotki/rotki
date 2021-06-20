@@ -353,6 +353,9 @@ WORLD_TO_COINBASE_PRO = {
     'SOL-2': 'SOL',
 }
 
+# Create a generic variable that can be 'Asset', or any subclass.
+Z = TypeVar('Z', bound='Asset')
+
 
 @total_ordering
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
@@ -515,6 +518,32 @@ class Asset():
         # else
         raise ValueError(f'Invalid comparison of asset with {type(other)}')
 
+    @classmethod
+    def initialize(
+            cls: Type[Z],
+            identifier: str,
+            asset_type: AssetType,
+            name: Optional[str] = None,
+            symbol: Optional[str] = None,
+            started: Optional[Timestamp] = None,
+            forked: Optional['Asset'] = None,
+            swapped_for: Optional['Asset'] = None,
+            coingecko: Optional[str] = None,
+            cryptocompare: Optional[str] = None,
+    ) -> Z:
+        """Initialize an asset from fields"""
+        asset = cls('whatever', direct_field_initialization=True)
+        object.__setattr__(asset, 'identifier', identifier)
+        object.__setattr__(asset, 'name', name)
+        object.__setattr__(asset, 'symbol', symbol)
+        object.__setattr__(asset, 'asset_type', asset_type)
+        object.__setattr__(asset, 'started', started)
+        object.__setattr__(asset, 'forked', forked)
+        object.__setattr__(asset, 'swapped_for', swapped_for)
+        object.__setattr__(asset, 'cryptocompare', cryptocompare)
+        object.__setattr__(asset, 'coingecko', coingecko)
+        return asset
+
 
 EthereumTokenDBTuple = Tuple[
     str,                  # identifier
@@ -587,7 +616,7 @@ class HasEthereumToken(Asset):
         }
 
     @classmethod
-    def initialize(
+    def initialize(  # type: ignore  # figure out a way to make mypy happy
             cls: Type[Y],
             address: ChecksumEthAddress,
             decimals: Optional[int] = None,

@@ -17,6 +17,7 @@ from rotkehlchen.constants.assets import (
     A_CWBTC,
     A_CZRX,
     A_ETH,
+    A_EUR,
     A_USD,
     A_USDT,
 )
@@ -30,7 +31,7 @@ from rotkehlchen.externalapis.cryptocompare import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.tests.utils.constants import A_DAO, A_EUR, A_SNGLS, A_XMR
+from rotkehlchen.tests.utils.constants import A_DAO, A_SNGLS, A_XMR
 from rotkehlchen.typing import Price, Timestamp
 
 

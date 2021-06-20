@@ -1,11 +1,11 @@
 import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
-from rotkehlchen.tests.utils.constants import A_EUR, A_XMR
+from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.typing import AssetAmount, Location
 

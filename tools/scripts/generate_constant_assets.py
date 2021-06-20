@@ -20,15 +20,15 @@ class ContextManager():
             if asset_data.forked in self.id_to_variable:
                 var_forked = self.id_to_variable[asset_data.forked]
             else:
-                var_forked = f'{identifier}_forked'
-                generated_text += self.add_asset_initialization(var_forked, asset_data.forked)
+                var_forked = f'{identifier.upper()}_forked'
+                generated_text += self.add_asset_initialization(var_forked, asset_data.forked.identifier)  # noqa: E501
         var_swappedfor = 'None'
         if asset_data.swapped_for:
             if asset_data.swapped_for in self.id_to_variable:
                 var_swappedfor = self.id_to_variable[asset_data.swapped_for]
             else:
-                var_swappedfor = f'{identifier}_swappedfor'
-                generated_text += self.add_asset_initialization(var_swappedfor, asset_data.swapped_for)  # noqa:E501
+                var_swappedfor = f'{identifier.upper()}_swappedfor'
+                generated_text += self.add_asset_initialization(var_swappedfor, asset_data.swapped_for.identifier)  # noqa:E501
 
         name = f'"{asset_data.name}"' if asset_data.name else None
         symbol = f'\'{asset_data.symbol}\'' if asset_data.symbol else None
@@ -59,8 +59,8 @@ class ContextManager():
             if token.swapped_for in self.id_to_variable:
                 var_swappedfor = self.id_to_variable[token.swapped_for]
             else:
-                var_swappedfor = f'{strethaddress_to_identifier(address)}_swappedfor'
-                generated_text += self.add_asset_initialization(var_swappedfor, token.swapped_for)
+                var_swappedfor = f'{strethaddress_to_identifier(address).upper()}_swappedfor'
+                generated_text += self.add_asset_initialization(var_swappedfor, token.swapped_for.identifier)  # noqa: E501
 
         name = f'"{token.name}"' if token.name else None
         symbol = f'\'{token.symbol}\'' if token.symbol else None
@@ -68,6 +68,11 @@ class ContextManager():
         coingecko = f'\'{token.coingecko}\'' if token.coingecko else None
         cryptocompare = f'\'{token.cryptocompare}\'' if token.cryptocompare else None
         protocol = f'\'{token.protocol}\'' if token.protocol else None
+        if token.underlying_tokens is not None:
+            raise ValueError(
+                f'Found token {address} with underlying tokens. Not supported '
+                f'at constants asset generation yet. Can implement when needed.',
+            )
         generated_text += (
             f'{var_name} = EthereumToken.initialize(\n'
             f'    address=string_to_ethereum_address(\'{address}\'),\n'

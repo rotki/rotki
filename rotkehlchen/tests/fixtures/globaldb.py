@@ -6,11 +6,10 @@ import pytest
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.typing import Price, Timestamp
 
 

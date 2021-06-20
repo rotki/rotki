@@ -1,5 +1,6 @@
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.constants.assets import A_EUR
 
 A_RDN = EthereumToken('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6')
 A_GNO = EthereumToken('0x6810e776880C02933D47DB1b9fc05908e5386b96')
@@ -46,8 +47,6 @@ A_ZEC = Asset('ZEC')
 A_GBP = Asset('GBP')
 A_CHF = Asset('CHF')
 A_AUD = Asset('AUD')
-A_EUR = Asset('EUR')
-A_KRW = Asset('KRW')
 A_CAD = Asset('CAD')
 
 ETH_ADDRESS1 = string_to_ethereum_address('0x5153493bB1E1642A63A098A65dD3913daBB6AE24')
