@@ -7,11 +7,11 @@ import pytest
 import requests
 
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
-from rotkehlchen.tests.utils.constants import A_EUR, A_RDN
+from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances

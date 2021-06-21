@@ -6,11 +6,10 @@ import pytest
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.typing import Price, Timestamp
 
 
@@ -27,8 +26,6 @@ def create_globaldb(
     GlobalDBHandler._GlobalDBHandler__instance = None  # type: ignore
 
     handler = GlobalDBHandler(data_dir=data_directory)
-    # note: the addition of custom ethereum tokens is moved after resolver initialization
-    # so that DB can be primed with all assets.json
     return handler
 
 

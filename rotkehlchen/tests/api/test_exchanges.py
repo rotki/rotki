@@ -6,8 +6,7 @@ from urllib.parse import urlencode
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
@@ -28,7 +27,6 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
     wait_for_async_task_with_result,
 )
-from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.tests.utils.exchanges import (
     assert_binance_balances_result,
     assert_poloniex_balances_result,
@@ -806,7 +804,7 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
         amount=FVal(1),
         rate=FVal(1),
         fee=FVal(1),
-        fee_currency=Asset('EUR'),
+        fee_currency=A_EUR,
         link='',
         notes='',
     ) for x in (Location.CRYPTOCOM, Location.KRAKEN)]

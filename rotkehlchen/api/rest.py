@@ -1289,7 +1289,7 @@ class RestAPI():
     def query_all_assets() -> Response:
         """Returns all supported assets"""
         # type ignore is due to: https://github.com/python/mypy/issues/7781
-        assets = GlobalDBHandler().get_all_asset_data(mapping=True)  # type: ignore
+        assets = GlobalDBHandler().get_all_asset_data(mapping=True, serialized=True)  # type: ignore  # noqa: E501
         return api_response(
             _wrap_in_ok_result(assets),
             status_code=HTTPStatus.OK,

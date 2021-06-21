@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`3069` When adding an asset coingecko/cryptocompare identifiers will now be validated and non-existing ones will be rejected.
+* :bug:`2685` Invoking `--version` from the rotki backedn binary in Windows should no longer raise a Permission error.
 
 * :release:`1.18.0 <2021-06-18>`
 * :feature:`2064` Users will now be able to close rotki to tray. When logged the tray icon will update based on the net worth value during the selected period (week, two weeks etc).

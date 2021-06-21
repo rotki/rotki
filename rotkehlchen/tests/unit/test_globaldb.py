@@ -16,6 +16,38 @@ from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import INITIAL_TOKENS
+from rotkehlchen.typing import Timestamp
+
+selfkey_address = string_to_ethereum_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7')
+selfkey_id = ethaddress_to_identifier(selfkey_address)
+selfkey_asset_data = AssetData(
+    identifier=selfkey_id,
+    name='Selfkey',
+    symbol='KEY',
+    asset_type=AssetType.ETHEREUM_TOKEN,
+    started=Timestamp(1508803200),
+    forked=None,
+    swapped_for=None,
+    ethereum_address=selfkey_address,
+    decimals=18,
+    cryptocompare=None,
+    coingecko='selfkey',
+    protocol=None,
+)
+bidr_asset_data = AssetData(
+    identifier='BIDR',
+    name='Binance IDR Stable Coin',
+    symbol='BIDR',
+    asset_type=AssetType.BINANCE_TOKEN,
+    started=Timestamp(1593475200),
+    forked=None,
+    swapped_for=None,
+    ethereum_address=None,
+    decimals=None,
+    cryptocompare=None,
+    coingecko='binanceidr',
+    protocol=None,
+)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -154,65 +186,40 @@ def test_check_asset_exists(globaldb):
 def test_get_asset_with_symbol(globaldb):
     # both categories of assets
     asset_data = globaldb.get_assets_with_symbol('KEY')
-    selfkey_address = string_to_ethereum_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7')
     bihukey_address = string_to_ethereum_address('0x4Cd988AfBad37289BAAf53C13e98E2BD46aAEa8c')
     aave_address = string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9')
     renbtc_address = string_to_ethereum_address('0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D')
-    assert asset_data == [AssetData(
-        identifier=ethaddress_to_identifier(selfkey_address),
-        name='Selfkey',
-        symbol='KEY',
-        asset_type=AssetType.ETHEREUM_TOKEN,
-        started=1508803200,
-        forked=None,
-        swapped_for=None,
-        ethereum_address=selfkey_address,
-        decimals=18,
-        cryptocompare=None,
-        coingecko='selfkey',
-        protocol=None,
-    ), AssetData(
-        identifier=ethaddress_to_identifier(bihukey_address),
-        name='Bihu KEY',
-        symbol='KEY',
-        asset_type=AssetType.ETHEREUM_TOKEN,
-        started=1507822985,
-        forked=None,
-        swapped_for=None,
-        ethereum_address=bihukey_address,
-        decimals=18,
-        cryptocompare='BIHU',
-        coingecko='key',
-        protocol=None,
-    ), AssetData(
-        identifier='KEY-3',
-        name='KeyCoin',
-        symbol='KEY',
-        asset_type=AssetType.OWN_CHAIN,
-        started=1405382400,
-        forked=None,
-        swapped_for=None,
-        ethereum_address=None,
-        decimals=None,
-        cryptocompare='KEYC',
-        coingecko='',
-        protocol=None,
-    )]
+    assert asset_data == [
+        selfkey_asset_data,
+        AssetData(
+            identifier=ethaddress_to_identifier(bihukey_address),
+            name='Bihu KEY',
+            symbol='KEY',
+            asset_type=AssetType.ETHEREUM_TOKEN,
+            started=1507822985,
+            forked=None,
+            swapped_for=None,
+            ethereum_address=bihukey_address,
+            decimals=18,
+            cryptocompare='BIHU',
+            coingecko='key',
+            protocol=None,
+        ), AssetData(
+            identifier='KEY-3',
+            name='KeyCoin',
+            symbol='KEY',
+            asset_type=AssetType.OWN_CHAIN,
+            started=1405382400,
+            forked=None,
+            swapped_for=None,
+            ethereum_address=None,
+            decimals=None,
+            cryptocompare='KEYC',
+            coingecko='',
+            protocol=None,
+        )]
     # only non-ethereum token
-    assert globaldb.get_assets_with_symbol('BIDR') == [AssetData(
-        identifier='BIDR',
-        name='Binance IDR Stable Coin',
-        symbol='BIDR',
-        asset_type=AssetType.BINANCE_TOKEN,
-        started=1593475200,
-        forked=None,
-        swapped_for=None,
-        ethereum_address=None,
-        decimals=None,
-        cryptocompare=None,
-        coingecko='binanceidr',
-        protocol=None,
-    )]
+    assert globaldb.get_assets_with_symbol('BIDR') == [bidr_asset_data]
     # only ethereum token
     assert globaldb.get_assets_with_symbol('AAVE') == [AssetData(
         identifier=ethaddress_to_identifier(aave_address),
@@ -265,3 +272,89 @@ def test_enum_values_are_present_in_global_db(globaldb, enum_class, table_name):
     for enum_class_entry in enum_class:
         r = cursor.execute(query, (enum_class_entry.value,))
         assert r.fetchone() == (1,), f'Did not find {table_name} entry for value {enum_class_entry.value}'  # noqa: E501
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_get_all_asset_data_specific_ids(globaldb):
+    btc_asset_data = AssetData(
+        identifier='BTC',
+        name='Bitcoin',
+        symbol='BTC',
+        asset_type=AssetType.OWN_CHAIN,
+        started=Timestamp(1231006505),
+        forked=None,
+        swapped_for=None,
+        ethereum_address=None,
+        decimals=None,
+        cryptocompare=None,
+        coingecko='bitcoin',
+        protocol=None,
+    )
+    eth_asset_data = AssetData(
+        identifier='ETH',
+        name='Ethereum',
+        symbol='ETH',
+        asset_type=AssetType.OWN_CHAIN,
+        started=Timestamp(1438214400),
+        forked=None,
+        swapped_for=None,
+        ethereum_address=None,
+        decimals=None,
+        cryptocompare=None,
+        coingecko='ethereum',
+        protocol=None,
+    )
+
+    asset_data = globaldb.get_all_asset_data(
+        mapping=False,
+        specific_ids=['BTC', 'ETH', selfkey_id, 'BIDR'],
+    )
+    assert asset_data == [
+        selfkey_asset_data,
+        bidr_asset_data,
+        btc_asset_data,
+        eth_asset_data,
+    ]
+
+    asset_data = globaldb.get_all_asset_data(
+        mapping=True,
+        serialized=True,
+        specific_ids=['BTC', 'ETH', selfkey_id, 'BIDR'],
+    )
+    assert asset_data == {
+        selfkey_id: selfkey_asset_data.serialize(),
+        'BIDR': bidr_asset_data.serialize(),
+        'BTC': btc_asset_data.serialize(),
+        'ETH': eth_asset_data.serialize(),
+    }
+    asset_data = globaldb.get_all_asset_data(
+        mapping=True,
+        serialized=False,
+        specific_ids=['BTC', 'ETH', selfkey_id, 'BIDR'],
+    )
+    assert asset_data == {
+        selfkey_id: selfkey_asset_data,
+        'BIDR': bidr_asset_data,
+        'BTC': btc_asset_data,
+        'ETH': eth_asset_data,
+    }
+
+    # unknown ids
+    assert globaldb.get_all_asset_data(
+        mapping=False,
+        specific_ids=['INVALIDIDSS!@!1', 'DSAD#@$DSAD@EAS'],
+    ) == []
+    assert globaldb.get_all_asset_data(
+        mapping=True,
+        specific_ids=['INVALIDIDSS!@!1', 'DSAD#@$DSAD@EAS'],
+    ) == {}
+
+    # empty list
+    assert globaldb.get_all_asset_data(
+        mapping=False,
+        specific_ids=[],
+    ) == []
+    assert globaldb.get_all_asset_data(
+        mapping=True,
+        specific_ids=[],
+    ) == {}

@@ -7,7 +7,7 @@ import requests
 from rotkehlchen.accounting.structures import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
@@ -16,7 +16,7 @@ from rotkehlchen.tests.utils.blockchain import (
     mock_bitcoin_balances_query,
     mock_etherscan_query,
 )
-from rotkehlchen.tests.utils.constants import A_EUR, A_RDN, A_XMR
+from rotkehlchen.tests.utils.constants import A_RDN, A_XMR
 from rotkehlchen.tests.utils.exchanges import (
     patch_binance_balances_query,
     patch_poloniex_balances_query,

@@ -2,14 +2,14 @@ import logging
 import shutil
 import sqlite3
 from pathlib import Path
-from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
+from typing import Any, Dict, List, Optional, Tuple, Union, cast, overload
 
 from typing_extensions import Literal
 
-from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.constants.assets import CONSTANT_ASSETS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
@@ -17,10 +17,6 @@ from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 from .schema import DB_SCRIPT_CREATE_TABLES
-
-if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
-
 
 log = logging.getLogger(__name__)
 
@@ -37,14 +33,6 @@ def _get_setting_value(cursor: sqlite3.Cursor, name: str, default_value: int) ->
         return default_value
 
     return int(result[0][0])
-
-
-def _initialize_temp_db_directory() -> TemporaryDirectory:
-    root_dir = Path(__file__).resolve().parent.parent
-    builtin_data_dir = root_dir / 'data'
-    tempdir = TemporaryDirectory()
-    shutil.copyfile(builtin_data_dir / 'global.db', Path(tempdir.name) / 'global.db')
-    return tempdir
 
 
 def initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
@@ -84,7 +72,6 @@ class GlobalDBHandler():
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
     _data_directory: Optional[Path] = None
-    _temp_db_directory: Optional[TemporaryDirectory] = None
     _conn: sqlite3.Connection
 
     def __new__(
@@ -92,38 +79,19 @@ class GlobalDBHandler():
             data_dir: Path = None,
     ) -> 'GlobalDBHandler':
         """
-        Lazily initializes the GlobalDB.
+        Initializes the GlobalDB.
 
-        If the data dir is not given it uses a copy of the built-in global DB copied
-        in a temporary directory.
-
-        If the data dir is given it used the already existing global DB in that directory,
+        If the data dir is given it uses the already existing global DB in that directory,
         of if there is none copies the built-in one there.
         """
         if GlobalDBHandler.__instance is not None:
-            if GlobalDBHandler.__instance._data_directory is None and data_dir is not None:
-                if GlobalDBHandler.__instance._temp_db_directory is not None:
-                    # we now know datadir. Cleanup temporary DB
-                    GlobalDBHandler.__instance._conn.close()
-                    GlobalDBHandler.__instance._temp_db_directory.cleanup()
-                    GlobalDBHandler.__instance._temp_db_directory = None
-                    GlobalDBHandler.__instance._data_directory = data_dir
-                    # and initialize it in the proper place
-                    GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
-
             return GlobalDBHandler.__instance
 
+        assert data_dir, 'First instantiation of GlobalDBHandler should have a data_dir'
         GlobalDBHandler.__instance = object.__new__(cls)
-        if data_dir is None:
-            # rotki not fully initialized yet. We don't know the data directory. Use temporary DB
-            tempdir = _initialize_temp_db_directory()
-            GlobalDBHandler.__instance._temp_db_directory = tempdir
-            dbname = Path(tempdir.name) / 'global.db'
-            GlobalDBHandler.__instance._conn = initialize_globaldb(dbname)
-        else:  # probably tests
-            GlobalDBHandler.__instance._data_directory = data_dir
-            GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
-
+        GlobalDBHandler.__instance._data_directory = data_dir
+        GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
+        _reload_constant_assets(GlobalDBHandler.__instance)
         return GlobalDBHandler.__instance
 
     @staticmethod
@@ -221,19 +189,29 @@ class GlobalDBHandler():
 
     @overload
     @staticmethod
-    def get_all_asset_data(mapping: Literal[True]) -> Dict[str, Dict[str, Any]]:
+    def get_all_asset_data(
+            mapping: Literal[True],
+            serialized: bool = False,
+            specific_ids: Optional[List[str]] = None,
+    ) -> Dict[str, Dict[str, Any]]:
         ...
 
     @overload
     @staticmethod
-    def get_all_asset_data(mapping: Literal[False]) -> List[AssetData]:
+    def get_all_asset_data(
+            mapping: Literal[False],
+            serialized: bool = False,
+            specific_ids: Optional[List[str]] = None,
+    ) -> List[AssetData]:
         ...
 
     @staticmethod
-    def get_all_asset_data(mapping: bool) -> Union[List[AssetData], Dict[str, Dict[str, Any]]]:
-        """Return all asset data from the DB
-
-        TODO: This can be improved. Too many sql queries.
+    def get_all_asset_data(
+            mapping: bool,
+            serialized: bool = False,
+            specific_ids: Optional[List[str]] = None,
+    ) -> Union[List[AssetData], Dict[str, Dict[str, Any]]]:
+        """Return all asset data from the DB or all data matching the given ids
 
         If mapping is True, return them as a Dict of identifier to data
         If mapping is False, return them as a List of AssetData
@@ -244,15 +222,22 @@ class GlobalDBHandler():
         else:
             result = []
         cursor = GlobalDBHandler()._conn.cursor()
-        querystr = """
+        specific_ids_query = ''
+        if specific_ids is not None:
+            specific_ids_query = f'AND A.identifier in ({",".join("?" * len(specific_ids))})'
+        querystr = f"""
         SELECT A.identifier, A.type, B.address, B.decimals, A.name, A.symbol, A.started, null, A.swapped_for, A.coingecko, A.cryptocompare, B.protocol from assets as A LEFT OUTER JOIN ethereum_tokens as B
-        ON B.address = A.details_reference WHERE A.type=?
+        ON B.address = A.details_reference WHERE A.type=? {specific_ids_query}
         UNION ALL
         SELECT A.identifier, A.type, null, null, A.name, A.symbol, A.started, B.forked, A.swapped_for, A.coingecko, A.cryptocompare, null from assets as A LEFT OUTER JOIN common_asset_details as B
-        ON B.asset_id = A.identifier WHERE A.type!=?;
+        ON B.asset_id = A.identifier WHERE A.type!=? {specific_ids_query};
         """  # noqa: E501
         eth_token_type = AssetType.ETHEREUM_TOKEN.serialize_for_db()    # pylint: disable=no-member
-        query = cursor.execute(querystr, (eth_token_type, eth_token_type))
+        if specific_ids is not None:
+            bindings = (eth_token_type, *specific_ids, eth_token_type, *specific_ids)
+        else:
+            bindings = (eth_token_type, eth_token_type)
+        query = cursor.execute(querystr, bindings)
         for entry in query:
             asset_type = AssetType.deserialize_from_db(entry[1])
             ethereum_address: Optional[ChecksumEthAddress]
@@ -275,7 +260,7 @@ class GlobalDBHandler():
                 protocol=entry[11],
             )
             if mapping:
-                result[entry[0]] = data.serialize()  # type: ignore
+                result[entry[0]] = data.serialize() if serialized else data  # type: ignore
             else:
                 result.append(data)  # type: ignore
 
@@ -1089,3 +1074,58 @@ class GlobalDBHandler():
              'from_timestamp': entry[2],
              'to_timestamp': entry[3],
              } for entry in query]
+
+
+def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
+    """Reloads the details of the constant declared assets after reading from the DB"""
+    identifiers = [x.identifier for x in CONSTANT_ASSETS]
+    db_data = globaldb.get_all_asset_data(mapping=True, serialized=False, specific_ids=identifiers)  # type: ignore  # noqa: E501
+
+    for entry in CONSTANT_ASSETS:
+        db_entry = db_data.get(entry.identifier)
+        if db_entry is None:
+            log.critical(
+                f'Constant declared asset with id {entry.identifier} has no corresponding DB entry'
+                f'Skipping reload this asset from DB. Either old global DB or user deleted it.',
+            )
+            continue
+
+        # TODO: Perhaps don't use frozen dataclasses? This setattr everywhere is ugly
+        if entry.asset_type == AssetType.ETHEREUM_TOKEN:
+            if db_entry.asset_type != AssetType.ETHEREUM_TOKEN:
+                log.critical(
+                    f'Constant declared token with id {entry.identifier} has a '
+                    f'different type in the DB {db_entry.asset_type}. This should never happen. '
+                    f'Skipping reloading this asset from DB. Did user mess with the DB?',
+                )
+                continue
+            swapped_for = Asset(db_entry.swapped_for) if db_entry.swapped_for else None
+            object.__setattr__(entry, 'name', db_entry.name)
+            object.__setattr__(entry, 'symbol', db_entry.symbol)
+            object.__setattr__(entry, 'started', db_entry.started)
+            object.__setattr__(entry, 'swapped_for', swapped_for)
+            object.__setattr__(entry, 'cryptocompare', db_entry.cryptocompare)
+            object.__setattr__(entry, 'coingecko', db_entry.coingecko)
+            object.__setattr__(entry, 'ethereum_address', db_entry.ethereum_address)
+            object.__setattr__(entry, 'decimals', db_entry.decimals)
+            object.__setattr__(entry, 'protocol', db_entry.protocol)
+            # TODO: Not changing underlying tokens at the moment since none
+            # of the constant ones have but perhaps in the future we should?
+        else:
+            if db_entry.asset_type == AssetType.ETHEREUM_TOKEN:
+                log.critical(
+                    f'Constant declared asset with id {entry.identifier} has an ethereum '
+                    f'token type in the DB {db_entry.asset_type}. This should never happen. '
+                    f'Skipping reloading this asset from DB. Did user mess with the DB?',
+                )
+                continue
+            swapped_for = Asset(db_entry.swapped_for) if db_entry.swapped_for else None
+            forked = Asset(db_entry.forked) if db_entry.forked else None
+            object.__setattr__(entry, 'name', db_entry.name)
+            object.__setattr__(entry, 'symbol', db_entry.symbol)
+            object.__setattr__(entry, 'asset_type', db_entry.asset_type)
+            object.__setattr__(entry, 'started', db_entry.started)
+            object.__setattr__(entry, 'forked', forked)
+            object.__setattr__(entry, 'swapped_for', swapped_for)
+            object.__setattr__(entry, 'cryptocompare', db_entry.cryptocompare)
+            object.__setattr__(entry, 'coingecko', db_entry.coingecko)

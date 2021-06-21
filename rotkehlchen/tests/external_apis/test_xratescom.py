@@ -1,13 +1,13 @@
 import pytest
 
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_EUR, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.xratescom import (
     get_current_xratescom_exchange_rates,
     get_historical_xratescom_exchange_rates,
 )
-from rotkehlchen.tests.utils.constants import A_CNY, A_EUR
+from rotkehlchen.tests.utils.constants import A_CNY
 
 
 def test_get_current_xratescom_exchange_rates():

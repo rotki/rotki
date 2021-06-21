@@ -4,12 +4,11 @@ from typing import Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.assets import A_BTC, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_EUR, A_USD
 from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.serialization.deserialize import pair_get_assets
-from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.typing import Location, Timestamp, TradePair
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
