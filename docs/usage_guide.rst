@@ -466,7 +466,7 @@ You may as well try creating an API key with the minimum read-related permission
 Binance / Binance US
 --------------
 
-Binance API is engineered in a way that makes really slow to query information for trades since every possible market pair has to be queried. This process can also fail since many requests have to be made to binance's servers and some rate limits could apply.
+Binance API is engineered in a way that makes it really slow to query information for trades since every possible market pair has to be queried. This process can also fail since many requests have to be made to binance servers and rate limits may apply.
 To avoid having to query every possible trade pair, since version 1.18, we have made possible to select what markets should be queried. This will considerably increase the speed as the amount of queries to binance will be reduced to only the markets you specify.
 To select which what markets you want to query edit your binance exchange instance
 
