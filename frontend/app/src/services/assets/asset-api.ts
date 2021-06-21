@@ -55,7 +55,9 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  editEthereumToken(token: EthereumToken): Promise<AssetIdResponse> {
+  editEthereumToken(
+    token: Omit<EthereumToken, 'identifier'>
+  ): Promise<AssetIdResponse> {
     return this.axios
       .patch<ActionResult<AssetIdResponse>>(
         '/assets/ethereum',
