@@ -1312,20 +1312,6 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def get_yearn_v2_basic_info(self, address):
-        cursor = self.conn.cursor()
-        query = cursor.execute(
-            'SELECT '
-            'address, '
-            'name, '
-            'block_number, '
-            'decimals, '
-            'from yearn_v2_vaults_basic_info WHERE address=?;',
-            (address,),
-        )
-
-        return query.fetchone()[0]
-
     def add_yearn_v2_vaults_events(
             self,
             address: ChecksumEthAddress,

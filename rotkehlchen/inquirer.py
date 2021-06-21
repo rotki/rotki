@@ -591,6 +591,7 @@ class Inquirer():
             return None
 
         underlying_token = underlying_token_opt[0]
+        underlying_token_price = self.find_usd_price(underlying_token)
         # Get the price per share from the yearn contract
         contract = EthereumContract(
             address=token.ethereum_address,
@@ -603,8 +604,7 @@ class Inquirer():
             calls=[(token.ethereum_address, contract.encode(method_name='pricePerShare'))],
         )
         price_per_share = contract.decode(output[0][1], 'pricePerShare')[0]
-        log.debug(str(price_per_share))
-        return Price(ZERO)
+        return price_per_share * underlying_token_price
 
     @staticmethod
     def get_fiat_usd_exchange_rates(currencies: Iterable[Asset]) -> Dict[Asset, Price]:

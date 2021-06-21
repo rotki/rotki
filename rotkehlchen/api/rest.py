@@ -2376,11 +2376,11 @@ class RestAPI():
             module_name='yearn_v2_vaults',
             method='get_balances',
             # We need to query defi balances before since defi_balances must be populated
-            query_specific_balances_before=[''],
+            query_specific_balances_before=['defi'],
             # Giving the defi balances as a lambda function here so that they
             # are retrieved only after we are sure the defi balances have been
             # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
+            given_defi_balances=lambda: self.rotkehlchen.chain_manager.balances.eth,
         )
 
     @require_premium_user(active_check=False)

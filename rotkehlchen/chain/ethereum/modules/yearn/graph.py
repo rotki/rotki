@@ -19,14 +19,38 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+QUERY_V2_VAULTS = (
+    """
+    {{
+    vaults {{
+        id
+        shareToken {{
+            symbol
+            name
+            decimals
+        }}
+        token {{
+            symbol
+            name
+            decimals
+            id
+        }}
+        apiVersion
+        activation
+        tags
+    }}
+    }}
+    """
+)
+
 QUERY_USER_DEPOSITS = (
     """
     {{
     deposits(
         where: {{
             account_in: $addresses,
-            timestamp_gte: $from_block,
-            timestamp_lte: $to_block,
+            blockNumber_gte: $from_block,
+            blockNumber_lte: $to_block,
         }}) {{
         id
         blockNumber
@@ -58,8 +82,8 @@ QUERY_USER_WITHDRAWLS = (
     withdrawals(
         where: {{
             account_in: $addresses,
-            timestamp_gte: $from_block,
-            timestamp_lte: $to_block,
+            blockNumber_gte: $from_block,
+            blockNumber_lte: $to_block,
         }}) {{
         id
         tokenAmount
@@ -163,11 +187,11 @@ class YearnV2Inquirer:
 
         for entry in deposits:
             # The id returned is a composition of hash + '-' + log_index
-            _, tx_hash, log_index = entry['id'].split('-')
+            _, tx_hash, log_index, log_index_to = entry['id'].split('-')
 
             try:
-                from_asset = EthereumToken(entry['vault']['token']['symbol'])
-                to_asset = EthereumToken(entry['vault']['shareToken']['symbol'])
+                from_asset = EthereumToken(entry['vault']['token']['id'])
+                to_asset = EthereumToken(entry['vault']['shareToken']['id'])
             except UnknownAsset:
                 from_str = entry['vault']['token']['symbol']
                 to_str = entry['vault']['shareToken']['symbol']
@@ -241,17 +265,17 @@ class YearnV2Inquirer:
         for entry in withdrawals:
             # The id returned is a composition of address + hash + '-' + log_index
 
-            _, tx_hash, log_index = entry['id'].split('-')
+            _, tx_hash, log_index, log_index_to = entry['id'].split('-')
 
             try:
-                from_asset = EthereumToken(entry['vault']['shareToken']['symbol'])
-                to_asset = EthereumToken(entry['vault']['token']['symbol'])
+                from_asset = EthereumToken(entry['vault']['shareToken']['id'])
+                to_asset = EthereumToken(entry['vault']['token']['id'])
             except UnknownAsset:
                 from_str = entry['vault']['shareToken']['symbol']
                 to_str = entry['vault']['token']['symbol']
 
                 self.msg_aggregator.add_warning(
-                    f'Ignoring deposit in yearn V2 from {from_str} to '
+                    f'Ignoring withdrawal in yearn V2 from {from_str} to '
                     f'{to_str} because the token is not recognized.',
                 )
                 continue

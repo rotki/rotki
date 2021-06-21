@@ -47,7 +47,7 @@ IMPORTABLE_LOCATIONS = Literal[
 ]
 
 
-KnownProtocolsAssets = ('UNI-V2', 'yearn_v2', 'curve_lp')
+KnownProtocolsAssets = ('UNI-V2', 'yearn_v2_vault', 'curve_lp')
 
 
 T_Timestamp = int
