@@ -1,10 +1,15 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 20/06/2021 14:33:34.
+# tools/scripts/generate_constant_assets.py at 21/06/2021 10:06:57.
 # Do not edit manually!
+
+from typing import List
+
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+
+CONSTANT_ASSETS: List[Asset] = []
 
 A_USD = Asset.initialize(
     identifier='USD',
@@ -17,6 +22,7 @@ A_USD = Asset.initialize(
     coingecko=None,
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_USD)
 A_EUR = Asset.initialize(
     identifier='EUR',
     asset_type=AssetType.FIAT,
@@ -28,6 +34,7 @@ A_EUR = Asset.initialize(
     coingecko=None,
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_EUR)
 A_BTC = Asset.initialize(
     identifier='BTC',
     asset_type=AssetType.OWN_CHAIN,
@@ -39,6 +46,7 @@ A_BTC = Asset.initialize(
     coingecko='bitcoin',
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_BTC)
 A_BCH = Asset.initialize(
     identifier='BCH',
     asset_type=AssetType.OWN_CHAIN,
@@ -50,6 +58,7 @@ A_BCH = Asset.initialize(
     coingecko='bitcoin-cash',
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_BCH)
 A_BSV = Asset.initialize(
     identifier='BSV',
     asset_type=AssetType.OWN_CHAIN,
@@ -61,6 +70,7 @@ A_BSV = Asset.initialize(
     coingecko='bitcoin-cash-sv',
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_BSV)
 A_ETH = Asset.initialize(
     identifier='ETH',
     asset_type=AssetType.OWN_CHAIN,
@@ -72,6 +82,7 @@ A_ETH = Asset.initialize(
     coingecko='ethereum',
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_ETH)
 A_ETH2 = Asset.initialize(
     identifier='ETH2',
     asset_type=AssetType.OWN_CHAIN,
@@ -83,6 +94,7 @@ A_ETH2 = Asset.initialize(
     coingecko='ethereum',
     cryptocompare='ETH',
 )
+CONSTANT_ASSETS.append(A_ETH2)
 A_ETC = Asset.initialize(
     identifier='ETC',
     asset_type=AssetType.OWN_CHAIN,
@@ -94,6 +106,7 @@ A_ETC = Asset.initialize(
     coingecko='ethereum-classic',
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_ETC)
 A_KSM = Asset.initialize(
     identifier='KSM',
     asset_type=AssetType.OWN_CHAIN,
@@ -105,6 +118,7 @@ A_KSM = Asset.initialize(
     coingecko='kusama',
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_KSM)
 
 A_BAL = EthereumToken.initialize(
     address=string_to_ethereum_address('0xba100000625a3754423978a60c9317c58a424e3D'),
@@ -117,6 +131,7 @@ A_BAL = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_BAL)
 A_BAT = EthereumToken.initialize(
     address=string_to_ethereum_address('0x0D8775F648430679A709E98d2b0Cb6250d2887EF'),
     decimals=18,
@@ -128,6 +143,7 @@ A_BAT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_BAT)
 A_UNI = EthereumToken.initialize(
     address=string_to_ethereum_address('0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'),
     decimals=18,
@@ -139,6 +155,7 @@ A_UNI = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_UNI)
 A_1INCH = EthereumToken.initialize(
     address=string_to_ethereum_address('0x111111111117dC0aa78b770fA6A738034120C302'),
     decimals=18,
@@ -150,6 +167,7 @@ A_1INCH = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_1INCH)
 A_DAI = EthereumToken.initialize(
     address=string_to_ethereum_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
     decimals=18,
@@ -161,6 +179,7 @@ A_DAI = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_DAI)
 A_SAI = EthereumToken.initialize(
     address=string_to_ethereum_address('0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'),
     decimals=18,
@@ -172,6 +191,7 @@ A_SAI = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_SAI)
 A_YFI = EthereumToken.initialize(
     address=string_to_ethereum_address('0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e'),
     decimals=18,
@@ -183,6 +203,7 @@ A_YFI = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YFI)
 A_USDT = EthereumToken.initialize(
     address=string_to_ethereum_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
     decimals=6,
@@ -194,6 +215,7 @@ A_USDT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_USDT)
 A_USDC = EthereumToken.initialize(
     address=string_to_ethereum_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
     decimals=6,
@@ -205,6 +227,7 @@ A_USDC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_USDC)
 A_TUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0x0000000000085d4780B73119b644AE5ecd22b376'),
     decimals=18,
@@ -216,6 +239,7 @@ A_TUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_TUSD)
 
 A_AAVE = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'),
@@ -228,6 +252,7 @@ A_AAVE = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AAVE)
 A_GUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd'),
     decimals=2,
@@ -239,6 +264,7 @@ A_GUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_GUSD)
 A_CRV = EthereumToken.initialize(
     address=string_to_ethereum_address('0xD533a949740bb3306d119CC777fa900bA034cd52'),
     decimals=18,
@@ -250,6 +276,7 @@ A_CRV = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CRV)
 A_KNC = EthereumToken.initialize(
     address=string_to_ethereum_address('0xdd974D5C2e2928deA5F71b9825b8b646686BD200'),
     decimals=18,
@@ -261,6 +288,7 @@ A_KNC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_KNC)
 A_WBTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),
     decimals=8,
@@ -272,6 +300,7 @@ A_WBTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_WBTC)
 A_WETH = EthereumToken.initialize(
     address=string_to_ethereum_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
     decimals=18,
@@ -283,6 +312,7 @@ A_WETH = EthereumToken.initialize(
     cryptocompare='ETH',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_WETH)
 A_ZRX = EthereumToken.initialize(
     address=string_to_ethereum_address('0xE41d2489571d322189246DaFA5ebDe1F4699F498'),
     decimals=18,
@@ -294,6 +324,7 @@ A_ZRX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ZRX)
 A_MANA = EthereumToken.initialize(
     address=string_to_ethereum_address('0x0F5D2fB29fb7d3CFeE444a200298f468908cC942'),
     decimals=18,
@@ -305,6 +336,7 @@ A_MANA = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_MANA)
 A_PAX = EthereumToken.initialize(
     address=string_to_ethereum_address('0x8E870D67F660D95d5be530380D0eC0bd388289E1'),
     decimals=18,
@@ -316,6 +348,7 @@ A_PAX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_PAX)
 A_COMP = EthereumToken.initialize(
     address=string_to_ethereum_address('0xc00e94Cb662C3520282E6f5717214004A7f26888'),
     decimals=18,
@@ -327,6 +360,7 @@ A_COMP = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_COMP)
 A_LRC = EthereumToken.initialize(
     address=string_to_ethereum_address('0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD'),
     decimals=18,
@@ -338,6 +372,7 @@ A_LRC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_LRC)
 A_LINK = EthereumToken.initialize(
     address=string_to_ethereum_address('0x514910771AF9Ca656af840dff83E8264EcF986CA'),
     decimals=18,
@@ -349,6 +384,7 @@ A_LINK = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_LINK)
 A_ADX = EthereumToken.initialize(
     address=string_to_ethereum_address('0xADE00C28244d5CE17D72E40330B1c318cD12B7c3'),
     decimals=18,
@@ -360,6 +396,7 @@ A_ADX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ADX)
 A_TORN = EthereumToken.initialize(
     address=string_to_ethereum_address('0x77777FeDdddFfC19Ff86DB637967013e6C6A116C'),
     decimals=18,
@@ -371,6 +408,7 @@ A_TORN = EthereumToken.initialize(
     cryptocompare='TORN',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_TORN)
 A_CORN = EthereumToken.initialize(
     address=string_to_ethereum_address('0xa456b515303B2Ce344E9d2601f91270f8c2Fea5E'),
     decimals=18,
@@ -382,6 +420,7 @@ A_CORN = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CORN)
 A_GRAIN = EthereumToken.initialize(
     address=string_to_ethereum_address('0x6589fe1271A0F29346796C6bAf0cdF619e25e58e'),
     decimals=18,
@@ -393,6 +432,7 @@ A_GRAIN = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_GRAIN)
 A_COMBO = EthereumToken.initialize(
     address=string_to_ethereum_address('0xfFffFffF2ba8F66D4e51811C5190992176930278'),
     decimals=18,
@@ -404,6 +444,7 @@ A_COMBO = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_COMBO)
 A_LDO = EthereumToken.initialize(
     address=string_to_ethereum_address('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32'),
     decimals=18,
@@ -415,6 +456,7 @@ A_LDO = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_LDO)
 A_RENBTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D'),
     decimals=8,
@@ -426,6 +468,7 @@ A_RENBTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_RENBTC)
 A_BNB = EthereumToken.initialize(
     address=string_to_ethereum_address('0xB8c77482e45F1F44dE1745F52C74426C631bDD52'),
     decimals=18,
@@ -437,6 +480,7 @@ A_BNB = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_BNB)
 A_REP = EthereumToken.initialize(
     address=string_to_ethereum_address('0x221657776846890989a759BA2973e427DfF5C9bB'),
     decimals=18,
@@ -448,6 +492,7 @@ A_REP = EthereumToken.initialize(
     cryptocompare='REP',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_REP)
 A_BZRX = EthereumToken.initialize(
     address=string_to_ethereum_address('0x56d811088235F11C8920698a204A5010a788f4b3'),
     decimals=18,
@@ -459,6 +504,7 @@ A_BZRX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_BZRX)
 A_STAKE = EthereumToken.initialize(
     address=string_to_ethereum_address('0x0Ae055097C6d159879521C384F1D2123D1f195e6'),
     decimals=18,
@@ -470,6 +516,7 @@ A_STAKE = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_STAKE)
 A_DPI = EthereumToken.initialize(
     address=string_to_ethereum_address('0x1494CA1F11D487c2bBe4543E90080AeBa4BA3C2b'),
     decimals=18,
@@ -481,6 +528,7 @@ A_DPI = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_DPI)
 A_YFII = EthereumToken.initialize(
     address=string_to_ethereum_address('0xa1d0E215a23d7030842FC67cE582a6aFa3CCaB83'),
     decimals=18,
@@ -492,6 +540,7 @@ A_YFII = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YFII)
 A_MCB = EthereumToken.initialize(
     address=string_to_ethereum_address('0x4e352cF164E64ADCBad318C3a1e222E9EBa4Ce42'),
     decimals=18,
@@ -503,6 +552,7 @@ A_MCB = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_MCB)
 
 # used as underlying assets of aave v1 tokens
 A_ENJ = EthereumToken.initialize(
@@ -516,6 +566,7 @@ A_ENJ = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ENJ)
 A_SUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0x57Ab1ec28D129707052df4dF418D58a2D46d5f51'),
     decimals=18,
@@ -527,6 +578,7 @@ A_SUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_SUSD)
 A_BUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0x4Fabb145d64652a948d72533023f6E7A623C7C53'),
     decimals=18,
@@ -538,6 +590,7 @@ A_BUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_BUSD)
 A_LEND = EthereumToken.initialize(
     address=string_to_ethereum_address('0x80fB784B7eD66730e8b1DBd9820aFD29931aab03'),
     decimals=18,
@@ -549,6 +602,7 @@ A_LEND = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_LEND)
 A_MKR = EthereumToken.initialize(
     address=string_to_ethereum_address('0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'),
     decimals=18,
@@ -560,6 +614,7 @@ A_MKR = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_MKR)
 A_REN = EthereumToken.initialize(
     address=string_to_ethereum_address('0x408e41876cCCDC0F92210600ef50372656052a38'),
     decimals=18,
@@ -571,6 +626,7 @@ A_REN = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_REN)
 A_SNX = EthereumToken.initialize(
     address=string_to_ethereum_address('0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F'),
     decimals=18,
@@ -582,6 +638,7 @@ A_SNX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_SNX)
 
 # atokens TODO: These can be handled programatically if enough info is in the assets DB
 # protocol and underlying asset
@@ -597,6 +654,7 @@ A_ALINK_V1 = EthereumToken.initialize(
     cryptocompare='LINK',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ALINK_V1)
 A_AETH_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x3a3A65aAb0dd2A17E3F1947bA16138cd37d08c04'),
     decimals=18,
@@ -608,6 +666,7 @@ A_AETH_V1 = EthereumToken.initialize(
     cryptocompare='ETH',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AETH_V1)
 A_AENJ_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x712DB54daA836B53Ef1EcBb9c6ba3b9Efb073F40'),
     decimals=18,
@@ -619,6 +678,7 @@ A_AENJ_V1 = EthereumToken.initialize(
     cryptocompare='ENJ',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AENJ_V1)
 A_ADAI_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d'),
     decimals=18,
@@ -630,6 +690,7 @@ A_ADAI_V1 = EthereumToken.initialize(
     cryptocompare='DAI',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ADAI_V1)
 A_AUSDC_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x9bA00D6856a4eDF4665BcA2C2309936572473B7E'),
     decimals=6,
@@ -641,6 +702,7 @@ A_AUSDC_V1 = EthereumToken.initialize(
     cryptocompare='USDC',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AUSDC_V1)
 A_ASUSD_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x625aE63000f46200499120B906716420bd059240'),
     decimals=18,
@@ -652,6 +714,7 @@ A_ASUSD_V1 = EthereumToken.initialize(
     cryptocompare='sUSD',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ASUSD_V1)
 A_ATUSD_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x4DA9b813057D04BAef4e5800E36083717b4a0341'),
     decimals=18,
@@ -663,6 +726,7 @@ A_ATUSD_V1 = EthereumToken.initialize(
     cryptocompare='TUSD',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ATUSD_V1)
 A_AUSDT_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x71fc860F7D3A592A4a98740e39dB31d25db65ae8'),
     decimals=6,
@@ -674,6 +738,7 @@ A_AUSDT_V1 = EthereumToken.initialize(
     cryptocompare='USDT',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AUSDT_V1)
 A_ABUSD_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x6Ee0f7BB50a54AB5253dA0667B0Dc2ee526C30a8'),
     decimals=18,
@@ -685,6 +750,7 @@ A_ABUSD_V1 = EthereumToken.initialize(
     cryptocompare='BUSD',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ABUSD_V1)
 A_ABAT_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0xE1BA0FB44CCb0D11b80F92f4f8Ed94CA3fF51D00'),
     decimals=18,
@@ -696,6 +762,7 @@ A_ABAT_V1 = EthereumToken.initialize(
     cryptocompare='BAT',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ABAT_V1)
 A_AKNC_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x9D91BE44C06d373a8a226E1f3b146956083803eB'),
     decimals=18,
@@ -707,6 +774,7 @@ A_AKNC_V1 = EthereumToken.initialize(
     cryptocompare='KNC',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AKNC_V1)
 A_ALEND_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7D2D3688Df45Ce7C552E19c27e007673da9204B8'),
     decimals=18,
@@ -718,6 +786,7 @@ A_ALEND_V1 = EthereumToken.initialize(
     cryptocompare='LEND',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ALEND_V1)
 A_AMANA_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x6FCE4A401B6B80ACe52baAefE4421Bd188e76F6f'),
     decimals=18,
@@ -729,6 +798,7 @@ A_AMANA_V1 = EthereumToken.initialize(
     cryptocompare='MANA',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AMANA_V1)
 A_AMKR_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7deB5e830be29F91E298ba5FF1356BB7f8146998'),
     decimals=18,
@@ -740,6 +810,7 @@ A_AMKR_V1 = EthereumToken.initialize(
     cryptocompare='MKR',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AMKR_V1)
 A_AREP_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x71010A9D003445aC60C4e6A7017c1E89A477B438'),
     decimals=18,
@@ -751,6 +822,7 @@ A_AREP_V1 = EthereumToken.initialize(
     cryptocompare='REP',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AREP_V1)
 A_AREN_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x69948cC03f478B95283F7dbf1CE764d0fc7EC54C'),
     decimals=18,
@@ -762,6 +834,7 @@ A_AREN_V1 = EthereumToken.initialize(
     cryptocompare='REN',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AREN_V1)
 A_ASNX_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x328C4c80BC7aCa0834Db37e6600A6c49E12Da4DE'),
     decimals=18,
@@ -773,6 +846,7 @@ A_ASNX_V1 = EthereumToken.initialize(
     cryptocompare='SNX',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ASNX_V1)
 A_AWBTC_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0xFC4B8ED459e00e5400be803A9BB3954234FD50e3'),
     decimals=8,
@@ -784,6 +858,7 @@ A_AWBTC_V1 = EthereumToken.initialize(
     cryptocompare='WBTC',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AWBTC_V1)
 A_AYFI_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x12e51E77DAAA58aA0E9247db7510Ea4B46F9bEAd'),
     decimals=18,
@@ -795,6 +870,7 @@ A_AYFI_V1 = EthereumToken.initialize(
     cryptocompare='YFI',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AYFI_V1)
 A_AZRX_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x6Fb0855c404E09c47C3fBCA25f08d4E41f9F062f'),
     decimals=18,
@@ -806,6 +882,7 @@ A_AZRX_V1 = EthereumToken.initialize(
     cryptocompare='ZRX',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AZRX_V1)
 A_AAAVE_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0xba3D9687Cf50fE253cd2e1cFeEdE1d6787344Ed5'),
     decimals=18,
@@ -817,6 +894,7 @@ A_AAAVE_V1 = EthereumToken.initialize(
     cryptocompare='AAVE',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AAAVE_V1)
 A_AUNI_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0xB124541127A0A657f056D9Dd06188c4F1b0e5aab'),
     decimals=18,
@@ -828,6 +906,7 @@ A_AUNI_V1 = EthereumToken.initialize(
     cryptocompare='UNI',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AUNI_V1)
 
 # compound tokens -- TODO: Can also be handled programmatically
 A_CDAI = EthereumToken.initialize(
@@ -841,6 +920,7 @@ A_CDAI = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CDAI)
 A_CUSDC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x39AA39c021dfbaE8faC545936693aC917d5E7563'),
     decimals=8,
@@ -852,6 +932,7 @@ A_CUSDC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CUSDC)
 A_CUSDT = EthereumToken.initialize(
     address=string_to_ethereum_address('0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9'),
     decimals=8,
@@ -863,6 +944,7 @@ A_CUSDT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CUSDT)
 A_CBAT = EthereumToken.initialize(
     address=string_to_ethereum_address('0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E'),
     decimals=8,
@@ -874,6 +956,7 @@ A_CBAT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CBAT)
 A_CETH = EthereumToken.initialize(
     address=string_to_ethereum_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
     decimals=8,
@@ -885,6 +968,7 @@ A_CETH = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CETH)
 A_CREP = EthereumToken.initialize(
     address=string_to_ethereum_address('0x158079Ee67Fce2f58472A96584A73C7Ab9AC95c1'),
     decimals=8,
@@ -896,6 +980,7 @@ A_CREP = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CREP)
 A_CWBTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0xC11b1268C1A384e55C48c2391d8d480264A3A7F4'),
     decimals=8,
@@ -907,6 +992,7 @@ A_CWBTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CWBTC)
 A_CZRX = EthereumToken.initialize(
     address=string_to_ethereum_address('0xB3319f5D18Bc0D84dD1b4825Dcde5d5f7266d407'),
     decimals=8,
@@ -918,6 +1004,7 @@ A_CZRX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CZRX)
 
 
 # Special tokens for defi price inquiry -- these should end up in programmatic rules
@@ -934,6 +1021,7 @@ A_3CRV = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_3CRV)
 A_YV1_DAIUSDCTBUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0x2994529C0652D127b7842094103715ec5299bBed'),
     decimals=18,
@@ -945,6 +1033,7 @@ A_YV1_DAIUSDCTBUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YV1_DAIUSDCTBUSD)
 A_CRVP_DAIUSDCTBUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0x3B3Ac5386837Dc563660FB6a0937DFAa5924333B'),
     decimals=18,
@@ -956,6 +1045,7 @@ A_CRVP_DAIUSDCTBUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CRVP_DAIUSDCTBUSD)
 A_YV1_DAIUSDCTTUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'),
     decimals=18,
@@ -967,6 +1057,7 @@ A_YV1_DAIUSDCTTUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YV1_DAIUSDCTTUSD)
 A_CRVP_DAIUSDCTTUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
     decimals=18,
@@ -978,6 +1069,7 @@ A_CRVP_DAIUSDCTTUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CRVP_DAIUSDCTTUSD)
 A_CRVP_RENWSBTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3'),
     decimals=18,
@@ -989,6 +1081,7 @@ A_CRVP_RENWSBTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CRVP_RENWSBTC)
 A_YV1_RENWSBTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7Ff566E1d69DEfF32a7b244aE7276b9f90e9D0f6'),
     decimals=18,
@@ -1000,6 +1093,7 @@ A_YV1_RENWSBTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YV1_RENWSBTC)
 A_CRV_RENWBTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x49849C98ae39Fff122806C06791Fa73784FB3675'),
     decimals=18,
@@ -1011,6 +1105,7 @@ A_CRV_RENWBTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CRV_RENWBTC)
 A_CRV_YPAX = EthereumToken.initialize(
     address=string_to_ethereum_address('0xD905e2eaeBe188fc92179b6350807D8bd91Db0D8'),
     decimals=18,
@@ -1022,6 +1117,7 @@ A_CRV_YPAX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CRV_YPAX)
 A_CRV_GUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0xD2967f45c4f384DEEa880F807Be904762a3DeA07'),
     decimals=18,
@@ -1033,6 +1129,7 @@ A_CRV_GUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CRV_GUSD)
 A_CRV_3CRV = EthereumToken.initialize(
     address=string_to_ethereum_address('0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490'),
     decimals=18,
@@ -1044,6 +1141,7 @@ A_CRV_3CRV = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CRV_3CRV)
 A_YV1_3CRV = EthereumToken.initialize(
     address=string_to_ethereum_address('0x9cA85572E6A3EbF24dEDd195623F188735A5179f'),
     decimals=18,
@@ -1055,6 +1153,7 @@ A_YV1_3CRV = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YV1_3CRV)
 A_CRV_3CRVSUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0xC25a3A3b969415c80451098fa907EC722572917F'),
     decimals=18,
@@ -1066,6 +1165,7 @@ A_CRV_3CRVSUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CRV_3CRVSUSD)
 A_YV1_ALINK = EthereumToken.initialize(
     address=string_to_ethereum_address('0x29E240CFD7946BA20895a7a02eDb25C210f9f324'),
     decimals=18,
@@ -1077,6 +1177,7 @@ A_YV1_ALINK = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YV1_ALINK)
 A_YV1_DAI = EthereumToken.initialize(
     address=string_to_ethereum_address('0xACd43E627e64355f1861cEC6d3a6688B31a6F952'),
     decimals=18,
@@ -1088,6 +1189,7 @@ A_YV1_DAI = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YV1_DAI)
 A_YV1_WETH = EthereumToken.initialize(
     address=string_to_ethereum_address('0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7'),
     decimals=18,
@@ -1099,6 +1201,7 @@ A_YV1_WETH = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YV1_WETH)
 A_YV1_YFI = EthereumToken.initialize(
     address=string_to_ethereum_address('0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1'),
     decimals=18,
@@ -1110,6 +1213,7 @@ A_YV1_YFI = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YV1_YFI)
 A_YV1_USDT = EthereumToken.initialize(
     address=string_to_ethereum_address('0x2f08119C6f07c006695E079AAFc638b8789FAf18'),
     decimals=6,
@@ -1121,6 +1225,7 @@ A_YV1_USDT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YV1_USDT)
 A_YV1_USDC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e'),
     decimals=6,
@@ -1132,6 +1237,7 @@ A_YV1_USDC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YV1_USDC)
 A_YV1_TUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0x37d19d1c4E1fa9DC47bD1eA12f742a0887eDa74a'),
     decimals=18,
@@ -1143,6 +1249,7 @@ A_YV1_TUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YV1_TUSD)
 A_YV1_GUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0xec0d8D3ED5477106c6D4ea27D90a60e594693C90'),
     decimals=2,
@@ -1154,6 +1261,7 @@ A_YV1_GUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YV1_GUSD)
 A_FARM_USDC = EthereumToken.initialize(
     address=string_to_ethereum_address('0xf0358e8c3CD5Fa238a29301d0bEa3D63A17bEdBE'),
     decimals=6,
@@ -1165,6 +1273,7 @@ A_FARM_USDC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_FARM_USDC)
 A_FARM_USDT = EthereumToken.initialize(
     address=string_to_ethereum_address('0x053c80eA73Dc6941F518a68E2FC52Ac45BDE7c9C'),
     decimals=6,
@@ -1176,6 +1285,7 @@ A_FARM_USDT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_FARM_USDT)
 A_FARM_DAI = EthereumToken.initialize(
     address=string_to_ethereum_address('0xab7FA2B2985BCcfC13c6D86b1D5A17486ab1e04C'),
     decimals=18,
@@ -1187,6 +1297,7 @@ A_FARM_DAI = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_FARM_DAI)
 A_FARM_TUSD = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7674622c63Bee7F46E86a4A5A18976693D54441b'),
     decimals=18,
@@ -1198,6 +1309,7 @@ A_FARM_TUSD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_FARM_TUSD)
 A_FARM_WETH = EthereumToken.initialize(
     address=string_to_ethereum_address('0xFE09e53A81Fe2808bc493ea64319109B5bAa573e'),
     decimals=18,
@@ -1209,6 +1321,7 @@ A_FARM_WETH = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_FARM_WETH)
 A_FARM_WBTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x5d9d25c7C457dD82fc8668FFC6B9746b674d4EcB'),
     decimals=8,
@@ -1220,6 +1333,7 @@ A_FARM_WBTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_FARM_WBTC)
 A_FARM_RENBTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0xC391d1b08c1403313B0c28D47202DFDA015633C4'),
     decimals=8,
@@ -1231,6 +1345,7 @@ A_FARM_RENBTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_FARM_RENBTC)
 A_FARM_CRVRENWBTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x9aA8F427A17d6B0d91B6262989EdC7D45d6aEdf8'),
     decimals=18,
@@ -1242,6 +1357,7 @@ A_FARM_CRVRENWBTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_FARM_CRVRENWBTC)
 
 
 # Needed by independentreserve
@@ -1256,6 +1372,7 @@ A_XRP = Asset.initialize(
     coingecko='ripple',
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_XRP)
 A_ADA = Asset.initialize(
     identifier='ADA',
     asset_type=AssetType.OWN_CHAIN,
@@ -1267,6 +1384,7 @@ A_ADA = Asset.initialize(
     coingecko='cardano',
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_ADA)
 A_DOT = Asset.initialize(
     identifier='DOT',
     asset_type=AssetType.OWN_CHAIN,
@@ -1278,6 +1396,7 @@ A_DOT = Asset.initialize(
     coingecko='polkadot',
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_DOT)
 A_LTC = Asset.initialize(
     identifier='LTC',
     asset_type=AssetType.OWN_CHAIN,
@@ -1289,6 +1408,7 @@ A_LTC = Asset.initialize(
     coingecko='litecoin',
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_LTC)
 A_EOS = Asset.initialize(
     identifier='EOS',
     asset_type=AssetType.OWN_CHAIN,
@@ -1300,6 +1420,7 @@ A_EOS = Asset.initialize(
     coingecko='eos',
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_EOS)
 A_XLM = Asset.initialize(
     identifier='XLM',
     asset_type=AssetType.OWN_CHAIN,
@@ -1311,6 +1432,7 @@ A_XLM = Asset.initialize(
     coingecko='stellar',
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_XLM)
 A_GRT = EthereumToken.initialize(
     address=string_to_ethereum_address('0xc944E90C64B2c07662A292be6244BDf05Cda44a7'),
     decimals=18,
@@ -1322,6 +1444,7 @@ A_GRT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_GRT)
 A_PMGT = EthereumToken.initialize(
     address=string_to_ethereum_address('0xAFFCDd96531bCd66faED95FC61e443D08F79eFEf'),
     decimals=5,
@@ -1333,6 +1456,7 @@ A_PMGT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_PMGT)
 A_OMG = EthereumToken.initialize(
     address=string_to_ethereum_address('0xd26114cd6EE289AccF82350c8d8487fedB8A0C07'),
     decimals=18,
@@ -1344,6 +1468,7 @@ A_OMG = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_OMG)
 
 A_AUD = Asset.initialize(
     identifier='AUD',
@@ -1356,6 +1481,7 @@ A_AUD = Asset.initialize(
     coingecko=None,
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_AUD)
 A_NZD = Asset.initialize(
     identifier='NZD',
     asset_type=AssetType.FIAT,
@@ -1367,6 +1493,7 @@ A_NZD = Asset.initialize(
     coingecko=None,
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_NZD)
 A_SGD = Asset.initialize(
     identifier='SGD',
     asset_type=AssetType.FIAT,
@@ -1378,6 +1505,7 @@ A_SGD = Asset.initialize(
     coingecko=None,
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_SGD)
 
 # Needed by cryptocompare.py
 A_KRW = Asset.initialize(
@@ -1391,6 +1519,7 @@ A_KRW = Asset.initialize(
     coingecko=None,
     cryptocompare=None,
 )
+CONSTANT_ASSETS.append(A_KRW)
 
 # Needed by airdrops.py
 A_CVX = EthereumToken.initialize(
@@ -1404,6 +1533,7 @@ A_CVX = EthereumToken.initialize(
     cryptocompare='CVX',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CVX)
 
 # Needed by loopring.py
 A_HT = EthereumToken.initialize(
@@ -1417,6 +1547,7 @@ A_HT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_HT)
 A_OKB = EthereumToken.initialize(
     address=string_to_ethereum_address('0x75231F58b43240C9718Dd58B4967c5114342a86c'),
     decimals=18,
@@ -1428,6 +1559,7 @@ A_OKB = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_OKB)
 A_KEEP = EthereumToken.initialize(
     address=string_to_ethereum_address('0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC'),
     decimals=18,
@@ -1439,6 +1571,7 @@ A_KEEP = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_KEEP)
 A_DXD = EthereumToken.initialize(
     address=string_to_ethereum_address('0xa1d65E8fB6e87b60FECCBc582F7f97804B725521'),
     decimals=18,
@@ -1450,6 +1583,7 @@ A_DXD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_DXD)
 _CETH_0X0BA45A8B5D5575935B8158A88C631E9F9C95A2E5_swappedfor = Asset.initialize(
     identifier='_ceth_0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0',
     asset_type=AssetType.ETHEREUM_TOKEN,
@@ -1461,6 +1595,7 @@ _CETH_0X0BA45A8B5D5575935B8158A88C631E9F9C95A2E5_swappedfor = Asset.initialize(
     coingecko='tellor',
     cryptocompare='TRB',
 )
+CONSTANT_ASSETS.append(_CETH_0X0BA45A8B5D5575935B8158A88C631E9F9C95A2E5_swappedfor)
 A_TRB = EthereumToken.initialize(
     address=string_to_ethereum_address('0x0Ba45A8b5d5575935B8158a88C631E9F9C95a2e5'),
     decimals=18,
@@ -1472,6 +1607,7 @@ A_TRB = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_TRB)
 A_AUC = EthereumToken.initialize(
     address=string_to_ethereum_address('0xc12d099be31567add4e4e4d0D45691C3F58f5663'),
     decimals=18,
@@ -1483,6 +1619,7 @@ A_AUC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AUC)
 A_RPL = EthereumToken.initialize(
     address=string_to_ethereum_address('0xB4EFd85c19999D84251304bDA99E90B92300Bd93'),
     decimals=18,
@@ -1494,6 +1631,7 @@ A_RPL = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_RPL)
 A_GNO = EthereumToken.initialize(
     address=string_to_ethereum_address('0x6810e776880C02933D47DB1b9fc05908e5386b96'),
     decimals=18,
@@ -1505,6 +1643,7 @@ A_GNO = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_GNO)
 A_BNT = EthereumToken.initialize(
     address=string_to_ethereum_address('0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C'),
     decimals=18,
@@ -1516,6 +1655,7 @@ A_BNT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_BNT)
 A_PBTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x5228a22e72ccC52d415EcFd199F99D0665E7733b'),
     decimals=18,
@@ -1527,6 +1667,7 @@ A_PBTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_PBTC)
 A_PNT = EthereumToken.initialize(
     address=string_to_ethereum_address('0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD'),
     decimals=18,
@@ -1538,6 +1679,7 @@ A_PNT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_PNT)
 A_GRID = EthereumToken.initialize(
     address=string_to_ethereum_address('0x12B19D3e2ccc14Da04FAe33e63652ce469b3F2FD'),
     decimals=12,
@@ -1549,6 +1691,7 @@ A_GRID = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_GRID)
 A_PNK = EthereumToken.initialize(
     address=string_to_ethereum_address('0x93ED3FBe21207Ec2E8f2d3c3de6e058Cb73Bc04d'),
     decimals=18,
@@ -1560,6 +1703,7 @@ A_PNK = EthereumToken.initialize(
     cryptocompare='PNK',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_PNK)
 A_NEST = EthereumToken.initialize(
     address=string_to_ethereum_address('0x04abEdA201850aC0124161F037Efd70c74ddC74C'),
     decimals=18,
@@ -1571,6 +1715,7 @@ A_NEST = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_NEST)
 A_BTU = EthereumToken.initialize(
     address=string_to_ethereum_address('0xb683D83a532e2Cb7DFa5275eED3698436371cc9f'),
     decimals=18,
@@ -1582,6 +1727,7 @@ A_BTU = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_BTU)
 A_VBZRX = EthereumToken.initialize(
     address=string_to_ethereum_address('0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F'),
     decimals=18,
@@ -1593,6 +1739,7 @@ A_VBZRX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_VBZRX)
 A_NMR = EthereumToken.initialize(
     address=string_to_ethereum_address('0x1776e1F26f98b1A5dF9cD347953a26dd3Cb46671'),
     decimals=18,
@@ -1604,6 +1751,7 @@ A_NMR = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_NMR)
 A_SNT = EthereumToken.initialize(
     address=string_to_ethereum_address('0x744d70FDBE2Ba4CF95131626614a1763DF805B9E'),
     decimals=18,
@@ -1615,6 +1763,7 @@ A_SNT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_SNT)
 A_MTA = EthereumToken.initialize(
     address=string_to_ethereum_address('0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
     decimals=18,
@@ -1626,6 +1775,7 @@ A_MTA = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_MTA)
 A_ONG = EthereumToken.initialize(
     address=string_to_ethereum_address('0xd341d1680Eeee3255b8C4c75bCCE7EB57f144dAe'),
     decimals=18,
@@ -1637,6 +1787,7 @@ A_ONG = EthereumToken.initialize(
     cryptocompare='ONG',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ONG)
 A_GRG = EthereumToken.initialize(
     address=string_to_ethereum_address('0x4FbB350052Bca5417566f188eB2EBCE5b19BC964'),
     decimals=18,
@@ -1648,6 +1799,7 @@ A_GRG = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_GRG)
 A_QCAD = EthereumToken.initialize(
     address=string_to_ethereum_address('0x4A16BAf414b8e637Ed12019faD5Dd705735DB2e0'),
     decimals=2,
@@ -1659,6 +1811,7 @@ A_QCAD = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_QCAD)
 A_TON = EthereumToken.initialize(
     address=string_to_ethereum_address('0x6a6c2adA3Ce053561C2FbC3eE211F23d9b8C520a'),
     decimals=18,
@@ -1670,6 +1823,7 @@ A_TON = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_TON)
 A_BAND = EthereumToken.initialize(
     address=string_to_ethereum_address('0xBA11D00c5f74255f56a5E366F4F77f5A186d7f55'),
     decimals=18,
@@ -1681,6 +1835,7 @@ A_BAND = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_BAND)
 A_UMA = EthereumToken.initialize(
     address=string_to_ethereum_address('0x04Fa0d235C4abf4BcF4787aF4CF447DE572eF828'),
     decimals=18,
@@ -1692,6 +1847,7 @@ A_UMA = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_UMA)
 A_WNXM = EthereumToken.initialize(
     address=string_to_ethereum_address('0x0d438F3b5175Bebc262bF23753C1E53d03432bDE'),
     decimals=18,
@@ -1703,6 +1859,7 @@ A_WNXM = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_WNXM)
 A_ENTRP = EthereumToken.initialize(
     address=string_to_ethereum_address('0x5BC7e5f0Ab8b2E10D2D0a3F21739FCe62459aeF3'),
     decimals=18,
@@ -1714,6 +1871,7 @@ A_ENTRP = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_ENTRP)
 A_NIOX = EthereumToken.initialize(
     address=string_to_ethereum_address('0xc813EA5e3b48BEbeedb796ab42A30C5599b01740'),
     decimals=4,
@@ -1725,6 +1883,7 @@ A_NIOX = EthereumToken.initialize(
     cryptocompare='AUTON',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_NIOX)
 A_OGN = EthereumToken.initialize(
     address=string_to_ethereum_address('0x8207c1FfC5B6804F6024322CcF34F29c3541Ae26'),
     decimals=18,
@@ -1736,6 +1895,7 @@ A_OGN = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_OGN)
 A_HEX = EthereumToken.initialize(
     address=string_to_ethereum_address('0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39'),
     decimals=8,
@@ -1747,6 +1907,7 @@ A_HEX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_HEX)
 A_HBTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x0316EB71485b0Ab14103307bf65a021042c6d380'),
     decimals=18,
@@ -1758,6 +1919,7 @@ A_HBTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_HBTC)
 A_PLTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x5979F50f1D4c08f9A53863C2f39A7B0492C38d0f'),
     decimals=18,
@@ -1769,6 +1931,7 @@ A_PLTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_PLTC)
 A_FIN = EthereumToken.initialize(
     address=string_to_ethereum_address('0x054f76beED60AB6dBEb23502178C52d6C5dEbE40'),
     decimals=18,
@@ -1780,6 +1943,7 @@ A_FIN = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_FIN)
 A_DOUGH = EthereumToken.initialize(
     address=string_to_ethereum_address('0xad32A8e6220741182940c5aBF610bDE99E737b2D'),
     decimals=18,
@@ -1791,6 +1955,7 @@ A_DOUGH = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_DOUGH)
 A_DEFI_L = EthereumToken.initialize(
     address=string_to_ethereum_address('0x78F225869c08d478c34e5f645d07A87d3fe8eb78'),
     decimals=18,
@@ -1802,6 +1967,7 @@ A_DEFI_L = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_DEFI_L)
 A_DEFI_S = EthereumToken.initialize(
     address=string_to_ethereum_address('0xaD6A626aE2B43DCb1B39430Ce496d2FA0365BA9C'),
     decimals=18,
@@ -1813,6 +1979,7 @@ A_DEFI_S = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_DEFI_S)
 A_TRYB = EthereumToken.initialize(
     address=string_to_ethereum_address('0x2C537E5624e4af88A7ae4060C022609376C8D0EB'),
     decimals=6,
@@ -1824,6 +1991,7 @@ A_TRYB = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_TRYB)
 A_CEL = EthereumToken.initialize(
     address=string_to_ethereum_address('0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d'),
     decimals=4,
@@ -1835,6 +2003,7 @@ A_CEL = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CEL)
 A_AMP = EthereumToken.initialize(
     address=string_to_ethereum_address('0xfF20817765cB7f73d4bde2e66e067E58D11095C2'),
     decimals=18,
@@ -1846,6 +2015,7 @@ A_AMP = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AMP)
 A_KP3R = EthereumToken.initialize(
     address=string_to_ethereum_address('0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44'),
     decimals=18,
@@ -1857,6 +2027,7 @@ A_KP3R = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_KP3R)
 A_AC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x9A0aBA393aac4dFbFf4333B06c407458002C6183'),
     decimals=18,
@@ -1868,6 +2039,7 @@ A_AC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_AC)
 A_CVT = EthereumToken.initialize(
     address=string_to_ethereum_address('0xBe428c3867F05deA2A89Fc76a102b544eaC7f772'),
     decimals=18,
@@ -1879,6 +2051,7 @@ A_CVT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_CVT)
 A_WOO = EthereumToken.initialize(
     address=string_to_ethereum_address('0x4691937a7508860F876c9c0a2a617E7d9E945D4B'),
     decimals=18,
@@ -1890,6 +2063,7 @@ A_WOO = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_WOO)
 A_BEL = EthereumToken.initialize(
     address=string_to_ethereum_address('0xA91ac63D040dEB1b7A5E4d4134aD23eb0ba07e14'),
     decimals=18,
@@ -1901,6 +2075,7 @@ A_BEL = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_BEL)
 A_OBTC = EthereumToken.initialize(
     address=string_to_ethereum_address('0x8064d9Ae6cDf087b1bcd5BDf3531bD5d8C537a68'),
     decimals=18,
@@ -1912,6 +2087,7 @@ A_OBTC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_OBTC)
 A_INDEX = EthereumToken.initialize(
     address=string_to_ethereum_address('0x0954906da0Bf32d5479e25f46056d22f08464cab'),
     decimals=18,
@@ -1923,6 +2099,7 @@ A_INDEX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_INDEX)
 A_TTV = EthereumToken.initialize(
     address=string_to_ethereum_address('0xa838be6E4b760E6061D4732D6B9F11Bf578f9A76'),
     decimals=18,
@@ -1934,6 +2111,7 @@ A_TTV = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_TTV)
 A_FARM = EthereumToken.initialize(
     address=string_to_ethereum_address('0xa0246c9032bC3A600820415aE600c6388619A14D'),
     decimals=18,
@@ -1945,6 +2123,7 @@ A_FARM = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_FARM)
 A_BOR = EthereumToken.initialize(
     address=string_to_ethereum_address('0x3c9d6c1C73b31c837832c72E04D3152f051fc1A9'),
     decimals=18,
@@ -1956,6 +2135,7 @@ A_BOR = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_BOR)
 A_RFOX = EthereumToken.initialize(
     address=string_to_ethereum_address('0xa1d6Df714F91DeBF4e0802A542E13067f31b8262'),
     decimals=18,
@@ -1967,6 +2147,7 @@ A_RFOX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_RFOX)
 A_NEC = EthereumToken.initialize(
     address=string_to_ethereum_address('0xCc80C051057B774cD75067Dc48f8987C4Eb97A5e'),
     decimals=18,
@@ -1978,6 +2159,7 @@ A_NEC = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_NEC)
 A_RGT = EthereumToken.initialize(
     address=string_to_ethereum_address('0xD291E7a03283640FDc51b121aC401383A46cC623'),
     decimals=18,
@@ -1989,6 +2171,7 @@ A_RGT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_RGT)
 A_VSP = EthereumToken.initialize(
     address=string_to_ethereum_address('0x1b40183EFB4Dd766f11bDa7A7c3AD8982e998421'),
     decimals=18,
@@ -2000,6 +2183,7 @@ A_VSP = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_VSP)
 A_SMARTCREDIT = EthereumToken.initialize(
     address=string_to_ethereum_address('0x72e9D9038cE484EE986FEa183f8d8Df93f9aDA13'),
     decimals=18,
@@ -2011,6 +2195,7 @@ A_SMARTCREDIT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_SMARTCREDIT)
 A_RAI = EthereumToken.initialize(
     address=string_to_ethereum_address('0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919'),
     decimals=18,
@@ -2022,6 +2207,7 @@ A_RAI = EthereumToken.initialize(
     cryptocompare='RAI',
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_RAI)
 A_TEL = EthereumToken.initialize(
     address=string_to_ethereum_address('0x467Bccd9d29f223BcE8043b84E8C8B282827790F'),
     decimals=2,
@@ -2033,6 +2219,7 @@ A_TEL = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_TEL)
 A_BCP = EthereumToken.initialize(
     address=string_to_ethereum_address('0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14'),
     decimals=18,
@@ -2044,6 +2231,7 @@ A_BCP = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_BCP)
 A_BADGER = EthereumToken.initialize(
     address=string_to_ethereum_address('0x3472A5A71965499acd81997a54BBA8D852C6E53d'),
     decimals=18,
@@ -2055,6 +2243,7 @@ A_BADGER = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_BADGER)
 A_SUSHI = EthereumToken.initialize(
     address=string_to_ethereum_address('0x6B3595068778DD592e39A122f4f5a5cF09C90fE2'),
     decimals=18,
@@ -2066,6 +2255,7 @@ A_SUSHI = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_SUSHI)
 A_MASK = EthereumToken.initialize(
     address=string_to_ethereum_address('0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074'),
     decimals=18,
@@ -2077,6 +2267,7 @@ A_MASK = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_MASK)
 A_YPIE = EthereumToken.initialize(
     address=string_to_ethereum_address('0x17525E4f4Af59fbc29551bC4eCe6AB60Ed49CE31'),
     decimals=18,
@@ -2088,6 +2279,7 @@ A_YPIE = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_YPIE)
 A_FUSE = EthereumToken.initialize(
     address=string_to_ethereum_address('0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d'),
     decimals=18,
@@ -2099,6 +2291,7 @@ A_FUSE = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_FUSE)
 A_SX = EthereumToken.initialize(
     address=string_to_ethereum_address('0x99fE3B1391503A1bC1788051347A1324bff41452'),
     decimals=18,
@@ -2110,6 +2303,7 @@ A_SX = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_SX)
 A_RSPT = EthereumToken.initialize(
     address=string_to_ethereum_address('0x016bf078ABcaCB987f0589a6d3BEAdD4316922B0'),
     decimals=18,
@@ -2121,3 +2315,4 @@ A_RSPT = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
+CONSTANT_ASSETS.append(A_RSPT)

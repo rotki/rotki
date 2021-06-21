@@ -49,6 +49,7 @@ class ContextManager():
             f'    coingecko={coingecko},\n'
             f'    cryptocompare={cryptocompare},\n'
             f')\n'
+            f'CONSTANT_ASSETS.append({var_name})\n'
         )
 
         if identifier in self.id_to_variable:
@@ -90,6 +91,7 @@ class ContextManager():
             f'    cryptocompare={cryptocompare},\n'
             f'    protocol={protocol},\n'
             f')\n'
+            f'CONSTANT_ASSETS.append({var_name})\n'
         )
         identifier = strethaddress_to_identifier(address)
         if identifier in self.id_to_variable:
@@ -109,6 +111,7 @@ def main() -> None:
         f'# This python file was generated automatically by\n'
         f'# {__file__} at {date}.\n'
         f'# Do not edit manually!\n'
+        f'\n'
     )
     ctx = ContextManager()
     with open(template_file, 'r') as f:
