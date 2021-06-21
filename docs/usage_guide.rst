@@ -463,6 +463,25 @@ In case of an exchange providing a more granular permissions scheme (e.g. Coinba
 
 You may as well try creating an API key with the minimum read-related permissions, then adding it in rotki and finally checking that the connection was successful and data was loaded as expected. Otherwise, try again adding more read-related premissions.
 
+Binance / Binance US
+--------------
+
+Binance API is engineered in a way that makes it really slow to query information for trades since every possible market pair has to be queried. This process can also fail since many requests have to be made to binance servers and rate limits may apply.
+To avoid having to query all existing trade pairs, it is possible to select what markets should be queried. This will considerably increase the speed as the amount of queries to binance will be reduced to only the markets you specify.
+To select which what markets you want to query edit your binance exchange instance
+
+.. image:: images/exchanges_edit_binance.png
+   :alt: Edit binance in the exchanges section
+   :align: center
+
+And choose the markets in the `Filter market pair(s)` search.
+
+.. image:: images/binance_markets_selection.png
+   :alt: Edit binance in the exchanges section
+   :align: center
+
+Once finished click on save.
+
 Adding an external service API Key
 =====================================
 
