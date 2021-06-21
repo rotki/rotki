@@ -186,7 +186,7 @@ class GlobalDBHandler():
             swapped_for_asset = data.get('swapped_for', None)
             swapped_for = swapped_for_asset.identifier if swapped_for_asset else None
             coingecko = data.get('coingecko', None)
-            cryptocompare = data.get('cryptocompare', None)
+            cryptocompare = data.get('cryptocompare', '')
 
         try:
             cursor.execute(
@@ -420,7 +420,7 @@ class GlobalDBHandler():
                         started, swapped_for, coingecko, cryptocompare, details_reference)
                         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                         (asset_id, 'C', None, None, None,
-                         None, None, None, underlying_token.address),
+                         None, None, '', underlying_token.address),
                     )
                 except sqlite3.IntegrityError as e:
                     connection.rollback()
@@ -764,7 +764,7 @@ class GlobalDBHandler():
                     data.get('started'),
                     swapped_for,
                     data.get('coingecko'),
-                    data.get('cryptocompare'),
+                    data.get('cryptocompare', ''),
                     identifier,
                 ),
             )
