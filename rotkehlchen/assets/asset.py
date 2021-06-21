@@ -625,7 +625,8 @@ class HasEthereumToken(Asset):
             started: Optional[Timestamp] = None,
             swapped_for: Optional[Asset] = None,
             coingecko: Optional[str] = None,
-            cryptocompare: Optional[str] = None,
+            # add the token with inactive cryptocompare so querying is not attempted by symbol
+            cryptocompare: Optional[str] = '',
             protocol: Optional[str] = None,
             underlying_tokens: Optional[List[UnderlyingToken]] = None,
     ) -> Y:

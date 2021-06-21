@@ -343,10 +343,9 @@ export default class AssetForm extends Vue {
     return this.identifier ?? this.symbol ?? null;
   }
 
-  get token(): EthereumToken | Omit<EthereumToken, 'identifier'> {
+  get token(): Omit<EthereumToken, 'identifier'> {
     const ut = this.underlyingTokens;
     return {
-      identifier: this.identifier ? this.identifier : undefined,
       address: this.address,
       name: this.name,
       symbol: this.symbol,
@@ -507,7 +506,7 @@ export default class AssetForm extends Vue {
   private async saveEthereumToken() {
     let identifier: string;
     const token = this.token!;
-    if (this.edit && 'identifier' in token) {
+    if (this.edit && this.identifier) {
       ({ identifier } = await this.$api.assets.editEthereumToken(token));
     } else {
       ({ identifier } = await this.$api.assets.addEthereumToken(token));
