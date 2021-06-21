@@ -164,18 +164,6 @@ CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 CRYPTOCOMPARE_HOURQUERYLIMIT = 2000
 
 
-class PriceHistoryEntry(NamedTuple):
-    time: Timestamp
-    low: Price
-    high: Price
-
-
-class PriceHistoryData(NamedTuple):
-    data: List[PriceHistoryEntry]
-    start_time: Timestamp
-    end_time: Timestamp
-
-
 class HistoHourAssetData(NamedTuple):
     timestamp: Timestamp
     usd_price: Price
@@ -189,17 +177,6 @@ CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES: Dict[Asset, HistoHourAssetData] = {
         usd_price=Price(FVal('239.13')),
     ),
 }
-
-
-def _dict_history_to_entries(data: List[Dict[str, Any]]) -> List[PriceHistoryEntry]:
-    """Turns a list of dict of history entries to a list of proper objects"""
-    return [
-        PriceHistoryEntry(
-            time=Timestamp(entry['time']),
-            low=Price(FVal(entry['low'])),
-            high=Price(FVal(entry['high'])),
-        ) for entry in data
-    ]
 
 
 def _multiply_str_nums(a: str, b: str) -> str:

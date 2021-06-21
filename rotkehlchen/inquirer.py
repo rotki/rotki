@@ -212,7 +212,6 @@ class Inquirer():
     _oracles: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
     special_tokens: List[EthereumToken]
-    special_protocols: Tuple[str]
 
     def __new__(
             cls,
@@ -265,9 +264,6 @@ class Inquirer():
             A_FARM_CRVRENWBTC,
             A_3CRV,
         ]
-
-        Inquirer.special_protocols = KnownProtocolsAssets
-
         return Inquirer.__instance
 
     @staticmethod
