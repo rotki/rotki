@@ -529,7 +529,8 @@ class Asset():
             forked: Optional['Asset'] = None,
             swapped_for: Optional['Asset'] = None,
             coingecko: Optional[str] = None,
-            cryptocompare: Optional[str] = None,
+            # add the asset with inactive cryptocompare so querying is not attempted by symbol
+            cryptocompare: Optional[str] = '',
     ) -> Z:
         """Initialize an asset from fields"""
         asset = cls('whatever', direct_field_initialization=True)
