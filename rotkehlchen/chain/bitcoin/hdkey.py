@@ -29,12 +29,6 @@ class PrefixParsingResult(NamedTuple):
     hint: str
 
 
-class BTCAddressType(Enum):
-    BASE58 = 1
-    BECH32 = 2
-    P2SH_P2WPKH = 3
-
-
 class XpubType(Enum):
     P2PKH = 1          # lecacy/xpub
     P2SH_P2WPKH = 2    # segwit/ypyb
@@ -139,7 +133,6 @@ class HDKey():
     chain_code: Optional[bytes]
     fingerprint: bytes
     xpub: Optional[str]
-    xpriv: Optional[str]
     pubkey: PublicKey
     privkey: Optional[PrivateKey]
     hint: str
@@ -200,7 +193,6 @@ class HDKey():
             parent=None,
             chain_code=xpub_bytes[13:45],
             fingerprint=hash160(pubkey.format(COMPRESSED_PUBKEY))[:4],
-            xpriv=None,
             xpub=xpub,
             privkey=None,
             pubkey=pubkey,
@@ -255,7 +247,6 @@ class HDKey():
             parent=self,
             chain_code=xpub_bytes[13:45],
             fingerprint=hash160(pubkey)[:4],
-            xpriv=None,
             xpub=child_xpub,
             privkey=None,
             pubkey=PublicKey(pubkey),

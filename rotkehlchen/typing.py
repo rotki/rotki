@@ -48,10 +48,6 @@ IMPORTABLE_LOCATIONS = Literal[
 KnownProtocolsAssets = ('UNI-V2', )
 
 
-T_BinaryEthAddress = bytes
-BinaryEthAddress = NewType('BinaryEthAddress', T_BinaryEthAddress)
-
-
 T_Timestamp = int
 Timestamp = NewType('Timestamp', T_Timestamp)
 

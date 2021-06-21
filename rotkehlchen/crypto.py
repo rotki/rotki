@@ -1,12 +1,10 @@
 import base64
 
-from coincurve import PrivateKey
 from Crypto import Random
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA3_256, SHA256
 
 from rotkehlchen.errors import UnableToDecryptRemoteData
-from rotkehlchen.typing import BinaryEthAddress
 
 
 # AES encrypt/decrypt taken from here: https://stackoverflow.com/a/44212550/110395
@@ -56,19 +54,3 @@ def sha3(data: bytes) -> bytes:
         encoded prior to usage.
     """
     return SHA3_256.new(data).digest()
-
-
-def ishash(data: bytes) -> bool:
-    return len(data) == 32
-
-
-def privatekey_to_publickey(private_key_bin: bytes) -> bytes:
-    """ Returns public key in bitcoins 'bin' encoding. """
-    if not ishash(private_key_bin):
-        raise ValueError('private_key_bin format mismatch. maybe hex encoded?')
-    private_key = PrivateKey(private_key_bin)
-    return private_key.public_key.format(compressed=False)
-
-
-def publickey_to_address(publickey: bytes) -> BinaryEthAddress:
-    return BinaryEthAddress(sha3(publickey[1:])[12:])

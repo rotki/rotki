@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Callable, DefaultDict, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, Callable, DefaultDict, Dict, List, NamedTuple, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH, A_WETH
@@ -11,7 +11,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -423,32 +422,6 @@ class CostBasisCalculator():
             matched_acquisitions=matched_acquisitions,
             is_complete=is_complete,
         )
-
-    def calculate_asset_details(
-            self,
-            taxfree_after_period: Optional[int],
-    ) -> Dict[Asset, Tuple[FVal, FVal]]:
-        """ Calculates what amount of all assets has been untouched for the tax-free period
-        and is hence tax-free and also the average buy price for each asset"""
-        self.details: Dict[Asset, Tuple[FVal, FVal]] = {}
-        now = ts_now()
-        for asset, events in self._events.items():
-            tax_free_amount_left = ZERO
-            amount_sum = ZERO
-            average = ZERO
-            for acquisition_event in events.acquisitions:
-                if taxfree_after_period is not None:
-                    if acquisition_event.timestamp + taxfree_after_period < now:
-                        tax_free_amount_left += acquisition_event.remaining_amount
-                amount_sum += acquisition_event.remaining_amount
-                average += acquisition_event.remaining_amount * acquisition_event.rate
-
-            if amount_sum == ZERO:
-                self.details[asset] = (ZERO, ZERO)
-            else:
-                self.details[asset] = (tax_free_amount_left, average / amount_sum)
-
-        return self.details
 
     def get_calculated_asset_amount(self, asset: Asset) -> Optional[FVal]:
         """Get the amount of asset accounting has calculated we should have after
