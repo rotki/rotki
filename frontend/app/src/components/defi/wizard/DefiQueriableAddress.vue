@@ -1,9 +1,11 @@
 <template>
   <blockchain-account-selector
+    outlined
     :value="selectedAccounts"
     flat
     :label="$t('defi_queriable_addres.label')"
     multiple
+    :chains="['ETH']"
     :loading="loading"
     @input="added($event)"
   />
