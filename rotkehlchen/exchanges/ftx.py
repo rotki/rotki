@@ -136,12 +136,19 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the FTX API key is good for usage in rotki"""
+        endpoint: Literal['account', 'wallet/all_balances']
+
+        if self.subaccount is None:
+            endpoint = 'wallet/all_balances'
+        else:
+            endpoint = 'account'
+
         try:
-            self._api_query('wallet/all_balances', paginate=False)
+            self._api_query(endpoint=endpoint, paginate=False)
         except RemoteError as e:
             error = str(e)
             if 'Not logged in' in error:
-                return False, 'Bad combination of API Keys'
+                return False, 'Error validating API Keys'
             raise
         return True, ''
 
@@ -238,6 +245,17 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         ...
 
     @overload
+    def _api_query(  # pylint: disable=no-self-use
+            self,
+            endpoint: Literal['account'],
+            start_time: Optional[Timestamp] = None,
+            end_time: Optional[Timestamp] = None,
+            limit: int = PAGINATION_LIMIT,
+            paginate: bool = True,
+    ) -> Dict[str, Any]:
+        ...
+
+    @overload
     def _api_query(
             self,
             endpoint: Literal[
@@ -261,7 +279,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_time: Optional[Timestamp] = None,
             limit: int = PAGINATION_LIMIT,
             paginate: bool = True,
-    ) -> Union[List[Dict[str, Any]], Dict[str, List[Any]]]:
+    ) -> Union[List[Dict[str, Any]], Dict[str, List[Any]], Dict[str, Any]]:
         """Query FTX endpoint and retrieve all available information if pagination
         is requested. In case of paginate being set to False only one request is made.
         Can raise:
