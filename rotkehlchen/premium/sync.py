@@ -15,7 +15,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
-from rotkehlchen.utils.misc import timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -105,8 +105,8 @@ class PremiumSyncManager():
             payload={
                 'local_size': data_bytes_size,
                 'remote_size': metadata.data_size,
-                'local_last_modified': timestamp_to_date(our_last_write_ts),
-                'remote_last_modified': timestamp_to_date(metadata.last_modify_ts),
+                'local_last_modified': our_last_write_ts,
+                'remote_last_modified': metadata.last_modify_ts,
             },
         )
 
