@@ -184,7 +184,7 @@ def get_usd_price_zero_if_error(
     inquirer = Inquirer()
     if asset in inquirer.special_tokens:
         return inquirer.find_usd_price(asset)
-    elif isinstance(asset, EthereumToken) and asset.protocol == 'yearn_v2_vault':
+    if isinstance(asset, EthereumToken) and asset.protocol == 'yearn_v2_vault':
         return inquirer.find_usd_price(asset)
 
     return query_usd_price_zero_if_error(
@@ -228,7 +228,7 @@ class YearnVaults(EthereumModule):
         )
         nominator = price_per_full_share - (10**18)
         denonimator = now_block_number - vault.contract.deployed_block
-        return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / 10**18, price_per_full_share
+        return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / 10**18
 
     def _get_single_addr_balance(
             self,

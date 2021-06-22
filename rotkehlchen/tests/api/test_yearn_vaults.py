@@ -6,6 +6,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YEARN_VAULTS,
@@ -42,8 +43,7 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import Timestamp
 
 TEST_ACC1 = '0x7780E86699e941254c8f4D9b7eB08FF7e96BBE10'
-TEST_V2_ACC1 = '0xc3d6880fd95e06c816cb030fac45b3ffe3651cb0'
-TEST_V2_ACC2 = '0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF'
+TEST_V2_ACC2 = '0x915C4580dFFD112db25a6cf06c76cDd9009637b7'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
@@ -386,6 +386,35 @@ EXPECTED_HISTORY = {
     ),
 }
 
+EXPECTED_V2_HISTORY = {
+    '_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44': YearnVaultHistory(
+        events=[YearnVaultEvent(
+            event_type='deposit',
+            block_number=12462638,
+            timestamp=Timestamp(1621397797),
+            from_asset=EthereumToken('0x94e131324b6054c0D789b190b2dAC504e4361b53'),
+            from_value=Balance(amount=FVal('32064.715735449204040742'), usd_value=ONE),
+            to_asset=EthereumToken('0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44'),
+            to_value=Balance(amount=FVal('32064.715735449204040742'), usd_value=ONE),
+            realized_pnl=None,
+            tx_hash='0x0a53f8817f44ac0f8b516b7fa7ecba2861c001f506dbc465fe289a7110fcc1ca',
+            log_index=16,
+        ), YearnVaultEvent(
+            event_type='withdraw',
+            block_number=12494161,
+            timestamp=Timestamp(1621820621),
+            from_asset=EthereumToken('0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44'),
+            from_value=Balance(amount=FVal('32064.715735449204040742'), usd_value=ONE),
+            to_asset=EthereumToken('0x94e131324b6054c0D789b190b2dAC504e4361b53'),
+            to_value=Balance(amount=FVal('32092.30659836985292638'), usd_value=ONE),
+            realized_pnl=None,
+            tx_hash='0xda0694c6b3582fe03b2eb9edb0169d23c8413157e233d0c8f678a7cc9ab4f918',
+            log_index=134,
+        )],
+        profit_loss=Balance(amount=FVal('3.782217772661052898'), usd_value=ONE),
+    ),
+}
+
 
 def check_vault_history(name, expected_history, result_history):
     """Check that the expected vault history matches for the non-mocked parts
@@ -497,14 +526,88 @@ def test_query_yearn_vault_history_non_premium(rotkehlchen_api_server, ethereum_
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_V2_ACC2]])
 @pytest.mark.parametrize('ethereum_modules', [['yearn_v2_vaults']])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+def test_query_yearn_v2_vault_balances(rotkehlchen_api_server, ethereum_accounts):
+    async_query = random.choice([True, False])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        token_balances={
+            '0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9': ['70000000'],
+            '0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67': ['2550000000000000000000'],
+        },
+    )
+
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "yearnvaultsv2balancesresource",
+        ), json={'async_query': async_query})
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+            assert outcome['message'] == ''
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+
+    for _, vault in result[TEST_V2_ACC2].items():
+        assert '%' in vault['roi']
+        assert FVal(vault['vault_value']['amount']) > ZERO
+        assert FVal(vault['vault_value']['usd_value']) > ZERO
+        assert FVal(vault['underlying_value']['amount']) > ZERO
+        assert FVal(vault['underlying_value']['usd_value']) > ZERO
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_V2_ACC2]])
+@pytest.mark.parametrize('ethereum_modules', [['yearn_v2_vaults']])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('should_mock_price_queries', [False])
-def test_query_yearn_v2_vault_history(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_yearn_v2_vault_history(rotkehlchen_api_server):
+    """Check querying the yearn vaults history endpoint works. Uses real data.
+    """
+
+    async_query = random.choice([True, False])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         "yearnvaultsv2historyresource",
-    ))
+    ), json={'async_query': async_query})
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        assert outcome['message'] == ''
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
 
-    result = assert_proper_response_with_result(response)
-    print(result)
-    raise AssertionError()
+    # Make sure some data was saved in the DB after first call
+    events = rotki.data.db.get_all_yearn_v2_vaults_events(TEST_V2_ACC2)
+    assert len(events) >= 11
+
+    result = result[TEST_V2_ACC2]
+    check_vault_history(
+        '_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44',
+        EXPECTED_V2_HISTORY,
+        result,
+    )
+
+    # Make sure events end up in the DB
+    # test yearn vault data purging from the db works
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'ethereummoduledataresource',
+        module_name='yearn_v2_vaults',
+    ))
+    assert_simple_ok_response(response)
+    events = rotki.data.db.get_all_yearn_v2_vaults_events(TEST_V2_ACC2)
+    assert len(events) == 0

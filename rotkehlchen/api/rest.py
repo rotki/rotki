@@ -2380,7 +2380,7 @@ class RestAPI():
             # Giving the defi balances as a lambda function here so that they
             # are retrieved only after we are sure the defi balances have been
             # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chain_manager.balances.eth,
+            given_defi_balances=self.rotkehlchen.chain_manager.balances.eth,
         )
 
     @require_premium_user(active_check=False)
@@ -2407,7 +2407,7 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
-    # @require_premium_user(active_check=False)
+    @require_premium_user(active_check=False)
     def get_yearn_v2_vaults_history(
             self,
             async_query: bool,
@@ -2424,7 +2424,7 @@ class RestAPI():
             # Giving the defi balances as a lambda function here so that they
             # are retrieved only after we are sure the defi balances have been
             # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
+            given_defi_balances=self.rotkehlchen.chain_manager.balances.eth,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module(
                 'yearn_v2_vaults',
             ),

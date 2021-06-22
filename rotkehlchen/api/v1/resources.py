@@ -1332,7 +1332,7 @@ class YearnVaultsV2BalancesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_yearn_v2_vaults_balances(async_query)
 
@@ -1361,7 +1361,7 @@ class YearnVaultsV2HistoryResource(BaseResource):
 
     get_schema = AsyncHistoricalQuerySchema()
 
-    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
+    @use_kwargs(get_schema, location='json_and_query')
     def get(
             self,
             async_query: bool,

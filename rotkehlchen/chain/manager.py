@@ -123,6 +123,7 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'Chi Gastoken by 1inch': True,  # True means all
     # yearn vault balances are detected by the yTokens
     'yearn.finance • Vaults': True,  # True means all
+    'Yearn Token Vaults': True,
     # Synthetix SNX token is in all_assets.json
     'Synthetix': ['SNX'],
     # Ampleforth's AMPL token is in all_assets.json

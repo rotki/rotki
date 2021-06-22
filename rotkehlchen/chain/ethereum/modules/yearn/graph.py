@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from eth_utils import to_checksum_address
+
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.graph import Graph, format_query_indentation
@@ -9,7 +11,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import get_usd_price_zero_if_error
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import Price, EthAddress, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, Price, EthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -187,7 +189,7 @@ class YearnV2Inquirer:
 
         for entry in deposits:
             # The id returned is a composition of hash + '-' + log_index
-            _, tx_hash, log_index, log_index_to = entry['id'].split('-')
+            _, tx_hash, log_index, _ = entry['id'].split('-')
 
             try:
                 from_asset = EthereumToken(entry['vault']['token']['id'])
@@ -225,6 +227,9 @@ class YearnV2Inquirer:
                 )
                 to_asset_usd_price = prices_cache.get(to_asset)
 
+            assert to_asset_usd_price is not None
+            assert from_asset_usd_price is not None
+
             from_asset_amount = token_normalized_value(
                 token_amount=int(entry['tokenAmount']),
                 token=from_asset,
@@ -237,7 +242,7 @@ class YearnV2Inquirer:
 
             result.append(YearnVaultEvent(
                 event_type='deposit',
-                block_number=entry['blockNumber'],
+                block_number=int(entry['blockNumber']),
                 timestamp=Timestamp(int(entry['timestamp']) // 1000),
                 from_asset=from_asset,
                 from_value=Balance(
@@ -251,7 +256,7 @@ class YearnV2Inquirer:
                 ),
                 realized_pnl=None,
                 tx_hash=tx_hash,
-                log_index=log_index,
+                log_index=int(log_index),
             ))
         return result
 
@@ -265,7 +270,7 @@ class YearnV2Inquirer:
         for entry in withdrawals:
             # The id returned is a composition of address + hash + '-' + log_index
 
-            _, tx_hash, log_index, log_index_to = entry['id'].split('-')
+            _, tx_hash, log_index, _ = entry['id'].split('-')
 
             try:
                 from_asset = EthereumToken(entry['vault']['shareToken']['id'])
@@ -303,6 +308,9 @@ class YearnV2Inquirer:
                 )
                 to_asset_usd_price = prices_cache.get(to_asset)
 
+            assert to_asset_usd_price is not None
+            assert from_asset_usd_price is not None
+
             from_asset_amount = token_normalized_value(
                 token_amount=int(entry['sharesBurnt']),
                 token=from_asset,
@@ -314,8 +322,8 @@ class YearnV2Inquirer:
             )
 
             result.append(YearnVaultEvent(
-                event_type='deposit',
-                block_number=entry['blockNumber'],
+                event_type='withdraw',
+                block_number=int(entry['blockNumber']),
                 timestamp=Timestamp(int(entry['timestamp']) // 1000),
                 from_asset=from_asset,
                 from_value=Balance(
@@ -329,7 +337,7 @@ class YearnV2Inquirer:
                 ),
                 realized_pnl=None,
                 tx_hash=tx_hash,
-                log_index=log_index,
+                log_index=int(log_index),
             ))
 
         return result
@@ -386,7 +394,7 @@ class YearnV2Inquirer:
         addresses: List[EthAddress],
         from_block: int,
         to_block: int,
-    ) -> Dict[str, List[YearnVaultEvent]]:
+    ) -> Dict[ChecksumEthAddress, Dict[str, List[YearnVaultEvent]]]:
 
         param_types = {
             '$from_block': 'BigInt!',
@@ -405,10 +413,10 @@ class YearnV2Inquirer:
             param_types=param_types,
             param_values=param_values,
         )
-        result = {}
+        result: Dict[ChecksumEthAddress, Dict[str, List[YearnVaultEvent]]] = {}
 
         for account in query['accounts']:
-            account_id = account['id']
+            account_id = to_checksum_address(account['id'])
             result[account_id] = {}
             result[account_id]['deposits'] = self._process_deposits(account['deposits'])
             result[account_id]['withdrawals'] = self._process_withdrawals(account['withdrawals'])

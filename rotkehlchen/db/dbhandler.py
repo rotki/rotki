@@ -49,7 +49,7 @@ from rotkehlchen.chain.ethereum.structures import (
 )
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
+from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_V2_VAULTS_PREFIX
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -1171,6 +1171,7 @@ class DBHandler:
             self.delete_aave_data()
             self.delete_adex_events_data()
             self.delete_yearn_vaults_data()
+            self.delete_yearn_v2_vaults_data()
             self.delete_loopring_data()
             self.delete_eth2_deposits()
             self.delete_eth2_daily_stats()
@@ -1189,6 +1190,8 @@ class DBHandler:
             self.delete_adex_events_data()
         elif module_name == 'yearn_vaults':
             self.delete_yearn_vaults_data()
+        elif module_name == 'yearn_v2_vaults':
+            self.delete_yearn_v2_vaults_data()
         elif module_name == 'loopring':
             self.delete_loopring_data()
         elif module_name == 'eth2':
@@ -1276,39 +1279,6 @@ class DBHandler:
                     f'Event data: {event_tuple}. Skipping...',
                 )
 
-        self.conn.commit()
-        self.update_last_write()
-
-    def add_yearn_v2_vault_basic_info(
-        self,
-        address,
-        name,
-        block_number,
-        decimals,
-    ) -> None:
-        cursor = self.conn.cursor()
-        vault_tuple = (
-            address,
-            name,
-            block_number,
-            decimals,
-        )
-
-        try:
-            cursor.execute(
-                'INSERT INTO yearn_v2_vaults_basic_info( '
-                'address, '
-                'name, '
-                'block_number, '
-                'decimals)'
-                'VALUES (?, ?, ?, ?)',
-                vault_tuple,
-            )
-        except sqlcipher.IntegrityError:  # pylint: disable=no-member
-            self.msg_aggregator.add_warning(
-                f'Tried to add a yearn vault basic info that already exists in the DB. '
-                f'Vault data: {vault_tuple}. Skipping...',
-            )
         self.conn.commit()
         self.update_last_write()
 
@@ -1412,7 +1382,7 @@ class DBHandler:
             ))
         return events
 
-    def get_all_yearn_v2_vaults_events(self, address: ChecksumEthAddress):
+    def get_all_yearn_v2_vaults_events(self, address: ChecksumEthAddress) -> List[YearnVaultEvent]:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT '
@@ -1456,6 +1426,16 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM yearn_vaults_events;')
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{YEARN_VAULTS_PREFIX}%";')
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_yearn_v2_vaults_data(self) -> None:
+        """Delete all historical aave event data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM yearn_v2_vaults_events;')
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{YEARN_V2_VAULTS_PREFIX}%";',
+        )
         self.conn.commit()
         self.update_last_write()
 

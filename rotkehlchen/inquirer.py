@@ -545,8 +545,7 @@ class Inquirer():
 
             if price == Price(ZERO):
                 return None
-            else:
-                prices.append(price)
+            prices.append(price)
 
         # Query virtual price of LP share and balances in the pool for each token
         contract = EthereumContract(
@@ -586,11 +585,11 @@ class Inquirer():
     ) -> Optional[Price]:
         assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
 
-        underlying_token_opt = GlobalDBHandler()._fetch_underlying_tokens(token.ethereum_address)
+        underlying_token_opt = GlobalDBHandler().fetch_underlying_tokens(token.ethereum_address)
         if not underlying_token_opt or len(underlying_token_opt) != 1:
             return None
 
-        underlying_token = underlying_token_opt[0]
+        underlying_token = EthereumToken(underlying_token_opt[0].address)
         underlying_token_price = self.find_usd_price(underlying_token)
         # Get the price per share from the yearn contract
         contract = EthereumContract(
