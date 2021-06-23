@@ -120,14 +120,14 @@
                   <li>
                     <i18n path="login.sync_error.local_modified">
                       <div class="font-weight-medium">
-                        {{ localLastModified }}
+                        <date-display :timestamp="localLastModified" />
                       </div>
                     </i18n>
                   </li>
                   <li class="mt-2">
                     <i18n path="login.sync_error.remote_modified">
                       <div class="font-weight-medium">
-                        {{ remoteLastModified }}
+                        <date-display :timestamp="remoteLastModified" />
                       </div>
                     </i18n>
                   </li>
@@ -244,12 +244,14 @@ export default class Login extends Vue {
     this.touched();
   }
 
-  get localLastModified(): string {
-    return this.syncConflict.payload?.localLastModified ?? '';
+  get localLastModified(): number {
+    const payload = this.syncConflict.payload;
+    return payload?.localLastModified ?? 0;
   }
 
-  get remoteLastModified(): string {
-    return this.syncConflict.payload?.remoteLastModified ?? '';
+  get remoteLastModified(): number {
+    const payload = this.syncConflict.payload;
+    return payload?.remoteLastModified ?? 0;
   }
 
   get localSize(): string {
