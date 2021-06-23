@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2722` The sync conflict dialog dates will now be consistent with the user specified date format.
 * :feature:`3069` When adding an asset coingecko/cryptocompare identifiers will now be validated and non-existing ones will be rejected.
 * :bug:`2685` Invoking `--version` from the rotki backedn binary in Windows should no longer raise a Permission error.
 * :bug:`3101` Editing ethereum token details via the asset manager in the frontend should now work properly again.
