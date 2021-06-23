@@ -3,8 +3,7 @@
     <template #message>{{ $t('lending.loading') }}</template>
   </progress-screen>
   <v-container v-else>
-    <active-modules :modules="modules" />
-    <v-row no-gutters>
+    <v-row no-gutters align="center">
       <v-col>
         <refresh-header
           :loading="anyRefreshing"
@@ -38,6 +37,9 @@
               </v-col>
             </v-row>
           </confirmable-reset>
+          <template #actions>
+            <active-modules :modules="modules" />
+          </template>
         </refresh-header>
       </v-col>
     </v-row>

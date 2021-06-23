@@ -19,8 +19,11 @@
               outlined
               flat
               dense
+              no-padding
+              hide-on-empty-usable
               max-width="340px"
               :usable-addresses="usableAddresses"
+              class="queried-address-dialog__selector"
               :chains="['ETH']"
               :label="$t('queried_address_dialog.add')"
             />
@@ -29,7 +32,6 @@
             <v-btn
               icon
               color="primary"
-              class="mt-2"
               :disabled="account === null"
               @click="addAddress"
             >
@@ -43,12 +45,16 @@
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </template>
-      <v-list
+      <div
         v-if="addresses(module).length > 0"
-        height="300px"
         class="queried-address-dialog__list"
       >
-        <v-row v-for="address in addresses(module)" :key="address" class="py-1">
+        <v-row
+          v-for="address in addresses(module)"
+          :key="address"
+          no-gutters
+          class="py-1"
+        >
           <v-col>
             <labeled-address-display
               :account="getAccount(address)"
@@ -87,7 +93,7 @@
             </v-tooltip>
           </v-col>
         </v-row>
-      </v-list>
+      </div>
       <div v-else class="queried-address-dialog__empty">
         <div>
           {{
@@ -192,6 +198,10 @@ export default class QueriedAddressDialog extends Vue {
 .queried-address-dialog {
   &__list {
     overflow-y: scroll;
+    overflow-x: hidden;
+    width: 99%;
+    padding: 8px;
+    height: 250px;
 
     @extend .themed-scrollbar;
   }
@@ -200,7 +210,7 @@ export default class QueriedAddressDialog extends Vue {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 300px;
+    height: 250px;
   }
 
   &__account {

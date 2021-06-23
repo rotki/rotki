@@ -19,7 +19,12 @@
                   v-on="on"
                   @click="onModulePress(module)"
                 >
-                  <v-img width="24px" contain :src="icon(module.identifier)" />
+                  <v-img
+                    width="24px"
+                    height="24px"
+                    contain
+                    :src="icon(module.identifier)"
+                  />
                 </v-btn>
               </template>
               <span v-if="module.enabled">

@@ -18,7 +18,11 @@
       :title="$t('uniswap.title')"
       :loading="anyRefreshing"
       @refresh="refresh()"
-    />
+    >
+      <template #actions>
+        <active-modules :modules="modules" />
+      </template>
+    </refresh-header>
     <v-row class="mt-4">
       <v-col>
         <blockchain-account-selector
@@ -120,6 +124,7 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
 import UniswapPoolFilter from '@/components/defi/uniswap/UniswapPoolFilter.vue';
@@ -131,12 +136,15 @@ import DefiModuleMixin from '@/mixins/defi-module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { UniswapDetails } from '@/premium/premium';
+import { MODULE_UNISWAP } from '@/services/session/consts';
+import { SupportedModules } from '@/services/session/types';
 import { Section } from '@/store/const';
 import { UniswapBalance } from '@/store/defi/types';
 import { ETH, GeneralAccount } from '@/typing/types';
 
 @Component({
   components: {
+    ActiveModules,
     UniswapPoolDetails,
     UniswapPoolFilter,
     BaseExternalLink,
@@ -160,6 +168,7 @@ export default class Uniswap extends Mixins(
   AssetMixin
 ) {
   readonly ETH = ETH;
+  readonly modules: SupportedModules[] = [MODULE_UNISWAP];
   section = Section.DEFI_UNISWAP_BALANCES;
   secondSection = Section.DEFI_UNISWAP_EVENTS;
 

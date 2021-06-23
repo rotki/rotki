@@ -6,11 +6,13 @@
         {{ $t('eth2page.loading') }}
       </template>
     </progress-screen>
-    <eth2-staking
-      v-else
-      :refreshing="refreshing"
-      :secondary-refreshing="secondaryRefreshing"
-    />
+    <div v-else>
+      <active-modules :modules="module" class="eth2-page__modules" />
+      <eth2-staking
+        :refreshing="refreshing"
+        :secondary-refreshing="secondaryRefreshing"
+      />
+    </div>
   </v-container>
 </template>
 
@@ -18,6 +20,7 @@
 import { Component, Mixins } from 'vue-property-decorator';
 
 import { mapActions } from 'vuex';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import DefiModuleMixin from '@/mixins/defi-module-mixin';
@@ -27,7 +30,7 @@ import { MODULE_ETH2 } from '@/services/session/consts';
 import { Section } from '@/store/const';
 
 @Component({
-  components: { ModuleNotActive, ProgressScreen, Eth2Staking },
+  components: { ActiveModules, ModuleNotActive, ProgressScreen, Eth2Staking },
   methods: {
     ...mapActions('staking', ['fetchStakingDetails'])
   }
@@ -51,4 +54,13 @@ export default class Eth2Page extends Mixins(StatusMixin, DefiModuleMixin) {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.eth2-page {
+  &__modules {
+    display: inline-flex;
+    position: absolute;
+    right: 65px;
+    top: 35px;
+  }
+}
+</style>

@@ -4,12 +4,16 @@
   </progress-screen>
   <v-container v-else>
     <v-row class="mt-8">
-      <v-col cols="12">
+      <v-col>
         <refresh-header
           :title="$t('borrowing.header')"
           :loading="anyRefreshing"
           @refresh="refresh()"
-        />
+        >
+          <template #actions>
+            <active-modules :modules="modules" />
+          </template>
+        </refresh-header>
       </v-col>
     </v-row>
     <v-row no-gutters class="mt-6">
@@ -80,6 +84,7 @@
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
 import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
 import LoanInfo from '@/components/defi/loan/LoanInfo.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -91,6 +96,13 @@ import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import StatusMixin from '@/mixins/status-mixin';
 import { DEFI_PROTOCOLS } from '@/services/defi/consts';
 import { SupportedDefiProtocols } from '@/services/defi/types';
+import {
+  MODULE_AAVE,
+  MODULE_COMPOUND,
+  MODULE_MAKERDAO_VAULTS,
+  MODULE_YEARN
+} from '@/services/session/consts';
+import { SupportedModules } from '@/services/session/types';
 import { Section } from '@/store/const';
 import {
   AaveLoan,
@@ -107,6 +119,7 @@ import {
     ...mapActions('defi', ['fetchBorrowing'])
   },
   components: {
+    ActiveModules,
     DefiSelectorItem,
     DefiProtocolSelector,
     RefreshHeader,
@@ -127,6 +140,13 @@ export default class Borrowing extends Mixins(StatusMixin) {
 
   section = Section.DEFI_BORROWING;
   secondSection = Section.DEFI_BORROWING_HISTORY;
+
+  readonly modules: SupportedModules[] = [
+    MODULE_AAVE,
+    MODULE_COMPOUND,
+    MODULE_YEARN,
+    MODULE_MAKERDAO_VAULTS
+  ];
 
   get selectedProtocols(): SupportedDefiProtocols[] {
     return this.protocol ? [this.protocol] : [];

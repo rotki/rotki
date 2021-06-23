@@ -165,7 +165,8 @@
   "blockchain_account_selector": {
     "all": "all",
     "default_label": "Filter account(s)",
-    "hint": "Showing results across {hintText} accounts."
+    "hint": "Showing results across {hintText} accounts.",
+    "no_data": "No more usable addresses"
   },
   "binance_market_selector": {
     "default_label": "Filter market pair(s)",
@@ -408,7 +409,7 @@
     "add": "Add address",
     "all_address_queried": "All your ethereum addresses are queried for {module}",
     "remove_tooltip": "Remove the address from the queried addresses",
-    "subtitle": "These addresses are queried for for {module}",
+    "subtitle": "Manage the addresses that will be queried for {module}",
     "title": "Queried Addresses"
   },
   "rounding_settings": {

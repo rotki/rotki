@@ -1,6 +1,6 @@
 <template>
   <v-card v-bind="$attrs">
-    <div class="mx-4 pt-2">
+    <div :class="noPadding ? null : 'mx-4 pt-2'">
       <v-autocomplete
         :value="value"
         :items="displayedAccounts"
@@ -11,7 +11,7 @@
         :disabled="loading"
         hide-details
         hide-selected
-        hide-no-data
+        :hide-no-data="!hideOnEmptyUsable"
         return-object
         chips
         single-line
@@ -26,6 +26,11 @@
         class="blockchain-account-selector"
         @input="input($event)"
       >
+        <template #no-data>
+          <span class="text-caption px-2">
+            {{ $t('blockchain_account_selector.no_data') }}
+          </span>
+        </template>
         <template #selection="data">
           <v-chip
             v-if="multiple"
@@ -113,6 +118,10 @@ export default class BlockchainAccountSelector extends Mixins(ThemeMixin) {
   outlined!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   dense!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  noPadding!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  hideOnEmptyUsable!: boolean;
 
   accounts!: GeneralAccount[];
   tags!: Tags;
@@ -142,7 +151,7 @@ export default class BlockchainAccountSelector extends Mixins(ThemeMixin) {
         this.usableAddresses.includes(address)
       );
     }
-    return this.selectableAccounts;
+    return this.hideOnEmptyUsable ? [] : this.selectableAccounts;
   }
 
   filter(item: GeneralAccount, queryText: string) {
