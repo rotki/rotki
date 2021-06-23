@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`3101` Editing ethereum token details via the asset manager in the frontend should now work properly again.
+* :bug:`3100` FTX API keys with permission for subaccounts only will now correctly validated.
 
 * :release:`1.18.0 <2021-06-18>`
 * :feature:`2064` Users will now be able to close rotki to tray. When logged the tray icon will update based on the net worth value during the selected period (week, two weeks etc).
