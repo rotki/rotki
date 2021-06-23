@@ -64,3 +64,8 @@ export const DEFI_MODULES: Module[] = [
     icon: require('@/assets/images/modules/eth.svg')
   }
 ];
+
+export function moduleName(module: string): string {
+  const data = DEFI_MODULES.find(value => value.identifier === module);
+  return data?.name ?? '';
+}

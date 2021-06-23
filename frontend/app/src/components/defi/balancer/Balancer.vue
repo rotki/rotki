@@ -10,6 +10,7 @@
     </template>
   </progress-screen>
   <v-container v-else>
+    <active-modules :modules="modules" class="balancer__modules" />
     <balancer-balances class="mt-4" :refreshing="anyRefreshing" />
   </v-container>
 </template>
@@ -18,6 +19,7 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
@@ -25,10 +27,13 @@ import DefiModuleMixin from '@/mixins/defi-module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { BalancerBalances } from '@/premium/premium';
+import { MODULE_BALANCER } from '@/services/session/consts';
+import { SupportedModules } from '@/services/session/types';
 import { Section } from '@/store/const';
 
 @Component({
   components: {
+    ActiveModules,
     BalancerBalances,
     NoPremiumPlaceholder,
     BaseExternalLink,
@@ -49,6 +54,7 @@ export default class Balancer extends Mixins(
   readonly secondSection = Section.DEFI_BALANCER_EVENTS;
   fetchBalancerBalances!: (refresh: boolean) => Promise<void>;
   fetchBalancerEvents!: (refresh: boolean) => Promise<void>;
+  readonly modules: SupportedModules[] = [MODULE_BALANCER];
 
   async mounted() {
     await Promise.all([
@@ -59,4 +65,13 @@ export default class Balancer extends Mixins(
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.balancer {
+  &__modules {
+    display: inline-flex;
+    position: absolute;
+    right: 84px;
+    top: 58px;
+  }
+}
+</style>

@@ -19,6 +19,14 @@
     "subtitle": "These accounting setting were used during the report creation",
     "days": "{days} days"
   },
+  "active_modules": {
+    "activate": "Activate the module",
+    "view_addresses": "View the queried addresses for the module",
+    "enable": {
+      "description": "Would you like to enable the {name} module?",
+      "title": "Enabled module"
+    }
+  },
   "adex_page": {
     "loading": "Please wait while your AdEx staking details are getting loaded..."
   },
@@ -157,7 +165,8 @@
   "blockchain_account_selector": {
     "all": "all",
     "default_label": "Filter account(s)",
-    "hint": "Showing results across {hintText} accounts."
+    "hint": "Showing results across {hintText} accounts.",
+    "no_data": "No more usable addresses"
   },
   "binance_market_selector": {
     "default_label": "Filter market pair(s)",
@@ -395,6 +404,13 @@
   "notes_display": {
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
+  },
+  "queried_address_dialog": {
+    "add": "Add address",
+    "all_address_queried": "All your ethereum addresses are queried for {module}",
+    "remove_tooltip": "Remove the address from the queried addresses",
+    "subtitle": "Manage the addresses that will be queried for {module}",
+    "title": "Queried Addresses"
   },
   "rounding_settings": {
     "amount_rounding": "Amount Rounding",

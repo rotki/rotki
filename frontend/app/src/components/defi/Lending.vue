@@ -3,7 +3,7 @@
     <template #message>{{ $t('lending.loading') }}</template>
   </progress-screen>
   <v-container v-else>
-    <v-row no-gutters>
+    <v-row no-gutters align="center">
       <v-col>
         <refresh-header
           :loading="anyRefreshing"
@@ -37,6 +37,9 @@
               </v-col>
             </v-row>
           </confirmable-reset>
+          <template #actions>
+            <active-modules :modules="modules" />
+          </template>
         </refresh-header>
       </v-col>
     </v-row>
@@ -168,6 +171,7 @@ import { default as BigNumber } from 'bignumber.js';
 import Component from 'vue-class-component';
 import { Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
 import LendingAssetTable from '@/components/defi/display/LendingAssetTable.vue';
 import YearnAssetsTable from '@/components/defi/yearn/YearnAssetsTable.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -197,12 +201,20 @@ import {
 } from '@/services/defi/consts';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
+import {
+  MODULE_AAVE,
+  MODULE_COMPOUND,
+  MODULE_MAKERDAO_DSR,
+  MODULE_YEARN
+} from '@/services/session/consts';
+import { SupportedModules } from '@/services/session/types';
 import { Section } from '@/store/const';
 import { BaseDefiBalance, ProfitLossModel } from '@/store/defi/types';
 import { Account, DefiAccount } from '@/typing/types';
 
 @Component({
   components: {
+    ActiveModules,
     YearnAssetsTable,
     PercentageDisplay,
     CompoundLendingDetails,
@@ -274,7 +286,12 @@ export default class Lending extends Mixins(StatusMixin) {
 
   readonly AAVE = DEFI_AAVE;
   readonly YEARN_VAULTS = DEFI_YEARN_VAULTS;
-
+  readonly modules: SupportedModules[] = [
+    MODULE_AAVE,
+    MODULE_COMPOUND,
+    MODULE_YEARN,
+    MODULE_MAKERDAO_DSR
+  ];
   get selectedAddresses(): string[] {
     return this.selectedAccount ? [this.selectedAccount.address] : [];
   }

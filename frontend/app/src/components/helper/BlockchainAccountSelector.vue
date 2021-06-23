@@ -1,6 +1,6 @@
 <template>
   <v-card v-bind="$attrs">
-    <div class="mx-4 pt-2">
+    <div :class="noPadding ? null : 'mx-4 pt-2'">
       <v-autocomplete
         :value="value"
         :items="displayedAccounts"
@@ -11,10 +11,12 @@
         :disabled="loading"
         hide-details
         hide-selected
-        hide-no-data
+        :hide-no-data="!hideOnEmptyUsable"
         return-object
         chips
+        single-line
         clearable
+        :dense="dense"
         :outlined="outlined"
         :open-on-clear="false"
         :label="label ? label : $t('blockchain_account_selector.default_label')"
@@ -24,6 +26,11 @@
         class="blockchain-account-selector"
         @input="input($event)"
       >
+        <template #no-data>
+          <span class="text-caption px-2">
+            {{ $t('blockchain_account_selector.no_data') }}
+          </span>
+        </template>
         <template #selection="data">
           <v-chip
             v-if="multiple"
@@ -33,11 +40,12 @@
             :click="data.select"
             filter
             close
+            close-label="overflow-x-hidden"
             @click:close="data.parent.selectItem(data.item)"
           >
             <account-display :account="data.item" />
           </v-chip>
-          <div v-else>
+          <div v-else class="overflow-x-hidden">
             <account-display :account="data.item" class="pr-2" />
           </div>
         </template>
@@ -46,7 +54,12 @@
             class="blockchain-account-selector__list__item d-flex justify-space-between flex-grow-1"
           >
             <div class="blockchain-account-selector__list__item__address-label">
-              <v-chip :color="dark ? null : 'grey lighten-3'" filter>
+              <v-chip
+                small
+                :color="dark ? null : 'grey lighten-3'"
+                filter
+                class="text-truncate"
+              >
                 <account-display :account="data.item" />
               </v-chip>
             </div>
@@ -54,6 +67,7 @@
               <tag-icon
                 v-for="tag in data.item.tags"
                 :key="tag"
+                small
                 class="mr-1"
                 :tag="tags[tag]"
               />
@@ -102,6 +116,12 @@ export default class BlockchainAccountSelector extends Mixins(ThemeMixin) {
   chains!: Blockchain[];
   @Prop({ required: false, type: Boolean, default: false })
   outlined!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  dense!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  noPadding!: boolean;
+  @Prop({ required: false, type: Boolean, default: false })
+  hideOnEmptyUsable!: boolean;
 
   accounts!: GeneralAccount[];
   tags!: Tags;
@@ -131,7 +151,7 @@ export default class BlockchainAccountSelector extends Mixins(ThemeMixin) {
         this.usableAddresses.includes(address)
       );
     }
-    return this.selectableAccounts;
+    return this.hideOnEmptyUsable ? [] : this.selectableAccounts;
   }
 
   filter(item: GeneralAccount, queryText: string) {
@@ -155,21 +175,9 @@ export default class BlockchainAccountSelector extends Mixins(ThemeMixin) {
 
 <style scoped lang="scss">
 .blockchain-account-selector {
-  &--outlined {
-    ::v-deep {
-      /* stylelint-disable */
-      .v-label:not(.v-label--active) {
-        /* stylelint-enable */
-        top: 24px;
-      }
-
-      .v-input {
-        &__icon {
-          &--append {
-            margin-top: 6px;
-          }
-        }
-      }
+  &__list {
+    &__item {
+      max-width: 100%;
     }
   }
 }
