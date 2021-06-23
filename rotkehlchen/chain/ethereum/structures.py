@@ -30,6 +30,24 @@ AAVE_EVENT_DB_TUPLE = Tuple[
     Optional[str],  # borrow rate mode
 ]
 
+YEARN_EVENT_DB_TUPLE = Tuple[
+    ChecksumEthAddress,
+    Literal['deposit', 'withdraw'],  # event_type
+    str,  # from_asset identifier
+    str,  # from_value amount
+    str,  # from value usd_value
+    str,  # to_asset idientifier
+    str,  # to_value amount
+    str,  # to value usd_value
+    Optional[str],  # pnl amount
+    Optional[str],  # pnl usd value
+    str,  # block number
+    str,  # str of timestamp
+    str,  # tx hash
+    int,  # log index
+    int,  # version
+]
+
 
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class AaveEvent:
@@ -340,6 +358,7 @@ class YearnVaultEvent:
     realized_pnl: Optional[Balance]
     tx_hash: str
     log_index: int
+    version: Optional[int]
 
     def serialize(self) -> Dict[str, Any]:
         # Would have been nice to have a customizable asdict() for dataclasses
@@ -356,6 +375,53 @@ class YearnVaultEvent:
             'tx_hash': self.tx_hash,
             'log_index': self.log_index,
         }
+
+    def serialize_for_db(self, address: ChecksumEthAddress) -> YEARN_EVENT_DB_TUPLE:
+        pnl_amount = None
+        pnl_usd_value = None
+        if self.realized_pnl:
+            pnl_amount = str(self.realized_pnl.amount)
+            pnl_usd_value = str(self.realized_pnl.usd_value)
+        vault_version = self.version
+        if vault_version is None:
+            vault_version = 1
+        return (
+            address,
+            self.event_type,
+            self.from_asset.identifier,
+            str(self.from_value.amount),
+            str(self.from_value.usd_value),
+            self.to_asset.identifier,
+            str(self.to_value.amount),
+            str(self.to_value.usd_value),
+            pnl_amount,
+            pnl_usd_value,
+            str(self.block_number),
+            str(self.timestamp),
+            self.tx_hash,
+            self.log_index,
+            vault_version,
+        )
+
+    @classmethod
+    def deserialize_from_db(cls, result: YEARN_EVENT_DB_TUPLE) -> 'YearnVaultEvent':
+        print(result)
+        realized_pnl = None
+        if result[8] is not None and result[9] is not None:
+            realized_pnl = Balance(amount=FVal(result[8]), usd_value=FVal(result[9]))
+        return cls(
+            event_type=result[1],
+            from_asset=Asset(result[2]),
+            from_value=Balance(amount=FVal(result[3]), usd_value=FVal(result[4])),
+            to_asset=Asset(result[5]),
+            to_value=Balance(amount=FVal(result[6]), usd_value=FVal(result[7])),
+            realized_pnl=realized_pnl,
+            block_number=int(result[10]),
+            timestamp=Timestamp(int(result[11])),
+            tx_hash=result[12],
+            log_index=result[13],
+            version=result[14],
+        )
 
     def __str__(self) -> str:
         """Used in DefiEvent processing during accounting"""

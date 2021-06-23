@@ -182,9 +182,8 @@ def get_usd_price_zero_if_error(
     This can be solved when we have an archive node.
     """
     inquirer = Inquirer()
-    if asset in inquirer.special_tokens:
-        return inquirer.find_usd_price(asset)
-    if isinstance(asset, EthereumToken) and asset.protocol == 'yearn_v2_vault':
+    if (asset in inquirer.special_tokens or
+            isinstance(asset, EthereumToken) and asset.protocol == 'yearn_vault_v2'):
         return inquirer.find_usd_price(asset)
 
     return query_usd_price_zero_if_error(
@@ -367,6 +366,7 @@ class YearnVaults(EthereumModule):
                 realized_pnl=None,
                 tx_hash=tx_hash,
                 log_index=deposit_index,
+                version=1,
             ))
 
         return events
@@ -448,6 +448,7 @@ class YearnVaults(EthereumModule):
                 realized_pnl=None,
                 tx_hash=tx_hash,
                 log_index=withdraw_index,
+                version=1,
             ))
 
         return events

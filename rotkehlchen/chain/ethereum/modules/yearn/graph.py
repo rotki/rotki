@@ -4,14 +4,14 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.graph import Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.structures import YearnVaultEvent
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import get_usd_price_zero_if_error
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import ChecksumEthAddress, Price, EthAddress, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, EthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -164,8 +164,8 @@ QUERY_USER_EVENTS = (
 )
 
 
-class YearnV2Inquirer:
-    """Reads Yearn V2 vaults information from the graph"""
+class YearnVaultsV2Graph:
+    """Reads Yearn vaults v2 information from the graph"""
 
     def __init__(
             self,
@@ -183,10 +183,6 @@ class YearnV2Inquirer:
     def _process_deposits(self, deposits: List[Dict[str, Any]]) -> List[YearnVaultEvent]:
         result = []
 
-        # Since multiple transactions can be made against the same token
-        # I'll save here the queried price
-        prices_cache: Dict[Asset, Price] = {}
-
         for entry in deposits:
             # The id returned is a composition of hash + '-' + log_index
             _, tx_hash, log_index, _ = entry['id'].split('-')
@@ -199,77 +195,81 @@ class YearnV2Inquirer:
                 to_str = entry['vault']['shareToken']['symbol']
 
                 self.msg_aggregator.add_warning(
-                    f'Ignoring deposit in yearn V2 from {from_str} to '
+                    f'Ignoring deposit in yearn vaults V2 from {from_str} to '
                     f'{to_str} because the token is not recognized.',
                 )
                 continue
-
-            # since the query of prices is expensive we check if
-            # it's in the dict and if not query it
-            from_asset_usd_price = prices_cache.get(from_asset)
-            to_asset_usd_price = prices_cache.get(to_asset)
-
-            if from_asset_usd_price is None:
-                prices_cache[from_asset] = get_usd_price_zero_if_error(
+            except KeyError as e:
+                log.debug(
+                    f'Failed to extract token information from deposit event '
+                    f'in yearn vaults v2 graph query. {str(e)}.',
+                )
+                self.msg_aggregator.add_warning(
+                    f'Ignoring deposit {tx_hash} in yearn vault V2 Failed to read'
+                    f' remote information. ',
+                )
+                continue
+            try:
+                from_asset_usd_price = get_usd_price_zero_if_error(
                     asset=from_asset,
                     time=Timestamp(int(entry['timestamp']) // 1000),
-                    location='yearn v2 vault deposit',
+                    location='yearn vault v2 deposit',
                     msg_aggregator=self.msg_aggregator,
                 )
-                from_asset_usd_price = prices_cache.get(from_asset)
 
-            if to_asset_usd_price is None:
-                prices_cache[to_asset] = get_usd_price_zero_if_error(
+                to_asset_usd_price = get_usd_price_zero_if_error(
                     asset=to_asset,
                     time=Timestamp(int(entry['timestamp']) // 1000),
                     location='yearn v2 vault deposit',
                     msg_aggregator=self.msg_aggregator,
                 )
-                to_asset_usd_price = prices_cache.get(to_asset)
 
-            assert to_asset_usd_price is not None
-            assert from_asset_usd_price is not None
+                from_asset_amount = token_normalized_value(
+                    token_amount=int(entry['tokenAmount']),
+                    token=from_asset,
+                )
 
-            from_asset_amount = token_normalized_value(
-                token_amount=int(entry['tokenAmount']),
-                token=from_asset,
-            )
+                to_asset_amount = token_normalized_value(
+                    token_amount=int(entry['sharesMinted']),
+                    token=to_asset,
+                )
 
-            to_asset_amount = token_normalized_value(
-                token_amount=int(entry['sharesMinted']),
-                token=to_asset,
-            )
-
-            result.append(YearnVaultEvent(
-                event_type='deposit',
-                block_number=int(entry['blockNumber']),
-                timestamp=Timestamp(int(entry['timestamp']) // 1000),
-                from_asset=from_asset,
-                from_value=Balance(
-                    amount=from_asset_amount,
-                    usd_value=from_asset_amount * from_asset_usd_price,
-                ),
-                to_asset=to_asset,
-                to_value=Balance(
-                    amount=to_asset_amount,
-                    usd_value=to_asset_amount * to_asset_usd_price,
-                ),
-                realized_pnl=None,
-                tx_hash=tx_hash,
-                log_index=int(log_index),
-            ))
+                result.append(YearnVaultEvent(
+                    event_type='deposit',
+                    block_number=int(entry['blockNumber']),
+                    timestamp=Timestamp(int(entry['timestamp']) // 1000),
+                    from_asset=from_asset,
+                    from_value=Balance(
+                        amount=from_asset_amount,
+                        usd_value=from_asset_amount * from_asset_usd_price,
+                    ),
+                    to_asset=to_asset,
+                    to_value=Balance(
+                        amount=to_asset_amount,
+                        usd_value=to_asset_amount * to_asset_usd_price,
+                    ),
+                    realized_pnl=None,
+                    tx_hash=tx_hash,
+                    log_index=int(log_index),
+                    version=2,
+                ))
+            except (KeyError, ValueError) as e:
+                log.error(
+                    f'Failed to read deposit from yearn vaults v2 graph because the response'
+                    f' does not have the expected output {str(e)}.',
+                )
+                self.msg_aggregator.add_warning(
+                    f'Ignoring deposit {tx_hash}in yearn vault V2 from {from_asset} to '
+                    f'{to_asset} because the remote information is not correct.',
+                )
+                continue
         return result
 
     def _process_withdrawals(self, withdrawals: List[Any]) -> List[YearnVaultEvent]:
-        # Since multiple transactions can be made against the same token
-        # I'll save here the queried price
-        prices_cache: Dict[Asset, Price] = {}
-
         result = []
 
         for entry in withdrawals:
             # The id returned is a composition of address + hash + '-' + log_index
-
             _, tx_hash, log_index, _ = entry['id'].split('-')
 
             try:
@@ -280,65 +280,75 @@ class YearnV2Inquirer:
                 to_str = entry['vault']['token']['symbol']
 
                 self.msg_aggregator.add_warning(
-                    f'Ignoring withdrawal in yearn V2 from {from_str} to '
+                    f'Ignoring withdrawal in yearn vault V2 from {from_str} to '
                     f'{to_str} because the token is not recognized.',
                 )
                 continue
+            except KeyError as e:
+                log.debug(
+                    f'Failed to extract token information from withdraw event '
+                    f'in yearn vaults v2 graph query. {str(e)}.',
+                )
+                self.msg_aggregator.add_warning(
+                    f'Ignoring withdrawal {tx_hash} in yearn vault V2 Failed to read'
+                    f' remote information. ',
+                )
+                continue
 
-            # since the query of prices is expensive we check if
-            # it's in the dict and if not query it
-            from_asset_usd_price = prices_cache.get(from_asset)
-            to_asset_usd_price = prices_cache.get(to_asset)
-
-            if from_asset_usd_price is None:
-                prices_cache[from_asset] = get_usd_price_zero_if_error(
+            try:
+                from_asset_usd_price = get_usd_price_zero_if_error(
                     asset=from_asset,
                     time=Timestamp(int(entry['timestamp']) // 1000),
                     location='yearn v2 vault withdrawal',
                     msg_aggregator=self.msg_aggregator,
                 )
-                from_asset_usd_price = prices_cache.get(from_asset)
 
-            if to_asset_usd_price is None:
-                prices_cache[to_asset] = get_usd_price_zero_if_error(
+                to_asset_usd_price = get_usd_price_zero_if_error(
                     asset=to_asset,
                     time=Timestamp(int(entry['timestamp']) // 1000),
                     location='yearn v2 vault withdrawal',
                     msg_aggregator=self.msg_aggregator,
                 )
-                to_asset_usd_price = prices_cache.get(to_asset)
 
-            assert to_asset_usd_price is not None
-            assert from_asset_usd_price is not None
+                from_asset_amount = token_normalized_value(
+                    token_amount=int(entry['sharesBurnt']),
+                    token=from_asset,
+                )
 
-            from_asset_amount = token_normalized_value(
-                token_amount=int(entry['sharesBurnt']),
-                token=from_asset,
-            )
+                to_asset_amount = token_normalized_value(
+                    token_amount=int(entry['tokenAmount']),
+                    token=to_asset,
+                )
 
-            to_asset_amount = token_normalized_value(
-                token_amount=int(entry['tokenAmount']),
-                token=to_asset,
-            )
-
-            result.append(YearnVaultEvent(
-                event_type='withdraw',
-                block_number=int(entry['blockNumber']),
-                timestamp=Timestamp(int(entry['timestamp']) // 1000),
-                from_asset=from_asset,
-                from_value=Balance(
-                    amount=from_asset_amount,
-                    usd_value=from_asset_amount * from_asset_usd_price,
-                ),
-                to_asset=to_asset,
-                to_value=Balance(
-                    amount=to_asset_amount,
-                    usd_value=to_asset_amount * to_asset_usd_price,
-                ),
-                realized_pnl=None,
-                tx_hash=tx_hash,
-                log_index=int(log_index),
-            ))
+                result.append(YearnVaultEvent(
+                    event_type='withdraw',
+                    block_number=int(entry['blockNumber']),
+                    timestamp=Timestamp(int(entry['timestamp']) // 1000),
+                    from_asset=from_asset,
+                    from_value=Balance(
+                        amount=from_asset_amount,
+                        usd_value=from_asset_amount * from_asset_usd_price,
+                    ),
+                    to_asset=to_asset,
+                    to_value=Balance(
+                        amount=to_asset_amount,
+                        usd_value=to_asset_amount * to_asset_usd_price,
+                    ),
+                    realized_pnl=None,
+                    tx_hash=tx_hash,
+                    log_index=int(log_index),
+                    version=2,
+                ))
+            except (KeyError, ValueError) as e:
+                log.error(
+                    f'Failed to read withdraw from yearn vaults v2 graph because the response'
+                    f' does not have the expected output {str(e)}.',
+                )
+                self.msg_aggregator.add_warning(
+                    f'Ignoring withdrawal {tx_hash} in yearn vault V2 from {from_asset} to '
+                    f'{to_asset} because the remote information is not correct.',
+                )
+                continue
 
         return result
 
@@ -387,6 +397,7 @@ class YearnV2Inquirer:
             param_types=param_types,
             param_values=param_values,
         )
+
         return self._process_withdrawals(query["withdrawals"])
 
     def get_all_events(
@@ -413,6 +424,7 @@ class YearnV2Inquirer:
             param_types=param_types,
             param_values=param_values,
         )
+
         result: Dict[ChecksumEthAddress, Dict[str, List[YearnVaultEvent]]] = {}
 
         for account in query['accounts']:

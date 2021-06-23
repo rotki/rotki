@@ -1334,7 +1334,7 @@ class YearnVaultsV2BalancesResource(BaseResource):
 
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_yearn_v2_vaults_balances(async_query)
+        return self.rest_api.get_yearn_vaults_v2_balances(async_query)
 
 
 class YearnVaultsHistoryResource(BaseResource):
@@ -1369,7 +1369,7 @@ class YearnVaultsV2HistoryResource(BaseResource):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
-        return self.rest_api.get_yearn_v2_vaults_history(
+        return self.rest_api.get_yearn_vaults_v2_history(
             async_query=async_query,
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,

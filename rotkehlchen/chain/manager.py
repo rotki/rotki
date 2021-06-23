@@ -46,7 +46,7 @@ from rotkehlchen.chain.ethereum.modules import (
     MakerdaoVaults,
     Uniswap,
     YearnVaults,
-    YearnV2Vaults,
+    YearnVaultsV2,
 )
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
@@ -426,7 +426,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         ...
 
     @overload
-    def get_module(self, module_name: Literal['yearn_v2_vaults']) -> Optional[YearnV2Vaults]:
+    def get_module(self, module_name: Literal['yearn_vaults_v2']) -> Optional[YearnVaultsV2]:
         ...
 
     def get_module(self, module_name: ModuleName) -> Optional[Any]:

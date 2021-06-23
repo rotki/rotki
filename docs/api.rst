@@ -6257,7 +6257,7 @@ Getting yearn finance vaults historical data
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
-Getting yearnv2 finance vaults balances
+Getting yearnv2 finance V2 vaults balances
 ==========================================
 
 .. http:get:: /api/(version)/blockchains/ETH/modules/yearnv2/vaults/balances
@@ -6275,7 +6275,7 @@ Getting yearnv2 finance vaults balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/yearnv2/vaults/balances HTTP/1.1
+      GET /api/1/blockchains/ETH/modules/yearn/vaultsv2/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -6288,51 +6288,42 @@ Getting yearnv2 finance vaults balances
       Content-Type: application/json
 
       {
-          "result": {
-              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-                  "YCRV Vault": {
-                      "underlying_token": "yDAI+yUSDC+yUSDT+yTUSD",
-                      "vault_token": "yyDAI+yUSDC+yUSDT+yTUSD",
-                      "underlying_value": {
-                          "amount": "25", "usd_value": "150"
-                      },
-                      "vault_value": {
-                          "amount": "19", "usd_value": "150"
-                      },
-                      "roi": "25.55%",
+        "result":{
+            "0x915C4580dFFD112db25a6cf06c76cDd9009637b7":{
+              "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9":{
+                  "underlying_token":"_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                  "vault_token":"_ceth_0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+                  "underlying_value":{
+                    "amount":"74.292820",
+                    "usd_value":"105.0"
                   },
-                  "YYFI Vault": {
-                      "underlying_token": "YFI",
-                      "vault_token": "yYFI",
-                      "underlying_value": {
-                          "amount": "25", "usd_value": "150"
-                      },
-                      "vault_value": {
-                          "amount": "19", "usd_value": "150"
-                      },
-                      "roi": "5.35%",
-                  }
+                  "vault_value":{
+                    "amount":"70",
+                    "usd_value":"105.0"
+                  },
+                  "roi":"-238.20%"
               },
-          "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-              "YALINK Vault": {
-                      "underlying_token": "aLINK",
-                      "vault_token": "yaLINK",
-                      "underlying_value": {
-                          "amount": "25", "usd_value": "150"
-                      },
-                      "vault_value": {
-                          "amount": "19", "usd_value": "150"
-                      },
-                      "roi": "35.15%",
+              "0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67":{
+                  "underlying_token":"_ceth_0x111111111117dC0aa78b770fA6A738034120C302",
+                  "vault_token":"_ceth_0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67",
+                  "underlying_value":{
+                    "amount":"2627.246068139435250",
+                    "usd_value":"3825.0"
+                  },
+                  "vault_value":{
+                    "amount":"2550",
+                    "usd_value":"3825.0"
+                  },
+                  "roi":"9.14%"
               }
-          }
-          },
-          "message": ""
+            }
+        },
+        "message":""
       }
 
    :resjson object result: A mapping of addresses to a mapping of vault names to vault balances
-   :resjsonarr string underlying_token: The symbol of the token that is deposited to the vault
-   :resjsonarr string vault_token: The symbol of the token that is minted when you deposit underlying token to the vault
+   :resjsonarr string underlying_token: The identifier of the token that is deposited to the vault
+   :resjsonarr string vault_token: The identifier of the token that is minted when you deposit underlying token to the vault
    :resjsonarr object underlying_value: The value of the underlying token for the vault.
    :resjsonarr object vault_value: The value of the vault token for the vault.
    :resjsonarr str roi: The Return of Investment for the vault since its creation
@@ -6344,10 +6335,10 @@ Getting yearnv2 finance vaults balances
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
-Getting yearnv2 finance vaults historical data
+Getting yearn finance V2 vaults historical data
 =============================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/yearnv2/vaults/history
+.. http:get:: /api/(version)/blockchains/ETH/modules/yearn/vaultsv2/history
 
    .. note::
       This endpoint is only available for premium users
@@ -6365,7 +6356,7 @@ Getting yearnv2 finance vaults historical data
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/yearnv2/vaults/history HTTP/1.1
+      GET /api/1/blockchains/ETH/modules/yearn/vaultsv2/history HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -6381,93 +6372,86 @@ Getting yearnv2 finance vaults historical data
       Content-Type: application/json
 
       {
-          "result": {
-              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-                  "YCRV Vault": {
-                      "events": [{
-                          "event_type": "deposit",
-                          "block_number": 1,
-                          "timestamp": 1,
-                          "from_asset": "yDAI+yUSDC+yUSDT+yTUSD",
-                          "from_value": {
-                              "amount": "115000", "usd_value": "119523.23"
-                          },
-                          "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
-                          "to_value": {
-                              "amount": "108230.234", "usd_value": "119523.23"
-                          },
-                          "realized_pnl": null,
-                          "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-                          "log_index": 1
-                      }, {
-                          "event_type": "withdraw",
-                          "block_number": 1,
-                          "timestamp": 1,
-                          "from_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
-                          "from_value": {
-                              "amount": "108230.234", "usd_value": "125321.24"
-                          },
-                          "to_asset": "yyDAI+yUSDC+yUSDT+yTUSD",
-                          "to_value": {
-                              "amount": "117500.23", "usd_value": "123500.32"
-                          },
-                          "realized_pnl": {
-                              "amount": "2500.23", "usd_value": "2750.452"
-                          },
-                          "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-                          "log_index": 1
-                      }],
-                      "profit_loss": {
-                              "amount": "2500.23", "usd_value": "2750.452"
-                      }
-                  },
-                  "YYFI Vault": {
-                      "events": [{
-                          "event_type": "deposit",
-                          "block_number": 1,
-                          "timestamp": 1,
-                          "from_asset": "YFI",
-                          "from_value": {
-                              "amount": "5", "usd_value": "155300.23"
-                          },
-                          "to_asset": "yYFI",
-                          "to_value": {
-                              "amount": "4.97423", "usd_value": "154300.44"
-                          },
-                          "realized_pnl": null,
-                          "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-                          "log_index": 1
-                      }],
-                      "profit_loss": {
-                              "amount": "0.05", "usd_value": "1500"
-                      }
-              }
-          },
-          "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-              "YSRENCURVE Vault": {
-                      "events": [{
-                          "event_type": "deposit",
-                          "block_number": 1,
-                          "timestamp": 1,
-                          "from_asset": "crvRenWSBTC",
-                          "from_value": {
-                              "amount": "20", "usd_value": "205213.12"
-                          },
-                          "to_asset": "ycrvRenWSBTC",
-                          "to_value": {
-                              "amount": "19.8523", "usd_value": "2049874.23"
-                          },
-                          "realized_pnl": null,
-                          "tx_hash": "0x188aea85b54c5b2834b144e9f7628b524bf9faf3b87821aa520b7bcfb57ab289",
-                          "log_index": 1
-                      }],
-                      "profit_loss": {
-                              "amount": "0.1", "usd_value": "1984.23"
-                      }
-              }
-          }},
-          "message": ""
+        "result":{
+            "0x915C4580dFFD112db25a6cf06c76cDd9009637b7":{
+              "_ceth_0xF29AE508698bDeF169B89834F76704C3B205aedf":{
+                  "events":[
+                    {
+                        "event_type":"deposit",
+                        "block_number":12588754,
+                        "timestamp":1623087604,
+                        "from_asset":"_ceth_0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F",
+                        "from_value":{
+                          "amount":"273.682277822922514201",
+                          "usd_value":"273.682277822922514201"
+                        },
+                        "to_asset":"_ceth_0xF29AE508698bDeF169B89834F76704C3B205aedf",
+                        "to_value":{
+                          "amount":"269.581682615706959373",
+                          "usd_value":"269.581682615706959373"
+                        },
+                        "realized_pnl":null,
+                        "tx_hash":"0x01ed01b47b8c7bdab961dd017e8412d1e9d181163e72cbfbce931395004bda4b",
+                        "log_index":149
+                    }
+                  ],
+                  "profit_loss":{
+                    "amount":"-273.682277822922514201",
+                    "usd_value":"-273.682277822922514201"
+                  }
+              },
+              "_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44":{
+                  "events":[
+                    {
+                        "event_type":"deposit",
+                        "block_number":12462638,
+                        "timestamp":1621397797,
+                        "from_asset":"_ceth_0x94e131324b6054c0D789b190b2dAC504e4361b53",
+                        "from_value":{
+                          "amount":"32064.715735449204040742",
+                          "usd_value":"32064.715735449204040742"
+                        },
+                        "to_asset":"_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44",
+                        "to_value":{
+                          "amount":"32064.715735449204040742",
+                          "usd_value":"32064.715735449204040742"
+                        },
+                        "realized_pnl":null,
+                        "tx_hash":"0x0a53f8817f44ac0f8b516b7fa7ecba2861c001f506dbc465fe289a7110fcc1ca",
+                        "log_index":16
+                    },
+                    {
+                        "event_type":"withdraw",
+                        "block_number":12494161,
+                        "timestamp":1621820621,
+                        "from_asset":"_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44",
+                        "from_value":{
+                          "amount":"32064.715735449204040742",
+                          "usd_value":"32064.715735449204040742"
+                        },
+                        "to_asset":"_ceth_0x94e131324b6054c0D789b190b2dAC504e4361b53",
+                        "to_value":{
+                          "amount":"32092.30659836985292638",
+                          "usd_value":"32092.30659836985292638"
+                        },
+                        "realized_pnl":{
+                          "amount":"27.590862920648885638",
+                          "usd_value":"27.590862920648885638"
+                        },
+                        "tx_hash":"0xda0694c6b3582fe03b2eb9edb0169d23c8413157e233d0c8f678a7cc9ab4f918",
+                        "log_index":134
+                    }
+                  ],
+                  "profit_loss":{
+                    "amount":"27.590862920648885638",
+                    "usd_value":"27.590862920648885638"
+                  }
+                }
+          }
+        },
+        "message":""
       }
+
 
    :resjson object result: A mapping of addresses to vault history results
    :resjsonarr string event_type: The type of the yearn vault event.

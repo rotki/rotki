@@ -2142,6 +2142,44 @@ def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
     assert db.get_version() == 27
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 27 to version 28.
+
+    - Recreates balancer events, uniswap events, amm_swaps. Deletes balancer pools
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v27_rotkehlchen.db')
+    db_v27 = _init_db_with_target_version(
+        target_version=27,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db_v27.conn.cursor()
+
+    # Checks before migration
+    assert cursor.execute('SELECT COUNT(*) from yearn_vaults_events;').fetchone()[0] == 1
+    # Migrate to v28
+    db = _init_db_with_target_version(
+        target_version=28,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    cursor.execute(
+        'SELECT COUNT(*) AS CNTREC FROM pragma_table_info("yearn_vaults_events") '
+        'WHERE name="version"',
+    )
+    assert cursor.fetchone()[0] == 1
+
+    cursor.execute('SELECT count(*) from yearn_vaults_events;')
+    assert cursor.fetchone()[0] == 1
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 28
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the

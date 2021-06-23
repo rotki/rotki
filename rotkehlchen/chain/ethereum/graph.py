@@ -73,7 +73,6 @@ class Graph():
         - RemoteError: If there is a problem querying the subgraph and there
         are no retries left.
         """
-        log.debug(param_values)
         prefix = ''
         if param_types is not None:
             prefix = 'query '
@@ -82,8 +81,8 @@ class Graph():
 
         querystr = prefix + querystr
         log.debug(f'Querying The Graph for {querystr}')
-        log.debug(querystr)
-        retries_left = 1
+
+        retries_left = QUERY_RETRY_TIMES
         while retries_left > 0:
             try:
                 result = self.client.execute(gql(querystr), variable_values=param_values)

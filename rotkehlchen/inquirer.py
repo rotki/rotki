@@ -54,7 +54,7 @@ from rotkehlchen.constants.assets import (
     A_YV1_YFI,
     A_WETH,
 )
-from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, UNISWAP_V2_LP_ABI, YEARN_V2_VAULT_ABI
+from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, UNISWAP_V2_LP_ABI, YEARN_VAULT_V2_ABI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors import (
     DeserializationError,
@@ -71,7 +71,14 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import KnownProtocolsAssets, Price, Timestamp
+from rotkehlchen.typing import (
+    CURVE_POOL_PROTOCOL,
+    KnownProtocolsAssets,
+    Price,
+    Timestamp,
+    UNISWAP_PROTOCOL,
+    YEARN_VAULTS_V2_PROTOCOL,
+)
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.network import request_get_dict
 
@@ -140,11 +147,11 @@ def get_underlying_asset_price(token: EthereumToken) -> Optional[Price]:
     due to recursive import problems
     """
     price = None
-    if token.protocol == 'UNI-V2':
+    if token.protocol == UNISWAP_PROTOCOL:
         price = Inquirer().find_uniswap_v2_lp_price(token)
-    elif token.protocol == 'curve_lp':
-        price = Inquirer().find_curve_lp_price(token)
-    elif token.protocol == 'yearn_vault':
+    elif token.protocol == CURVE_POOL_PROTOCOL:
+        price = Inquirer().find_curve_pool_price(token)
+    elif token.protocol == YEARN_VAULTS_V2_PROTOCOL:
         price = Inquirer().find_yearn_price(token)
 
     if token == A_YV1_ALINK:
@@ -509,7 +516,7 @@ class Inquirer():
         share_value = numerator / total_supply
         return Price(share_value)
 
-    def find_curve_lp_price(
+    def find_curve_pool_price(
         self,
         lp_token: EthereumToken,
     ) -> Optional[Price]:
@@ -519,6 +526,11 @@ class Inquirer():
         3. Obtain the virtual price for share and the balances of each
         token in the pool
         4. Calc the price for a share
+
+        Returns:
+        - The price for 1 LP token from the pool
+
+        Doesn't return any exception
         """
         assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
 
@@ -561,9 +573,16 @@ class Inquirer():
 
         output = multicall_2(
             ethereum=self._ethereum,
-            require_success=True,
+            require_success=False,
             calls=call,
         )
+
+        # Check that all the request where successful
+
+        if not all([contract_output[0] for contract_output in output]):
+            log.debug(f'Failed to query contract methods while finding curve pool price. {output}')
+            return None
+
         # Deserialice information obtained in the multicall execution
         data = []
         data.append(contract.decode(output[0][1], 'get_virtual_price')[0])
@@ -574,6 +593,11 @@ class Inquirer():
 
         # Total number of assets price in the pool
         total_assets_price = sum(map(operator.mul, data[1:], prices))
+
+        if total_assets_price == 0:
+            # The only way I see this possible is if the pool has some issue
+            return None
+
         # Calc weight of each asset as the proportion of tokens value
         weights = map(lambda x: data[x + 1] * prices[x] / total_assets_price, range(len(tokens)))
         assets_price = FVal(sum(map(operator.mul, weights, prices)))
@@ -585,16 +609,17 @@ class Inquirer():
     ) -> Optional[Price]:
         assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
 
-        underlying_token_opt = GlobalDBHandler().fetch_underlying_tokens(token.ethereum_address)
-        if not underlying_token_opt or len(underlying_token_opt) != 1:
+        maybe_underlying_token = GlobalDBHandler().fetch_underlying_tokens(token.ethereum_address)
+        if not maybe_underlying_token or len(maybe_underlying_token) != 1:
+            log.error(f'Yean token without underlying asset {token}')
             return None
 
-        underlying_token = EthereumToken(underlying_token_opt[0].address)
+        underlying_token = EthereumToken(maybe_underlying_token[0].address)
         underlying_token_price = self.find_usd_price(underlying_token)
         # Get the price per share from the yearn contract
         contract = EthereumContract(
             address=token.ethereum_address,
-            abi=YEARN_V2_VAULT_ABI,
+            abi=YEARN_VAULT_V2_ABI,
             deployed_block=0,
         )
         output = multicall_2(

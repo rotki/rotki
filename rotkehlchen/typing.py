@@ -14,7 +14,7 @@ ModuleName = Literal[
     'aave',
     'compound',
     'yearn_vaults',
-    'yearn_v2_vaults',
+    'yearn_vaults_v2',
     'uniswap',
     'adex',
     'loopring',
@@ -29,7 +29,7 @@ AVAILABLE_MODULES_MAP = {
     'aave': 'Aave',
     'compound': 'Compound',
     'yearn_vaults': 'Yearn Vaults',
-    'yearn_v2_vaults': 'Yearn V2 Vaults',
+    'yearn_vaults_v2': 'Yearn V2 Vaults',
     'uniswap': 'Uniswap',
     'adex': 'AdEx',
     'loopring': 'Loopring',
@@ -46,8 +46,16 @@ IMPORTABLE_LOCATIONS = Literal[
     'nexo',
 ]
 
+UNISWAP_PROTOCOL = 'UNI-V2'
+YEARN_VAULTS_V2_PROTOCOL = 'yearn_vaults_v2'
+CURVE_POOL_PROTOCOL = 'curve_pool'
 
-KnownProtocolsAssets = ('UNI-V2', 'yearn_v2_vault', 'curve_lp')
+
+KnownProtocolsAssets = (
+    UNISWAP_PROTOCOL,
+    YEARN_VAULTS_V2_PROTOCOL,
+    CURVE_POOL_PROTOCOL,
+)
 
 
 T_Timestamp = int
