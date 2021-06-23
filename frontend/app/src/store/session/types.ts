@@ -31,8 +31,8 @@ export interface SessionState {
 export interface SyncConflictPayload {
   readonly localSize: string;
   readonly remoteSize: string;
-  readonly localLastModified: string;
-  readonly remoteLastModified: string;
+  readonly localLastModified: number;
+  readonly remoteLastModified: number;
 }
 
 export interface SyncConflict {
