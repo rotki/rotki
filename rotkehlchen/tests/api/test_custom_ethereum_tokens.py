@@ -386,7 +386,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     underlying3_id = ETHEREUM_DIRECTIVE + underlying_address3
     cursor = GlobalDBHandler()._conn.cursor()
     initial_underlying_num = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]  # noqa: E501
-    assert initial_underlying_num == 3, 'check underlying tokens mapping start number is expected'
+
     # Make sure the equivalent assets we will delete exist in the DB
     result = cursor.execute(
         'SELECT COUNT(*) from assets WHERE identifier IN (?, ?, ?, ?, ?)',
@@ -510,7 +510,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     assert_token_entry_exists_in_result(result, expected_result)
     # and removes the mapping of all underlying tokens
     result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
-    assert result == 0
+    assert result == initial_underlying_num - 3
     # and that the equivalent asset entries were also deleted
     result = cursor.execute(
         'SELECT COUNT(*) from assets WHERE identifier IN (?, ?)',
