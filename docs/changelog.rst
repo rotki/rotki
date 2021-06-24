@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3118` Users will now be able to properly connect to the dockerized backend through the app. (It will not work if the docker container is a previous release).
 * :bug:`3101` Editing ethereum token details via the asset manager in the frontend should now work properly again.
 * :bug:`3100` FTX API keys with permission for subaccounts only will now correctly validated.
 
