@@ -174,7 +174,7 @@ export default class ProfitLossReport extends Vue {
 
   async exportCSV() {
     try {
-      if (this.$interop.isPackaged) {
+      if (this.$interop.isPackaged && this.$api.defaultBackend) {
         const directory = await this.$interop.openDirectory(
           this.$t('profit_loss_report.select_directory').toString()
         );

@@ -78,12 +78,22 @@ export class RotkehlchenApi {
   private _session: SessionApi;
   private _balances: BalancesApi;
   private _history: HistoryApi;
-  private readonly _assets: AssetApi;
+  private _assets: AssetApi;
+  private _serverUrl: string;
   private readonly baseTransformer = setupTransformer([]);
 
+  get serverUrl(): string {
+    return this._serverUrl;
+  }
+
+  get defaultBackend(): boolean {
+    return this._serverUrl === process.env.VUE_APP_BACKEND_URL;
+  }
+
   constructor() {
+    this._serverUrl = process.env.VUE_APP_BACKEND_URL!;
     this.axios = axios.create({
-      baseURL: `${process.env.VUE_APP_BACKEND_URL}/api/1/`,
+      baseURL: `${this.serverUrl}/api/1/`,
       timeout: 30000
     });
     this.baseTransformer = setupTransformer();
@@ -115,6 +125,7 @@ export class RotkehlchenApi {
   }
 
   setup(serverUrl: string) {
+    this._serverUrl = serverUrl;
     this.axios = axios.create({
       baseURL: `${serverUrl}/api/1/`,
       timeout: 30000
@@ -123,6 +134,7 @@ export class RotkehlchenApi {
     this._session = new SessionApi(this.axios);
     this._balances = new BalancesApi(this.axios);
     this._history = new HistoryApi(this.axios);
+    this._assets = new AssetApi(this.axios);
   }
 
   checkIfLogged(username: string): Promise<boolean> {
