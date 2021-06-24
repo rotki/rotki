@@ -66,12 +66,7 @@ def _force_remote(cursor: sqlite3.Cursor, local_asset: Asset, full_insert: str) 
 
     May raise an sqlite3 error if something fails.
     """
-    cursor.executescript('BEGIN TRANSACTION; PRAGMA foreign_keys=off; COMMIT;')
-    # Delete the old entry
-    # I'm not sure why but if you don't disable it again they check is still on
-    # I verified this with cursor.commit(PRAGMA foreign_keys) + print(cursor.fetchone())
-    # The executescript can't also be removed
-    cursor.execute('PRAGMA foreign_keys = OFF;')
+    cursor.executescript('BEGIN TRANSACTION; COMMIT; PRAGMA foreign_keys = OFF;')
     if local_asset.asset_type == AssetType.ETHEREUM_TOKEN:
         token = EthereumToken.from_asset(local_asset)
         cursor.execute(
@@ -87,8 +82,7 @@ def _force_remote(cursor: sqlite3.Cursor, local_asset: Asset, full_insert: str) 
         'DELETE FROM assets WHERE identifier=?;',
         (local_asset.identifier,),
     )
-    cursor.execute('PRAGMA foreign_keys = ON;')
-    cursor.executescript('BEGIN TRANSACTION; PRAGMA foreign_keys=on; COMMIT;')
+    cursor.executescript('BEGIN TRANSACTION; COMMIT; PRAGMA foreign_keys = ON;')
     # Insert new entry. Since identifiers are the same, no foreign key constrains should break
     executeall(cursor, full_insert)
     AssetResolver().clean_memory_cache(local_asset.identifier.lower())
