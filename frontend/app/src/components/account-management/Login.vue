@@ -72,6 +72,7 @@
                   :label="$t('login.custom_backend.label')"
                   :placeholder="$t('login.custom_backend.placeholder')"
                   :hint="$t('login.custom_backend.hint')"
+                  @keypress.enter="saveCustomBackend"
                 />
               </v-col>
               <v-col cols="auto">
