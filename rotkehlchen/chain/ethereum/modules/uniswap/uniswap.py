@@ -795,14 +795,14 @@ class Uniswap(EthereumModule):
             trades.extend(self._get_trades_graph_v2_for_address(address, start_ts, end_ts))
         except RemoteError as e:
             log.error(
-                f'Error querying uniswap v2 trades using graph for address {address} ',
+                f'Error querying uniswap v2 trades using graph for address {address} '
                 f'between {start_ts} and {end_ts}. {str(e)}',
             )
         try:
             trades.extend(self._get_trades_graph_v3_for_address(address, start_ts, end_ts))
         except RemoteError as e:
             log.error(
-                f'Error querying uniswap v3 trades using graph for address {address} ',
+                f'Error querying uniswap v3 trades using graph for address {address} '
                 f'between {start_ts} and {end_ts}. {str(e)}',
             )
         return trades
