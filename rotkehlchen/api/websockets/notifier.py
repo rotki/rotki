@@ -9,7 +9,7 @@ from geventwebsocket.websocket import WebSocket
 from rotkehlchen.greenlets import GreenletManager
 
 if TYPE_CHECKING:
-    from rotkehlchen.api.websockets.typing import WSMessageType
+    from rotkehlchen.api.websockets.typedefs import WSMessageType
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +104,7 @@ class RotkiWSApp(WebSocketApplication):
         rotki_notifier: RotkiNotifier = self.ws.environ['rotki_notifier']
         rotki_notifier.subscribe(self.ws)
 
-    def on_message(self, message, *args: Any, **kwargs: Any) -> None:
+    def on_message(self, message: Optional[str], *args: Any, **kwargs: Any) -> None:
         if self.ws.closed:
             return
         try:

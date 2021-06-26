@@ -2,7 +2,7 @@ import logging
 from collections import deque
 from typing import TYPE_CHECKING, Deque, List, Optional
 
-from rotkehlchen.api.websockets.typing import WSMessageType
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 
 if TYPE_CHECKING:
     from rotkehlchen.api.websockets.notifier import RotkiNotifier

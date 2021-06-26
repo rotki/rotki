@@ -1,6 +1,6 @@
 import json
 from collections import deque
-from typing import Any, Deque, Dict
+from typing import Any, Deque, Dict, Generator
 
 import gevent
 import pytest
@@ -46,9 +46,9 @@ class WebsocketReader():
 
 @pytest.fixture(name='websocket_connection')
 def fixture_websocket_connection_reader(
-        rotkehlchen_api_server,
+        rotkehlchen_api_server,  # pylint: disable=unused-argument
         websockets_api_port,
-) -> WebsocketReader:
+) -> Generator[WebsocketReader, None, None]:
     ws = create_connection(f'ws://127.0.0.1:{websockets_api_port}')
     websocket_reader = WebsocketReader(ws)
     ws.send('{}')  # whatever -- just to subscribe
