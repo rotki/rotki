@@ -795,14 +795,14 @@ class Uniswap(EthereumModule):
             trades.extend(self._get_trades_graph_v2_for_address(address, start_ts, end_ts))
         except RemoteError as e:
             log.error(
-                f'Error querying uniswap v2 trades using graph for address {address} ',
+                f'Error querying uniswap v2 trades using graph for address {address} '
                 f'between {start_ts} and {end_ts}. {str(e)}',
             )
         try:
             trades.extend(self._get_trades_graph_v3_for_address(address, start_ts, end_ts))
         except RemoteError as e:
             log.error(
-                f'Error querying uniswap v3 trades using graph for address {address} ',
+                f'Error querying uniswap v3 trades using graph for address {address} '
                 f'between {start_ts} and {end_ts}. {str(e)}',
             )
         return trades
@@ -859,20 +859,9 @@ class Uniswap(EthereumModule):
                 self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
                 raise
 
-            # Combine the two list of the query
-            result_data = result['swaps_from']
-            result_data.extend(result['swaps_to'])
-
-            # Store ids of swaps to avoid possible duplicates
-            fetched_ids = set()
-
-            for entry in result_data:
+            for entry in result['swaps']:
                 swaps = []
                 for swap in entry['transaction']['swaps']:
-                    if swap['id'] in fetched_ids:
-                        continue
-                    fetched_ids.add(swap['id'])
-
                     timestamp = swap['timestamp']
                     swap_token0 = swap['pair']['token0']
                     swap_token1 = swap['pair']['token1']
@@ -943,7 +932,7 @@ class Uniswap(EthereumModule):
                 trades.extend(self._tx_swaps_to_trades(swaps))
 
             # Check whether an extra request is needed
-            if len(result_data) < GRAPH_QUERY_LIMIT:
+            if len(result['swaps']) < GRAPH_QUERY_LIMIT:
                 break
 
             # Update pagination step
