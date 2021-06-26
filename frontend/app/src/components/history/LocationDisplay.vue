@@ -36,7 +36,7 @@ export default class LocationDisplay extends Mixins(AssetMixin) {
         identifier: this.identifier,
         exchange: false,
         imageIcon: true,
-        icon: `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.identifier}/icon`
+        icon: `${this.$api.serverUrl}/api/1/assets/${this.identifier}/icon`
       };
     }
 

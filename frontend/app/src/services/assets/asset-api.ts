@@ -149,7 +149,7 @@ export class AssetApi {
 
   async allAssets(): Promise<SupportedAssets> {
     return this.axios
-      .get<ActionResult<SupportedAssets>>('assets/all', {
+      .get<ActionResult<SupportedAssets>>('/assets/all', {
         validateStatus: validWithSessionAndExternalService,
         transformResponse: setupTransformer([], true)
       })

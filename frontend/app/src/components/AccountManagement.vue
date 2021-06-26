@@ -156,21 +156,10 @@ export default class AccountManagement extends Mixins(BackendMixin) {
 
   async backendChanged(url: string | null) {
     await this.$store.commit('setConnected', false);
-    const { success } = await this.$store.dispatch('connect', url);
-    if (!success) {
-      this.setMessage({
-        success: false,
-        description: this.$t(
-          'account_management.custom_backend.failed.description',
-          { url }
-        ).toString(),
-        title: this.$t(
-          'account_management.custom_backend.failed.title'
-        ).toString()
-      });
-      deleteBackendUrl();
+    if (!url) {
       await this.restartBackend();
     }
+    await this.$store.dispatch('connect', url);
   }
 
   async login(credentials: Credentials) {
