@@ -60,10 +60,16 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         default='127.0.0.1',
     )
     p.add_argument(
-        '--api-port',
+        '--rest-api-port',
         help='The port on which the rest API will run',
         type=int,
         default=5042,
+    )
+    p.add_argument(
+        '--websockets-api-port',
+        help='The port on which the websockets API will run',
+        type=int,
+        default=5043,
     )
     p.add_argument(
         '--api-cors',

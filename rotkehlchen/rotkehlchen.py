@@ -24,6 +24,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import account_for_manually_tracked_balances
 from rotkehlchen.chain.ethereum.manager import (
@@ -139,6 +140,8 @@ class Rotkehlchen():
         self.api_task_greenlets: List[gevent.Greenlet] = []
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
+        self.rotki_notifier = RotkiNotifier(greenlet_manager=self.greenlet_manager)
+        self.msg_aggregator.rotki_notifier = self.rotki_notifier
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         # Initialize the GlobalDBHandler singleton. Has to be initialized BEFORE asset resolver
         GlobalDBHandler(data_dir=self.data_dir)

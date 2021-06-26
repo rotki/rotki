@@ -29,3 +29,4 @@ from rotkehlchen.tests.fixtures.messages import *
 from rotkehlchen.tests.fixtures.pylint import *
 from rotkehlchen.tests.fixtures.rotkehlchen import *
 from rotkehlchen.tests.fixtures.variables import *
+from rotkehlchen.tests.fixtures.websockets import *

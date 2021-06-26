@@ -203,7 +203,8 @@ def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, global
 @pytest.fixture(name='rotkehlchen_api_server')
 def fixture_rotkehlchen_api_server(
         uninitialized_rotkehlchen,
-        api_port,
+        rest_api_port,
+        websockets_api_port,
         start_with_logged_in_user,
         start_with_valid_premium,
         db_password,
@@ -229,7 +230,11 @@ def fixture_rotkehlchen_api_server(
 ):
     """A partially mocked rotkehlchen server instance"""
 
-    api_server = create_api_server(rotki=uninitialized_rotkehlchen, port_number=api_port)
+    api_server = create_api_server(
+        rotki=uninitialized_rotkehlchen,
+        rest_port_number=rest_api_port,
+        websockets_port_number=websockets_api_port,
+    )
 
     initialize_mock_rotkehlchen_instance(
         rotki=api_server.rest_api.rotkehlchen,
