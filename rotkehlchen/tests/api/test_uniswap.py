@@ -26,7 +26,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED, A_SLP, A_YAM_V1
+from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED, A_YAM_V1
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
@@ -483,65 +483,41 @@ def test_get_uniswap_trades_history(
     _query_and_assert_simple_uniswap_trades(setup, rotkehlchen_api_server, async_query)
 
 
-CRAZY_UNISWAP_ADDRESS = string_to_ethereum_address('0xB1637bE0173330664adecB343faF112Ca837dA06')
+CRAZY_UNISWAP_ADDRESS = string_to_ethereum_address('0xc61288821b4722Ce29249F0BA03b633F0bE46a5A')
+CRAZY_UNISWAP_ADDRESS2 = string_to_ethereum_address('0x4cB251099BaE191d0faE838CC5ac85C67FE6D419')
 
 
 def get_expected_crazy_trades():
     """Function so no price (unknown) assets can be resolved only when existing in the DB"""
+    A_MOONYIELD = EthereumToken('0xc2C11C4F315a99976AD8A6Ff2b46D8bf69FC8177')  # noqa: N806
+    A_PENGUIN_PARTY = EthereumToken('0x30BCd71b8d21FE830e493b30e90befbA29de9114')  # noqa: N806
+    A_FMK = EthereumToken('0x86B0Aa51eB489585D88d2e671E5ee1b9e457Be60')  # noqa: N806
     return [AMMTrade(
         trade_type=TradeType.BUY,
-        base_asset=A_WETH,
+        base_asset=A_MOONYIELD,
         quote_asset=A_WETH,
-        amount=AssetAmount(FVal('0.088104479651219417')),
-        rate=Price(FVal('0.9584427736363110293711465160')),
+        amount=AssetAmount(FVal('15.4')),
+        rate=Price(FVal('0.007309082368793852662337662338')),
         trade_index=0,
         swaps=[AMMSwap(
-            tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
-            log_index=140,
-            address=CRAZY_UNISWAP_ADDRESS,
-            from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-            to_address=string_to_ethereum_address('0x21aD02e972E968D9c76a7081a483d782001d6558'),
-            timestamp=Timestamp(1605431265),
-            location=Location.UNISWAP,
-            token0=A_SLP,
-            token1=A_WETH,
-            amount0_in=AssetAmount(ZERO),
-            amount1_in=AssetAmount(FVal('0.084443101846698663')),
-            amount0_out=AssetAmount(FVal('876')),
-            amount1_out=AssetAmount(ZERO),
-        ), AMMSwap(
-            tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
-            log_index=143,
+            tx_hash='0xe4a6a3759abeba7fe5d79bd77955b3ce6545f593efb445137b2eb29d3b685a55',
+            log_index=217,
             address=CRAZY_UNISWAP_ADDRESS,
             from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
             to_address=CRAZY_UNISWAP_ADDRESS,
-            timestamp=Timestamp(1605431265),
+            timestamp=Timestamp(1605423297),
             location=Location.UNISWAP,
-            token0=EthereumToken('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # Penguin Party
-            token1=A_SLP,
-            amount0_in=AssetAmount(ZERO),
-            amount1_in=AssetAmount(FVal('876')),
-            amount0_out=AssetAmount(FVal('20.085448793024895802')),
-            amount1_out=AssetAmount(ZERO),
-        ), AMMSwap(
-            tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
-            log_index=146,
-            address=CRAZY_UNISWAP_ADDRESS,
-            from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-            to_address=string_to_ethereum_address('0xB8db34F834E9dF42F2002CeB7B829DaD89d08E14'),
-            timestamp=Timestamp(1605431265),
-            location=Location.UNISWAP,
-            token0=EthereumToken('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # Penguin Party
-            token1=A_WETH,
-            amount0_in=AssetAmount(FVal('20.085448793024895802')),
+            token0=A_WETH,
+            token1=A_MOONYIELD,
+            amount0_in=AssetAmount(FVal('0.112559868479425331')),
             amount1_in=AssetAmount(ZERO),
             amount0_out=AssetAmount(ZERO),
-            amount1_out=AssetAmount(FVal('0.088104479651219417')),
+            amount1_out=AssetAmount(FVal('15.4')),
         )],
     ), AMMTrade(
         trade_type=TradeType.BUY,
-        base_asset=EthereumToken('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # Penguin Party
-        quote_asset=EthereumToken('0x86B0Aa51eB489585D88d2e671E5ee1b9e457Be60'),  # FMK
+        base_asset=A_PENGUIN_PARTY,
+        quote_asset=A_FMK,
         amount=AssetAmount(FVal('5.311132913120564692')),
         rate=Price(FVal('0.2482572293550899816477686816')),
         trade_index=0,
@@ -550,10 +526,10 @@ def get_expected_crazy_trades():
             log_index=20,
             address=CRAZY_UNISWAP_ADDRESS,
             from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-            to_address=CRAZY_UNISWAP_ADDRESS,
+            to_address=string_to_ethereum_address('0xB1637bE0173330664adecB343faF112Ca837dA06'),
             timestamp=Timestamp(1605420918),
             location=Location.UNISWAP,
-            token0=EthereumToken('0x86B0Aa51eB489585D88d2e671E5ee1b9e457Be60'),  # FMK
+            token0=A_FMK,
             token1=A_WETH,
             amount0_in=AssetAmount(FVal('1.318527141747939222')),
             amount1_in=AssetAmount(ZERO),
@@ -561,13 +537,13 @@ def get_expected_crazy_trades():
             amount1_out=AssetAmount(FVal('0.023505635029170072')),
         ), AMMSwap(
             tx_hash='0xde838fff85d4df6d1b4270477456bab1b644e7f4830f606fc2dc522608b6194f',
-            log_index=23,
+            log_index=143,
             address=CRAZY_UNISWAP_ADDRESS,
             from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-            to_address=string_to_ethereum_address('0xc61288821b4722Ce29249F0BA03b633F0bE46a5A'),
+            to_address=CRAZY_UNISWAP_ADDRESS,
             timestamp=Timestamp(1605420918),
             location=Location.UNISWAP,
-            token0=EthereumToken('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # Penguin Party
+            token0=A_PENGUIN_PARTY,
             token1=A_WETH,
             amount0_in=AssetAmount(ZERO),
             amount1_in=AssetAmount(FVal('0.023505635029170072')),
@@ -594,7 +570,7 @@ def get_bothin_trades():
         swaps=[AMMSwap(
             tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
             log_index=166,
-            address=CRAZY_UNISWAP_ADDRESS,
+            address=CRAZY_UNISWAP_ADDRESS2,
             from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
             to_address=string_to_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
             timestamp=Timestamp(1604657395),
@@ -608,9 +584,9 @@ def get_bothin_trades():
         ), AMMSwap(
             tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
             log_index=169,
-            address=CRAZY_UNISWAP_ADDRESS,
+            address=CRAZY_UNISWAP_ADDRESS2,
             from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-            to_address=CRAZY_UNISWAP_ADDRESS,
+            to_address=string_to_ethereum_address('0xB1637bE0173330664adecB343faF112Ca837dA06'),
             timestamp=Timestamp(1604657395),
             location=Location.UNISWAP,
             token0=EthereumToken('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # Penguin Party
@@ -622,7 +598,7 @@ def get_bothin_trades():
         ), AMMSwap(
             tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
             log_index=172,
-            address=CRAZY_UNISWAP_ADDRESS,
+            address=CRAZY_UNISWAP_ADDRESS2,
             from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
             to_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
             timestamp=Timestamp(1604657395),
@@ -644,7 +620,7 @@ def get_bothin_trades():
         swaps=[AMMSwap(
             tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
             log_index=166,
-            address=CRAZY_UNISWAP_ADDRESS,
+            address=CRAZY_UNISWAP_ADDRESS2,
             from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
             to_address=string_to_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
             timestamp=Timestamp(1604657395),
@@ -660,7 +636,7 @@ def get_bothin_trades():
             log_index=169,
             address=CRAZY_UNISWAP_ADDRESS,
             from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-            to_address=CRAZY_UNISWAP_ADDRESS,
+            to_address=string_to_ethereum_address('0xB1637bE0173330664adecB343faF112Ca837dA06'),
             timestamp=Timestamp(1604657395),
             location=Location.UNISWAP,
             token0=EthereumToken('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # Penguin Party
@@ -687,7 +663,7 @@ def get_bothin_trades():
     )]
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[CRAZY_UNISWAP_ADDRESS]])
+@pytest.mark.parametrize('ethereum_accounts', [[CRAZY_UNISWAP_ADDRESS, CRAZY_UNISWAP_ADDRESS2]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_uniswap_exotic_history(
@@ -702,7 +678,7 @@ def test_get_uniswap_exotic_history(
     setup = setup_balances(
         rotki,
         ethereum_accounts=ethereum_accounts,
-        eth_balances=['33000030003'],
+        eth_balances=['33000030003', '23322222222'],
         token_balances={},
         btc_accounts=None,
         original_queries=['zerion', 'logs', 'blocknobytime'],
@@ -724,12 +700,12 @@ def test_get_uniswap_exotic_history(
 
     expected_crazy_trades = get_expected_crazy_trades()
     for idx, trade in enumerate(result[CRAZY_UNISWAP_ADDRESS]):
-        if idx == len(expected_crazy_trades):
+        if idx == len(expected_crazy_trades) - 1:
             break  # test up to last expected_crazy_trades trades from 1605437542
         assert trade == expected_crazy_trades[idx].serialize()
 
     found_idx = -1
-    for idx, trade in enumerate(result[CRAZY_UNISWAP_ADDRESS]):
+    for idx, trade in enumerate(result[CRAZY_UNISWAP_ADDRESS2]):
         if trade['tx_hash'] == '0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017':  # noqa: E501
             found_idx = idx
             break
@@ -738,7 +714,7 @@ def test_get_uniswap_exotic_history(
     # Also test for the swaps that have both tokens at amountIn or amountOut
     both_in_trades = get_bothin_trades()
     for idx, trade in enumerate(both_in_trades):
-        assert trade.serialize() == result[CRAZY_UNISWAP_ADDRESS][found_idx + idx]
+        assert trade.serialize() == result[CRAZY_UNISWAP_ADDRESS2][found_idx + idx]
 
     # Make sure they end up in the DB
     assert len(rotki.data.db.get_amm_swaps()) != 0
