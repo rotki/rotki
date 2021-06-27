@@ -24,7 +24,7 @@ def test_backend():
         try:
             while True:
                 output = proc.stdout.readline().decode('utf-8')
-                if 'rotki API server is running at' in output:
+                if 'rotki REST API server is running at' in output:
                     break
 
             url = f'http://{output.split()[-1]}/api/1/info'

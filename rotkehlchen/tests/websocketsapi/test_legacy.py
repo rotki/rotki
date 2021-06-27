@@ -1,3 +1,7 @@
+import pytest
+
+
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_query_legacy_message(rotkehlchen_api_server, websocket_connection):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.msg_aggregator.add_error('This is an error')

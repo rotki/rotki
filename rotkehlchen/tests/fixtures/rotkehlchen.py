@@ -51,6 +51,12 @@ def fixture_start_with_valid_premium():
     return False
 
 
+@pytest.fixture(name='legacy_messages_via_websockets')
+def fixture_legacy_messages_via_websockets():
+    """Decide whether rotki notifier will be instantiated for message aggregator in tests"""
+    return False
+
+
 @pytest.fixture(name='rotki_premium_credentials')
 def fixture_rotki_premium_credentials() -> PremiumCredentials:
     return PremiumCredentials(
@@ -107,6 +113,7 @@ def initialize_mock_rotkehlchen_instance(
         ksm_rpc_endpoint,
         aave_use_graph,
         max_tasks_num,
+        legacy_messages_via_websockets,
 ):
     if not start_with_logged_in_user:
         return
@@ -154,6 +161,9 @@ def initialize_mock_rotkehlchen_instance(
     if start_with_valid_premium:
         rotki.premium = Premium(rotki_premium_credentials)
         rotki.premium_sync_manager.premium = rotki.premium
+
+    if legacy_messages_via_websockets is False:
+        rotki.msg_aggregator.rotki_notifier = None
 
     # After unlocking when all objects are created we need to also include
     # customized fixtures that may have been set by the tests
@@ -227,6 +237,7 @@ def fixture_rotkehlchen_api_server(
         ksm_rpc_endpoint,
         aave_use_graph,
         max_tasks_num,
+        legacy_messages_via_websockets,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -260,6 +271,7 @@ def fixture_rotkehlchen_api_server(
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         aave_use_graph=aave_use_graph,
         max_tasks_num=max_tasks_num,
+        legacy_messages_via_websockets=legacy_messages_via_websockets,
     )
     yield api_server
     api_server.stop()
@@ -290,6 +302,7 @@ def rotkehlchen_instance(
         ksm_rpc_endpoint,
         aave_use_graph,
         max_tasks_num,
+        legacy_messages_via_websockets,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -317,6 +330,7 @@ def rotkehlchen_instance(
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         aave_use_graph=aave_use_graph,
         max_tasks_num=max_tasks_num,
+        legacy_messages_via_websockets=legacy_messages_via_websockets,
     )
     return uninitialized_rotkehlchen
 

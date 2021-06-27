@@ -14,6 +14,29 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _ws_send_impl(
+        websocket: WebSocket,
+        to_send_msg: str,
+        success_callback: Optional[Callable] = None,
+        success_callback_args: Optional[Dict[str, Any]] = None,
+        failure_callback: Optional[Callable] = None,
+        failure_callback_args: Optional[Dict[str, Any]] = None,
+) -> None:
+    try:
+        websocket.send(to_send_msg)
+    except WebSocketError as e:
+        logger.error(f'Websocket send with message {to_send_msg} failed due to {str(e)}')
+
+        if failure_callback:
+            failure_callback_args = {} if failure_callback_args is None else failure_callback_args  # noqa: E501
+            failure_callback(**failure_callback_args)
+        return
+
+    if success_callback:  # send success
+        success_callback_args = {} if success_callback_args is None else success_callback_args  # noqa: E501
+        success_callback(**success_callback_args)
+
+
 class RotkiNotifier():
 
     def __init__(
@@ -33,29 +56,6 @@ class RotkiNotifier():
             logger.info(f'Websocket with hash id {hash(websocket)} unsubscribed from rotki notifier')  # noqa: E501
         except ValueError:
             pass
-
-    def _ws_send_impl(
-            self,
-            websocket: WebSocket,
-            to_send_msg: str,
-            success_callback: Optional[Callable] = None,
-            success_callback_args: Optional[Dict[str, Any]] = None,
-            failure_callback: Optional[Callable] = None,
-            failure_callback_args: Optional[Dict[str, Any]] = None,
-    ) -> None:
-        try:
-            websocket.send(to_send_msg)
-        except WebSocketError as e:
-            logger.error(f'Websocket send with message {to_send_msg} failed due to {str(e)}')
-
-            if failure_callback:
-                failure_callback_args = {} if failure_callback_args is None else failure_callback_args  # noqa: E501
-                failure_callback(**failure_callback_args)
-            return
-
-        if success_callback:  # send success
-            success_callback_args = {} if success_callback_args is None else success_callback_args  # noqa: E501
-            success_callback(**success_callback_args)
 
     def broadcast(
             self,
@@ -78,7 +78,7 @@ class RotkiNotifier():
                 after_seconds=None,
                 task_name=f'Websocket send for {str(message_type)}',
                 exception_is_error=True,
-                method=self._ws_send_impl,
+                method=_ws_send_impl,
                 websocket=websocket,
                 to_send_msg=message,
                 success_callback=success_callback,
