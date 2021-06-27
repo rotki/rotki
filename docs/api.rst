@@ -1,4 +1,4 @@
-rotki API
+rotki REST API
 ##################################################
 .. toctree::
   :maxdepth: 2
