@@ -2380,7 +2380,7 @@ class RestAPI():
             # Giving the eth balances as a lambda function here so that they
             # are retrieved only after we are sure the eth balances have been
             # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chain_manager.balances.eth,
+            given_eth_balances=lambda: self.rotkehlchen.chain_manager.balances.eth,
         )
 
     @require_premium_user(active_check=False)
@@ -2423,7 +2423,7 @@ class RestAPI():
             # Giving the eth balances as a lambda function here so that they
             # are retrieved only after we are sure the eth balances have been
             # queried.
-            given_defi_balances=self.rotkehlchen.chain_manager.balances.eth,
+            given_eth_balances=lambda: self.rotkehlchen.chain_manager.balances.eth,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module(
                 'yearn_vaults_v2',
             ),

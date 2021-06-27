@@ -9,14 +9,14 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import YearnVaultHistory, YearnVaultBalance
 from rotkehlchen.chain.ethereum.modules.yearn.graph import YearnVaultsV2Graph
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import get_usd_price_zero_if_error
-from rotkehlchen.chain.ethereum.structures import YearnVault, YearnVaultEvent
+from rotkehlchen.chain.ethereum.structures import YearnVaultEvent
 from rotkehlchen.constants.ethereum import (
     MAX_BLOCKTIME_CACHE,
     YEARN_VAULT_V2_ABI,
     YEARN_VAULTS_V2_PREFIX,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -32,8 +32,12 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 BLOCKS_PER_YEAR = 2425846
-
 log = logging.getLogger(__name__)
+SUBGRAPH_REMOTE_ERROR_MSG = (
+    "Failed to request the Yearn Finance subgraph due to {error_msg}. "
+    "All the deposits and withdrawals history queries are not functioning until this is fixed. "  # noqa: E501
+    "Probably will get fixed with time. If not report it to rotki's support channel"  # noqa: E501
+)
 
 
 class YearnVaultsV2(EthereumModule):
@@ -53,17 +57,15 @@ class YearnVaultsV2(EthereumModule):
         self.etherscan = Etherscan(database=self.database, msg_aggregator=self.msg_aggregator)
 
         try:
-            self.graph_inquirer: Optional[YearnVaultsV2Graph] = YearnVaultsV2Graph(
+            self.graph_inquirer: YearnVaultsV2Graph = YearnVaultsV2Graph(
                 ethereum_manager=ethereum_manager,
                 database=database,
                 premium=premium,
                 msg_aggregator=msg_aggregator,
             )
         except RemoteError as e:
-            self.graph_inquirer = None
-            self.msg_aggregator.add_error(
-                f'Could not initialize the Yearn V2 subgraph due to {str(e)}.',
-            )
+            self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+            raise ModuleInitializationFailure('Yearn Finance Subgraph remote error') from e
 
     def _calculate_vault_roi(self, vault: EthereumToken) -> Tuple[FVal, int]:
         """
@@ -93,7 +95,7 @@ class YearnVaultsV2(EthereumModule):
     ) -> Dict[ChecksumEthAddress, YearnVaultBalance]:
         result = {}
         for asset, balance in defi_balances.items():
-            if isinstance(asset, EthereumToken) and asset.protocol == 'yearn_vaults_v2':
+            if isinstance(asset, EthereumToken) and asset.protocol == YEARN_VAULTS_V2_PROTOCOL:
                 underlying = GlobalDBHandler().fetch_underlying_tokens(asset.ethereum_address)
                 if underlying is None:
                     log.error(f'Found yearn asset {asset} without underlying asset')
@@ -102,6 +104,7 @@ class YearnVaultsV2(EthereumModule):
                 vault_address = asset.ethereum_address
 
                 roi = roi_cache.get(vault_address, None)
+                # price_per_share_cache
                 pps = pps_cache.get(vault_address, None)
                 if roi is None:
                     roi, pps = self._calculate_vault_roi(asset)
@@ -124,15 +127,16 @@ class YearnVaultsV2(EthereumModule):
 
     def get_balances(
         self,
-        given_defi_balances: 'GIVEN_ETH_BALANCES',
+        given_eth_balances: 'GIVEN_ETH_BALANCES',
     ) -> Dict[ChecksumEthAddress, Dict[ChecksumEthAddress, YearnVaultBalance]]:
 
-        if isinstance(given_defi_balances, dict):
-            defi_balances = given_defi_balances
+        if isinstance(given_eth_balances, dict):
+            defi_balances = given_eth_balances
         else:
-            defi_balances = given_defi_balances()
+            defi_balances = given_eth_balances()
 
         roi_cache: Dict[str, FVal] = {}
+        # price_per_share_cache
         pps_cache: Dict[str, int] = {}
         result = {}
 
@@ -156,7 +160,7 @@ class YearnVaultsV2(EthereumModule):
                     usd_price = get_usd_price_zero_if_error(
                         asset=event.to_asset,
                         time=event.timestamp,
-                        location='yearn vault event processing',
+                        location='yearn vault v2 event processing',
                         msg_aggregator=self.msg_aggregator,
                     )
                     profit = Balance(profit_amount, profit_amount * usd_price)
@@ -169,24 +173,6 @@ class YearnVaultsV2(EthereumModule):
 
         return total
 
-    def _get_vault_deposit_events(
-            self,
-            vault: YearnVault,
-            address: ChecksumEthAddress,
-            from_block: int,
-            to_block: int,
-    ) -> List[YearnVaultEvent]:
-        pass
-
-    def _get_vault_withdraw_events(
-            self,
-            vault: YearnVault,
-            address: ChecksumEthAddress,
-            from_block: int,
-            to_block: int,
-    ) -> List[YearnVaultEvent]:
-        pass
-
     def get_vaults_history(
             self,
             eth_balances: Dict[ChecksumEthAddress, BalanceSheet],
@@ -194,21 +180,18 @@ class YearnVaultsV2(EthereumModule):
             from_block: int,
             to_block: int,
     ) -> Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]]:
-        assert self.graph_inquirer is not None
-
         # Addresses that we will query
         query_addresses: List[EthAddress] = []
         query_checksumed_addresses: List[ChecksumEthAddress] = []
 
         # Skip addresses recently fetched
         for address in addresses:
-            lowered_addr = address.lower()
             last_query = self.database.get_used_query_range(
-                name=f'{YEARN_VAULTS_V2_PREFIX}_{lowered_addr}',
+                name=f'{YEARN_VAULTS_V2_PREFIX}_{address}',
             )
             skip_query = last_query and to_block - last_query[1] < MAX_BLOCKTIME_CACHE
             if not skip_query:
-                query_addresses.append(EthAddress(lowered_addr))
+                query_addresses.append(EthAddress(address.lower()))
                 query_checksumed_addresses.append(address)
 
         # if None of the addresses has yearn v2 positions this
@@ -218,14 +201,13 @@ class YearnVaultsV2(EthereumModule):
             from_block=from_block,
             to_block=to_block,
         )
-
+        current_time = ts_now()
         vaults_histories_per_address: Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]] = {}
 
         for address, new_events in new_events_addresses.items():
             # Query events from db for address
             db_events = self.database.get_all_yearn_vaults_v2_events(address=address)
-
-            # Flattern the data into an unique list
+            # Flatten the data into a unique list
             events = list(new_events['deposits'])
             events.extend(new_events['withdrawals'])
 
@@ -241,14 +223,11 @@ class YearnVaultsV2(EthereumModule):
 
             # Vaults histories
             vaults_histories: Dict[str, YearnVaultHistory] = {}
-
             # Dict that stores vault token symbol and their events + total pnl
             vaults: Dict[str, Dict[str, List[YearnVaultEvent]]] = defaultdict(
                 lambda: defaultdict(list),
             )
-
             self.database.add_yearn_vaults_events(address, events)
-
             all_events = db_events + events
 
             for event in all_events:
@@ -258,15 +237,14 @@ class YearnVaultsV2(EthereumModule):
                 else:
                     vault_token_symbol = event.from_asset.identifier
                     underlying_token = event.to_asset
-
                 vaults[vault_token_symbol]['events'].append(event)
 
             # Sort events in each vault
             for key in vaults.keys():
                 vaults[key]['events'].sort(key=lambda x: x.timestamp)
                 total_pnl = self._process_vault_events(vaults[key]['events'])
-
                 balances = eth_balances.get(address)
+
                 if balances:
                     for asset, balance in balances.assets.items():
                         found_balance = (
@@ -284,8 +262,8 @@ class YearnVaultsV2(EthereumModule):
                 if total_pnl.amount != ZERO:
                     usd_price = get_usd_price_zero_if_error(
                         asset=underlying_token,
-                        time=ts_now(),
-                        location='yearn vault history',
+                        time=current_time,
+                        location='yearn vault v2 history',
                         msg_aggregator=self.msg_aggregator,
                     )
                     total_pnl.usd_value = usd_price * total_pnl.amount
@@ -303,16 +281,17 @@ class YearnVaultsV2(EthereumModule):
             )
 
         for address in query_checksumed_addresses:
-            if address in vaults_histories_per_address.keys():
-                has_no_len = len(vaults_histories_per_address[address]) == 0
-                if address in vaults_histories_per_address and has_no_len:
-                    del vaults_histories_per_address[address]
+            if (
+                address in vaults_histories_per_address and
+                len(vaults_histories_per_address[address]) == 0
+            ):
+                del vaults_histories_per_address[address]
 
         return vaults_histories_per_address
 
     def get_history(
             self,
-            given_defi_balances: 'GIVEN_ETH_BALANCES',
+            given_eth_balances: 'GIVEN_ETH_BALANCES',
             addresses: List[ChecksumEthAddress],
             reset_db_data: bool,
             from_timestamp: Timestamp,  # pylint: disable=unused-argument
@@ -320,10 +299,10 @@ class YearnVaultsV2(EthereumModule):
     ) -> Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]]:
         with self.history_lock:
 
-            if isinstance(given_defi_balances, dict):
-                eth_balances = given_defi_balances
+            if isinstance(given_eth_balances, dict):
+                eth_balances = given_eth_balances
             else:
-                eth_balances = given_defi_balances()
+                eth_balances = given_eth_balances()
 
             if reset_db_data is True:
                 self.database.delete_yearn_vaults_v2_data()

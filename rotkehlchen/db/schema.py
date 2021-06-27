@@ -245,26 +245,6 @@ CREATE TABLE IF NOT EXISTS yearn_vaults_events (
 );
 """
 
-DB_CREATE_YEARN_VAULT_V2_EVENTS = """
-CREATE TABLE IF NOT EXISTS yearn_vaults_v2_events (
-    address VARCHAR[42] NOT NULL,
-    event_type VARCHAR[10] NOT NULL,
-    from_asset VARCHAR[44] NOT NULL,
-    from_amount TEXT NOT NULL,
-    from_usd_value TEXT NOT NULL,
-    to_asset VARCHAR[44] NOT NULL,
-    to_amount TEXT NOT NULL,
-    to_usd_value TEXT NOT NULL,
-    pnl_amount TEXT,
-    pnl_usd_value TEXT,
-    block_number INTEGER NOT NULL,
-    timestamp INTEGER NOT NULL,
-    tx_hash VARCHAR[66] NOT NULL,
-    log_index INTEGER NOT NULL,
-    PRIMARY KEY (event_type, tx_hash, log_index)
-);
-"""
-
 DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS = """
 CREATE TABLE IF NOT EXISTS external_service_credentials (
     name VARCHAR[30] NOT NULL PRIMARY KEY,

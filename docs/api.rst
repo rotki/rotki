@@ -6257,10 +6257,10 @@ Getting yearn finance vaults historical data
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
-Getting yearnv2 finance V2 vaults balances
+Getting yearn finance V2 vaults balances
 ==========================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/yearnv2/vaults/balances
+.. http:get:: /api/(version)/blockchains/ETH/modules/yearn/vaultsv2/balances
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -6268,7 +6268,7 @@ Getting yearnv2 finance V2 vaults balances
    .. note::
       This endpoint also accepts parameters as query arguments.
 
-   Doing a GET on the yearn finance vaults balances resource will return all yearn vault balances.
+   Doing a GET on the yearn finance vaults V2 balances resource will return all yearn vault balances.
 
 
    **Example Request**:
@@ -6329,7 +6329,7 @@ Getting yearnv2 finance V2 vaults balances
    :resjsonarr str roi: The Return of Investment for the vault since its creation
 
 
-   :statuscode 200: Yearn vault balances succesfully queried.
+   :statuscode 200: Yearn vault V2 balances succesfully queried.
    :statuscode 409: User is not logged in. Or yearn module is not activated.
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
@@ -6349,7 +6349,7 @@ Getting yearn finance V2 vaults historical data
    .. note::
       This endpoint also accepts parameters as query arguments.
 
-   Doing a GET on the yearn finance vaults history resource will return all yearn vault related events for addresses that have utilized yearn finance vaults.
+   Doing a GET on the yearn finance vaults V2 history resource will return all yearn vault related events for addresses that have utilized yearn finance vaults.
 
 
    **Example Request**:
@@ -6472,7 +6472,7 @@ Getting yearn finance V2 vaults historical data
    :resjsonarr int log_index: The log index of the event.
    :resjson object profit_loss: The total profit/loss for the vault
 
-   :statuscode 200: Yearn vaults history succesfully queried.
+   :statuscode 200: Yearn vaults V2 history succesfully queried.
    :statuscode 409: User is not logged in. Or yearn module is not activated.
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.

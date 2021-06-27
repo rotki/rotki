@@ -2146,7 +2146,7 @@ def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
 def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
     """Test upgrading the DB from version 27 to version 28.
 
-    - Recreates balancer events, uniswap events, amm_swaps. Deletes balancer pools
+    - Adds a new column 'version' to the 'yearn_vaults_events' table
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v27_rotkehlchen.db')
@@ -2168,12 +2168,16 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
     cursor = db.conn.cursor()
 
     cursor.execute(
-        'SELECT COUNT(*) AS CNTREC FROM pragma_table_info("yearn_vaults_events") '
+        'SELECT COUNT(*) FROM pragma_table_info("yearn_vaults_events") '
         'WHERE name="version"',
     )
     assert cursor.fetchone()[0] == 1
 
     cursor.execute('SELECT count(*) from yearn_vaults_events;')
+    assert cursor.fetchone()[0] == 1
+
+    # Check that the version is correct for the event in db
+    cursor.execute('SELECT version from yearn_vaults_events;')
     assert cursor.fetchone()[0] == 1
 
     # Finally also make sure that we have updated to the target version

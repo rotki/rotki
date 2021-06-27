@@ -1291,7 +1291,7 @@ class DBHandler:
         return events
 
     def delete_yearn_vaults_data(self) -> None:
-        """Delete all historical aave event data"""
+        """Delete all historical yearn vault events data"""
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM yearn_vaults_events WHERE version=1;')
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{YEARN_VAULTS_PREFIX}%";')
@@ -1299,7 +1299,7 @@ class DBHandler:
         self.update_last_write()
 
     def delete_yearn_vaults_v2_data(self) -> None:
-        """Delete all historical aave event data"""
+        """Delete all historical yearn vault v2 events data"""
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM yearn_vaults_events WHERE version=2;')
         cursor.execute(

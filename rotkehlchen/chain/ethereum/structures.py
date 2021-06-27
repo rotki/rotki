@@ -405,7 +405,6 @@ class YearnVaultEvent:
 
     @classmethod
     def deserialize_from_db(cls, result: YEARN_EVENT_DB_TUPLE) -> 'YearnVaultEvent':
-        print(result)
         realized_pnl = None
         if result[8] is not None and result[9] is not None:
             realized_pnl = Balance(amount=FVal(result[8]), usd_value=FVal(result[9]))

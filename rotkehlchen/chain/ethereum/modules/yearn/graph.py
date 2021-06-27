@@ -1,5 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing_extensions import Literal
+
 
 from eth_utils import to_checksum_address
 
@@ -180,35 +182,57 @@ class YearnVaultsV2Graph:
         self.premium = premium
         self.graph = Graph('https://api.thegraph.com/subgraphs/name/salazarguille/yearn-vaults-v2-subgraph-mainnet')  # noqa: E501
 
-    def _process_deposits(self, deposits: List[Dict[str, Any]]) -> List[YearnVaultEvent]:
+    def _process_event(
+        self,
+        events: List[Dict[str, Any]],
+        event_type: Literal['deposit', 'withdraw'],
+    ) -> List[YearnVaultEvent]:
         result = []
 
-        for entry in deposits:
+        for entry in events:
             # The id returned is a composition of hash + '-' + log_index
-            _, tx_hash, log_index, _ = entry['id'].split('-')
+            try:
+                _, tx_hash, log_index, _ = entry['id'].split('-')
+            except ValueError as e:
+                log.debug(
+                    f'Failed to extract transaction hash and log index from {event_type} event '
+                    f'in yearn vaults v2 graph query. Got {entry["id"]}. {str(e)}.',
+                )
+                self.msg_aggregator.add_warning(
+                    f'Ignoring {event_type} in yearn vault V2. Failed to read id {entry["id"]}',
+                )
+                continue
 
             try:
-                from_asset = EthereumToken(entry['vault']['token']['id'])
-                to_asset = EthereumToken(entry['vault']['shareToken']['id'])
+                if event_type == 'deposit':
+                    from_asset = EthereumToken(entry['vault']['token']['id'])
+                    to_asset = EthereumToken(entry['vault']['shareToken']['id'])
+                elif event_type == 'withdraw':
+                    from_asset = EthereumToken(entry['vault']['shareToken']['id'])
+                    to_asset = EthereumToken(entry['vault']['token']['id'])
             except UnknownAsset:
-                from_str = entry['vault']['token']['symbol']
-                to_str = entry['vault']['shareToken']['symbol']
-
+                if event_type == 'deposit':
+                    from_str = entry['vault']['token']['symbol']
+                    to_str = entry['vault']['shareToken']['symbol']
+                elif event_type == 'withdraw':
+                    from_str = entry['vault']['shareToken']['symbol']
+                    to_str = entry['vault']['token']['symbol']
                 self.msg_aggregator.add_warning(
-                    f'Ignoring deposit in yearn vaults V2 from {from_str} to '
+                    f'Ignoring {event_type} in yearn vaults V2 from {from_str} to '
                     f'{to_str} because the token is not recognized.',
                 )
                 continue
             except KeyError as e:
                 log.debug(
-                    f'Failed to extract token information from deposit event '
+                    f'Failed to extract token information from {event_type} event '
                     f'in yearn vaults v2 graph query. {str(e)}.',
                 )
                 self.msg_aggregator.add_warning(
-                    f'Ignoring deposit {tx_hash} in yearn vault V2 Failed to read'
+                    f'Ignoring {event_type} {tx_hash} in yearn vault V2 Failed to decode'
                     f' remote information. ',
                 )
                 continue
+
             try:
                 from_asset_usd_price = get_usd_price_zero_if_error(
                     asset=from_asset,
@@ -216,26 +240,32 @@ class YearnVaultsV2Graph:
                     location='yearn vault v2 deposit',
                     msg_aggregator=self.msg_aggregator,
                 )
-
                 to_asset_usd_price = get_usd_price_zero_if_error(
                     asset=to_asset,
                     time=Timestamp(int(entry['timestamp']) // 1000),
                     location='yearn v2 vault deposit',
                     msg_aggregator=self.msg_aggregator,
                 )
-
-                from_asset_amount = token_normalized_value(
-                    token_amount=int(entry['tokenAmount']),
-                    token=from_asset,
-                )
-
-                to_asset_amount = token_normalized_value(
-                    token_amount=int(entry['sharesMinted']),
-                    token=to_asset,
-                )
-
+                if event_type == 'deposit':
+                    from_asset_amount = token_normalized_value(
+                        token_amount=int(entry['tokenAmount']),
+                        token=from_asset,
+                    )
+                    to_asset_amount = token_normalized_value(
+                        token_amount=int(entry['sharesMinted']),
+                        token=to_asset,
+                    )
+                elif event_type == 'withdraw':
+                    from_asset_amount = token_normalized_value(
+                        token_amount=int(entry['sharesBurnt']),
+                        token=from_asset,
+                    )
+                    to_asset_amount = token_normalized_value(
+                        token_amount=int(entry['tokenAmount']),
+                        token=to_asset,
+                    )
                 result.append(YearnVaultEvent(
-                    event_type='deposit',
+                    event_type=event_type,
                     block_number=int(entry['blockNumber']),
                     timestamp=Timestamp(int(entry['timestamp']) // 1000),
                     from_asset=from_asset,
@@ -255,101 +285,14 @@ class YearnVaultsV2Graph:
                 ))
             except (KeyError, ValueError) as e:
                 log.error(
-                    f'Failed to read deposit from yearn vaults v2 graph because the response'
-                    f' does not have the expected output {str(e)}.',
+                    f'Failed to read {event_type} from yearn vaults v2 graph because the response'
+                    f' does not have the expected output. {str(e)}.',
                 )
                 self.msg_aggregator.add_warning(
-                    f'Ignoring deposit {tx_hash}in yearn vault V2 from {from_asset} to '
+                    f'Ignoring {event_type} {tx_hash} in yearn vault V2 from {from_asset} to '
                     f'{to_asset} because the remote information is not correct.',
                 )
                 continue
-        return result
-
-    def _process_withdrawals(self, withdrawals: List[Any]) -> List[YearnVaultEvent]:
-        result = []
-
-        for entry in withdrawals:
-            # The id returned is a composition of address + hash + '-' + log_index
-            _, tx_hash, log_index, _ = entry['id'].split('-')
-
-            try:
-                from_asset = EthereumToken(entry['vault']['shareToken']['id'])
-                to_asset = EthereumToken(entry['vault']['token']['id'])
-            except UnknownAsset:
-                from_str = entry['vault']['shareToken']['symbol']
-                to_str = entry['vault']['token']['symbol']
-
-                self.msg_aggregator.add_warning(
-                    f'Ignoring withdrawal in yearn vault V2 from {from_str} to '
-                    f'{to_str} because the token is not recognized.',
-                )
-                continue
-            except KeyError as e:
-                log.debug(
-                    f'Failed to extract token information from withdraw event '
-                    f'in yearn vaults v2 graph query. {str(e)}.',
-                )
-                self.msg_aggregator.add_warning(
-                    f'Ignoring withdrawal {tx_hash} in yearn vault V2 Failed to read'
-                    f' remote information. ',
-                )
-                continue
-
-            try:
-                from_asset_usd_price = get_usd_price_zero_if_error(
-                    asset=from_asset,
-                    time=Timestamp(int(entry['timestamp']) // 1000),
-                    location='yearn v2 vault withdrawal',
-                    msg_aggregator=self.msg_aggregator,
-                )
-
-                to_asset_usd_price = get_usd_price_zero_if_error(
-                    asset=to_asset,
-                    time=Timestamp(int(entry['timestamp']) // 1000),
-                    location='yearn v2 vault withdrawal',
-                    msg_aggregator=self.msg_aggregator,
-                )
-
-                from_asset_amount = token_normalized_value(
-                    token_amount=int(entry['sharesBurnt']),
-                    token=from_asset,
-                )
-
-                to_asset_amount = token_normalized_value(
-                    token_amount=int(entry['tokenAmount']),
-                    token=to_asset,
-                )
-
-                result.append(YearnVaultEvent(
-                    event_type='withdraw',
-                    block_number=int(entry['blockNumber']),
-                    timestamp=Timestamp(int(entry['timestamp']) // 1000),
-                    from_asset=from_asset,
-                    from_value=Balance(
-                        amount=from_asset_amount,
-                        usd_value=from_asset_amount * from_asset_usd_price,
-                    ),
-                    to_asset=to_asset,
-                    to_value=Balance(
-                        amount=to_asset_amount,
-                        usd_value=to_asset_amount * to_asset_usd_price,
-                    ),
-                    realized_pnl=None,
-                    tx_hash=tx_hash,
-                    log_index=int(log_index),
-                    version=2,
-                ))
-            except (KeyError, ValueError) as e:
-                log.error(
-                    f'Failed to read withdraw from yearn vaults v2 graph because the response'
-                    f' does not have the expected output {str(e)}.',
-                )
-                self.msg_aggregator.add_warning(
-                    f'Ignoring withdrawal {tx_hash} in yearn vault V2 from {from_asset} to '
-                    f'{to_asset} because the remote information is not correct.',
-                )
-                continue
-
         return result
 
     def get_deposit_events(
@@ -374,7 +317,7 @@ class YearnVaultsV2Graph:
             param_types=param_types,
             param_values=param_values,
         )
-        return self._process_deposits(query["deposits"])
+        return self._process_event(query["deposits"], 'deposit')
 
     def get_withdraw_events(
         self,
@@ -398,7 +341,7 @@ class YearnVaultsV2Graph:
             param_values=param_values,
         )
 
-        return self._process_withdrawals(query["withdrawals"])
+        return self._process_event(query["withdrawals"], 'withdraw')
 
     def get_all_events(
         self,
@@ -430,7 +373,10 @@ class YearnVaultsV2Graph:
         for account in query['accounts']:
             account_id = to_checksum_address(account['id'])
             result[account_id] = {}
-            result[account_id]['deposits'] = self._process_deposits(account['deposits'])
-            result[account_id]['withdrawals'] = self._process_withdrawals(account['withdrawals'])
+            result[account_id]['deposits'] = self._process_event(account['deposits'], 'deposit')
+            result[account_id]['withdrawals'] = self._process_event(
+                account['withdrawals'],
+                'withdraw',
+            )
 
         return result

@@ -11,8 +11,7 @@ def upgrade_v27_to_v28(db: 'DBHandler') -> None:
     """
     cursor = db.conn.cursor()
     cursor.execute(
-        'SELECT COUNT(*) AS CNTREC FROM pragma_table_info("yearn_vaults_events") '
-        'WHERE name="version"',
+        'SELECT COUNT(*) FROM sqlite_master WHERE type="yearn_vaults_events" AND name="version"',
     )
     if cursor.fetchone()[0] == 0:
         cursor.execute(

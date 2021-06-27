@@ -527,10 +527,7 @@ class Inquirer():
         token in the pool
         4. Calc the price for a share
 
-        Returns:
-        - The price for 1 LP token from the pool
-
-        Doesn't return any exception
+        Returns the price of 1 LP token from the pool
         """
         assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
 
@@ -554,8 +551,11 @@ class Inquirer():
         prices = []
         for token in tokens:
             price = self.find_usd_price(token)
-
             if price == Price(ZERO):
+                log.error(
+                    f'Could not calculate price for {lp_token} due to inability to '
+                    f'fetch price for {token}.',
+                )
                 return None
             prices.append(price)
 
@@ -570,32 +570,61 @@ class Inquirer():
             (pool.pool_address, contract.encode(method_name='balances', arguments=[i]))
             for i in range(len(pool.assets))
         ]
-
         output = multicall_2(
             ethereum=self._ethereum,
             require_success=False,
             calls=call,
         )
 
-        # Check that all the request where successful
-
-        if not all([contract_output[0] for contract_output in output]):
-            log.debug(f'Failed to query contract methods while finding curve pool price. {output}')
+        # Check that the output has the correct structure
+        if not all([len(call_result) == 2 for call_result in output]):
+            log.debug(
+                f'Failed to query contract methods while finding curve pool price. '
+                f'Not every outcome has length 2. {output}',
+            )
             return None
-
+        # Check that all the request where successful
+        if not all([contract_output[0] for contract_output in output]):
+            log.debug(f'Failed to query contract methods while finding curve price. {output}')
+            return None
         # Deserialice information obtained in the multicall execution
         data = []
-        data.append(contract.decode(output[0][1], 'get_virtual_price')[0])
+        virtual_price_decoded = contract.decode(output[0][1], 'get_virtual_price')
+        # Verify that the output from the contrat call is correct
+        if (
+            not isinstance(virtual_price_decoded, tuple) or
+            len(virtual_price_decoded) != 1 or
+            not isinstance(virtual_price_decoded[0], int)
+        ):
+            log.debug(f'Failed to decode get_virtual_price while finding curve price. {output}')
+            return None
+        data.append(FVal(virtual_price_decoded[0]))
         for i in range(len(pool.assets)):
-            amount = contract.decode(output[i + 1][1], 'balances', arguments=[i])[0]
+            amount_decoded = contract.decode(output[i + 1][1], 'balances', arguments=[i])
+            # Verify that the contract decoded the output correctly
+            if (
+                not isinstance(amount_decoded, tuple) or
+                len(amount_decoded) != 1 or
+                not isinstance(amount_decoded[0], int)
+            ):
+                log.debug(f'Failed to decode balances {i} while finding curve price. {output}')
+                return None
+            amount = amount_decoded[0]
             normalized_amount = token_normalized_value_decimals(amount, tokens[i].decimals)
             data.append(normalized_amount)
 
+        # Prices and data should verifty this relation for the following operations
+        if len(prices) != len(data) - 1:
+            log.debug(
+                f'Lenght of prices {len(prices)} does not match len of data {len(data)} '
+                f'while querying curve pool price.',
+            )
         # Total number of assets price in the pool
         total_assets_price = sum(map(operator.mul, data[1:], prices))
-
         if total_assets_price == 0:
-            # The only way I see this possible is if the pool has some issue
+            log.error(
+                f'Curve pool price returned unexpected data {data} that lead to a zero price.',
+            )
             return None
 
         # Calc weight of each asset as the proportion of tokens value
@@ -607,11 +636,15 @@ class Inquirer():
         self,
         token: EthereumToken,
     ) -> Optional[Price]:
+        """
+        Query price for a yearn vault v2 token using the pricePerShare method
+        and the price of the underlying token.
+        """
         assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
 
         maybe_underlying_token = GlobalDBHandler().fetch_underlying_tokens(token.ethereum_address)
-        if not maybe_underlying_token or len(maybe_underlying_token) != 1:
-            log.error(f'Yean token without underlying asset {token}')
+        if maybe_underlying_token is None or len(maybe_underlying_token) != 1:
+            log.error(f'Yearn vault token {token} without an underlying asset')
             return None
 
         underlying_token = EthereumToken(maybe_underlying_token[0].address)
@@ -627,8 +660,16 @@ class Inquirer():
             require_success=True,
             calls=[(token.ethereum_address, contract.encode(method_name='pricePerShare'))],
         )
-        price_per_share = contract.decode(output[0][1], 'pricePerShare')[0]
-        return price_per_share * underlying_token_price
+        if isinstance(output, list) and len(output) != 0 and output[0][0] is True:
+            price_per_share = contract.decode(output[0][1], 'pricePerShare')
+            if len(price_per_share) != 0:
+                return price_per_share[0] * underlying_token_price
+            log.error(f'Failed to decode pricePerShare for yearn vault v2 token {token}')
+        log.error(
+            f'Error to call multicall for price on Yearn vault v2 token {token} '
+            f'with output {output}.',
+        )
+        return None
 
     @staticmethod
     def get_fiat_usd_exchange_rates(currencies: Iterable[Asset]) -> Dict[Asset, Price]:

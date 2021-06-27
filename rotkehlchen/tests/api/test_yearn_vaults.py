@@ -478,8 +478,7 @@ def check_vault_history(name, expected_history, result_history):
     )],
 )
 def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
-    """Check querying the yearn vaults history endpoint works. Uses real data.
-    """
+    """Check querying the yearn vaults history endpoint works. Uses real data."""
     async_query = random.choice([True, False])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
@@ -599,8 +598,7 @@ def test_query_yearn_vault_v2_balances(rotkehlchen_api_server, ethereum_accounts
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_query_yearn_vault_v2_history(rotkehlchen_api_server, ethereum_accounts):
-    """Check querying the yearn vaults history endpoint works. Uses real data.
-    """
+    """Check querying the yearn vaults v2 history endpoint works. Uses real data."""
 
     async_query = random.choice([True, False])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

@@ -56,7 +56,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp, YEARN_VAULTS_V2_PROTOCOL
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
@@ -182,8 +182,10 @@ def get_usd_price_zero_if_error(
     This can be solved when we have an archive node.
     """
     inquirer = Inquirer()
-    if (asset in inquirer.special_tokens or
-            isinstance(asset, EthereumToken) and asset.protocol == 'yearn_vault_v2'):
+    if (
+        asset in inquirer.special_tokens or
+        isinstance(asset, EthereumToken) and asset.protocol == YEARN_VAULTS_V2_PROTOCOL
+    ):
         return inquirer.find_usd_price(asset)
 
     return query_usd_price_zero_if_error(
