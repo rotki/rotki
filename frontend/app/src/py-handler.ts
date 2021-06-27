@@ -315,7 +315,7 @@ export default class PyHandler {
     const defaultArgs: string[] = [
       '-m',
       'rotkehlchen',
-      '--api-port',
+      '--rest-api-port',
       port.toString()
     ];
 
@@ -378,7 +378,7 @@ export default class PyHandler {
       args.push('--api-cors', this._corsURL);
     }
     args.push('--logfile', this.backendLogFile);
-    args = ['--api-port', port.toString()].concat(args);
+    args = ['--rest-api-port', port.toString()].concat(args);
     this.logToFile(
       `Starting packaged python subprocess: ${executable} ${args.join(' ')}`
     );

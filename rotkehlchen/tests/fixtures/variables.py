@@ -23,7 +23,13 @@ def session_db_password():
 
 
 @pytest.fixture
-def api_port(port_generator):
+def rest_api_port(port_generator):
+    port = next(port_generator)
+    return port
+
+
+@pytest.fixture
+def websockets_api_port(port_generator):
     port = next(port_generator)
     return port
 
