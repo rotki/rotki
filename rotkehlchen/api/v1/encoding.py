@@ -27,6 +27,11 @@ from rotkehlchen.chain.substrate.utils import (
     get_kusama_address_from_public_key,
     is_valid_kusama_address,
 )
+from rotkehlchen.chain.substrate.typing import PolkadotAddress, SubstratePublicKey
+from rotkehlchen.chain.substrate.utils import (
+    get_polkadot_address_from_public_key,
+    is_valid_polkadot_address,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import (
@@ -344,6 +349,9 @@ class BlockchainField(fields.Field):
             return SupportedBlockchain.KUSAMA
         if value in ('avax', 'AVAX'):
             return SupportedBlockchain.AVALANCHE
+        raise ValidationError(f'Unrecognized value {value} given for blockchain name')
+        if value in ('dot', 'DOT'):
+            return SupportedBlockchain.POLKADOT
         raise ValidationError(f'Unrecognized value {value} given for blockchain name')
 
 
@@ -1358,6 +1366,23 @@ def _validate_blockchain_account_schemas(
                     field_name='address',
                 )
             given_addresses.add(address)
+    
+    # Make sure polkadot addresses are valid (either ss58 format or ENS domain)
+    elif data['blockchain'] == SupportedBlockchain.POLKADOT:
+        for account_data in data['accounts']:
+            address = address_getter(account_data)
+            # ENS domain will be checked in the transformation step
+            if not address.endswith('.eth') and not is_valid_polkadot_address(address):
+                raise ValidationError(
+                    f'Given value {address} is not a valid polkadot address',
+                    field_name='address',
+                )
+            if address in given_addresses:
+                raise ValidationError(
+                    f'Address {address} appears multiple times in the request data',
+                    field_name='address',
+                )
+            given_addresses.add(address)
 
 
 def _transform_btc_address(
@@ -1480,6 +1505,58 @@ def _transform_ksm_address(
         ) from e
 
     log.debug(f'Resolved KSM ENS {given_address} to {address}')
+
+    return address
+
+def _transform_dot_address(
+        ethereum: EthereumManager,
+        given_address: str,
+) -> PolkadotAddress:
+    """Returns a KSM address (if exists) given an ENS domain. At this point any
+    given address has been already validated either as an ENS name or as a
+    valid Polkadot address (ss58 format).
+
+    NB: ENS domains for Substrate chains (e.g. KSM, DOT) store the Substrate
+    public key. It requires to encode it with a specific ss58 format for
+    obtaining the specific chain address.
+
+    Polkadot/Polkadot ENS domain accounts:
+    https://guide.Polkadot.network/docs/en/mirror-ens
+
+    ENS domain substrate public key encoding:
+    https://github.com/ensdomains/address-encoder/blob/master/src/index.ts
+    """
+    if not given_address.endswith('.eth'):
+        return PolkadotAddress(given_address)
+
+    try:
+        resolved_address = ethereum.ens_lookup(
+            given_address,
+            blockchain=SupportedBlockchain.POLKADOT,
+        )
+    except (RemoteError, InputError) as e:
+        raise ValidationError(
+            f'Given ENS address {given_address} could not be resolved '
+            f'for Polkadot due to: {str(e)}',
+            field_name='address',
+        ) from None
+
+    if resolved_address is None:
+        raise ValidationError(
+            f'Given ENS address {given_address} could not be resolved for Polkadot',
+            field_name='address',
+        ) from None
+
+    try:
+        address = get_polkadot_address_from_public_key(SubstratePublicKey(resolved_address))
+    except (TypeError, ValueError) as e:
+        raise ValidationError(
+            f'Given ENS address {given_address} does not contain a valid '
+            f"Substrate public key: {resolved_address}. Polkadot address can't be obtained.",
+            field_name='address',
+        ) from e
+
+    log.debug(f'Resolved DOT ENS {given_address} to {address}')
 
     return address
 

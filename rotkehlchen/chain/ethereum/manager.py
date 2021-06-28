@@ -550,6 +550,7 @@ class EthereumManager():
             blockchain: Literal[
                 SupportedBlockchain.BITCOIN,
                 SupportedBlockchain.KUSAMA,
+                SupportedBlockchain.POLKADOT,
             ],
             call_order: Optional[Sequence[NodeName]] = None,
     ) -> Optional[HexStr]:
@@ -585,6 +586,7 @@ class EthereumManager():
             blockchain: Literal[
                 SupportedBlockchain.BITCOIN,
                 SupportedBlockchain.KUSAMA,
+                SupportedBlockchain.POLKADOT,
             ],
     ) -> Optional[HexStr]:
         ...

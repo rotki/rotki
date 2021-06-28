@@ -945,6 +945,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     };
     const kusama = { ...state.ksm };
     const avalanche = { ...state.avax };
+    const polkadot = { ...state.dot };
+
     const exchanges = { ...state.exchangeBalances };
 
     for (const asset in totals) {
@@ -1021,6 +1023,16 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
 
     commit('updateAvax', avalanche);
+
+    for (const address in polkadot) {
+      const balances = polkadot[address];
+      polkadot[address] = {
+        assets: updateBalancePrice(balances.assets, prices),
+        liabilities: updateBalancePrice(balances.liabilities, prices)
+      };
+    }
+
+    commit('updateDot', polkadot);
 
     for (const exchange in exchanges) {
       exchanges[exchange] = updateBalancePrice(exchanges[exchange], prices);

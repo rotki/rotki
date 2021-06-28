@@ -38,6 +38,7 @@ from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.typing import SubstrateChain
 from rotkehlchen.chain.substrate.utils import KUSAMA_NODES_TO_CONNECT_AT_START
+from rotkehlchen.chain.substrate.utils import POLKADOT_NODES_TO_CONNECT_AT_START
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data.importer import DataImporter
@@ -280,6 +281,14 @@ class Rotkehlchen():
             connect_at_start=KUSAMA_NODES_TO_CONNECT_AT_START,
             connect_on_startup=self._connect_ksm_manager_on_startup(),
             own_rpc_endpoint=settings.ksm_rpc_endpoint,
+        )
+        polkadot_manager = SubstrateManager(
+            chain=SubstrateChain.POLKADOT,
+            msg_aggregator=self.msg_aggregator,
+            greenlet_manager=self.greenlet_manager,
+            connect_at_start=POLKADOT_NODES_TO_CONNECT_AT_START,
+            connect_on_startup=self._connect_dot_manager_on_startup(),
+            own_rpc_endpoint=settings.dot_rpc_endpoint,
         )
         self.covalent_avalanche = Covalent(
             msg_aggregator=self.msg_aggregator,

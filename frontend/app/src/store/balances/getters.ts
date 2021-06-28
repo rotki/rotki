@@ -47,6 +47,7 @@ export interface BalanceGetters {
   btcAccounts: BlockchainAccountWithBalance[];
   kusamaBalances: BlockchainAccountWithBalance[];
   avaxAccounts: BlockchainAccountWithBalance[];
+  polkadotBalances: BlockchainAccountWithBalance[];
   totals: AssetBalance[];
   exchangeRate: ExchangeRateGetter;
   exchanges: ExchangeInfo[];
@@ -117,11 +118,15 @@ export const getters: Getters<
   kusamaBalances: ({ ksmAccounts, ksm }) => {
     return balances(ksmAccounts, ksm, KSM);
   },
+
   avaxAccounts: ({
     avaxAccounts,
     avax
   }: BalanceState): BlockchainAccountWithBalance[] => {
     return balances(avaxAccounts, avax, AVAX);
+  },
+  polkadotBalances: ({ dotAccounts, dot }) => {
+    return balances(dotAccounts, dot, DOT);
   },
   btcAccounts({
     btc,
@@ -366,7 +371,10 @@ export const getters: Getters<
     const btcAccounts: BlockchainAccountWithBalance[] = getters.btcAccounts;
     const kusamaBalances: BlockchainAccountWithBalance[] =
       getters.kusamaBalances;
+    const polkadotBalances: BlockchainAccountWithBalance[] =
+      getters.polkadotBalances;
     const avaxAccounts: BlockchainAccountWithBalance[] = getters.avaxAccounts;
+
     const loopring: AccountAssetBalances = state.loopringBalances;
 
     if (ethAccounts.length > 0) {
@@ -434,6 +442,16 @@ export const getters: Getters<
         l2: [],
         usdValue: sum(avaxAccounts),
         loading: avaxStatus === Status.NONE || avaxStatus === Status.LOADING
+      });
+    }
+
+    if (polkadotBalances.length > 0) {
+      const dotStatus = status(Section.BLOCKCHAIN_DOT);
+      totals.push({
+        chain: DOT,
+        l2: [],
+        usdValue: sum(polkadotBalances),
+        loading: dotStatus === Status.NONE || dotStatus === Status.LOADING
       });
     }
 

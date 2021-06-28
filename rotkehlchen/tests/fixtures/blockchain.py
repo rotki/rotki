@@ -7,6 +7,7 @@ from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstrateChain
+from rotkehlchen.chain.substrate.typing import PolkadotAddress, SubstrateChain
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -20,6 +21,13 @@ from rotkehlchen.tests.utils.substrate import (
     KUSAMA_SS58_FORMAT,
     KUSAMA_TOKEN,
     KUSAMA_TOKEN_DECIMALS,
+    wait_until_all_substrate_nodes_connected,
+)
+from rotkehlchen.tests.utils.substrate import (
+    POLKADOT_DEFAULT_OWN_RPC_ENDPOINT,
+    POLKADOT_SS58_FORMAT,
+    POLKADOT_TOKEN,
+    POLKADOT_TOKEN_DECIMALS,
     wait_until_all_substrate_nodes_connected,
 )
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
@@ -50,6 +58,16 @@ def fixture_ksm_accounts() -> List[KusamaAddress]:
     return []
 
 
+@pytest.fixture(name='dot_accounts')
+def fixture_dot_accounts() -> List[PolkadotAddress]:
+    """As per feature requirements, instantiating SubstrateManager won't trigger
+    the logic that attempts to connect to the nodes. Use this fixture with KSM
+    addresses on tests (e.g. integration/API tests) that require connection
+    since instantiation.
+    """
+    return []
+
+
 @pytest.fixture(name='avax_accounts')
 def fixture_avax_accounts() -> List[ChecksumEthAddress]:
     return []
@@ -60,12 +78,14 @@ def fixture_blockchain_accounts(
         ethereum_accounts: List[ChecksumEthAddress],
         btc_accounts: List[BTCAddress],
         ksm_accounts: List[KusamaAddress],
+        dot_accounts: List[PolkadotAddress],
         avax_accounts: List[ChecksumEthAddress],
 ) -> BlockchainAccounts:
     return BlockchainAccounts(
         eth=ethereum_accounts,
         btc=btc_accounts.copy(),
         ksm=ksm_accounts.copy(),
+        dot=dot_accounts.copy(),
         avax=avax_accounts.copy(),
     )
 

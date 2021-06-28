@@ -11,6 +11,7 @@ from rotkehlchen.chain.substrate.typing import (
     BlockNumber,
     DictNodeNameNodeAttributes,
     KusamaNodeName,
+    PolkadotNodeName,
     NodeName,
     NodeNameAttributes,
     SubstrateChain,

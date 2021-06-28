@@ -7078,6 +7078,13 @@
         "symbol": "KSM",
         "type": "own chain"
     },
+    "DOT": {
+        "coingecko": "polkadot",
+        "name": "Polkadot",
+        "started": 1590500178,
+        "symbol": "DOT",
+        "type": "own chain"
+    },
     "KUE": {
         "coingecko": "kuende",
         "ethereum_address": "0xdf1338FbAfe7aF1789151627B886781ba556eF9a",

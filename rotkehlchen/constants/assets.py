@@ -132,6 +132,19 @@ A_AVAX = Asset.initialize(
 )
 CONSTANT_ASSETS.append(A_AVAX)
 
+A_DOT = Asset.initialize(
+    identifier='DOT',
+    asset_type=AssetType.OWN_CHAIN,
+    name="Polkadot",
+    symbol='DOT',
+    started=Timestamp(1590500178),
+    forked=None,
+    swapped_for=None,
+    coingecko='polkadot',
+    cryptocompare=None,
+)
+CONSTANT_ASSETS.append(A_DOT)
+
 A_BAL = EthereumToken.initialize(
     address=string_to_ethereum_address('0xba100000625a3754423978a60c9317c58a424e3D'),
     decimals=18,

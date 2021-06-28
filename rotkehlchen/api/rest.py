@@ -677,6 +677,13 @@ class RestAPI():
                 if val:
                     totals['assets'] = {'KSM': val}
                 result = {'per_account': per_account, 'totals': totals}
+            elif blockchain == SupportedBlockchain.POLKADOT:
+                val = result['per_account'].get('DOT', None)
+                per_account = {'DOT': val} if val else {}
+                val = result['totals']['assets'].get('DOT', None)
+                if val:
+                    totals['assets'] = {'DOT': val}
+                result = {'per_account': per_account, 'totals': totals}
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
