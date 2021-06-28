@@ -1,9 +1,6 @@
 <template>
   <no-premium-placeholder v-if="!premium" :text="$t('balancer.premium')" />
-  <module-not-active
-    v-else-if="!isBalancerEnabled"
-    :modules="[balancerModule]"
-  />
+  <module-not-active v-else-if="!isEnabled" :modules="modules" />
   <progress-screen v-else-if="loading">
     <template #message>
       {{ $t('balancer.loading') }}
@@ -23,7 +20,7 @@ import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
-import DefiModuleMixin from '@/mixins/defi-module-mixin';
+import ModuleMixin from '@/mixins/module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { BalancerBalances } from '@/premium/premium';
@@ -47,7 +44,7 @@ import { Section } from '@/store/const';
 })
 export default class Balancer extends Mixins(
   StatusMixin,
-  DefiModuleMixin,
+  ModuleMixin,
   PremiumMixin
 ) {
   readonly section = Section.DEFI_BALANCER_BALANCES;
@@ -55,6 +52,10 @@ export default class Balancer extends Mixins(
   fetchBalancerBalances!: (refresh: boolean) => Promise<void>;
   fetchBalancerEvents!: (refresh: boolean) => Promise<void>;
   readonly modules: SupportedModules[] = [MODULE_BALANCER];
+
+  get isEnabled(): boolean {
+    return this.isModuleEnabled(MODULE_BALANCER);
+  }
 
   async mounted() {
     await Promise.all([

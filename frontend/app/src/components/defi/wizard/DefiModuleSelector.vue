@@ -48,23 +48,13 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { Component, Mixins } from 'vue-property-decorator';
 import { DEFI_MODULES } from '@/components/defi/wizard/consts';
+import ModuleMixin from '@/mixins/module-mixin';
 import { SupportedModules } from '@/services/session/types';
-import { SettingsUpdate } from '@/typing/types';
 
-@Component({
-  computed: {
-    ...mapGetters('session', ['activeModules'])
-  },
-  methods: {
-    ...mapActions('session', ['updateSettings'])
-  }
-})
-export default class DefiModuleSelector extends Vue {
-  updateSettings!: (update: SettingsUpdate) => Promise<void>;
-  activeModules!: SupportedModules[];
+@Component({})
+export default class DefiModuleSelector extends Mixins(ModuleMixin) {
   readonly supportedModules = DEFI_MODULES;
   selectedModules: SupportedModules[] = [];
   search: string = '';
@@ -85,7 +75,7 @@ export default class DefiModuleSelector extends Vue {
 
   async update(activeModules: SupportedModules[]) {
     this.loading = true;
-    await this.updateSettings({ active_modules: activeModules });
+    await this.activateModules(activeModules);
     this.selectedModules = activeModules;
     this.loading = false;
   }

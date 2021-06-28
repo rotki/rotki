@@ -20,7 +20,7 @@ import { mapActions } from 'vuex';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import DefiModuleMixin from '@/mixins/defi-module-mixin';
+import ModuleMixin from '@/mixins/module-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { AdexStaking } from '@/premium/premium';
 import { MODULE_ADEX } from '@/services/session/consts';
@@ -32,7 +32,7 @@ import { Section } from '@/store/const';
     ...mapActions('staking', ['fetchAdex'])
   }
 })
-export default class AdexPage extends Mixins(StatusMixin, DefiModuleMixin) {
+export default class AdexPage extends Mixins(StatusMixin, ModuleMixin) {
   readonly module = [MODULE_ADEX];
   section = Section.STAKING_ADEX;
   secondSection = Section.STAKING_ADEX_HISTORY;

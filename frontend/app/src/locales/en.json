@@ -402,6 +402,11 @@
     },
     "title": "Merge Assets"
   },
+  "module_activator": {
+    "hint": "* Modules that are activated for all addresses will not appear here",
+    "subtitle": "Select which modules should be queried for this account",
+    "title": "Enabled modules"
+  },
   "notes_display": {
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"

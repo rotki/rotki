@@ -382,6 +382,27 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   },
 
+  async enableModule(
+    { state, dispatch },
+    payload: {
+      readonly enable: SupportedModules[];
+      readonly addresses: string[];
+    }
+  ) {
+    const activeModules = state.generalSettings.activeModules;
+    const modules: SupportedModules[] = [...activeModules, ...payload.enable];
+    dispatch('updateSettings', { active_modules: modules });
+
+    for (const module of payload.enable) {
+      for (const address of payload.addresses) {
+        await dispatch('addQueriedAddress', {
+          module,
+          address
+        });
+      }
+    }
+  },
+
   async addQueriedAddress({ commit }, payload: QueriedAddressPayload) {
     try {
       const queriedAddresses = await api.session.addQueriedAddress(payload);

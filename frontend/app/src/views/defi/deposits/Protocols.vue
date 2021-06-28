@@ -7,7 +7,7 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import Lending from '@/components/defi/Lending.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import DefiModuleMixin from '@/mixins/defi-module-mixin';
+import ModuleMixin from '@/mixins/module-mixin';
 import {
   MODULE_AAVE,
   MODULE_COMPOUND,
@@ -19,7 +19,7 @@ import { SupportedModules } from '@/services/session/types';
 @Component({
   components: { ModuleNotActive, Lending }
 })
-export default class Protocols extends Mixins(DefiModuleMixin) {
+export default class Protocols extends Mixins(ModuleMixin) {
   readonly modules: SupportedModules[] = [
     MODULE_AAVE,
     MODULE_COMPOUND,
