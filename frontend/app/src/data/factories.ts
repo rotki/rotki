@@ -6,6 +6,7 @@ export const defaultGeneralSettings = (): GeneralSettings => ({
   floatingPrecision: Defaults.FLOATING_PRECISION,
   ethRpcEndpoint: Defaults.RPC_ENDPOINT,
   ksmRpcEndpoint: Defaults.KSM_RPC_ENDPOINT,
+  dotRpcEndpoint: Defaults.DOT_RPC_ENDPOINT,
   balanceSaveFrequency: Defaults.BALANCE_SAVE_FREQUENCY,
   dateDisplayFormat: Defaults.DEFAULT_DATE_DISPLAY_FORMAT,
   anonymousUsageAnalytics: Defaults.ANONYMOUS_USAGE_ANALYTICS,

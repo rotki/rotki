@@ -34,6 +34,7 @@ def is_valid_kusama_address(value: str) -> bool:
         value=value,
     )
 
+
 def is_valid_polkadot_address(value: str) -> bool:
     return is_valid_substrate_address(
         chain=SubstrateChain.POLKADOT,
@@ -69,7 +70,7 @@ def is_valid_substrate_address(
     if chain == SubstrateChain.KUSAMA:
         valid_ss58_format = 2
     elif chain == SubstrateChain.POLKADOT:
-        valid_ss58_format = 2
+        valid_ss58_format = 0
     else:
         raise AssertionError(f'Unexpected chain: {chain}')
 
@@ -100,6 +101,7 @@ def get_kusama_address_from_public_key(public_key: SubstratePublicKey) -> Kusama
         public_key=public_key,
     )
 
+
 def get_polkadot_address_from_public_key(public_key: SubstratePublicKey) -> PolkadotAddress:
     """Return a valid Polkadot address given a Substrate public key.
 
@@ -115,7 +117,6 @@ def get_polkadot_address_from_public_key(public_key: SubstratePublicKey) -> Polk
         chain=SubstrateChain.POLKADOT,
         public_key=public_key,
     )
-
 
 
 def get_substrate_address_from_public_key(

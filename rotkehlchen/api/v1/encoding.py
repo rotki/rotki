@@ -22,12 +22,11 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_btc_address,
 )
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstratePublicKey
+from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_kusama_address_from_public_key,
     is_valid_kusama_address,
 )
-from rotkehlchen.chain.substrate.typing import PolkadotAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_polkadot_address_from_public_key,
     is_valid_polkadot_address,
@@ -347,11 +346,11 @@ class BlockchainField(fields.Field):
             return SupportedBlockchain.ETHEREUM
         if value in ('ksm', 'KSM'):
             return SupportedBlockchain.KUSAMA
-        if value in ('avax', 'AVAX'):
-            return SupportedBlockchain.AVALANCHE
-        raise ValidationError(f'Unrecognized value {value} given for blockchain name')
         if value in ('dot', 'DOT'):
             return SupportedBlockchain.POLKADOT
+        if value in ('avax', 'AVAX'):
+            return SupportedBlockchain.AVALANCHE
+
         raise ValidationError(f'Unrecognized value {value} given for blockchain name')
 
 
@@ -1366,7 +1365,7 @@ def _validate_blockchain_account_schemas(
                     field_name='address',
                 )
             given_addresses.add(address)
-    
+
     # Make sure polkadot addresses are valid (either ss58 format or ENS domain)
     elif data['blockchain'] == SupportedBlockchain.POLKADOT:
         for account_data in data['accounts']:
@@ -1507,6 +1506,7 @@ def _transform_ksm_address(
     log.debug(f'Resolved KSM ENS {given_address} to {address}')
 
     return address
+
 
 def _transform_dot_address(
         ethereum: EthereumManager,

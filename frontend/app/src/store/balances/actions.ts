@@ -943,9 +943,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       standalone: state.btc.standalone ? { ...state.btc.standalone } : {},
       xpubs: state.btc.xpubs ? [...state.btc.xpubs] : []
     };
-    const kusama = { ...state.ksm };
+      const kusama = { ...state.ksm };
+      const polkadot = { ...state.dot };
     const avalanche = { ...state.avax };
-    const polkadot = { ...state.dot };
 
     const exchanges = { ...state.exchangeBalances };
 

@@ -2,7 +2,8 @@ import { BalanceState } from '@/store/balances/types';
 
 export const defaultState = (): BalanceState => ({
   eth: {},
-  ksm: {},
+    ksm: {},
+    dot: {},
   avax: {},
   btc: {
     standalone: {},
@@ -14,7 +15,8 @@ export const defaultState = (): BalanceState => ({
   connectedExchanges: [],
   exchangeBalances: {},
   ethAccounts: [],
-  ksmAccounts: [],
+    ksmAccounts: [],
+    dotAccounts: [],
   avaxAccounts: [],
   btcAccounts: {
     standalone: [],

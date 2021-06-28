@@ -46,7 +46,8 @@ export interface BalanceState {
   loopringBalances: AccountAssetBalances;
   eth: BlockchainAssetBalances;
   btc: BtcBalances;
-  ksm: BlockchainAssetBalances;
+    ksm: BlockchainAssetBalances;
+    dot: BlockchainAssetBalances;
   avax: BlockchainAssetBalances;
   totals: AssetBalances;
   liabilities: AssetBalances;
@@ -55,7 +56,8 @@ export interface BalanceState {
   exchangeBalances: ExchangeData;
   ethAccounts: GeneralAccountData[];
   btcAccounts: BtcAccountData;
-  ksmAccounts: GeneralAccountData[];
+    ksmAccounts: GeneralAccountData[];
+    dotAccounts: GeneralAccountData[];
   avaxAccounts: GeneralAccountData[];
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalanceWithValue[];

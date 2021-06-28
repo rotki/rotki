@@ -4,7 +4,8 @@ from typing import Dict, List, NamedTuple, NewType, Tuple, Type, Union
 from substrateinterface import SubstrateInterface
 
 KusamaAddress = NewType('KusamaAddress', str)
-SubstrateAddress = Union[KusamaAddress]
+PolkadotAddress = NewType('PolkadotAddress', str)
+SubstrateAddress = Union[KusamaAddress, PolkadotAddress]
 SubstratePublicKey = NewType('SubstratePublicKey', str)
 
 SubstrateChainId = NewType('SubstrateChainId', str)
@@ -40,7 +41,7 @@ class KusamaNodeName(Enum):
                 'via "own_rpc_endpoint" or the specific db setting',
             )
         if self == KusamaNodeName.PARITY:
-            return 'https://kusama-rpc.polkadot.io/'
+            return 'https://rpc.polkadot.io/'
         if self == KusamaNodeName.ONFINALITY:
             return 'https://kusama.api.onfinality.io/public-https'
         if self == KusamaNodeName.ELARA:
@@ -77,9 +78,9 @@ class PolkadotNodeName(Enum):
                 'via "own_rpc_endpoint" or the specific db setting',
             )
         if self == PolkadotNodeName.PARITY:
-            return 'https://polkadot-rpc.polkadot.io/'
+            return 'https://rpc.polkadot.io/'
         if self == PolkadotNodeName.ONFINALITY:
-            return 'https://polkadot.api.onfinality.io/public-https'
+            return 'https://polkadot.api.onfinality.io/public-ws'
         if self == PolkadotNodeName.ELARA:
             return 'https://polkadot.elara.patract.io'
         raise AssertionError(f'Unexpected PolkadotNodeName: {self}')
@@ -150,7 +151,7 @@ class SubstrateChain(Enum):
         """
         if self == SubstrateChain.KUSAMA:
             return KusamaNodeName
-        
+
         elif self == SubstrateChain.POLKADOT:
             return PolkadotNodeName
         raise AssertionError(f'Unexpected Chain: {self}')

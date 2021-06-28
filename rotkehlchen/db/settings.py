@@ -80,6 +80,7 @@ class DBSettings(NamedTuple):
     include_gas_costs: bool = DEFAULT_INCLUDE_GAS_COSTS
     eth_rpc_endpoint: str = 'http://localhost:8545'
     ksm_rpc_endpoint: str = 'http://localhost:9933'
+    dot_rpc_endpoint: str = 'http://localhost:9933'
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
     last_balance_save: Timestamp = Timestamp(0)

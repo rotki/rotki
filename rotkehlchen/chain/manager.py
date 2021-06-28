@@ -342,7 +342,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     def set_ksm_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
         return self.kusama.set_rpc_endpoint(endpoint)
-    
+
     def set_dot_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
         return self.polkadot.set_rpc_endpoint(endpoint)
 
@@ -515,7 +515,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         should_query_eth = not blockchain or blockchain == SupportedBlockchain.ETHEREUM
         should_query_btc = not blockchain or blockchain == SupportedBlockchain.BITCOIN
         should_query_ksm = not blockchain or blockchain == SupportedBlockchain.KUSAMA
-        should_query_dot = not blockchain or blockchain == SupportedBlockchain.POlKADOT
+        should_query_dot = not blockchain or blockchain == SupportedBlockchain.POLKADOT
         should_query_avax = not blockchain or blockchain == SupportedBlockchain.AVALANCHE
 
         if should_query_eth:
@@ -619,7 +619,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         May raise:
         - RemotError: if no nodes are available or the balances request fails.
         """
-        if len(self.accounts.ksm) == 0:
+        if len(self.accounts.dot) == 0:
             return
 
         dot_usd_price = Inquirer().find_usd_price(A_DOT)
@@ -1120,7 +1120,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 # we are adding/removing accounts, make sure query cache is flushed
                 self.flush_cache('query_polkadot_balances', arguments_matter=True)
                 self.flush_cache('query_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.POLKADOT)  # noqa: E501
+                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.POLKADOT)  # noqa: 
                 for account in accounts:
                     self.modify_polkadot_account(
                         account=PolkadotAddress(account),

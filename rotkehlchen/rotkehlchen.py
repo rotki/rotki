@@ -307,6 +307,7 @@ class Rotkehlchen():
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             ethereum_manager=ethereum_manager,
             kusama_manager=kusama_manager,
+            polkadot_manager=polkadot_manager,
             avalanche_manager=avalanche_manager,
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
@@ -1131,6 +1132,9 @@ class Rotkehlchen():
 
     def _connect_ksm_manager_on_startup(self) -> bool:
         return bool(self.data.db.get_blockchain_accounts().ksm)
+
+    def _connect_dot_manager_on_startup(self) -> bool:
+        return bool(self.data.db.get_blockchain_accounts().dot)
 
     def create_oracle_cache(
             self,

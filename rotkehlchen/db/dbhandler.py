@@ -1669,6 +1669,7 @@ class DBHandler:
         ksm_list = []
         dot_list = []
         avax_list = []
+
         supported_blockchains = {blockchain.value for blockchain in SupportedBlockchain}
         for entry in query:
             if entry[0] not in supported_blockchains:

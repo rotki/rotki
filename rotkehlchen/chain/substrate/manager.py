@@ -33,7 +33,7 @@ from .typing import (
     SubstrateChain,
     SubstrateChainId,
 )
-from .utils import KUSAMA_NODE_CONNECTION_TIMEOUT, POLKADOT_NODE_CONNECTION_TIMEOUT
+from .utils import KUSAMA_NODE_CONNECTION_TIMEOUT
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
