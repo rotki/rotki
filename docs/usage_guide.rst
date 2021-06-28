@@ -888,7 +888,7 @@ Finally you can get a CSV export by pressing the "Export CSV" button. This expor
 Analytics
 **********
 
-If you have a premium subscription you can get analytics on your all your assets and trades.
+If you have a premium subscription you can get analytics on all your assets and trades.
 
 .. note::
     The starting point of the for these analytics will be when you started using the application as rotki takes balance snapshots daily. We also plan to provide analytics on data before that in a best effort basis as detailed in `this <https://github.com/rotki/rotki/issues/1379>`_ issue.
