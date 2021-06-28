@@ -3,7 +3,7 @@
     outlined
     :value="selectedAccounts"
     flat
-    :label="$t('defi_queriable_addres.label')"
+    :label="$t('module_queried_address.label')"
     multiple
     :chains="['ETH']"
     :loading="loading"
@@ -30,7 +30,7 @@ import { Account, GeneralAccount } from '@/typing/types';
     ...mapActions('session', ['deleteQueriedAddress', 'addQueriedAddress'])
   }
 })
-export default class DefiQueriableAddress extends Vue {
+export default class ModuleQueriedAddress extends Vue {
   @Prop({ required: true })
   module!: SupportedModules;
   @Prop({ required: true })
@@ -85,5 +85,3 @@ export default class DefiQueriableAddress extends Vue {
   }
 }
 </script>
-
-<style scoped></style>

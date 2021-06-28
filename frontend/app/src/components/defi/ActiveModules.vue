@@ -56,7 +56,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
-import { DEFI_MODULES } from '@/components/defi/wizard/consts';
+import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import { SupportedModules } from '@/services/session/types';
@@ -105,12 +105,12 @@ export default class ActiveModules extends Vue {
   }
 
   name(module: string): string {
-    const data = DEFI_MODULES.find(value => value.identifier === module);
+    const data = SUPPORTED_MODULES.find(value => value.identifier === module);
     return data?.name ?? '';
   }
 
   icon(module: SupportedModules): string {
-    const data = DEFI_MODULES.find(value => value.identifier === module);
+    const data = SUPPORTED_MODULES.find(value => value.identifier === module);
     return data?.icon ?? '';
   }
 

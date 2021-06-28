@@ -29,6 +29,8 @@ const args = [
   'rotkehlchen',
   '--rest-api-port',
   '22221',
+  '--websockets-api-port',
+  '22222',
   '--api-cors',
   'http://localhost:*',
   '--data-dir',

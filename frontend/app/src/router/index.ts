@@ -76,8 +76,8 @@ export default new Router({
           component: () => import('../views/settings/UserSecuritySettings.vue')
         },
         {
-          path: 'defi',
-          component: () => import('../views/settings/DefiSettings.vue')
+          path: 'modules',
+          component: () => import('../views/settings/ModuleSettings.vue')
         }
       ]
     },

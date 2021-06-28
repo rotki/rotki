@@ -12,7 +12,7 @@ import {
   MODULE_YEARN
 } from '@/services/session/consts';
 
-export const DEFI_MODULES: Module[] = [
+export const SUPPORTED_MODULES: Module[] = [
   {
     identifier: MODULE_AAVE,
     name: 'Aave',
@@ -66,6 +66,6 @@ export const DEFI_MODULES: Module[] = [
 ];
 
 export function moduleName(module: string): string {
-  const data = DEFI_MODULES.find(value => value.identifier === module);
+  const data = SUPPORTED_MODULES.find(value => value.identifier === module);
   return data?.name ?? '';
 }

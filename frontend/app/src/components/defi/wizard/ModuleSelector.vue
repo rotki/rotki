@@ -13,10 +13,10 @@
     :disabled="loading"
     :loading="loading"
     :open-on-clear="false"
-    :label="$t('defi_module_selector.label')"
+    :label="$t('module_selector.label')"
     item-text="name"
     item-value="identifier"
-    class="defi-module-selector"
+    class="module-selector"
     @input="update"
   >
     <template #selection="data">
@@ -49,13 +49,13 @@
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
-import { DEFI_MODULES } from '@/components/defi/wizard/consts';
+import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ModuleMixin from '@/mixins/module-mixin';
 import { SupportedModules } from '@/services/session/types';
 
 @Component({})
-export default class DefiModuleSelector extends Mixins(ModuleMixin) {
-  readonly supportedModules = DEFI_MODULES;
+export default class ModuleSelector extends Mixins(ModuleMixin) {
+  readonly supportedModules = SUPPORTED_MODULES;
   selectedModules: SupportedModules[] = [];
   search: string = '';
   loading: boolean = false;

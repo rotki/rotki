@@ -43,7 +43,7 @@
           </template>
           <v-row>
             <v-col>
-              <defi-module-selector />
+              <module-selector />
             </v-col>
           </v-row>
         </card>
@@ -69,7 +69,7 @@
           <template #subtitle>
             {{ $t('defi_wizard.steps.select_accounts.hint') }}
           </template>
-          <defi-address-selector class="defi-wizard__address-selector" />
+          <module-address-selector class="defi-wizard__address-selector" />
         </card>
         <v-btn text @click="step = 2">
           {{ $t('defi_wizard.steps.select_accounts.back') }}
@@ -85,13 +85,13 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
-import DefiAddressSelector from '@/components/defi/wizard/DefiAddressSelector.vue';
-import DefiModuleSelector from '@/components/defi/wizard/DefiModuleSelector.vue';
+import ModuleAddressSelector from '@/components/defi/wizard/ModuleAddressSelector.vue';
+import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { DEFI_SETUP_DONE } from '@/store/settings/consts';
 import { FrontendSettingsPayload } from '@/store/settings/types';
 
 @Component({
-  components: { DefiAddressSelector, DefiModuleSelector },
+  components: { ModuleAddressSelector, ModuleSelector },
   methods: {
     ...mapActions('settings', ['updateSetting'])
   }
