@@ -7,6 +7,9 @@ on:
     branches:
       - build
 
+env:
+  PYINSTALLER_VERSION: 3.5 # If editing this, make sure to also change rotki_packaging.yaml
+
 jobs:
 
   build-linux:
