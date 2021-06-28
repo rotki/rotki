@@ -202,6 +202,55 @@ data will be unavailable.
 
 .. _DockerHub: https://hub.docker.com/r/rotki/rotki/
 
+Docker Compose
+================
+
+If you prefer to use docker compose, a docker-compose.yml template is provided below for convienence.
+
+Using Docker Defined Volume:
+
+.. code-block:: yml
+
+   version: '3.7'
+   services:
+     rotki:
+       environment: 
+         - TZ=America/Chicago  # TimeZone Databases on Wikipedia: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+       image: rotki/rotki:latest
+       ports:
+         - "8084:80"  # Container exposes port 80, 8084 can be any port of your choosing.
+       networks:
+         - rotki-net
+       volumes:
+         - rotki-data:/data 
+         - rotki-logs:/logs
+   volumes:
+     rotki-data:
+     rotki-logs:
+   networks: 
+     rotki-net:
+
+Using $home (or which ever path to your local data) Defined directed volume:
+
+.. code-block:: yml
+
+   version: '3.7'
+   services:
+     rotki:
+       environment: 
+         - TZ=America/Chicago  # TimeZone Databases on Wikipedia: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+       image: rotki/rotki:latest
+       ports:
+         - "8084:80"  # Container exposes port 80, 8084 can be any port of your choosing.
+       networks:
+         - rotki-net
+       volumes:
+         - $HOME/.rotki/data:/data 
+         - $HOME/.rotki/logs:/logs
+   networks: 
+     rotki-net:
+
+
 Moving the accounts from the desktop application
 -------------------------------------------------
 
