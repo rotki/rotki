@@ -4,7 +4,7 @@ import logging
 from enum import Enum
 from pathlib import Path
 import operator
-from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
@@ -104,6 +104,21 @@ ASSETS_UNDERLYING_BTC = (
 
 
 CurrentPriceOracleInstance = Union['Coingecko', 'Cryptocompare']
+
+
+def _check_curve_contract_call(decoded: Tuple[Any, ...]) -> bool:
+    """
+    Checks the result of decoding curve contract methods to verify:
+    - The result is a tuple
+    - It should return only one value
+    - The value should be an integer
+    Returns true if the decode was correct
+    """
+    return (
+        isinstance(decoded, tuple) and
+        len(decoded) == 1 and
+        isinstance(decoded[0], int)
+    )
 
 
 class CurrentPriceOracle(Enum):
@@ -226,7 +241,6 @@ class Inquirer():
     _oracles: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
     special_tokens: List[EthereumToken]
-    special_protocols: Tuple[str, str, str]
 
     def __new__(
             cls,
@@ -279,7 +293,6 @@ class Inquirer():
             A_FARM_CRVRENWBTC,
             A_3CRV,
         ]
-        Inquirer.special_protocols = KnownProtocolsAssets
         return Inquirer.__instance
 
     @staticmethod
@@ -431,7 +444,14 @@ class Inquirer():
         if is_known_protocol is True or underlying_tokens is not None:
             assert token is not None
             result = get_underlying_asset_price(token)
-            usd_price = Price(ZERO) if result is None else Price(result)
+            if result is None:
+                usd_price = Price(ZERO)
+                if instance._ethereum is not None:
+                    instance._ethereum.msg_aggregator.add_warning(
+                        f'Could not find price for {token}',
+                    )
+            else:
+                usd_price = Price(result)
             Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
                 price=usd_price,
                 time=ts_now(),
@@ -539,7 +559,6 @@ class Inquirer():
         # Translate addresses to tokens
         try:
             for asset in pool.assets:
-                # Eth address is translated to weth
                 if asset == '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
                     tokens.append(A_WETH)
                 else:
@@ -565,15 +584,15 @@ class Inquirer():
             abi=CURVE_POOL_ABI,
             deployed_block=0,
         )
-        call = [(pool.pool_address, contract.encode(method_name='get_virtual_price'))]
-        call += [
+        calls = [(pool.pool_address, contract.encode(method_name='get_virtual_price'))]
+        calls += [
             (pool.pool_address, contract.encode(method_name='balances', arguments=[i]))
             for i in range(len(pool.assets))
         ]
         output = multicall_2(
             ethereum=self._ethereum,
             require_success=False,
-            calls=call,
+            calls=calls,
         )
 
         # Check that the output has the correct structure
@@ -583,7 +602,7 @@ class Inquirer():
                 f'Not every outcome has length 2. {output}',
             )
             return None
-        # Check that all the request where successful
+        # Check that all the request were successful
         if not all([contract_output[0] for contract_output in output]):
             log.debug(f'Failed to query contract methods while finding curve price. {output}')
             return None
@@ -591,22 +610,14 @@ class Inquirer():
         data = []
         virtual_price_decoded = contract.decode(output[0][1], 'get_virtual_price')
         # Verify that the output from the contrat call is correct
-        if (
-            not isinstance(virtual_price_decoded, tuple) or
-            len(virtual_price_decoded) != 1 or
-            not isinstance(virtual_price_decoded[0], int)
-        ):
+        if not _check_curve_contract_call(virtual_price_decoded):
             log.debug(f'Failed to decode get_virtual_price while finding curve price. {output}')
             return None
         data.append(FVal(virtual_price_decoded[0]))
         for i in range(len(pool.assets)):
             amount_decoded = contract.decode(output[i + 1][1], 'balances', arguments=[i])
             # Verify that the contract decoded the output correctly
-            if (
-                not isinstance(amount_decoded, tuple) or
-                len(amount_decoded) != 1 or
-                not isinstance(amount_decoded[0], int)
-            ):
+            if not _check_curve_contract_call(amount_decoded):
                 log.debug(f'Failed to decode balances {i} while finding curve price. {output}')
                 return None
             amount = amount_decoded[0]
@@ -616,9 +627,10 @@ class Inquirer():
         # Prices and data should verifty this relation for the following operations
         if len(prices) != len(data) - 1:
             log.debug(
-                f'Lenght of prices {len(prices)} does not match len of data {len(data)} '
+                f'Length of prices {len(prices)} does not match len of data {len(data)} '
                 f'while querying curve pool price.',
             )
+            return None
         # Total number of assets price in the pool
         total_assets_price = sum(map(operator.mul, data[1:], prices))
         if total_assets_price == 0:
@@ -665,6 +677,7 @@ class Inquirer():
             if len(price_per_share) != 0:
                 return price_per_share[0] * underlying_token_price
             log.error(f'Failed to decode pricePerShare for yearn vault v2 token {token}')
+            # will return None right below
         log.error(
             f'Error to call multicall for price on Yearn vault v2 token {token} '
             f'with output {output}.',

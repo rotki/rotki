@@ -347,5 +347,5 @@ def test_find_curve_lp_token_price(inquirer, ethereum_manager):
 
     price = inquirer.find_curve_pool_price(EthereumToken(address))
     assert price is not None
-    # Check that the protcol is correctly caught by the inquirer
+    # Check that the protocol is correctly caught by the inquirer
     assert price == inquirer.find_usd_price(EthereumToken(address))

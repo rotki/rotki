@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 def upgrade_v27_to_v28(db: 'DBHandler') -> None:
     """Upgrades the DB from v27 to v28
 
-    - Adds new column to yearn events representing the version of the protocol for the event
+    - Adds new column to yearn vaults events representing the version of the protocol for the event
     """
     cursor = db.conn.cursor()
     cursor.execute(

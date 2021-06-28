@@ -10,7 +10,10 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.ethereum import EthereumContract
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_optional_fval
+from rotkehlchen.serialization.deserialize import (
+    deserialize_optional_fval,
+    deserialize_timestamp,
+)
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 AAVE_EVENT_TYPE = Literal['deposit', 'withdrawal', 'interest', 'borrow', 'repay', 'liquidation']
@@ -358,7 +361,7 @@ class YearnVaultEvent:
     realized_pnl: Optional[Balance]
     tx_hash: str
     log_index: int
-    version: Optional[int]
+    version: int
 
     def serialize(self) -> Dict[str, Any]:
         # Would have been nice to have a customizable asdict() for dataclasses
@@ -383,8 +386,6 @@ class YearnVaultEvent:
             pnl_amount = str(self.realized_pnl.amount)
             pnl_usd_value = str(self.realized_pnl.usd_value)
         vault_version = self.version
-        if vault_version is None:
-            vault_version = 1
         return (
             address,
             self.event_type,
@@ -405,18 +406,73 @@ class YearnVaultEvent:
 
     @classmethod
     def deserialize_from_db(cls, result: YEARN_EVENT_DB_TUPLE) -> 'YearnVaultEvent':
+        """
+        Turns a tuple read from the DB into an appropriate YearnVaultEvent
+        May raise a DeserializationError if there is an issue with information in
+        the database
+        """
+        location = 'deserialize yearn vault event from db'
         realized_pnl = None
         if result[8] is not None and result[9] is not None:
-            realized_pnl = Balance(amount=FVal(result[8]), usd_value=FVal(result[9]))
+            pnl_amount = deserialize_optional_fval(
+                value=result[8],
+                name='pnl_amount',
+                location=location,
+            )
+            pnl_usd_value = deserialize_optional_fval(
+                value=result[9],
+                name='pnl_usd_value',
+                location=location,
+            )
+            realized_pnl = Balance(amount=pnl_amount, usd_value=pnl_usd_value)
+
+        from_value_amount = deserialize_optional_fval(
+            value=result[3],
+            name='from_value_amount',
+            location=location,
+        )
+        from_value_usd_value = deserialize_optional_fval(
+            result[4],
+            name='from_value_usd_value',
+            location=location,
+        )
+        to_value_amount = deserialize_optional_fval(
+            value=result[6],
+            name='to_value_amount',
+            location=location,
+        )
+        to_value_usd_value = deserialize_optional_fval(
+            value=result[7],
+            name='to_value_usd_value',
+            location=location,
+        )
+        try:
+            block_number = int(result[10])
+        except ValueError as e:
+            raise DeserializationError(
+                f'Failed to deserialize block number {result[10]} in yearn vault event: {str(e)}',
+            ) from e
+        try:
+            from_asset = Asset(result[2])
+        except UnknownAsset as e:
+            raise DeserializationError(
+                f'Failed to deserialize from_asset {result[2]} in yearn vault event',
+            ) from e
+        try:
+            to_asset = Asset(result[5])
+        except UnknownAsset as e:
+            raise DeserializationError(
+                f'Failed to deserialize from_asset {result[5]} in yearn vault event',
+            ) from e
         return cls(
             event_type=result[1],
-            from_asset=Asset(result[2]),
-            from_value=Balance(amount=FVal(result[3]), usd_value=FVal(result[4])),
-            to_asset=Asset(result[5]),
-            to_value=Balance(amount=FVal(result[6]), usd_value=FVal(result[7])),
+            from_asset=from_asset,
+            from_value=Balance(amount=from_value_amount, usd_value=from_value_usd_value),
+            to_asset=to_asset,
+            to_value=Balance(amount=to_value_amount, usd_value=to_value_usd_value),
             realized_pnl=realized_pnl,
-            block_number=int(result[10]),
-            timestamp=Timestamp(int(result[11])),
+            block_number=block_number,
+            timestamp=deserialize_timestamp(result[11]),
             tx_hash=result[12],
             log_index=result[13],
             version=result[14],

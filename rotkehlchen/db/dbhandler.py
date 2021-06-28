@@ -1170,8 +1170,8 @@ class DBHandler:
             self.delete_balancer_events_data()
             self.delete_aave_data()
             self.delete_adex_events_data()
-            self.delete_yearn_vaults_data()
-            self.delete_yearn_vaults_v2_data()
+            self.delete_yearn_vaults_data(version=1)
+            self.delete_yearn_vaults_data(version=2)
             self.delete_loopring_data()
             self.delete_eth2_deposits()
             self.delete_eth2_daily_stats()
@@ -1189,9 +1189,9 @@ class DBHandler:
         elif module_name == 'adex':
             self.delete_adex_events_data()
         elif module_name == 'yearn_vaults':
-            self.delete_yearn_vaults_data()
+            self.delete_yearn_vaults_data(version=1)
         elif module_name == 'yearn_vaults_v2':
-            self.delete_yearn_vaults_v2_data()
+            self.delete_yearn_vaults_data(version=2)
         elif module_name == 'loopring':
             self.delete_loopring_data()
         elif module_name == 'eth2':
@@ -1276,7 +1276,12 @@ class DBHandler:
         )
         events = []
         for result in query:
-            events.append(YearnVaultEvent.deserialize_from_db(result))
+            try:
+                events.append(YearnVaultEvent.deserialize_from_db(result))
+            except DeserializationError as e:
+                msg = f'Failed to read yearn vault event from database {result}'
+                self.msg_aggregator.add_warning(msg)
+                log.error(msg, error=str(e))
         return events
 
     def get_all_yearn_vaults_v2_events(self, address: ChecksumEthAddress) -> List[YearnVaultEvent]:
@@ -1287,26 +1292,29 @@ class DBHandler:
         )
         events = []
         for result in query:
-            events.append(YearnVaultEvent.deserialize_from_db(result))
+            try:
+                events.append(YearnVaultEvent.deserialize_from_db(result))
+            except DeserializationError as e:
+                msg = f'Failed to read yearn vault event from database {result}'
+                self.msg_aggregator.add_warning(msg)
+                log.error(msg, error=str(e))
         return events
 
-    def delete_yearn_vaults_data(self) -> None:
+    def delete_yearn_vaults_data(self, version: int = 1) -> None:
         """Delete all historical yearn vault events data"""
+        if version not in (1, 2):
+            log.error(f'Called delete yearn vault data with non valid version {version}')
+            return None
+        if version == 1:
+            prefix = YEARN_VAULTS_PREFIX
+        elif version == 2:
+            prefix = YEARN_VAULTS_V2_PREFIX
         cursor = self.conn.cursor()
-        cursor.execute('DELETE FROM yearn_vaults_events WHERE version=1;')
-        cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{YEARN_VAULTS_PREFIX}%";')
+        cursor.execute(f'DELETE FROM yearn_vaults_events WHERE version={version};')
+        cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{prefix}%";')
         self.conn.commit()
         self.update_last_write()
-
-    def delete_yearn_vaults_v2_data(self) -> None:
-        """Delete all historical yearn vault v2 events data"""
-        cursor = self.conn.cursor()
-        cursor.execute('DELETE FROM yearn_vaults_events WHERE version=2;')
-        cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name LIKE "{YEARN_VAULTS_V2_PREFIX}%";',
-        )
-        self.conn.commit()
-        self.update_last_write()
+        return None
 
     def delete_loopring_data(self) -> None:
         """Delete all loopring related data"""

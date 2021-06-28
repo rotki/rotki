@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.structures import YearnVaultEvent
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import get_usd_price_zero_if_error
 from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, EthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -21,7 +22,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 QUERY_V2_VAULTS = (
     """
@@ -284,9 +286,13 @@ class YearnVaultsV2Graph:
                     version=2,
                 ))
             except (KeyError, ValueError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
                 log.error(
                     f'Failed to read {event_type} from yearn vaults v2 graph because the response'
-                    f' does not have the expected output. {str(e)}.',
+                    f' does not have the expected output.',
+                    error=msg,
                 )
                 self.msg_aggregator.add_warning(
                     f'Ignoring {event_type} {tx_hash} in yearn vault V2 from {from_asset} to '
@@ -360,7 +366,7 @@ class YearnVaultsV2Graph:
             'to_block': to_block,
             'addresses': addresses,
         }
-        #  TODO: need to paginate correctly this query
+
         querystr = format_query_indentation(QUERY_USER_EVENTS.format())
         query = self.graph.query(
             querystr=querystr,

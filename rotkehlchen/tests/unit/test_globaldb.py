@@ -365,18 +365,22 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     This tests verifies the behaviour of sqlite at the moment of
     activating and deactivating PRAGMA foreign_keys. As per what
     we could test and the documentation says for the change to
-    take effect it needs that no transaction is ongoing.
+    take effect it needs that no transaction is pending.
 
     In this test we do:
     - Deactivate the check, insert assets and activate it again
     - Deactivate them and activate them again without pending transactions
     - Start a transaction, check that the change doesn't take effect, commit
-    and see how it then works.
+    and see that then it works.
+
+    The reason for this test's existence is to verify our assumptions on sqlite
+    and PRAGMAs and to check that they hold for the versions we use. If this test
+    fails we know that something has changed and we will need to adjust our strategy.
     """
     cursor = globaldb._conn.cursor()
     cursor.execute('PRAGMA foreign_keys = OFF;')
     cursor.execute('PRAGMA foreign_keys')
-    # Now restrictions should be dissabled
+    # Now restrictions should be disabled
     assert cursor.fetchone()[0] == 0
 
     cursor.execute(
@@ -398,7 +402,7 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     cursor.execute('PRAGMA foreign_keys = ON;')
     cursor.execute('PRAGMA foreign_keys')
     assert cursor.fetchone()[0] == 0
-    # To change them again we have to finish previous transactin
+    # To change them again we have to commit the pending transaction
     cursor.execute('COMMIT;')
     # activate them again
     cursor.execute('PRAGMA foreign_keys = ON;')
