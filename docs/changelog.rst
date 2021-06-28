@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2778` Users will now be able to enable modules and queried addresses when adding an ethereum account
 * :feature:`2722` The sync conflict dialog dates will now be consistent with the user specified date format.
 * :feature:`3114` Users can easily check and manage which addresses are queried for each defi module directly from the respective module page.
 * :feature:`3069` When adding an asset coingecko/cryptocompare identifiers will now be validated and non-existing ones will be rejected.
