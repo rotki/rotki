@@ -4,7 +4,7 @@ on:
     tags:
       - 'v*'
 env:
-  PYINSTALLER_VERSION: 3.5
+  PYINSTALLER_VERSION: 3.5 # If editing this, make sure to also change rotki_nightly_builds.yml
 
 jobs:
   create_draft:
