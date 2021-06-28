@@ -64,6 +64,7 @@ import {
   UnlockPayload
 } from '@/typing/types';
 import { backoff } from '@/utils/backoff';
+import { uniqueStrings } from '@/utils/data';
 
 const periodic = {
   isRunning: false
@@ -390,7 +391,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   ) {
     const activeModules = state.generalSettings.activeModules;
-    const modules: SupportedModules[] = [...activeModules, ...payload.enable];
+    const modules: SupportedModules[] = [
+      ...activeModules,
+      ...payload.enable
+    ].filter(uniqueStrings);
     dispatch('updateSettings', { active_modules: modules });
 
     for (const module of payload.enable) {
