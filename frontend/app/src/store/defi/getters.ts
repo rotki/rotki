@@ -1078,7 +1078,11 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
     }
 
-    if (status === Status.LOADED || status === Status.REFRESHING) {
+    const overviewStatus = status(Section.DEFI_OVERVIEW);
+    if (
+      overviewStatus === Status.LOADED ||
+      overviewStatus === Status.REFRESHING
+    ) {
       const filter: SupportedDefiProtocols[] = [DEFI_MAKERDAO];
       const { totalCollateralUsd, totalDebt } = loanSummary(filter);
       summary[DEFI_MAKERDAO] = {
