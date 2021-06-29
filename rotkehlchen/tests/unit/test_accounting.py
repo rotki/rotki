@@ -850,3 +850,64 @@ def test_sell_fiat_for_crypto(accountant):
     assert len(warnings) == 0
     errors = accountant.msg_aggregator.consume_errors()
     assert len(errors) == 0
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_fees_count_in_cost_basis(accountant):
+    """
+    Test for https://github.com/rotki/rotki/issues/2744
+    Make sure that asset amounts used in fees are reduced.
+    """
+    history = [{
+        'timestamp': 1609537953,
+        'base_asset': 'ETH',
+        'quote_asset': 'EUR',
+        'trade_type': 'buy',
+        'rate': 598.26,
+        'fee': 1,
+        'fee_currency': 'EUR',
+        'amount': 1,
+        'location': 'kraken',
+    }, {
+        'timestamp': 1624395186,
+        'base_asset': 'ETH',
+        'quote_asset': 'EUR',
+        'trade_type': 'sell',
+        'rate': 1862.06,
+        'fee': 0.5,
+        'fee_currency': 'ETH',
+        'amount': 0.5,
+        'location': 'kraken',
+    }, {
+        'timestamp': 1625001464,
+        'base_asset': 'ETH',
+        'quote_asset': 'EUR',
+        'trade_type': 'sell',
+        'rate': 1837.31,
+        'fee': 0,
+        'fee_currency': 'EUR',
+        'amount': 0.5,
+        'location': 'kraken',
+    }]
+    result = accounting_history_process(
+        accountant,
+        1436979735,
+        1625001466,
+        history,
+    )
+
+    assert FVal(result['overview']['total_profit_loss']) == FVal(
+        # first sell also has a huge fee, same as the amount sold
+        1862.06 * 0.5 - (0.5 * 598.26 + 0.5) - 0.5 * 1862.06 +
+        # 2nd sell can't find ETH due to fee of previous so considers pure profit
+        1837.31 * 0.5,
+    )
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_ETH) is None
+    error = (
+        'No documented acquisition found for ETH(Ethereum) before 29/06/2021 23:17:44.'
+        ' Let rotki know how you acquired it via a ledger action'
+    )
+    warnings = accountant.msg_aggregator.consume_warnings()
+    assert len(warnings) == 0
+    errors = accountant.msg_aggregator.consume_errors()
+    assert errors == [error]
