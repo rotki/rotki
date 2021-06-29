@@ -62,8 +62,8 @@ history1 = [
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_simple_accounting(accountant):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
-    assert accountant.general_trade_pl.is_close('557.5284549025')
-    assert accountant.taxable_trade_pl.is_close('557.5284549025')
+    assert accountant.general_trade_pl.is_close('558.25365490257463')
+    assert accountant.taxable_trade_pl.is_close('558.25365490257463')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -106,11 +106,11 @@ def test_selling_crypto_bought_with_crypto(accountant):
     assert sells[0].amount == FVal('0.3853125')
     assert sells[0].timestamp == 1449809536
     assert sells[0].rate.is_close(FVal('386.0340632603'))
-    assert sells[0].fee_rate.is_close(FVal('0.96508515815085'))
+    assert sells[0].fee_rate == Fee(ZERO)  # the fee should not be double counted
     assert sells[0].gain.is_close(FVal('148.74375'))
 
-    assert accountant.general_trade_pl.is_close('73.8225270636')
-    assert accountant.taxable_trade_pl.is_close('73.8225270636')
+    assert accountant.general_trade_pl.is_close('74.1943864386100625')
+    assert accountant.taxable_trade_pl.is_close('74.1943864386100625')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -362,8 +362,8 @@ def test_nocrypto2crypto(accountant):
 }])
 def test_no_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
-    assert accountant.general_trade_pl.is_close('265250.9620977')
-    assert accountant.taxable_trade_pl.is_close('265250.9620977')
+    assert accountant.general_trade_pl.is_close('265251.6872977225746')
+    assert accountant.taxable_trade_pl.is_close('265251.6872977225746')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -372,7 +372,7 @@ def test_no_taxfree_period(accountant):
 }])
 def test_big_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
-    assert accountant.general_trade_pl.is_close('265250.9620977')
+    assert accountant.general_trade_pl.is_close('265251.6872977225746375')
     assert accountant.taxable_trade_pl.is_close('0')
 
 
@@ -494,7 +494,7 @@ def test_ignored_assets(accountant):
         'location': 'kraken',
     }]
     result = accounting_history_process(accountant, 1436979735, 1519693374, history)
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('557.5284549025')
+    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('558.253654902574637500')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -537,7 +537,7 @@ def test_settlement_buy(accountant):
         1519693374,
         history,
     )
-    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.9920725')
+    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.9908725')
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1932.598999')
     assert FVal(result['overview']['settlement_losses']).is_close('8.357159475')
 
@@ -594,7 +594,7 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         history,
         margin_list=margin_history,
     )
-    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.748')
+    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.7468')
     assert FVal(result['overview']['general_trade_profit_loss']).is_close('1940.9561588')
     assert FVal(result['overview']['margin_positions_profit_loss']).is_close('-162.18738')
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1778.7687788')
@@ -843,7 +843,7 @@ def test_sell_fiat_for_crypto(accountant):
         1519693374,
         history,
     )
-    assert FVal(result['overview']['total_profit_loss']) == FVal(25000 - 0.02 - 250 * 1.001 - 0.01)
+    assert FVal(result['overview']['total_profit_loss']) == FVal(25000 - 0.02 - 250 * 1.001)  # the 0.02/2 fee from sell of CHF to ETH is not counted since the first sell is skipped, only the buy of ETH is counted  # noqa: E501
     assert accountant.events.cost_basis.get_calculated_asset_amount(A_ETH) == FVal(1)
     assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC) == FVal(4)
     warnings = accountant.msg_aggregator.consume_warnings()
