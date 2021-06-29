@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :release:`1.18.1 <2021-06-30>`
+* :bug:`2447` When fee of a trade is paid in crypto that crypto's asset will now be deducted from the cost basis calculation.
 * :bug:`3133` Users will now properly see a MakerDAO entry in the Defi Overview.
 * :bug:`2887` Upgrade the deprecated binance exchangeInfo and deposit/withdrawal APIs.
 * :bug:`3118` Users will now be able to properly connect to the dockerized backend through the app. (It will not work if the docker container is a previous release).
