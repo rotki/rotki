@@ -920,8 +920,9 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 category = AssetMovementCategory.WITHDRAWAL
                 timestamp = deserialize_timestamp_from_date(
                     date=raw_data['applyTime'],
-                    formatstr='iso8601',
+                    formatstr='%Y-%m-%d %H:%M:%S',
                     location='binance withdrawal',
+                    skip_milliseconds=True,
                 )
                 fee = Fee(deserialize_asset_amount(raw_data['transactionFee']))
 
