@@ -61,9 +61,6 @@ V3_METHODS = (
     'account',
     'myTrades',
     'openOrders',
-)
-
-V1_METHODS = (
     'exchangeInfo',
     'time',
 )
@@ -346,8 +343,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     hashlib.sha256,
                 ).hexdigest()
                 call_options['signature'] = signature
-            elif api_type == 'api' and method in V1_METHODS:
-                api_version = 1
             else:
                 raise AssertionError(f'Unexpected {self.name} API method {method}')
 
