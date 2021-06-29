@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`3133` Users will now properly see a MakerDAO entry in the Defi Overview.
+* :bug:`2887` Upgrade the deprecated binance exchangeInfo and deposit/withdrawal APIs.
 * :bug:`3118` Users will now be able to properly connect to the dockerized backend through the app. (It will not work if the docker container is a previous release).
 * :bug:`3101` Editing ethereum token details via the asset manager in the frontend should now work properly again.
 * :bug:`3100` FTX API keys with permission for subaccounts only will now be correctly validated.
