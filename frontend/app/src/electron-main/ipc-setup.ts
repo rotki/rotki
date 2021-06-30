@@ -28,7 +28,8 @@ import {
   IPC_RESTART_BACKEND,
   IPC_SERVER_URL,
   IPC_TRAY_UPDATE,
-  IPC_VERSION
+  IPC_VERSION,
+  IPC_WEBSOCKET_URL
 } from '@/electron-main/ipc-commands';
 import { debugSettings, getUserMenu } from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
@@ -138,6 +139,10 @@ export function ipcSetup(
 
   ipcMain.on(IPC_SERVER_URL, event => {
     event.returnValue = pyHandler.serverUrl;
+  });
+
+  ipcMain.on(IPC_WEBSOCKET_URL, event => {
+    event.returnValue = pyHandler.websocketUrl;
   });
 
   ipcMain.on(IPC_PREMIUM_LOGIN, (event, args) => {
