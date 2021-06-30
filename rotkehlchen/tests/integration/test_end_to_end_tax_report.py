@@ -392,9 +392,9 @@ def test_end_to_end_tax_report(accountant):
     # action seen in history before end_ts
     assert accountant.currently_processing_timestamp == 1511626623
     general_trade_pl = FVal(result['general_trade_profit_loss'])
-    assert general_trade_pl.is_close('5032.272455644')
+    assert general_trade_pl.is_close('5033.312065244648')
     taxable_trade_pl = FVal(result['taxable_trade_profit_loss'])
-    assert taxable_trade_pl.is_close('3954.996939709')
+    assert taxable_trade_pl.is_close('3956.21087022028')
     loan_profit = FVal(result['loan_profit'])
     assert loan_profit.is_close('0.116193915')
     settlement_losses = FVal(result['settlement_losses'])
@@ -446,9 +446,9 @@ def test_end_to_end_tax_report_in_period(accountant):
     assert accountant.currently_processing_timestamp == 1511626623
     result = result['overview']
     general_trade_pl = FVal(result['general_trade_profit_loss'])
-    assert general_trade_pl.is_close('1506.937290335')
+    assert general_trade_pl.is_close('1506.698795886789')
     taxable_trade_pl = FVal(result['taxable_trade_profit_loss'])
-    assert taxable_trade_pl.is_close('642.7084519791')
+    assert taxable_trade_pl.is_close('643.1971824900041')
     loan_profit = FVal(result['loan_profit'])
     assert loan_profit.is_close('0.1140477')
     settlement_losses = FVal(result['settlement_losses'])

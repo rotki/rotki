@@ -10,6 +10,7 @@ from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.typing import AssetMovementCategory, EthereumTransaction, Fee, Location, Timestamp
+from rotkehlchen.utils.misc import timestamp_to_date
 
 DUMMY_ADDRESS = '0x0'
 DUMMY_HASH = b''
@@ -62,8 +63,8 @@ history1 = [
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_simple_accounting(accountant):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
-    assert accountant.general_trade_pl.is_close('557.5284549025')
-    assert accountant.taxable_trade_pl.is_close('557.5284549025')
+    assert accountant.general_trade_pl.is_close('558.25365490257463')
+    assert accountant.taxable_trade_pl.is_close('558.25365490257463')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -106,11 +107,11 @@ def test_selling_crypto_bought_with_crypto(accountant):
     assert sells[0].amount == FVal('0.3853125')
     assert sells[0].timestamp == 1449809536
     assert sells[0].rate.is_close(FVal('386.0340632603'))
-    assert sells[0].fee_rate.is_close(FVal('0.96508515815085'))
+    assert sells[0].fee_rate == Fee(ZERO)  # the fee should not be double counted
     assert sells[0].gain.is_close(FVal('148.74375'))
 
-    assert accountant.general_trade_pl.is_close('73.8225270636')
-    assert accountant.taxable_trade_pl.is_close('73.8225270636')
+    assert accountant.general_trade_pl.is_close('74.1943864386100625')
+    assert accountant.taxable_trade_pl.is_close('74.1943864386100625')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -362,8 +363,8 @@ def test_nocrypto2crypto(accountant):
 }])
 def test_no_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
-    assert accountant.general_trade_pl.is_close('265250.9620977')
-    assert accountant.taxable_trade_pl.is_close('265250.9620977')
+    assert accountant.general_trade_pl.is_close('265251.6872977225746')
+    assert accountant.taxable_trade_pl.is_close('265251.6872977225746')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -372,7 +373,7 @@ def test_no_taxfree_period(accountant):
 }])
 def test_big_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
-    assert accountant.general_trade_pl.is_close('265250.9620977')
+    assert accountant.general_trade_pl.is_close('265251.6872977225746375')
     assert accountant.taxable_trade_pl.is_close('0')
 
 
@@ -494,7 +495,7 @@ def test_ignored_assets(accountant):
         'location': 'kraken',
     }]
     result = accounting_history_process(accountant, 1436979735, 1519693374, history)
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('557.5284549025')
+    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('558.253654902574637500')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -537,7 +538,7 @@ def test_settlement_buy(accountant):
         1519693374,
         history,
     )
-    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.9920725')
+    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.9908725')
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1932.598999')
     assert FVal(result['overview']['settlement_losses']).is_close('8.357159475')
 
@@ -594,7 +595,7 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         history,
         margin_list=margin_history,
     )
-    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.748')
+    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.7468')
     assert FVal(result['overview']['general_trade_profit_loss']).is_close('1940.9561588')
     assert FVal(result['overview']['margin_positions_profit_loss']).is_close('-162.18738')
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1778.7687788')
@@ -843,10 +844,72 @@ def test_sell_fiat_for_crypto(accountant):
         1519693374,
         history,
     )
-    assert FVal(result['overview']['total_profit_loss']) == FVal(25000 - 0.02 - 250 * 1.001 - 0.01)
+    assert FVal(result['overview']['total_profit_loss']) == FVal(25000 - 0.02 - 250 * 1.001)  # the 0.02/2 fee from sell of CHF to ETH is not counted since the first sell is skipped, only the buy of ETH is counted  # noqa: E501
     assert accountant.events.cost_basis.get_calculated_asset_amount(A_ETH) == FVal(1)
     assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC) == FVal(4)
     warnings = accountant.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
     errors = accountant.msg_aggregator.consume_errors()
     assert len(errors) == 0
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_fees_count_in_cost_basis(accountant):
+    """
+    Test for https://github.com/rotki/rotki/issues/2744
+    Make sure that asset amounts used in fees are reduced.
+    """
+    history = [{
+        'timestamp': 1609537953,
+        'base_asset': 'ETH',
+        'quote_asset': 'EUR',
+        'trade_type': 'buy',
+        'rate': 598.26,
+        'fee': 1,
+        'fee_currency': 'EUR',
+        'amount': 1,
+        'location': 'kraken',
+    }, {
+        'timestamp': 1624395186,
+        'base_asset': 'ETH',
+        'quote_asset': 'EUR',
+        'trade_type': 'sell',
+        'rate': 1862.06,
+        'fee': 0.5,
+        'fee_currency': 'ETH',
+        'amount': 0.5,
+        'location': 'kraken',
+    }, {
+        'timestamp': 1625001464,
+        'base_asset': 'ETH',
+        'quote_asset': 'EUR',
+        'trade_type': 'sell',
+        'rate': 1837.31,
+        'fee': 0,
+        'fee_currency': 'EUR',
+        'amount': 0.5,
+        'location': 'kraken',
+    }]
+    result = accounting_history_process(
+        accountant,
+        1436979735,
+        1625001466,
+        history,
+    )
+
+    assert FVal(result['overview']['total_profit_loss']) == FVal(
+        # first sell also has a huge fee, same as the amount sold
+        1862.06 * 0.5 - (0.5 * 598.26 + 0.5) - 0.5 * 1862.06 +
+        # 2nd sell can't find ETH due to fee of previous so considers pure profit
+        1837.31 * 0.5,
+    )
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_ETH) is None
+    error = (
+        f'No documented acquisition found for ETH(Ethereum) before '
+        f'{timestamp_to_date(1625001464, treat_as_local=True)}. '
+        f'Let rotki know how you acquired it via a ledger action'
+    )
+    warnings = accountant.msg_aggregator.consume_warnings()
+    assert len(warnings) == 0
+    errors = accountant.msg_aggregator.consume_errors()
+    assert errors == [error]
