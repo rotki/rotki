@@ -480,7 +480,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async addAccounts(
     { state, commit, dispatch, rootGetters },
-    { blockchain, payload }: AddAccountsPayload
+    { blockchain, payload, modules }: AddAccountsPayload
   ): Promise<void> {
     const taskType = TaskType.ADD_ACCOUNT;
     const isTaskRunning = rootGetters['tasks/isTaskRunning'];
@@ -546,7 +546,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           'session/enableModule',
           {
             enable: modules,
-            addresses: accounts.map(({ address }) => address)
+            addresses: [address]
           },
           { root: true }
         );
@@ -556,7 +556,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     };
 
     const additions = accounts.map(value =>
-      addAccount(blockchain, value).catch(() => {})
+      addAccount(blockchain, value, modules).catch(() => {})
     );
     Promise.all(additions)
       .then(async () => {
