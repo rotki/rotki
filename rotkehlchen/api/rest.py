@@ -43,6 +43,7 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
+from rotkehlchen.chain.ethereum.gitcoin.importer import GitcoinDataImporter, GitcoinProcessor
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.constants.assets import A_ETH
@@ -2048,6 +2049,15 @@ class RestAPI():
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+        elif source == 'gitcoin':
+            if self.rotkehlchen.premium is None:
+                return api_response(wrap_in_fail_result(
+                    'Gitcoin grants importing is premium only',
+                    status_code=HTTPStatus.CONFLICT,
+                ))
+
+            gitcoin_importer = GitcoinDataImporter(db=self.rotkehlchen.data.db)
+            gitcoin_importer.import_gitcoin_csv(filepath)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
@@ -3072,3 +3082,33 @@ class RestAPI():
             ),
             status_code=HTTPStatus.OK,
         )
+
+    def _process_gitcoin(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Dict[str, Any]:
+        processor = GitcoinProcessor(self.rotkehlchen.data.db)
+        report = processor.process_gitcoin(from_ts=from_timestamp, to_ts=to_timestamp)
+        return {'result': report.serialize(), 'message': ''}
+
+    @require_premium_user(active_check=False)
+    def process_gitcoin(
+            self,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_process_gitcoin',
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        response = self._process_gitcoin(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)

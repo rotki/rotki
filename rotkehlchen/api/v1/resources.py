@@ -73,6 +73,7 @@ from rotkehlchen.api.v1.encoding import (
     TagSchema,
     TimerangeLocationCacheQuerySchema,
     TimerangeLocationQuerySchema,
+    TimerangeQuerySchema,
     TradeDeleteSchema,
     TradePatchSchema,
     TradeSchema,
@@ -1643,3 +1644,20 @@ class BinanceUserMarkets(BaseResource):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(self, name: str, location: Location) -> Response:
         return self.rest_api.get_user_binance_pairs(name, location)
+
+
+class GitcoinQuerySchema(BaseResource):
+    put_schema = TimerangeQuerySchema()
+
+    @use_kwargs(put_schema, location='json_and_query')
+    def put(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.process_gitcoin(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            async_query=async_query,
+        )

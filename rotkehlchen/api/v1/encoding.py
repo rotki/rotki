@@ -809,11 +809,14 @@ class EthereumTransactionQuerySchema(Schema):
     only_cache = fields.Boolean(missing=False)
 
 
-class TimerangeLocationQuerySchema(Schema):
+class TimerangeQuerySchema(Schema):
     from_timestamp = TimestampField(missing=Timestamp(0))
     to_timestamp = TimestampField(missing=ts_now)
-    location = LocationField(missing=None)
     async_query = fields.Boolean(missing=False)
+
+
+class TimerangeLocationQuerySchema(TimerangeQuerySchema):
+    location = LocationField(missing=None)
 
 
 class TimerangeLocationCacheQuerySchema(TimerangeLocationQuerySchema):

@@ -21,7 +21,9 @@ class DBLedgerActions():
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             location: Optional[Location],
+            link: Optional[str] = None,
     ) -> List[LedgerAction]:
+        bindings = []
         cursor = self.db.conn.cursor()
         query = (
             'SELECT identifier,'
@@ -37,8 +39,18 @@ class DBLedgerActions():
         )
         if location is not None:
             query += f'WHERE location="{location.serialize_for_db()}" '
-        query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
-        results = cursor.execute(query, bindings)
+
+        if link is not None:
+            if 'WHERE' not in query:
+                query += ' WHERE '
+            else:
+                query += ' AND '
+            query += 'link=? '
+            bindings = [link]
+
+        query, time_bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
+
+        results = cursor.execute(query, bindings + list(time_bindings))  # type: ignore
         actions = []
         for result in results:
             try:
@@ -71,6 +83,17 @@ class DBLedgerActions():
         identifier = cursor.lastrowid
         self.db.conn.commit()
         return identifier
+
+    def add_ledger_actions(self, actions: List[LedgerAction]) -> None:
+        """Adds multiple ledger action to the DB"""
+        cursor = self.db.conn.cursor()
+        query = """
+        INSERT INTO ledger_actions(
+            timestamp, type, location, amount, asset, rate, rate_asset, link, notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+        cursor.executemany(query, [x.serialize_for_db() for x in actions])
+        self.db.conn.commit()
 
     def remove_ledger_action(self, identifier: int) -> Optional[str]:
         """Removes a ledger action from the DB by identifier

@@ -8251,7 +8251,7 @@ Data imports
 
       {"source": "cointracking.info", "filepath": "/path/to/data/file"}
 
-   :reqjson str source: The source of the data to import. Valid values are ``"cointracking.info"``
+   :reqjson str source: The source of the data to import. Valid values are ``"cointracking.info"``, ``"cryptocom"``, ``"blockfi-transactions"``, ``"blockfi-trades"``, ``"nexo"``, ``"gitcoin"``.
    :reqjson str filepath: The filepath to the data for importing
 
    **Example Response**:
@@ -8269,7 +8269,7 @@ Data imports
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: Data imported. Check user messages for warnings.
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in.
+   :statuscode 409: User is not logged in. Or premium was needed for the import and not found.
    :statuscode 500: Internal rotki error
 
 ERC20 token info
@@ -8376,3 +8376,57 @@ User selected Binance markets
           "result": ["BTCUSD", "ETHUSD"],
           "message": ""
       }
+
+
+Gitcoin report
+===================
+
+.. http:put:: /api/(version)/gitcoin/report
+
+   Doing a PUT to this endpoint will process a report for the user's gitcoin grant events in the given period and return it. Each report contains a breakdown of how much was earned in the current profit currency in total. And also how much was earned in the current profit currency per asset and what amount per asset.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/exchanges/binance/pairs/testExchange HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"from_timestamp": 0, "to_timestamp": 1624828416 }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "per_asset": {
+	          "ETH": {
+		      "amount": "5",
+		      "value": "5500"
+		  },
+	          "USDT": {
+		      "amount": "150",
+		      "value": "131.44"
+		  },
+	          "DAI": {
+		      "amount": "101",
+		      "value": "93.21"
+		  }
+	      },
+	      "total": "5724.65"
+	  }
+          "message": ""
+      }
+
+   :resjson string profit_currency: The profit currency used in the report.
+   :resjson object per_asset: A mapping of each asset to amount earned in the given period and its value in the user chosen profit currency.
+   :resjson string total: The total amount earned in profit currency during the given period.
+   :statuscode 200: Report succesfully generated
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal rotki error
