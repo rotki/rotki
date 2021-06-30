@@ -46,6 +46,7 @@ from rotkehlchen.chain.ethereum.modules import (
     MakerdaoVaults,
     Uniswap,
     YearnVaults,
+    YearnVaultsV2,
 )
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
@@ -122,6 +123,7 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'Chi Gastoken by 1inch': True,  # True means all
     # yearn vault balances are detected by the yTokens
     'yearn.finance • Vaults': True,  # True means all
+    'Yearn Token Vaults': True,
     # Synthetix SNX token is in all_assets.json
     'Synthetix': ['SNX'],
     # Ampleforth's AMPL token is in all_assets.json
@@ -421,6 +423,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_module(self, module_name: Literal['yearn_vaults']) -> Optional[YearnVaults]:
+        ...
+
+    @overload
+    def get_module(self, module_name: Literal['yearn_vaults_v2']) -> Optional[YearnVaultsV2]:
         ...
 
     def get_module(self, module_name: ModuleName) -> Optional[Any]:

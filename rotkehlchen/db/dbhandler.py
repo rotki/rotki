@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union,
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType
+from rotkehlchen.accounting.structures import ActionType, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -49,7 +49,7 @@ from rotkehlchen.chain.ethereum.structures import (
 )
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
+from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -1170,7 +1170,8 @@ class DBHandler:
             self.delete_balancer_events_data()
             self.delete_aave_data()
             self.delete_adex_events_data()
-            self.delete_yearn_vaults_data()
+            self.delete_yearn_vaults_data(version=1)
+            self.delete_yearn_vaults_data(version=2)
             self.delete_loopring_data()
             self.delete_eth2_deposits()
             self.delete_eth2_daily_stats()
@@ -1188,7 +1189,9 @@ class DBHandler:
         elif module_name == 'adex':
             self.delete_adex_events_data()
         elif module_name == 'yearn_vaults':
-            self.delete_yearn_vaults_data()
+            self.delete_yearn_vaults_data(version=1)
+        elif module_name == 'yearn_vaults_v2':
+            self.delete_yearn_vaults_data(version=2)
         elif module_name == 'loopring':
             self.delete_loopring_data()
         elif module_name == 'eth2':
@@ -1229,27 +1232,7 @@ class DBHandler:
     ) -> None:
         cursor = self.conn.cursor()
         for e in events:
-            pnl_amount = None
-            pnl_usd_value = None
-            if e.realized_pnl:
-                pnl_amount = str(e.realized_pnl.amount)
-                pnl_usd_value = str(e.realized_pnl.usd_value)
-            event_tuple = (
-                address,
-                e.event_type,
-                e.from_asset.identifier,
-                str(e.from_value.amount),
-                str(e.from_value.usd_value),
-                e.to_asset.identifier,
-                str(e.to_value.amount),
-                str(e.to_value.usd_value),
-                pnl_amount,
-                pnl_usd_value,
-                str(e.block_number),
-                str(e.timestamp),
-                e.tx_hash,
-                e.log_index,
-            )
+            event_tuple = e.serialize_for_db(address)
             try:
                 cursor.execute(
                     'INSERT INTO yearn_vaults_events( '
@@ -1266,8 +1249,9 @@ class DBHandler:
                     'block_number, '
                     'timestamp, '
                     'tx_hash, '
-                    'log_index)'
-                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    'log_index,'
+                    'version)'
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     event_tuple,
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
@@ -1286,49 +1270,50 @@ class DBHandler:
     ) -> List[YearnVaultEvent]:
         cursor = self.conn.cursor()
         query = cursor.execute(
-            'SELECT '
-            'event_type, '
-            'from_asset, '
-            'from_amount, '
-            'from_usd_value, '
-            'to_asset, '
-            'to_amount, '
-            'to_usd_value, '
-            'pnl_amount, '
-            'pnl_usd_value, '
-            'block_number, '
-            'timestamp, '
-            'tx_hash, '
-            'log_index '
-            'from yearn_vaults_events WHERE address=? AND (from_asset=? OR from_asset=?);',
+            'SELECT * from yearn_vaults_events WHERE address=? '
+            'AND (from_asset=? OR from_asset=?);',
             (address, vault.underlying_token.identifier, vault.token.identifier),
         )
         events = []
         for result in query:
-            realized_pnl = None
-            if result[7] is not None:
-                realized_pnl = Balance(amount=FVal(result[7]), usd_value=FVal(result[8]))
-            events.append(YearnVaultEvent(
-                event_type=result[0],
-                from_asset=Asset(result[1]),
-                from_value=Balance(amount=FVal(result[2]), usd_value=FVal(result[3])),
-                to_asset=Asset(result[4]),
-                to_value=Balance(amount=FVal(result[5]), usd_value=FVal(result[6])),
-                realized_pnl=realized_pnl,
-                block_number=int(result[9]),
-                timestamp=Timestamp(int(result[10])),
-                tx_hash=result[11],
-                log_index=result[12],
-            ))
+            try:
+                events.append(YearnVaultEvent.deserialize_from_db(result))
+            except (DeserializationError, UnknownAsset) as e:
+                msg = f'Failed to read yearn vault event from database due to {str(e)}'
+                self.msg_aggregator.add_warning(msg)
+                log.warning(msg, data=result)
         return events
 
-    def delete_yearn_vaults_data(self) -> None:
-        """Delete all historical aave event data"""
+    def get_all_yearn_vaults_v2_events(self, address: ChecksumEthAddress) -> List[YearnVaultEvent]:
         cursor = self.conn.cursor()
-        cursor.execute('DELETE FROM yearn_vaults_events;')
-        cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{YEARN_VAULTS_PREFIX}%";')
+        query = cursor.execute(
+            'SELECT * from yearn_vaults_events WHERE address=? AND version=2;',
+            (address, ),
+        )
+        events = []
+        for result in query:
+            try:
+                events.append(YearnVaultEvent.deserialize_from_db(result))
+            except (DeserializationError, UnknownAsset) as e:
+                msg = f'Failed to read yearn vault event from database due to {str(e)}'
+                self.msg_aggregator.add_warning(msg)
+                log.warning(msg, data=result)
+        return events
+
+    def delete_yearn_vaults_data(self, version: int = 1) -> None:
+        """Delete all historical yearn vault events data"""
+        if version not in (1, 2):
+            log.error(f'Called delete yearn vault data with non valid version {version}')
+            return None
+        prefix = YEARN_VAULTS_PREFIX
+        if version == 2:
+            prefix = YEARN_VAULTS_V2_PREFIX
+        cursor = self.conn.cursor()
+        cursor.execute(f'DELETE FROM yearn_vaults_events WHERE version={version};')
+        cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{prefix}%";')
         self.conn.commit()
         self.update_last_write()
+        return None
 
     def delete_loopring_data(self) -> None:
         """Delete all loopring related data"""
@@ -1346,6 +1331,7 @@ class DBHandler:
         - {exchange_name}_asset_movements
         - aave_events_{address}
         - yearn_vaults_events_{address}
+        - yearn_vaults_v2_events_{address}
         """
         cursor = self.conn.cursor()
         query = cursor.execute(

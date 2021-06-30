@@ -1086,7 +1086,7 @@ def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
         if db_entry is None:
             log.critical(
                 f'Constant declared asset with id {entry.identifier} has no corresponding DB entry'
-                f'Skipping reload this asset from DB. Either old global DB or user deleted it.',
+                f'. Skipping reload this asset from DB. Either old global DB or user deleted it.',
             )
             continue
 

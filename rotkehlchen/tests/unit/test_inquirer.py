@@ -337,3 +337,15 @@ def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
 
     price = inquirer.find_uniswap_v2_lp_price(EthereumToken(addess))
     assert price is not None
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_curve_lp_token_price(inquirer, ethereum_manager):
+    address = '0xb19059ebb43466C323583928285a49f558E572Fd'
+    inquirer.inject_ethereum(ethereum_manager)
+
+    price = inquirer.find_curve_pool_price(EthereumToken(address))
+    assert price is not None
+    # Check that the protocol is correctly caught by the inquirer
+    assert price == inquirer.find_usd_price(EthereumToken(address))

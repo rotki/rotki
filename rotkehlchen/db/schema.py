@@ -238,6 +238,7 @@ CREATE TABLE IF NOT EXISTS yearn_vaults_events (
     timestamp INTEGER NOT NULL,
     tx_hash VARCHAR[66] NOT NULL,
     log_index INTEGER NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY(from_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     PRIMARY KEY (event_type, tx_hash, log_index)

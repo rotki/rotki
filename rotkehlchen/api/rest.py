@@ -2368,6 +2368,21 @@ class RestAPI():
             given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
         )
 
+    @require_loggedin_user()
+    def get_yearn_vaults_v2_balances(self, async_query: bool) -> Response:
+        # Once that has ran we can be sure that defi_balances mapping is populated
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='yearn_vaults_v2',
+            method='get_balances',
+            # We need to query defi balances before since eth balances must be populated
+            query_specific_balances_before=['defi'],
+            # Giving the eth balances as a lambda function here so that they
+            # are retrieved only after we are sure the eth balances have been
+            # queried.
+            given_eth_balances=lambda: self.rotkehlchen.chain_manager.balances.eth,
+        )
+
     @require_premium_user(active_check=False)
     def get_yearn_vaults_history(
             self,
@@ -2387,6 +2402,31 @@ class RestAPI():
             # queried.
             given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('yearn_vaults'),
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+    @require_premium_user(active_check=False)
+    def get_yearn_vaults_v2_history(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='yearn_vaults_v2',
+            method='get_history',
+            query_specific_balances_before=['defi'],
+            # Giving the eth balances as a lambda function here so that they
+            # are retrieved only after we are sure the eth balances have been
+            # queried.
+            given_eth_balances=lambda: self.rotkehlchen.chain_manager.balances.eth,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module(
+                'yearn_vaults_v2',
+            ),
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,

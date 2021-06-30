@@ -10,7 +10,10 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.ethereum import EthereumContract
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_optional_fval
+from rotkehlchen.serialization.deserialize import (
+    deserialize_optional_fval,
+    deserialize_timestamp,
+)
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 AAVE_EVENT_TYPE = Literal['deposit', 'withdrawal', 'interest', 'borrow', 'repay', 'liquidation']
@@ -28,6 +31,24 @@ AAVE_EVENT_DB_TUPLE = Tuple[
     Optional[str],  # asset2 amount / borrow rate / fee amount
     Optional[str],  # asset2 usd value / borrow accrued interest rate / fee usd value
     Optional[str],  # borrow rate mode
+]
+
+YEARN_EVENT_DB_TUPLE = Tuple[
+    ChecksumEthAddress,
+    Literal['deposit', 'withdraw'],  # event_type
+    str,  # from_asset identifier
+    str,  # from_value amount
+    str,  # from value usd_value
+    str,  # to_asset idientifier
+    str,  # to_value amount
+    str,  # to value usd_value
+    Optional[str],  # pnl amount
+    Optional[str],  # pnl usd value
+    str,  # block number
+    str,  # str of timestamp
+    str,  # tx hash
+    int,  # log index
+    int,  # version
 ]
 
 
@@ -340,6 +361,7 @@ class YearnVaultEvent:
     realized_pnl: Optional[Balance]
     tx_hash: str
     log_index: int
+    version: int
 
     def serialize(self) -> Dict[str, Any]:
         # Would have been nice to have a customizable asdict() for dataclasses
@@ -356,6 +378,95 @@ class YearnVaultEvent:
             'tx_hash': self.tx_hash,
             'log_index': self.log_index,
         }
+
+    def serialize_for_db(self, address: ChecksumEthAddress) -> YEARN_EVENT_DB_TUPLE:
+        pnl_amount = None
+        pnl_usd_value = None
+        if self.realized_pnl:
+            pnl_amount = str(self.realized_pnl.amount)
+            pnl_usd_value = str(self.realized_pnl.usd_value)
+        vault_version = self.version
+        return (
+            address,
+            self.event_type,
+            self.from_asset.identifier,
+            str(self.from_value.amount),
+            str(self.from_value.usd_value),
+            self.to_asset.identifier,
+            str(self.to_value.amount),
+            str(self.to_value.usd_value),
+            pnl_amount,
+            pnl_usd_value,
+            str(self.block_number),
+            str(self.timestamp),
+            self.tx_hash,
+            self.log_index,
+            vault_version,
+        )
+
+    @classmethod
+    def deserialize_from_db(cls, result: YEARN_EVENT_DB_TUPLE) -> 'YearnVaultEvent':
+        """
+        Turns a tuple read from the DB into an appropriate YearnVaultEvent
+        May raise a DeserializationError if there is an issue with information in
+        the database
+        """
+        location = 'deserialize yearn vault event from db'
+        realized_pnl = None
+        if result[8] is not None and result[9] is not None:
+            pnl_amount = deserialize_optional_fval(
+                value=result[8],
+                name='pnl_amount',
+                location=location,
+            )
+            pnl_usd_value = deserialize_optional_fval(
+                value=result[9],
+                name='pnl_usd_value',
+                location=location,
+            )
+            realized_pnl = Balance(amount=pnl_amount, usd_value=pnl_usd_value)
+
+        from_value_amount = deserialize_optional_fval(
+            value=result[3],
+            name='from_value_amount',
+            location=location,
+        )
+        from_value_usd_value = deserialize_optional_fval(
+            result[4],
+            name='from_value_usd_value',
+            location=location,
+        )
+        to_value_amount = deserialize_optional_fval(
+            value=result[6],
+            name='to_value_amount',
+            location=location,
+        )
+        to_value_usd_value = deserialize_optional_fval(
+            value=result[7],
+            name='to_value_usd_value',
+            location=location,
+        )
+        try:
+            block_number = int(result[10])
+        except ValueError as e:
+            raise DeserializationError(
+                f'Failed to deserialize block number {result[10]} in yearn vault event: {str(e)}',
+            ) from e
+        from_asset = Asset(result[2])
+        to_asset = Asset(result[5])
+        return cls(
+            event_type=result[1],
+            from_asset=from_asset,
+            from_value=Balance(amount=from_value_amount, usd_value=from_value_usd_value),
+            to_asset=to_asset,
+            to_value=Balance(amount=to_value_amount, usd_value=to_value_usd_value),
+            realized_pnl=realized_pnl,
+            block_number=block_number,
+            timestamp=deserialize_timestamp(result[11]),
+            tx_hash=result[12],
+            log_index=result[13],
+            version=result[14],
+        )
 
     def __str__(self) -> str:
         """Used in DefiEvent processing during accounting"""

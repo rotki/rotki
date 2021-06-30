@@ -358,3 +358,76 @@ def test_get_all_asset_data_specific_ids(globaldb):
         mapping=True,
         specific_ids=[],
     ) == {}
+
+
+def test_globaldb_pragma_foreign_keys(globaldb):
+    """
+    This tests verifies the behaviour of sqlite at the moment of
+    activating and deactivating PRAGMA foreign_keys. As per what
+    we could test and the documentation says for the change to
+    take effect it needs that no transaction is pending.
+
+    In this test we do:
+    - Deactivate the check, insert assets and activate it again
+    - Deactivate them and activate them again without pending transactions
+    - Start a transaction, check that the change doesn't take effect, commit
+    and see that then it works.
+
+    The reason for this test's existence is to verify our assumptions on sqlite
+    and PRAGMAs and to check that they hold for the versions we use. If this test
+    fails we know that something has changed and we will need to adjust our strategy.
+    """
+    cursor = globaldb._conn.cursor()
+    cursor.execute('PRAGMA foreign_keys = OFF;')
+    cursor.execute('PRAGMA foreign_keys')
+    # Now restrictions should be disabled
+    assert cursor.fetchone()[0] == 0
+
+    cursor.execute(
+        """
+        INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES(
+        "0xD178b20c6007572bD1FD01D205cC20D32B4A6017", 18, NULL
+        );
+        """,
+    )
+    cursor.execute(
+        """
+        INSERT INTO assets(identifier,type, name, symbol,
+        started, swapped_for, coingecko, cryptocompare, details_reference)
+        VALUES("_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "C", "Aidus", "AID"   ,
+        123, NULL,   NULL, "AIDU", "0xD178b20c6007572bD1FD01D205cC20D32B4A6017");
+        """,
+    )
+    # activate them again should fail since we haven't finished
+    cursor.execute('PRAGMA foreign_keys = ON;')
+    cursor.execute('PRAGMA foreign_keys')
+    assert cursor.fetchone()[0] == 0
+    # To change them again we have to commit the pending transaction
+    cursor.execute('COMMIT;')
+    # activate them again
+    cursor.execute('PRAGMA foreign_keys = ON;')
+    cursor.execute('PRAGMA foreign_keys')
+    assert cursor.fetchone()[0] == 1
+
+    # deactivate them
+    cursor.execute('PRAGMA foreign_keys = OFF;')
+    globaldb._conn.commit()
+    cursor.execute('PRAGMA foreign_keys')
+    assert cursor.fetchone()[0] == 0
+    cursor.execute('PRAGMA foreign_keys = ON;')
+    cursor.execute('PRAGMA foreign_keys')
+    # Now restrictions should be enabled
+    assert cursor.fetchone()[0] == 1
+
+    # Start a transaction and they should fail to change to off
+    # since the transaction hasn't finished
+    cursor.execute('begin')
+    cursor.execute('PRAGMA foreign_keys = OFF;')
+    cursor.execute('PRAGMA foreign_keys')
+    assert cursor.fetchone()[0] == 1
+    # Finish the transaction
+    cursor.execute('commit')
+    cursor.execute('PRAGMA foreign_keys = OFF;')
+    cursor.execute('PRAGMA foreign_keys')
+    # Now the pragma should be off
+    assert cursor.fetchone()[0] == 0
