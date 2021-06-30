@@ -10,6 +10,7 @@ from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.typing import AssetMovementCategory, EthereumTransaction, Fee, Location, Timestamp
+from rotkehlchen.utils.misc import timestamp_to_date
 
 DUMMY_ADDRESS = '0x0'
 DUMMY_HASH = b''
@@ -904,8 +905,9 @@ def test_fees_count_in_cost_basis(accountant):
     )
     assert accountant.events.cost_basis.get_calculated_asset_amount(A_ETH) is None
     error = (
-        'No documented acquisition found for ETH(Ethereum) before 29/06/2021 23:17:44.'
-        ' Let rotki know how you acquired it via a ledger action'
+        f'No documented acquisition found for ETH(Ethereum) before '
+        f'{timestamp_to_date(1625001464, treat_as_local=True)}. '
+        f'Let rotki know how you acquired it via a ledger action'
     )
     warnings = accountant.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
