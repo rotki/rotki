@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`3142` During v26->v27 upgrade if a user has balancer LP events the upgrade should no longer fail.
+
 * :release:`1.18.1 <2021-06-30>`
 * :bug:`2447` When fee of a trade is paid in crypto that crypto's asset will now be deducted from the cost basis calculation.
 * :bug:`3133` Users will now properly see a MakerDAO entry in the Defi Overview.
