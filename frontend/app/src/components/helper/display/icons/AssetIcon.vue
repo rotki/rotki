@@ -79,7 +79,7 @@ export default class AssetIcon extends Mixins(AssetMixin) {
     ) {
       return require(`@/assets/images/defi/weth.svg`);
     }
-    const url = `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.asset}/icon`;
+    const url = `${this.$api.serverUrl}/api/1/assets/${this.asset}/icon`;
     return this.changeable ? `${url}?t=${Date.now()}` : url;
   }
 }

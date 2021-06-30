@@ -888,7 +888,6 @@ def test_upgrade_db_12_to_13(user_data_dir):
 
     # Make sure that current balances table is deleted
     cursor = db.conn.cursor()
-    # with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
     query = cursor.execute(
         'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name="current_balances"',
     )

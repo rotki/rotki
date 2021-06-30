@@ -218,6 +218,7 @@
     "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input."
   },
   "connection_failure": {
+    "default": "Connect to default",
     "message": "A connection to the rotki backend was not possible, would you like to retry again?",
     "retry": "Retry",
     "terminate": "Terminate",
@@ -2555,12 +2556,6 @@
     "about_tooltip": "Show the application's about modal",
     "creation": {
       "error": "Account creation failed"
-    },
-    "custom_backend": {
-      "failed": {
-        "title": "Could not connect to custom backend",
-        "description": "Connection to {url} failed after 5 attempts"
-      }
     }
   },
   "privacy_notice": {

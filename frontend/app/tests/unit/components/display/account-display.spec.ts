@@ -22,7 +22,7 @@ describe('AccountDisplay.vue', () => {
     return mount(AccountDisplay, {
       store,
       vuetify,
-      stubs: ['v-tooltip', 'crypto-icon'],
+      stubs: ['v-tooltip', 'asset-icon'],
       propsData: {
         account
       }

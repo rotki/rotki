@@ -123,6 +123,8 @@ class TaxableEvents():
                 paid_with_asset=paid_with_asset,
                 trade_rate=trade_rate,
                 fee_in_profit_currency=fee_in_profit_currency,
+                fee_currency=None,
+                fee_amount=Fee(ZERO),
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
@@ -137,6 +139,8 @@ class TaxableEvents():
                 paid_with_asset=paid_with_asset,
                 trade_rate=trade_rate,
                 fee_in_profit_currency=fee_in_profit_currency,
+                fee_currency=None,
+                fee_amount=Fee(ZERO),
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
@@ -148,6 +152,8 @@ class TaxableEvents():
                 paid_with_asset=paid_with_asset,
                 trade_rate=trade_rate,
                 fee_in_profit_currency=fee_in_profit_currency,
+                fee_currency=None,
+                fee_amount=Fee(ZERO),
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
@@ -162,6 +168,8 @@ class TaxableEvents():
                 paid_with_asset=paid_with_asset,
                 trade_rate=trade_rate,
                 fee_in_profit_currency=fee_in_profit_currency,
+                fee_currency=None,
+                fee_amount=Fee(ZERO),
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
@@ -213,6 +221,8 @@ class TaxableEvents():
             paid_with_asset: Asset,
             trade_rate: FVal,
             fee_in_profit_currency: Fee,
+            fee_currency: Optional[Asset],
+            fee_amount: Optional[Fee],
             timestamp: Timestamp,
     ) -> None:
         """
@@ -232,6 +242,8 @@ class TaxableEvents():
             paid_with_asset=paid_with_asset,
             trade_rate=trade_rate,
             fee_in_profit_currency=fee_in_profit_currency,
+            fee_currency=fee_currency,
+            fee_amount=fee_amount,
             timestamp=timestamp,
             is_virtual=False,
         )
@@ -290,7 +302,9 @@ class TaxableEvents():
             receiving_amount=receiving_amount,
             rate_in_profit_currency=rate_in_profit_currency,
             gain_in_profit_currency=gain_in_profit_currency,
-            total_fee_in_profit_currency=fee_in_profit_currency,
+            total_fee_in_profit_currency=Fee(ZERO),  # do not pay double fees
+            fee_currency=None,
+            fee_amount=Fee(ZERO),
             timestamp=timestamp,
             is_virtual=True,
         )
@@ -303,6 +317,8 @@ class TaxableEvents():
             paid_with_asset: Asset,
             trade_rate: FVal,
             fee_in_profit_currency: Fee,
+            fee_currency: Optional[Asset],
+            fee_amount: Optional[Fee],
             timestamp: Timestamp,
             is_virtual: bool = False,
             is_from_prefork_virtual_buy: bool = False,
@@ -356,6 +372,13 @@ class TaxableEvents():
             rate=buy_rate,
             fee_in_profit_currency=fee_in_profit_currency,
         )
+        if fee_currency is not None and not fee_currency.is_fiat() and fee_amount is not None:
+            self.cost_basis.calculate_spend_cost_basis(
+                spending_amount=fee_amount,
+                spending_asset=fee_currency,
+                timestamp=timestamp,
+            )
+
         if timestamp >= self.query_start_ts:
             self.csv_exporter.add_buy(
                 location=location,
@@ -380,6 +403,8 @@ class TaxableEvents():
             receiving_amount: FVal,
             gain_in_profit_currency: FVal,
             total_fee_in_profit_currency: Fee,
+            fee_currency: Optional[Asset],
+            fee_amount: Optional[Fee],
             trade_rate: FVal,
             rate_in_profit_currency: FVal,
             timestamp: Timestamp,
@@ -417,6 +442,8 @@ class TaxableEvents():
             receiving_amount=receiving_amount,
             gain_in_profit_currency=gain_in_profit_currency,
             total_fee_in_profit_currency=total_fee_in_profit_currency,
+            fee_currency=fee_currency,
+            fee_amount=fee_amount,
             rate_in_profit_currency=rate_in_profit_currency,
             timestamp=timestamp,
             is_virtual=False,
@@ -436,7 +463,9 @@ class TaxableEvents():
             bought_amount=receiving_amount,
             paid_with_asset=selling_asset,
             trade_rate=1 / trade_rate,
-            fee_in_profit_currency=total_fee_in_profit_currency,
+            fee_in_profit_currency=Fee(ZERO),  # do not count fee twice
+            fee_currency=None,
+            fee_amount=Fee(ZERO),
             timestamp=timestamp,
             is_virtual=True,
         )
@@ -450,6 +479,8 @@ class TaxableEvents():
             receiving_amount: Optional[FVal],
             gain_in_profit_currency: FVal,
             total_fee_in_profit_currency: Fee,
+            fee_currency: Optional[Asset],
+            fee_amount: Optional[Fee],
             rate_in_profit_currency: FVal,
             timestamp: Timestamp,
             loan_settlement: bool = False,
@@ -503,6 +534,12 @@ class TaxableEvents():
             fee_in_profit_currency=total_fee_in_profit_currency,
             gain_in_profit_currency=gain_in_profit_currency,
         )
+        if fee_currency is not None and not fee_currency.is_fiat() and fee_amount is not None:
+            self.cost_basis.calculate_spend_cost_basis(
+                spending_amount=fee_amount,
+                spending_asset=fee_currency,
+                timestamp=timestamp,
+            )
         self.handle_prefork_asset_sells(selling_asset, selling_amount, timestamp)
 
         # now search the acquisitions for `paid_with_asset` and calculate profit/loss
