@@ -3,10 +3,12 @@ Changelog
 =========
 
 * :feature:`2778` Users will now be able to enable modules and queried addresses when adding an ethereum account
+* :feature:`1857` Premium users will now be able to query Aave V2 events. 
 * :feature:`2722` The sync conflict dialog dates will now be consistent with the user specified date format.
 * :feature:`3114` Users can easily check and manage which addresses are queried for each defi module directly from the respective module page.
 * :feature:`3069` When adding an asset coingecko/cryptocompare identifiers will now be validated and non-existing ones will be rejected.
 * :bug:`2685` Invoking `--version` from the rotki backend binary in Windows should no longer raise a Permission error.
+
 
 * :release:`1.18.1 <2021-06-30>`
 * :bug:`2447` When fee of a trade is paid in crypto that crypto's asset will now be deducted from the cost basis calculation.

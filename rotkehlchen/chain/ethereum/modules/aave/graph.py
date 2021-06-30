@@ -126,6 +126,67 @@ USER_EVENTS_QUERY = """
 }
 """
 
+USER_EVENTS_QUERY_V2 = """
+  users (where: {id: $address}) {
+    id
+    depositHistory {
+        id
+        amount
+        reserve {
+          id
+        }
+        timestamp
+    }
+    redeemUnderlyingHistory {
+        id
+        amount
+        reserve {
+          id
+        }
+        timestamp
+    }
+    borrowHistory {
+        id
+        amount
+        reserve {
+          id
+        }
+        timestamp
+        borrowRate
+        borrowRateMode
+    }
+    repayHistory {
+        id
+        amount
+        reserve {
+          id
+        }
+        timestamp
+    }
+    liquidationCallHistory {
+        id
+        collateralAmount
+        collateralReserve {
+          id
+        }
+        principalAmount
+        principalReserve {
+          id
+        }
+        timestamp
+    }
+    reserves{
+        id
+        aTokenBalanceHistory {
+          id
+          currentATokenBalance
+          timestamp
+        }
+    }
+  }
+}
+"""
+
 
 class ATokenBalanceHistory(NamedTuple):
     reserve_address: ChecksumEthAddress
@@ -250,7 +311,16 @@ def _parse_atoken_balance_history(
             continue
 
         _, decimals = _get_reserve_address_decimals(asset)
-        balance = token_normalized_value_decimals(int(entry['balance']), token_decimals=decimals)
+        if 'currentATokenBalance' in entry:
+            balance = token_normalized_value_decimals(
+                int(entry['currentATokenBalance']),
+                token_decimals=decimals,
+            )
+        else:
+            balance = token_normalized_value_decimals(
+                int(entry['balance']),
+                token_decimals=decimals,
+            )
         result.append(ATokenBalanceHistory(
             reserve_address=reserve_address,
             balance=balance,
@@ -302,6 +372,7 @@ class AaveGraphInquirer(AaveInquirer):
             msg_aggregator=msg_aggregator,
         )
         self.graph = Graph('https://api.thegraph.com/subgraphs/name/aave/protocol-multy-raw')
+        self.graph_v2 = Graph('https://api.thegraph.com/subgraphs/name/aave/protocol-v2')
 
     def get_history_for_addresses(
             self,
@@ -335,8 +406,11 @@ class AaveGraphInquirer(AaveInquirer):
         query = self.graph.query(
             querystr=USER_RESERVES_QUERY.format(address=address.lower()),
         )
+        query_v2 = self.graph_v2.query(
+            querystr=USER_RESERVES_QUERY.format(address=address.lower()),
+        )
         result = []
-        for entry in query['userReserves']:
+        for entry in query['userReserves'] + query_v2['userReserves']:
             reserve = entry['reserve']
             try:
                 result.append(AaveUserReserve(
@@ -581,35 +655,65 @@ class AaveGraphInquirer(AaveInquirer):
             last_query_ts = last_query[1]
             from_ts = Timestamp(last_query_ts + 1)
 
-        deposits = withdrawals = borrows = repays = liquidation_calls = []
+        deposits, withdrawals, borrows = [], [], []
+        repays, liquidation_calls = [], []
         query = self.graph.query(
             querystr=USER_EVENTS_QUERY,
             param_types={'$address': 'ID!'},
             param_values={'address': address.lower()},
         )
-        user_result = query['users'][0]
+        query_v2 = self.graph_v2.query(
+            querystr=USER_EVENTS_QUERY_V2,
+            param_types={'$address': 'ID!'},
+            param_values={'address': address.lower()},
+        )
+
+        user_merged_data = defaultdict(list)
         if now - last_query_ts > AAVE_GRAPH_RECENT_SECS:
             # In theory if these were individual queries we should do them only if
             # we have not queried recently. In practise since we only do 1 query above
             # this is useless for now, but keeping the mechanism in case we change
             # the way we query the subgraph
-            deposits = self._parse_deposits(user_result['depositHistory'], from_ts, to_ts)
-            withdrawals = self._parse_withdrawals(
-                withdrawals=user_result['redeemUnderlyingHistory'],
-                from_ts=from_ts,
-                to_ts=to_ts,
-            )
-            borrows = self._parse_borrows(user_result['borrowHistory'], from_ts, to_ts)
-            repays = self._parse_repays(user_result['repayHistory'], from_ts, to_ts)
-            liquidation_calls = self._parse_liquidations(
-                user_result['liquidationCallHistory'],
-                from_ts,
-                to_ts,
-            )
+
+            if len(query['users']) != 0:
+                user_result = query['users'][0]
+                deposits += self._parse_deposits(user_result['depositHistory'], from_ts, to_ts)
+                withdrawals += self._parse_withdrawals(
+                    withdrawals=user_result['redeemUnderlyingHistory'],
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                )
+                borrows += self._parse_borrows(user_result['borrowHistory'], from_ts, to_ts)
+                repays += self._parse_repays(user_result['repayHistory'], from_ts, to_ts)
+                liquidation_calls += self._parse_liquidations(
+                    user_result['liquidationCallHistory'],
+                    from_ts,
+                    to_ts,
+                )
+                for key, value in user_result.items():
+                    user_merged_data[key].extend(value)
+
+            if len(query_v2['users']) != 0:
+                user_result_v2 = query_v2['users'][0]
+                deposits += self._parse_deposits(user_result_v2['depositHistory'], from_ts, to_ts)
+                withdrawals += self._parse_withdrawals(
+                    withdrawals=user_result_v2['redeemUnderlyingHistory'],
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                )
+                borrows += self._parse_borrows(user_result_v2['borrowHistory'], from_ts, to_ts)
+                repays += self._parse_repays(user_result_v2['repayHistory'], from_ts, to_ts)
+                liquidation_calls += self._parse_liquidations(
+                    user_result_v2['liquidationCallHistory'],
+                    from_ts,
+                    to_ts,
+                )
+                for key, value in user_result_v2.items():
+                    user_merged_data[key].extend(value)
 
         result = self._process_events(
             user_address=address,
-            user_result=user_result,
+            user_result=user_merged_data,
             from_ts=from_ts,
             to_ts=to_ts,
             deposits=deposits,
@@ -747,7 +851,8 @@ class AaveGraphInquirer(AaveInquirer):
             asset, balance = result
             borrow_rate = FVal(entry['borrowRate']) / RAY
             borrow_rate_mode = entry['borrowRateMode']
-            accrued_borrow_interest = entry['accruedBorrowInterest']
+            # accruedBorrowInterest is not present in the V2 subgraph
+            accrued_borrow_interest = entry.get('accruedBorrowInterest', ZERO)
             events.append(AaveBorrowEvent(
                 event_type='borrow',
                 asset=asset,
@@ -779,11 +884,19 @@ class AaveGraphInquirer(AaveInquirer):
             if result is None:
                 continue  # problem parsing, error already logged
             asset, decimals = result
-            amount_after_fee = token_normalized_value_decimals(
-                int(entry['amountAfterFee']),
-                token_decimals=decimals,
-            )
-            fee = token_normalized_value_decimals(int(entry['fee']), token_decimals=decimals)
+            if 'amountAfterFee' in entry:
+                amount_after_fee = token_normalized_value_decimals(
+                    int(entry['amountAfterFee']),
+                    token_decimals=decimals,
+                )
+                fee = token_normalized_value_decimals(int(entry['fee']), token_decimals=decimals)
+            else:
+                # In the V2 subgraph the amountAfterFee and Fee keys are replaced by amount
+                amount_after_fee = token_normalized_value_decimals(
+                    int(entry['amount']),
+                    token_decimals=decimals,
+                )
+                fee = ZERO
             usd_price = query_usd_price_zero_if_error(
                 asset=asset,
                 time=timestamp,

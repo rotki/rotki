@@ -6,7 +6,17 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveLiquidationEvent,
     AaveRepayEvent,
 )
-from rotkehlchen.constants.assets import A_ADAI_V1, A_AWBTC_V1, A_BUSD, A_DAI, A_ETH, A_WBTC
+from rotkehlchen.constants.assets import (
+    A_ADAI_V1,
+    A_AWBTC_V1,
+    A_BUSD,
+    A_DAI,
+    A_ETH,
+    A_WBTC,
+    A_LINK,
+    A_ALINK_V1,
+    A_USDT,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_ADAI
@@ -346,5 +356,70 @@ expected_aave_liquidation_test_events = [
         borrow_rate_mode='variable',
         borrow_rate=FVal('0.048662000571241866099699838'),
         accrued_borrow_interest=ZERO,
+    ),
+]
+
+expected_aave_v2_events = [
+    AaveDepositWithdrawalEvent(
+        event_type='deposit',
+        asset=A_LINK,
+        atoken=A_ALINK_V1,
+        value=Balance(
+            amount=FVal('12629.998670888732814733'),
+            usd_value=FVal('12629.998670888732814733'),
+        ),
+        block_number=0,
+        timestamp=Timestamp(1615333105),
+        tx_hash='0x75444c0ae48700f388d05ec8380b3922c4daf1e8eef2476001437b68d36f56a1',
+        log_index=1,
+    ), AaveBorrowEvent(
+        event_type='borrow',
+        asset=A_USDT,
+        value=Balance(
+            amount=FVal('100000'),
+            usd_value=FVal('100000'),
+        ),
+        block_number=0,
+        timestamp=Timestamp(1615333284),
+        tx_hash='0x74e8781fd86e81a87a4ba93bc7755d4a94901765cd72399f0372d36e7a26a03a',
+        log_index=2,
+        borrow_rate_mode='stable',
+        borrow_rate=FVal('0.088712770921360153608109216'),
+        accrued_borrow_interest=ZERO,
+    ), AaveRepayEvent(
+        event_type='repay',
+        asset=A_USDT,
+        value=Balance(
+            amount=FVal('100071.409221'),
+            usd_value=FVal('100071.409221'),
+        ),
+        fee=Balance(amount=ZERO, usd_value=ZERO),
+        block_number=0,
+        timestamp=Timestamp(1615587042),
+        tx_hash='0x164e3eafef02ac1a956ba3c7d027506d47de36b34daee1e05ca0d178413911c1',
+        log_index=4,
+    ), AaveInterestEvent(
+        event_type='interest',
+        asset=A_ALINK_V1,
+        value=Balance(
+            amount=FVal('0.092486713379308309'),
+            usd_value=FVal('0.092486713379308309'),
+        ),
+        block_number=0,
+        timestamp=Timestamp(1615669328),
+        tx_hash='0xfeee61357d43e79a2beae9edab860c30db9765964be26eff82c6834d4e2c2db7',
+        log_index=4,
+    ), AaveDepositWithdrawalEvent(
+        event_type='withdrawal',
+        asset=A_LINK,
+        atoken=A_ALINK_V1,
+        value=Balance(
+            amount=FVal('12630.091157602112123042'),
+            usd_value=FVal('12630.091157602112123042'),
+        ),
+        block_number=0,
+        timestamp=Timestamp(1615669328),
+        tx_hash='0xfeee61357d43e79a2beae9edab860c30db9765964be26eff82c6834d4e2c2db7',
+        log_index=3,
     ),
 ]
