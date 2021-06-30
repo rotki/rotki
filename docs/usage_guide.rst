@@ -365,16 +365,16 @@ Users can also manage the existing historical price cache entries. They can insp
    :alt: Managing the historical price cache
    :align: center
 
-Customizing the DeFi settings
+Customizing the Module settings
 ====================================
 
-By choosing the "Defi" section of the settings you can customize the DeFi settings of the application.
+By choosing the "Module" section of the settings you can customize the enabled modules and the queried addresses for each module for the application.
 
 The benefit of enabling only the modules you use, and specifying the addresses, is that rotki will only
 query the specified addresses for the enabled modules. This can considerably improve the querying speed.
 
-.. image:: images/defi_settings.png
-   :alt: Changing the user's password
+.. image:: images/module_settings.png
+   :alt: Managing module settings
    :align: center
 
 

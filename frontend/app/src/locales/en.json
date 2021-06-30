@@ -402,6 +402,11 @@
     },
     "title": "Merge Assets"
   },
+  "module_activator": {
+    "hint": "* Modules that are activated for all addresses will not appear here",
+    "subtitle": "Select which modules should be queried for this account",
+    "title": "Enabled modules"
+  },
   "notes_display": {
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
@@ -504,12 +509,12 @@
     "default_format": "Date should be in DD/MM/YYYY or DD/MM/YYYY HH:MM format",
     "seconds_format": "Date should be in DD/MM/YYYY HH:MM:ss format"
   },
-  "defi_address_selector": {
+  "module_address_selector": {
     "back": "Back",
     "next": "Next"
   },
-  "defi_module_selector": {
-    "label": "Select modules(s)"
+  "module_selector": {
+    "label": "Select module(s)"
   },
   "defi_overview": {
     "multiple_assets": "Multiple assets"
@@ -519,16 +524,16 @@
     "filter_specific": "Showing results for selected protocol",
     "label": "Filter protocol(s)"
   },
-  "defi_queriable_addres": {
+  "module_queried_address": {
     "label": "Select address(es)"
   },
-  "defi_settings": {
-    "active_modules": "Active Defi modules",
+  "module_settings": {
+    "active_modules": "Active modules",
     "active_modules_description": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled.",
     "hint": "* Please remember that after activating a module, you need to logout and login again for the activation to take effect",
     "select_accounts": "Selected accounts",
     "select_accounts_description": "If no accounts are selected for a protocol, data for all accounts will be queried for that protocol.",
-    "title": "Defi Settings"
+    "title": "Module Settings"
   },
   "defi_wizard": {
     "steps": {
@@ -1171,7 +1176,7 @@
   },
   "module_not_active": {
     "not_active": "{module} module(s) not active. Please visit the {link}. {text}",
-    "settings_link": "Defi settings",
+    "settings_link": "Module settings",
     "at_least_one": "You need to activate at least one of them."
   },
   "premium_credentials": {
@@ -2389,7 +2394,7 @@
     "tabs": {
       "accounting": "Accounting",
       "data_security": "Data & Security",
-      "defi": "Defi",
+      "modules": "Modules",
       "general": "General"
     },
     "title": "Settings"

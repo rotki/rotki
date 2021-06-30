@@ -1,5 +1,5 @@
 <template>
-  <v-stepper v-model="step" class="defi-address-selector">
+  <v-stepper v-model="step" class="module-address-selector">
     <v-sheet rounded outlined>
       <v-stepper-header>
         <template v-for="n in steps">
@@ -44,7 +44,7 @@
         </v-row>
 
         <v-card class="mb-12 mt-4" flat height="110px">
-          <defi-queriable-address
+          <module-queried-address
             :module="modules[n - 1].identifier"
             :selected-addresses="
               queriedAddresses[modules[n - 1].identifier]
@@ -55,14 +55,14 @@
         </v-card>
 
         <v-btn v-if="step > 1" text @click="previousStep(n)">
-          {{ $t('defi_address_selector.back') }}
+          {{ $t('module_address_selector.back') }}
         </v-btn>
         <v-btn
           v-if="step < modules.length"
           color="primary"
           @click="nextStep(n)"
         >
-          {{ $t('defi_address_selector.next') }}
+          {{ $t('module_address_selector.next') }}
         </v-btn>
       </v-stepper-content>
     </v-stepper-items>
@@ -72,13 +72,13 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
-import { DEFI_MODULES } from '@/components/defi/wizard/consts';
-import DefiQueriableAddress from '@/components/defi/wizard/DefiQueriableAddress.vue';
+import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
+import ModuleQueriedAddress from '@/components/defi/wizard/ModuleQueriedAddress.vue';
 import { Module } from '@/components/defi/wizard/types';
 import { QueriedAddresses, SupportedModules } from '@/services/session/types';
 
 @Component({
-  components: { DefiQueriableAddress },
+  components: { ModuleQueriedAddress },
   computed: {
     ...mapGetters('session', ['activeModules']),
     ...mapState('session', ['queriedAddresses'])
@@ -87,7 +87,7 @@ import { QueriedAddresses, SupportedModules } from '@/services/session/types';
     ...mapActions('session', ['fetchQueriedAddresses'])
   }
 })
-export default class DefiAddressSelector extends Vue {
+export default class ModuleAddressSelector extends Vue {
   step: number = 1;
   activeModules!: SupportedModules[];
   queriedAddresses!: QueriedAddresses;
@@ -99,9 +99,9 @@ export default class DefiAddressSelector extends Vue {
 
   get modules(): Module[] {
     if (this.activeModules.length === 0) {
-      return DEFI_MODULES;
+      return SUPPORTED_MODULES;
     }
-    return DEFI_MODULES.filter(module =>
+    return SUPPORTED_MODULES.filter(module =>
       this.activeModules.includes(module.identifier)
     );
   }
@@ -123,7 +123,7 @@ export default class DefiAddressSelector extends Vue {
 <style scoped lang="scss">
 @import '~@/scss/scroll';
 
-.defi-address-selector {
+.module-address-selector {
   border: none !important;
   box-shadow: none !important;
   background: transparent !important;

@@ -85,6 +85,11 @@
         />
       </v-col>
     </v-row>
+    <v-row v-if="isEth" no-gutters>
+      <v-col>
+        <module-activator @update:selection="selectedModules = $event" />
+      </v-col>
+    </v-row>
     <v-row
       v-if="
         (!isBtc || (isBtc && !isXpub) || !!edit) &&
@@ -95,6 +100,15 @@
       class="mt-2"
     >
       <v-col>
+        <v-row v-if="!edit && !isXpub" no-gutters align="center">
+          <v-col cols="auto">
+            <v-checkbox
+              v-model="multiple"
+              :disabled="accountOperation || loading || !!edit"
+              :label="$t('account_form.labels.multiple')"
+            />
+          </v-col>
+        </v-row>
         <v-text-field
           v-if="!multiple"
           v-model="address"
@@ -125,15 +139,6 @@
                   count: entries.length
                 })
               "
-            />
-          </v-col>
-        </v-row>
-        <v-row v-if="!edit && !isXpub" no-gutters align="center">
-          <v-col cols="auto">
-            <v-checkbox
-              v-model="multiple"
-              :disabled="accountOperation || loading || !!edit"
-              :label="$t('account_form.labels.multiple')"
             />
           </v-col>
         </v-row>
@@ -177,10 +182,12 @@ import {
   XPUB_ADD
 } from '@/components/accounts/const';
 import InputModeSelect from '@/components/accounts/InputModeSelect.vue';
+import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import { AccountInput } from '@/components/accounts/types';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TaskType } from '@/model/task-type';
 import { deserializeApiErrorMessage } from '@/services/converters';
+import { SupportedModules } from '@/services/session/types';
 import {
   AddAccountsPayload,
   BlockchainAccount,
@@ -248,7 +255,7 @@ const validationErrors: () => ValidationErrors = () => ({
 });
 
 @Component({
-  components: { InputModeSelect, TagInput },
+  components: { ModuleActivator, InputModeSelect, TagInput },
   computed: {
     ...mapGetters('tasks', ['isTaskRunning']),
     ...mapGetters('balances', ['account'])
@@ -277,6 +284,7 @@ export default class AccountForm extends Vue {
   editAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
   advanced: boolean = false;
   inputMode: AccountInput = MANUAL_ADD;
+  selectedModules: SupportedModules[] = [];
 
   readonly FIELD_XPUB = FIELD_XPUB;
   readonly FIELD_ADDRESS = FIELD_ADDRESS;
@@ -297,6 +305,10 @@ export default class AccountForm extends Vue {
       entries[lowerCase] = address;
     }
     return Object.values(entries);
+  }
+
+  get isEth(): boolean {
+    return this.blockchain === ETH;
   }
 
   get isBtc(): boolean {
@@ -511,7 +523,8 @@ export default class AccountForm extends Vue {
 
       await this.addAccounts({
         blockchain: ETH,
-        payload: payload
+        payload: payload,
+        modules: this.selectedModules
       });
       return true;
     } catch (e) {
@@ -546,7 +559,8 @@ export default class AccountForm extends Vue {
       address: this.address.trim(),
       label: this.label,
       tags: this.tags,
-      xpub: xpubPayload
+      xpub: xpubPayload,
+      modules: this.isEth ? this.selectedModules : undefined
     };
   }
 
@@ -562,7 +576,8 @@ export default class AccountForm extends Vue {
               address: address,
               label: this.label,
               tags: this.tags
-            }))
+            })),
+            modules: this.isEth ? this.selectedModules : undefined
           } as AddAccountsPayload);
         } else {
           await this.addAccount(this.payload());

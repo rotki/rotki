@@ -23,7 +23,7 @@ import { mapActions } from 'vuex';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import DefiModuleMixin from '@/mixins/defi-module-mixin';
+import ModuleMixin from '@/mixins/module-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { Eth2Staking } from '@/premium/premium';
 import { MODULE_ETH2 } from '@/services/session/consts';
@@ -35,7 +35,7 @@ import { Section } from '@/store/const';
     ...mapActions('staking', ['fetchStakingDetails'])
   }
 })
-export default class Eth2Page extends Mixins(StatusMixin, DefiModuleMixin) {
+export default class Eth2Page extends Mixins(StatusMixin, ModuleMixin) {
   readonly module = [MODULE_ETH2];
   readonly section = Section.STAKING_ETH2;
   readonly secondSection = Section.STAKING_ETH2_DEPOSITS;

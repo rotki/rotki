@@ -1,5 +1,5 @@
 <template>
-  <module-not-active v-if="!isUniswapEnabled" :modules="[MODULE_UNISWAP]" />
+  <module-not-active v-if="!isEnabled" :modules="modules" />
   <progress-screen v-else-if="loading">
     <template #message>
       {{ $t('uniswap.loading') }}
@@ -132,7 +132,7 @@ import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import AssetMixin from '@/mixins/asset-mixin';
-import DefiModuleMixin from '@/mixins/defi-module-mixin';
+import ModuleMixin from '@/mixins/module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { UniswapDetails } from '@/premium/premium';
@@ -163,7 +163,7 @@ import { ETH, GeneralAccount } from '@/typing/types';
 })
 export default class Uniswap extends Mixins(
   StatusMixin,
-  DefiModuleMixin,
+  ModuleMixin,
   PremiumMixin,
   AssetMixin
 ) {
@@ -178,6 +178,10 @@ export default class Uniswap extends Mixins(
   selectedPools: string[] = [];
   fetchUniswapBalances!: (refresh: boolean) => Promise<void>;
   fetchUniswapEvents!: (refresh: boolean) => Promise<void>;
+
+  get isEnabled(): boolean {
+    return this.isModuleEnabled(MODULE_UNISWAP);
+  }
 
   get selectedAddresses(): string[] {
     return this.selectedAccount ? [this.selectedAccount.address] : [];

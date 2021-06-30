@@ -15,7 +15,7 @@ describe('DefiWizard.vue', () => {
     return mount(DefiWizard, {
       store,
       vuetify,
-      stubs: ['v-tooltip', 'defi-module-selector', 'defi-address-selector']
+      stubs: ['v-tooltip', 'module-selector', 'module-address-selector', 'card']
     });
   }
 

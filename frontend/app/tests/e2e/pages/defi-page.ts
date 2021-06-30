@@ -33,7 +33,7 @@ export class DefiPage {
   }
 
   selectAccounts() {
-    cy.get('.defi-address-selector')
+    cy.get('.module-address-selector')
       .find('.v-stepper__header')
       .children()
       .should('have.length', 1);

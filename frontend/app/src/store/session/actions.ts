@@ -64,6 +64,7 @@ import {
   UnlockPayload
 } from '@/typing/types';
 import { backoff } from '@/utils/backoff';
+import { uniqueStrings } from '@/utils/data';
 
 const periodic = {
   isRunning: false
@@ -379,6 +380,30 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
           })
           .toString()
       );
+    }
+  },
+
+  async enableModule(
+    { state, dispatch },
+    payload: {
+      readonly enable: SupportedModules[];
+      readonly addresses: string[];
+    }
+  ) {
+    const activeModules = state.generalSettings.activeModules;
+    const modules: SupportedModules[] = [
+      ...activeModules,
+      ...payload.enable
+    ].filter(uniqueStrings);
+    dispatch('updateSettings', { active_modules: modules });
+
+    for (const module of payload.enable) {
+      for (const address of payload.addresses) {
+        await dispatch('addQueriedAddress', {
+          module,
+          address
+        });
+      }
     }
   },
 

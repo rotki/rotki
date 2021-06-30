@@ -1,7 +1,7 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
-import DefiModuleSelector from '@/components/defi/wizard/DefiModuleSelector.vue';
+import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { api } from '@/services/rotkehlchen-api';
 import store from '@/store/store';
 import { GeneralSettings } from '@/typing/types';
@@ -11,12 +11,12 @@ jest.mock('@/services/rotkehlchen-api');
 
 Vue.use(Vuetify);
 
-describe('DefiModuleSelector.vue', () => {
-  let wrapper: Wrapper<DefiModuleSelector>;
+describe('ModuleSelector.vue', () => {
+  let wrapper: Wrapper<ModuleSelector>;
 
   function createWrapper() {
     const vuetify = new Vuetify();
-    return mount(DefiModuleSelector, {
+    return mount(ModuleSelector, {
       store,
       vuetify,
       stubs: ['v-tooltip']

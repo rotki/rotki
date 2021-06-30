@@ -110,7 +110,7 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
-import { DEFI_MODULES } from '@/components/defi/wizard/consts';
+import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import {
@@ -184,7 +184,7 @@ export default class QueriedAddressDialog extends Vue {
     if (!this.module) {
       return '';
     }
-    const defiModule = DEFI_MODULES.find(
+    const defiModule = SUPPORTED_MODULES.find(
       ({ identifier }) => identifier === this.module
     );
     return defiModule?.name ?? this.module;

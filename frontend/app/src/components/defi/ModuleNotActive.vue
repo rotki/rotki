@@ -20,7 +20,7 @@
               <router-link
                 class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
                 text
-                to="/settings/defi"
+                to="/settings/modules"
                 small
               >
                 {{ $t('module_not_active.settings_link') }}
@@ -49,7 +49,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { DEFI_MODULES } from '@/components/defi/wizard/consts';
+import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import { MODULES } from '@/services/session/consts';
 import { SupportedModules } from '@/services/session/types';
 
@@ -64,12 +64,12 @@ export default class ModuleNotActive extends Vue {
   modules!: SupportedModules;
 
   name(module: string): string {
-    const data = DEFI_MODULES.find(value => value.identifier === module);
+    const data = SUPPORTED_MODULES.find(value => value.identifier === module);
     return data?.name ?? '';
   }
 
   icon(module: SupportedModules): string {
-    const data = DEFI_MODULES.find(value => value.identifier === module);
+    const data = SUPPORTED_MODULES.find(value => value.identifier === module);
     return data?.icon ?? '';
   }
 
