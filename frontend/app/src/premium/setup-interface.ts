@@ -1,5 +1,5 @@
 import Chart from 'chart.js';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import Vue from 'vue';
 import Vuex from 'vuex';
 import { TIME_UNIT_DAY } from '@/components/dashboard/const';
@@ -14,22 +14,22 @@ import store from '@/store/store';
 
 const date: DateUtilities = {
   epoch(): number {
-    return moment().unix();
+    return dayjs().unix();
   },
   format(date: string, oldFormat: string, newFormat: string): string {
-    return moment(date, oldFormat).format(newFormat);
+    return dayjs(date, oldFormat).format(newFormat);
   },
   now(format: string): string {
-    return moment().format(format);
+    return dayjs().format(format);
   },
   epochToFormat(epoch: number, format: string): string {
-    return moment(epoch * 1000).format(format);
+    return dayjs(epoch * 1000).format(format);
   },
   dateToEpoch(date: string, format: string): number {
-    return moment(date, format).unix();
+    return dayjs(date, format).unix();
   },
   epochStartSubtract(amount: number, unit: TimeUnit): number {
-    return moment().subtract(amount, unit).startOf(TIME_UNIT_DAY).unix();
+    return dayjs().subtract(amount, unit).startOf(TIME_UNIT_DAY).unix();
   },
   toUserSelectedFormat(timestamp: number): string {
     return displayDateFormatter.format(
@@ -71,7 +71,6 @@ export const setupPremium = () => {
   window.Vue = Vue;
   window.Chart = Chart;
   window.Vue.use(Vuex);
-  window.moment = moment;
   window.rotki = {
     useHostComponents: true,
     version: 11,

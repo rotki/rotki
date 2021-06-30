@@ -45,7 +45,7 @@
 </template>
 
 <script lang="ts">
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 
 @Component({})
@@ -85,7 +85,7 @@ export default class DateTimePicker extends Vue {
     );
   }
 
-  timeModel: string = moment().format(this.timeFormat);
+  timeModel: string = dayjs().format(this.timeFormat);
   dateModel: string = '';
 
   maxDate: string = '';
@@ -107,13 +107,13 @@ export default class DateTimePicker extends Vue {
 
   private setMaxTime() {
     if (this.limitNow) {
-      this.maxTime = moment().format(this.timeFormat);
+      this.maxTime = dayjs().format(this.timeFormat);
     }
   }
 
   private setMaxDate() {
     if (this.limitNow) {
-      this.maxDate = moment().format(DateTimePicker.dateFormat);
+      this.maxDate = dayjs().format(DateTimePicker.dateFormat);
     }
   }
 
@@ -185,7 +185,7 @@ export default class DateTimePicker extends Vue {
   }
 
   setNow() {
-    const now = moment();
+    const now = dayjs();
     this.timeModel = now.format(this.timeFormat);
     this.dateModel = now.format(DateTimePicker.dateFormat);
     this.updateActualDate();

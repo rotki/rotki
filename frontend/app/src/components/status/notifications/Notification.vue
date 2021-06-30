@@ -64,7 +64,7 @@
 </template>
 
 <script lang="ts">
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import ThemeMixin from '@/mixins/theme-mixin';
 import { Severity } from '@/store/notifications/consts';
@@ -112,7 +112,7 @@ export default class Notification extends Mixins(ThemeMixin) {
   }
 
   timeDisplay(date: Date): string {
-    return moment(date).format('LLL');
+    return dayjs(date).format('LLL');
   }
 }
 </script>
