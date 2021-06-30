@@ -602,21 +602,19 @@ class Inquirer():
                 f'Not every outcome has length 2. {output}',
             )
             return None
-        # Check that all the request were successful
+        # Check that all the requests were successful
         if not all([contract_output[0] for contract_output in output]):
             log.debug(f'Failed to query contract methods while finding curve price. {output}')
             return None
-        # Deserialice information obtained in the multicall execution
+        # Deserialize information obtained in the multicall execution
         data = []
         virtual_price_decoded = contract.decode(output[0][1], 'get_virtual_price')
-        # Verify that the output from the contrat call is correct
         if not _check_curve_contract_call(virtual_price_decoded):
             log.debug(f'Failed to decode get_virtual_price while finding curve price. {output}')
             return None
         data.append(FVal(virtual_price_decoded[0]))
         for i in range(len(pool.assets)):
             amount_decoded = contract.decode(output[i + 1][1], 'balances', arguments=[i])
-            # Verify that the contract decoded the output correctly
             if not _check_curve_contract_call(amount_decoded):
                 log.debug(f'Failed to decode balances {i} while finding curve price. {output}')
                 return None
@@ -624,7 +622,7 @@ class Inquirer():
             normalized_amount = token_normalized_value_decimals(amount, tokens[i].decimals)
             data.append(normalized_amount)
 
-        # Prices and data should verifty this relation for the following operations
+        # Prices and data should verify this relation for the following operations
         if len(prices) != len(data) - 1:
             log.debug(
                 f'Length of prices {len(prices)} does not match len of data {len(data)} '
@@ -639,7 +637,7 @@ class Inquirer():
             )
             return None
 
-        # Calc weight of each asset as the proportion of tokens value
+        # Calculate weight of each asset as the proportion of tokens value
         weights = map(lambda x: data[x + 1] * prices[x] / total_assets_price, range(len(tokens)))
         assets_price = FVal(sum(map(operator.mul, weights, prices)))
         return (assets_price * FVal(data[0])) / (10 ** lp_token.decimals)

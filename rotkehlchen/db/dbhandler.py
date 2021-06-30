@@ -1278,10 +1278,10 @@ class DBHandler:
         for result in query:
             try:
                 events.append(YearnVaultEvent.deserialize_from_db(result))
-            except DeserializationError as e:
-                msg = f'Failed to read yearn vault event from database {result}'
+            except (DeserializationError, UnknownAsset) as e:
+                msg = f'Failed to read yearn vault event from database due to {str(e)}'
                 self.msg_aggregator.add_warning(msg)
-                log.error(msg, error=str(e))
+                log.warning(msg, data=result)
         return events
 
     def get_all_yearn_vaults_v2_events(self, address: ChecksumEthAddress) -> List[YearnVaultEvent]:
@@ -1294,10 +1294,10 @@ class DBHandler:
         for result in query:
             try:
                 events.append(YearnVaultEvent.deserialize_from_db(result))
-            except DeserializationError as e:
-                msg = f'Failed to read yearn vault event from database {result}'
+            except (DeserializationError, UnknownAsset) as e:
+                msg = f'Failed to read yearn vault event from database due to {str(e)}'
                 self.msg_aggregator.add_warning(msg)
-                log.error(msg, error=str(e))
+                log.warning(msg, data=result)
         return events
 
     def delete_yearn_vaults_data(self, version: int = 1) -> None:
@@ -1305,9 +1305,8 @@ class DBHandler:
         if version not in (1, 2):
             log.error(f'Called delete yearn vault data with non valid version {version}')
             return None
-        if version == 1:
-            prefix = YEARN_VAULTS_PREFIX
-        elif version == 2:
+        prefix = YEARN_VAULTS_PREFIX
+        if version == 2:
             prefix = YEARN_VAULTS_V2_PREFIX
         cursor = self.conn.cursor()
         cursor.execute(f'DELETE FROM yearn_vaults_events WHERE version={version};')

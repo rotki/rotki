@@ -178,7 +178,6 @@ class YearnVaultsV2(EthereumModule):
             from_block: int,
             to_block: int,
     ) -> Dict[ChecksumEthAddress, Dict[str, YearnVaultHistory]]:
-        # Addresses that we will query
         query_addresses: List[EthAddress] = []
         query_checksumed_addresses: List[ChecksumEthAddress] = []
 

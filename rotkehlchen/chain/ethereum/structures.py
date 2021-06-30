@@ -452,18 +452,8 @@ class YearnVaultEvent:
             raise DeserializationError(
                 f'Failed to deserialize block number {result[10]} in yearn vault event: {str(e)}',
             ) from e
-        try:
-            from_asset = Asset(result[2])
-        except UnknownAsset as e:
-            raise DeserializationError(
-                f'Failed to deserialize from_asset {result[2]} in yearn vault event',
-            ) from e
-        try:
-            to_asset = Asset(result[5])
-        except UnknownAsset as e:
-            raise DeserializationError(
-                f'Failed to deserialize from_asset {result[5]} in yearn vault event',
-            ) from e
+        from_asset = Asset(result[2])
+        to_asset = Asset(result[5])
         return cls(
             event_type=result[1],
             from_asset=from_asset,
