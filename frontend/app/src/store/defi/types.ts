@@ -49,8 +49,10 @@ export interface DefiState {
   allProtocols: AllDefiProtocols;
   compoundBalances: CompoundBalances;
   compoundHistory: CompoundHistory;
-  yearnVaultsHistory: YearnVaultsHistory;
   yearnVaultsBalances: YearnVaultsBalances;
+  yearnVaultsHistory: YearnVaultsHistory;
+  yearnVaultsV2Balances: YearnVaultsBalances;
+  yearnVaultsV2History: YearnVaultsHistory;
   uniswapBalances: UniswapBalances;
   uniswapTrades: DexTrades;
   uniswapEvents: UniswapEvents;

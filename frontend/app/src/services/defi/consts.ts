@@ -1,6 +1,7 @@
 import { balanceKeys } from '@/services/consts';
 
 export const DEFI_YEARN_VAULTS = 'yearn_vaults';
+export const DEFI_YEARN_VAULTS_V2 = 'yearn_vaults_v2';
 export const DEFI_AAVE = 'aave';
 export const DEFI_MAKERDAO = 'makerdao';
 export const DEFI_COMPOUND = 'compound';
@@ -11,6 +12,7 @@ export const DEFI_PROTOCOLS = [
   DEFI_MAKERDAO,
   DEFI_COMPOUND,
   DEFI_YEARN_VAULTS,
+  DEFI_YEARN_VAULTS_V2,
   DEFI_UNISWAP
 ] as const;
 
@@ -51,3 +53,8 @@ export const aaveHistoryKeys = [
   'accrued_borrow_interest',
   'borrow_rate'
 ];
+
+export const V1 = 'v1' as const;
+export const V2 = 'v2' as const;
+
+export const PROTOCOL_VERSION = [V1, V2] as const;

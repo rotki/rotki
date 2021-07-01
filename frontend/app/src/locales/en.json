@@ -1670,20 +1670,20 @@
       },
       "yearn_vaults": {
         "task": {
-          "title": "Querying yearn.finance Vaults balances"
+          "title": "Querying yearn.finance Vaults {version} balances"
         },
         "error": {
-          "title": "yearn.finance Vaults balances",
-          "description": "Failed to retrieve yearn.finance Vaults balances: {error}"
+          "title": "yearn.finance Vaults {version} balances",
+          "description": "Failed to retrieve yearn.finance Vaults {version} balances: {error}"
         }
       },
       "yearn_vaults_history": {
         "task": {
-          "title": "Querying yearn.finance Vaults history"
+          "title": "Querying yearn.finance Vaults {version} history"
         },
         "error": {
-          "title": "yearn.finance Vaults history",
-          "description": "Failed to retrieve yearn.finance Vaults history: {error}"
+          "title": "yearn.finance Vaults {version} history",
+          "description": "Failed to retrieve yearn.finance Vaults {version} history: {error}"
         }
       },
       "uniswap": {
