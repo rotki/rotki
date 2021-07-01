@@ -973,6 +973,57 @@ Query the historical price of assets
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
+
+
+.. http:put:: /api/(version)/assets/prices/historical
+
+    Saves in the database the price for an asset in a given currency at a certain timestamp.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/prices/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+       {
+            "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
+            "to_asset": "USD",
+            "async_query": true,
+            "timestamp": 1611166335,
+            "price": "1.20"
+       }
+
+   :reqjson string from_asset: Asset for what the price is given.
+   :reqjson string to_asset: Asset used to set the price.
+   :reqjson string to_asset: Asset used to set the price.
+   :reqjson int timestamp: The moment when the price is being captured.
+   :reqjson string price: Price at the timestamp given.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson object result: Always true
+   :statuscode 200: Operation sent to database.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
+
+
 Get a list of setup exchanges
 ==============================
 

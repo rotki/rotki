@@ -79,7 +79,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPriceOracle
+from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -3196,3 +3196,33 @@ class RestAPI():
             self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator,
         ).delete_gitcoin_ledger_actions(grant_id)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+    def _perform_add_manual_price(self, historical_price: HistoricalPrice) -> Dict[str, Any]:
+        # pylint: disable=no-self-use
+        GlobalDBHandler().add_historical_prices([historical_price])
+        return OK_RESULT
+
+    def add_manual_price(
+        self,
+        from_asset: Asset,
+        price: Price,
+        to_asset: Asset,
+        timestamp: Timestamp,
+        async_query: bool,
+    ) -> Response:
+        historical_price = HistoricalPrice(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            source=HistoricalPriceOracle.MANUAL,
+            timestamp=timestamp,
+            price=price,
+        )
+        if async_query:
+            return self._query_async(
+                command='_perform_add_manual_price',
+                historical_price=historical_price,
+            )
+        self._perform_add_manual_price(historical_price)
+        return api_response(
+            result={'result': True, 'message': ''},
+            status_code=HTTPStatus.OK,
+        )

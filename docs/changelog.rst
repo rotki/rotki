@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`1666` Users will now be able to see their yearn v2 vaults in in the defi section.
+* :feature:`2456` Users will now be able to correctly retrive prices for Curve LP tokens.
 * :feature:`2778` Users will now be able to enable modules and queried addresses when adding an ethereum account
 * :feature:`1857` Premium users will now be able to query Aave V2 events. 
 * :feature:`2722` The sync conflict dialog dates will now be consistent with the user specified date format.

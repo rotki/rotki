@@ -57,6 +57,7 @@ from rotkehlchen.api.v1.encoding import (
     IntegerIdentifierSchema,
     LedgerActionEditSchema,
     LedgerActionSchema,
+    ManualPriceSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
     ModifyEthereumTokenSchema,
@@ -1563,6 +1564,7 @@ class CurrentAssetsPriceResource(BaseResource):
 class HistoricalAssetsPriceResource(BaseResource):
 
     post_schema = HistoricalAssetsPriceSchema()
+    put_schema = ManualPriceSchema()
 
     @use_kwargs(post_schema, location='json')
     def post(
@@ -1575,6 +1577,23 @@ class HistoricalAssetsPriceResource(BaseResource):
             assets_timestamp=assets_timestamp,
             target_asset=target_asset,
             async_query=async_query,
+        )
+
+    @use_kwargs(put_schema, location='json')
+    def put(
+        self,
+        from_asset: Asset,
+        price: Price,
+        to_asset: Asset,
+        timestamp: Timestamp,
+        async_query: bool,
+    ) -> Response:
+        return self.rest_api.add_manual_price(
+            from_asset,
+            price,
+            to_asset,
+            timestamp,
+            async_query,
         )
 
 
