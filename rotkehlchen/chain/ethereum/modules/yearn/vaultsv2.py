@@ -17,7 +17,6 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.premium.premium import Premium
@@ -54,7 +53,6 @@ class YearnVaultsV2(EthereumModule):
         self.msg_aggregator = msg_aggregator
         self.premium = premium
         self.history_lock = Semaphore()
-        self.etherscan = Etherscan(database=self.database, msg_aggregator=self.msg_aggregator)
 
         try:
             self.graph_inquirer: YearnVaultsV2Graph = YearnVaultsV2Graph(
@@ -84,7 +82,7 @@ class YearnVaultsV2(EthereumModule):
             method_name='pricePerShare',
         )
         nominator = price_per_full_share - (10**18)
-        denonimator = now_block_number - self.etherscan.get_blocknumber_by_time(vault.started)
+        denonimator = now_block_number - self.ethereum.etherscan.get_blocknumber_by_time(vault.started)  # noqa: E501
         return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / 10**18, price_per_full_share
 
     def _get_single_addr_balance(
