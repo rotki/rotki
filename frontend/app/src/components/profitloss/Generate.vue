@@ -12,17 +12,19 @@
           @changed="onChanged"
         />
         <v-row v-if="custom">
-          <v-col cols="12">
+          <v-col cols="12" md="6">
             <date-time-picker
               v-model="start"
+              outlined
               label="Start Date"
               limit-now
               :rules="startRules"
             />
           </v-col>
-          <v-col cols="12">
+          <v-col cols="12" md="6">
             <date-time-picker
               v-model="end"
+              outlined
               label="End Date"
               limit-now
               :rules="endRules"
