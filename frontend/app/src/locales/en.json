@@ -554,7 +554,7 @@
       "setup": {
         "continue": "Continue",
         "description_line_one": "rotki will attempt by default to retrieve information for all your accounts and available modules. The retrieval might require a lot of time based on the number of accounts you have.",
-        "description_line_three": "You can use the default settings if you want to have information for all protocols fetched for all accounts automatically. (Defi Settings can be changed at a later time).",
+        "description_line_three": "You can use the default settings if you want to have information for all protocols fetched for all accounts automatically. (Module Settings can be changed at a later time).",
         "description_line_two": "To reduce the query time you can specify only the DeFi modules and accounts you are interested in.",
         "subtitle": "Select options to improve your rotki DeFi experience",
         "title": "Setup DeFi",
@@ -2207,7 +2207,7 @@
   },
   "decentralized_finance": {
     "title": "Decentralized Finance",
-    "settings_tooltip": "Opens the Defi settings",
+    "settings_tooltip": "Opens the Module settings",
     "tabs": {
       "overview": "Overview",
       "deposits": "Deposits",

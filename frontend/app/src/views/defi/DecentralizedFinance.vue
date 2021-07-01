@@ -8,7 +8,7 @@
             fab
             depressed
             v-bind="attrs"
-            to="/settings/defi"
+            to="/settings/modules"
             v-on="on"
           >
             <v-icon color="primary">mdi-cog</v-icon>

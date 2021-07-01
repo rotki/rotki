@@ -88,7 +88,7 @@
                     {{ $t('external_services.loopring.not_enabled') }}
                   </v-col>
                   <v-col class="shrink">
-                    <v-btn to="/settings/defi" color="primary">
+                    <v-btn to="/settings/modules" color="primary">
                       {{ $t('external_services.loopring.settings') }}
                     </v-btn>
                   </v-col>

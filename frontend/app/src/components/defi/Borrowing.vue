@@ -100,7 +100,8 @@ import {
   MODULE_AAVE,
   MODULE_COMPOUND,
   MODULE_MAKERDAO_VAULTS,
-  MODULE_YEARN
+  MODULE_YEARN,
+  MODULE_YEARN_V2
 } from '@/services/session/consts';
 import { SupportedModules } from '@/services/session/types';
 import { Section } from '@/store/const';
@@ -145,6 +146,7 @@ export default class Borrowing extends Mixins(StatusMixin) {
     MODULE_AAVE,
     MODULE_COMPOUND,
     MODULE_YEARN,
+    MODULE_YEARN_V2,
     MODULE_MAKERDAO_VAULTS
   ];
 
