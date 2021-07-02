@@ -74,7 +74,7 @@
         </v-card>
       </v-col>
       <v-col cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
-        <defi-protocol-selector v-model="protocol" />
+        <defi-protocol-selector v-model="protocol" liabilities />
       </v-col>
     </v-row>
     <loan-info :loan="loan(selection)" />
@@ -99,9 +99,7 @@ import { SupportedDefiProtocols } from '@/services/defi/types';
 import {
   MODULE_AAVE,
   MODULE_COMPOUND,
-  MODULE_MAKERDAO_VAULTS,
-  MODULE_YEARN,
-  MODULE_YEARN_V2
+  MODULE_MAKERDAO_VAULTS
 } from '@/services/session/consts';
 import { SupportedModules } from '@/services/session/types';
 import { Section } from '@/store/const';
@@ -145,8 +143,6 @@ export default class Borrowing extends Mixins(StatusMixin) {
   readonly modules: SupportedModules[] = [
     MODULE_AAVE,
     MODULE_COMPOUND,
-    MODULE_YEARN,
-    MODULE_YEARN_V2,
     MODULE_MAKERDAO_VAULTS
   ];
 

@@ -4,7 +4,7 @@
       <v-autocomplete
         :value="value"
         :search-input.sync="search"
-        :items="supportedProtocols"
+        :items="dual"
         hide-details
         hide-selected
         hide-no-data
@@ -59,8 +59,17 @@ export interface Protocol {
 export default class DefiProtocolSelector extends Vue {
   @Prop({ required: true })
   value!: SupportedDefiProtocols | null;
+  @Prop({ required: true, type: Boolean, default: false })
+  liabilities!: boolean;
 
-  readonly supportedProtocols: Protocol[] = [
+  get protocols(): Protocol[] {
+    if (this.liabilities) {
+      return this.dual;
+    }
+    return [...this.dual, ...this.lending];
+  }
+
+  private readonly dual: Protocol[] = [
     {
       identifier: DEFI_AAVE,
       name: 'Aave',
@@ -75,7 +84,10 @@ export default class DefiProtocolSelector extends Vue {
       identifier: DEFI_COMPOUND,
       name: 'Compound',
       icon: require('@/assets/images/defi/compound.svg')
-    },
+    }
+  ];
+
+  private readonly lending: Protocol[] = [
     {
       identifier: DEFI_YEARN_VAULTS,
       name: 'yearn.finance',
