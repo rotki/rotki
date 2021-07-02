@@ -2249,6 +2249,7 @@
     "headers": {
       "roi": "ROI",
       "vault": "Vault",
+      "version": "Version",
       "underlying_asset": "Underlying Asset",
       "vault_asset": "Vault Asset"
     }

@@ -42,7 +42,8 @@ import {
   DEFI_AAVE,
   DEFI_COMPOUND,
   DEFI_MAKERDAO,
-  DEFI_YEARN_VAULTS
+  DEFI_YEARN_VAULTS,
+  DEFI_YEARN_VAULTS_V2
 } from '@/services/defi/consts';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 
@@ -78,6 +79,11 @@ export default class DefiProtocolSelector extends Vue {
     {
       identifier: DEFI_YEARN_VAULTS,
       name: 'yearn.finance',
+      icon: require('@/assets/images/defi/yearn_vaults.svg')
+    },
+    {
+      identifier: DEFI_YEARN_VAULTS_V2,
+      name: 'yearn.finance v2',
       icon: require('@/assets/images/defi/yearn_vaults.svg')
     }
   ];

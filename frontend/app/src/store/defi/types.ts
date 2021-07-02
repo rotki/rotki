@@ -215,6 +215,7 @@ interface LendingHistoryExtras {
   readonly makerdao: MakerDAOLendingHistoryExtras;
   readonly compound: HistoryExtras<CompoundEventType>;
   readonly yearn_vaults: HistoryExtras<YearnEventType>;
+  readonly yearn_vaults_v2: HistoryExtras<YearnEventType>;
   readonly uniswap: {};
 }
 
