@@ -1,3 +1,4 @@
+from sqlite3 import Cursor
 from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
@@ -8,6 +9,24 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+
+
+def _add_gitcoin_extra_data(cursor: Cursor, actions: List[LedgerAction]) -> None:
+    db_tuples = []
+    for action in actions:
+        if action.extra_data is not None:
+            db_tuples.append(
+                action.extra_data.serialize_for_db(parent_id=action.identifier),
+            )
+
+    if len(db_tuples) == 0:
+        return
+
+    query = """INSERT INTO ledger_actions_gitcoin_data(
+        parent_id, tx_id, grant_id, tx_type
+    )
+    VALUES (?, ?, ?, ?);"""
+    cursor.executemany(query, db_tuples)
 
 
 class DBLedgerActions():
@@ -77,23 +96,6 @@ class DBLedgerActions():
 
         return actions
 
-    def _add_gitcoin_extra_data(self, cursor, actions: List[LedgerAction]) -> None:
-        db_tuples = []
-        for action in actions:
-            if action.extra_data is not None:
-                db_tuples.append(
-                    action.extra_data.serialize_for_db(parent_id=action.identifier),
-                )
-
-        if len(db_tuples) == 0:
-            return
-
-        query = """INSERT INTO ledger_actions_gitcoin_data(
-            parent_id, tx_id, grant_id, tx_type
-        )
-        VALUES (?, ?, ?, ?);"""
-        cursor.executemany(query, db_tuples)
-
     def add_ledger_action(self, action: LedgerAction) -> int:
         """Adds a new ledger action to the DB and returns its identifier for success"""
         cursor = self.db.conn.cursor()
@@ -105,7 +107,7 @@ class DBLedgerActions():
         cursor.execute(query, action.serialize_for_db())
         identifier = cursor.lastrowid
         action.identifier = identifier
-        self._add_gitcoin_extra_data(cursor, [action])
+        _add_gitcoin_extra_data(cursor, [action])
         self.db.conn.commit()
         return identifier
 
