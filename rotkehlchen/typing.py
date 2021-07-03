@@ -297,6 +297,7 @@ class Location(DBEnumMixIn):
     NEXO = 27
     BLOCKFI = 28
     INDEPENDENTRESERVE = 29
+    GITCOIN = 30
 
 
 class AssetMovementCategory(Enum):

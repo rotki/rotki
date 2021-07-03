@@ -11,7 +11,7 @@ from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import Timestamp, Location
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +49,7 @@ class GitcoinProcessor():
         actions = self.db_ledger.get_ledger_actions(
             from_ts=from_ts,
             to_ts=to_ts,
-            location=None,
-            link='gitcoin',
+            location=Location.GITCOIN,
         )
         profit_currency = self.db.get_main_currency()
 

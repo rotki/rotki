@@ -76,8 +76,10 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('Z', 26);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('[', 27);
 /* BlockFI */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('\\', 28);
-/* IndependentrReserve */
+/* IndependentReserve */
 INSERT OR IGNORE INTO location(location, seq) VALUES (']', 29);
+/* Gitcoin */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('^', 30);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
@@ -400,6 +402,29 @@ CREATE TABLE IF NOT EXISTS ledger_actions (
 );
 """
 
+# Custom enum table for gicoin transaction types
+DB_CREATE_GITCOIN_TX_TYPE = """
+CREATE TABLE IF NOT EXISTS gitcoin_tx_type (
+  type    CHAR(1)       PRIMARY KEY NOT NULL,
+  seq     INTEGER UNIQUE
+);
+/* Ethereum Transaction */
+INSERT OR IGNORE INTO gitcoin_tx_type(type, seq) VALUES ('A', 1);
+/* ZKSync Transaction */
+INSERT OR IGNORE INTO gitcoin_tx_type(type, seq) VALUES ('B', 2);
+"""
+
+
+DB_CREATE_LEDGER_ACTIONS_GITCOIN_DATA = """
+CREATE TABLE IF NOT EXISTS ledger_actions_gitcoin_data (
+    parent_id INTEGER NOT NULL PRIMARY KEY,
+    tx_id TEXT NOT NULL,
+    grant_id INTEGER NOT NULL,
+    tx_type NOT NULL DEFAULT('A') REFERENCES gitcoin_tx_type(type),
+    FOREIGN KEY(parent_id) REFERENCES ledger_actions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+);
+"""  # noqa: E501
+
 DB_CREATE_ETHEREUM_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS ethereum_transactions (
     tx_hash BLOB,
@@ -560,7 +585,7 @@ CREATE TABLE IF NOT EXISTS balancer_events (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -600,4 +625,6 @@ PRAGMA foreign_keys=on;
     DB_CREATE_ACTION_TYPE,
     DB_CREATE_IGNORED_ACTIONS,
     DB_CREATE_BALANCER_EVENTS,
+    DB_CREATE_LEDGER_ACTIONS_GITCOIN_DATA,
+    DB_CREATE_GITCOIN_TX_TYPE,
 )

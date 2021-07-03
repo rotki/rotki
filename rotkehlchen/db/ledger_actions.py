@@ -22,21 +22,12 @@ class DBLedgerActions():
             to_ts: Optional[Timestamp],
             location: Optional[Location],
             link: Optional[str] = None,
+            notes: Optional[str] = None,
     ) -> List[LedgerAction]:
         bindings = []
         cursor = self.db.conn.cursor()
-        query = (
-            'SELECT identifier,'
-            '  timestamp,'
-            '  type,'
-            '  location,'
-            '  amount,'
-            '  asset,'
-            '  rate,'
-            '  rate_asset,'
-            '  link,'
-            '  notes FROM ledger_actions '
-        )
+        query_selection = 'SELECT * '
+        query = 'FROM ledger_actions '
         if location is not None:
             query += f'WHERE location="{location.serialize_for_db()}" '
 
@@ -46,15 +37,29 @@ class DBLedgerActions():
             else:
                 query += ' AND '
             query += 'link=? '
-            bindings = [link]
+            bindings.append(link)
+
+        if notes is not None:
+            if 'WHERE' not in query:
+                query += ' WHERE '
+            else:
+                query += ' AND '
+            query += 'notes=? '
+            bindings.append(notes)
 
         query, time_bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
+        full_query = query_selection + query
+        results = cursor.execute(full_query, bindings + list(time_bindings)).fetchall()  # type: ignore  # noqa: E501
 
-        results = cursor.execute(query, bindings + list(time_bindings))  # type: ignore
+        original_query = 'SELECT identifier ' + query[:-1]
+        gitcoin_query = f'SELECT * from ledger_actions_gitcoin_data WHERE parent_id IN ({original_query});'  # noqa: E501
+        gitcoin_results = cursor.execute(gitcoin_query, bindings + list(time_bindings))  # type: ignore  # noqa: E501
+        gitcoin_map = {x[0]: x for x in gitcoin_results}
+
         actions = []
         for result in results:
             try:
-                action = LedgerAction.deserialize_from_db(result)
+                action = LedgerAction.deserialize_from_db(result, gitcoin_map)
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error deserializing Ledger Action from the DB. Skipping it.'
@@ -67,9 +72,27 @@ class DBLedgerActions():
                     f'Unknown asset {e.asset_name} found',
                 )
                 continue
+
             actions.append(action)
 
         return actions
+
+    def _add_gitcoin_extra_data(self, cursor, actions: List[LedgerAction]) -> None:
+        db_tuples = []
+        for action in actions:
+            if action.extra_data is not None:
+                db_tuples.append(
+                    action.extra_data.serialize_for_db(parent_id=action.identifier),
+                )
+
+        if len(db_tuples) == 0:
+            return
+
+        query = """INSERT INTO ledger_actions_gitcoin_data(
+            parent_id, tx_id, grant_id, tx_type
+        )
+        VALUES (?, ?, ?, ?);"""
+        cursor.executemany(query, db_tuples)
 
     def add_ledger_action(self, action: LedgerAction) -> int:
         """Adds a new ledger action to the DB and returns its identifier for success"""
@@ -81,19 +104,19 @@ class DBLedgerActions():
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
         cursor.execute(query, action.serialize_for_db())
         identifier = cursor.lastrowid
+        action.identifier = identifier
+        self._add_gitcoin_extra_data(cursor, [action])
         self.db.conn.commit()
         return identifier
 
     def add_ledger_actions(self, actions: List[LedgerAction]) -> None:
-        """Adds multiple ledger action to the DB"""
-        cursor = self.db.conn.cursor()
-        query = """
-        INSERT INTO ledger_actions(
-            timestamp, type, location, amount, asset, rate, rate_asset, link, notes
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
-        cursor.executemany(query, [x.serialize_for_db() for x in actions])
-        self.db.conn.commit()
+        """Adds multiple ledger action to the DB
+
+        Is slow due to not using executemany since the ledger actions table
+        utilized an auto generated primary key.
+        """
+        for action in actions:
+            self.add_ledger_action(action)
 
     def remove_ledger_action(self, identifier: int) -> Optional[str]:
         """Removes a ledger action from the DB by identifier
@@ -115,6 +138,8 @@ class DBLedgerActions():
 
     def edit_ledger_action(self, action: LedgerAction) -> Optional[str]:
         """Edits a ledger action from the DB by identifier
+
+        Does not edit the extra data at the moment
 
         Returns None for success or an error message for error
         """

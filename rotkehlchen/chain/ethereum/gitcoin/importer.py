@@ -1,9 +1,15 @@
 import csv
 import logging
+import re
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.ledger_actions import (
+    GitcoinEventData,
+    GitcoinEventTxType,
+    LedgerAction,
+    LedgerActionType,
+)
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
@@ -23,6 +29,7 @@ class GitcoinDataImporter():
     def __init__(self, db: DBHandler) -> None:
         self.db = db
         self.db_ledger = DBLedgerActions(self.db, self.db.msg_aggregator)
+        self.grantid_re = re.compile(r'/grants/(\d+)/.*')
 
     def _consume_grant_entry(self, entry: Dict[str, Any]) -> Optional[LedgerAction]:
         """
@@ -39,13 +46,13 @@ class GitcoinDataImporter():
 
         timestamp = iso8601ts_to_timestamp(entry['date'])
         usd_value = deserialize_asset_amount(entry['Value In USD'])
-        tx_id = entry['txid']
+
         asset = get_asset_by_symbol(entry['token_name'])
         if asset is None:
             raise UnknownAsset(entry['token_name'])
         token_amount = deserialize_asset_amount(entry['token_value'])
 
-        if token_amount == ZERO:
+        if token_amount == ZERO:  # try to make up for https://github.com/gitcoinco/web/issues/9213
             price = query_usd_price_zero_if_error(
                 asset=asset,
                 time=timestamp,
@@ -58,19 +65,43 @@ class GitcoinDataImporter():
                     f'due to amount being zero and inability to find price. Skipping.',
                 )
                 return None
+            # calculate the amount from price and value
+            token_amount = usd_value / price  # type: ignore
 
+        match = self.grantid_re.search(entry['url'])
+        if match is None:
+            self.db.msg_aggregator.add_warning(
+                f'Could not process gitcoin grant entry at {entry["date"]} for {asset.symbol} '
+                f'due to inability to read grant id. Skipping.',
+            )
+            return None
+
+        grant_id = int(match.group(1))
         rate = Price(usd_value / token_amount)
+
+        raw_txid = entry['txid']
+        tx_type = GitcoinEventTxType.ETHEREUM
+        tx_id = raw_txid
+        if raw_txid.startswith('sync-tx:'):
+            tx_type = GitcoinEventTxType.ZKSYNC
+            tx_id = raw_txid.split('sync-tx:')[1]  # can't fail due to the if condition
+
         return LedgerAction(
             identifier=1,  # whatever does not go in the DB
             timestamp=timestamp,
             action_type=LedgerActionType.DONATION_RECEIVED,
-            location=Location.BLOCKCHAIN,  # perhaps differentiate eth/zksync here?
+            location=Location.GITCOIN,
             amount=token_amount,
             asset=asset,
             rate=rate,
             rate_asset=A_USD,  # let's use the rate gitcoin calculated
-            link=tx_id,
-            notes='gitcoin',
+            link=raw_txid,
+            notes=f'Gitcoin grant {grant_id} event',
+            extra_data=GitcoinEventData(
+                tx_id=tx_id,
+                grant_id=grant_id,
+                tx_type=tx_type,
+            ),
         )
 
     def import_gitcoin_csv(self, filepath: Path) -> None:

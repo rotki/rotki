@@ -122,6 +122,8 @@ TABLES_AT_INIT = [
     'ignored_actions',
     'action_type',
     'balancer_events',
+    'ledger_actions_gitcoin_data',
+    'gitcoin_tx_type',
 ]
 
 
