@@ -25,6 +25,7 @@ import gevent
 from flask import Response, make_response, send_file
 from gevent.event import Event
 from gevent.lock import Semaphore
+from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
@@ -984,7 +985,13 @@ class RestAPI():
     @require_loggedin_user()
     def add_ledger_action(self, action: LedgerAction) -> Response:
         db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
-        identifier = db.add_ledger_action(action)
+        try:
+            identifier = db.add_ledger_action(action)
+        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            db.db.conn.rollback()
+            error_msg = 'Failed to add Ledger action due to entry already existing in the DB'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
         result_dict = _wrap_in_ok_result({'identifier': identifier})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 

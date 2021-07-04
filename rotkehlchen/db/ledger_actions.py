@@ -1,5 +1,8 @@
+import logging
 from sqlite3 import Cursor
 from typing import TYPE_CHECKING, List, Optional
+
+from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
@@ -7,11 +10,14 @@ from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
+log = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
 def _add_gitcoin_extra_data(cursor: Cursor, actions: List[LedgerAction]) -> None:
+    """May raise sqlcipher.IntegrityError"""
     db_tuples = []
     for action in actions:
         if action.extra_data is not None:
@@ -23,9 +29,9 @@ def _add_gitcoin_extra_data(cursor: Cursor, actions: List[LedgerAction]) -> None
         return
 
     query = """INSERT INTO ledger_actions_gitcoin_data(
-        parent_id, tx_id, grant_id, tx_type
+        parent_id, tx_id, grant_id, clr_round, tx_type
     )
-    VALUES (?, ?, ?, ?);"""
+    VALUES (?, ?, ?, ?, ?);"""
     cursor.executemany(query, db_tuples)
 
 
@@ -97,7 +103,12 @@ class DBLedgerActions():
         return actions
 
     def add_ledger_action(self, action: LedgerAction) -> int:
-        """Adds a new ledger action to the DB and returns its identifier for success"""
+        """Adds a new ledger action to the DB and returns its identifier for success
+
+        May raise:
+        - sqlcipher.IntegrityError if there is a conflict at addition in  _add_gitcoin_extra_data.
+         If this error is raised connection needs to be rolled back by the caller.
+        """
         cursor = self.db.conn.cursor()
         query = """
         INSERT INTO ledger_actions(
@@ -118,7 +129,12 @@ class DBLedgerActions():
         utilized an auto generated primary key.
         """
         for action in actions:
-            self.add_ledger_action(action)
+            try:
+                self.add_ledger_action(action)
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                self.db.msg_aggregator.add_warning('Did not add ledger action to DB due to it already existing')  # noqa: E501
+                log.warning(f'Did not add ledger action {action} to the DB due to it already existing')  # noqa: E501
+                self.db.conn.rollback()  # undo the addition and rollack to last commit
 
     def remove_ledger_action(self, identifier: int) -> Optional[str]:
         """Removes a ledger action from the DB by identifier
