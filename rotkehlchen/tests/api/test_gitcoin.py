@@ -3,11 +3,15 @@ from http import HTTPStatus
 import pytest
 import requests
 
+from rotkehlchen.chain.ethereum.gitcoin.constants import GITCOIN_GRANTS_PREFIX
+from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_proper_response,
     assert_proper_response_with_result,
 )
+from rotkehlchen.typing import Location
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
@@ -71,3 +75,92 @@ def test_get_grant_events(rotkehlchen_api_server, start_with_valid_premium):
         'tx_type': 'zksync',
         'usd_value': '0.9499999999999998000000000000',
     }
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_delete_grant_events(rotkehlchen_api_server):
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    # Get and save data of 3 different grants in the DB
+    id1 = 149
+    json_data = {
+        'from_timestamp': 1622162468,  # 28/05/2021
+        'to_timestamp': 1622246400,  # 29/05/2021
+        'grant_id': id1,
+    }
+    response = requests.post(api_url_for(
+        rotkehlchen_api_server,
+        'gitcoineventsresource',
+    ), json=json_data)
+    assert_proper_response(response)
+    id2 = 184
+    json_data = {
+        'from_timestamp': 1622162468,  # 28/05/2021
+        'to_timestamp': 1622246400,  # 29/05/2021
+        'grant_id': id2,
+    }
+    response = requests.post(api_url_for(
+        rotkehlchen_api_server,
+        'gitcoineventsresource',
+    ), json=json_data)
+    assert_proper_response(response)
+    id3 = 223
+    json_data = {
+        'from_timestamp': 1622162468,  # 28/05/2021
+        'to_timestamp': 1622246400,  # 29/05/2021
+        'grant_id': id3,
+    }
+    response = requests.post(api_url_for(
+        rotkehlchen_api_server,
+        'gitcoineventsresource',
+    ), json=json_data)
+    assert_proper_response(response)
+
+    # make sure events are saved
+    db = rotki.data.db
+    ledgerdb = DBLedgerActions(db, db.msg_aggregator)
+    actions = ledgerdb.get_ledger_actions(from_ts=None, to_ts=None, location=Location.GITCOIN)
+    assert len(actions) == 5
+    assert len([x for x in actions if x.extra_data.grant_id == id1]) == 3
+    assert len([x for x in actions if x.extra_data.grant_id == id2]) == 1
+    assert len([x for x in actions if x.extra_data.grant_id == id3]) == 1
+    # make sure db ranges were written
+    queryrange = db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id1}')
+    assert queryrange == (1622162468, 1622246400)
+    queryrange = db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id2}')
+    assert queryrange == (1622162468, 1622246400)
+    queryrange = db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id3}')
+    assert queryrange == (1622162468, 1622246400)
+
+    # delete 1 grant's data
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'gitcoineventsresource',
+    ), json={'grant_id': id2})
+    assert_proper_response(response)
+    # check that they got deleted but rest is fine
+    actions = ledgerdb.get_ledger_actions(from_ts=None, to_ts=None, location=Location.GITCOIN)
+    assert len(actions) == 4
+    assert len([x for x in actions if x.extra_data.grant_id == id1]) == 3
+    assert len([x for x in actions if x.extra_data.grant_id == id2]) == 0
+    assert len([x for x in actions if x.extra_data.grant_id == id3]) == 1
+    # make sure db ranges were written
+    queryrange = db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id1}')
+    assert queryrange == (1622162468, 1622246400)
+    assert db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id2}') is None
+    queryrange = db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id3}')
+    assert queryrange == (1622162468, 1622246400)
+
+    # delete all remaining grant data
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'gitcoineventsresource',
+    ))
+    assert_proper_response(response)
+    # check that they got deleted but rest is fine
+    actions = ledgerdb.get_ledger_actions(from_ts=None, to_ts=None, location=Location.GITCOIN)
+    assert len(actions) == 0
+    # make sure db ranges were written
+    assert db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id1}') is None
+    assert db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id2}') is None
+    assert db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id3}') is None

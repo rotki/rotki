@@ -3170,3 +3170,10 @@ class RestAPI():
             result=result_dict,
             status_code=response.get('status_code', HTTPStatus.OK),
         )
+
+    @require_loggedin_user()
+    def purge_gitcoin_grant_data(self, grant_id: Optional[int]) -> Response:
+        DBLedgerActions(
+            self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator,
+        ).delete_gitcoin_ledger_actions(grant_id)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)

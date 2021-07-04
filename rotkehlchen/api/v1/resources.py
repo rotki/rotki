@@ -45,6 +45,7 @@ from rotkehlchen.api.v1.encoding import (
     ExchangesResourceRemoveSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
+    GitcoinEventsDeleteSchema,
     GitcoinEventsQuerySchema,
     HistoricalAssetsPriceSchema,
     HistoryExportingSchema,
@@ -1649,6 +1650,7 @@ class BinanceUserMarkets(BaseResource):
 
 class GitcoinEventsResource(BaseResource):
     post_schema = GitcoinEventsQuerySchema()
+    delete_schema = GitcoinEventsDeleteSchema()
 
     @use_kwargs(post_schema, location='json_and_query')
     def post(
@@ -1664,6 +1666,10 @@ class GitcoinEventsResource(BaseResource):
             async_query=async_query,
             grant_id=grant_id,
         )
+
+    @use_kwargs(delete_schema, location='json_and_query')
+    def delete(self, grant_id: Optional[int]) -> Response:
+        return self.rest_api.purge_gitcoin_grant_data(grant_id=grant_id)
 
 
 class GitcoinReportResource(BaseResource):

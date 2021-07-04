@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, List, Optional
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
+from rotkehlchen.chain.ethereum.gitcoin.constants import GITCOIN_GRANTS_PREFIX
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.typing import Location, Timestamp
@@ -175,3 +176,24 @@ class DBLedgerActions():
             )
         self.db.conn.commit()
         return error_msg
+
+    def delete_gitcoin_ledger_actions(self, grant_id: Optional[int]) -> None:
+        cursor = self.db.conn.cursor()
+        query1str = (
+            'DELETE FROM ledger_actions WHERE identifier IN ('
+            'SELECT parent_id from ledger_actions_gitcoin_data '
+        )
+        query2str = 'DELETE FROM used_query_ranges WHERE name '
+        if grant_id:
+            query1str += 'WHERE grant_id = ?);'
+            bindings1 = (grant_id,)
+            query2str += '= ?;'
+            bindings2 = (f'{GITCOIN_GRANTS_PREFIX}_{grant_id}',)
+        else:
+            query1str += ');'
+            bindings1 = ()  # type: ignore
+            query2str += 'LIKE ? ESCAPE ?'
+            bindings2 = (f'{GITCOIN_GRANTS_PREFIX}_%', '\\')  # type: ignore
+
+        cursor.execute(query1str, bindings1)
+        cursor.execute(query2str, bindings2)

@@ -8399,6 +8399,10 @@ Gitcoin gather event data
 
       {"from_timestamp": 0, "to_timestamp": 1624828416, "grant_id": 149 }
 
+   :reqjson integer from_timestamp: The timestamp from which to query grant events
+   :reqjson integer to_timestamp: The timestamp until which to query grant events
+   :reqjson integer grant_id: The id of the grant for which to query events
+
    **Example Response**:
 
    .. sourcecode:: http
@@ -8438,6 +8442,45 @@ Gitcoin gather event data
    :resjson string tx_type: The type of transaction. Either "ethereum" or "zksync".
    :resjson string clr_round: Optional. Can be null. The CLR round the event belongs to.
    :statuscode 200: Events succesfully queried
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal rotki error.
+
+
+Gitcoin delete event data
+==========================
+
+.. http:delete:: /api/(version)/gitcoin/events
+
+   Doing a DELETE to this endpoint will delete all gitcoin event data for the given grant id or if no grant id is given for all grants.
+
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/gitcoin/events HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"grant_id": 149 }
+
+   :reqjson integer grant_id: The id of the grant for which to delete events. If not given all gitcoin events are deleted.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :statuscode 200: Events succesfully deleted
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal rotki error.
