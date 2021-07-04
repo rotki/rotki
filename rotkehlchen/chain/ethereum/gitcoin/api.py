@@ -37,6 +37,7 @@ class GitcoinAPI():
         self.db = db
         self.db_ledger = DBLedgerActions(self.db, self.db.msg_aggregator)
         self.session = requests.session()
+        self.clr_payouts: Optional[List[Dict[str, Any]]] = None
 
     def _single_grant_api_query(self, query_str: str) -> Dict[str, Any]:
         backoff = 1
@@ -183,6 +184,20 @@ class GitcoinAPI():
             from_timestamp = Timestamp(step_to_timestamp)
             step_to_timestamp = min(step_to_timestamp + MONTH_IN_SECONDS, to_timestamp)
 
+        # Check if any of the clr_payouts are in the range
+        if self.clr_payouts:
+            for payout in self.clr_payouts:
+                timestamp = deserialize_timestamp_from_date(
+                    date=payout['timestamp'],
+                    formatstr='%Y-%m-%dT%H:%M:%S',
+                    location='Gitcoin API',
+                    skip_milliseconds=True,
+                )
+                if from_timestamp <= timestamp <= to_timestamp:
+                    round_num = payout.pop('round')
+                    payout['clr_round'] = round_num
+                    transactions.append(payout)
+
         actions = []
         for transaction in transactions:
             try:
@@ -229,6 +244,10 @@ class GitcoinAPI():
             )
             result = self._single_grant_api_query(query_str)
             transactions.extend(result['transactions'])
+
+            if self.clr_payouts is None:
+                self.clr_payouts = result.get('clr_payouts', [])
+
             if result['metadata']['has_next'] is False:
                 break
             # else next page
