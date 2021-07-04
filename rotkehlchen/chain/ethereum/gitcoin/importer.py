@@ -4,13 +4,9 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from rotkehlchen.accounting.ledger_actions import (
-    GitcoinEventData,
-    GitcoinEventTxType,
-    LedgerAction,
-    LedgerActionType,
-)
+from rotkehlchen.accounting.ledger_actions import GitcoinEventData, LedgerAction, LedgerActionType
 from rotkehlchen.assets.utils import get_asset_by_symbol
+from rotkehlchen.chain.ethereum.gitcoin.utils import process_gitcoin_txid
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
@@ -80,12 +76,7 @@ class GitcoinDataImporter():
         rate = Price(usd_value / token_amount)
 
         raw_txid = entry['txid']
-        tx_type = GitcoinEventTxType.ETHEREUM
-        tx_id = raw_txid
-        if raw_txid.startswith('sync-tx:'):
-            tx_type = GitcoinEventTxType.ZKSYNC
-            tx_id = raw_txid.split('sync-tx:')[1]  # can't fail due to the if condition
-
+        tx_type, tx_id = process_gitcoin_txid(key='txid', entry=entry)
         return LedgerAction(
             identifier=1,  # whatever does not go in the DB
             timestamp=timestamp,

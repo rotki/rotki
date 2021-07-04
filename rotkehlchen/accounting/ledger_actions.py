@@ -238,6 +238,20 @@ class LedgerAction:
             'notes': self.notes,
         }
 
+    def serialize_for_gitcoin(self) -> Dict[str, Any]:
+        """Should only be called for actions that have gitcoin data"""
+        extra_data: GitcoinEventData = self.extra_data  # type: ignore
+        return {
+            'timestamp': self.timestamp,
+            'amount': str(self.amount),
+            'asset': self.asset.identifier,
+            'usd_value': str(self.amount * self.rate),  # type: ignore
+            'grant_id': extra_data.grant_id,
+            'tx_id': extra_data.tx_id,
+            'tx_type': str(extra_data.tx_type),
+            'clr_round': extra_data.clr_round,
+        }
+
     def serialize_for_db(self) -> LedgerActionDBTuple:
         """Serializes an action for writing in the DB.
         Identifier and extra_data are ignored"""

@@ -55,6 +55,8 @@ from rotkehlchen.api.v1.resources import (
     ExchangesDataResource,
     ExchangesResource,
     ExternalServicesResource,
+    GitcoinEventsResource,
+    GitcoinReportResource,
     HistoricalAssetsPriceResource,
     HistoryDownloadingResource,
     HistoryExportingResource,
@@ -96,8 +98,8 @@ from rotkehlchen.api.v1.resources import (
     WatchersResource,
     YearnVaultsBalancesResource,
     YearnVaultsHistoryResource,
-    YearnVaultsV2HistoryResource,
     YearnVaultsV2BalancesResource,
+    YearnVaultsV2HistoryResource,
     create_blueprint,
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
@@ -210,6 +212,8 @@ URLS_V1: URLS = [
     ('/info', InfoResource),
     ('/ping', PingResource),
     ('/import', DataImportResource),
+    ('/gitcoin/events', GitcoinEventsResource),
+    ('/gitcoin/report', GitcoinReportResource),
 ]
 
 logger = logging.getLogger(__name__)

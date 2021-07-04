@@ -8377,6 +8377,71 @@ User selected Binance markets
           "message": ""
       }
 
+Gitcoin gather event data
+==========================
+
+.. http:post:: /api/(version)/gitcoin/events
+
+   Doing a POST to this endpoint will initiate a query for all gitcoin events for a specific grant in a specific period. Events will be aggregated from querying the gitcoin api and the local database.
+
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/gitcoin/events HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"from_timestamp": 0, "to_timestamp": 1624828416, "grant_id": 149 }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+	      "timestamp": 1624791600,
+	      "amount": "0.00053",
+	      "asset": "ETH",
+	      "usd_value": "1.55",
+	      "grant_id": 149,
+	      "tx_id": "0x00298f72ad40167051e111e6dc2924de08cce7cf0ad00d04ad5a9e58426536a1",
+	      "tx_type": "ethereum",
+	      "clr_round": null,
+	  }, {
+	      "timestamp": 1624791600,
+	      "amount": "5",
+	      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+	      "usd_value": "5.01",
+	      "grant_id": 149,
+	      "tx_id": "5612f84bc20cda25b911af39b792c973bdd5916b3b6868db2420b5dafd705a90",
+	      "tx_type": "zksync",
+	      "clr_round": 9,
+	  }],
+          "message": ""
+      }
+
+   :resjson integer timestamp: The timestamp of the event
+   :resjson string amount: The amount donated in asset
+   :resjson string asset: The identifier of the donated asset.
+   :resjson string usd_value: The value of the donated asset amount in usd.
+   :resjson integer grant_id: The identifier of the grant for which the event is
+   :resjson string tx_id: The etherscan or zksync transaction identifier.
+   :resjson string tx_type: The type of transaction. Either "ethereum" or "zksync".
+   :resjson string clr_round: Optional. Can be null. The CLR round the event belongs to.
+   :statuscode 200: Events succesfully queried
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal rotki error.
+
 
 Gitcoin report
 ===================

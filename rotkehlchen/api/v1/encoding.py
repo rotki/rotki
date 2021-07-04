@@ -823,6 +823,17 @@ class TimerangeLocationCacheQuerySchema(TimerangeLocationQuerySchema):
     only_cache = fields.Boolean(missing=False)
 
 
+class GitcoinEventsQuerySchema(TimerangeQuerySchema):
+    grant_id = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=1,
+            error='Gitcoin grant id must be a positive integer',
+        ),
+        required=True,
+    )
+
+
 class TradeSchema(Schema):
     timestamp = TimestampField(required=True)
     location = LocationField(required=True)

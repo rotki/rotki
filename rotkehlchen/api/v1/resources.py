@@ -45,6 +45,7 @@ from rotkehlchen.api.v1.encoding import (
     ExchangesResourceRemoveSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
+    GitcoinEventsQuerySchema,
     HistoricalAssetsPriceSchema,
     HistoryExportingSchema,
     HistoryProcessingSchema,
@@ -1646,7 +1647,26 @@ class BinanceUserMarkets(BaseResource):
         return self.rest_api.get_user_binance_pairs(name, location)
 
 
-class GitcoinQuerySchema(BaseResource):
+class GitcoinEventsResource(BaseResource):
+    post_schema = GitcoinEventsQuerySchema()
+
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            async_query: bool,
+            grant_id: int,
+    ) -> Response:
+        return self.rest_api.get_gitcoin_events(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            async_query=async_query,
+            grant_id=grant_id,
+        )
+
+
+class GitcoinReportResource(BaseResource):
     put_schema = TimerangeQuerySchema()
 
     @use_kwargs(put_schema, location='json_and_query')

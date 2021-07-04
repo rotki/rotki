@@ -44,6 +44,7 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
+from rotkehlchen.chain.ethereum.gitcoin.api import GitcoinAPI
 from rotkehlchen.chain.ethereum.gitcoin.importer import GitcoinDataImporter
 from rotkehlchen.chain.ethereum.gitcoin.processor import GitcoinProcessor
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
@@ -3120,3 +3121,52 @@ class RestAPI():
         )
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+
+    def _get_gitcoin_events(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            grant_id: int,
+    ) -> Dict[str, Any]:
+        api = GitcoinAPI(self.rotkehlchen.data.db)
+        try:
+            actions = api.query_grant_history(
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+                grant_id=grant_id,
+            )
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        serialized_result = []
+        for action in actions:
+            serialized_result.append(action.serialize_for_gitcoin())
+
+        return {'result': serialized_result, 'message': '', 'status_code': HTTPStatus.OK}
+
+    @require_premium_user(active_check=False)
+    def get_gitcoin_events(
+            self,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            grant_id: int,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_gitcoin_events',
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                grant_id=grant_id,
+            )
+
+        response = self._get_gitcoin_events(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            grant_id=grant_id,
+        )
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(
+            result=result_dict,
+            status_code=response.get('status_code', HTTPStatus.OK),
+        )
