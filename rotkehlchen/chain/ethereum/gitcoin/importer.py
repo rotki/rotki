@@ -100,6 +100,7 @@ class GitcoinDataImporter():
             extra_data=GitcoinEventData(
                 tx_id=tx_id,
                 grant_id=grant_id,
+                clr_round=None,  # can't get round from CSV
                 tx_type=tx_type,
             ),
         )

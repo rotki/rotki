@@ -417,11 +417,13 @@ INSERT OR IGNORE INTO gitcoin_tx_type(type, seq) VALUES ('B', 2);
 
 DB_CREATE_LEDGER_ACTIONS_GITCOIN_DATA = """
 CREATE TABLE IF NOT EXISTS ledger_actions_gitcoin_data (
-    parent_id INTEGER NOT NULL PRIMARY KEY,
-    tx_id TEXT NOT NULL,
+    parent_id INTEGER NOT NULL,
+    tx_id TEXT NOT NULL UNIQUE,
     grant_id INTEGER NOT NULL,
+    clr_round INTEGER,
     tx_type NOT NULL DEFAULT('A') REFERENCES gitcoin_tx_type(type),
-    FOREIGN KEY(parent_id) REFERENCES ledger_actions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+    FOREIGN KEY(parent_id) REFERENCES ledger_actions(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(parent_id, tx_id, grant_id)
 );
 """  # noqa: E501
 

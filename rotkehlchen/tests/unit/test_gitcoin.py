@@ -38,6 +38,7 @@ def test_csv_import(database, price_historian):  # pylint: disable=unused-argume
         extra_data=GitcoinEventData(
             tx_id='0x00298f72ad40167051e111e6dc2924de08cce7cf0ad00d04ad5a9e58426536a1',
             grant_id=149,
+            clr_round=None,
             tx_type=GitcoinEventTxType.ETHEREUM,
         ),
     ), LedgerAction(
@@ -54,6 +55,7 @@ def test_csv_import(database, price_historian):  # pylint: disable=unused-argume
         extra_data=GitcoinEventData(
             tx_id='5612f84bc20cda25b911af39b792c973bdd5916b3b6868db2420b5dafd705a90',
             grant_id=149,
+            clr_round=None,
             tx_type=GitcoinEventTxType.ZKSYNC,
         ),
     )]

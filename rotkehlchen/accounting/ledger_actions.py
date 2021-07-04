@@ -172,21 +172,29 @@ class GitcoinEventTxType(DBEnumMixIn):
 
 
 GitcoinEventDataDB = Tuple[
-    int,  # parent_id
-    str,  # tx_id
-    int,  # grant_id
-    str,  # tx_type
+    int,            # parent_id
+    str,            # tx_id
+    int,            # grant_id
+    Optional[int],  # clr_round
+    str,            # tx_type
 ]
 
 
 class GitcoinEventData(NamedTuple):
     tx_id: str
     grant_id: int
+    clr_round: Optional[int]
     tx_type: GitcoinEventTxType
 
     def serialize_for_db(self, parent_id: int) -> GitcoinEventDataDB:
         """Serializes Gitcoin event data to a tuple for writing to DB"""
-        return parent_id, self.tx_id, self.grant_id, self.tx_type.serialize_for_db()
+        return (
+            parent_id,
+            self.tx_id,
+            self.grant_id,
+            self.clr_round,
+            self.tx_type.serialize_for_db(),
+        )
 
     @staticmethod
     def deserialize_from_db(data: GitcoinEventDataDB) -> 'GitcoinEventData':
@@ -196,7 +204,8 @@ class GitcoinEventData(NamedTuple):
         return GitcoinEventData(
             tx_id=data[1],
             grant_id=data[2],
-            tx_type=GitcoinEventTxType.deserialize_from_db(data[3]),
+            clr_round=data[3],
+            tx_type=GitcoinEventTxType.deserialize_from_db(data[4]),
         )
 
 
