@@ -1284,11 +1284,17 @@ class DBHandler:
                 log.warning(msg, data=result)
         return events
 
-    def get_all_yearn_vaults_v2_events(self, address: ChecksumEthAddress) -> List[YearnVaultEvent]:
+    def get_yearn_vaults_v2_events(
+        self,
+        address: ChecksumEthAddress,
+        from_block: int,
+        to_block: int,
+    ) -> List[YearnVaultEvent]:
         cursor = self.conn.cursor()
         query = cursor.execute(
-            'SELECT * from yearn_vaults_events WHERE address=? AND version=2;',
-            (address, ),
+            'SELECT * from yearn_vaults_events WHERE address=? AND version=2 '
+            'AND block_number BETWEEN ? AND ?',
+            (address, from_block, to_block),
         )
         events = []
         for result in query:

@@ -201,7 +201,11 @@ class YearnVaultsV2(EthereumModule):
 
         for address, new_events in new_events_addresses.items():
             # Query events from db for address
-            db_events = self.database.get_all_yearn_vaults_v2_events(address=address)
+            db_events = self.database.get_yearn_vaults_v2_events(
+                address=address,
+                from_block=from_block,
+                to_block=to_block,
+            )
             # Flatten the data into a unique list
             events = list(new_events['deposits'])
             events.extend(new_events['withdrawals'])
@@ -215,15 +219,19 @@ class YearnVaultsV2(EthereumModule):
                     to_block=to_block,
                 )
                 continue
+            self.database.add_yearn_vaults_events(address, events)
 
+        for address in addresses:
+            all_events = self.database.get_yearn_vaults_v2_events(
+                address=address,
+                from_block=from_block,
+                to_block=to_block,
+            )
             vaults_histories: Dict[str, YearnVaultHistory] = {}
             # Dict that stores vault token symbol and their events + total pnl
             vaults: Dict[str, Dict[str, List[YearnVaultEvent]]] = defaultdict(
                 lambda: defaultdict(list),
             )
-            self.database.add_yearn_vaults_events(address, events)
-            all_events = db_events + events
-
             for event in all_events:
                 if event.event_type == 'deposit':
                     vault_token_symbol = event.to_asset.identifier
