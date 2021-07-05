@@ -11,6 +11,7 @@ from hexbytes import HexBytes
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.errors import ConversionError
 from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_date
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.utils.misc import (
@@ -338,6 +339,16 @@ def test_generate_address_via_create2(
 def test_timestamp_to_date():
     date = timestamp_to_date(1611395717, formatstr='%d/%m/%Y %H:%M:%S %Z')
     assert not date.endswith(' '), 'Make sure %Z empty string is removed'
+
+
+def test_deserialize_timestamp_from_date():
+    timestamp = deserialize_timestamp_from_date(
+        date='2020-10-06T20:46:48Z',  # failed in the past due to the trailing Z
+        formatstr='%Y-%m-%dT%H:%M:%S',
+        location='foo',
+        skip_milliseconds=True,
+    )
+    assert timestamp == 1602017208
 
 
 def test_jsonloads_dict():

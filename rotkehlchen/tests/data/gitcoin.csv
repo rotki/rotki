@@ -1,0 +1,11 @@
+id,date,From,From Location,To,To Location,Type,Value In USD,txid,token_name,token_value,url
+880635,2021-06-27T13:00:00,albertinim211,,lefterisjp,"Berlin, Germany",grant,0.95,0x00298f72ad40167051e111e6dc2924de08cce7cf0ad00d04ad5a9e58426536a1,ETH,0.00,/grants/149/rotki-the-portfolio-tracker-and-accounting-tool-t
+880634,2021-06-27T13:00:00,qiuqiu1188,,lefterisjp,"Berlin, Germany",grant,1.01,sync-tx:5612f84bc20cda25b911af39b792c973bdd5916b3b6868db2420b5dafd705a90,ETH,0.00,/grants/149/rotki-the-portfolio-tracker-and-accounting-tool-t
+880532,2021-06-27T13:00:00,rhy89,,lefterisjp,"Berlin, Germany",grant,5.25,sync-tx:f0df2a0c4771f0e5094035468086259e4c05f35a7b57c8de04f8cdf7f5f68c5f,ETH,0.00,/grants/149/rotki-the-portfolio-tracker-and-accounting-tool-t
+880497,2021-06-27T13:00:00,lujy338,,lefterisjp,"Berlin, Germany",grant,1.14,sync-tx:ae4d34658a8fab4e549ef95abfb08bf6fbfd7a5f60963a88cdf5abcc0b3c2b51,DAI,1.20,/grants/149/rotki-the-portfolio-tracker-and-accounting-tool-t
+880472,2021-06-27T13:00:00,specterofnet,,lefterisjp,"Berlin, Germany",grant,2.00,sync-tx:aeaf596c6e833f39eabdc6a6dae39bf9ea6747aafcbb77be37f57715fdd6baf8,DAI,2.00,/grants/149/rotki-the-portfolio-tracker-and-accounting-tool-t
+880432,2021-06-27T13:00:00,a4097076,,lefterisjp,"Berlin, Germany",grant,3.50,sync-tx:a048caf5058258eb91ded496efd09786036654047bb002b2c644a2a711433270,ETH,0.00,/grants/149/rotki-the-portfolio-tracker-and-accounting-tool-t
+880343,2021-06-27T13:00:00,maobl,,lefterisjp,"Berlin, Germany",grant,1.90,sync-tx:b809fe92b91d3299ec699a83a42f18bb048b051877d79f1d3ed896f602e22a11,USDT,2.00,/grants/149/rotki-the-portfolio-tracker-and-accounting-tool-t
+880221,2021-06-27T13:00:00,hypnodotis,,lefterisjp,"Berlin, Germany",grant,2.85,sync-tx:7c1c9f17c4f860cfcb6fec2ae91cdceca6e87345f0b34828c6fa2937b9de9d5d,DAI,3.00,/grants/149/rotki-the-portfolio-tracker-and-accounting-tool-t
+880177,2021-06-27T13:00:00,jiqiang21,,lefterisjp,"Berlin, Germany",grant,1.84,sync-tx:8fa737233b75fe54481ad4b54cbcfe617ee02b193dc3ea5fbaca0cf182a3d52e,ETH,0.00,/grants/149/rotki-the-portfolio-tracker-and-accounting-tool-t
+880086,2021-06-27T13:00:00,lujy338,,lefterisjp,"Berlin, Germany",grant,1.14,sync-tx:61712da89a48be434327d64eb6da1e25cfab3b236ea9211a8fa3930cfba2f056,DAI,1.20,/grants/149/rotki-the-portfolio-tracker-and-accounting-tool-t

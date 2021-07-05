@@ -45,6 +45,8 @@ from rotkehlchen.api.v1.encoding import (
     ExchangesResourceRemoveSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
+    GitcoinEventsDeleteSchema,
+    GitcoinEventsQuerySchema,
     HistoricalAssetsPriceSchema,
     HistoryExportingSchema,
     HistoryProcessingSchema,
@@ -73,6 +75,7 @@ from rotkehlchen.api.v1.encoding import (
     TagSchema,
     TimerangeLocationCacheQuerySchema,
     TimerangeLocationQuerySchema,
+    TimerangeQuerySchema,
     TradeDeleteSchema,
     TradePatchSchema,
     TradeSchema,
@@ -1643,3 +1646,44 @@ class BinanceUserMarkets(BaseResource):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(self, name: str, location: Location) -> Response:
         return self.rest_api.get_user_binance_pairs(name, location)
+
+
+class GitcoinEventsResource(BaseResource):
+    post_schema = GitcoinEventsQuerySchema()
+    delete_schema = GitcoinEventsDeleteSchema()
+
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            async_query: bool,
+            grant_id: int,
+    ) -> Response:
+        return self.rest_api.get_gitcoin_events(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            async_query=async_query,
+            grant_id=grant_id,
+        )
+
+    @use_kwargs(delete_schema, location='json_and_query')
+    def delete(self, grant_id: Optional[int]) -> Response:
+        return self.rest_api.purge_gitcoin_grant_data(grant_id=grant_id)
+
+
+class GitcoinReportResource(BaseResource):
+    put_schema = TimerangeQuerySchema()
+
+    @use_kwargs(put_schema, location='json_and_query')
+    def put(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.process_gitcoin(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            async_query=async_query,
+        )

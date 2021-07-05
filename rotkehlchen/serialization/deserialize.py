@@ -119,6 +119,7 @@ def deserialize_timestamp_from_date(
     if formatstr == 'iso8601':
         return iso8601ts_to_timestamp(date)
 
+    date = date.rstrip('Z')
     try:
         return Timestamp(create_timestamp(datestr=date, formatstr=formatstr))
     except ValueError as e:

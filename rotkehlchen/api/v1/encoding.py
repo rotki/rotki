@@ -809,15 +809,40 @@ class EthereumTransactionQuerySchema(Schema):
     only_cache = fields.Boolean(missing=False)
 
 
-class TimerangeLocationQuerySchema(Schema):
+class TimerangeQuerySchema(Schema):
     from_timestamp = TimestampField(missing=Timestamp(0))
     to_timestamp = TimestampField(missing=ts_now)
-    location = LocationField(missing=None)
     async_query = fields.Boolean(missing=False)
+
+
+class TimerangeLocationQuerySchema(TimerangeQuerySchema):
+    location = LocationField(missing=None)
 
 
 class TimerangeLocationCacheQuerySchema(TimerangeLocationQuerySchema):
     only_cache = fields.Boolean(missing=False)
+
+
+class GitcoinEventsQuerySchema(TimerangeQuerySchema):
+    grant_id = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=1,
+            error='Gitcoin grant id must be a positive integer',
+        ),
+        required=True,
+    )
+
+
+class GitcoinEventsDeleteSchema(Schema):
+    grant_id = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=1,
+            error='Gitcoin grant id must be a positive integer',
+        ),
+        missing=None,
+    )
 
 
 class TradeSchema(Schema):

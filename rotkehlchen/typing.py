@@ -21,6 +21,7 @@ ModuleName = Literal[
     'balancer',
     'eth2',
 ]
+
 # TODO: Turn this into some kind of light data structure and not just a mapping
 # This is a mapping of module ids to human readable names
 AVAILABLE_MODULES_MAP = {
@@ -44,6 +45,7 @@ IMPORTABLE_LOCATIONS = Literal[
     'blockfi-transactions',
     'blockfi-trades',
     'nexo',
+    'gitcoin',
 ]
 
 UNISWAP_PROTOCOL = 'UNI-V2'
@@ -295,6 +297,7 @@ class Location(DBEnumMixIn):
     NEXO = 27
     BLOCKFI = 28
     INDEPENDENTRESERVE = 29
+    GITCOIN = 30
 
 
 class AssetMovementCategory(Enum):

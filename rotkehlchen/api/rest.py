@@ -25,6 +25,7 @@ import gevent
 from flask import Response, make_response, send_file
 from gevent.event import Event
 from gevent.lock import Semaphore
+from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
@@ -43,6 +44,9 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
+from rotkehlchen.chain.ethereum.gitcoin.api import GitcoinAPI
+from rotkehlchen.chain.ethereum.gitcoin.importer import GitcoinDataImporter
+from rotkehlchen.chain.ethereum.gitcoin.processor import GitcoinProcessor
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.constants.assets import A_ETH
@@ -982,7 +986,13 @@ class RestAPI():
     @require_loggedin_user()
     def add_ledger_action(self, action: LedgerAction) -> Response:
         db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
-        identifier = db.add_ledger_action(action)
+        try:
+            identifier = db.add_ledger_action(action)
+        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            db.db.conn.rollback()
+            error_msg = 'Failed to add Ledger action due to entry already existing in the DB'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
         result_dict = _wrap_in_ok_result({'identifier': identifier})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
@@ -2048,6 +2058,15 @@ class RestAPI():
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+        elif source == 'gitcoin':
+            if self.rotkehlchen.premium is None:
+                return api_response(wrap_in_fail_result(
+                    'Gitcoin grants importing is premium only',
+                    status_code=HTTPStatus.CONFLICT,
+                ))
+
+            gitcoin_importer = GitcoinDataImporter(db=self.rotkehlchen.data.db)
+            gitcoin_importer.import_gitcoin_csv(filepath)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
@@ -3072,3 +3091,89 @@ class RestAPI():
             ),
             status_code=HTTPStatus.OK,
         )
+
+    def _process_gitcoin(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Dict[str, Any]:
+        processor = GitcoinProcessor(self.rotkehlchen.data.db)
+        report = processor.process_gitcoin(from_ts=from_timestamp, to_ts=to_timestamp)
+        return {'result': report.serialize(), 'message': ''}
+
+    @require_premium_user(active_check=False)
+    def process_gitcoin(
+            self,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_process_gitcoin',
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        response = self._process_gitcoin(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+
+    def _get_gitcoin_events(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            grant_id: int,
+    ) -> Dict[str, Any]:
+        api = GitcoinAPI(self.rotkehlchen.data.db)
+        try:
+            actions = api.query_grant_history(
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+                grant_id=grant_id,
+            )
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+
+        serialized_result = []
+        for action in actions:
+            serialized_result.append(action.serialize_for_gitcoin())
+
+        return {'result': serialized_result, 'message': '', 'status_code': HTTPStatus.OK}
+
+    @require_premium_user(active_check=False)
+    def get_gitcoin_events(
+            self,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            grant_id: int,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_gitcoin_events',
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                grant_id=grant_id,
+            )
+
+        response = self._get_gitcoin_events(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            grant_id=grant_id,
+        )
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(
+            result=result_dict,
+            status_code=response.get('status_code', HTTPStatus.OK),
+        )
+
+    @require_loggedin_user()
+    def purge_gitcoin_grant_data(self, grant_id: Optional[int]) -> Response:
+        DBLedgerActions(
+            self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator,
+        ).delete_gitcoin_ledger_actions(grant_id)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
