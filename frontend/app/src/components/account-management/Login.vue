@@ -173,7 +173,21 @@
             type="error"
             icon="mdi-alert-circle-outline"
           >
-            <span v-for="(error, i) in errors" :key="i" v-text="error" />
+            <v-row>
+              <v-col class="grow">
+                <span v-for="(error, i) in errors" :key="i" v-text="error" />
+              </v-col>
+              <v-col class="shrink">
+                <v-btn
+                  v-if="isLoggedInError"
+                  depressed
+                  color="primary"
+                  @click="logout"
+                >
+                  {{ $t('login.logout') }}
+                </v-btn>
+              </v-col>
+            </v-row>
           </v-alert>
         </transition>
       </v-form>
@@ -207,6 +221,7 @@
 </template>
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import { mapActions } from 'vuex';
 import {
   deleteBackendUrl,
   getBackendUrl,
@@ -214,13 +229,17 @@ import {
 } from '@/components/account-management/utils';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { SyncConflict } from '@/store/session/types';
+import { ActionStatus } from '@/store/types';
 import { Credentials, SyncApproval } from '@/typing/types';
 
 const KEY_REMEMBER = 'rotki.remember';
 const KEY_USERNAME = 'rotki.username';
 
 @Component({
-  components: { RevealableInput }
+  components: { RevealableInput },
+  methods: {
+    ...mapActions('session', ['logoutRemoteSession'])
+  }
 })
 export default class Login extends Vue {
   @Prop({ required: true })
@@ -235,6 +254,8 @@ export default class Login extends Vue {
   @Prop({ required: false, type: Array, default: () => [] })
   errors!: string[];
 
+  logoutRemoteSession!: () => Promise<ActionStatus>;
+
   @Watch('username')
   onUsernameChange() {
     this.touched();
@@ -243,6 +264,17 @@ export default class Login extends Vue {
   @Watch('password')
   onPasswordChange() {
     this.touched();
+  }
+
+  isLoggedInError(): boolean {
+    return !!this.errors.find(error => error.includes('is already logged in'));
+  }
+
+  async logout() {
+    const { success } = await this.logoutRemoteSession();
+    if (success) {
+      this.touched();
+    }
   }
 
   get localLastModified(): number {

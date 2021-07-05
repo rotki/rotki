@@ -1141,6 +1141,7 @@
     }
   },
   "login": {
+    "logout": "Logout",
     "custom_backend": {
       "session_only": "Save only for this session",
       "tooltip": "Connect to a different rotki backend",
