@@ -878,7 +878,7 @@ Finally you can get a CSV export by pressing the "Export CSV" button. This expor
 - ``is_virtual`` is a boolean describing if an event is a virtually generated event. Only appears if the crypto to crypto setting is set. In many jurisdictions, crypto to crypto trades are taxable at the rate of the equivalent fiat currency. So an additional virtual buy is always generated for a crypto to crypto sell and the opposite for a crypto to crypto buy. So for example selling BSV for BTC would also make the user buy BTC with EUR as a virtual event, assuming EUR is the set profit currency.
 - ``paid_in_XXX``, where XXX is the user's customized ``profit_currency`` is a number describing the amount of ``paid_in_asset`` converted to the user`s ``profit_currency``.
 - ``taxable_received_in_XXX`` where XXX is the user's customized ``profit_currency`` is a number describing the amount of ``received_in_asset`` converted to the user's ``profit_currency``. Note that rotki additionally subtracts an exchange's trading fees from this number.
-- ``taxable_bought_cost_in_EUR`` where XXX is the user's customized ``profit_currency`` is a float simulating the total amount of ``paid_in_asset`` given the user's customized accounting strategy in the user's ``profit_currency``.
+- ``taxable_bought_cost_in_XXX`` where XXX is the user's customized ``profit_currency`` is a float simulating the total amount of ``paid_in_asset`` given the user's customized accounting strategy in the user's ``profit_currency``.
 - ``cost_basis`` If this is a spending event, this field contains information about where the amount that is spent came from according to the user's setting. Which buys contributed to this spend. If not enough information is known then this is also stated.
 
 .. note::
