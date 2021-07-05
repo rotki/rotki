@@ -12,17 +12,19 @@
           @changed="onChanged"
         />
         <v-row v-if="custom">
-          <v-col cols="12">
+          <v-col cols="12" md="6">
             <date-time-picker
               v-model="start"
+              outlined
               label="Start Date"
               limit-now
               :rules="startRules"
             />
           </v-col>
-          <v-col cols="12">
+          <v-col cols="12" md="6">
             <date-time-picker
               v-model="end"
+              outlined
               label="End Date"
               limit-now
               :rules="endRules"
@@ -47,7 +49,7 @@
 </template>
 
 <script lang="ts">
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
@@ -115,8 +117,8 @@ export default class Generate extends Vue {
     }
 
     this.start = period.start;
-    if (convertToTimestamp(period.end) > moment().unix()) {
-      this.end = moment().format('DD/MM/YYYY HH:mm:ss');
+    if (convertToTimestamp(period.end) > dayjs().unix()) {
+      this.end = dayjs().format('DD/MM/YYYY HH:mm:ss');
     } else {
       this.end = period.end;
     }
