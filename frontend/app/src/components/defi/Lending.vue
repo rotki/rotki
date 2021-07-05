@@ -33,6 +33,12 @@
                   <v-btn icon :value="YEARN_VAULTS">
                     <defi-protocol-icon mode="icon" :protocol="YEARN_VAULTS" />
                   </v-btn>
+                  <v-btn icon :value="YEARN_VAULTS_V2">
+                    <defi-protocol-icon
+                      mode="icon"
+                      :protocol="YEARN_VAULTS_V2"
+                    />
+                  </v-btn>
                 </v-btn-toggle>
               </v-col>
             </v-row>
@@ -296,6 +302,7 @@ export default class Lending extends Mixins(StatusMixin) {
 
   readonly AAVE = DEFI_AAVE;
   readonly YEARN_VAULTS = DEFI_YEARN_VAULTS;
+  readonly YEARN_VAULTS_V2 = DEFI_YEARN_VAULTS_V2;
   readonly modules: SupportedModules[] = [
     MODULE_AAVE,
     MODULE_COMPOUND,

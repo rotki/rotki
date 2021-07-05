@@ -12,7 +12,8 @@ import {
   MODULE_AAVE,
   MODULE_COMPOUND,
   MODULE_MAKERDAO_DSR,
-  MODULE_YEARN
+  MODULE_YEARN,
+  MODULE_YEARN_V2
 } from '@/services/session/consts';
 import { SupportedModules } from '@/services/session/types';
 
@@ -24,7 +25,8 @@ export default class Protocols extends Mixins(ModuleMixin) {
     MODULE_AAVE,
     MODULE_COMPOUND,
     MODULE_MAKERDAO_DSR,
-    MODULE_YEARN
+    MODULE_YEARN,
+    MODULE_YEARN_V2
   ];
 
   get anyModuleEnabled(): boolean {
