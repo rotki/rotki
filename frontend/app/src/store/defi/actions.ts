@@ -1197,11 +1197,19 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     function clearYearnVaultsState() {
-      commit('yearnVaultsBalances', {});
-      commit('yearnVaultsHistory', {});
+      commit(DefiMutations.YEARN_VAULTS_BALANCES, {});
+      commit(DefiMutations.YEARN_VAULTS_HISTORY, {});
 
       resetStatus(Section.DEFI_YEARN_VAULTS_BALANCES);
       resetStatus(Section.DEFI_YEARN_VAULTS_HISTORY);
+    }
+
+    function clearYearnVaultsV2State() {
+      commit(DefiMutations.YEARN_VAULTS_V2_BALANCES, {});
+      commit(DefiMutations.YEARN_VAULTS_V2_HISTORY, {});
+
+      resetStatus(Section.DEFI_YEARN_VAULTS_V2_BALANCES);
+      resetStatus(Section.DEFI_YEARN_VAULTS_V2_HISTORY);
     }
 
     function clearUniswapState() {
@@ -1234,6 +1242,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       clearCompoundState();
     } else if (module === MODULE_YEARN) {
       clearYearnVaultsState();
+    } else if (module === MODULE_YEARN_V2) {
+      clearYearnVaultsV2State();
     } else if (module === MODULE_UNISWAP) {
       clearUniswapState();
     } else if (module === MODULE_BALANCER) {
@@ -1244,6 +1254,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       clearAaveState();
       clearCompoundState();
       clearYearnVaultsState();
+      clearYearnVaultsV2State();
       clearUniswapState();
       clearBalancerState();
     }
