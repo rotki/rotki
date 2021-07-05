@@ -127,7 +127,7 @@ prices = {
             1625001464: FVal(1837.31),
         },
         'USD': {
-            1624791600: FVal(1983.33),
+            1624798800: FVal(1983.33),
         },
     },
     strethaddress_to_identifier('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'): {

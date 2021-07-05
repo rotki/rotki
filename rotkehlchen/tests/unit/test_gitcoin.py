@@ -27,7 +27,7 @@ def test_csv_import(database, price_historian):  # pylint: disable=unused-argume
     assert len(actions) == 10
     expected_actions = [LedgerAction(
         identifier=1,
-        timestamp=Timestamp(1624791600),
+        timestamp=Timestamp(1624798800),
         action_type=LedgerActionType.DONATION_RECEIVED,
         location=Location.GITCOIN,
         amount=FVal('0.0004789924016679019628604417823'),
@@ -44,7 +44,7 @@ def test_csv_import(database, price_historian):  # pylint: disable=unused-argume
         ),
     ), LedgerAction(
         identifier=2,
-        timestamp=Timestamp(1624791600),
+        timestamp=Timestamp(1624798800),
         action_type=LedgerActionType.DONATION_RECEIVED,
         location=Location.GITCOIN,
         amount=FVal('0.0005092445533521905078832065264'),

@@ -31,6 +31,49 @@ GITCOIN_START_TS = Timestamp(1506297600)  # 25/09/2017 -- date of first blog pos
 logger = logging.getLogger(__name__)
 
 
+def _deserialize_transaction(grant_id: int, rawtx: Dict[str, Any]) -> LedgerAction:
+    """May raise:
+    - DeserializationError
+    - KeyError
+    - UnknownAsset
+    """
+    timestamp = deserialize_timestamp_from_date(
+        date=rawtx['timestamp'],
+        formatstr='%Y-%m-%dT%H:%M:%S',
+        location='Gitcoin API',
+        skip_milliseconds=True,
+    )
+    asset = get_asset_by_symbol(rawtx['asset'])
+    if asset is None:
+        raise UnknownAsset(rawtx['asset'])
+    raw_amount = deserialize_int_from_str(symbol=rawtx['amount'], location='gitcoin api')
+    amount = asset_normalized_value(raw_amount, asset)
+    # let's use gitcoin's calculated rate for now since they include it in the response
+    rate = Price(deserialize_price(rawtx['usd_value']) / amount)
+    raw_txid = rawtx['tx_hash']
+    tx_type, tx_id = process_gitcoin_txid(key='tx_hash', entry=rawtx)
+    clr_round = rawtx['clr_round']
+    notes = f'Gitcoin grant {grant_id} event' if not clr_round else f'Gitcoin grant {grant_id} event in clr_round {clr_round}'  # noqa: E501
+    return LedgerAction(
+        identifier=1,  # whatever -- does not end up in the DB
+        timestamp=timestamp,
+        action_type=LedgerActionType.DONATION_RECEIVED,
+        location=Location.GITCOIN,
+        amount=AssetAmount(amount),
+        asset=asset,
+        rate=rate,
+        rate_asset=A_USD,
+        link=raw_txid,
+        notes=notes,
+        extra_data=GitcoinEventData(
+            tx_id=tx_id,
+            grant_id=grant_id,
+            clr_round=clr_round,
+            tx_type=tx_type,
+        ),
+    )
+
+
 class GitcoinAPI():
 
     def __init__(self, db: DBHandler) -> None:
@@ -85,48 +128,6 @@ class GitcoinAPI():
             break  # success
 
         return json_ret
-
-    def _deserialize_transaction(self, grant_id: int, rawtx: Dict[str, Any]) -> LedgerAction:
-        """May raise:
-        - DeserializationError
-        - KeyError
-        - UnknownAsset
-        """
-        timestamp = deserialize_timestamp_from_date(
-            date=rawtx['timestamp'],
-            formatstr='%Y-%m-%dT%H:%M:%S',
-            location='Gitcoin API',
-            skip_milliseconds=True,
-        )
-        asset = get_asset_by_symbol(rawtx['asset'])
-        if asset is None:
-            raise UnknownAsset(rawtx['asset'])
-        raw_amount = deserialize_int_from_str(symbol=rawtx['amount'], location='gitcoin api')
-        amount = asset_normalized_value(raw_amount, asset)
-        # let's use gitcoin's calculated rate for now since they include it in the response
-        rate = Price(deserialize_price(rawtx['usd_value']) / amount)
-        raw_txid = rawtx['tx_hash']
-        tx_type, tx_id = process_gitcoin_txid(key='tx_hash', entry=rawtx)
-        clr_round = rawtx['clr_round']
-        notes = f'Gitcoin grant {grant_id} event' if not clr_round else f'Gitcoin grant {grant_id} event in clr_round {clr_round}'  # noqa: E501
-        return LedgerAction(
-            identifier=1,  # whatever -- does not end up in the DB
-            timestamp=timestamp,
-            action_type=LedgerActionType.DONATION_RECEIVED,
-            location=Location.GITCOIN,
-            amount=AssetAmount(amount),
-            asset=asset,
-            rate=rate,
-            rate_asset=A_USD,
-            link=raw_txid,
-            notes=notes,
-            extra_data=GitcoinEventData(
-                tx_id=tx_id,
-                grant_id=grant_id,
-                clr_round=clr_round,
-                tx_type=tx_type,
-            ),
-        )
 
     def query_grant_history(
             self,
@@ -201,7 +202,7 @@ class GitcoinAPI():
         actions = []
         for transaction in transactions:
             try:
-                action = self._deserialize_transaction(grant_id, transaction)
+                action = _deserialize_transaction(grant_id=grant_id, rawtx=transaction)
             except (DeserializationError, KeyError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):

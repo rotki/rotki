@@ -13,9 +13,11 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.history.price import query_usd_price_zero_if_error
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount
+from rotkehlchen.serialization.deserialize import (
+    deserialize_asset_amount,
+    deserialize_timestamp_from_date,
+)
 from rotkehlchen.typing import Location, Price
-from rotkehlchen.utils.misc import iso8601ts_to_timestamp
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +42,12 @@ class GitcoinDataImporter():
         if entry['Type'] != 'grant':
             return None
 
-        timestamp = iso8601ts_to_timestamp(entry['date'])
+        timestamp = deserialize_timestamp_from_date(
+            date=entry['date'],
+            formatstr='%Y-%m-%dT%H:%M:%S',
+            location='Gitcoin CSV',
+            skip_milliseconds=True,
+        )
         usd_value = deserialize_asset_amount(entry['Value In USD'])
 
         asset = get_asset_by_symbol(entry['token_name'])
