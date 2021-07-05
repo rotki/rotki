@@ -4,7 +4,7 @@
       <v-autocomplete
         :value="value"
         :search-input.sync="search"
-        :items="dual"
+        :items="protocols"
         hide-details
         hide-selected
         hide-no-data
@@ -59,7 +59,7 @@ export interface Protocol {
 export default class DefiProtocolSelector extends Vue {
   @Prop({ required: true })
   value!: SupportedDefiProtocols | null;
-  @Prop({ required: true, type: Boolean, default: false })
+  @Prop({ required: false, type: Boolean, default: false })
   liabilities!: boolean;
 
   get protocols(): Protocol[] {
