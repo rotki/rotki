@@ -89,8 +89,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     let exchanges: Exchange[];
 
     try {
-      const { username, create } = payload;
-      const isLogged = await api.checkIfLogged(username);
+      const { username, create, restore } = payload;
+      const isLogged = restore || (await api.checkIfLogged(username));
       if (isLogged && !state.syncConflict.message) {
         [settings, exchanges] = await Promise.all([
           api.getSettings(),
@@ -198,6 +198,19 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       await dispatch('stop');
     } catch (e) {
       showError(e.message, 'Logout failed');
+    }
+  },
+  async logoutRemoteSession(): Promise<ActionStatus> {
+    try {
+      const loggedUsers = await api.loggedUsers();
+      for (let i = 0; i < loggedUsers.length; i++) {
+        const user = loggedUsers[i];
+        await api.logout(user);
+      }
+      return { success: true };
+    } catch (e) {
+      showError(e.message, 'Logout failed');
+      return { success: false, message: e.message };
     }
   },
   async stop({ commit }) {

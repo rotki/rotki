@@ -105,6 +105,7 @@ export interface UnlockPayload {
   readonly apiKey?: string;
   readonly apiSecret?: string;
   readonly submitUsageAnalytics?: boolean;
+  readonly restore?: boolean;
 }
 
 export type SettingsUpdate = {

@@ -144,6 +144,22 @@ export class RotkehlchenApi {
       .then(result => result[username] === 'loggedin');
   }
 
+  loggedUsers(): Promise<string[]> {
+    return this.axios
+      .get<ActionResult<AccountSession>>(`/users`)
+      .then(handleResponse)
+      .then(result => {
+        const loggedUsers: string[] = [];
+        for (const user in result) {
+          if (result[user] !== 'loggedin') {
+            continue;
+          }
+          loggedUsers.push(user);
+        }
+        return loggedUsers;
+      });
+  }
+
   logout(username: string): Promise<boolean> {
     return this.axios
       .patch<ActionResult<boolean>>(

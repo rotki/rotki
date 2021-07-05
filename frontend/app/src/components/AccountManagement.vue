@@ -11,7 +11,10 @@
             {{ $t('app.moto') }}
           </span>
         </div>
-        <connection-loading v-if="!connectionFailure" :connected="connected" />
+        <connection-loading
+          v-if="!connectionFailure"
+          :connected="connected && !autolog"
+        />
         <connection-failure v-else />
         <v-slide-y-transition>
           <login
@@ -76,7 +79,9 @@ import Login from '@/components/account-management/Login.vue';
 import PremiumReminder from '@/components/account-management/PremiumReminder.vue';
 import {
   deleteBackendUrl,
-  getBackendUrl
+  getBackendUrl,
+  lastLogin,
+  setLastLogin
 } from '@/components/account-management/utils';
 import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue';
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
@@ -110,6 +115,7 @@ export default class AccountManagement extends Mixins(BackendMixin) {
   accountCreation: boolean = false;
   premium!: boolean;
   loading: boolean = false;
+  autolog: boolean = false;
   message!: Message;
   connected!: boolean;
   syncConflict!: SyncConflict;
@@ -147,6 +153,28 @@ export default class AccountManagement extends Mixins(BackendMixin) {
       deleteBackendUrl();
       await this.restartBackend();
     }
+
+    const lastLoggedUser = lastLogin();
+
+    try {
+      this.autolog = true;
+      const isLogged = await this.$api.checkIfLogged(lastLoggedUser);
+      if (isLogged) {
+        await this.unlock({
+          username: lastLoggedUser,
+          restore: true,
+          password: ''
+        });
+        if (this.logged) {
+          this.showPremiumDialog();
+          this.showGetPremiumButton();
+        }
+      }
+      // eslint-disable-next-line no-empty
+    } catch (e) {
+    } finally {
+      this.autolog = false;
+    }
   }
 
   @Emit()
@@ -176,6 +204,7 @@ export default class AccountManagement extends Mixins(BackendMixin) {
     }
     this.loading = false;
     if (this.logged) {
+      setLastLogin(username);
       this.showPremiumDialog();
       this.showGetPremiumButton();
     }
