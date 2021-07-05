@@ -639,6 +639,53 @@ class AaveGraphInquirer(AaveInquirer):
             total_earned_liquidations=total_earned_liquidations,
         )
 
+    def _process_graph_query_result(
+        self,
+        query: Dict[str, Any],
+        deposits: List[AaveDepositWithdrawalEvent],
+        withdrawals: List[AaveDepositWithdrawalEvent],
+        borrows: List[AaveBorrowEvent],
+        repays: List[AaveRepayEvent],
+        liquidation_calls: List[AaveLiquidationEvent],
+        user_merged_data: Dict[str, Any],
+        from_ts: Timestamp,
+        to_ts: Timestamp,
+    ) -> None:
+        """
+        Given a query result from the graph this function extracts information for:
+        - deposits
+        - withdrawals
+        - borrows
+        - repays
+        - liquidation_calls
+        and extends the corresponding arguments with the obtained information.
+        """
+        if 'users' not in query or len(query['users']) == 0:
+            # If there is no information on the query finish the execution
+            log.debug(f'Aave subgraph query has no information for user. {str(query)}')
+            return
+        user_result = query['users'][0]
+        msg = 'Failed to obtain a valid result from Aave graph.'
+        try:
+            deposits += self._parse_deposits(user_result['depositHistory'], from_ts, to_ts)
+            withdrawals += self._parse_withdrawals(
+                withdrawals=user_result['redeemUnderlyingHistory'],
+                from_ts=from_ts,
+                to_ts=to_ts,
+            )
+            borrows += self._parse_borrows(user_result['borrowHistory'], from_ts, to_ts)
+            repays += self._parse_repays(user_result['repayHistory'], from_ts, to_ts)
+            liquidation_calls += self._parse_liquidations(
+                liquidations=user_result['liquidationCallHistory'],
+                from_ts=from_ts,
+                to_ts=to_ts,
+            )
+        except KeyError as e:
+            self.msg_aggregator.add_warning(msg + f' Missing key {str(e)}')
+            return
+        for key, value in user_result.items():
+            user_merged_data[key].extend(value)
+
     def _get_user_data(
             self,
             from_ts: Timestamp,
@@ -655,8 +702,11 @@ class AaveGraphInquirer(AaveInquirer):
             last_query_ts = last_query[1]
             from_ts = Timestamp(last_query_ts + 1)
 
-        deposits, withdrawals, borrows = [], [], []
-        repays, liquidation_calls = [], []
+        deposits: List[AaveDepositWithdrawalEvent] = []
+        withdrawals: List[AaveDepositWithdrawalEvent] = []
+        borrows: List[AaveBorrowEvent] = []
+        repays: List[AaveRepayEvent] = []
+        liquidation_calls: List[AaveLiquidationEvent] = []
         query = self.graph.query(
             querystr=USER_EVENTS_QUERY,
             param_types={'$address': 'ID!'},
@@ -668,48 +718,34 @@ class AaveGraphInquirer(AaveInquirer):
             param_values={'address': address.lower()},
         )
 
-        user_merged_data = defaultdict(list)
+        user_merged_data: Dict[str, Any] = defaultdict(list)
         if now - last_query_ts > AAVE_GRAPH_RECENT_SECS:
             # In theory if these were individual queries we should do them only if
             # we have not queried recently. In practise since we only do 1 query above
             # this is useless for now, but keeping the mechanism in case we change
             # the way we query the subgraph
-
-            if len(query['users']) != 0:
-                user_result = query['users'][0]
-                deposits += self._parse_deposits(user_result['depositHistory'], from_ts, to_ts)
-                withdrawals += self._parse_withdrawals(
-                    withdrawals=user_result['redeemUnderlyingHistory'],
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                )
-                borrows += self._parse_borrows(user_result['borrowHistory'], from_ts, to_ts)
-                repays += self._parse_repays(user_result['repayHistory'], from_ts, to_ts)
-                liquidation_calls += self._parse_liquidations(
-                    user_result['liquidationCallHistory'],
-                    from_ts,
-                    to_ts,
-                )
-                for key, value in user_result.items():
-                    user_merged_data[key].extend(value)
-
-            if len(query_v2['users']) != 0:
-                user_result_v2 = query_v2['users'][0]
-                deposits += self._parse_deposits(user_result_v2['depositHistory'], from_ts, to_ts)
-                withdrawals += self._parse_withdrawals(
-                    withdrawals=user_result_v2['redeemUnderlyingHistory'],
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                )
-                borrows += self._parse_borrows(user_result_v2['borrowHistory'], from_ts, to_ts)
-                repays += self._parse_repays(user_result_v2['repayHistory'], from_ts, to_ts)
-                liquidation_calls += self._parse_liquidations(
-                    user_result_v2['liquidationCallHistory'],
-                    from_ts,
-                    to_ts,
-                )
-                for key, value in user_result_v2.items():
-                    user_merged_data[key].extend(value)
+            self._process_graph_query_result(
+                query=query,
+                deposits=deposits,
+                withdrawals=withdrawals,
+                borrows=borrows,
+                repays=repays,
+                liquidation_calls=liquidation_calls,
+                user_merged_data=user_merged_data,
+                from_ts=from_ts,
+                to_ts=to_ts,
+            )
+            self._process_graph_query_result(
+                query=query_v2,
+                deposits=deposits,
+                withdrawals=withdrawals,
+                borrows=borrows,
+                repays=repays,
+                liquidation_calls=liquidation_calls,
+                user_merged_data=user_merged_data,
+                from_ts=from_ts,
+                to_ts=to_ts,
+            )
 
         result = self._process_events(
             user_address=address,

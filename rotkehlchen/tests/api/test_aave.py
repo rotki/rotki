@@ -105,7 +105,6 @@ def test_query_aave_history_with_borrowing_v2(rotkehlchen_api_server, ethereum_a
         btc_accounts=None,
         original_queries=['zerion', 'logs', 'blocknobytime'],
     )
-
     _query_simple_aave_history_test_v2(setup, rotkehlchen_api_server, False)
 
 
@@ -207,7 +206,6 @@ def _query_simple_aave_history_test_v2(
         else:
             result = assert_proper_response_with_result(response)
 
-    print(result)
     assert len(result) == 1
     assert len(result[AAVE_V2_TEST_ACC]) == 4
     events = result[AAVE_V2_TEST_ACC]['events']

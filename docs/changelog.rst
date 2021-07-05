@@ -9,7 +9,6 @@ Changelog
 * :feature:`3069` When adding an asset coingecko/cryptocompare identifiers will now be validated and non-existing ones will be rejected.
 * :bug:`2685` Invoking `--version` from the rotki backend binary in Windows should no longer raise a Permission error.
 
-
 * :release:`1.18.1 <2021-06-30>`
 * :bug:`2447` When fee of a trade is paid in crypto that crypto's asset will now be deducted from the cost basis calculation.
 * :bug:`3133` Users will now properly see a MakerDAO entry in the Defi Overview.
