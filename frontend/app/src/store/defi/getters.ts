@@ -40,7 +40,8 @@ import {
   GETTER_BALANCER_BALANCES,
   GETTER_UNISWAP_ASSETS,
   MAKERDAO,
-  YEARN_FINANCE_VAULTS
+  YEARN_FINANCE_VAULTS,
+  YEARN_FINANCE_VAULTS_V2
 } from '@/store/defi/const';
 import {
   AaveLoan,
@@ -1157,6 +1158,16 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         totalDebtUsd: totalDebt,
         totalLendingDepositUsd: totalLendingDeposit(filter, [])
       };
+
+      const yearnV2Summary = protocolSummary(
+        DEFI_YEARN_VAULTS_V2,
+        Section.DEFI_YEARN_VAULTS_V2_BALANCES,
+        YEARN_FINANCE_VAULTS_V2,
+        true
+      );
+      if (yearnV2Summary) {
+        summary[DEFI_YEARN_VAULTS_V2] = yearnV2Summary;
+      }
     }
 
     return sortBy(Object.values(summary), 'protocol.name');
