@@ -100,7 +100,7 @@ export default class Generate extends Vue {
       !!v || this.$t('generate.validation.empty_end_date').toString()
   ];
 
-  mounted() {
+  created() {
     this.year = this[PROFIT_LOSS_PERIOD].year;
     this.quarter = this[PROFIT_LOSS_PERIOD].quarter;
   }
