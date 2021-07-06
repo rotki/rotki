@@ -19,6 +19,7 @@ from rotkehlchen.tests.utils.aave import (
     aave_mocked_historical_prices,
     expected_aave_deposit_test_events,
     expected_aave_liquidation_test_events,
+    expected_aave_v2_events,
 )
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -33,6 +34,7 @@ from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balance
 
 
 AAVE_BALANCES_TEST_ACC = '0xC2cB1040220768554cf699b0d863A3cd4324ce32'
+AAVE_V2_TEST_ACC = '0x008C00c45D461d7E08acBC4755a4A0a3a94115ee'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCES_TEST_ACC]])
@@ -85,6 +87,25 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
         assert 'usd_value' in entry['balance']
         assert '%' in entry['variable_apr']
         assert '%' in entry['stable_apr']
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_V2_TEST_ACC]])
+@pytest.mark.parametrize('ethereum_modules', [['aave']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
+@pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('aave_use_graph', [True])
+def test_query_aave_history_with_borrowing_v2(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
+    """Check querying the aave histoy endpoint works. Uses real data."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        original_queries=['zerion', 'logs', 'blocknobytime'],
+    )
+    _query_simple_aave_history_test_v2(setup, rotkehlchen_api_server, False)
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCES_TEST_ACC]])
@@ -161,6 +182,47 @@ def _query_simple_aave_history_test(
         a=events[:len(expected_events)],
         b=expected_events,
         ignore_keys=['log_index', 'block_number'] if use_graph else None,
+    )
+
+
+def _query_simple_aave_history_test_v2(
+        setup: BalancesTestSetup,
+        server: APIServer,
+        async_query: bool,
+) -> None:
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(api_url_for(
+            server,
+            "aavehistoryresource",
+        ), json={'async_query': async_query})
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            # Big timeout since this test can take a long time
+            outcome = wait_for_async_task(server, task_id, timeout=600)
+            assert outcome['message'] == ''
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
+
+    assert len(result) == 1
+    assert len(result[AAVE_V2_TEST_ACC]) == 4
+    events = result[AAVE_V2_TEST_ACC]['events']
+    total_earned_interest = result[AAVE_V2_TEST_ACC]['total_earned_interest']
+    total_lost = result[AAVE_V2_TEST_ACC]['total_lost']
+    total_earned_liquidations = result[AAVE_V2_TEST_ACC]['total_earned_liquidations']
+    assert len(total_lost) == 1
+    assert len(total_earned_liquidations) == 0
+    assert len(total_earned_interest) == 1
+    assert len(total_earned_interest['_ceth_0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84']) == 2
+    assert FVal(total_earned_interest['_ceth_0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84']['amount']) >= FVal('0.09')  # noqa: E501
+    assert FVal(total_earned_interest['_ceth_0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84']['usd_value']) >= FVal('0.09248')  # noqa: E501
+
+    assert_serialized_lists_equal(
+        a=events[:len(expected_aave_v2_events)],
+        b=process_result_list(expected_aave_v2_events),
+        ignore_keys=None,
     )
 
 

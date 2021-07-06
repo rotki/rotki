@@ -2146,6 +2146,7 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
     """Test upgrading the DB from version 27 to version 28.
 
     - Adds a new column 'version' to the 'yearn_vaults_events' table
+    - Delete aave events
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v27_rotkehlchen.db')
@@ -2157,6 +2158,7 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
     cursor = db_v27.conn.cursor()
 
     # Checks before migration
+    assert cursor.execute('SELECT COUNT(*) FROM aave_events;').fetchone()[0] == 1
     assert cursor.execute('SELECT COUNT(*) from yearn_vaults_events;').fetchone()[0] == 1
     # Migrate to v28
     db = _init_db_with_target_version(
@@ -2178,6 +2180,9 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
     # Check that the version is correct for the event in db
     cursor.execute('SELECT version from yearn_vaults_events;')
     assert cursor.fetchone()[0] == 1
+
+    # Check that aave_events got deleted
+    assert cursor.execute('SELECT COUNT(*) FROM aave_events;').fetchone()[0] == 0
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 28
