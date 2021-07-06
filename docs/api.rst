@@ -8397,11 +8397,12 @@ Gitcoin gather event data
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"from_timestamp": 0, "to_timestamp": 1624828416, "grant_id": 149 }
+      {"from_timestamp": 0, "to_timestamp": 1624828416, "grant_id": 149, "only_cahe": false }
 
    :reqjson integer from_timestamp: The timestamp from which to query grant events
    :reqjson integer to_timestamp: The timestamp until which to query grant events
    :reqjson integer grant_id: The id of the grant for which to query events
+   :reqjson bool only_cache: Signifying if caller only wants what's in the DB or if the remote API should also be queried.
 
    **Example Response**:
 

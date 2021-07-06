@@ -1659,12 +1659,14 @@ class GitcoinEventsResource(BaseResource):
             to_timestamp: Timestamp,
             async_query: bool,
             grant_id: int,
+            only_cache: bool,
     ) -> Response:
         return self.rest_api.get_gitcoin_events(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
             async_query=async_query,
             grant_id=grant_id,
+            only_cache=only_cache,
         )
 
     @use_kwargs(delete_schema, location='json_and_query')

@@ -130,13 +130,34 @@ class GitcoinAPI():
 
         return json_ret
 
-    def query_grant_history(
+    def get_db_grant_events(
             self,
             grant_id: int,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> List[LedgerAction]:
+        ledger_actions = self.db_ledger.get_ledger_actions(
+            from_ts=from_ts,
+            to_ts=to_ts,
+            location=Location.GITCOIN,
+        )
+        return [x for x in ledger_actions if x.extra_data.grant_id == grant_id]  # type: ignore
+
+    def query_grant_history(
+            self,
+            grant_id: int,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            only_cache: bool = False,
+    ) -> List[LedgerAction]:
         """May raise RemotError"""
+        if only_cache:
+            return self.get_db_grant_events(
+                grant_id=grant_id,
+                from_ts=from_ts,
+                to_ts=to_ts,
+            )
+
         entry_name = f'{GITCOIN_GRANTS_PREFIX}_{grant_id}'
         dbranges = DBQueryRanges(self.db)
         from_timestamp = GITCOIN_START_TS if from_ts is None else from_ts
@@ -163,10 +184,10 @@ class GitcoinAPI():
             end_ts=to_timestamp,
             ranges_to_query=ranges,
         )
-        return self.db_ledger.get_ledger_actions(
+        return self.get_db_grant_events(
+            grant_id=grant_id,
             from_ts=from_timestamp,
             to_ts=to_timestamp,
-            location=Location.GITCOIN,
         )
 
     def query_grant_history_period(

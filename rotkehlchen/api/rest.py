@@ -3127,6 +3127,7 @@ class RestAPI():
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             grant_id: int,
+            only_cache: bool,
     ) -> Dict[str, Any]:
         api = GitcoinAPI(self.rotkehlchen.data.db)
         try:
@@ -3134,6 +3135,7 @@ class RestAPI():
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 grant_id=grant_id,
+                only_cache=only_cache,
             )
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
@@ -3151,6 +3153,7 @@ class RestAPI():
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             grant_id: int,
+            only_cache: bool,
     ) -> Response:
         if async_query:
             return self._query_async(
@@ -3158,12 +3161,14 @@ class RestAPI():
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
                 grant_id=grant_id,
+                only_cache=only_cache,
             )
 
         response = self._get_gitcoin_events(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
             grant_id=grant_id,
+            only_cache=only_cache,
         )
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(
