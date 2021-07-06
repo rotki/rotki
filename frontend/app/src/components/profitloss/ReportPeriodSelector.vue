@@ -103,8 +103,7 @@ export default class ReportPeriodSelector extends Vue {
 
   isStartAfterNow(selection: Quarter) {
     const start = this.startDateTime(selection);
-    const startEpoch = dayjs(start, 'DD/MM/YYYY HH:mm:ss').unix();
-    return startEpoch >= dayjs().unix();
+    return dayjs(start, 'DD/MM/YYYY HH:mm').isAfter(dayjs());
   }
 
   startDateTime(selection: Quarter): string {
