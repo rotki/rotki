@@ -2,7 +2,8 @@ import { default as BigNumber } from 'bignumber.js';
 import {
   AAVE_BORROWING_EVENTS,
   AAVE_LENDING_EVENTS,
-  DEFI_PROTOCOLS
+  DEFI_PROTOCOLS,
+  PROTOCOL_VERSION
 } from '@/services/defi/consts';
 import { CompoundEventType } from '@/services/defi/types/compound';
 import { Balance } from '@/services/types-api';
@@ -39,3 +40,5 @@ export interface ApiMakerDAOVault {
   readonly liquidationPrice: BigNumber | null;
   readonly stabilityFee: string;
 }
+
+export type ProtocolVersion = typeof PROTOCOL_VERSION[number];

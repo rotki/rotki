@@ -1,5 +1,5 @@
 <template>
-  <v-row>
+  <v-row v-if="visibleModules.length > 0">
     <v-col>
       <div class="font-weight-medium">{{ $t('module_activator.title') }}</div>
       <div class="text-caption text--secondary">

@@ -20,8 +20,8 @@
     "days": "{days} days"
   },
   "active_modules": {
-    "activate": "Activate the module",
-    "view_addresses": "View the queried addresses for the module",
+    "activate": "Activate the {name} module",
+    "view_addresses": "View the queried addresses for the {name}",
     "enable": {
       "description": "Would you like to enable the {name} module?",
       "title": "Enabled module"
@@ -554,7 +554,7 @@
       "setup": {
         "continue": "Continue",
         "description_line_one": "rotki will attempt by default to retrieve information for all your accounts and available modules. The retrieval might require a lot of time based on the number of accounts you have.",
-        "description_line_three": "You can use the default settings if you want to have information for all protocols fetched for all accounts automatically. (Defi Settings can be changed at a later time).",
+        "description_line_three": "You can use the default settings if you want to have information for all protocols fetched for all accounts automatically. (Module Settings can be changed at a later time).",
         "description_line_two": "To reduce the query time you can specify only the DeFi modules and accounts you are interested in.",
         "subtitle": "Select options to improve your rotki DeFi experience",
         "title": "Setup DeFi",
@@ -1671,20 +1671,20 @@
       },
       "yearn_vaults": {
         "task": {
-          "title": "Querying yearn.finance Vaults balances"
+          "title": "Querying yearn.finance Vaults {version} balances"
         },
         "error": {
-          "title": "yearn.finance Vaults balances",
-          "description": "Failed to retrieve yearn.finance Vaults balances: {error}"
+          "title": "yearn.finance Vaults {version} balances",
+          "description": "Failed to retrieve yearn.finance Vaults {version} balances: {error}"
         }
       },
       "yearn_vaults_history": {
         "task": {
-          "title": "Querying yearn.finance Vaults history"
+          "title": "Querying yearn.finance Vaults {version} history"
         },
         "error": {
-          "title": "yearn.finance Vaults history",
-          "description": "Failed to retrieve yearn.finance Vaults history: {error}"
+          "title": "yearn.finance Vaults {version} history",
+          "description": "Failed to retrieve yearn.finance Vaults {version} history: {error}"
         }
       },
       "uniswap": {
@@ -2208,7 +2208,7 @@
   },
   "decentralized_finance": {
     "title": "Decentralized Finance",
-    "settings_tooltip": "Opens the Defi settings",
+    "settings_tooltip": "Opens the Module settings",
     "tabs": {
       "overview": "Overview",
       "deposits": "Deposits",
@@ -2250,6 +2250,7 @@
     "headers": {
       "roi": "ROI",
       "vault": "Vault",
+      "version": "Version",
       "underlying_asset": "Underlying Asset",
       "vault_asset": "Vault Asset"
     }

@@ -41,6 +41,7 @@ const DYDX = 'dYdX';
 const MELON = 'Melon';
 const ENZYME = 'Enzyme';
 export const YEARN_FINANCE_VAULTS = 'yearn.finance • Vaults';
+export const YEARN_FINANCE_VAULTS_V2 = 'yearn.finance • Vaults (v2)';
 const YEARN_TOKEN_VAULTS = 'Yearn Token Vaults';
 const KEEPERDAO = 'KeeperDAO';
 const MSTABLE = 'mStable';
@@ -129,6 +130,7 @@ export const OVERVIEW_PROTOCOLS = [
   MELON,
   ENZYME,
   YEARN_FINANCE_VAULTS,
+  YEARN_FINANCE_VAULTS_V2,
   YEARN_TOKEN_VAULTS,
   KEEPERDAO,
   MSTABLE,
@@ -276,6 +278,7 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [UNISWAPV1]: 'uniswap.svg',
   [UNISWAPV2]: 'uniswap.svg',
   [YEARN_FINANCE_VAULTS]: 'yearn_vaults.svg',
+  [YEARN_FINANCE_VAULTS_V2]: 'yearn_vaults.svg',
   [YEARN_TOKEN_VAULTS]: 'yearn_vaults.svg',
   [MAKERDAO]: 'makerdao.svg',
   [AAVE_V2_VARIABLE_DEBT]: 'aave.svg',

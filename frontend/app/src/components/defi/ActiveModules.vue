@@ -28,9 +28,19 @@
                 </v-btn>
               </template>
               <span v-if="module.enabled">
-                {{ $t('active_modules.view_addresses') }}
+                {{
+                  $t('active_modules.view_addresses', {
+                    name: name(module.identifier)
+                  })
+                }}
               </span>
-              <span v-else>{{ $t('active_modules.activate') }}</span>
+              <span v-else>
+                {{
+                  $t('active_modules.activate', {
+                    name: name(module.identifier)
+                  })
+                }}
+              </span>
             </v-tooltip>
           </v-col>
         </v-row>
