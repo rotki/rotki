@@ -1,6 +1,6 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import gevent
 import requests
@@ -52,7 +52,8 @@ def _deserialize_transaction(grant_id: int, rawtx: Dict[str, Any]) -> LedgerActi
     rate = Price(deserialize_price(rawtx['usd_value']) / amount)
     raw_txid = rawtx['tx_hash']
     tx_type, tx_id = process_gitcoin_txid(key='tx_hash', entry=rawtx)
-    clr_round = rawtx['clr_round']
+    # until we figure out if we can use it https://github.com/gitcoinco/web/issues/9255#issuecomment-874537144  # noqa: E501
+    clr_round = rawtx.get('clr_round', None)
     notes = f'Gitcoin grant {grant_id} event' if not clr_round else f'Gitcoin grant {grant_id} event in clr_round {clr_round}'  # noqa: E501
     return LedgerAction(
         identifier=1,  # whatever -- does not end up in the DB
@@ -145,10 +146,12 @@ class GitcoinAPI():
             start_ts=from_timestamp,
             end_ts=to_timestamp,
         )
+        grant_created_on: Optional[Timestamp] = None
 
         for period_range in ranges:
-            actions = self.query_grant_history_period(
+            actions, grant_created_on = self.query_grant_history_period(
                 grant_id=grant_id,
+                grant_created_on=grant_created_on,
                 from_timestamp=period_range[0],
                 to_timestamp=period_range[1],
             )
@@ -169,10 +172,35 @@ class GitcoinAPI():
     def query_grant_history_period(
             self,
             grant_id: int,
+            grant_created_on: Optional[Timestamp],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> List[LedgerAction]:
+    ) -> Tuple[List[LedgerAction], Optional[Timestamp]]:
         transactions: List[Dict[str, Any]] = []
+        if grant_created_on is None:
+            query_str = (
+                f'https://gitcoin.co/api/v0.1/grants/contributions_rec_report/'
+                f'?id={grant_id}&from_timestamp=2017-09-25&to_timestamp=2017-09-25'
+            )
+            result = self._single_grant_api_query(query_str)
+            try:
+                grant_created_on = deserialize_timestamp_from_date(
+                    date=result['metadata']['created_on'],
+                    formatstr='%Y-%m-%dT%H:%M:%S',
+                    location='Gitcoin API',
+                    skip_milliseconds=True,
+                )
+                from_timestamp = max(grant_created_on, from_timestamp)
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                logger.error(
+                    f'Unexpected data encountered during deserialization of gitcoin api '
+                    f'query: {result}. Error was: {msg}',
+                )
+                # continue with the given from_timestamp
+
         step_to_timestamp = min(from_timestamp + MONTH_IN_SECONDS, to_timestamp)
         while from_timestamp != step_to_timestamp:
             transactions.extend(
@@ -225,7 +253,7 @@ class GitcoinAPI():
 
             actions.append(action)
 
-        return actions
+        return actions, grant_created_on
 
     def query_grant_history_period30d(
             self,
