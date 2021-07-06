@@ -629,7 +629,7 @@ def test_query_yearn_vault_v2_history(rotkehlchen_api_server, ethereum_accounts)
             result = assert_proper_response_with_result(response)
 
     # Make sure some data was saved in the DB after first call
-    events = rotki.data.db.get_all_yearn_vaults_v2_events(TEST_V2_ACC2)
+    events = rotki.data.db.get_yearn_vaults_v2_events(TEST_V2_ACC2, 0, 12770065)
     assert len(events) >= 11
 
     result = result[TEST_V2_ACC2]
@@ -647,5 +647,5 @@ def test_query_yearn_vault_v2_history(rotkehlchen_api_server, ethereum_accounts)
         module_name='yearn_vaults_v2',
     ))
     assert_simple_ok_response(response)
-    events = rotki.data.db.get_all_yearn_vaults_v2_events(TEST_V2_ACC2)
+    events = rotki.data.db.get_yearn_vaults_v2_events(TEST_V2_ACC2, 0, 12770065)
     assert len(events) == 0
