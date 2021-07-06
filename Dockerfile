@@ -64,4 +64,4 @@ COPY ./packaging/docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY ./packaging/docker/docker-entrypoint.sh ./opt/rotki
 CMD ["sh", "-c", "exec /opt/rotki/docker-entrypoint.sh"]
 
-HEALTHCHECK CMD curl --fail http://localhost/api/1/users || exit 1
+HEALTHCHECK CMD curl --fail http://localhost/api/1/ping || exit 1

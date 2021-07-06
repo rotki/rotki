@@ -69,7 +69,9 @@ export default class PyHandler {
   private rpcFailureNotifier?: any;
   private childProcess?: ChildProcess;
   private _port?: number;
+  private _websocketPort?: number;
   private _serverUrl: string;
+  private _websocketUrl: string;
   private executable?: string;
   private _corsURL?: string;
   private backendOutput: string = '';
@@ -99,10 +101,15 @@ export default class PyHandler {
     return this._serverUrl;
   }
 
+  get websocketUrl(): string {
+    return this._websocketUrl;
+  }
+
   constructor(private app: App) {
     app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
     this.defaultLogDirectory = app.getPath('logs');
     this._serverUrl = '';
+    this._websocketUrl = '';
   }
 
   logToFile(msg: string | Error) {
@@ -170,12 +177,17 @@ export default class PyHandler {
 
     const port = await selectPort();
     const backendUrl = process.env.VUE_APP_BACKEND_URL;
-    if (port !== DEFAULT_PORT && backendUrl && typeof backendUrl === 'string') {
-      const portSeparator = backendUrl.lastIndexOf(':');
-      const oldPort = backendUrl.substring(portSeparator + 1);
-      const host = backendUrl.substr(0, portSeparator);
+
+    assert(backendUrl);
+    const regExp = /(.*):\/\/(.*):(.*)/;
+    const match = backendUrl.match(regExp);
+    assert(match && match.length === 4);
+    const [, scheme, host, oldPort] = match;
+    assert(host);
+
+    if (port !== DEFAULT_PORT) {
       if (parseInt(oldPort) !== port) {
-        this._serverUrl = `${host}:${port}`;
+        this._serverUrl = `${scheme}://${host}:${port}`;
         this.logToFile(
           `Default port ${oldPort} was in use. Starting backend at ${port}`
         );
@@ -183,12 +195,14 @@ export default class PyHandler {
     }
 
     this._port = port;
+    this._websocketPort = await selectPort(port + 1);
+    this._websocketUrl = `${host}:${this._websocketPort}`;
     const args: string[] = getBackendArguments(options);
 
     if (this.guessPackaged()) {
-      this.startProcessPackaged(port, args);
+      this.startProcessPackaged(port, this._websocketPort, args);
     } else {
-      this.startProcess(port, args);
+      this.startProcess(port, this._websocketPort, args);
     }
 
     const childProcess = this.childProcess;
@@ -311,12 +325,14 @@ export default class PyHandler {
     }, 2000);
   }
 
-  private startProcess(port: number, args: string[]) {
+  private startProcess(port: number, websocketPort: number, args: string[]) {
     const defaultArgs: string[] = [
       '-m',
       'rotkehlchen',
       '--rest-api-port',
-      port.toString()
+      port.toString(),
+      '--websockets-api-port',
+      websocketPort.toString()
     ];
 
     if (this._corsURL) {
@@ -359,7 +375,11 @@ export default class PyHandler {
     this.childProcess = spawn('python', allArgs);
   }
 
-  private startProcessPackaged(port: number, args: string[]) {
+  private startProcessPackaged(
+    port: number,
+    websocketPort: number,
+    args: string[]
+  ) {
     const dist_dir = PyHandler.packagedBackendPath();
     const files = fs.readdirSync(dist_dir);
     if (files.length === 0) {
@@ -378,7 +398,12 @@ export default class PyHandler {
       args.push('--api-cors', this._corsURL);
     }
     args.push('--logfile', this.backendLogFile);
-    args = ['--rest-api-port', port.toString()].concat(args);
+    args = [
+      '--rest-api-port',
+      port.toString(),
+      '--websockets-api-port',
+      websocketPort.toString()
+    ].concat(args);
     this.logToFile(
       `Starting packaged python subprocess: ${executable} ${args.join(' ')}`
     );

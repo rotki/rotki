@@ -20,7 +20,8 @@ import {
   IPC_RESTART_BACKEND,
   IPC_SERVER_URL,
   IPC_TRAY_UPDATE,
-  IPC_VERSION
+  IPC_VERSION,
+  IPC_WEBSOCKET_URL
 } from '@/electron-main/ipc-commands';
 
 function ipcAction<T>(message: string, arg?: any): Promise<T> {
@@ -65,6 +66,7 @@ contextBridge.exposeInMainWorld('interop', {
       }
     : undefined,
   serverUrl: (): string => ipcRenderer.sendSync(IPC_SERVER_URL),
+  websocketUrl: (): string => ipcRenderer.sendSync(IPC_WEBSOCKET_URL),
   metamaskImport: () => ipcAction(IPC_METAMASK_IMPORT),
   restartBackend: options => ipcAction(IPC_RESTART_BACKEND, options),
   checkForUpdates: () => ipcAction(IPC_CHECK_FOR_UPDATES),

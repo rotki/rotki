@@ -1,4 +1,5 @@
 import { taskManager } from '@/services/task-manager';
+import { websocket } from '@/services/websocket-service';
 import { QUERY_PERIOD, REFRESH_PERIOD } from '@/store/settings/consts';
 import store from '@/store/store';
 
@@ -35,16 +36,22 @@ class Monitoring {
   start(restarting: boolean = false) {
     const settings = store.state.settings!;
 
-    if (!this.monitors[PERIODIC]) {
-      if (!restarting) {
-        Monitoring.fetch();
+    websocket.connect().then(connected => {
+      if (connected) {
+        return;
       }
 
-      this.monitors[PERIODIC] = setInterval(
-        Monitoring.fetch,
-        settings[QUERY_PERIOD] * 1000
-      );
-    }
+      if (!this.monitors[PERIODIC]) {
+        if (!restarting) {
+          Monitoring.fetch();
+        }
+
+        this.monitors[PERIODIC] = setInterval(
+          Monitoring.fetch,
+          settings[QUERY_PERIOD] * 1000
+        );
+      }
+    });
 
     if (!this.monitors[TASK]) {
       if (!restarting) {
@@ -69,6 +76,7 @@ class Monitoring {
   }
 
   stop() {
+    websocket.disconnect();
     for (const key in this.monitors) {
       clearInterval(this.monitors[key]);
       delete this.monitors[key];

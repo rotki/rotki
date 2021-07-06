@@ -51,6 +51,7 @@ export interface Interop {
   monitorDebugSettings(): void;
   debugSettings?(): DebugSettings | undefined;
   serverUrl(): string;
+  websocketUrl(): string;
   metamaskImport(): Promise<MetamaskImport>;
   checkForUpdates(): Promise<boolean>;
   downloadUpdate(progress: (percentage: number) => void): Promise<boolean>;

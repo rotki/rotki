@@ -16,6 +16,7 @@ import { setupFormatter } from '@/utils/setup-formatter';
 import i18n from './i18n';
 import router from './router';
 import store from './store/store';
+import './utils/logging';
 
 Vue.config.productionTip = false;
 
