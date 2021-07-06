@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 
@@ -31,5 +32,6 @@ export function setupDayjs() {
   dayjs.extend(customParseFormat);
   dayjs.extend(utc);
   dayjs.extend(timezone);
+  dayjs.extend(localizedFormat);
   dayjs.tz.guess();
 }
