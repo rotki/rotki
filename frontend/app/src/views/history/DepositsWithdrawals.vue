@@ -143,6 +143,7 @@ import {
   FETCH_FROM_CACHE,
   FETCH_FROM_SOURCE,
   FETCH_REFRESH,
+  HistoryActions,
   IGNORE_MOVEMENTS
 } from '@/store/history/consts';
 import {
@@ -176,9 +177,9 @@ import { ActionStatus, Message } from '@/store/types';
   },
   methods: {
     ...mapActions('history', [
-      'fetchMovements',
-      'ignoreActions',
-      'unignoreActions'
+      HistoryActions.FETCH_MOVEMENTS,
+      HistoryActions.IGNORE_ACTIONS,
+      HistoryActions.UNIGNORE_ACTION
     ]),
     ...mapMutations(['setMessage'])
   }

@@ -231,7 +231,7 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import AssetMixin from '@/mixins/asset-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
-import { IGNORE_TRADES } from '@/store/history/consts';
+import { HistoryActions, IGNORE_TRADES } from '@/store/history/consts';
 import { IgnoreActionPayload, TradeEntry } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
 
@@ -257,9 +257,9 @@ import { ActionStatus, Message } from '@/store/types';
   },
   methods: {
     ...mapActions('history', [
-      'deleteExternalTrade',
-      'ignoreActions',
-      'unignoreActions'
+      HistoryActions.DELETE_EXTERNAL_TRADE,
+      HistoryActions.IGNORE_ACTIONS,
+      HistoryActions.UNIGNORE_ACTION
     ]),
     ...mapMutations(['setMessage'])
   }

@@ -1,16 +1,35 @@
 import i18n from '@/i18n';
 
-export const ACTION_FETCH_LEDGER_ACTIONS = 'fetchLedgerActions' as const;
-export const ACTION_ADD_LEDGER_ACTION = 'addLedgerAction' as const;
-export const ACTION_EDIT_LEDGER_ACTION = 'editLedgerAction' as const;
-export const ACTION_DELETE_LEDGER_ACTION = 'deleteLedgerAction' as const;
-export const ACTION_PURGE_TRANSACTIONS = 'purgeTransactions' as const;
-export const ACTION_PURGE_EXCHANGE = 'purgeExchange' as const;
-export const ACTION_REMOVE_EXCHANGE_TRADES = 'removeExchangeTrades' as const;
-export const ACTION_REMOVE_EXCHANGE_MOVEMENTS = 'removeExchangeMovements' as const;
+export enum HistoryActions {
+  FETCH_TRADES = 'fetchTrades',
+  ADD_EXTERNAL_TRADE = 'addExternalTrade',
+  FETCH_LEDGER_ACTIONS = 'fetchLedgerActions',
+  ADD_LEDGER_ACTION = 'addLedgerAction',
+  EDIT_LEDGER_ACTION = 'editLedgerAction',
+  DELETE_LEDGER_ACTION = 'deleteLedgerAction',
+  PURGE_TRANSACTIONS = 'purgeTransactions',
+  PURGE_EXCHANGE = 'purgeExchange',
+  REMOVE_EXCHANGE_TRADES = 'removeExchangeTrades',
+  REMOVE_EXCHANGE_MOVEMENTS = 'removeExchangeMovements',
+  FETCH_TRANSACTIONS = 'fetchTransactions',
+  FETCH_MOVEMENTS = 'fetchMovements',
+  EDIT_EXTERNAL_TRADE = 'editExternalTrade',
+  DELETE_EXTERNAL_TRADE = 'deleteExternalTrade',
+  IGNORE_ACTIONS = 'ignoreActions',
+  UNIGNORE_ACTION = 'unignoreActions'
+}
 
-export const MUTATION_ADD_LEDGER_ACTION = 'addLedgerAction' as const;
-export const MUTATION_SET_LEDGER_ACTIONS = 'setLedgerActions' as const;
+export enum HistoryMutations {
+  ADD_LEDGER_ACTION = 'addLedgerAction',
+  SET_LEDGER_ACTIONS = 'setLedgerActions',
+  RESET = 'reset',
+  SET_TRANSACTIONS = 'setTransactions',
+  SET_MOVEMENTS = 'setMovements',
+  DELETE_TRADE = 'deleteTrade',
+  UPDATE_TRADE = 'updateTrade',
+  ADD_TRADE = 'addTrade',
+  SET_TRADES = 'setTrades'
+}
 
 export const ACTION_INCOME = 'income';
 export const ACTION_LOSS = 'loss';

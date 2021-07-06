@@ -36,10 +36,7 @@ import {
 } from '@/services/session/types';
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
-import {
-  ACTION_PURGE_EXCHANGE,
-  ACTION_PURGE_TRANSACTIONS
-} from '@/store/history/consts';
+import { HistoryActions } from '@/store/history/consts';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { ACTION_PURGE_CACHED_DATA } from '@/store/session/const';
@@ -581,7 +578,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     const opts = { root: true };
     if (purgable === ALL_CENTRALIZED_EXCHANGES) {
       await dispatch(
-        `history/${ACTION_PURGE_EXCHANGE}`,
+        `history/${HistoryActions.PURGE_EXCHANGE}`,
         ALL_CENTRALIZED_EXCHANGES,
         opts
       );
@@ -589,7 +586,11 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, MODULE_UNISWAP, opts);
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, MODULE_BALANCER, opts);
     } else if (purgable === ALL_TRANSACTIONS) {
-      await dispatch(`history/${ACTION_PURGE_TRANSACTIONS}`, undefined, opts);
+      await dispatch(
+        `history/${HistoryActions.PURGE_TRANSACTIONS}`,
+        undefined,
+        opts
+      );
     } else if (purgable === ALL_MODULES) {
       await dispatch(`staking/${ACTION_PURGE_DATA}`, ALL_MODULES, opts);
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, ALL_MODULES, opts);
@@ -597,7 +598,11 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       SUPPORTED_EXCHANGES.includes(purgable as SupportedExchange) ||
       EXTERNAL_EXCHANGES.includes(purgable as SupportedExternalExchanges)
     ) {
-      await dispatch(`history/${ACTION_PURGE_EXCHANGE}`, purgable, opts);
+      await dispatch(
+        `history/${HistoryActions.PURGE_EXCHANGE}`,
+        purgable,
+        opts
+      );
     } else if (MODULES.includes(purgable as SupportedModules)) {
       if ([MODULE_ETH2, MODULE_ADEX].includes(purgable)) {
         await dispatch(`staking/${ACTION_PURGE_DATA}`, purgable, opts);

@@ -1,9 +1,6 @@
 import { MutationTree } from 'vuex';
 import { TradeUpdate } from '@/services/history/types';
-import {
-  MUTATION_ADD_LEDGER_ACTION,
-  MUTATION_SET_LEDGER_ACTIONS
-} from '@/store/history/consts';
+import { HistoryMutations } from '@/store/history/consts';
 import { defaultState } from '@/store/history/state';
 import {
   AssetMovements,
@@ -16,16 +13,19 @@ import {
 } from '@/store/history/types';
 
 export const mutations: MutationTree<HistoryState> = {
-  setTrades(state: HistoryState, trades: Trades) {
+  [HistoryMutations.SET_TRADES](state: HistoryState, trades: Trades) {
     state.trades = trades;
   },
 
-  addTrade(state: HistoryState, trade: TradeEntry) {
+  [HistoryMutations.ADD_TRADE](state: HistoryState, trade: TradeEntry) {
     const { data: trades } = state.trades;
     state.trades = { ...state.trades, data: [...trades, trade] };
   },
 
-  updateTrade(state: HistoryState, { trade, oldTradeId }: TradeUpdate) {
+  [HistoryMutations.UPDATE_TRADE](
+    state: HistoryState,
+    { trade, oldTradeId }: TradeUpdate
+  ) {
     const { data: trades } = state.trades;
     const update = [...trades];
     const index = update.findIndex(exTrade => {
@@ -38,7 +38,7 @@ export const mutations: MutationTree<HistoryState> = {
     };
   },
 
-  deleteTrade(state: HistoryState, tradeId: string) {
+  [HistoryMutations.DELETE_TRADE](state: HistoryState, tradeId: string) {
     const { data: trades } = state.trades;
     const data = [...trades.filter(trade => trade.tradeId !== tradeId)];
     state.trades = {
@@ -47,22 +47,31 @@ export const mutations: MutationTree<HistoryState> = {
     };
   },
 
-  setMovements(state: HistoryState, movements: AssetMovements) {
+  [HistoryMutations.SET_MOVEMENTS](
+    state: HistoryState,
+    movements: AssetMovements
+  ) {
     state.assetMovements = movements;
   },
 
-  setTransactions(state: HistoryState, transactions: EthTransactions) {
+  [HistoryMutations.SET_TRANSACTIONS](
+    state: HistoryState,
+    transactions: EthTransactions
+  ) {
     state.transactions = transactions;
   },
 
-  [MUTATION_SET_LEDGER_ACTIONS](
+  [HistoryMutations.SET_LEDGER_ACTIONS](
     state: HistoryState,
     actions: HistoricData<LedgerActionEntry>
   ) {
     state.ledgerActions = actions;
   },
 
-  [MUTATION_ADD_LEDGER_ACTION](state: HistoryState, action: LedgerActionEntry) {
+  [HistoryMutations.ADD_LEDGER_ACTION](
+    state: HistoryState,
+    action: LedgerActionEntry
+  ) {
     const ledgerActions = state.ledgerActions;
     state.ledgerActions = {
       data: [...ledgerActions.data, action],
@@ -71,7 +80,7 @@ export const mutations: MutationTree<HistoryState> = {
     };
   },
 
-  reset(state: HistoryState) {
+  [HistoryMutations.RESET](state: HistoryState) {
     Object.assign(state, defaultState());
   }
 };

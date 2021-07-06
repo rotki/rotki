@@ -28,7 +28,8 @@ import { Section } from '@/store/const';
 import {
   FETCH_FROM_CACHE,
   FETCH_FROM_SOURCE,
-  FETCH_REFRESH
+  FETCH_REFRESH,
+  HistoryActions
 } from '@/store/history/consts';
 import { FetchSource, TradeEntry } from '@/store/history/types';
 import { REFRESH_PERIOD } from '@/store/settings/consts';
@@ -46,13 +47,13 @@ import { RefreshPeriod } from '@/store/settings/types';
     ...mapState('settings', [REFRESH_PERIOD])
   },
   methods: {
-    ...mapActions('history', ['fetchTrades', 'deleteExternalTrade']),
+    ...mapActions('history', [HistoryActions.FETCH_TRADES]),
     ...mapActions('defi', ['fetchUniswapTrades', 'fetchBalancerTrades'])
   }
 })
 export default class TradeHistory extends Mixins(StatusMixin) {
   selectedLocation: TradeLocation | null = null;
-  fetchTrades!: (payload: FetchSource) => Promise<void>;
+  [HistoryActions.FETCH_TRADES]!: (payload: FetchSource) => Promise<void>;
   fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
   fetchBalancerTrades!: (refresh: boolean) => Promise<void>;
   [REFRESH_PERIOD]!: RefreshPeriod;
