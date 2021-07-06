@@ -188,9 +188,9 @@ import StatusMixin from '@/mixins/status-mixin';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { Section } from '@/store/const';
 import {
-  ACTION_INCOME,
   HistoryActions,
-  IGNORE_LEDGER_ACTION
+  IGNORE_LEDGER_ACTION,
+  LedgerActionType
 } from '@/store/history/consts';
 import {
   HistoricData,
@@ -205,7 +205,7 @@ import { Zero } from '@/utils/bignumbers';
 
 const emptyAction: () => UnsavedAction = () => ({
   timestamp: 0,
-  actionType: ACTION_INCOME,
+  actionType: LedgerActionType.ACTION_INCOME,
   location: TRADE_LOCATION_EXTERNAL,
   amount: Zero,
   asset: ''

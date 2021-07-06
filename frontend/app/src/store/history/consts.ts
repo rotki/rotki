@@ -31,59 +31,50 @@ export enum HistoryMutations {
   SET_TRADES = 'setTrades'
 }
 
-export const ACTION_INCOME = 'income';
-export const ACTION_LOSS = 'loss';
-export const ACTION_DONATION = 'donation received';
-export const ACTION_EXPENSE = 'expense';
-export const ACTION_DIVIDENDS = 'dividends income';
-export const ACTION_AIRDROP = 'airdrop';
-export const ACTION_GIFT = 'gift';
-export const ACTION_GRANT = 'grant';
-
-export const LEDGER_ACTION_TYPES = [
-  ACTION_INCOME,
-  ACTION_LOSS,
-  ACTION_DONATION,
-  ACTION_EXPENSE,
-  ACTION_DIVIDENDS,
-  ACTION_AIRDROP,
-  ACTION_GIFT,
-  ACTION_GRANT
-] as const;
+export enum LedgerActionType {
+  ACTION_INCOME = 'income',
+  ACTION_LOSS = 'loss',
+  ACTION_DONATION = 'donation received',
+  ACTION_EXPENSE = 'expense',
+  ACTION_DIVIDENDS = 'dividends income',
+  ACTION_AIRDROP = 'airdrop',
+  ACTION_GIFT = 'gift',
+  ACTION_GRANT = 'grant'
+}
 
 type ActionDataEntry = { readonly identifier: string; readonly label: string };
 
 export const ledgerActionsData: ActionDataEntry[] = [
   {
-    identifier: ACTION_INCOME,
+    identifier: LedgerActionType.ACTION_INCOME,
     label: i18n.t('ledger_actions.actions.income').toString()
   },
   {
-    identifier: ACTION_LOSS,
+    identifier: LedgerActionType.ACTION_LOSS,
     label: i18n.t('ledger_actions.actions.loss').toString()
   },
   {
-    identifier: ACTION_DONATION,
+    identifier: LedgerActionType.ACTION_DONATION,
     label: i18n.t('ledger_actions.actions.donation').toString()
   },
   {
-    identifier: ACTION_EXPENSE,
+    identifier: LedgerActionType.ACTION_EXPENSE,
     label: i18n.t('ledger_actions.actions.expense').toString()
   },
   {
-    identifier: ACTION_DIVIDENDS,
+    identifier: LedgerActionType.ACTION_DIVIDENDS,
     label: i18n.t('ledger_actions.actions.dividends').toString()
   },
   {
-    identifier: ACTION_AIRDROP,
+    identifier: LedgerActionType.ACTION_AIRDROP,
     label: i18n.t('ledger_actions.actions.airdrop').toString()
   },
   {
-    identifier: ACTION_GIFT,
+    identifier: LedgerActionType.ACTION_GIFT,
     label: i18n.t('ledger_actions.actions.gift').toString()
   },
   {
-    identifier: ACTION_GRANT,
+    identifier: LedgerActionType.ACTION_GRANT,
     label: i18n.t('ledger_actions.actions.grant').toString()
   }
 ];
