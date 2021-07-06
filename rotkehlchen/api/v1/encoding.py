@@ -832,6 +832,7 @@ class GitcoinEventsQuerySchema(TimerangeQuerySchema):
         ),
         required=True,
     )
+    only_cache = fields.Boolean(missing=False)
 
 
 class GitcoinEventsDeleteSchema(Schema):

@@ -36,8 +36,8 @@ def test_get_grant_events(rotkehlchen_api_server, start_with_valid_premium):
         return
 
     outcome = assert_proper_response_with_result(response)
-    assert len(outcome) == 36
-    assert outcome[:3] == [{
+    assert len(outcome) == 34
+    assert outcome[:5] == [{
         'amount': '0.000475',
         'asset': 'ETH',
         'clr_round': None,
@@ -56,14 +56,32 @@ def test_get_grant_events(rotkehlchen_api_server, start_with_valid_premium):
         'tx_type': 'zksync',
         'usd_value': '1.28526450',
     }, {
-        'amount': '0.095',
+        'amount': '0.95',
+        'asset': '_ceth_0xdAC17F958D2ee523a2206206994597C13D831ec7',
+        'clr_round': None,
+        'grant_id': grant_id,
+        'timestamp': 1622710976,
+        'tx_id': 'ebc0b230114c13fdd8957e01e0568a34928c87c89b9d0f8a0db058849e9419ef',
+        'tx_type': 'zksync',
+        'usd_value': '0.95',
+    }, {
+        'amount': '0.00019',
         'asset': 'ETH',
         'clr_round': None,
         'grant_id': grant_id,
-        'timestamp': 1622613547,
-        'tx_id': '0x6956dd7d09fa26dd1bcf8e3dfd430fa8faeb30ec47f122dec125b5fc9d1bdca8',
+        'timestamp': 1622711531,
+        'tx_id': 'f9e25d11eb88a644bed9c40902fe76e64fa4b4c3fe3a8a7bfefad10559a08e12',
+        'tx_type': 'zksync',
+        'usd_value': '0.5335006159891',
+    }, {
+        'amount': '1.9',
+        'asset': '_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        'clr_round': None,
+        'grant_id': grant_id,
+        'timestamp': 1622737471,
+        'tx_id': '0xb632c6f0b2d9aed0924cefc62cc47b8258d373122c66f8ad4a1c37d2b5f7f0ff',
         'tx_type': 'ethereum',
-        'usd_value': '257.05290',
+        'usd_value': '1.900000000000000099999999999',
     }]
     assert outcome[-1] == {
         'amount': '0.95',
