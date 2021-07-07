@@ -94,6 +94,22 @@ def test_get_grant_events(rotkehlchen_api_server, start_with_valid_premium):
         'usd_value': '0.9499999999999998000000000000',
     }
 
+    # Make sure that only_cache -> false and grant_id missing is caugh
+    json_data = {
+        'from_timestamp': 1622516400,  # 3 hours hours after midnight 01/06/2021
+        'to_timestamp': 1623294000,  # 3 hours hours after midnight 10/06/2021
+        'only_cache': False,
+    }
+    response = requests.post(api_url_for(
+        rotkehlchen_api_server,
+        'gitcoineventsresource',
+    ), json=json_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='Attempted to query gitcoin events from the api without specifying a grant id',  # noqa: E501
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

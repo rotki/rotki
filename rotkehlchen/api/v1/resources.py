@@ -1658,7 +1658,7 @@ class GitcoinEventsResource(BaseResource):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             async_query: bool,
-            grant_id: int,
+            grant_id: Optional[int],
             only_cache: bool,
     ) -> Response:
         return self.rest_api.get_gitcoin_events(

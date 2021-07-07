@@ -830,7 +830,7 @@ class GitcoinEventsQuerySchema(TimerangeQuerySchema):
             min=1,
             error='Gitcoin grant id must be a positive integer',
         ),
-        required=True,
+        missing=None,
     )
     only_cache = fields.Boolean(missing=False)
 
