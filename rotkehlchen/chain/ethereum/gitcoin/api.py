@@ -15,7 +15,7 @@ from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, MONTH_IN_SECONDS
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.ranges import DBQueryRanges
-from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
+from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, InputError
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_str,
@@ -132,7 +132,7 @@ class GitcoinAPI():
 
     def get_db_grant_events(
             self,
-            grant_id: int,
+            grant_id: Optional[int],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> List[LedgerAction]:
@@ -141,21 +141,32 @@ class GitcoinAPI():
             to_ts=to_ts,
             location=Location.GITCOIN,
         )
+        if grant_id is None:
+            return ledger_actions
+        # else
         return [x for x in ledger_actions if x.extra_data.grant_id == grant_id]  # type: ignore
 
     def query_grant_history(
             self,
-            grant_id: int,
+            grant_id: Optional[int],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             only_cache: bool = False,
     ) -> List[LedgerAction]:
-        """May raise RemotError"""
+        """May raise:
+        - RemotError if there is an error querying the gitcoin API
+        - InputError if only_cache is False and grant_id is missing
+        """
         if only_cache:
             return self.get_db_grant_events(
                 grant_id=grant_id,
                 from_ts=from_ts,
                 to_ts=to_ts,
+            )
+
+        if grant_id is None:
+            raise InputError(
+                'Attempted to query gitcoin events from the api without specifying a grant id',
             )
 
         entry_name = f'{GITCOIN_GRANTS_PREFIX}_{grant_id}'

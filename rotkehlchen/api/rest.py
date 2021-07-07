@@ -3126,7 +3126,7 @@ class RestAPI():
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            grant_id: int,
+            grant_id: Optional[int],
             only_cache: bool,
     ) -> Dict[str, Any]:
         api = GitcoinAPI(self.rotkehlchen.data.db)
@@ -3139,6 +3139,8 @@ class RestAPI():
             )
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+        except InputError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
 
         serialized_result = []
         for action in actions:
@@ -3152,7 +3154,7 @@ class RestAPI():
             async_query: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-            grant_id: int,
+            grant_id: Optional[int],
             only_cache: bool,
     ) -> Response:
         if async_query:
