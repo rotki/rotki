@@ -103,6 +103,22 @@ class DBLedgerActions():
 
         return actions
 
+    def get_gitcoin_grant_events(
+            self,
+            grant_id: Optional[int],
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+    ) -> List[LedgerAction]:
+        ledger_actions = self.get_ledger_actions(
+            from_ts=from_ts,
+            to_ts=to_ts,
+            location=Location.GITCOIN,
+        )
+        if grant_id is None:
+            return ledger_actions
+        # else
+        return [x for x in ledger_actions if x.extra_data.grant_id == grant_id]  # type: ignore
+
     def add_ledger_action(self, action: LedgerAction) -> int:
         """Adds a new ledger action to the DB and returns its identifier for success
 

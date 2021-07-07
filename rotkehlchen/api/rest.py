@@ -3096,10 +3096,19 @@ class RestAPI():
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            grant_id: Optional[int],
     ) -> Dict[str, Any]:
         processor = GitcoinProcessor(self.rotkehlchen.data.db)
-        report = processor.process_gitcoin(from_ts=from_timestamp, to_ts=to_timestamp)
-        return {'result': report.serialize(), 'message': ''}
+        profit_currency, reports = processor.process_gitcoin(
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+            grant_id=grant_id,
+        )
+        result = {
+            'reports': {grantid: report.serialize() for grantid, report in reports.items()},
+            'profit_currency': profit_currency.identifier,
+        }
+        return {'result': result, 'message': ''}
 
     @require_premium_user(active_check=False)
     def process_gitcoin(
@@ -3107,17 +3116,20 @@ class RestAPI():
             async_query: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            grant_id: Optional[int],
     ) -> Response:
         if async_query:
             return self._query_async(
                 command='_process_gitcoin',
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
+                grant_id=grant_id,
             )
 
         response = self._process_gitcoin(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
+            grant_id=grant_id,
         )
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
