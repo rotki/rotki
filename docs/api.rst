@@ -8397,7 +8397,7 @@ Gitcoin gather event data
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"from_timestamp": 0, "to_timestamp": 1624828416, "grant_id": 149, "only_cahe": false }
+      {"from_timestamp": 0, "to_timestamp": 1624828416, "grant_id": 149, "only_cache": false }
 
    :reqjson integer from_timestamp: The timestamp from which to query grant events
    :reqjson integer to_timestamp: The timestamp until which to query grant events

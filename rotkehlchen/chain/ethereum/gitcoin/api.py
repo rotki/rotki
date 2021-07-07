@@ -6,16 +6,18 @@ import gevent
 import requests
 
 from rotkehlchen.accounting.ledger_actions import GitcoinEventData, LedgerAction, LedgerActionType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.chain.ethereum.gitcoin.constants import GITCOIN_GRANTS_PREFIX
 from rotkehlchen.chain.ethereum.gitcoin.utils import process_gitcoin_txid
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_PAN, A_USD
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, MONTH_IN_SECONDS
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.ranges import DBQueryRanges
-from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, InputError
+from rotkehlchen.errors import DeserializationError, InputError, RemoteError, UnknownAsset
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_str,
@@ -31,6 +33,22 @@ GITCOIN_START_TS = Timestamp(1506297600)  # 25/09/2017 -- date of first blog pos
 logger = logging.getLogger(__name__)
 
 
+def get_gitcoin_asset(symbol: str) -> Asset:
+    """At the moment gitcoin keeps a symbol for the asset so mapping to asset can be ambiguous
+
+    May raise:
+    - UnknownAsset
+    """
+    if symbol == 'PAN':
+        return A_PAN
+
+    asset = get_asset_by_symbol(symbol)
+    if asset is None:
+        raise UnknownAsset(symbol)
+
+    return asset
+
+
 def _deserialize_transaction(grant_id: int, rawtx: Dict[str, Any]) -> LedgerAction:
     """May raise:
     - DeserializationError
@@ -43,13 +61,12 @@ def _deserialize_transaction(grant_id: int, rawtx: Dict[str, Any]) -> LedgerActi
         location='Gitcoin API',
         skip_milliseconds=True,
     )
-    asset = get_asset_by_symbol(rawtx['asset'])
-    if asset is None:
-        raise UnknownAsset(rawtx['asset'])
+    asset = get_gitcoin_asset(rawtx['asset'])
     raw_amount = deserialize_int_from_str(symbol=rawtx['amount'], location='gitcoin api')
     amount = asset_normalized_value(raw_amount, asset)
     # let's use gitcoin's calculated rate for now since they include it in the response
-    rate = Price(deserialize_price(rawtx['usd_value']) / amount)
+    usd_value = Price(ZERO) if rawtx['usd_value'] is None else deserialize_price(rawtx['usd_value'])  # noqa: E501
+    rate = Price(ZERO) if usd_value == ZERO else Price(usd_value / amount)
     raw_txid = rawtx['tx_hash']
     tx_type, tx_id = process_gitcoin_txid(key='tx_hash', entry=rawtx)
     # until we figure out if we can use it https://github.com/gitcoinco/web/issues/9255#issuecomment-874537144  # noqa: E501
