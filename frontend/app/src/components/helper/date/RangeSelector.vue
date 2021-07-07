@@ -1,5 +1,5 @@
 <template>
-  <fragment>
+  <div class="range-selector">
     <report-period-selector
       :year="year"
       :quarter="quarter"
@@ -28,17 +28,16 @@
         />
       </v-col>
     </v-row>
-    <v-alert v-model="invalidRange" type="error">
+    <v-alert v-model="invalidRange" type="error" dense>
       {{ $t('generate.validation.end_after_start') }}
     </v-alert>
-  </fragment>
+  </div>
 </template>
 
 <script lang="ts">
 import { computed, defineComponent, inject } from '@vue/composition-api';
 import dayjs from 'dayjs';
 import { Store } from 'vuex';
-import Fragment from '@/components/helper/Fragment';
 import ReportPeriodSelector, {
   PeriodChangedEvent,
   SelectionChangedEvent
@@ -54,7 +53,7 @@ export type SelectedRange = {
 
 export default defineComponent({
   name: 'RangeSelector',
-  components: { Fragment, ReportPeriodSelector },
+  components: { ReportPeriodSelector },
   props: {
     value: {
       type: Object,
@@ -124,4 +123,8 @@ export default defineComponent({
 });
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.range-selector {
+  height: 260px;
+}
+</style>
