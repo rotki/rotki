@@ -352,6 +352,17 @@
     "address": "Addresses",
     "chain_selector": "Blockchain"
   },
+  "gitcoin_grants": {
+    "text": "Gitcoin grants",
+    "title": "Gitcoin Grants"
+  },
+  "gitcoint_grant": {
+    "grant_id": "Grant Id"
+  },
+  "grants": {
+    "delete_tooltip": "Delete all the event data for the selected grant",
+    "id_positive": "The grant id must be a positive integer number"
+  },
   "help_sidebar": {
     "about": "About",
     "about_subtitle": "About the application",
@@ -1295,7 +1306,8 @@
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
       "transactions": "Ethereum Transactions",
-      "ledger_actions": "Ledger Actions"
+      "ledger_actions": "Ledger Actions",
+      "gitcoin_grants": "Gitcoin Grants"
     }
   },
   "overview": {
@@ -1969,6 +1981,7 @@
     "import_data": "Import Data",
     "history": "History",
     "history_sub": {
+      "gitcoin_grants": "Gitcoin Grants",
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
       "ethereum_transactions": "Ethereum Transactions",
