@@ -8498,11 +8498,15 @@ Gitcoin report
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/exchanges/binance/pairs/testExchange HTTP/1.1
+      PUT /api/1/gitcoin/report HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"from_timestamp": 0, "to_timestamp": 1624828416 }
+      {"from_timestamp": 0, "to_timestamp": 1624828416, "grant_id": 149 }
+
+   :reqjson integer from_timestamp: The timestamp from which to start the report
+   :reqjson integer to_timestamp: The timestamp until which to perform the report.
+   :reqjson integer grant_id: Optional. The id of the grant for which to create the report. If missing all grant events in the given range are used from the DB.
 
    **Example Response**:
 
@@ -8513,26 +8517,40 @@ Gitcoin report
 
       {
           "result": {
-	      "per_asset": {
-	          "ETH": {
-		      "amount": "5",
-		      "value": "5500"
-		  },
-	          "USDT": {
-		      "amount": "150",
-		      "value": "131.44"
-		  },
-	          "DAI": {
-		      "amount": "101",
-		      "value": "93.21"
+	      "profit_currencty": "EUR",
+	      "reports": {
+		  "149": {
+		      "per_asset": {
+			  "ETH": {
+			      "amount": "5",
+			      "value": "5500"
+			  },
+			  "_ceth_0x1A175474E89094C44Da98b954EedeAC495271d9A": {
+			      "amount": "150",
+			      "value": "131.44"
+			  },
+			  "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+			      "amount": "101",
+			      "value": "93.21"
+			  }
+		      },
+		      "total": "5724.65"
+	          },
+		  "184": {
+		      "per_asset": {
+			  "ETH": {
+			      "amount": "5",
+			      "value": "5500"
+			  },
+		      },
+		      "total": "5500"
 		  }
-	      },
-	      "total": "5724.65"
 	  }
           "message": ""
       }
 
-   :resjson string profit_currency: The profit currency used in the report.
+   :resjson object reports: A mapping of grant ids to report results.
+   :resjson string profit_currency: The profit currency used in the report. The "value" field is in this currency.
    :resjson object per_asset: A mapping of each asset to amount earned in the given period and its value in the user chosen profit currency.
    :resjson string total: The total amount earned in profit currency during the given period.
    :statuscode 200: Report succesfully generated

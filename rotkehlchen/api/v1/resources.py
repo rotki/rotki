@@ -47,6 +47,7 @@ from rotkehlchen.api.v1.encoding import (
     ExternalServicesResourceDeleteSchema,
     GitcoinEventsDeleteSchema,
     GitcoinEventsQuerySchema,
+    GitcoinReportSchema,
     HistoricalAssetsPriceSchema,
     HistoryExportingSchema,
     HistoryProcessingSchema,
@@ -75,7 +76,6 @@ from rotkehlchen.api.v1.encoding import (
     TagSchema,
     TimerangeLocationCacheQuerySchema,
     TimerangeLocationQuerySchema,
-    TimerangeQuerySchema,
     TradeDeleteSchema,
     TradePatchSchema,
     TradeSchema,
@@ -1675,7 +1675,7 @@ class GitcoinEventsResource(BaseResource):
 
 
 class GitcoinReportResource(BaseResource):
-    put_schema = TimerangeQuerySchema()
+    put_schema = GitcoinReportSchema()
 
     @use_kwargs(put_schema, location='json_and_query')
     def put(
@@ -1683,9 +1683,11 @@ class GitcoinReportResource(BaseResource):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             async_query: bool,
+            grant_id: Optional[int],
     ) -> Response:
         return self.rest_api.process_gitcoin(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
             async_query=async_query,
+            grant_id=grant_id,
         )

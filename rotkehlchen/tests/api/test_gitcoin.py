@@ -11,6 +11,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_response_with_result,
 )
+from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.typing import Location
 
 
@@ -198,3 +199,130 @@ def test_delete_grant_events(rotkehlchen_api_server):
     assert db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id1}') is None
     assert db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id2}') is None
     assert db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id3}') is None
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_process_grants(rotkehlchen_api_server):
+    grant_id = 149  # rotki grant
+    json_data = {
+        'from_timestamp': 1599177600,  # 04/09/2020
+        'to_timestamp': 1599523200,  # 08/09/2020
+        'grant_id': grant_id,
+    }
+    response = requests.post(api_url_for(
+        rotkehlchen_api_server,
+        'gitcoineventsresource',
+    ), json=json_data)
+    outcome = assert_proper_response_with_result(response)
+    assert outcome == [{
+        'amount': '47.5',
+        'asset': '_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        'clr_round': None,
+        'grant_id': grant_id,
+        'timestamp': 1599221029,
+        'tx_id': '0x8337431e38f6f485aa3857cd4496b99239659ddd78810ed21ca2dc6817fb4add',
+        'tx_type': 'ethereum',
+        'usd_value': '47.49999999999999000000000000',
+    }, {
+        'amount': '19',
+        'asset': '_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        'clr_round': None,
+        'grant_id': grant_id,
+        'timestamp': 1599492244,
+        'tx_id': '0x888f3ebddcd2964afe1c0fe5e50e997a1c5e4abac7c388816abc845fcd7ba1dd',
+        'tx_type': 'ethereum',
+        'usd_value': '19.0',
+    }]
+    grant_id = 184  # trueblocks grant
+    json_data = {
+        'from_timestamp': 1600300800,  # 17/09/2020
+        'to_timestamp': 1600387200,  # 18/09/2020
+        'grant_id': grant_id,
+    }
+    response = requests.post(api_url_for(
+        rotkehlchen_api_server,
+        'gitcoineventsresource',
+    ), json=json_data)
+    outcome = assert_proper_response_with_result(response)
+    assert outcome == [{
+        'amount': '0.0095',
+        'asset': 'ETH',
+        'clr_round': None,
+        'grant_id': grant_id,
+        'timestamp': 1600380544,
+        'tx_id': '0xb789c4c2f8c3aef594daa9bad8b0ae15bf6add454a9c1e958a0fb5bfab41a41c',
+        'tx_type': 'ethereum',
+        'usd_value': '3.698825000000000300000000000',
+    }]
+
+    # get the report for all grants
+    json_data = {
+        'from_timestamp': 1599177600,  # 04/09/2020
+        'to_timestamp': 1600387200,  # 18/09/2020
+    }
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'gitcoinreportresource',
+    ), json=json_data)
+    outcome = assert_proper_response_with_result(response)
+    assert outcome == {
+        'profit_currency': 'EUR',
+        'reports': {
+            '149': {
+                'per_asset': {
+                    '_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F': {
+                        'amount': '66.5', 'value': '60.44905008635577674756840287'},
+                },
+                'total': '60.44905008635577674756840287',
+            },
+            '184': {
+                'per_asset': {
+                    'ETH': {'amount': '0.0095', 'value': '3.362262521588946732115262249'},
+                },
+                'total': '3.362262521588946732115262249',
+            },
+        },
+    }
+
+    # get report for single grant
+    json_data = {
+        'from_timestamp': 1599177600,  # 04/09/2020
+        'to_timestamp': 1600387200,  # 18/09/2020
+        'grant_id': 184,
+    }
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'gitcoinreportresource',
+    ), json=json_data)
+    outcome = assert_proper_response_with_result(response)
+    assert outcome == {
+        'profit_currency': 'EUR',
+        'reports': {
+            '184': {
+                'per_asset': {
+                    'ETH': {'amount': '0.0095', 'value': '3.362262521588946732115262249'},
+                },
+                'total': '3.362262521588946732115262249',
+            },
+        },
+    }
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [False])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_process_grants_non_premium(rotkehlchen_api_server):
+    json_data = {
+        'from_timestamp': 1599177600,  # 04/09/2020
+        'to_timestamp': 1600387200,  # 18/09/2020
+    }
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'gitcoinreportresource',
+    ), json=json_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='does not have a premium subscription',
+        status_code=HTTPStatus.CONFLICT,
+    )

@@ -823,7 +823,7 @@ class TimerangeLocationCacheQuerySchema(TimerangeLocationQuerySchema):
     only_cache = fields.Boolean(missing=False)
 
 
-class GitcoinEventsQuerySchema(TimerangeQuerySchema):
+class GitcoinReportSchema(TimerangeQuerySchema):
     grant_id = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
@@ -832,6 +832,9 @@ class GitcoinEventsQuerySchema(TimerangeQuerySchema):
         ),
         missing=None,
     )
+
+
+class GitcoinEventsQuerySchema(GitcoinReportSchema):
     only_cache = fields.Boolean(missing=False)
 
 
