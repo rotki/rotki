@@ -5,7 +5,7 @@ export type ExplorerUrls = {
   readonly transaction: string;
 };
 
-type Chains = Blockchain | 'ETC';
+type Chains = Blockchain | 'ETC' | 'zksync';
 
 export type AssetExplorerUrls = {
   [key in Chains]: ExplorerUrls;
@@ -27,5 +27,9 @@ export const explorerUrls: AssetExplorerUrls = {
   KSM: {
     address: 'https://polkascan.io/kusama/account/',
     transaction: 'https://polkascan.io/kusama/transaction/'
+  },
+  zksync: {
+    address: 'https://zkscan.io/explorer/accounts/',
+    transaction: 'https://zkscan.io/explorer/transactions/'
   }
 };
