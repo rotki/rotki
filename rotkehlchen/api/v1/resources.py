@@ -58,6 +58,8 @@ from rotkehlchen.api.v1.encoding import (
     LedgerActionEditSchema,
     LedgerActionSchema,
     ManualPriceSchema,
+    ManualPriceDeleteSchema,
+    ManualPriceRegisteredSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
     ModifyEthereumTokenSchema,
@@ -1565,6 +1567,8 @@ class HistoricalAssetsPriceResource(BaseResource):
 
     post_schema = HistoricalAssetsPriceSchema()
     put_schema = ManualPriceSchema()
+    get_schema = ManualPriceRegisteredSchema()
+    delete_schema = ManualPriceDeleteSchema()
 
     @use_kwargs(post_schema, location='json')
     def post(
@@ -1583,18 +1587,32 @@ class HistoricalAssetsPriceResource(BaseResource):
     def put(
         self,
         from_asset: Asset,
+        to_asset: Asset,
         price: Price,
+        timestamp: Timestamp,
+        async_query: bool,
+    ) -> Response:
+        return self.rest_api.edit_manual_price(
+            from_asset,
+            to_asset,
+            price,
+            timestamp,
+            async_query,
+        )
+
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(self, asset: Asset, async_query: bool) -> Response:
+        return self.rest_api.get_manual_prices(asset, async_query)
+
+    @use_kwargs(delete_schema)
+    def delete(
+        self,
+        from_asset: Asset,
         to_asset: Asset,
         timestamp: Timestamp,
         async_query: bool,
     ) -> Response:
-        return self.rest_api.add_manual_price(
-            from_asset,
-            price,
-            to_asset,
-            timestamp,
-            async_query,
-        )
+        return self.rest_api.delete_manual_price(from_asset, to_asset, timestamp, async_query)
 
 
 class NamedOracleCacheResource(BaseResource):

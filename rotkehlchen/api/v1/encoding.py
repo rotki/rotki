@@ -1904,7 +1904,19 @@ class BinanceMarketsUserSchema(Schema):
 
 class ManualPriceSchema(Schema):
     from_asset = AssetField(required=True)
+    to_asset = AssetField(required=True)
     price = PriceField(required=True)
+    timestamp = TimestampField(required=True)
+    async_query = fields.Boolean(missing=False)
+
+
+class ManualPriceRegisteredSchema(Schema):
+    asset = AssetField(required=True)
+    async_query = fields.Boolean(missing=False)
+
+
+class ManualPriceDeleteSchema(Schema):
+    from_asset = AssetField(required=True)
     to_asset = AssetField(required=True)
     timestamp = TimestampField(required=True)
     async_query = fields.Boolean(missing=False)

@@ -3196,16 +3196,23 @@ class RestAPI():
             self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator,
         ).delete_gitcoin_ledger_actions(grant_id)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
-    def _perform_add_manual_price(self, historical_price: HistoricalPrice) -> Dict[str, Any]:
-        # pylint: disable=no-self-use
-        GlobalDBHandler().add_historical_prices([historical_price])
-        return OK_RESULT
 
-    def add_manual_price(
+    def _edit_manual_price(self, historical_price: HistoricalPrice) -> Dict[str, Any]:
+        # pylint: disable=no-self-use
+        edited = GlobalDBHandler().edit_manual_price(historical_price)
+        if edited:
+            return OK_RESULT
+        return {
+            'result': None,
+            'message': 'Failed to edit historical price entry.',
+            'status_code': HTTPStatus.BAD_REQUEST,
+        }
+
+    def edit_manual_price(
         self,
         from_asset: Asset,
-        price: Price,
         to_asset: Asset,
+        price: Price,
         timestamp: Timestamp,
         async_query: bool,
     ) -> Response:
@@ -3218,11 +3225,64 @@ class RestAPI():
         )
         if async_query:
             return self._query_async(
-                command='_perform_add_manual_price',
+                command='_edit_manual_price',
                 historical_price=historical_price,
             )
-        self._perform_add_manual_price(historical_price)
+        response = self._edit_manual_price(historical_price)
         return api_response(
-            result={'result': True, 'message': ''},
-            status_code=HTTPStatus.OK,
+            result={'result': response['result'], 'message': response['message']},
+            status_code=response.get('status_code', HTTPStatus.OK),
+        )
+
+    def _get_manual_prices(self, asset: Asset) -> Dict[str, Any]:
+        # pylint: disable=no-self-use
+        return _wrap_in_ok_result(
+            GlobalDBHandler().get_manual_prices(asset),
+        )
+
+    def get_manual_prices(
+        self,
+        asset: Asset,
+        async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_manual_prices',
+                asset=asset,
+            )
+        response = self._get_manual_prices(asset)
+        return api_response(
+            result={'result': response['result'], 'message': response['message']},
+            status_code=response.get('status_code', HTTPStatus.OK),
+        )
+
+    def _delete_manual_price(
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        timestamp: Timestamp,
+    ) -> Dict[str, Any]:
+        # pylint: disable=no-self-use
+        return _wrap_in_ok_result(
+            GlobalDBHandler().delete_manual_price(from_asset, to_asset, timestamp),
+        )
+
+    def delete_manual_price(
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        timestamp: Timestamp,
+        async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_delete_manual_price',
+                from_asset=from_asset,
+                to_asset=to_asset,
+                timestamp=timestamp,
+            )
+        response = self._delete_manual_price(from_asset, to_asset, timestamp)
+        return api_response(
+            result={'result': response['result'], 'message': response['message']},
+            status_code=response.get('status_code', HTTPStatus.OK),
         )

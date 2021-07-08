@@ -977,7 +977,7 @@ Query the historical price of assets
 
 .. http:put:: /api/(version)/assets/prices/historical
 
-    Saves in the database the price for an asset in a given currency at a certain timestamp.
+    Manually adds the price of an asset against another asset at a certain timestamp to the database.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
@@ -998,10 +998,9 @@ Query the historical price of assets
             "price": "1.20"
        }
 
-   :reqjson string from_asset: Asset for what the price is given.
-   :reqjson string to_asset: Asset used to set the price.
-   :reqjson string to_asset: Asset used to set the price.
-   :reqjson int timestamp: The moment when the price is being captured.
+   :reqjson string from_asset: The asset for which the price is given.
+   :reqjson string to_asset: The asset against which the price is given.
+   :reqjson int timestamp: The unix timestamp for which to save the price
    :reqjson string price: Price at the timestamp given.
 
 
@@ -1021,7 +1020,103 @@ Query the historical price of assets
    :statuscode 200: Operation sent to database.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error
-   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
+
+
+
+.. http:get:: /api/(version)/assets/prices/historical
+
+    Queries prices of an asset against another asset at a certain timestamp to the database.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/prices/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+       {
+          "asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620"
+       }
+
+   :reqjson string asset: Asset for what the price is retrieved.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+            {
+              "from_asset": "_ceth_0xD533a949740bb3306d119CC777fa900bA034cd52",
+              "to_asset": "USD",
+              "timestamp": 1611166335,
+              "price": "1.20"
+            }, 
+            {
+              "from_asset": '_ceth_0xD533a949740bb3306d119CC777fa900bA034cd52',
+              "to_asset": 'USD',
+              "timestamp": 1611166340,
+              "price": "1.40"
+            }
+          ],
+          "message": ""
+      }
+
+   :resjson object result: List with information for each historical price.
+   :statuscode 200: Operation executed.
+   :statuscode 400: Provided information is in some way malformed.
+   :statuscode 500: Internal rotki error
+
+
+.. http:delete:: /api/(version)/assets/prices/historical
+
+    Deletes price of an asset against another asset at a certain timestamp from the database.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/assets/prices/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+       {
+        "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
+        "to_asset": "USD",
+        "timestamp": 1611166335
+       }
+
+   :reqjson string from_asset: The asset for which the price is given.
+   :reqjson string to_asset: The asset against which the price is given.
+   :reqjson int timestamp: The unix timestamp for which to save the price
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": null,
+        "message": ""
+      }
+
+   :statuscode 200: Operation executed.
+   :statuscode 400: Provided information is in some way malformed.
+   :statuscode 500: Internal rotki error
+
 
 
 Get a list of setup exchanges
