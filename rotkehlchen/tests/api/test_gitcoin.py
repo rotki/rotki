@@ -37,7 +37,7 @@ def test_get_grant_events(rotkehlchen_api_server, start_with_valid_premium):
         return
 
     outcome = assert_proper_response_with_result(response)
-    assert len(outcome) == 34
+    assert len(outcome) == 32
     assert outcome[:5] == [{
         'amount': '0.000475',
         'asset': 'ETH',
@@ -237,8 +237,8 @@ def test_process_grants(rotkehlchen_api_server):
     }]
     grant_id = 184  # trueblocks grant
     json_data = {
-        'from_timestamp': 1600300800,  # 17/09/2020
-        'to_timestamp': 1600387200,  # 18/09/2020
+        'from_timestamp': 1600387200,  # 18/09/2020
+        'to_timestamp': 1600473600,  # 19/09/2020
         'grant_id': grant_id,
     }
     response = requests.post(api_url_for(
@@ -247,20 +247,28 @@ def test_process_grants(rotkehlchen_api_server):
     ), json=json_data)
     outcome = assert_proper_response_with_result(response)
     assert outcome == [{
-        'amount': '0.0095',
+        'amount': '0.0019',
         'asset': 'ETH',
         'clr_round': None,
         'grant_id': grant_id,
-        'timestamp': 1600380544,
-        'tx_id': '0xb789c4c2f8c3aef594daa9bad8b0ae15bf6add454a9c1e958a0fb5bfab41a41c',
+        'timestamp': 1600395691,
+        'tx_id': '0xabe446d26d35e2502dcd6f28349285081cbe4aef28efa4cdbb8a43fa2422d788',
         'tx_type': 'ethereum',
-        'usd_value': '3.698825000000000300000000000',
+        'usd_value': '0.6934049999999998999999999999'}, {
+            'amount': '4.95',
+            'asset': '_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F',
+            'clr_round': None,
+            'grant_id': 184,
+            'timestamp': 1600473301,
+            'tx_id': '0x822064cb1031361f2b95b1b08d009db7af8d4e8620ff8e71aba12325e0d8e676',
+            'tx_type': 'ethereum',
+            'usd_value': '4.95',
     }]
 
     # get the report for all grants
     json_data = {
         'from_timestamp': 1599177600,  # 04/09/2020
-        'to_timestamp': 1600387200,  # 18/09/2020
+        'to_timestamp': 1600473600,  # 19/09/2020
     }
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
@@ -279,9 +287,12 @@ def test_process_grants(rotkehlchen_api_server):
             },
             '184': {
                 'per_asset': {
-                    'ETH': {'amount': '0.0095', 'value': '3.362262521588946732115262249'},
+                    'ETH': {'amount': '0.0019', 'value': '0.6303108808290154531406235796'},
+                    '_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F': {
+                        'amount': '4.95', 'value': '4.499590946277611126261248977',
+                    },
                 },
-                'total': '3.362262521588946732115262249',
+                'total': '5.129901827106626579401872557',
             },
         },
     }
@@ -289,7 +300,7 @@ def test_process_grants(rotkehlchen_api_server):
     # get report for single grant
     json_data = {
         'from_timestamp': 1599177600,  # 04/09/2020
-        'to_timestamp': 1600387200,  # 18/09/2020
+        'to_timestamp': 1600473600,  # 19/09/2020
         'grant_id': 184,
     }
     response = requests.put(api_url_for(
@@ -302,9 +313,12 @@ def test_process_grants(rotkehlchen_api_server):
         'reports': {
             '184': {
                 'per_asset': {
-                    'ETH': {'amount': '0.0095', 'value': '3.362262521588946732115262249'},
+                    'ETH': {'amount': '0.0019', 'value': '0.6303108808290154531406235796'},
+                    '_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F': {
+                        'amount': '4.95', 'value': '4.499590946277611126261248977',
+                    },
                 },
-                'total': '3.362262521588946732115262249',
+                'total': '5.129901827106626579401872557',
             },
         },
     }

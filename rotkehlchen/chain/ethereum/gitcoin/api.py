@@ -4,14 +4,15 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import gevent
 import requests
+from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.ledger_actions import GitcoinEventData, LedgerAction, LedgerActionType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.chain.ethereum.gitcoin.constants import GITCOIN_GRANTS_PREFIX
 from rotkehlchen.chain.ethereum.gitcoin.utils import process_gitcoin_txid
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.constants.assets import A_PAN, A_USD
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, MONTH_IN_SECONDS
 from rotkehlchen.db.dbhandler import DBHandler
@@ -28,19 +29,23 @@ from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 GITCOIN_START_TS = Timestamp(1506297600)  # 25/09/2017 -- date of first blog post. Too early?
+NO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 
 logger = logging.getLogger(__name__)
 
 
-def get_gitcoin_asset(symbol: str) -> Asset:
+def get_gitcoin_asset(symbol: str, token_address: str) -> Asset:
     """At the moment gitcoin keeps a symbol for the asset so mapping to asset can be ambiguous
 
     May raise:
     - UnknownAsset
     """
-    if symbol == 'PAN':
-        return A_PAN
+    if token_address != NO_ADDRESS:
+        try:
+            return EthereumToken(to_checksum_address(token_address))
+        except UnknownAsset:
+            pass  # let's try by symbol
 
     asset = get_asset_by_symbol(symbol)
     if asset is None:
@@ -61,7 +66,7 @@ def _deserialize_transaction(grant_id: int, rawtx: Dict[str, Any]) -> LedgerActi
         location='Gitcoin API',
         skip_milliseconds=True,
     )
-    asset = get_gitcoin_asset(rawtx['asset'])
+    asset = get_gitcoin_asset(symbol=rawtx['asset'], token_address=rawtx['token_address'])
     raw_amount = deserialize_int_from_str(symbol=rawtx['amount'], location='gitcoin api')
     amount = asset_normalized_value(raw_amount, asset)
     # let's use gitcoin's calculated rate for now since they include it in the response

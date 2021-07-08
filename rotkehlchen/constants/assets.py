@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 07/07/2021 14:59:15.
+# tools/scripts/generate_constant_assets.py at 08/07/2021 21:43:30.
 # Do not edit manually!
 
 from typing import List
@@ -2316,17 +2316,3 @@ A_RSPT = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_RSPT)
-
-# Used by gitcoin events
-A_PAN = EthereumToken.initialize(
-    address=string_to_ethereum_address('0xD56daC73A4d6766464b38ec6D91eB45Ce7457c44'),
-    decimals=18,
-    name="Panvala pan",
-    symbol='PAN',
-    started=Timestamp(1566378597),
-    swapped_for=None,
-    coingecko='panvala-pan',
-    cryptocompare=None,
-    protocol=None,
-)
-CONSTANT_ASSETS.append(A_PAN)
