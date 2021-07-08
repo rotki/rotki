@@ -230,3 +230,40 @@ def test_manual_historical_price(rotkehlchen_api_server, globaldb):
     assert data[0]['to_asset'] == 'USD'
     assert data[0]['timestamp'] == 1611166340
     assert data[0]['price'] == '1.40'
+    # Delete an entry that is not in database
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            "historicalassetspriceresource",
+        ),
+        json={
+            'from_asset': curv_id,
+            'to_asset': 'USD',
+            'timestamp': 1611166338,
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Failed to delete manual price',
+        status_code=HTTPStatus.CONFLICT,
+        result_exists=True,
+    )
+    # Try to edit an entry that doesn't exists
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "historicalassetspriceresource",
+        ),
+        json={
+            'from_asset': curv_id,
+            'to_asset': 'USD',
+            'timestamp': 1611166344,
+            'price': "1.40",
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Failed to edit manual price',
+        status_code=HTTPStatus.CONFLICT,
+        result_exists=True,
+    )

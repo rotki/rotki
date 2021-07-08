@@ -991,7 +991,6 @@ Query the historical price of assets
        {
             "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
             "to_asset": "USD",
-            "async_query": true,
             "timestamp": 1611166335,
             "price": "1.20"
        }
@@ -1014,7 +1013,7 @@ Query the historical price of assets
           "message": ""
       }
 
-   :resjson object result: Always true
+   :resjson object result: true if the manual price was correctly stored in the database, false otherwise.
    :statuscode 200: Operation sent to database.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error
@@ -1037,7 +1036,6 @@ Query the historical price of assets
        {
             "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
             "to_asset": "USD",
-            "async_query": true,
             "timestamp": 1611166335,
             "price": "1.20"
        }
@@ -1060,7 +1058,7 @@ Query the historical price of assets
           "message": ""
       }
 
-   :resjson object result: True if any entry was updated, false otherwise.
+   :resjson object result: true if any entry was updated, false otherwise.
    :statuscode 200: Operation sent to database.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error
@@ -1150,11 +1148,11 @@ Query the historical price of assets
       Content-Type: application/json
 
       {
-        "result": null,
+        "result": true,
         "message": ""
       }
 
-   :statuscode 200: Operation executed.
+   :statuscode 200: true if any entry was deleted, false otherwise.
    :statuscode 400: Provided information is in some way malformed.
    :statuscode 500: Internal rotki error
 

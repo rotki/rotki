@@ -3211,8 +3211,13 @@ class RestAPI():
             timestamp=timestamp,
             price=price,
         )
-        GlobalDBHandler().add_single_historical_price(historical_price)
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        added = GlobalDBHandler().add_single_historical_price(historical_price)
+        if added:
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(
+            result={'result': False, 'message': 'Failed to store manual price'},
+            status_code=HTTPStatus.CONFLICT,
+        )
 
     def edit_manual_price(  # pylint: disable=no-self-use
         self,
@@ -3232,8 +3237,8 @@ class RestAPI():
         if edited:
             return api_response(OK_RESULT, status_code=HTTPStatus.OK)
         return api_response(
-            result={'result': False, 'message': ''},
-            status_code=HTTPStatus.OK,
+            result={'result': False, 'message': 'Failed to edit manual price'},
+            status_code=HTTPStatus.CONFLICT,
         )
 
     def get_manual_prices(  # pylint: disable=no-self-use
@@ -3252,5 +3257,10 @@ class RestAPI():
         to_asset: Asset,
         timestamp: Timestamp,
     ) -> Response:
-        GlobalDBHandler().delete_manual_price(from_asset, to_asset, timestamp)
-        return api_response(_wrap_in_ok_result(OK_RESULT), status_code=HTTPStatus.OK)
+        deleted = GlobalDBHandler().delete_manual_price(from_asset, to_asset, timestamp)
+        if deleted:
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(
+            result={'result': False, 'message': 'Failed to delete manual price'},
+            status_code=HTTPStatus.CONFLICT,
+        )
