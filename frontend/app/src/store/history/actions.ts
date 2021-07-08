@@ -14,6 +14,8 @@ import {
 import {
   AssetMovement,
   EthTransaction,
+  GitcoinGrantEvents,
+  GitcoinGrantEventsPayload,
   NewTrade,
   Trade,
   TradeLocation,
@@ -21,7 +23,11 @@ import {
 } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
-import { EntryWithMeta, LimitedResponse } from '@/services/types-api';
+import {
+  ActionResult,
+  EntryWithMeta,
+  LimitedResponse
+} from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
   FETCH_FROM_CACHE,
@@ -843,6 +849,37 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } else {
       await dispatch(HistoryActions.REMOVE_EXCHANGE_TRADES, exchange);
       await dispatch(HistoryActions.REMOVE_EXCHANGE_MOVEMENTS, exchange);
+    }
+  },
+  async [HistoryActions.FETCH_GITCOIN_GRANT](
+    { commit },
+    payload: GitcoinGrantEventsPayload
+  ): Promise<ActionResult<GitcoinGrantEvents[]>> {
+    try {
+      const { taskId } = await api.history.gatherGitcoinGrandEvents(payload);
+
+      const meta: TaskMeta = {
+        title: i18n
+          .t('actions.balances.gitcoin_grant.task.title', {
+            grant: 'grantId' in payload ? payload.grantId : ''
+          })
+          .toString(),
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      };
+
+      const type = TaskType.GITCOIN_GRANT_EVENTS;
+      const task = createTask(taskId, type, meta);
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<GitcoinGrantEvents[], TaskMeta>(
+        type
+      );
+
+      return { result, message: '' };
+    } catch (e) {
+      return { result: [], message: e.message };
     }
   }
 };

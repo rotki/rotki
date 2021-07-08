@@ -65,3 +65,58 @@ export interface EthTransaction {
 export interface LedgerActionResult {
   readonly identifier: number;
 }
+
+interface GitcoinBaseEventsPayload {
+  readonly fromTimestamp: number;
+  readonly toTimestamp: number;
+}
+
+interface FromCacheGitcoinEventsPayload extends GitcoinBaseEventsPayload {
+  readonly onlyCache: true;
+}
+
+export interface GitcoinGrantPayload extends GitcoinBaseEventsPayload {
+  readonly grantId: number;
+}
+
+export type GitcoinGrantEventsPayload =
+  | GitcoinGrantPayload
+  | FromCacheGitcoinEventsPayload;
+
+export type GitcoinReportPayload = GitcoinBaseEventsPayload & {
+  readonly grantId?: number;
+};
+
+export interface GitcoinGrantEvents {
+  readonly timestamp: number;
+  readonly asset: string;
+  readonly amount: BigNumber;
+  readonly usdValue: BigNumber;
+  readonly grandId: number;
+  readonly txId: string;
+  readonly txType: 'ethereum' | 'zksync';
+  readonly clrRound: Nullable<number>;
+}
+
+interface GitcoinGrantEarnings {
+  readonly amount: BigNumber;
+  readonly value: BigNumber;
+}
+
+interface GitcoinGrantPerAssetDetails {
+  readonly [asset: string]: GitcoinGrantEarnings;
+}
+
+interface GitcoinGrantDetails {
+  readonly perAsset: GitcoinGrantPerAssetDetails;
+  readonly total: BigNumber;
+}
+
+interface GitcoinPerGrantReport {
+  [grantId: string]: GitcoinGrantDetails;
+}
+
+export interface GitcoinGrantReport {
+  readonly profitCurrency: string;
+  readonly reports: GitcoinPerGrantReport;
+}

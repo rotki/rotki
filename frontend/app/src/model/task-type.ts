@@ -42,5 +42,6 @@ export enum TaskType {
   ASSET_UPDATE = 'asset_update',
   ASSET_UPDATE_PERFORM = 'asset_update_perform',
   DEFI_YEARN_VAULT_V2_HISTORY = 'defi_yearn_vault_v2_history',
-  DEFI_YEARN_VAULT_V2_BALANCES = 'defi_yearn_vault_v2_balances'
+  DEFI_YEARN_VAULT_V2_BALANCES = 'defi_yearn_vault_v2_balances',
+  GITCOIN_GRANT_EVENTS = 'gitcoin_grant_events'
 }

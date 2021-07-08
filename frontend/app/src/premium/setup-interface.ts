@@ -8,6 +8,8 @@ import { displayDateFormatter } from '@/data/date_formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { registerComponents } from '@/premium/register-components';
 import { DataUtilities, DateUtilities, SettingsApi } from '@/premium/types';
+import { api } from '@/services/rotkehlchen-api';
+import { HistoryActions } from '@/store/history/consts';
 import { DARK_THEME, LIGHT_THEME } from '@/store/settings/consts';
 import { FrontendSettingsPayload, Themes } from '@/store/settings/types';
 import store from '@/store/store';
@@ -45,6 +47,20 @@ const data: DataUtilities = {
   },
   getIdentifierForSymbol: (symbol: string) => {
     return store.getters['balances/getIdentifierForSymbol'](symbol);
+  },
+  gitcoin: {
+    generateReport(payload) {
+      return api.history.generateReport(payload);
+    },
+    deleteGrant(grantId) {
+      return api.history.deleteGitcoinGrantEvents(grantId);
+    },
+    fetchGrantEvents(payload) {
+      return store.dispatch(
+        `history/${HistoryActions.FETCH_GITCOIN_GRANT}`,
+        payload
+      );
+    }
   }
 };
 
@@ -73,7 +89,7 @@ export const setupPremium = () => {
   window.Vue.use(Vuex);
   window.rotki = {
     useHostComponents: true,
-    version: 11,
+    version: 12,
     utils: {
       date,
       data,

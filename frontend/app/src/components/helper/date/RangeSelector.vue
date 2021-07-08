@@ -46,10 +46,10 @@ import { RotkehlchenState } from '@/store/types';
 import { assert } from '@/utils/assertions';
 import { convertToTimestamp } from '@/utils/date';
 
-export type SelectedRange = {
+export interface SelectedRange {
   readonly start: string;
   readonly end: string;
-};
+}
 
 export default defineComponent({
   name: 'RangeSelector',

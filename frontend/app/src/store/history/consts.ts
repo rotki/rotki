@@ -16,7 +16,8 @@ export enum HistoryActions {
   EDIT_EXTERNAL_TRADE = 'editExternalTrade',
   DELETE_EXTERNAL_TRADE = 'deleteExternalTrade',
   IGNORE_ACTIONS = 'ignoreActions',
-  UNIGNORE_ACTION = 'unignoreActions'
+  UNIGNORE_ACTION = 'unignoreActions',
+  FETCH_GITCOIN_GRANT = 'fetchGitcoinGrant'
 }
 
 export enum HistoryMutations {

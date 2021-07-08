@@ -353,15 +353,7 @@
     "chain_selector": "Blockchain"
   },
   "gitcoin_grants": {
-    "text": "Gitcoin grants",
-    "title": "Gitcoin Grants"
-  },
-  "gitcoint_grant": {
-    "grant_id": "Grant Id"
-  },
-  "grants": {
-    "delete_tooltip": "Delete all the event data for the selected grant",
-    "id_positive": "The grant id must be a positive integer number"
+    "text": "Gitcoin Grants"
   },
   "help_sidebar": {
     "about": "About",
@@ -1768,6 +1760,11 @@
         "error": {
           "title": "{location} balance query",
           "message": "Failed to query {location} balances: {error}"
+        }
+      },
+      "gitcoin_grant": {
+        "task": {
+          "title": "Fetching events for Gitcoin grant {grant}"
         }
       },
       "historic_fetch_price": {
