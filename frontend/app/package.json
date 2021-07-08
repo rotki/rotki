@@ -26,6 +26,7 @@
   },
   "main": "background.js",
   "dependencies": {
+    "@vue/composition-api": "1.0.0-rc.13",
     "axios": "0.21.1",
     "bignumber.js": "9.0.1",
     "chart.js": "2.9.4",
@@ -124,7 +125,8 @@
   "optionalDependencies": {
     "@cypress/code-coverage": "3.9.7",
     "@cypress/webpack-preprocessor": "5.9.1",
-    "@vue/cli-plugin-e2e-cypress": "4.5.13"
+    "@vue/cli-plugin-e2e-cypress": "4.5.13",
+    "dmg-license": "1.0.9"
   },
   "engines": {
     "node": ">=14 <15",
