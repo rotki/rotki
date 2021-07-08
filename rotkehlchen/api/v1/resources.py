@@ -1567,6 +1567,7 @@ class HistoricalAssetsPriceResource(BaseResource):
 
     post_schema = HistoricalAssetsPriceSchema()
     put_schema = ManualPriceSchema()
+    patch_schema = ManualPriceSchema()
     get_schema = ManualPriceRegisteredSchema()
     delete_schema = ManualPriceDeleteSchema()
 
@@ -1590,19 +1591,32 @@ class HistoricalAssetsPriceResource(BaseResource):
         to_asset: Asset,
         price: Price,
         timestamp: Timestamp,
-        async_query: bool,
+    ) -> Response:
+        return self.rest_api.add_manual_price(
+            from_asset,
+            to_asset,
+            price,
+            timestamp,
+        )
+
+    @use_kwargs(patch_schema, location='json')
+    def patch(
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        price: Price,
+        timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.edit_manual_price(
             from_asset,
             to_asset,
             price,
             timestamp,
-            async_query,
         )
 
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
-    def get(self, asset: Asset, async_query: bool) -> Response:
-        return self.rest_api.get_manual_prices(asset, async_query)
+    def get(self, from_asset: Optional[Asset], to_asset: Optional[Asset]) -> Response:
+        return self.rest_api.get_manual_prices(from_asset, to_asset)
 
     @use_kwargs(delete_schema)
     def delete(
@@ -1610,9 +1624,8 @@ class HistoricalAssetsPriceResource(BaseResource):
         from_asset: Asset,
         to_asset: Asset,
         timestamp: Timestamp,
-        async_query: bool,
     ) -> Response:
-        return self.rest_api.delete_manual_price(from_asset, to_asset, timestamp, async_query)
+        return self.rest_api.delete_manual_price(from_asset, to_asset, timestamp)
 
 
 class NamedOracleCacheResource(BaseResource):

@@ -979,8 +979,6 @@ Query the historical price of assets
 
     Manually adds the price of an asset against another asset at a certain timestamp to the database.
 
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``.
 
    **Example Request**:
 
@@ -1022,13 +1020,57 @@ Query the historical price of assets
    :statuscode 500: Internal rotki error
 
 
+.. http:patch:: /api/(version)/assets/prices/historical
+
+    Edits price for a manually added price if it already exists in the database. Returns false
+    if no entry was updated.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/prices/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+       {
+            "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
+            "to_asset": "USD",
+            "async_query": true,
+            "timestamp": 1611166335,
+            "price": "1.20"
+       }
+
+   :reqjson string from_asset: The asset for which the price is given.
+   :reqjson string to_asset: The asset against which the price is given.
+   :reqjson int timestamp: The unix timestamp for which the price was saved
+   :reqjson string price: New price at the timestamp given.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson object result: True if any entry was updated, false otherwise.
+   :statuscode 200: Operation sent to database.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 500: Internal rotki error
+
 
 .. http:get:: /api/(version)/assets/prices/historical
 
     Queries prices of an asset against another asset at a certain timestamp to the database.
+    If none of the fields are provided returns all the prices manually added.
 
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``.
 
    **Example Request**:
 
@@ -1039,10 +1081,11 @@ Query the historical price of assets
       Content-Type: application/json;charset=UTF-8
 
        {
-          "asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620"
+          "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620"
        }
 
-   :reqjson string asset: Asset for what the price is retrieved.
+   :reqjson string from_asset: Optional. The from_asset for which the price is retrieved.
+   :reqjson string to_asset: Optional. The to_asset for which the price is retrieved.
 
 
    **Example Response**:
@@ -1080,8 +1123,6 @@ Query the historical price of assets
 
     Deletes price of an asset against another asset at a certain timestamp from the database.
 
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``.
 
    **Example Request**:
 

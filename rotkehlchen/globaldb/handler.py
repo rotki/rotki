@@ -1013,21 +1013,11 @@ class GlobalDBHandler():
 
     @staticmethod
     def add_single_historical_price(entry: HistoricalPrice) -> None:
-        """Adds the given historical price entries in the DB
-
-        If any addition causes a DB error it's skipped and an error is logged
-        """
+        """Adds the given historical price entries in the DB"""
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
         try:
             serialized = entry.serialize_for_db()
-            cursor.execute(
-                'SELECT COUNT(*) FROM price_history WHERE from_asset=? AND '
-                'to_asset=? AND timestamp=?',
-                (serialized[0], serialized[1], serialized[3]),
-            )
-            if cursor.fetchone()[0] is None:
-                return
             cursor.execute(
                 """INSERT OR IGNORE INTO price_history(
                 from_asset, to_asset, source_type, timestamp, price
@@ -1036,22 +1026,34 @@ class GlobalDBHandler():
                 serialized,
             )
         except sqlite3.IntegrityError as e:
-            connection.rollback()  # roll back any of the executemany that may have gone in
+            connection.rollback()
             log.error(
-                f'One of the given historical price entries caused a DB error. {str(e)}. ',
+                f'Failed to add single historical price. {str(e)}. ',
             )
+        # success
         connection.commit()
 
     @staticmethod
-    def get_manual_prices(asset: 'Asset') -> List[Dict[str, str]]:
+    def get_manual_prices(
+        from_asset: Optional[Asset],
+        to_asset: Optional[Asset],
+    ) -> List[Dict[str, str]]:
         """Returns prices added to the database by the user for an asset"""
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
         querystr = (
             'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history '
-            'WHERE from_asset=? AND source_type="A" ORDER BY timestamp'
+            'WHERE source_type="A" '
         )
-        query = cursor.execute(querystr, (asset.identifier,))
+        params = []
+        if from_asset is not None:
+            querystr += 'AND from_asset=? '
+            params.append(from_asset.identifier)
+        if to_asset is not None:
+            querystr += 'AND to_asset=? '
+            params.append(to_asset.identifier)
+        querystr += 'ORDER BY timestamp'
+        query = cursor.execute(querystr, tuple(params))
         result = query.fetchall()
         return [
             {
@@ -1063,38 +1065,24 @@ class GlobalDBHandler():
             for entry in result
         ]
 
-    def edit_manual_price(self, entry: HistoricalPrice) -> bool:
-        """Returns prices added to the database by the user for an asset"""
+    @staticmethod
+    def edit_manual_price(entry: HistoricalPrice) -> bool:
+        """Edits a manually insert historical price. Returns false if no row
+        was updated and true otherwise.
+        """
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
-        # check that the entry we want to edit exitst
-        querystr = (
-            'SELECT COUNT(*) FROM price_history '
-            'WHERE from_asset=? AND to_asset=? AND timestamp=? AND source_type="A"'
-        )
-        params = (
-            entry.from_asset.identifier,
-            entry.to_asset.identifier,
-            entry.timestamp,
-        )
-        query = cursor.execute(querystr, params)
-        if query.fetchone()[0] == 0:
-            self.add_single_historical_price(entry)
-            return True
-
         querystr = (
             'UPDATE price_history SET price=? WHERE from_asset=? AND to_asset=? '
-            'AND timestamp=? AND source_type="A"'
+            'AND source_type=? AND timestamp=? '
         )
         entry_serialized = entry.serialize_for_db()
-        params_update = (
-            entry_serialized[4],
-            entry_serialized[0],
-            entry_serialized[1],
-            entry_serialized[3],
-        )
+        # Price that is the last entry should be the first and the rest of the
+        # positions are correct in the tuple
+        params_update = entry_serialized[-1:] + entry_serialized[:-1]
         try:
-            cursor.execute(querystr, params_update)
+            changes = cursor.execute(querystr, params_update).rowcount
+            return changes == 1
         except sqlite3.IntegrityError as e:
             connection.rollback()
             log.error(
@@ -1102,7 +1090,6 @@ class GlobalDBHandler():
                 f'to {entry.to_asset} at timestamp: {str(entry.timestamp)} due to {str(e)}',
             )
             return False
-        return True
 
     @staticmethod
     def delete_manual_price(
@@ -1117,15 +1104,13 @@ class GlobalDBHandler():
             'AND timestamp=? AND source_type="A"'
         )
         query_list = [from_asset.identifier, to_asset.identifier, timestamp]
-        try:
-            cursor.execute(querystr, tuple(query_list))
-        except sqlite3.IntegrityError as e:
-            connection.rollback()
+        cursor.execute(querystr, tuple(query_list))
+        if cursor.rowcount != 1:
             log.error(
                 f'Failed to delete historical price from {from_asset} to {to_asset} '
-                f'and timestamp: {str(timestamp)} due to {str(e)}',
+                f'and timestamp: {str(timestamp)}.',
             )
-
+            return
         connection.commit()
 
     @staticmethod

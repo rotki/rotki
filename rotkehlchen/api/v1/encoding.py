@@ -1907,16 +1907,14 @@ class ManualPriceSchema(Schema):
     to_asset = AssetField(required=True)
     price = PriceField(required=True)
     timestamp = TimestampField(required=True)
-    async_query = fields.Boolean(missing=False)
 
 
 class ManualPriceRegisteredSchema(Schema):
-    asset = AssetField(required=True)
-    async_query = fields.Boolean(missing=False)
+    from_asset = AssetField(missing=None)
+    to_asset = AssetField(missing=None)
 
 
 class ManualPriceDeleteSchema(Schema):
     from_asset = AssetField(required=True)
     to_asset = AssetField(required=True)
     timestamp = TimestampField(required=True)
-    async_query = fields.Boolean(missing=False)
