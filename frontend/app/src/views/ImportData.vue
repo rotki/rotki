@@ -176,6 +176,28 @@
                 </ul>
               </v-col>
             </v-row>
+            <v-divider class="mt-2 mb-4" />
+            <div v-if="premium">
+              <v-row>
+                <v-col cols="12">
+                  <v-img
+                    max-width="200"
+                    class="import-data__gitcoin"
+                    :src="require('@/assets/images/import/gitcoin.svg')"
+                  />
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <file-upload source="gitcoin" />
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12">
+                  <span>{{ $t('import_data.gitcoin.description') }}</span>
+                </v-col>
+              </v-row>
+            </div>
           </v-col>
         </v-row>
       </v-card-text>
@@ -184,15 +206,16 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Mixins } from 'vue-property-decorator';
 import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
+import PremiumMixin from '@/mixins/premium-mixin';
 
 @Component({
   components: { FileUpload, BasePageHeader, ExternalLink }
 })
-export default class ImportData extends Vue {}
+export default class ImportData extends Mixins(PremiumMixin) {}
 </script>
 
 <style scoped lang="scss">

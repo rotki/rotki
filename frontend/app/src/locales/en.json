@@ -2464,6 +2464,9 @@
       "line_two": "BlockFi lets you export two different files. Trades will be imported from the file that only contains trades.",
       "note": "Important notes for importing data from {0}'s CSV exports."
     },
+    "gitcoin": {
+      "description": "Import the Gitcoin Grant events from a CSV file"
+    },
     "nexo": {
       "import": "Import {0} from Nexo",
       "import_transactions": "transactions",
