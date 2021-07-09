@@ -66,7 +66,11 @@ class WebsocketService {
         resolve(false);
       };
       this._connection.onclose = event => {
-        logger.debug('websocket connection closed', event);
+        logger.debug('websocket connection closed');
+        if (!event.wasClean) {
+          logger.debug('Close was not clean attempting reconnect');
+          this.connect().then();
+        }
       };
     });
   }
