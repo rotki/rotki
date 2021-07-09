@@ -57,11 +57,11 @@ from rotkehlchen.api.v1.encoding import (
     IntegerIdentifierSchema,
     LedgerActionEditSchema,
     LedgerActionSchema,
-    ManualPriceSchema,
-    ManualPriceDeleteSchema,
-    ManualPriceRegisteredSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
+    ManualPriceDeleteSchema,
+    ManualPriceRegisteredSchema,
+    ManualPriceSchema,
     ModifyEthereumTokenSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
@@ -1593,10 +1593,10 @@ class HistoricalAssetsPriceResource(BaseResource):
         timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.add_manual_price(
-            from_asset,
-            to_asset,
-            price,
-            timestamp,
+            from_asset=from_asset,
+            to_asset=to_asset,
+            price=price,
+            timestamp=timestamp,
         )
 
     @use_kwargs(patch_schema, location='json')
@@ -1608,10 +1608,10 @@ class HistoricalAssetsPriceResource(BaseResource):
         timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.edit_manual_price(
-            from_asset,
-            to_asset,
-            price,
-            timestamp,
+            from_asset=from_asset,
+            to_asset=to_asset,
+            price=price,
+            timestamp=timestamp,
         )
 
     @use_kwargs(get_schema, location='json_and_query_and_view_args')

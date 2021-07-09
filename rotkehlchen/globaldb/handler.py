@@ -1067,7 +1067,7 @@ class GlobalDBHandler():
                 'timestamp': entry[3],
                 'price': entry[4],
             }
-            for entry in query.fetchall()
+            for entry in query
         ]
 
     @staticmethod
@@ -1116,13 +1116,13 @@ class GlobalDBHandler():
             'DELETE FROM price_history WHERE from_asset=? AND to_asset=? '
             'AND timestamp=? AND source_type=?'
         )
-        query_list = [
+        bindings = (
             from_asset.identifier,
             to_asset.identifier,
             timestamp,
             HistoricalPriceOracle.MANUAL.serialize_for_db(),  # pylint: disable=no-member
-        ]
-        cursor.execute(querystr, tuple(query_list))
+        )
+        cursor.execute(querystr, bindings)
         if cursor.rowcount != 1:
             log.error(
                 f'Failed to delete historical price from {from_asset} to {to_asset} '
