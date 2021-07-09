@@ -9,7 +9,7 @@
   >
     <v-tab
       v-for="tab in visibleTabs"
-      v-show="visibleTabs.length > 1"
+      v-show="visibleTabs.length > 1 && !tab.hideHeader"
       :key="tab.name"
       :to="tab.routeTo"
       class="tab-navigation__tabs__tab"
@@ -46,6 +46,7 @@ export interface TabContent {
   readonly name: string;
   readonly routeTo: string;
   readonly hidden?: boolean;
+  readonly hideHeader?: boolean;
 }
 
 @Component({})
