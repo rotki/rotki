@@ -143,7 +143,7 @@ export default class NavigationMenu extends Vue {
           ).toString(),
           route: Routes.HISTORY_GITCOIN,
           icon: '',
-          image: require('@/assets/images/gitcoin.png'),
+          image: require('@/assets/images/gitcoin.svg'),
           class: 'gitcoin'
         }
       ]
@@ -259,15 +259,6 @@ export default class NavigationMenu extends Vue {
 </script>
 
 <style scoped lang="scss">
-.navigation-menu {
-  &__item {
-    &--active {
-      background-color: var(--v-primary-base);
-      color: white !important;
-    }
-  }
-}
-
 ::v-deep {
   .v-list-group {
     &__header {
@@ -277,6 +268,22 @@ export default class NavigationMenu extends Vue {
 
       .v-list-item {
         padding-left: 0 !important;
+      }
+    }
+  }
+}
+
+.navigation-menu {
+  &__item {
+    &--active {
+      background-color: var(--v-primary-base);
+      color: white !important;
+
+      ::v-deep {
+        .nav-icon {
+          opacity: 1 !important;
+          filter: invert(100%);
+        }
       }
     }
   }

@@ -8,7 +8,14 @@
             :identifier="identifier"
             size="24px"
           />
-          <v-img v-else-if="image" contain width="24px" :src="image" />
+          <v-img
+            v-else-if="image"
+            contain
+            width="24px"
+            :src="image"
+            class="nav-icon"
+            :class="$style.icon"
+          />
           <v-icon v-else>{{ icon }}</v-icon>
         </v-list-item-icon>
       </template>
@@ -16,7 +23,14 @@
     </v-tooltip>
     <v-list-item-icon v-else>
       <asset-icon v-if="!!cryptoIcon" :identifier="identifier" size="24px" />
-      <v-img v-else-if="image" contain width="24px" :src="image" />
+      <v-img
+        v-else-if="image"
+        contain
+        width="24px"
+        :src="image"
+        class="nav-icon"
+        :class="$style.icon"
+      />
       <v-icon v-else>{{ icon }}</v-icon>
     </v-list-item-icon>
     <v-list-item-content class="d-flex flex-grow-1">
@@ -55,4 +69,8 @@ export default class NavigationMenuItem extends Vue {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style module lang="scss">
+.icon {
+  opacity: 0.66;
+}
+</style>
