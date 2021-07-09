@@ -1012,6 +1012,127 @@ class GlobalDBHandler():
         connection.commit()
 
     @staticmethod
+    def add_single_historical_price(entry: HistoricalPrice) -> bool:
+        """
+        Adds the given historical price entries in the DB.
+        Returns True if the operation succeeded and False otherwise
+        """
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        try:
+            serialized = entry.serialize_for_db()
+            cursor.execute(
+                """INSERT OR IGNORE INTO price_history(
+                from_asset, to_asset, source_type, timestamp, price
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                serialized,
+            )
+        except sqlite3.IntegrityError as e:
+            connection.rollback()
+            log.error(
+                f'Failed to add single historical price. {str(e)}. ',
+            )
+            return False
+        # success
+        connection.commit()
+        return True
+
+    @staticmethod
+    def get_manual_prices(
+        from_asset: Optional[Asset],
+        to_asset: Optional[Asset],
+    ) -> List[Dict[str, str]]:
+        """Returns prices added to the database by the user for an asset"""
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        querystr = (
+            'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history '
+            'WHERE source_type=? '
+        )
+        # Start by adding the manual source type to the list of params
+        params = [HistoricalPriceOracle.MANUAL.serialize_for_db()]  # pylint: disable=no-member
+        if from_asset is not None:
+            querystr += 'AND from_asset=? '
+            params.append(from_asset.identifier)
+        if to_asset is not None:
+            querystr += 'AND to_asset=? '
+            params.append(to_asset.identifier)
+        querystr += 'ORDER BY timestamp'
+        query = cursor.execute(querystr, tuple(params))
+        return [
+            {
+                'from_asset': entry[0],
+                'to_asset': entry[1],
+                'timestamp': entry[3],
+                'price': entry[4],
+            }
+            for entry in query
+        ]
+
+    @staticmethod
+    def edit_manual_price(entry: HistoricalPrice) -> bool:
+        """Edits a manually inserted historical price. Returns false if no row
+        was updated and true otherwise.
+        """
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        querystr = (
+            'UPDATE price_history SET price=? WHERE from_asset=? AND to_asset=? '
+            'AND source_type=? AND timestamp=? '
+        )
+        entry_serialized = entry.serialize_for_db()
+        # Price that is the last entry should be the first and the rest of the
+        # positions are correct in the tuple
+        params_update = entry_serialized[-1:] + entry_serialized[:-1]
+        try:
+            cursor.execute(querystr, params_update)
+        except sqlite3.IntegrityError as e:
+            connection.rollback()
+            log.error(
+                f'Failed to edit manual historical prices from {entry.from_asset} '
+                f'to {entry.to_asset} at timestamp: {str(entry.timestamp)} due to {str(e)}',
+            )
+            return False
+
+        if cursor.rowcount == 1:
+            connection.commit()
+            return True
+        return False
+
+    @staticmethod
+    def delete_manual_price(
+            from_asset: 'Asset',
+            to_asset: 'Asset',
+            timestamp: Timestamp,
+    ) -> bool:
+        """
+        Deletes a manually inserted historical price given by its primary key.
+        Returns True if one row was deleted and False otherwise
+        """
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        querystr = (
+            'DELETE FROM price_history WHERE from_asset=? AND to_asset=? '
+            'AND timestamp=? AND source_type=?'
+        )
+        bindings = (
+            from_asset.identifier,
+            to_asset.identifier,
+            timestamp,
+            HistoricalPriceOracle.MANUAL.serialize_for_db(),  # pylint: disable=no-member
+        )
+        cursor.execute(querystr, bindings)
+        if cursor.rowcount != 1:
+            log.error(
+                f'Failed to delete historical price from {from_asset} to {to_asset} '
+                f'and timestamp: {str(timestamp)}.',
+            )
+            return False
+        connection.commit()
+        return True
+
+    @staticmethod
     def delete_historical_prices(
             from_asset: 'Asset',
             to_asset: 'Asset',

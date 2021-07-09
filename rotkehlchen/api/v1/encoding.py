@@ -1900,3 +1900,21 @@ class ERC20InfoSchema(Schema):
 class BinanceMarketsUserSchema(Schema):
     name = fields.String(required=True)
     location = LocationField(limit_to=[Location.BINANCEUS, Location.BINANCE], required=True)
+
+
+class ManualPriceSchema(Schema):
+    from_asset = AssetField(required=True)
+    to_asset = AssetField(required=True)
+    price = PriceField(required=True)
+    timestamp = TimestampField(required=True)
+
+
+class ManualPriceRegisteredSchema(Schema):
+    from_asset = AssetField(missing=None)
+    to_asset = AssetField(missing=None)
+
+
+class ManualPriceDeleteSchema(Schema):
+    from_asset = AssetField(required=True)
+    to_asset = AssetField(required=True)
+    timestamp = TimestampField(required=True)

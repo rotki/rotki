@@ -79,7 +79,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPriceOracle
+from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -3196,3 +3196,71 @@ class RestAPI():
             self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator,
         ).delete_gitcoin_ledger_actions(grant_id)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def add_manual_price(  # pylint: disable=no-self-use
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        price: Price,
+        timestamp: Timestamp,
+    ) -> Response:
+        historical_price = HistoricalPrice(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            source=HistoricalPriceOracle.MANUAL,
+            timestamp=timestamp,
+            price=price,
+        )
+        added = GlobalDBHandler().add_single_historical_price(historical_price)
+        if added:
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(
+            result={'result': False, 'message': 'Failed to store manual price'},
+            status_code=HTTPStatus.CONFLICT,
+        )
+
+    def edit_manual_price(  # pylint: disable=no-self-use
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        price: Price,
+        timestamp: Timestamp,
+    ) -> Response:
+        historical_price = HistoricalPrice(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            source=HistoricalPriceOracle.MANUAL,
+            timestamp=timestamp,
+            price=price,
+        )
+        edited = GlobalDBHandler().edit_manual_price(historical_price)
+        if edited:
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(
+            result={'result': False, 'message': 'Failed to edit manual price'},
+            status_code=HTTPStatus.CONFLICT,
+        )
+
+    def get_manual_prices(  # pylint: disable=no-self-use
+        self,
+        from_asset: Optional[Asset],
+        to_asset: Optional[Asset],
+    ) -> Response:
+        return api_response(
+            _wrap_in_ok_result(GlobalDBHandler().get_manual_prices(from_asset, to_asset)),
+            status_code=HTTPStatus.OK,
+        )
+
+    def delete_manual_price(  # pylint: disable=no-self-use
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        timestamp: Timestamp,
+    ) -> Response:
+        deleted = GlobalDBHandler().delete_manual_price(from_asset, to_asset, timestamp)
+        if deleted:
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(
+            result={'result': False, 'message': 'Failed to delete manual price'},
+            status_code=HTTPStatus.CONFLICT,
+        )

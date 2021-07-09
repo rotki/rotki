@@ -59,6 +59,9 @@ from rotkehlchen.api.v1.encoding import (
     LedgerActionSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
+    ManualPriceDeleteSchema,
+    ManualPriceRegisteredSchema,
+    ManualPriceSchema,
     ModifyEthereumTokenSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
@@ -1563,6 +1566,10 @@ class CurrentAssetsPriceResource(BaseResource):
 class HistoricalAssetsPriceResource(BaseResource):
 
     post_schema = HistoricalAssetsPriceSchema()
+    put_schema = ManualPriceSchema()
+    patch_schema = ManualPriceSchema()
+    get_schema = ManualPriceRegisteredSchema()
+    delete_schema = ManualPriceDeleteSchema()
 
     @use_kwargs(post_schema, location='json')
     def post(
@@ -1576,6 +1583,49 @@ class HistoricalAssetsPriceResource(BaseResource):
             target_asset=target_asset,
             async_query=async_query,
         )
+
+    @use_kwargs(put_schema, location='json')
+    def put(
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        price: Price,
+        timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.add_manual_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            price=price,
+            timestamp=timestamp,
+        )
+
+    @use_kwargs(patch_schema, location='json')
+    def patch(
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        price: Price,
+        timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.edit_manual_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            price=price,
+            timestamp=timestamp,
+        )
+
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(self, from_asset: Optional[Asset], to_asset: Optional[Asset]) -> Response:
+        return self.rest_api.get_manual_prices(from_asset, to_asset)
+
+    @use_kwargs(delete_schema)
+    def delete(
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.delete_manual_price(from_asset, to_asset, timestamp)
 
 
 class NamedOracleCacheResource(BaseResource):
