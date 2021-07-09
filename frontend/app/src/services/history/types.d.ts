@@ -30,7 +30,10 @@ export interface TradeUpdate {
   readonly oldTradeId: string;
 }
 
-export type TradeLocation = SupportedExchange | SupportedTradeLocation;
+export type TradeLocation =
+  | SupportedExchange
+  | SupportedTradeLocation
+  | 'gitcoin';
 
 type MovementCategory = 'deposit' | 'withdrawal';
 
