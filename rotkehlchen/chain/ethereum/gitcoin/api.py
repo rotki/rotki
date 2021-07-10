@@ -35,6 +35,10 @@ NO_ADDRESS = '0x0000000000000000000000000000000000000000'
 logger = logging.getLogger(__name__)
 
 
+class ZeroGitcoinAmount(Exception):
+    pass
+
+
 def get_gitcoin_asset(symbol: str, token_address: str) -> Asset:
     """At the moment gitcoin keeps a symbol for the asset so mapping to asset can be ambiguous
 
@@ -44,7 +48,7 @@ def get_gitcoin_asset(symbol: str, token_address: str) -> Asset:
     if token_address != NO_ADDRESS:
         try:
             return EthereumToken(to_checksum_address(token_address))
-        except UnknownAsset:
+        except (UnknownAsset, ValueError):
             pass  # let's try by symbol
 
     asset = get_asset_by_symbol(symbol)
@@ -69,6 +73,9 @@ def _deserialize_transaction(grant_id: int, rawtx: Dict[str, Any]) -> LedgerActi
     asset = get_gitcoin_asset(symbol=rawtx['asset'], token_address=rawtx['token_address'])
     raw_amount = deserialize_int_from_str(symbol=rawtx['amount'], location='gitcoin api')
     amount = asset_normalized_value(raw_amount, asset)
+    if amount == ZERO:
+        raise ZeroGitcoinAmount()
+
     # let's use gitcoin's calculated rate for now since they include it in the response
     usd_value = Price(ZERO) if rawtx['usd_value'] is None else deserialize_price(rawtx['usd_value'])  # noqa: E501
     rate = Price(ZERO) if usd_value == ZERO else Price(usd_value / amount)
@@ -287,6 +294,9 @@ class GitcoinAPI():
                     f'Found unknown asset {str(e)} in a gitcoin api event transaction. '
                     'Ignoring it.',
                 )
+                continue
+            except ZeroGitcoinAmount:
+                logger.warning(f'Found gitcoin event with 0 amount for grant {grant_id}. Ignoring')
                 continue
 
             actions.append(action)
