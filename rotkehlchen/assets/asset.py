@@ -226,6 +226,11 @@ WORLD_TO_KRAKEN = {
     'MINA': 'MINA',
     'SRM': 'SRM',
     'SOL-2': 'SOL',
+    strethaddress_to_identifier('0x3506424F91fD33084466F402d5D97f05F8e3b4AF'): 'CHZ',
+    strethaddress_to_identifier('0x8207c1FfC5B6804F6024322CcF34F29c3541Ae26'): 'OGN',
+    strethaddress_to_identifier('0xbC396689893D065F41bc2C6EcbeE5e0085233447'): 'PERP',
+    strethaddress_to_identifier('0xD417144312DbF50465b1C641d016962017Ef6240'): 'CQT',
+    strethaddress_to_identifier('0xF5D669627376EBd411E34b98F19C868c8ABA5ADA'): 'AXS',
 }
 
 WORLD_TO_BINANCE = {
@@ -320,6 +325,8 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0xfAE4Ee59CDd86e3Be9e8b90b53AA866327D7c090'): 'CPC',
     'ONE-2': 'ONE',
     strethaddress_to_identifier('0xf4CD3d3Fda8d7Fd6C5a500203e38640A70Bf9577'): 'YFDAI',
+    'BTMX': 'ASD',
+    strethaddress_to_identifier('0xEA1ea0972fa092dd463f2968F9bB51Cc4c981D71'): 'MODEFI',
 }
 
 WORLD_TO_ICONOMI = {

@@ -335,6 +335,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'BTCTRON',  # neither in coingecko nor cryptocompare
     'FCT2',  # neither in coingecko nor cryptocompare
     'XFLR',  # neither in coingecko nor cryptocompare (is an iou for FLR - SPARK)
+    'SUNX',  # neither in coingecko nor cryptocompare
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
@@ -507,6 +508,7 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'IDX',  # no cryptocompare/coingecko data
     'CHEX',  # no cryptocompare/coingecko data (chintai)
     'PLANETS',  # PlanetWatch (PLANETS) but has no cryptocompare/coingecko
+    'MCS',  # no cryptocompare/coingecko data yet
 )
 
 UNSUPPORTED_FTX_ASSETS = (
@@ -617,7 +619,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'ADA3L',  # no cryptocompare/coingecko data
     'FEAR',  # no cryptocompare/coingecko data
     'DAPPX',  # no cryptocompare/coingecko data
-    'CQT',  # Unlaunched token
+    'OOE',  # no cryptocompare/coingecko data
+    'SPHRI',  # no cryptocompare/coingecko data SpheriumFinance
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
