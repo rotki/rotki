@@ -50,6 +50,9 @@
     "loading": "Please wait while rotki queries the blockchain...",
     "total": "Total"
   },
+  "asset_icon": {
+    "tooltip": "[{symbol}] {name}"
+  },
   "asset_locations": {
     "title": "Asset Locations",
     "header": {
