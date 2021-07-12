@@ -1,6 +1,6 @@
 import logging
 from sqlite3 import Cursor
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -15,6 +15,12 @@ log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+
+
+class GitcoinGrantMetadata(NamedTuple):
+    grant_id: int
+    name: str
+    created_on: Timestamp
 
 
 def _add_gitcoin_extra_data(cursor: Cursor, actions: List[LedgerAction]) -> None:
@@ -102,6 +108,47 @@ class DBLedgerActions():
             actions.append(action)
 
         return actions
+
+    def get_gitcoin_grant_metadata(
+            self,
+            grant_id: Optional[int] = None,
+    ) -> Dict[int, GitcoinGrantMetadata]:
+        cursor = self.db.conn.cursor()
+        querystr = 'SELECT * from gitcoin_grant_metadata'
+        bindings: Union[Tuple, Tuple[int]] = ()
+        if grant_id is not None:
+            querystr += ' WHERE grant_id=?'
+            bindings = (grant_id,)
+
+        response = cursor.execute(querystr, bindings)
+        results = {}
+        for entry in response:
+            results[entry[0]] = GitcoinGrantMetadata(
+                grant_id=entry[0],
+                name=entry[1],
+                created_on=entry[2],
+            )
+
+        return results
+
+    def set_gitcoin_grant_metadata(
+            self,
+            grant_id: int,
+            name: str,
+            created_on: Timestamp,
+    ) -> None:
+        """Inserts new grant metadata entry if they don't exist or update entry if it does"""
+        cursor = self.db.conn.cursor()
+        cursor.execute(
+            'INSERT OR IGNORE INTO gitcoin_grant_metadata(grant_id, grant_name, created_on) '
+            'VALUES(?, ?, ?);',
+            (grant_id, name, created_on),
+        )
+        if cursor.rowcount != 1:
+            cursor.execute(
+                'UPDATE gitcoin_grant_metadata SET grant_name=?, created_on=? WHERE grant_id=?;',
+                (name, created_on, grant_id),
+            )
 
     def get_gitcoin_grant_events(
             self,
@@ -200,16 +247,20 @@ class DBLedgerActions():
             'SELECT parent_id from ledger_actions_gitcoin_data '
         )
         query2str = 'DELETE FROM used_query_ranges WHERE name '
+        query3str = 'DELETE FROM gitcoin_grant_metadata '
         if grant_id:
             query1str += 'WHERE grant_id = ?);'
             bindings1 = (grant_id,)
             query2str += '= ?;'
             bindings2 = (f'{GITCOIN_GRANTS_PREFIX}_{grant_id}',)
+            query3str += 'WHERE grant_id=?;'
         else:
             query1str += ');'
             bindings1 = ()  # type: ignore
             query2str += 'LIKE ? ESCAPE ?'
             bindings2 = (f'{GITCOIN_GRANTS_PREFIX}_%', '\\')  # type: ignore
+            query3str += ';'
 
         cursor.execute(query1str, bindings1)
         cursor.execute(query2str, bindings2)
+        cursor.execute(query3str, bindings1)

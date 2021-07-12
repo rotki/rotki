@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -159,19 +160,46 @@ class GitcoinAPI():
 
         return json_ret
 
+    def get_history_from_db(
+            self,
+            grant_id: Optional[int],
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+    ) -> Dict[int, Dict[str, Any]]:
+        grantid_to_metadata = self.db_ledger.get_gitcoin_grant_metadata(grant_id)
+        grantid_to_events = defaultdict(list)
+        events = self.db_ledger.get_gitcoin_grant_events(
+            grant_id=grant_id,
+            from_ts=from_ts,
+            to_ts=to_ts,
+        )
+        for event in events:
+            grantid_to_events[event.extra_data.grant_id].append(event.serialize_for_gitcoin())  # type: ignore  # noqa: E501
+
+        result = {}
+        for grantid, serialized_events in grantid_to_events.items():
+            metadata = grantid_to_metadata.get(grantid)
+            result[grantid] = {
+                'events': serialized_events,
+                'name': metadata.name if metadata else None,
+                'created_on': metadata.created_on if metadata else None,
+            }
+
+        return result
+
     def query_grant_history(
             self,
             grant_id: Optional[int],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             only_cache: bool = False,
-    ) -> List[LedgerAction]:
+    ) -> Dict[int, Dict[str, Any]]:
         """May raise:
         - RemotError if there is an error querying the gitcoin API
         - InputError if only_cache is False and grant_id is missing
         """
         if only_cache:
-            return self.db_ledger.get_gitcoin_grant_events(
+            return self.get_history_from_db(
                 grant_id=grant_id,
                 from_ts=from_ts,
                 to_ts=to_ts,
@@ -208,10 +236,10 @@ class GitcoinAPI():
             end_ts=to_timestamp,
             ranges_to_query=ranges,
         )
-        return self.db_ledger.get_gitcoin_grant_events(
+        return self.get_history_from_db(
             grant_id=grant_id,
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
+            from_ts=from_ts,
+            to_ts=to_ts,
         )
 
     def query_grant_history_period(
@@ -236,6 +264,12 @@ class GitcoinAPI():
                     skip_milliseconds=True,
                 )
                 from_timestamp = max(grant_created_on, from_timestamp)
+                grant_name = result['metadata']['grant_name']
+                self.db_ledger.set_gitcoin_grant_metadata(
+                    grant_id=grant_id,
+                    name=grant_name,
+                    created_on=grant_created_on,
+                )
             except (DeserializationError, KeyError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
