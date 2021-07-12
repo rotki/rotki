@@ -81,12 +81,15 @@ WORLD_TO_BITTREX = {
     strethaddress_to_identifier('0x6F919D67967a97EA36195A2346d9244E60FE0dDB'): 'BLOC',
     strethaddress_to_identifier('0xc528c28FEC0A90C083328BC45f587eE215760A0F'): 'EDR',
     strethaddress_to_identifier('0xfAE4Ee59CDd86e3Be9e8b90b53AA866327D7c090'): 'CPC',
+    # Tokenized coinbase in bittrex
+    'COIN-2': 'COIN',
 }
 
 WORLD_TO_FTX = {
     strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
     strethaddress_to_identifier('0xcca0c9c383076649604eE31b20248BC04FdF61cA'): 'ASD',
     'SOL-2': 'SOL',
+    'COIN': 'COIN',
 }
 
 WORLD_TO_POLONIEX = {
