@@ -18,8 +18,8 @@ const date: DateUtilities = {
   epoch(): number {
     return dayjs().unix();
   },
-  format(date: string, oldFormat: string, newFormat: string): string {
-    return dayjs(date, oldFormat).format(newFormat);
+  format(date: string, _: string, newFormat: string): string {
+    return dayjs(date).format(newFormat);
   },
   now(format: string): string {
     return dayjs().format(format);
