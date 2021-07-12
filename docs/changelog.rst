@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`692` Gitcoin Grant owners will now be able to track and generate reports of their grants.
 * :feature:`1666` Users will now be able to see their yearn v2 vaults in in the defi section.
 * :feature:`2456` Users will now be able to correctly retrive prices for Curve LP tokens.
 * :feature:`2778` Users will now be able to enable modules and queried addresses when adding an ethereum account

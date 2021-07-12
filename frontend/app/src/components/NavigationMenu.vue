@@ -14,6 +14,7 @@
               :show-tooltips="showTooltips"
               :text="navItem.text"
               :icon="navItem.icon"
+              :image="navItem.image"
               :crypto-icon="navItem.cryptoIcon"
             />
           </v-list-item>
@@ -24,6 +25,7 @@
                 :text="navItem.text"
                 :icon="navItem.icon"
                 :crypto-icon="navItem.cryptoIcon"
+                :image="navItem.image"
                 :class="`navigation__${navItem.class}`"
               />
             </template>
@@ -38,6 +40,7 @@
                 :show-tooltips="showTooltips"
                 :text="subNavItem.text"
                 :icon="subNavItem.icon"
+                :image="subNavItem.image"
                 :crypto-icon="subNavItem.cryptoIcon"
               />
             </v-list-item>
@@ -63,6 +66,7 @@ type NavItemDetails = {
   readonly route: string;
   readonly class?: string;
   readonly icon: string;
+  readonly image?: string;
   readonly cryptoIcon?: string;
 };
 
@@ -131,6 +135,16 @@ export default class NavigationMenu extends Vue {
           route: Routes.HISTORY_LEDGER_ACTIONS,
           icon: 'mdi-book-open-variant',
           class: 'ledger'
+        },
+        {
+          type: 'item',
+          text: this.$t(
+            'navigation_menu.history_sub.gitcoin_grants'
+          ).toString(),
+          route: Routes.HISTORY_GITCOIN,
+          icon: '',
+          image: require('@/assets/images/gitcoin.svg'),
+          class: 'gitcoin'
         }
       ]
     },
@@ -245,15 +259,6 @@ export default class NavigationMenu extends Vue {
 </script>
 
 <style scoped lang="scss">
-.navigation-menu {
-  &__item {
-    &--active {
-      background-color: var(--v-primary-base);
-      color: white !important;
-    }
-  }
-}
-
 ::v-deep {
   .v-list-group {
     &__header {
@@ -263,6 +268,22 @@ export default class NavigationMenu extends Vue {
 
       .v-list-item {
         padding-left: 0 !important;
+      }
+    }
+  }
+}
+
+.navigation-menu {
+  &__item {
+    &--active {
+      background-color: var(--v-primary-base);
+      color: white !important;
+
+      ::v-deep {
+        .nav-icon {
+          opacity: 1 !important;
+          filter: invert(100%);
+        }
       }
     }
   }

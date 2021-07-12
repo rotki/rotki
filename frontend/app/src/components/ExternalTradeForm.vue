@@ -170,6 +170,7 @@ import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { NewTrade, Trade, TradeType } from '@/services/history/types';
 import { HistoricPricePayload } from '@/store/balances/types';
+import { HistoryActions } from '@/store/history/consts';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
 import { assert } from '@/utils/assertions';
@@ -181,7 +182,10 @@ import { bigNumberify, Zero } from '@/utils/bignumbers';
     ...mapGetters('tasks', ['isTaskRunning'])
   },
   methods: {
-    ...mapActions('history', ['addExternalTrade', 'editExternalTrade']),
+    ...mapActions('history', [
+      HistoryActions.ADD_EXTERNAL_TRADE,
+      HistoryActions.EDIT_EXTERNAL_TRADE
+    ]),
     ...mapActions('balances', ['fetchHistoricPrice'])
   }
 })

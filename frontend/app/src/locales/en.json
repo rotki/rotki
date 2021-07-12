@@ -50,6 +50,9 @@
     "loading": "Please wait while rotki queries the blockchain...",
     "total": "Total"
   },
+  "asset_icon": {
+    "tooltip": "[{symbol}] {name}"
+  },
   "asset_locations": {
     "title": "Asset Locations",
     "header": {
@@ -351,6 +354,9 @@
     "tx": "Transactions",
     "address": "Addresses",
     "chain_selector": "Blockchain"
+  },
+  "gitcoin_grants": {
+    "text": "Gitcoin Grants"
   },
   "help_sidebar": {
     "about": "About",
@@ -1295,7 +1301,8 @@
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
       "transactions": "Ethereum Transactions",
-      "ledger_actions": "Ledger Actions"
+      "ledger_actions": "Ledger Actions",
+      "gitcoin_grants": "Gitcoin Grants"
     }
   },
   "overview": {
@@ -1758,6 +1765,11 @@
           "message": "Failed to query {location} balances: {error}"
         }
       },
+      "gitcoin_grant": {
+        "task": {
+          "title": "Fetching events for Gitcoin grant {grant}"
+        }
+      },
       "historic_fetch_price": {
         "task": {
           "description": "Fetching rate from {fromAsset} to {toAsset} on {date}",
@@ -1969,6 +1981,7 @@
     "import_data": "Import Data",
     "history": "History",
     "history_sub": {
+      "gitcoin_grants": "Gitcoin Grants",
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
       "ethereum_transactions": "Ethereum Transactions",
@@ -2453,6 +2466,9 @@
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "line_two": "BlockFi lets you export two different files. Trades will be imported from the file that only contains trades.",
       "note": "Important notes for importing data from {0}'s CSV exports."
+    },
+    "gitcoin": {
+      "description": "Import the Gitcoin Grant events from a CSV file"
     },
     "nexo": {
       "import": "Import {0} from Nexo",

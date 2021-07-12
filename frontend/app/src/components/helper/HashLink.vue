@@ -89,7 +89,7 @@ export default class HashLink extends Mixins(ScrambleMixin, ThemeMixin) {
   @Prop({ required: false, type: String, default: '' })
   baseUrl!: string;
   @Prop({ required: false, type: String, default: ETH })
-  chain!: Blockchain | 'ETC';
+  chain!: Blockchain | 'ETC' | 'zksync';
   @Prop({ required: false, type: Boolean, default: false })
   tx!: Boolean;
   @Prop({ required: false, type: Boolean, default: false })
@@ -112,11 +112,17 @@ export default class HashLink extends Mixins(ScrambleMixin, ThemeMixin) {
     if (this.baseUrl) {
       return this.baseUrl;
     }
-    const explorersSetting = this.explorers[this.chain];
+
     const defaultSetting = explorerUrls[this.chain];
-    const baseUrl = this.tx
-      ? explorersSetting?.transaction ?? defaultSetting.transaction
-      : explorersSetting?.address ?? defaultSetting.address;
+    let baseUrl: string;
+    if (this.chain === 'zksync') {
+      baseUrl = this.tx ? defaultSetting.transaction : defaultSetting.address;
+    } else {
+      const explorersSetting = this.explorers[this.chain];
+      baseUrl = this.tx
+        ? explorersSetting?.transaction ?? defaultSetting.transaction
+        : explorersSetting?.address ?? defaultSetting.address;
+    }
 
     return baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
   }

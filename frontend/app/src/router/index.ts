@@ -55,6 +55,10 @@ export default new Router({
         {
           path: Routes.HISTORY_LEDGER_ACTIONS,
           component: () => import('../views/history/LedgerActions.vue')
+        },
+        {
+          path: Routes.HISTORY_GITCOIN,
+          component: () => import('../views/history/GitcoinGrants.vue')
         }
       ]
     },

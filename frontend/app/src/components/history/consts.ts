@@ -221,6 +221,13 @@ export const tradeLocations: TradeLocationData[] = [
     icon: 'mdi-basket',
     imageIcon: false,
     exchange: false
+  },
+  {
+    identifier: 'gitcoin',
+    name: 'Gitcoin',
+    icon: require('@/assets/images/gitcoin.png'),
+    imageIcon: true,
+    exchange: false
   }
 ];
 

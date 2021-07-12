@@ -266,7 +266,7 @@ export default class Login extends Vue {
     this.touched();
   }
 
-  isLoggedInError(): boolean {
+  get isLoggedInError(): boolean {
     return !!this.errors.find(error => error.includes('is already logged in'));
   }
 

@@ -31,6 +31,11 @@ export default class History extends Vue {
       routeTo: '/history/transactions'
     },
     {
+      name: this.$t('history.tabs.gitcoin_grants').toString(),
+      routeTo: Routes.HISTORY_GITCOIN,
+      hideHeader: true
+    },
+    {
       name: this.$t('history.tabs.ledger_actions').toString(),
       routeTo: Routes.HISTORY_LEDGER_ACTIONS
     }
