@@ -8597,28 +8597,37 @@ Gitcoin gather event data
       Content-Type: application/json
 
       {
-          "result": [{
-	      "timestamp": 1624791600,
-	      "amount": "0.00053",
-	      "asset": "ETH",
-	      "usd_value": "1.55",
-	      "grant_id": 149,
-	      "tx_id": "0x00298f72ad40167051e111e6dc2924de08cce7cf0ad00d04ad5a9e58426536a1",
-	      "tx_type": "ethereum",
-	      "clr_round": null,
-	  }, {
-	      "timestamp": 1624791600,
-	      "amount": "5",
-	      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
-	      "usd_value": "5.01",
-	      "grant_id": 149,
-	      "tx_id": "5612f84bc20cda25b911af39b792c973bdd5916b3b6868db2420b5dafd705a90",
-	      "tx_type": "zksync",
-	      "clr_round": 9,
-	  }],
+          "result": {
+              149: {
+                  "events": [{
+                      "timestamp": 1624791600,
+                      "amount": "0.00053",
+                      "asset": "ETH",
+                      "usd_value": "1.55",
+                      "grant_id": 149,
+                      "tx_id": "0x00298f72ad40167051e111e6dc2924de08cce7cf0ad00d04ad5a9e58426536a1",
+                      "tx_type": "ethereum",
+                      "clr_round": null,
+                  }, {
+                      "timestamp": 1624791600,
+                      "amount": "5",
+                      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "usd_value": "5.01",
+                      "grant_id": 149,
+                      "tx_id": "5612f84bc20cda25b911af39b792c973bdd5916b3b6868db2420b5dafd705a90",
+                      "tx_type": "zksync",
+                      "clr_round": 9,
+                  }],
+                  "name": "rotki",
+		  "created_on": 1624791600
+             }
+          },
           "message": ""
       }
 
+   :resjson object result: A mapping of integer grant ids to events, grant name and created_on.
+   :resjson string name: The name of the grant
+   :resjson integer created_on: The timestamp the grant was created in
    :resjson integer timestamp: The timestamp of the event
    :resjson string amount: The amount donated in asset
    :resjson string asset: The identifier of the donated asset.

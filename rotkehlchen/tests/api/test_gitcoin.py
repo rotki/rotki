@@ -4,7 +4,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.gitcoin.constants import GITCOIN_GRANTS_PREFIX
-from rotkehlchen.db.ledger_actions import DBLedgerActions
+from rotkehlchen.db.ledger_actions import DBLedgerActions, GitcoinGrantMetadata
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -37,8 +37,11 @@ def test_get_grant_events(rotkehlchen_api_server, start_with_valid_premium):
         return
 
     outcome = assert_proper_response_with_result(response)
-    assert len(outcome) == 32
-    assert outcome[:5] == [{
+    assert len(outcome) == 1
+    result = outcome[str(grant_id)]
+    assert result['name'] == 'Rotki - The portfolio tracker and accounting tool that protects your privacy'  # noqa: E501
+    assert result['created_on'] == 1571694841
+    assert result['events'][:5] == [{
         'amount': '0.000475',
         'asset': 'ETH',
         'clr_round': None,
@@ -84,7 +87,7 @@ def test_get_grant_events(rotkehlchen_api_server, start_with_valid_premium):
         'tx_type': 'ethereum',
         'usd_value': '1.900000000000000099999999999',
     }]
-    assert outcome[-1] == {
+    assert result['events'][-1] == {
         'amount': '0.95',
         'asset': '_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F',
         'clr_round': None,
@@ -118,6 +121,11 @@ def test_delete_grant_events(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Get and save data of 3 different grants in the DB
     id1 = 149
+    metadata1 = GitcoinGrantMetadata(
+        grant_id=id1,
+        name='Rotki - The portfolio tracker and accounting tool that protects your privacy',
+        created_on=1571694841,
+    )
     json_data = {
         'from_timestamp': 1622162468,  # 28/05/2021
         'to_timestamp': 1622246400,  # 29/05/2021
@@ -129,6 +137,11 @@ def test_delete_grant_events(rotkehlchen_api_server):
     ), json=json_data)
     assert_proper_response(response)
     id2 = 184
+    metadata2 = GitcoinGrantMetadata(
+        grant_id=id2,
+        name='TrueBlocks',
+        created_on=1575424305,
+    )
     json_data = {
         'from_timestamp': 1622162468,  # 28/05/2021
         'to_timestamp': 1622246400,  # 29/05/2021
@@ -140,6 +153,11 @@ def test_delete_grant_events(rotkehlchen_api_server):
     ), json=json_data)
     assert_proper_response(response)
     id3 = 223
+    metadata3 = GitcoinGrantMetadata(
+        grant_id=id3,
+        name='Ethereum Magicians',
+        created_on=1578054753,
+    )
     json_data = {
         'from_timestamp': 1622162468,  # 28/05/2021
         'to_timestamp': 1622246400,  # 29/05/2021
@@ -166,6 +184,12 @@ def test_delete_grant_events(rotkehlchen_api_server):
     assert queryrange == (1622162468, 1622246400)
     queryrange = db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id3}')
     assert queryrange == (1622162468, 1622246400)
+    # make sure grant metadata were written
+    assert ledgerdb.get_gitcoin_grant_metadata() == {
+        id1: metadata1,
+        id2: metadata2,
+        id3: metadata3,
+    }
 
     # delete 1 grant's data
     response = requests.delete(api_url_for(
@@ -185,6 +209,8 @@ def test_delete_grant_events(rotkehlchen_api_server):
     assert db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id2}') is None
     queryrange = db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id3}')
     assert queryrange == (1622162468, 1622246400)
+    # make sure grant metadata were written
+    assert ledgerdb.get_gitcoin_grant_metadata() == {id1: metadata1, id3: metadata3}
 
     # delete all remaining grant data
     response = requests.delete(api_url_for(
@@ -199,6 +225,8 @@ def test_delete_grant_events(rotkehlchen_api_server):
     assert db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id1}') is None
     assert db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id2}') is None
     assert db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id3}') is None
+    # make sure grant metadata were written
+    assert ledgerdb.get_gitcoin_grant_metadata() == {}
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -216,7 +244,9 @@ def test_process_grants(rotkehlchen_api_server):
         'gitcoineventsresource',
     ), json=json_data)
     outcome = assert_proper_response_with_result(response)
-    assert outcome == [{
+    assert len(outcome) == 1
+    result = outcome[str(grant_id)]
+    assert result['events'] == [{
         'amount': '47.5',
         'asset': '_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F',
         'clr_round': None,
@@ -246,7 +276,9 @@ def test_process_grants(rotkehlchen_api_server):
         'gitcoineventsresource',
     ), json=json_data)
     outcome = assert_proper_response_with_result(response)
-    assert outcome == [{
+    assert len(outcome) == 1
+    result = outcome[str(grant_id)]
+    assert result['events'] == [{
         'amount': '0.0019',
         'asset': 'ETH',
         'clr_round': None,

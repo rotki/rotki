@@ -427,6 +427,14 @@ CREATE TABLE IF NOT EXISTS ledger_actions_gitcoin_data (
 );
 """  # noqa: E501
 
+DB_CREATE_GITCOIN_GRANT_METADATA = """
+CREATE TABLE IF NOT EXISTS gitcoin_grant_metadata (
+    grant_id INTEGER NOT NULL PRIMARY KEY,
+    grant_name TEXT NOT NULL,
+    created_on INTEGER NOT NULL
+);
+"""
+
 DB_CREATE_ETHEREUM_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS ethereum_transactions (
     tx_hash BLOB,
@@ -587,7 +595,7 @@ CREATE TABLE IF NOT EXISTS balancer_events (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -629,4 +637,5 @@ PRAGMA foreign_keys=on;
     DB_CREATE_BALANCER_EVENTS,
     DB_CREATE_LEDGER_ACTIONS_GITCOIN_DATA,
     DB_CREATE_GITCOIN_TX_TYPE,
+    DB_CREATE_GITCOIN_GRANT_METADATA,
 )

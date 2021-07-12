@@ -3143,7 +3143,7 @@ class RestAPI():
     ) -> Dict[str, Any]:
         api = GitcoinAPI(self.rotkehlchen.data.db)
         try:
-            actions = api.query_grant_history(
+            grantid_to_data = api.query_grant_history(
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 grant_id=grant_id,
@@ -3154,11 +3154,7 @@ class RestAPI():
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
 
-        serialized_result = []
-        for action in actions:
-            serialized_result.append(action.serialize_for_gitcoin())
-
-        return {'result': serialized_result, 'message': '', 'status_code': HTTPStatus.OK}
+        return {'result': grantid_to_data, 'message': '', 'status_code': HTTPStatus.OK}
 
     @require_premium_user(active_check=False)
     def get_gitcoin_events(
