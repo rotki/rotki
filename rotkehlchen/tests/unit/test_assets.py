@@ -126,6 +126,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'XEP',     # Electra Protocol (XEP) but another XEP in CC
         ethaddress_to_identifier('0xcbb20D755ABAD34cb4a9b5fF6Dd081C76769f62e'),  # noqa: E501 # Cash Global Coin (CGC) but another CGC in CC
         ethaddress_to_identifier('0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'),  # noqa: E501 # Binance Wrapped BTC (BBTC) but another BBTC in CC
+        'NRV',     # Nerve Finance (NRV) but another NRV in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -292,6 +293,8 @@ def test_coingecko_identifiers_are_reachable():
         'AM',
         # Coingecko has Swarm (BZZ) and we have SwarmCoin
         'SWARM',
+        # Coingecko has aircoin and we have a different airtoken
+        'AIR-2',
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

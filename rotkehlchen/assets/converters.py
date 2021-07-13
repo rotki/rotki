@@ -621,6 +621,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'DAPPX',  # no cryptocompare/coingecko data
     'OOE',  # no cryptocompare/coingecko data
     'SPHRI',  # no cryptocompare/coingecko data SpheriumFinance
+    'CFG',  # not released yet. TODO: Review this one later
+    'MUSH',  # Couldn't find a listing post saying what asset is this one
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets

@@ -90,6 +90,8 @@ WORLD_TO_FTX = {
     strethaddress_to_identifier('0xcca0c9c383076649604eE31b20248BC04FdF61cA'): 'ASD',
     'SOL-2': 'SOL',
     'COIN': 'COIN',
+    # SLP is smooth love potion
+    strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
 }
 
 WORLD_TO_POLONIEX = {
@@ -277,6 +279,7 @@ WORLD_TO_BINANCE = {
     strethaddress_to_identifier('0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6'): 'RCN',
     strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
     strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
+    strethaddress_to_identifier('0xEA1ea0972fa092dd463f2968F9bB51Cc4c981D71'): 'MOD',
 }
 
 WORLD_TO_BITFINEX = {
@@ -305,6 +308,8 @@ WORLD_TO_BITFINEX = {
     strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
     # FET is Fetch AI in bitfinex
     strethaddress_to_identifier('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'): 'FET',
+    # TerraUSD is TERRAUST in bitfinex
+    'UST': 'TERRAUST',
 }
 
 WORLD_TO_KUCOIN = {
@@ -330,6 +335,7 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0xf4CD3d3Fda8d7Fd6C5a500203e38640A70Bf9577'): 'YFDAI',
     'BTMX': 'ASD',
     strethaddress_to_identifier('0xEA1ea0972fa092dd463f2968F9bB51Cc4c981D71'): 'MODEFI',
+    strethaddress_to_identifier('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC'): 'KICK',
 }
 
 WORLD_TO_ICONOMI = {
