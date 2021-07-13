@@ -63,6 +63,7 @@ import {
   computed,
   defineComponent,
   inject,
+  onMounted,
   PropType,
   ref,
   watch
@@ -111,13 +112,17 @@ export default defineComponent({
       price.value = value.price.toString();
     });
     watch(price, value => {
-      if (value.endsWith('.')) {
+      if (value.endsWith('.') || (value.includes('.') && value.endsWith('0'))) {
         return;
       }
       const bn = bigNumberify(value);
       if (bn.isFinite()) {
         input({ price: bn });
       }
+    });
+
+    onMounted(() => {
+      price.value = props.value.price.toString();
     });
 
     return {
