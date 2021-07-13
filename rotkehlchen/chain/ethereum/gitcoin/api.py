@@ -59,6 +59,33 @@ def get_gitcoin_asset(symbol: str, token_address: str) -> Asset:
     return asset
 
 
+# Hardcoded by querying https://gitcoin.co/api/v0.1/grants/clr_round_metadata/
+CLR_ROUNDS = {
+    1: (1548979200, 1550188800),
+    2: (1553558400, 1555632000),
+    3: (1568505600, 1570147200),
+    4: (1578268800, 1579564800),
+    5: (1584921600, 1586044800),
+    6: (1592265600, 1593734400),
+    7: (1600041600, 1601661600),
+    8: (1606845998, 1608249600),
+    9: (1615383000, 1616716799),
+    10: (1623855600, 1625184000),
+}
+
+
+def _calculate_clr_round(timestamp: Timestamp, rawtx: Dict[str, Any]) -> Optional[int]:
+    clr_round = rawtx.get('clr_round', None)
+    if clr_round:
+        return clr_round
+
+    for round_num, timerange in CLR_ROUNDS.items():
+        if timerange[0] <= timestamp <= timerange[1]:
+            return round_num
+
+    return None
+
+
 def _deserialize_transaction(grant_id: int, rawtx: Dict[str, Any]) -> LedgerAction:
     """May raise:
     - DeserializationError
@@ -83,7 +110,7 @@ def _deserialize_transaction(grant_id: int, rawtx: Dict[str, Any]) -> LedgerActi
     raw_txid = rawtx['tx_hash']
     tx_type, tx_id = process_gitcoin_txid(key='tx_hash', entry=rawtx)
     # until we figure out if we can use it https://github.com/gitcoinco/web/issues/9255#issuecomment-874537144  # noqa: E501
-    clr_round = rawtx.get('clr_round', None)
+    clr_round = _calculate_clr_round(timestamp, rawtx)
     notes = f'Gitcoin grant {grant_id} event' if not clr_round else f'Gitcoin grant {grant_id} event in clr_round {clr_round}'  # noqa: E501
     return LedgerAction(
         identifier=1,  # whatever -- does not end up in the DB
