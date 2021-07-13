@@ -2,7 +2,7 @@ import { TimeUnit } from '@/components/dashboard/types';
 import { DebugSettings } from '@/electron-main/ipc';
 import { SupportedAsset } from '@/services/assets/types';
 import {
-  GitcoinGrantEvents,
+  GitcoinGrants,
   GitcoinGrantEventsPayload,
   GitcoinGrantReport,
   GitcoinReportPayload
@@ -21,7 +21,7 @@ interface GitCoinApi {
   deleteGrant(grantId: number): Promise<boolean>;
   fetchGrantEvents(
     payload: GitcoinGrantEventsPayload
-  ): Promise<ActionResult<GitcoinGrantEvents[]>>;
+  ): Promise<ActionResult<GitcoinGrants>>;
   generateReport(payload: GitcoinReportPayload): Promise<GitcoinGrantReport>;
 }
 
