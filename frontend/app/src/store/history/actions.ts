@@ -14,7 +14,7 @@ import {
 import {
   AssetMovement,
   EthTransaction,
-  GitcoinGrantEvents,
+  GitcoinGrants,
   GitcoinGrantEventsPayload,
   NewTrade,
   Trade,
@@ -854,7 +854,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async [HistoryActions.FETCH_GITCOIN_GRANT](
     { commit },
     payload: GitcoinGrantEventsPayload
-  ): Promise<ActionResult<GitcoinGrantEvents[]>> {
+  ): Promise<ActionResult<GitcoinGrants>> {
     try {
       const { taskId } = await api.history.gatherGitcoinGrandEvents(payload);
 
@@ -873,13 +873,14 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
       commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<GitcoinGrantEvents[], TaskMeta>(
-        type
-      );
+      const { result } = await taskCompletion<GitcoinGrants, TaskMeta>(type);
 
       return { result, message: '' };
     } catch (e) {
-      return { result: [], message: e.message };
+      return {
+        result: {},
+        message: e.message
+      };
     }
   }
 };

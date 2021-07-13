@@ -90,6 +90,16 @@ export type GitcoinReportPayload = GitcoinBaseEventsPayload & {
   readonly grantId?: number;
 };
 
+interface GitcoinGrant {
+  readonly name: string;
+  readonly events: GitcoinGrantEvents[];
+  readonly createdOn: string;
+}
+
+export interface GitcoinGrants {
+  readonly [grantId: string]: GitcoinGrant;
+}
+
 export interface GitcoinGrantEvents {
   readonly timestamp: number;
   readonly asset: string;
