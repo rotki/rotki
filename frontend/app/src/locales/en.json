@@ -422,7 +422,7 @@
     "date_non_empty": "The date of the price cannot be empty",
     "from_asset": "From Asset",
     "from_non_empty": "The from asset cannot be empty",
-    "hint": "Buy 1 {fromAsset} for {price} {toAsset}",
+    "hint": "1 {fromAsset} was worth {price} {toAsset}",
     "price": "Price",
     "price_nan": "The specified price is not a valid number",
     "price_non_empty": "The price cannot be empty",
@@ -482,7 +482,7 @@
       "price": "Price",
       "to_asset": "To Asset"
     },
-    "join_text": "is",
+    "join_text": "was worth",
     "title": "Manual Prices"
   },
   "queried_address_dialog": {
