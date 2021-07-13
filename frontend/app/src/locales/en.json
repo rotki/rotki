@@ -417,6 +417,74 @@
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
   },
+  "price_form": {
+    "date": "Date",
+    "date_non_empty": "The date of the price cannot be empty",
+    "from_asset": "From Asset",
+    "from_non_empty": "The from asset cannot be empty",
+    "hint": "1 {fromAsset} was worth {price} {toAsset}",
+    "price": "Price",
+    "price_nan": "The specified price is not a valid number",
+    "price_non_empty": "The price cannot be empty",
+    "to_asset": "To Asset",
+    "to_non_empty": "The to asset cannot be empty"
+  },
+  "price_management": {
+    "add": {
+      "error": {
+        "description": "Adding the price was not successful: {message}",
+        "title": "Price addition failed"
+      }
+    },
+    "dialog": {
+      "add_title": "Add Price",
+      "edit_title": "Edit Price"
+    },
+    "edit": {
+      "error": {
+        "description": "Editing the price was not successful: {message}",
+        "title": "Price edit failed"
+      }
+    },
+    "filter_title": "Filter Prices",
+    "from_asset": "From Asset",
+    "title": "Price Management",
+    "to_asset": "To Asset"
+  },
+  "price_table": {
+    "actions": {
+      "delete": {
+        "tooltip": "Delete the price entry"
+      },
+      "edit": {
+        "tooltip": "Edit the price entry"
+      }
+    },
+    "delete": {
+      "dialog": {
+        "message": "Are you sure you want to delete this price entry?",
+        "title": "Delete the price"
+      },
+      "failure": {
+        "message": "There was an error while deleting the price entry: {message}",
+        "title": "Price delete failed"
+      }
+    },
+    "fetch": {
+      "failure": {
+        "message": "Failed to fetch prices {message}",
+        "title": "Price fetch failure"
+      }
+    },
+    "headers": {
+      "date": "Date",
+      "from_asset": "From Asset",
+      "price": "Price",
+      "to_asset": "To Asset"
+    },
+    "join_text": "was worth",
+    "title": "Manual Prices"
+  },
   "queried_address_dialog": {
     "add": "Add address",
     "all_address_queried": "All your ethereum addresses are queried for {module}",
@@ -1988,6 +2056,7 @@
       "ledger_actions": "Ledger Actions"
     },
     "defi": "DeFi",
+    "manage_prices": "Manage Prices",
     "statistics": "Statistics",
     "profit_loss_report": "Profit and Loss Report",
     "defi_sub": {

@@ -1,24 +1,22 @@
 <template>
   <v-tooltip top open-delay="400">
     <template #activator="{ on, attrs }">
-      <generated-icon
-        v-if="!!currency || error"
-        :asset="displayAsset"
-        :currency="!!currency"
-        :size="size"
-        v-bind="attrs"
-        v-on="on"
-      />
-      <v-img
-        v-else-if="!error"
-        :src="url"
-        :max-width="size"
-        :min-width="size"
-        contain
-        v-bind="attrs"
-        @error="error = true"
-        v-on="on"
-      />
+      <div v-bind="attrs" v-on="on">
+        <generated-icon
+          v-if="!!currency || error"
+          :asset="displayAsset"
+          :currency="!!currency"
+          :size="size"
+        />
+        <v-img
+          v-else-if="!error"
+          :src="url"
+          :max-width="size"
+          :min-width="size"
+          contain
+          @error="error = true"
+        />
+      </div>
     </template>
     <span>
       {{
