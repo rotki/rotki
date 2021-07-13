@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, List, Optional
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.globaldb.manual_price_oracle import ManualPriceOracle
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -95,6 +96,7 @@ class PriceHistorian():
     __instance: Optional['PriceHistorian'] = None
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
+    _manual: ManualPriceOracle
     _oracles: Optional[List[HistoricalPriceOracle]] = None
     _oracle_instances: Optional[List[HistoricalPriceOracleInstance]] = None
 
@@ -114,6 +116,7 @@ class PriceHistorian():
         PriceHistorian.__instance = object.__new__(cls)
         PriceHistorian._cryptocompare = cryptocompare
         PriceHistorian._coingecko = coingecko
+        PriceHistorian._manual = ManualPriceOracle()
 
         return PriceHistorian.__instance
 
@@ -198,7 +201,6 @@ class PriceHistorian():
                     timestamp=timestamp,
                 )
                 continue
-
             if price != Price(ZERO):
                 log.debug(
                     f'Historical price oracle {oracle} got price',
