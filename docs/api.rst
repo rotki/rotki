@@ -8626,8 +8626,8 @@ Gitcoin gather event data
       }
 
    :resjson object result: A mapping of integer grant ids to events, grant name and created_on.
-   :resjson string name: The name of the grant
-   :resjson integer created_on: The timestamp the grant was created in
+   :resjson string name: The name of the grant. Can be null if there was a problem querying it.
+   :resjson integer created_on: The timestamp the grant was created in. Can be null if there was a problem querying it.
    :resjson integer timestamp: The timestamp of the event
    :resjson string amount: The amount donated in asset
    :resjson string asset: The identifier of the donated asset.

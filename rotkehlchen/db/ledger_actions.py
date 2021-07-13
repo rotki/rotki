@@ -264,3 +264,4 @@ class DBLedgerActions():
         cursor.execute(query1str, bindings1)
         cursor.execute(query2str, bindings2)
         cursor.execute(query3str, bindings1)
+        self.db.conn.commit()
