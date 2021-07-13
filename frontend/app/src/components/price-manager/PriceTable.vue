@@ -182,16 +182,16 @@ export default defineComponent({
     return {
       headers: [
         {
-          text: this.$t('price_table.headers.price').toString(),
-          value: 'price'
-        },
-        {
           text: this.$t('price_table.headers.from_asset').toString(),
           value: 'fromAsset'
         },
         {
           text: '',
           value: 'join'
+        },
+        {
+          text: this.$t('price_table.headers.price').toString(),
+          value: 'price'
         },
         {
           text: this.$t('price_table.headers.to_asset').toString(),
