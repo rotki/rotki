@@ -281,7 +281,7 @@ export default class NetWorthChart extends Vue {
         BigNumber.ROUND_DOWN
       );
 
-      const time = dayjs(item.label, 'MMM DD, YYYY, h:mm:ss a').format(
+      const time = dayjs(item.label).format(
         this.activeTimeframe.tooltipTimeFormat
       );
 
