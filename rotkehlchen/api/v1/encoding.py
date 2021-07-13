@@ -1733,8 +1733,9 @@ class ModifyEthereumTokenSchema(Schema):
             **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
-        self.token.schema.coingecko_obj = coingecko
-        self.token.schema.cryptocompare_obj = cryptocompare
+        token: fields.Nested = self.declared_fields['token']  # type: ignore
+        token.schema.coingecko_obj = coingecko
+        token.schema.cryptocompare_obj = cryptocompare
 
     @validates_schema
     def validate_modify_ethereum_token_schema(  # pylint: disable=no-self-use
@@ -1743,12 +1744,13 @@ class ModifyEthereumTokenSchema(Schema):
             **_kwargs: Any,
     ) -> None:
         # Not the best way to do it. Need to manually validate, coingecko/cryptocompare id here
+        token: fields.Nested = self.declared_fields['token']  # type: ignore
         serialized_token = data['token'].serialize_all_info()
         serialized_token.pop('identifier')
         _validate_external_ids(
             data=serialized_token,
-            coingecko_obj=self.token.schema.coingecko_obj,
-            cryptocompare_obj=self.token.schema.cryptocompare_obj,
+            coingecko_obj=token.schema.coingecko_obj,
+            cryptocompare_obj=token.schema.cryptocompare_obj,
         )
 
 
