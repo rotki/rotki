@@ -1,3 +1,4 @@
+import { BigNumber } from 'bignumber.js';
 import { CONFLICT_RESOLUTION } from '@/services/assets/consts';
 import { Nullable } from '@/types';
 
@@ -48,3 +49,21 @@ export interface ConflictResolution {
 }
 
 export type ManagedAsset = EthereumToken | SupportedAsset;
+
+export interface HistoricalPrice {
+  readonly fromAsset: string;
+  readonly toAsset: string;
+  readonly timestamp: number;
+  readonly price: BigNumber;
+}
+
+export interface HistoricalPriceDeletePayload {
+  readonly fromAsset: string;
+  readonly toAsset: string;
+  readonly timestamp: number;
+}
+
+export interface HistoricalPricePayload {
+  readonly fromAsset: string;
+  readonly toAsset: string;
+}

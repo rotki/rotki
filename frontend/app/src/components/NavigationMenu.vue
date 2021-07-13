@@ -243,6 +243,16 @@ export default class NavigationMenu extends Vue {
     },
     {
       type: 'item',
+      text: this.$t('navigation_menu.manage_prices').toString(),
+      route: Routes.PRICE_MANAGER,
+      class: 'asset-manager',
+      icon: 'mdi-chart-line'
+    },
+    {
+      type: 'divider'
+    },
+    {
+      type: 'item',
       text: this.$tc('navigation_menu.api_keys'),
       route: '/settings/api-keys/rotki-premium',
       class: 'settings__api-keys',

@@ -235,6 +235,14 @@ export default new Router({
       props: true
     },
     {
+      path: Routes.PRICE_MANAGER,
+      component: () => import('../views/PriceManager.vue'),
+      meta: {
+        canNavigateBack: true
+      },
+      props: true
+    },
+    {
       path: Routes.ASSET_MANAGER,
       component: () => import('../views/AssetManager.vue')
     },
