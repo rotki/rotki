@@ -30,6 +30,7 @@ NOT_EXPOSED_SOURCES = (
 DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER = [
     HistoricalPriceOracle.CRYPTOCOMPARE,
     HistoricalPriceOracle.COINGECKO,
+    HistoricalPriceOracle.MANUAL,
 ]
 
 
