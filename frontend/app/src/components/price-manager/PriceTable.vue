@@ -1,6 +1,7 @@
 <template>
   <card outlined-body>
     <template #title>{{ $t('price_table.title') }}</template>
+    <slot />
     <data-table
       :items="prices"
       :headers="headers"

@@ -7,9 +7,6 @@
     </v-row>
     <card class="mt-8">
       <template #title>{{ $t('price_management.filter_title') }}</template>
-      <v-btn absolute fab top right color="primary" @click="openForm()">
-        <v-icon> mdi-plus </v-icon>
-      </v-btn>
       <v-row>
         <v-col cols="12" md="6">
           <asset-select
@@ -30,12 +27,16 @@
       </v-row>
     </card>
     <price-table
-      class="mt-8"
+      class="mt-12"
       :filter="filter"
       :refresh="refresh"
       @edit="openForm($event)"
       @refreshed="refresh = false"
-    />
+    >
+      <v-btn absolute fab top right color="primary" @click="openForm()">
+        <v-icon> mdi-plus </v-icon>
+      </v-btn>
+    </price-table>
     <big-dialog
       :display="showForm"
       :title="
