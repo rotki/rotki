@@ -139,8 +139,14 @@ export default defineComponent({
     const editMode = ref(false);
 
     const openForm = function (hPrice: HistoricalPrice = emptyPrice()) {
-      editMode.value = !!hPrice.fromAsset && !!hPrice.toAsset;
-      price.value = hPrice;
+      editMode.value = !!hPrice.timestamp;
+      price.value = editMode.value
+        ? hPrice
+        : {
+            ...hPrice,
+            fromAsset: filter.fromAsset ?? '',
+            toAsset: filter.toAsset ?? ''
+          };
       showForm.value = true;
     };
 
