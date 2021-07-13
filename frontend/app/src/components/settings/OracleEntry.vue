@@ -1,6 +1,6 @@
 <template>
   <v-row align="center">
-    <v-col cols="auto">
+    <v-col cols="4">
       <v-img
         :width="size"
         contain
@@ -23,13 +23,16 @@ export default class OracleEntry extends Vue {
   @Prop({ required: true, type: String })
   identifier!: string;
 
-  readonly size = '48px';
+  size = '48px';
 
   get icon(): string {
     if (this.identifier === 'cryptocompare') {
       return require('@/assets/images/oracles/cryptocompare.png');
     } else if (this.identifier === 'coingecko') {
       return require('@/assets/images/oracles/coingecko.svg');
+    } else if (this.identifier === 'manual') {
+      this.size = '40px';
+      return require('@/assets/images/oracles/book.svg');
     }
     return '';
   }
