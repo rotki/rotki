@@ -281,7 +281,7 @@ def test_process_grants(rotkehlchen_api_server):
     assert result['events'] == [{
         'amount': '0.0019',
         'asset': 'ETH',
-        'clr_round': None,
+        'clr_round': 7,
         'grant_id': grant_id,
         'timestamp': 1600395691,
         'tx_id': '0xabe446d26d35e2502dcd6f28349285081cbe4aef28efa4cdbb8a43fa2422d788',
@@ -289,7 +289,7 @@ def test_process_grants(rotkehlchen_api_server):
         'usd_value': '0.6934049999999998999999999999'}, {
             'amount': '4.95',
             'asset': '_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F',
-            'clr_round': None,
+            'clr_round': 7,
             'grant_id': 184,
             'timestamp': 1600473301,
             'tx_id': '0x822064cb1031361f2b95b1b08d009db7af8d4e8620ff8e71aba12325e0d8e676',
