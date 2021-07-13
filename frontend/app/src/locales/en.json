@@ -424,6 +424,7 @@
     "from_non_empty": "The from asset cannot be empty",
     "hint": "Buy 1 {fromAsset} for {price} {toAsset}",
     "price": "Price",
+    "price_nan": "The specified price is not a valid number",
     "price_non_empty": "The price cannot be empty",
     "to_asset": "To Asset",
     "to_non_empty": "The to asset cannot be empty"

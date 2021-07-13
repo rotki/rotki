@@ -38,7 +38,7 @@
             })
           "
           persistent-hint
-          @input="input({ price: $event })"
+          @input="price = $event"
         />
       </v-col>
     </v-row>
@@ -72,6 +72,7 @@ import AssetMixin from '@/mixins/asset-mixin';
 import { HistoricalPrice } from '@/services/assets/types';
 import { AssetSymbolGetter } from '@/store/balances/types';
 import { RotkehlchenState } from '@/store/types';
+import { bigNumberify } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 export default defineComponent({
@@ -98,12 +99,26 @@ export default defineComponent({
     );
     const fromAsset = computed(({ value }) => getSymbol(value.fromAsset));
     const toAsset = computed(({ value }) => getSymbol(value.toAsset));
-    const price = computed(({ value }) => value.price);
-    watch(valid, value => emit('valid', value));
-
+    const price = ref('');
     const input = (price: Partial<HistoricalPrice>) => {
       emit('input', { ...props.value, ...price });
     };
+    watch(valid, value => emit('valid', value));
+    watch(props.value, value => {
+      if (price.value.endsWith('.')) {
+        return;
+      }
+      price.value = value.price.toString();
+    });
+    watch(price, value => {
+      if (value.endsWith('.')) {
+        return;
+      }
+      const bn = bigNumberify(value);
+      if (bn.isFinite()) {
+        input({ price: bn });
+      }
+    });
 
     return {
       date,
@@ -124,7 +139,10 @@ export default defineComponent({
         (v: string) => !!v || this.$t('price_form.to_non_empty').toString()
       ],
       priceRules: [
-        (v: string) => !!v || this.$t('price_form.price_non_empty').toString()
+        (v: string) => !!v || this.$t('price_form.price_non_empty').toString(),
+        (v: string) =>
+          (!!v && bigNumberify(v).isFinite()) ||
+          this.$t('price_form.price_nan').toString()
       ],
       dateRules: [
         (v: string) => !!v || this.$t('price_form.date_non_empty').toString()
