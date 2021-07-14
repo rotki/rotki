@@ -139,8 +139,8 @@ def test_token_to_fiat_via_second_oracle(fake_price_historian):
 
     expected_price = Price(FVal('30000'))
     oracle_instances = price_historian._oracle_instances
-    oracle_instances[0].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')
-    oracle_instances[1].query_historical_price.return_value = expected_price
+    oracle_instances[1].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')
+    oracle_instances[2].query_historical_price.return_value = expected_price
 
     price = price_historian.query_historical_price(
         from_asset=A_BTC,
@@ -148,7 +148,7 @@ def test_token_to_fiat_via_second_oracle(fake_price_historian):
         timestamp=Timestamp(1611595466),
     )
     assert price == expected_price
-    for oracle_instance in price_historian._oracle_instances[0:2]:
+    for oracle_instance in price_historian._oracle_instances[1:3]:
         assert oracle_instance.query_historical_price.call_count == 1
 
 
@@ -168,8 +168,8 @@ def test_manual_oracle_correctly_returns_price(globaldb, fake_price_historian):
     # Make the other oracles fail
     expected_price = Price(FVal('30000'))
     oracle_instances = price_historian._oracle_instances
-    oracle_instances[0].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')
     oracle_instances[1].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')
+    oracle_instances[2].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')
     # Query price, should return the manual price
     price = price_historian.query_historical_price(
         from_asset=A_BTC,
