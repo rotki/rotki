@@ -15,6 +15,7 @@ Changelog
 * :bug:`2685` Invoking `--version` from the rotki backend binary in Windows should no longer raise a Permission error.
 * :bug:`3142` During v26->v27 upgrade if a user has balancer LP events the upgrade should no longer fail.
 * :bug:`3172` COIN should now be properly mapped to Coinbase tokenized stock in both bittrex and FTX.
+* :bug:`3134` The new cWBTC token should now be properly recognized for compound users.
 
 * :release:`1.18.1 <2021-06-30>`
 * :bug:`2447` When fee of a trade is paid in crypto that crypto's asset will now be deducted from the cost basis calculation.
