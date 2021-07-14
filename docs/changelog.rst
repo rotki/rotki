@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :release:`1.19.0 <2021-07-15>`
+* :feature:`3116` Support for INR (Indian Rupee) as a profit currency has been added.
 * :feature:`1520` Users can now manually add prices for tokens/assets.
 * :feature:`692` Gitcoin Grant owners will now be able to track and generate reports of their grants.
 * :feature:`1666` Users will now be able to see their yearn v2 vaults in in the defi section.
@@ -14,6 +16,8 @@ Changelog
 * :bug:`3145` Docker users will now have the ability to logout any other sessions when attempting to connect from a new browser window.
 * :bug:`2685` Invoking `--version` from the rotki backend binary in Windows should no longer raise a Permission error.
 * :bug:`3142` During v26->v27 upgrade if a user has balancer LP events the upgrade should no longer fail.
+* :bug:`3172` COIN should now be properly mapped to Coinbase tokenized stock in both bittrex and FTX.
+* :bug:`3134` The new cWBTC token should now be properly recognized for compound users.
 
 * :release:`1.18.1 <2021-06-30>`
 * :bug:`2447` When fee of a trade is paid in crypto that crypto's asset will now be deducted from the cost basis calculation.
