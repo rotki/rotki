@@ -333,7 +333,7 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0xfAE4Ee59CDd86e3Be9e8b90b53AA866327D7c090'): 'CPC',
     'ONE-2': 'ONE',
     strethaddress_to_identifier('0xf4CD3d3Fda8d7Fd6C5a500203e38640A70Bf9577'): 'YFDAI',
-    'BTMX': 'ASD',
+    strethaddress_to_identifier('0xcca0c9c383076649604eE31b20248BC04FdF61cA'): 'ASD',
     strethaddress_to_identifier('0xEA1ea0972fa092dd463f2968F9bB51Cc4c981D71'): 'MODEFI',
     strethaddress_to_identifier('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC'): 'KICK',
 }

@@ -100,6 +100,9 @@ const REFLEXER = 'Reflexer';
 const COMETH_TUBE = 'Cometh • Tube';
 const COMETH_STAKING = 'Cometh • Staking';
 const LIVEPEER = 'Livepeer';
+const COZY = 'Cozy';
+const COZY_YEARN = 'Cozy • Yearn';
+const COZY_COMPOUND = 'Cozy • Compound';
 
 export const OVERVIEW_PROTOCOLS = [
   YGOVFINANCEV1,
@@ -196,7 +199,10 @@ export const OVERVIEW_PROTOCOLS = [
   REFLEXER,
   COMETH_TUBE,
   COMETH_STAKING,
-  LIVEPEER
+  LIVEPEER,
+  COZY,
+  COZY_COMPOUND,
+  COZY_YEARN
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
@@ -294,7 +300,10 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [REFLEXER]: 'reflexer.png',
   [COMETH_TUBE]: 'cometh.jpg',
   [COMETH_STAKING]: 'cometh.jpg',
-  [LIVEPEER]: 'livepeer.svg'
+  [LIVEPEER]: 'livepeer.svg',
+  [COZY]: 'cozy.svg',
+  [COZY_COMPOUND]: 'cozy.svg',
+  [COZY_YEARN]: 'cozy.svg'
 };
 
 export function getProtcolIcon(name: OverviewDefiProtocol): string {
