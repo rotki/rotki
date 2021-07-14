@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`3116` Support for INR (Indian Rupee) as a profit currency has been added.
 * :feature:`1520` Users can now manually add prices for tokens/assets.
 * :feature:`692` Gitcoin Grant owners will now be able to track and generate reports of their grants.
 * :feature:`1666` Users will now be able to see their yearn v2 vaults in in the defi section.
