@@ -285,7 +285,8 @@
     "twd": "New Taiwan dollar",
     "nok": "Norwegian krone",
     "usd": "United States Dollar",
-    "zar": "South African Rand"
+    "zar": "South African Rand",
+    "inr": "Indian rupee"
   },
   "currency_drop_down": {
     "hint": "Select as the main currency",
