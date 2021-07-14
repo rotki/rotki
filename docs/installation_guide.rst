@@ -141,6 +141,17 @@ following::
        -v $HOME/.rotki/logs:/logs \
        rotki/rotki:latest
 
+.. warning::
+    On Linux the mounted volume folders for data and logs will be
+    owned by the ``root`` user. If the owner of these folder changes
+    to some other user than root this will make them inaccessible
+    by the the container, which can result in 500 errors when
+    accessing rotki in the container.
+
+    If you run into this issue you can fix it by changing the
+    directory owner back to ``root``.
+
+
 This will start a new container that stores the data and logs into a
 ``.rotki`` directory under the user’s home directory. You will be able
 to find your account data (databases etc) under the ``.rotki/data``
