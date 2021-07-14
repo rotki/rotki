@@ -10,8 +10,6 @@ def upgrade_v26_to_v27(db: 'DBHandler') -> None:
     - Deletes and recreates the tables that were changed after removing UnknownEthereumToken
     """
     cursor = db.conn.cursor()
-    cursor.execute('DROP TABLE IF EXISTS balancer_pools;')
-
     cursor.execute('DROP TABLE IF EXISTS balancer_events;')
     cursor.execute("""
 CREATE TABLE IF NOT EXISTS balancer_events (
@@ -35,6 +33,7 @@ CREATE TABLE IF NOT EXISTS balancer_events (
     PRIMARY KEY (tx_hash, log_index)
 );
 """)
+    cursor.execute('DROP TABLE IF EXISTS balancer_pools;')
     cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "balancer_events%";')
 
     cursor.execute('DROP TABLE IF EXISTS amm_swaps;')

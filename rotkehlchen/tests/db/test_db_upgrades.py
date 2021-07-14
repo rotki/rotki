@@ -2127,6 +2127,9 @@ def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
         'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "balancer%";',
     ).fetchone()[0] == 2
     assert cursor.execute('SELECT COUNT(*) from used_query_ranges;').fetchone()[0] == 6
+    assert cursor.execute('SELECT COUNT(*) from amm_swaps;').fetchone()[0] == 2
+    assert cursor.execute('SELECT COUNT(*) from balancer_pools;').fetchone()[0] == 1
+    assert cursor.execute('SELECT COUNT(*) from balancer_events;').fetchone()[0] == 1
 
     # Migrate to v27
     db = _init_db_with_target_version(
@@ -2136,6 +2139,8 @@ def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
     )
     cursor = db.conn.cursor()
     assert cursor.execute('SELECT COUNT(*) from used_query_ranges;').fetchone()[0] == 2
+    assert cursor.execute('SELECT COUNT(*) from amm_swaps;').fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) from balancer_events;').fetchone()[0] == 0
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 27
