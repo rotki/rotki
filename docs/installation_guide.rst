@@ -220,7 +220,7 @@ If you prefer to use docker compose, a docker-compose.yml template is provided b
 
 Using Docker Defined Volume:
 
-.. code-block:: yml
+.. code-block:: yaml
 
    version: '3.7'
    services:
@@ -243,7 +243,7 @@ Using Docker Defined Volume:
 
 Using $home (or which ever path to your local data) Defined directed volume:
 
-.. code-block:: yml
+.. code-block:: yaml
 
    version: '3.7'
    services:
