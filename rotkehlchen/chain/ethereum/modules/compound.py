@@ -27,7 +27,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import hexstr_to_int
+from rotkehlchen.utils.misc import hexstr_to_int, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -120,6 +120,21 @@ def _get_txhash_and_logidx(identifier: str) -> Optional[Tuple[str, int]]:
     return result[0], log_index
 
 
+def _compound_symbol_to_token(symbol: str, timestamp: Timestamp) -> EthereumToken:
+    """
+    Turns a compound symbol to an ethereum token.
+
+    May raise UnknownAsset
+    """
+    if symbol == 'cWBTC':
+        if timestamp >= Timestamp(1615751087):
+            return EthereumToken('0xccF4429DB6322D5C611ee964527D42E5d685DD6a')
+        # else
+        return EthereumToken('0xC11b1268C1A384e55C48c2391d8d480264A3A7F4')
+    # else
+    return symbol_to_ethereum_token(symbol)
+
+
 class Compound(EthereumModule):
     """Compound integration module
 
@@ -170,6 +185,7 @@ class Compound(EthereumModule):
             given_defi_balances: GIVEN_DEFI_BALANCES,
     ) -> Dict[ChecksumEthAddress, Dict[str, Dict[Asset, CompoundBalance]]]:
         compound_balances = {}
+        now = ts_now()
         if isinstance(given_defi_balances, dict):
             defi_balances = given_defi_balances
         else:
@@ -227,7 +243,10 @@ class Compound(EthereumModule):
                     )
                 else:  # 'Debt'
                     try:
-                        ctoken = symbol_to_ethereum_token('c' + entry.token_symbol)
+                        ctoken = _compound_symbol_to_token(
+                            symbol='c' + entry.token_symbol,
+                            timestamp=now,
+                        )
                     except UnknownAsset:
                         log.error(
                             f'Encountered unknown asset {entry.token_symbol} in '
@@ -344,9 +363,10 @@ class Compound(EthereumModule):
 
         events = []
         for entry in result['liquidationEvents']:
+            timestamp = entry['blockTime']
             ctoken_symbol = entry['cTokenSymbol']
             try:
-                ctoken_asset = symbol_to_asset_or_token(ctoken_symbol)
+                ctoken_asset = _compound_symbol_to_token(symbol=ctoken_symbol, timestamp=timestamp)
             except UnknownAsset:
                 log.error(
                     f'Found unexpected cTokenSymbol {ctoken_symbol} during graph query. Skipping.')
@@ -360,7 +380,7 @@ class Compound(EthereumModule):
                     f'graph query. Skipping.',
                 )
                 continue
-            timestamp = entry['blockTime']
+
             # Amount/value of underlying asset paid by liquidator
             # Essentially liquidator covers part of the debt of the user
             debt_amount = FVal(entry['underlyingRepayAmount'])
@@ -433,8 +453,9 @@ class Compound(EthereumModule):
         events = []
         for entry in result[graph_event_name]:
             ctoken_symbol = entry['cTokenSymbol']
+            timestamp = entry['blockTime']
             try:
-                ctoken_asset = symbol_to_asset_or_token(ctoken_symbol)
+                ctoken_asset = _compound_symbol_to_token(symbol=ctoken_symbol, timestamp=timestamp)
             except UnknownAsset:
                 log.error(
                     f'Found unexpected cTokenSymbol {ctoken_symbol} during graph query. Skipping.')
@@ -449,7 +470,6 @@ class Compound(EthereumModule):
                     f'graph query. Skipping.',
                 )
                 continue
-            timestamp = entry['blockTime']
             usd_price = query_usd_price_zero_if_error(
                 asset=underlying_asset,
                 time=timestamp,
@@ -473,7 +493,7 @@ class Compound(EthereumModule):
                 from_value = Balance(amount=amount, usd_value=usd_value)
                 to_value = Balance(amount=underlying_amount, usd_value=usd_value)
                 from_asset = ctoken_asset
-                to_asset = underlying_asset
+                to_asset = underlying_asset  # type: ignore
 
             events.append(CompoundEvent(
                 event_type=event_type,

@@ -21,6 +21,7 @@ const CURRENCY_SGD = 'SGD';
 const CURRENCY_SEK = 'SEK';
 const CURRENCY_TWD = 'TWD';
 const CURRENCY_NOK = 'NOK';
+const CURRENCY_INR = 'INR';
 
 const SUPPORTED_CURRENCIES = [
   CURRENCY_USD,
@@ -42,7 +43,8 @@ const SUPPORTED_CURRENCIES = [
   CURRENCY_TWD,
   CURRENCY_NOK,
   CURRENCY_BTC,
-  CURRENCY_ETH
+  CURRENCY_ETH,
+  CURRENCY_INR
 ] as const;
 
 export type SupportedCurrency = typeof SUPPORTED_CURRENCIES[number];
@@ -66,6 +68,7 @@ export const currencies: Currency[] = [
   new Currency(i18n.t('currencies.sek').toString(), CURRENCY_SEK, 'kr'),
   new Currency(i18n.t('currencies.twd').toString(), CURRENCY_TWD, 'NT$'),
   new Currency(i18n.t('currencies.nok').toString(), CURRENCY_NOK, 'kr'),
+  new Currency(i18n.t('currencies.inr').toString(), CURRENCY_INR, '₹'),
   new Currency('Bitcoin', CURRENCY_BTC, '₿'),
   new Currency('Ether', CURRENCY_ETH, 'Ξ')
 ];

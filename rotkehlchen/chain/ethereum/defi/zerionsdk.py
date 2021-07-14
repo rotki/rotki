@@ -125,6 +125,9 @@ KNOWN_ZERION_PROTOCOL_NAMES = (
     'Cometh • Tube',
     'Cometh • Staking',
     'Livepeer',
+    'Cozy',
+    'Cozy • Yearn',
+    'Cozy • Compound',
 )
 
 

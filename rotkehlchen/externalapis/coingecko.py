@@ -171,6 +171,8 @@ DELISTED_ASSETS = [
     strethaddress_to_identifier('0xAef38fBFBF932D1AeF3B808Bc8fBd8Cd8E1f8BC5'),
     strethaddress_to_identifier('0xd341d1680Eeee3255b8C4c75bCCE7EB57f144dAe'),
     'FLO',
+    strethaddress_to_identifier('0x06147110022B768BA8F99A8f385df11a151A9cc8'),
+    strethaddress_to_identifier('0x27695E09149AdC738A978e9A678F99E4c39e9eb9'),
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [

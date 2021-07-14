@@ -124,6 +124,9 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0x6D0F5149c502faf215C89ab306ec3E50b15e2892'),  # noqa: E501 # Portion (PRT) but another PRT in CC
         'ANI',     # Animecoin (ANI) but another ANI in CC
         'XEP',     # Electra Protocol (XEP) but another XEP in CC
+        ethaddress_to_identifier('0xcbb20D755ABAD34cb4a9b5fF6Dd081C76769f62e'),  # noqa: E501 # Cash Global Coin (CGC) but another CGC in CC
+        ethaddress_to_identifier('0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'),  # noqa: E501 # Binance Wrapped BTC (BBTC) but another BBTC in CC
+        'NRV',     # Nerve Finance (NRV) but another NRV in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -278,6 +281,20 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0xCb5ea3c190d8f82DEADF7ce5Af855dDbf33e3962'),
         # We have Cashbery Coin for symbol CBC that is not listed in the coingecko list
         'CBC-2',
+        # We have Air token for symbol AIR. Got another AIR symbol token
+        ethaddress_to_identifier('0x27Dce1eC4d3f72C3E457Cc50354f1F975dDEf488'),
+        # We have Acorn Collective for symbol OAK. Got another OAK symbol token
+        ethaddress_to_identifier('0x5e888B83B7287EED4fB7DA7b7d0A0D4c735d94b3'),
+        # Coingecko has yearn v1 vault yUSD
+        ethaddress_to_identifier('0x0ff3773a6984aD900f7FB23A9acbf07AC3aDFB06'),
+        # Coingecko has yearn v1 vault yUSD (different vault from above but same symbol)
+        ethaddress_to_identifier('0x4B5BfD52124784745c1071dcB244C6688d2533d3'),
+        # Coingecko has Aston Martin Cognizant Fan Token and we have AeroME
+        'AM',
+        # Coingecko has Swarm (BZZ) and we have SwarmCoin
+        'SWARM',
+        # Coingecko has aircoin and we have a different airtoken
+        'AIR-2',
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
