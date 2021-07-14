@@ -26,10 +26,14 @@ For creating an account press "Create New Account" and provide a username and a 
   - **Username**: it is just an identifier for your database; a local user.
   - **Password**: :red:`Do not forget this password`. It is used to encrypt all your local files.
 
-If you have purchased a premium subscription you can also add the **API Key** and the **secret** here. See the section :ref:`sync-data-with-rotki-server` to know how to sync your data with Roki Server (this option is disabled by default).
+If you want to restore an account using premium sync during the account creation, then you can **Enable premium**,
+and insert your **API Key** and the **secret** here.
+
+For a completely new account it is suggest to add your premium API key and secret using :ref:`set-up-rotki-premium`
+after login in with the new account.
 
 .. image:: images/rotki_create_account.png
-   :alt: Creating a new account with a premium rotki API key/secret pair
+   :alt: Creating a new account
    :align: center
 
 All accounts are created in the rotki directory, see the section :ref:`rotki_data_directory` to know where it is located.
@@ -52,6 +56,7 @@ Sign-in
 
 If you already have an account just write the name and the password at the sign in prompt.
 
+.. _set-up-rotki-premium:
 
 Set up rotki Premium
 ======================
@@ -99,7 +104,7 @@ Changing the Profit Currency
 
 rotki calculates everything, including your total profit/loss during the PnL report into a given fiat currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
 
-.. image:: images/profit_currency.gif
+.. image:: images/sc_profit_currency.png
    :alt: Changing the profit currency
    :align: center
 
@@ -365,6 +370,8 @@ Users can also manage the existing historical price cache entries. They can insp
    :alt: Managing the historical price cache
    :align: center
 
+.. _customize-module-settings:
+
 Customizing the Module settings
 ====================================
 
@@ -430,8 +437,8 @@ In this section we will explain how you can import data by integrating with exte
 Adding an exchange
 =====================
 
-.. image:: images/add_exchange.gif
-   :alt: Add API keys for a new exchange
+.. image:: images/rotki_add_exchange_1.png
+   :alt: Adding exchanges
    :align: center
 
 You can integrate many different exchanges with rotki. Currently supported exchanges are:
@@ -440,9 +447,20 @@ Coinbase Pro, Gemini, Iconomi, Bitstamp, KuCoin, FTX.
 
 To do so you have to go to your exchange and create an API key (see the section :ref:`api-key-permissions`).
 
-Click on the "API keys" on the left sidebar. This will take you to the place where you can add new exchange API keys. Select the exchanges panel and select your exchange from the dropdown menu. Then copy and paste the ``API Key`` and the ``API Secret`` in the respective text fields and press submit.
+Click on the "API keys" on the left sidebar. This will take you to the place where you can add new exchange API keys.
+Press the plus button to open the exchange addition menu.
 
-If all went well, then you will get a confirmation that the connection was successful. If not please doublecheck that the key and secret are correct.
+.. image:: images/rotki_add_exchange_2.png
+   :alt: Add API keys for a new exchange
+   :align: center
+
+Then copy and paste the ``API Key`` and the ``API Secret`` in the respective text fields and press Save.
+
+If all went well, you should be able to see your newly added exchange. If not please doublecheck that the key and secret are correct.
+
+.. image:: images/rotki_add_exchange_3.png
+   :alt: Add API keys for a new exchange
+   :align: center
 
 .. _api-key-permissions:
 
@@ -487,7 +505,7 @@ Adding an external service API Key
 
 rotki relies on various external services for data such as historical crypto prices or ethereum transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the section of the API keys page.
 
-.. image:: images/add_external_service.gif
+.. image:: images/add_external_service.png
    :alt: Add API keys for an external service
    :align: center
 
@@ -548,7 +566,8 @@ Adding Manual Balances
 
 With rotki you can also add balances/accounts for any type of asset and location that may not be supported at the moment. For example real estate, equity holdings or holdings in a not yet supported blockchain or exchange.
 
-To add or modify a manually tracked balance navigate to the "Manual Balances" sub-page and click the large "+" icon. There choose the asset from the dropdown menu, input a unique label for the account, decorate it with any number of tags and choose an amount and location.
+To add or modify a manually tracked balance navigate to the "Manual Balances" sub-page and click the large "+" icon.
+There choose the asset from the dropdown menu, input a unique label for the account, decorate it with any number of tags and choose an amount and location.
 
 .. image:: images/sc_manually_tracked_balances.png
    :alt: The manually tracked balances
@@ -562,11 +581,15 @@ rotki allows to track balances of blockchain accounts.
 
 To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Ethereum and Kusama chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button.
 
-.. image:: images/add_blockchain_balance.gif
+.. image:: images/add_blockchain_account.png
    :alt: Add a blockchain account
    :align: center
 
-To stop tracking a particular account scroll down to the accounts tables and click the "Delete" icon (trashcan) under Actions.
+To stop tracking one or more accounts you can check corresponding box in the accounts table and click the "Delete" button.
+
+.. image:: images/delete_blockchain_account.png
+   :alt: Delete a blockchain account
+   :align: center
 
 If an ethereum account also contains tracked tokens you can click on the arrow under "Actions" in order to expand its view and show the balance breakdown for the account over all assets it holds.
 
@@ -594,7 +617,7 @@ Adding/Editing Labels and tags
 
 You can edit any of your blockchain accounts and add a label. The label is unique to the account and will show up in the accounts tables instead of the address. You will still be able to see the address if you hover over the label in the tables.
 
-.. image:: images/add_tag_label.gif
+.. image:: images/add_tag_label.png
    :alt: Add a label and create a tag
    :align: center
 
@@ -606,7 +629,7 @@ Filtering by tags
 
 You can filter the tables by a combination of tags.
 
-.. image:: images/filter_by_tag.gif
+.. image:: images/filter_by_tag.png
    :alt: Filter the accounts by tag
    :align: center
 
@@ -776,48 +799,85 @@ Decentralized Finance
 
 To track and analyze your DeFi actions use the Decentralized Finance tab from the left side menu. You can choose from the different types of DeFi actions presented in the submenu.
 
-
-Lending
+Overview
 ===========
 
-In the lending section you can see the status of your DAI in the DAI Savings Rate (DSR). The accounts that use DSR are auto-detected from your given blockchain accounts. You can see how much DAI you have locked over all of your accounts and how much DAI is locked for each account in the DSR.
+Rotki provides an overview of your assets in the different Defi protocols.
 
-.. image:: images/sc_dsr_nonpremium_all.png
+.. image:: images/defi_overview.png
+   :alt: Defi Overview
+   :align: center
+
+Deposits
+===========
+
+In the deposits section you can see the status of your different Defi lending protocols.
+You can see the status of your Yearn Vaults, Aave lending, Compound supply along with
+your DAI in MakerDAO DSR.
+
+The accounts that can be auto-detected from your given blockchain accounts.
+However you can manage the different modules and addresses that are queried to make the retrieval faster.
+For more information you can check :ref:`customize-module-settings`.
+
+You can see how much of each asset you have locked over all of your accounts and how much of each is locked
+for each account across the different protocols.
+
+.. image:: images/sc_decentralized_deposits_no_premium.png
    :alt: DSR without premium
    :align: center
 
-You can also filter by account and see how much DAI is locked in the DSR for each account.
+You can also filter by account and protocol and you can see how the assets locked in the various protocols.
 
-If you have a premium subscription you can also see how much DAI you have gained in total or over each account, the history of deposits/withdrawals and how much DAI was earned at the point in time for each action.
-
-.. image:: images/sc_dsr_premium_all.png
-   :alt: DSR with premium
+.. image:: images/sc_decentralized_deposits.png
+   :alt: Defi Deposits with premium
    :align: center
 
-Finally you need to have premium in order for the total amount of DAI earned in a given time period to be counted in the profit/loss report.
+You can see details about the assets locked in your Yearn vaults and check the profit/loss per asset.
 
-Below you can see a small demonstration of the usage of DSR by a premium account.
+.. image:: images/sc_decentralized_deposits_yearn.png
+  :alt: Defi Deposits Yearn Vaults
+  :align: center
 
-.. image:: images/dsr_premium_demo.gif
-   :alt: DSR premium demo
-   :align: center
+You can also a details list of historical actions performed in the supported Defi protocols such as deposits withdrawals etc.
 
-Borrowing
+.. image:: images/sc_decentralized_deposits_history.png
+  :alt: Defi Deposits history
+  :align: center
+
+Finally you need to have premium in order for the total amount of earned assets in a given time period to be counted in the profit/loss report.
+
+Liquidity Pools
+================
+
+.. image:: images/sc_decentralized_lp.png
+  :alt: Defi Deposits history
+  :align: center
+
+Rotki provides support for Uniswap v2 and Balancer liquidity pools. With the exception of Uniswap v2 lp balances
+this feature is only available to premium users.
+
+The liquidity pool support allows premium users to see their balances, the per pool profit/loss and any events
+(such as mint/burn) performed.
+
+Liabilities
 =============
 
-In the borrowing section you can find information on your makerdao vaults. The vaults are autodetected from your ethereum accounts and information about each one of them is displayed.
+In the liabilities section you can find information on your Aave Borrowing, Compound Borrow, and MakerDAO Vaults.
+These collateralized loans can be autodetected from your ethereum accounts and information about each one of them is displayed.
+However you can manage the different modules and addresses that are queried to make the retrieval faster.
+For more information you can check :ref:`customize-module-settings`.
 
 As a normal non-premium user you can see all your vaults, and for each one inspect the locked collateral, collateralization, debt generated and the liquidation price.
 
 .. image:: images/sc_vaults_nonpremium.png
-   :alt: Makerdao vaults without a premium account
+   :alt: MakerDAO vaults without a premium account
    :align: center
 
 
 With a premium subscription you can also see additional information such as the creation time of the vault, list of historical activities, total interest owed and liquidation events.
 
 .. image:: images/sc_vaults_premium.png
-   :alt: Makerdao vaults with a premium account
+   :alt: MakerDAO vaults with a premium account
    :align: center
 
 Premium users can also have makervault interest taken into account in the profit/loss report.
@@ -825,10 +885,12 @@ Premium users can also have makervault interest taken into account in the profit
 Finally premium users can create watchers for their vaults.
 
 .. image:: images/sc_vaults_premium_watchers.png
-   :alt: Makerdao vaults with a premium account
+   :alt: MakerDAO vault watchers
    :align: center
 
-They can add a target collateralization ratio they would like rotki to watch for in a vault. If the collateralization ratio becomes less/greater than that ratio then an alert is sent to your email. This watcher service runs on the rotki server so you don't even need to leave the application open.
+They can add a target collateralization ratio they would like rotki to watch for in a vault.
+If the collateralization ratio becomes less/greater than that ratio then an alert is sent to your email.
+This watcher service runs on the rotki server so you don't even need to leave the application open.
 
 Below you can see a small demonstration of the usage of makerdao vaults by a premium account.
 
