@@ -794,6 +794,25 @@ When both the source identifier and target asset are selected you can press the 
 On a successful merge you will be notified to to either re-login or refresh the balances manually to see the changes
 on the frontend.
 
+Adding missing prices
+**********************
+
+Some times rotki might be unable to retrieve a historical price for an asset from CoinGecko or CryptoCompare.
+In this case you can use the price management interface to insert your own entries of prices.
+
+.. image:: images/price_management.png
+   :alt: Price management
+   :align: center
+
+To add a new price you have to press the plus button. This will open the add form.
+
+.. image:: images/price_management_add.png
+   :alt: Adding a new price
+   :align: center
+
+There you can specify the assets the price and the date of the price. Then you can proceed to save the entry.
+After saving you should be able to see the new entry.
+
 Decentralized Finance
 **********************
 
