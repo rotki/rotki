@@ -16,6 +16,11 @@
             class="nav-icon"
             :class="$style.icon"
           />
+          <component
+            :is="iconComponent"
+            v-else-if="iconComponent"
+            :active="active"
+          />
           <v-icon v-else>{{ icon }}</v-icon>
         </v-list-item-icon>
       </template>
@@ -31,6 +36,11 @@
         class="nav-icon"
         :class="$style.icon"
       />
+      <component
+        :is="iconComponent"
+        v-else-if="iconComponent"
+        :active="active"
+      />
       <v-icon v-else>{{ icon }}</v-icon>
     </v-list-item-icon>
     <v-list-item-content class="d-flex flex-grow-1">
@@ -40,6 +50,7 @@
 </template>
 
 <script lang="ts">
+import { VueConstructor } from 'vue';
 import { Component, Vue, Prop } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import { IdentifierForSymbolGetter } from '@/store/balances/types';
@@ -60,6 +71,10 @@ export default class NavigationMenuItem extends Vue {
   text!: string;
   @Prop({ required: false })
   image!: string;
+  @Prop({ required: false })
+  iconComponent!: VueConstructor | undefined;
+  @Prop({ required: false, type: Boolean, default: false })
+  active!: boolean;
 
   getIdentifierForSymbol!: IdentifierForSymbolGetter;
 

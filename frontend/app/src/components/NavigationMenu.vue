@@ -15,6 +15,7 @@
               :text="navItem.text"
               :icon="navItem.icon"
               :image="navItem.image"
+              :icon-component="navItem.component"
               :crypto-icon="navItem.cryptoIcon"
             />
           </v-list-item>
@@ -25,6 +26,7 @@
                 :text="navItem.text"
                 :icon="navItem.icon"
                 :crypto-icon="navItem.cryptoIcon"
+                :icon-component="navItem.component"
                 :image="navItem.image"
                 :class="`navigation__${navItem.class}`"
               />
@@ -36,13 +38,17 @@
               active-class="navigation-menu__item--active"
               :to="subNavItem.route"
             >
-              <navigation-menu-item
-                :show-tooltips="showTooltips"
-                :text="subNavItem.text"
-                :icon="subNavItem.icon"
-                :image="subNavItem.image"
-                :crypto-icon="subNavItem.cryptoIcon"
-              />
+              <template #default="{ active }">
+                <navigation-menu-item
+                  :show-tooltips="showTooltips"
+                  :text="subNavItem.text"
+                  :icon="subNavItem.icon"
+                  :image="subNavItem.image"
+                  :icon-component="subNavItem.component"
+                  :crypto-icon="subNavItem.cryptoIcon"
+                  :active="active"
+                />
+              </template>
             </v-list-item>
           </v-list-group>
           <v-divider
@@ -57,7 +63,9 @@
 </template>
 
 <script lang="ts">
+import { VueConstructor } from 'vue';
 import { Component, Vue, Prop } from 'vue-property-decorator';
+import GitcoinIcon from '@/components/icons/GitcoinIcon.vue';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 import { Routes } from '@/router/routes';
 
@@ -67,6 +75,7 @@ type NavItemDetails = {
   readonly class?: string;
   readonly icon: string;
   readonly image?: string;
+  readonly component?: VueConstructor;
   readonly cryptoIcon?: string;
 };
 
@@ -143,7 +152,7 @@ export default class NavigationMenu extends Vue {
           ).toString(),
           route: Routes.HISTORY_GITCOIN,
           icon: '',
-          image: require('@/assets/images/gitcoin.svg'),
+          component: GitcoinIcon,
           class: 'gitcoin'
         }
       ]

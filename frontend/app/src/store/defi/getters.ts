@@ -1007,6 +1007,14 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     _,
     { status }
   ) => {
+    function shouldDisplay(summary: DefiProtocolSummary) {
+      const lending = summary.totalLendingDepositUsd.gt(0);
+      const debt = summary.totalDebtUsd.gt(0);
+      const balance = summary.balanceUsd && summary.balanceUsd.gt(0);
+      const collateral = summary.totalCollateralUsd.gt(0);
+      return lending || debt || balance || collateral;
+    }
+
     const protocolSummary = (
       protocol: SupportedDefiProtocols,
       section: Section,
@@ -1055,7 +1063,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
             protocol
           );
 
-          if (aaveSummary) {
+          if (aaveSummary && shouldDisplay(aaveSummary)) {
             summary[protocol] = aaveSummary;
           }
           continue;
@@ -1068,22 +1076,22 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
             protocol
           );
 
-          if (compoundSummary) {
+          if (compoundSummary && shouldDisplay(compoundSummary)) {
             summary[protocol] = compoundSummary;
           }
           continue;
         }
 
         if (protocol === YEARN_FINANCE_VAULTS) {
-          const compoundSummary = protocolSummary(
+          const yearnVaultsSummary = protocolSummary(
             DEFI_YEARN_VAULTS,
             Section.DEFI_YEARN_VAULTS_BALANCES,
             protocol,
             true
           );
 
-          if (compoundSummary) {
-            summary[protocol] = compoundSummary;
+          if (yearnVaultsSummary && shouldDisplay(yearnVaultsSummary)) {
+            summary[protocol] = yearnVaultsSummary;
           }
           continue;
         }
@@ -1145,7 +1153,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     ) {
       const filter: SupportedDefiProtocols[] = [DEFI_MAKERDAO];
       const { totalCollateralUsd, totalDebt } = loanSummary(filter);
-      summary[DEFI_MAKERDAO] = {
+      const makerDAOSummary: DefiProtocolSummary = {
         protocol: {
           name: MAKERDAO,
           icon: getProtcolIcon(MAKERDAO)
@@ -1159,13 +1167,17 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         totalLendingDepositUsd: totalLendingDeposit(filter, [])
       };
 
+      if (shouldDisplay(makerDAOSummary)) {
+        summary[DEFI_MAKERDAO] = makerDAOSummary;
+      }
+
       const yearnV2Summary = protocolSummary(
         DEFI_YEARN_VAULTS_V2,
         Section.DEFI_YEARN_VAULTS_V2_BALANCES,
         YEARN_FINANCE_VAULTS_V2,
         true
       );
-      if (yearnV2Summary) {
+      if (yearnV2Summary && shouldDisplay(yearnV2Summary)) {
         summary[DEFI_YEARN_VAULTS_V2] = yearnV2Summary;
       }
     }
