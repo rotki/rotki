@@ -112,7 +112,7 @@ export default class AssetSelect extends Vue {
   }
 
   private getAvailableAssets() {
-    if (this.items) {
+    if (this.items && this.items.length > 0) {
       return this.supportedAssets.filter(asset =>
         this.items!.includes(asset.identifier)
       );
@@ -121,9 +121,12 @@ export default class AssetSelect extends Vue {
   }
 
   customFilter(item: SupportedAsset, queryText: string): boolean {
-    const keyword = queryText?.toLocaleLowerCase()?.trim() ?? '';
-    const name = item.name.trim().toLocaleLowerCase();
-    const symbol = item.symbol.trim().toLocaleLowerCase();
+    const toLower = (string?: string | null) => {
+      return string?.toLocaleLowerCase()?.trim() ?? '';
+    };
+    const keyword = toLower(queryText);
+    const name = toLower(item.name);
+    const symbol = toLower(item.symbol);
     return name.indexOf(keyword) >= 0 || symbol.indexOf(keyword) >= 0;
   }
 

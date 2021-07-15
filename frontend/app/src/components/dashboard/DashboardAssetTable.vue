@@ -23,6 +23,7 @@
           :search="search"
           :loading="loading"
           sort-by="usdValue"
+          :custom-filter="assetFilter"
         >
           <template #header.usdValue>
             <div class="text-no-wrap">
@@ -134,16 +135,18 @@
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
 import DataTable from '@/components/helper/DataTable.vue';
 import { CURRENCY_USD } from '@/data/currencies';
+import AssetMixin from '@/mixins/asset-mixin';
 import {
   AssetBalance,
   AssetPrices,
   ExchangeRateGetter
 } from '@/store/balances/types';
+import { Nullable } from '@/types';
 
 @Component({
   components: { DataTable },
@@ -154,7 +157,7 @@ import {
     ...mapState('balances', ['prices'])
   }
 })
-export default class DashboardAssetTable extends Vue {
+export default class DashboardAssetTable extends Mixins(AssetMixin) {
   @Prop({ required: false, type: Boolean, default: false })
   loading!: boolean;
   @Prop({ required: true, type: String })
@@ -169,6 +172,20 @@ export default class DashboardAssetTable extends Vue {
   exchangeRate!: ExchangeRateGetter;
 
   search: string = '';
+
+  assetFilter(
+    _value: Nullable<string>,
+    search: Nullable<string>,
+    item: Nullable<AssetBalance>
+  ) {
+    if (!search || !item) {
+      return true;
+    }
+    const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
+    const name = this.getAssetName(item.asset)?.toLocaleLowerCase()?.trim();
+    const symbol = this.getSymbol(item.asset)?.toLocaleLowerCase()?.trim();
+    return symbol.indexOf(keyword) >= 0 || name.indexOf(keyword) >= 0;
+  }
 
   get headers(): DataTableHeader[] {
     return [
