@@ -29,8 +29,8 @@ For creating an account press "Create New Account" and provide a username and a 
 If you want to restore an account using premium sync during the account creation, then you can **Enable premium**,
 and insert your **API Key** and the **secret** here.
 
-For a completely new account it is suggest to add your premium API key and secret using :ref:`set-up-rotki-premium`
-after login in with the new account.
+For a completely new account it is suggested to add your premium API key and secret using :ref:`set-up-rotki-premium`
+after logging in with the new account.
 
 .. image:: images/rotki_create_account.png
    :alt: Creating a new account
@@ -585,7 +585,7 @@ To add or modify an account navigate to the "Blockchain Balances" sub-page and c
    :alt: Add a blockchain account
    :align: center
 
-To stop tracking one or more accounts you can check corresponding box in the accounts table and click the "Delete" button.
+To stop tracking one or more accounts you can check the corresponding box in the accounts table and click the "Delete" button.
 
 .. image:: images/delete_blockchain_account.png
    :alt: Delete a blockchain account
@@ -798,7 +798,7 @@ Adding missing prices
 **********************
 
 Some times rotki might be unable to retrieve a historical price for an asset from CoinGecko or CryptoCompare.
-In this case you can use the price management interface to insert your own entries of prices.
+In this case you can use the price management interface to insert your own price entries.
 
 .. image:: images/price_management.png
    :alt: Price management
@@ -810,7 +810,7 @@ To add a new price you have to press the plus button. This will open the add for
    :alt: Adding a new price
    :align: center
 
-There you can specify the assets the price and the date of the price. Then you can proceed to save the entry.
+There you can specify the assets, the price and the date of the price. Then you can proceed to save the entry.
 After saving you should be able to see the new entry.
 
 Decentralized Finance
@@ -834,8 +834,8 @@ In the deposits section you can see the status of your different Defi lending pr
 You can see the status of your Yearn Vaults, Aave lending, Compound supply along with
 your DAI in MakerDAO DSR.
 
-The accounts that can be auto-detected from your given blockchain accounts.
-However you can manage the different modules and addresses that are queried to make the retrieval faster.
+The accounts are auto-detected from your given blockchain accounts.
+However you can, and most probably should, manage the different modules and addresses that are queried to make the retrieval faster.
 For more information you can check :ref:`customize-module-settings`.
 
 You can see how much of each asset you have locked over all of your accounts and how much of each is locked
@@ -845,7 +845,7 @@ for each account across the different protocols.
    :alt: DSR without premium
    :align: center
 
-You can also filter by account and protocol and you can see how the assets locked in the various protocols.
+You can also filter by account and protocol and you can see how the assets are locked in the various protocols.
 
 .. image:: images/sc_decentralized_deposits.png
    :alt: Defi Deposits with premium
@@ -857,13 +857,13 @@ You can see details about the assets locked in your Yearn vaults and check the p
   :alt: Defi Deposits Yearn Vaults
   :align: center
 
-You can also a details list of historical actions performed in the supported Defi protocols such as deposits withdrawals etc.
+You can also get a detailed list of historical actions performed in the supported Defi protocols such as deposits withdrawals etc.
 
 .. image:: images/sc_decentralized_deposits_history.png
   :alt: Defi Deposits history
   :align: center
 
-Finally you need to have premium in order for the total amount of earned assets in a given time period to be counted in the profit/loss report.
+Finally you need to have a premium subscription in order for the total amount of earned or lost value per asset in a given time period to be counted in the profit/loss report.
 
 Liquidity Pools
 ================
@@ -1010,7 +1010,9 @@ As a premium user you can also keep track of your Gitcoin grants and generate re
    :alt: Gitcoin grant events
    :align: center
 
-You can type grant id, select a period you are interested in and press the fetch button to retrieve the events for this
+You need to first find the id ofthe grant you are interested in. When you visit the grant, the id is what comes after the ``grants/`` part of the url. For example for rotki (https://gitcoin.co/grants/149/rotki) the id is ``149``.
+
+ You type the grant id, select a period you are interested in and press the fetch button to retrieve the events for this
 period. After the the retrieval completes you should be able to see the list of the events for this Grant.
 
 .. image:: images/gitcoin_grants_report.png
@@ -1021,7 +1023,7 @@ With the events retrieved you can also generate reports for specific periods. In
 of the assets received for the specified grant over the selected period.
 
 .. warning::
-    The report depends an the already fetched events. If any events are missing during the selected report period
+    The report depends on the already fetched events. If any events are missing during the selected report period
     then they will not be included in the generated report.
 
 .. _set-the-backend-s-arguments:
