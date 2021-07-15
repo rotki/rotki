@@ -103,6 +103,11 @@ export default class AssetSelect extends Vue {
     this.visibleAssets = this.getAvailableAssets();
   }
 
+  @Watch('items')
+  onItemsUpdate() {
+    this.visibleAssets = this.getAvailableAssets();
+  }
+
   @Watch('search')
   onSearchUpdate() {
     const assets = this.getAvailableAssets();
