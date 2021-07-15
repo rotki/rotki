@@ -26,10 +26,8 @@ from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress, S
 from rotkehlchen.chain.substrate.utils import (
     get_kusama_address_from_public_key,
     is_valid_kusama_address,
-)
-from rotkehlchen.chain.substrate.utils import (
     get_polkadot_address_from_public_key,
-    is_valid_polkadot_address,
+    is_valid_polkadot_address
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -1512,7 +1510,7 @@ def _transform_dot_address(
         ethereum: EthereumManager,
         given_address: str,
 ) -> PolkadotAddress:
-    """Returns a KSM address (if exists) given an ENS domain. At this point any
+    """Returns a DOT address (if exists) given an ENS domain. At this point any
     given address has been already validated either as an ENS name or as a
     valid Polkadot address (ss58 format).
 
