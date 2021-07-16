@@ -13,6 +13,7 @@ export class RotkiApp {
     cy.get('.create-account__boxes__user-prompted').click();
     cy.get('.create-account__buttons__continue').click();
     cy.get('.create-account__analytics__buttons__confirm').click();
+    cy.updateAssets();
   }
 
   closePremiumOverlay() {
