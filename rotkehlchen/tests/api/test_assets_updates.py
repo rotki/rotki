@@ -16,6 +16,7 @@ from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
     wait_for_async_task,
@@ -764,3 +765,20 @@ INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES("0xa74476443119A
         assert len(errors) == 0, f'Found errors: {errors}'
         assert len(warnings) == 1
         assert f'Failed to resolve conflict for {gnt.identifier} in the DB during the v1 assets update. Skipping entry' in warnings[0]  # noqa: E501
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_update_no_user_loggedin(rotkehlchen_api_server):
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetupdatesresource',
+        ),
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='No user is currently logged in',
+        status_code=HTTPStatus.CONFLICT,
+    )
