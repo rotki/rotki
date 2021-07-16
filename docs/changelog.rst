@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`3199` Users will now properly see the node connection status/last sync information update.
+
 * :release:`1.19.0 <2021-07-15>`
 * :feature:`3116` Support for INR (Indian Rupee) as a profit currency has been added.
 * :feature:`1520` Users can now manually add prices for tokens/assets.
