@@ -49,11 +49,11 @@ jobs:
               - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb)
               - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-${{ env.RELEASE_VERSION }}-linux)
             - **OSX**
-              - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.dmg)
-              - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.zip)
+              - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.dmg)
+              - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.zip)
               - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-backend-${{ env.RELEASE_VERSION }}-macos.zip)
             - **Windows**
-              - [Windows executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32-${{ env.RELEASE_VERSION }}.exe)
+              - [Windows executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe)
               - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-${{ env.RELEASE_VERSION }}-windows.exe)
             
             Optionally, you can also [verify the integrity](https://rotki.readthedocs.io/en/latest/installation_guide.html#verifying-integrity) of the aforementioned binaries using the following checksums:
@@ -64,11 +64,11 @@ jobs:
               - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb.sha512)
               - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-${{ env.RELEASE_VERSION }}-linux.sha512)
             - **OSX**
-              - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.dmg.sha512)
-              - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin-${{ env.RELEASE_VERSION }}.zip.sha512)
+              - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.dmg.sha512)
+              - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.zip.sha512)
               - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-backend-${{ env.RELEASE_VERSION }}-macos.zip.sha512)
             - **Windows**
-              - [Windows executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32-${{ env.RELEASE_VERSION }}.exe.sha512)
+              - [Windows executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe.sha512)
               - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotkehlchen-${{ env.RELEASE_VERSION }}-windows.exe.sha512)
 
             # Release Highlights
