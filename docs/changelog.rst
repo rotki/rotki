@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3198` Users in docker will now see a regularly sized Gitcoin icon under the history menu.
 * :bug:`3199` Users will now properly see the node connection status/last sync information update.
 
 * :release:`1.19.0 <2021-07-15>`
