@@ -259,9 +259,10 @@ if ($Env:CI) {
     echo "::group::npm ci"
 }
 
-cd frontend\app
+cd frontend
 npm ci
 ExitOnFailure("Restoring the node dependencies with npm ci failed")
+cd app
 
 if ($Env:CI) {
     echo "::endgroup::"

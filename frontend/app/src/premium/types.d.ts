@@ -1,12 +1,12 @@
+import {
+  GitcoinGrantEventsPayload,
+  GitcoinGrantReport,
+  GitcoinGrants,
+  GitcoinReportPayload
+} from '@rotki/common/lib/gitcoin';
 import { TimeUnit } from '@/components/dashboard/types';
 import { DebugSettings } from '@/electron-main/ipc';
 import { SupportedAsset } from '@/services/assets/types';
-import {
-  GitcoinGrants,
-  GitcoinGrantEventsPayload,
-  GitcoinGrantReport,
-  GitcoinReportPayload
-} from '@/services/history/types';
 import { ActionResult } from '@/services/types-api';
 import { FrontendSettingsPayload, Themes } from '@/store/settings/types';
 

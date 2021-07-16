@@ -1,3 +1,7 @@
+import {
+  GitcoinGrantEventsPayload,
+  GitcoinGrants
+} from '@rotki/common/lib/gitcoin';
 import { ActionTree } from 'vuex';
 import { exchangeName } from '@/components/history/consts';
 import { TRADE_LOCATION_EXTERNAL, EXTERNAL_EXCHANGES } from '@/data/defaults';
@@ -14,8 +18,6 @@ import {
 import {
   AssetMovement,
   EthTransaction,
-  GitcoinGrants,
-  GitcoinGrantEventsPayload,
   NewTrade,
   Trade,
   TradeLocation,
