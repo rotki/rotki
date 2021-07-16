@@ -2894,7 +2894,7 @@ Performing an asset update
    :resjson object result: Either ``true`` if all went fine or a a list of conflicts, containing the identifier of the asset in question and the local and remote versions.
    :statuscode 200: Update was succesfully applied (if any).
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Conflicts were found during update. The conflicts should also be returned.
+   :statuscode 409: Conflicts were found during update. The conflicts should also be returned. No user is currently logged in.
    :statuscode 500: Internal rotki error
    :statuscode 502: Error while trying to reach the remote for asset updates.
 
