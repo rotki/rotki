@@ -486,8 +486,6 @@ UNSUPPORTED_BINANCE_ASSETS = (
     '456',  # https://twitter.com/rotkiapp/status/1161977327078838272
     '1INCHDOWN',  # no cryptocompare/coingecko data
     '1INCHUP',  # no cryptocompare/coingecko data
-    'UNIDOWN',  # no cryptocompare/coingecko data
-    'UNIUP',  # no cryptocompare/coingecko data
     'SXPDOWN',  # no cryptocompare/coingecko data
     'SXPUP',  # no cryptocompare/coingecko data
     'AAVEDOWN',  # no cryptocompare/coingecko data
