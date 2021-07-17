@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`3198` Firefox docker users will now see a regularly sized Gitcoin icon under the history menu.
 * :bug:`3199` Users will now properly see the node connection status/last sync information update.
+* :bug:`3214` UNIUP and UNIDOWN will now be correctly detected.
 
 * :release:`1.19.0 <2021-07-15>`
 * :feature:`3116` Support for INR (Indian Rupee) as a profit currency has been added.
