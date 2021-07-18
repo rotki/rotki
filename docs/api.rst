@@ -1102,8 +1102,8 @@ Query the historical price of assets
               "price": "1.20"
             }, 
             {
-              "from_asset": '_ceth_0xD533a949740bb3306d119CC777fa900bA034cd52',
-              "to_asset": 'USD',
+              "from_asset": "_ceth_0xD533a949740bb3306d119CC777fa900bA034cd52",
+              "to_asset": "USD",
               "timestamp": 1611166340,
               "price": "1.40"
             }
@@ -6521,7 +6521,7 @@ Getting yearn finance V2 vaults balances
 
 
 Getting yearn finance V2 vaults historical data
-=============================================
+================================================
 
 .. http:get:: /api/(version)/blockchains/ETH/modules/yearn/vaultsv2/history
 
