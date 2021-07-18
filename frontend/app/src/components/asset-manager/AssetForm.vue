@@ -242,11 +242,16 @@ import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
-import { EthereumToken, UnderlyingToken } from '@/services/assets/types';
+import {
+  EthereumToken,
+  ManagedAsset,
+  SupportedAsset,
+  UnderlyingToken
+} from '@/services/assets/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { SupportedAsset } from '@/services/types-model';
 import { ERC20Token } from '@/store/balances/types';
 import { showError } from '@/store/utils';
+import { Nullable } from '@/types';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 function value<T>(t: T): T | undefined {
@@ -302,7 +307,7 @@ export default class AssetForm extends Vue {
   value!: boolean;
 
   @Prop({ required: false, default: () => null })
-  edit!: EthereumToken | SupportedAsset | null;
+  edit!: Nullable<ManagedAsset>;
   @Prop({ required: false, type: Boolean, default: false })
   saving!: boolean;
 
@@ -338,7 +343,7 @@ export default class AssetForm extends Vue {
     return this.identifier ?? this.symbol ?? null;
   }
 
-  get token(): EthereumToken {
+  get token(): Omit<EthereumToken, 'identifier'> {
     const ut = this.underlyingTokens;
     return {
       address: this.address,
@@ -501,7 +506,7 @@ export default class AssetForm extends Vue {
   private async saveEthereumToken() {
     let identifier: string;
     const token = this.token!;
-    if (this.edit) {
+    if (this.edit && this.identifier) {
       ({ identifier } = await this.$api.assets.editEthereumToken(token));
     } else {
       ({ identifier } = await this.$api.assets.addEthereumToken(token));

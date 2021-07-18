@@ -1,5 +1,6 @@
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.constants.assets import A_EUR
 
 A_RDN = EthereumToken('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6')
 A_GNO = EthereumToken('0x6810e776880C02933D47DB1b9fc05908e5386b96')
@@ -25,37 +26,27 @@ A_SLP = EthereumToken('0x37236CD05b34Cc79d3715AF2383E96dd7443dCF1')
 A_DOLLAR_BASED = EthereumToken('0x68A118Ef45063051Eac49c7e647CE5Ace48a68a5')
 A_BAND = EthereumToken('0xBA11D00c5f74255f56a5E366F4F77f5A186d7f55')
 A_YAM_V1 = EthereumToken('0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16')
-A_CHI = EthereumToken('0x0000000000004946c0e9F43F4Dee607b0eF1fA1c')
-
-A_ADAI_V2 = EthereumToken('0x028171bCA77440897B824Ca71D1c56caC55b68A3')
 
 
-A_ADA = Asset('ADA')
 A_AIR2 = Asset('AIR-2')
 A_SDC = Asset('SDC')
 A_DOGE = Asset('DOGE')
 A_NANO = Asset('NANO')
 A_NEO = Asset('NEO')
-A_XRP = Asset('XRP')
-A_LTC = Asset('LTC')
 A_SC = Asset('SC')
 A_XMR = Asset('XMR')
 A_DASH = Asset('DASH')
 A_WAVES = Asset('WAVES')
 A_EWT = Asset('EWT')
 A_XTZ = Asset('XTZ')
-A_IOTA = Asset('IOTA')
 A_BSV = Asset('BSV')
 A_BCH = Asset('BCH')
 A_CNY = Asset('CNY')
 A_JPY = Asset('JPY')
 A_ZEC = Asset('ZEC')
-A_DOT = Asset('DOT')
 A_GBP = Asset('GBP')
 A_CHF = Asset('CHF')
 A_AUD = Asset('AUD')
-A_EUR = Asset('EUR')
-A_KRW = Asset('KRW')
 A_CAD = Asset('CAD')
 
 ETH_ADDRESS1 = string_to_ethereum_address('0x5153493bB1E1642A63A098A65dD3913daBB6AE24')

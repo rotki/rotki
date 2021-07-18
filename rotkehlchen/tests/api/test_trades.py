@@ -5,7 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.api.v1.encoding import TradeSchema
-from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_WETH
+from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_EUR, A_WETH
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import FREE_TRADES_LIMIT
@@ -15,7 +15,6 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_response_with_result,
 )
-from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.tests.utils.history import (
     assert_binance_trades_result,
     assert_poloniex_trades_result,

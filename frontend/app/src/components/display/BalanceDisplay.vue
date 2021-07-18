@@ -1,6 +1,6 @@
 <template>
   <div
-    class="d-flex flex-row balance_display shrink pt-1 pb-1"
+    class="d-flex flex-row balance_display shrink pt-1 pb-1 align-center"
     :class="{
       'justify-end': !noJustify,
       'balance-display--gain': mode === 'gain',
@@ -39,13 +39,12 @@
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import AssetMixin from '@/mixins/asset-mixin';
-import { TokenDetails } from '@/services/defi/types';
 import { Balance } from '@/services/types-api';
 
 @Component({})
 export default class BalanceDisplay extends Mixins(AssetMixin) {
   @Prop({ required: true })
-  asset!: TokenDetails;
+  asset!: string;
   @Prop({ required: true })
   value!: Balance | null;
   @Prop({ required: false, type: Boolean, default: false })

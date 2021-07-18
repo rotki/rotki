@@ -14,6 +14,8 @@ import {
 import {
   AssetMovement,
   EthTransaction,
+  GitcoinGrants,
+  GitcoinGrantEventsPayload,
   NewTrade,
   Trade,
   TradeLocation,
@@ -21,26 +23,22 @@ import {
 } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
-import { EntryWithMeta, LimitedResponse } from '@/services/types-api';
+import {
+  ActionResult,
+  EntryWithMeta,
+  LimitedResponse
+} from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
-  ACTION_ADD_LEDGER_ACTION,
-  ACTION_DELETE_LEDGER_ACTION,
-  ACTION_EDIT_LEDGER_ACTION,
-  ACTION_FETCH_LEDGER_ACTIONS,
-  ACTION_PURGE_EXCHANGE,
-  ACTION_PURGE_TRANSACTIONS,
-  ACTION_REMOVE_EXCHANGE_MOVEMENTS,
-  ACTION_REMOVE_EXCHANGE_TRADES,
   FETCH_FROM_CACHE,
   FETCH_FROM_SOURCE,
   FETCH_REFRESH,
+  HistoryActions,
+  HistoryMutations,
   IGNORE_LEDGER_ACTION,
   IGNORE_MOVEMENTS,
   IGNORE_TRADES,
-  IGNORE_TRANSACTIONS,
-  MUTATION_ADD_LEDGER_ACTION,
-  MUTATION_SET_LEDGER_ACTIONS
+  IGNORE_TRANSACTIONS
 } from '@/store/history/consts';
 import { defaultHistoricState } from '@/store/history/state';
 import {
@@ -75,7 +73,7 @@ import { assert } from '@/utils/assertions';
 import { uniqueStrings } from '@/utils/data';
 
 export const actions: ActionTree<HistoryState, RotkehlchenState> = {
-  async fetchTrades(
+  async [HistoryActions.FETCH_TRADES](
     {
       commit,
       state,
@@ -158,7 +156,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         found: result.entriesFound,
         limit: result.entriesLimit
       };
-      commit('setTrades', data);
+      commit(HistoryMutations.SET_TRADES, data);
       setStatus(Status.PARTIALLY_LOADED);
     };
 
@@ -189,11 +187,17 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     setStatus(Status.LOADED);
   },
 
-  async addExternalTrade({ commit }, trade: NewTrade): Promise<ActionStatus> {
+  async [HistoryActions.ADD_EXTERNAL_TRADE](
+    { commit },
+    trade: NewTrade
+  ): Promise<ActionStatus> {
     let success = false;
     let message = '';
     try {
-      commit('addTrade', await api.history.addExternalTrade(trade));
+      commit(
+        HistoryMutations.ADD_TRADE,
+        await api.history.addExternalTrade(trade)
+      );
       success = true;
     } catch (e) {
       message = e.message;
@@ -201,7 +205,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     return { success, message };
   },
 
-  async editExternalTrade(
+  async [HistoryActions.EDIT_EXTERNAL_TRADE](
     { commit },
     trade: TradeEntry
   ): Promise<ActionStatus> {
@@ -216,7 +220,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         },
         oldTradeId: trade.tradeId
       };
-      commit('updateTrade', payload);
+      commit(HistoryMutations.UPDATE_TRADE, payload);
       success = true;
     } catch (e) {
       message = e.message;
@@ -224,7 +228,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     return { success, message };
   },
 
-  async deleteExternalTrade(
+  async [HistoryActions.DELETE_EXTERNAL_TRADE](
     { commit },
     tradeId: string
   ): Promise<ActionStatus> {
@@ -233,14 +237,14 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     try {
       success = await api.history.deleteExternalTrade(tradeId);
       if (success) {
-        commit('deleteTrade', tradeId);
+        commit(HistoryMutations.DELETE_TRADE, tradeId);
       }
     } catch (e) {
       message = e.message;
     }
     return { success, message };
   },
-  async fetchMovements(
+  async [HistoryActions.FETCH_MOVEMENTS](
     {
       commit,
       state,
@@ -326,7 +330,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         limit: result.entriesLimit,
         found: result.entriesFound
       };
-      commit('setMovements', data);
+      commit(HistoryMutations.SET_MOVEMENTS, data);
       setStatus(Status.PARTIALLY_LOADED);
     };
 
@@ -358,7 +362,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     setStatus(Status.LOADED);
   },
 
-  async fetchTransactions(
+  async [HistoryActions.FETCH_TRANSACTIONS](
     {
       commit,
       state,
@@ -442,7 +446,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         limit: result.entriesLimit,
         found: result.entriesFound
       };
-      commit('setTransactions', data);
+      commit(HistoryMutations.SET_TRANSACTIONS, data);
       setStatus(Status.PARTIALLY_LOADED);
     };
 
@@ -470,7 +474,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     setStatus(Status.LOADED);
   },
 
-  async [ACTION_FETCH_LEDGER_ACTIONS](
+  async [HistoryActions.FETCH_LEDGER_ACTIONS](
     {
       commit,
       dispatch,
@@ -531,7 +535,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         limit: result.entriesLimit,
         found: result.entriesFound
       };
-      commit(MUTATION_SET_LEDGER_ACTIONS, data);
+      commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
     } catch (e) {
       const message = i18n
         .t('actions.ledger_actions.error.description', {
@@ -555,13 +559,13 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     }
   },
 
-  async [ACTION_ADD_LEDGER_ACTION](
+  async [HistoryActions.ADD_LEDGER_ACTION](
     { commit },
     action: Omit<LedgerAction, 'identifier'>
   ): Promise<ActionStatus> {
     try {
       const { identifier } = await api.history.addLedgerAction(action);
-      commit(MUTATION_ADD_LEDGER_ACTION, {
+      commit(HistoryMutations.ADD_LEDGER_ACTION, {
         ...action,
         identifier
       } as LedgerAction);
@@ -571,7 +575,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     }
   },
 
-  async [ACTION_EDIT_LEDGER_ACTION](
+  async [HistoryActions.EDIT_LEDGER_ACTION](
     { commit },
     action: LedgerAction
   ): Promise<ActionStatus> {
@@ -585,14 +589,14 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         limit: result.entriesLimit,
         found: result.entriesFound
       };
-      commit(MUTATION_SET_LEDGER_ACTIONS, data);
+      commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
       return { success: true };
     } catch (e) {
       return { success: false, message: e.message };
     }
   },
 
-  async [ACTION_DELETE_LEDGER_ACTION](
+  async [HistoryActions.DELETE_LEDGER_ACTION](
     { commit },
     identifier: number
   ): Promise<ActionStatus> {
@@ -606,14 +610,14 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         limit: result.entriesLimit,
         found: result.entriesFound
       };
-      commit(MUTATION_SET_LEDGER_ACTIONS, data);
+      commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
       return { success: true };
     } catch (e) {
       return { success: false, message: e.message };
     }
   },
 
-  async ignoreActions(
+  async [HistoryActions.IGNORE_ACTIONS](
     { commit, state },
     { actionIds, type }: IgnoreActionPayload
   ): Promise<ActionStatus> {
@@ -647,7 +651,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           data[i] = { ...data[i], ignoredInAccounting: true };
         }
       }
-      commit('setTrades', {
+      commit(HistoryMutations.SET_TRADES, {
         data,
         found: state.trades.found,
         limit: state.trades.limit
@@ -661,7 +665,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           data[i] = { ...data[i], ignoredInAccounting: true };
         }
       }
-      commit('setMovements', {
+      commit(HistoryMutations.SET_MOVEMENTS, {
         data,
         found: state.assetMovements.found,
         limit: state.assetMovements.limit
@@ -677,7 +681,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           data[i] = { ...data[i], ignoredInAccounting: true };
         }
       }
-      commit('setTransactions', {
+      commit(HistoryMutations.SET_TRANSACTIONS, {
         data,
         found: state.transactions.found,
         limit: state.transactions.limit
@@ -692,7 +696,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           data[i] = { ...data[i], ignoredInAccounting: true };
         }
       }
-      commit(MUTATION_SET_LEDGER_ACTIONS, {
+      commit(HistoryMutations.SET_LEDGER_ACTIONS, {
         data,
         found: state.ledgerActions.found,
         limit: state.ledgerActions.limit
@@ -700,7 +704,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     }
     return { success: true };
   },
-  async unignoreActions(
+  async [HistoryActions.UNIGNORE_ACTION](
     { commit, state },
     { actionIds, type }: IgnoreActionPayload
   ) {
@@ -734,7 +738,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           data[i] = { ...data[i], ignoredInAccounting: false };
         }
       }
-      commit('setTrades', {
+      commit(HistoryMutations.SET_TRADES, {
         data,
         found: state.trades.found,
         limit: state.trades.limit
@@ -751,7 +755,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           data[i] = { ...data[i], ignoredInAccounting: false };
         }
       }
-      commit('setMovements', {
+      commit(HistoryMutations.SET_MOVEMENTS, {
         data,
         found: state.assetMovements.found,
         limit: state.assetMovements.limit
@@ -770,7 +774,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           data[i] = { ...data[i], ignoredInAccounting: false };
         }
       }
-      commit('setTransactions', {
+      commit(HistoryMutations.SET_TRANSACTIONS, {
         data,
         found: state.transactions.found,
         limit: state.transactions.limit
@@ -788,7 +792,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           data[i] = { ...data[i], ignoredInAccounting: false };
         }
       }
-      commit(MUTATION_SET_LEDGER_ACTIONS, {
+      commit(HistoryMutations.SET_LEDGER_ACTIONS, {
         data,
         found: state.ledgerActions.found,
         limit: state.ledgerActions.limit
@@ -797,7 +801,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     return { success: true };
   },
 
-  async [ACTION_REMOVE_EXCHANGE_TRADES](
+  async [HistoryActions.REMOVE_EXCHANGE_TRADES](
     { commit, state },
     location: SupportedExchange
   ) {
@@ -809,9 +813,9 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       limit: state.trades.limit
     };
 
-    commit('setTrades', trades);
+    commit(HistoryMutations.SET_TRADES, trades);
   },
-  async [ACTION_REMOVE_EXCHANGE_MOVEMENTS](
+  async [HistoryActions.REMOVE_EXCHANGE_MOVEMENTS](
     { commit, state: { assetMovements } },
     location: SupportedExchange
   ) {
@@ -823,22 +827,60 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       limit: assetMovements.limit
     };
 
-    commit('setMovements', trades);
+    commit(HistoryMutations.SET_MOVEMENTS, trades);
   },
-  async [ACTION_PURGE_TRANSACTIONS]({ commit, rootGetters: { status } }) {
-    commit('setTransactions', defaultHistoricState<EthTransactions>());
+  async [HistoryActions.PURGE_TRANSACTIONS]({
+    commit,
+    rootGetters: { status }
+  }) {
+    commit(
+      HistoryMutations.SET_TRANSACTIONS,
+      defaultHistoricState<EthTransactions>()
+    );
     setStatus(Status.NONE, Section.TX, status, commit);
   },
-  async [ACTION_PURGE_EXCHANGE](
+  async [HistoryActions.PURGE_EXCHANGE](
     { commit, dispatch },
     exchange: SupportedExchange | typeof ALL_CENTRALIZED_EXCHANGES
   ) {
     if (exchange === ALL_CENTRALIZED_EXCHANGES) {
-      commit('setTrades', defaultHistoricState());
-      commit('setMovements', defaultHistoricState());
+      commit(HistoryMutations.SET_TRADES, defaultHistoricState());
+      commit(HistoryMutations.SET_MOVEMENTS, defaultHistoricState());
     } else {
-      await dispatch(ACTION_REMOVE_EXCHANGE_TRADES, exchange);
-      await dispatch(ACTION_REMOVE_EXCHANGE_MOVEMENTS, exchange);
+      await dispatch(HistoryActions.REMOVE_EXCHANGE_TRADES, exchange);
+      await dispatch(HistoryActions.REMOVE_EXCHANGE_MOVEMENTS, exchange);
+    }
+  },
+  async [HistoryActions.FETCH_GITCOIN_GRANT](
+    { commit },
+    payload: GitcoinGrantEventsPayload
+  ): Promise<ActionResult<GitcoinGrants>> {
+    try {
+      const { taskId } = await api.history.gatherGitcoinGrandEvents(payload);
+
+      const meta: TaskMeta = {
+        title: i18n
+          .t('actions.balances.gitcoin_grant.task.title', {
+            grant: 'grantId' in payload ? payload.grantId : ''
+          })
+          .toString(),
+        ignoreResult: false,
+        numericKeys: balanceKeys
+      };
+
+      const type = TaskType.GITCOIN_GRANT_EVENTS;
+      const task = createTask(taskId, type, meta);
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<GitcoinGrants, TaskMeta>(type);
+
+      return { result, message: '' };
+    } catch (e) {
+      return {
+        result: {},
+        message: e.message
+      };
     }
   }
 };

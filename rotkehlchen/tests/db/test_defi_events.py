@@ -159,6 +159,7 @@ def test_add_and_get_yearn_vault_events(data_dir, username):
         timestamp=Timestamp(1),
         tx_hash='0x01653e88600a6492ad6e9ae2af415c990e623479057e4e93b163e65cfb2d4436',
         log_index=1,
+        version=1,
     ), YearnVaultEvent(
         event_type='withdraw',
         from_asset=A_YV1_DAI,
@@ -170,6 +171,7 @@ def test_add_and_get_yearn_vault_events(data_dir, username):
         timestamp=Timestamp(2),
         tx_hash='0x4147da3e5d3c0565a99192ce0b32182ab30b8e1067921d9b2a8ef3bd60b7e2ce',
         log_index=2,
+        version=1,
     )]
     data.db.add_yearn_vaults_events(address=addr1, events=addr1_events)
     addr2 = make_ethereum_address()
@@ -184,6 +186,7 @@ def test_add_and_get_yearn_vault_events(data_dir, username):
         timestamp=Timestamp(1),
         tx_hash='0x8c094d58f33e8dedcd348cb33b58f3bd447602f1fecb99e51b1c2868029eab55',
         log_index=1,
+        version=1,
     ), YearnVaultEvent(
         event_type='withdraw',
         from_asset=A_YV1_DAI,
@@ -195,6 +198,7 @@ def test_add_and_get_yearn_vault_events(data_dir, username):
         timestamp=Timestamp(2),
         tx_hash='0x58c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
         log_index=2,
+        version=1,
     )]
     data.db.add_yearn_vaults_events(address=addr2, events=addr2_events)
 

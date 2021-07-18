@@ -5,8 +5,7 @@ import {
   DSRMovementType,
   EventType,
   MakerDAOVaultEventType,
-  SupportedDefiProtocols,
-  TokenDetails
+  SupportedDefiProtocols
 } from '@/services/defi/types';
 import {
   AaveBalances,
@@ -50,8 +49,10 @@ export interface DefiState {
   allProtocols: AllDefiProtocols;
   compoundBalances: CompoundBalances;
   compoundHistory: CompoundHistory;
-  yearnVaultsHistory: YearnVaultsHistory;
   yearnVaultsBalances: YearnVaultsBalances;
+  yearnVaultsHistory: YearnVaultsHistory;
+  yearnVaultsV2Balances: YearnVaultsBalances;
+  yearnVaultsV2History: YearnVaultsHistory;
   uniswapBalances: UniswapBalances;
   uniswapTrades: DexTrades;
   uniswapEvents: UniswapEvents;
@@ -214,6 +215,7 @@ interface LendingHistoryExtras {
   readonly makerdao: MakerDAOLendingHistoryExtras;
   readonly compound: HistoryExtras<CompoundEventType>;
   readonly yearn_vaults: HistoryExtras<YearnEventType>;
+  readonly yearn_vaults_v2: HistoryExtras<YearnEventType>;
   readonly uniswap: {};
 }
 
@@ -305,19 +307,19 @@ interface DexSwap {
   readonly location: 'uniswap';
   readonly logIndex: number;
   readonly toAddress: string;
-  readonly token0: TokenDetails;
-  readonly token1: TokenDetails;
+  readonly token0: string;
+  readonly token1: string;
   readonly txHash: string;
 }
 
 export interface DexTrade {
   readonly address: string;
   readonly amount: BigNumber;
-  readonly baseAsset: TokenDetails;
+  readonly baseAsset: string;
   readonly fee: BigNumber;
-  readonly feeCurrency: TokenDetails;
+  readonly feeCurrency: string;
   readonly location: 'uniswap' | 'balancer';
-  readonly quoteAsset: TokenDetails;
+  readonly quoteAsset: string;
   readonly rate: BigNumber;
   readonly swaps: DexSwap[];
   readonly timestamp: number;
@@ -347,14 +349,14 @@ interface UniswapPoolDetails {
   readonly poolAddress: string;
   readonly profitLoss0: BigNumber;
   readonly profitLoss1: BigNumber;
-  readonly token0: TokenDetails;
-  readonly token1: TokenDetails;
+  readonly token0: string;
+  readonly token1: string;
   readonly usdProfitLoss: BigNumber;
 }
 
 export interface UniswapPool {
   readonly address: string;
-  readonly assets: TokenDetails[];
+  readonly assets: string[];
 }
 
 export interface UniswapEvents {
@@ -369,7 +371,7 @@ export interface UniswapEventDetails
     Pick<UniswapPoolDetails, 'address' | 'poolAddress' | 'token0' | 'token1'> {}
 
 export interface BalancerUnderlyingToken {
-  readonly token: TokenDetails;
+  readonly token: string;
   readonly totalAmount: BigNumber;
   readonly userBalance: Balance;
   readonly usdPrice: BigNumber;
@@ -392,7 +394,7 @@ export interface BalancerBalances {
 }
 
 interface PoolToken {
-  readonly token: TokenDetails;
+  readonly token: string;
   readonly weight: string;
 }
 

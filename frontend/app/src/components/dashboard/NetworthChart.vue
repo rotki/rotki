@@ -34,8 +34,7 @@ import {
   TimeScale,
   TimeUnit
 } from 'chart.js';
-
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import { Timeframe, Timeframes } from '@/components/dashboard/types';
@@ -282,7 +281,7 @@ export default class NetWorthChart extends Vue {
         BigNumber.ROUND_DOWN
       );
 
-      const time = moment(item.label, 'MMM DD, YYYY, h:mm:ss a').format(
+      const time = dayjs(item.label).format(
         this.activeTimeframe.tooltipTimeFormat
       );
 

@@ -1,38 +1,46 @@
 <template>
-  <v-card light class="tag-manager">
-    <v-card-title>
+  <card light class="tag-manager">
+    <template #title>
       {{ $t('tag_manager.title') }}
-      <v-spacer v-if="dialog" />
-      <v-btn v-if="dialog" class="tag-manager__close" icon text @click="close">
+    </template>
+    <template v-if="dialog" #details>
+      <v-btn class="tag-manager__close" icon text @click="close">
         <v-icon>mdi-close</v-icon>
       </v-btn>
-    </v-card-title>
-    <v-card-subtitle v-text="$t('tag_manager.subtitle')" />
-    <v-card-text>
-      <tag-creator
-        :tag="tag"
-        :edit-mode="editMode"
-        @changed="onChange($event)"
-        @cancel="cancel"
-        @save="save"
-      />
+    </template>
+    <template #subtitle>
+      {{ $t('tag_manager.subtitle') }}
+    </template>
+    <tag-creator
+      :tag="tag"
+      :edit-mode="editMode"
+      @changed="onChange($event)"
+      @cancel="cancel"
+      @save="save"
+    />
 
-      <v-divider />
+    <v-divider />
 
-      <v-row no-gutters justify="space-between" align="end">
-        <v-col cols="8">
-          <div class="text-h5" v-text="$t('tag_manager.my_tags')" />
-        </v-col>
-        <v-col cols="4">
-          <v-text-field
-            v-model="search"
-            append-icon="mdi-magnify"
-            :label="$t('tag_manager.search')"
-            single-line
-            hide-details
-          />
-        </v-col>
-      </v-row>
+    <card outlined-body flat>
+      <template #title>
+        {{ $t('tag_manager.my_tags') }}
+      </template>
+      <template #search>
+        <v-row justify="end">
+          <v-col cols="12" sm="5">
+            <v-text-field
+              v-model="search"
+              outlined
+              dense
+              class="mb-4"
+              prepend-inner-icon="mdi-magnify"
+              :label="$t('tag_manager.search')"
+              single-line
+              hide-details
+            />
+          </v-col>
+        </v-row>
+      </template>
       <data-table
         :items="tags"
         item-key="name"
@@ -43,23 +51,30 @@
           <tag-icon :tag="item" />
         </template>
         <template #item.action="{ item }">
-          <v-icon small class="mr-2" @click="editItem(item)">
-            mdi-pencil
-          </v-icon>
-          <v-icon small class="mr-2" @click="deleteItem(item)">
-            mdi-delete
-          </v-icon>
+          <v-row no-gutters>
+            <v-col>
+              <v-icon small class="mr-2" @click="editItem(item)">
+                mdi-pencil
+              </v-icon>
+            </v-col>
+            <v-col>
+              <v-icon small class="mr-2" @click="deleteItem(item)">
+                mdi-delete
+              </v-icon>
+            </v-col>
+          </v-row>
         </template>
       </data-table>
-      <confirm-dialog
-        :title="$t('tag_manager.confirmation.title')"
-        :message="$t('tag_manager.confirmation.message', { tagToDelete })"
-        :display="!!tagToDelete"
-        @confirm="confirmDelete"
-        @cancel="tagToDelete = ''"
-      />
-    </v-card-text>
-  </v-card>
+    </card>
+
+    <confirm-dialog
+      :title="$t('tag_manager.confirmation.title')"
+      :message="$t('tag_manager.confirmation.message', { tagToDelete })"
+      :display="!!tagToDelete"
+      @confirm="confirmDelete"
+      @cancel="tagToDelete = ''"
+    />
+  </card>
 </template>
 
 <script lang="ts">
@@ -107,7 +122,7 @@ export default class TagManager extends Vue {
       text: this.$t('tag_manager.headers.actions').toString(),
       value: 'action',
       sortable: false,
-      width: '50'
+      width: '80'
     }
   ];
 

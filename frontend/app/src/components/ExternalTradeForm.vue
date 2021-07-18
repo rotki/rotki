@@ -160,7 +160,7 @@
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
@@ -170,6 +170,7 @@ import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { NewTrade, Trade, TradeType } from '@/services/history/types';
 import { HistoricPricePayload } from '@/store/balances/types';
+import { HistoryActions } from '@/store/history/consts';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
 import { assert } from '@/utils/assertions';
@@ -181,7 +182,10 @@ import { bigNumberify, Zero } from '@/utils/bignumbers';
     ...mapGetters('tasks', ['isTaskRunning'])
   },
   methods: {
-    ...mapActions('history', ['addExternalTrade', 'editExternalTrade']),
+    ...mapActions('history', [
+      HistoryActions.ADD_EXTERNAL_TRADE,
+      HistoryActions.EDIT_EXTERNAL_TRADE
+    ]),
     ...mapActions('balances', ['fetchHistoricPrice'])
   }
 })
@@ -288,7 +292,7 @@ export default class ExternalTradeForm extends Vue {
       return;
     }
 
-    const timestamp = moment(this.datetime, ExternalTradeForm.format).unix();
+    const timestamp = dayjs(this.datetime, ExternalTradeForm.format).unix();
     const fromAsset = this.base;
     const toAsset = this.quote;
 
@@ -321,7 +325,7 @@ export default class ExternalTradeForm extends Vue {
 
     this.base = trade.baseAsset;
     this.quote = trade.quoteAsset;
-    this.datetime = moment(trade.timestamp * 1000).format(
+    this.datetime = dayjs(trade.timestamp * 1000).format(
       ExternalTradeForm.format
     );
     this.amount = trade.amount.toString();
@@ -339,7 +343,7 @@ export default class ExternalTradeForm extends Vue {
 
   reset() {
     this.id = '';
-    this.datetime = moment().format(ExternalTradeForm.format);
+    this.datetime = dayjs().format(ExternalTradeForm.format);
     this.amount = '';
     this.rate = '';
     this.fee = '';
@@ -365,7 +369,7 @@ export default class ExternalTradeForm extends Vue {
       quoteAsset: this.quote,
       rate: rate.isNaN() ? Zero : rate,
       location: 'external',
-      timestamp: moment(this.datetime, ExternalTradeForm.format).unix(),
+      timestamp: dayjs(this.datetime, ExternalTradeForm.format).unix(),
       tradeType: this.type
     };
 

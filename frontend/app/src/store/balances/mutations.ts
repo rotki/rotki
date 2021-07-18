@@ -1,5 +1,6 @@
 import { MutationTree } from 'vuex';
 import { Exchange } from '@/model/action-result';
+import { SupportedAsset } from '@/services/assets/types';
 import {
   Balances,
   BtcBalances,
@@ -7,7 +8,6 @@ import {
   ManualBalanceWithValue
 } from '@/services/balances/types';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
-import { SupportedAsset } from '@/services/types-model';
 import {
   MUTATION_UPDATE_LOOPRING_BALANCES,
   MUTATION_UPDATE_PRICES
@@ -52,7 +52,7 @@ export const mutations: MutationTree<BalanceState> = {
   editExchange(
     state: BalanceState,
     {
-      exchange: { location, name: oldName, krakenAccountType },
+      exchange: { location, name: oldName, krakenAccountType, ftxSubaccount },
       newName
     }: EditExchange
   ) {
@@ -64,7 +64,8 @@ export const mutations: MutationTree<BalanceState> = {
     exchanges[index] = Object.assign(exchanges[index], {
       name,
       location,
-      krakenAccountType
+      krakenAccountType,
+      ftxSubaccount
     });
     state.connectedExchanges = exchanges;
   },

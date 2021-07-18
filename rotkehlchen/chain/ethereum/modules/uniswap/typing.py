@@ -1,12 +1,10 @@
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tuple
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken, ethereum_knownornot_token_parts
-from rotkehlchen.assets.utils import serialize_ethereum_token
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants import ZERO
@@ -17,13 +15,11 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ethereum_token_from_db,
     deserialize_timestamp,
-    deserialize_unknown_ethereum_token_from_db,
 )
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Price, Timestamp
 
 log = logging.getLogger(__name__)
 
-SWAP_FEE = FVal('0.003')  # 0.3% fee for swapping tokens
 UNISWAP_EVENTS_PREFIX = 'uniswap_events'
 UNISWAP_TRADES_PREFIX = 'uniswap_trades'
 
@@ -32,14 +28,14 @@ UNISWAP_TRADES_PREFIX = 'uniswap_trades'
 
 @dataclass(init=True, repr=True)
 class LiquidityPoolAsset:
-    asset: Union[EthereumToken, UnknownEthereumToken]
+    asset: EthereumToken
     total_amount: Optional[FVal]
     user_balance: Balance
     usd_price: Price = Price(ZERO)
 
     def serialize(self) -> Dict[str, Any]:
         return {
-            'asset': serialize_ethereum_token(self.asset),
+            'asset': self.asset.serialize(),
             'total_amount': self.total_amount,
             'user_balance': self.user_balance.serialize(),
             'usd_price': self.usd_price,
@@ -62,24 +58,23 @@ class LiquidityPool:
         }
 
 
-AddressBalances = Dict[ChecksumEthAddress, List[LiquidityPool]]
-DDAddressBalances = DefaultDict[ChecksumEthAddress, List[LiquidityPool]]
-AssetPrice = Dict[ChecksumEthAddress, Price]
+AddressToLPBalances = Dict[ChecksumEthAddress, List[LiquidityPool]]
+DDAddressToLPBalances = DefaultDict[ChecksumEthAddress, List[LiquidityPool]]
+AssetToPrice = Dict[ChecksumEthAddress, Price]
 
 
 class ProtocolBalance(NamedTuple):
-    address_balances: AddressBalances
+    """Container structure for uniswap LP balances
+
+    Known assets are all assets we have an oracle for
+    Unknown assets are those we would have to try to query through uniswap directly
+    """
+    address_balances: AddressToLPBalances
     known_assets: Set[EthereumToken]
-    unknown_assets: Set[UnknownEthereumToken]
+    unknown_assets: Set[EthereumToken]
 
-
-# Get trades history
 
 AddressTrades = Dict[ChecksumEthAddress, List[AMMTrade]]
-ProtocolHistory = Dict[str, Union[AddressTrades]]
-
-
-# Get events history
 
 
 class EventType(Enum):
@@ -104,23 +99,14 @@ LiquidityPoolEventDBTuple = (
         int,  # timestamp
         str,  # event_type
         str,  # pool_address
-        int,  # is_token0_unknown
-        str,  # token0_address
-        str,  # token0_symbol
-        str,  # token0_name
-        int,  # token0_decimals
-        int,  # is_token1_unknown
-        str,  # token1_address
-        str,  # token1_symbol
-        str,  # token1_name
-        int,  # token1_decimals
+        str,  # token0_identifier
+        str,  # token1_identifier
         str,  # amount0
         str,  # amount1
         str,  # usd_price
         str,  # lp_amount
     ]
 )
-SerializeAsDictKeys = Union[List[str], Tuple[str, ...], Set[str]]
 
 
 class LiquidityPoolEvent(NamedTuple):
@@ -130,8 +116,8 @@ class LiquidityPoolEvent(NamedTuple):
     timestamp: Timestamp
     event_type: EventType
     pool_address: ChecksumEthAddress
-    token0: Union[EthereumToken, UnknownEthereumToken]
-    token1: Union[EthereumToken, UnknownEthereumToken]
+    token0: EthereumToken
+    token1: EthereumToken
     amount0: AssetAmount
     amount1: AssetAmount
     usd_price: Price
@@ -152,20 +138,12 @@ class LiquidityPoolEvent(NamedTuple):
         3 - timestamp
         4 - type
         5 - pool_address
-        6 - is_token0_unknown
-        7 - token0_address
-        8 - token0_symbol
-        9 - token0_name
-        10 - token0_decimals
-        11 - is_token1_unknown
-        12 - token1_address
-        13 - token1_symbol
-        14 - token1_name
-        15 - token1_decimals
-        16 - amount0
-        17 - amount1
-        18 - usd_price
-        19 - lp_amount
+        6 - token0_identifier
+        7 - token1_identifier
+        8 - amount0
+        9 - amount1
+        10 - usd_price
+        11 - lp_amount
         """
         db_event_type = event_tuple[4]
         if db_event_type not in {str(event_type) for event_type in EventType}:
@@ -180,30 +158,8 @@ class LiquidityPoolEvent(NamedTuple):
         else:
             raise ValueError(f'Unexpected event type case: {db_event_type}.')
 
-        is_token0_unknown = event_tuple[6]
-        is_token1_unknown = event_tuple[11]
-
-        token0: Union[EthereumToken, UnknownEthereumToken]
-        token1: Union[EthereumToken, UnknownEthereumToken]
-        if is_token0_unknown:
-            token0 = deserialize_unknown_ethereum_token_from_db(
-                ethereum_address=event_tuple[7],
-                symbol=event_tuple[8],
-                name=event_tuple[9],
-                decimals=event_tuple[10],
-            )
-        else:
-            token0 = deserialize_ethereum_token_from_db(identifier=event_tuple[8])
-
-        if is_token1_unknown:
-            token1 = deserialize_unknown_ethereum_token_from_db(
-                ethereum_address=event_tuple[12],
-                symbol=event_tuple[13],
-                name=event_tuple[14],
-                decimals=event_tuple[15],
-            )
-        else:
-            token1 = deserialize_ethereum_token_from_db(identifier=event_tuple[13])
+        token0 = deserialize_ethereum_token_from_db(identifier=event_tuple[6])
+        token1 = deserialize_ethereum_token_from_db(identifier=event_tuple[7])
 
         return cls(
             tx_hash=event_tuple[0],
@@ -214,15 +170,13 @@ class LiquidityPoolEvent(NamedTuple):
             pool_address=string_to_ethereum_address(event_tuple[5]),
             token0=token0,
             token1=token1,
-            amount0=deserialize_asset_amount(event_tuple[16]),
-            amount1=deserialize_asset_amount(event_tuple[17]),
-            usd_price=deserialize_price(event_tuple[18]),
-            lp_amount=deserialize_asset_amount(event_tuple[19]),
+            amount0=deserialize_asset_amount(event_tuple[8]),
+            amount1=deserialize_asset_amount(event_tuple[9]),
+            usd_price=deserialize_price(event_tuple[10]),
+            lp_amount=deserialize_asset_amount(event_tuple[11]),
         )
 
     def to_db_tuple(self) -> LiquidityPoolEventDBTuple:
-        is_token0_unknown, token0_symbol_or_id = ethereum_knownornot_token_parts(self.token0)
-        is_token1_unknown, token1_symbol_or_id = ethereum_knownornot_token_parts(self.token1)
         db_tuple = (
             self.tx_hash,
             self.log_index,
@@ -230,22 +184,14 @@ class LiquidityPoolEvent(NamedTuple):
             int(self.timestamp),
             str(self.event_type),
             str(self.pool_address),
-            is_token0_unknown,
-            str(self.token0.ethereum_address),
-            token0_symbol_or_id,
-            str(self.token0.name),
-            self.token0.decimals,
-            is_token1_unknown,
-            str(self.token1.ethereum_address),
-            token1_symbol_or_id,
-            str(self.token1.name),
-            self.token1.decimals,
+            self.token0.identifier,
+            self.token1.identifier,
             str(self.amount0),
             str(self.amount1),
             str(self.usd_price),
             str(self.lp_amount),
         )
-        return db_tuple  # type: ignore
+        return db_tuple
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -263,8 +209,8 @@ class LiquidityPoolEvent(NamedTuple):
 class LiquidityPoolEventsBalance(NamedTuple):
     address: ChecksumEthAddress
     pool_address: ChecksumEthAddress
-    token0: Union[EthereumToken, UnknownEthereumToken]
-    token1: Union[EthereumToken, UnknownEthereumToken]
+    token0: EthereumToken
+    token1: EthereumToken
     events: List[LiquidityPoolEvent]
     profit_loss0: FVal
     profit_loss1: FVal
@@ -274,8 +220,8 @@ class LiquidityPoolEventsBalance(NamedTuple):
         return {
             'address': self.address,
             'pool_address': self.pool_address,
-            'token0': serialize_ethereum_token(self.token0),
-            'token1': serialize_ethereum_token(self.token1),
+            'token0': self.token0.serialize(),
+            'token1': self.token1.serialize(),
             'events': [event.serialize() for event in self.events],
             'profit_loss0': str(self.profit_loss0),
             'profit_loss1': str(self.profit_loss1),

@@ -10,7 +10,6 @@ import requests
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
@@ -197,7 +196,7 @@ INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES("0x1B175474E8909
     globaldb.add_asset(  # add a conflicting token
         asset_id='_ceth_0x1B175474E89094C44Da98b954EedeAC495271d0F',
         asset_type=AssetType.ETHEREUM_TOKEN,
-        data=CustomEthereumToken(
+        data=EthereumToken.initialize(
             address=ChecksumEthAddress('0x1B175474E89094C44Da98b954EedeAC495271d0F'),
             decimals=12,
             name='Conflicting token',

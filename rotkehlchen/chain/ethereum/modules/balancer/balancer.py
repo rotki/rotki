@@ -2,14 +2,14 @@ import datetime
 import logging
 from collections import defaultdict
 from operator import add, sub
-from typing import TYPE_CHECKING, DefaultDict, List, Optional, Set, Union
+from typing import TYPE_CHECKING, DefaultDict, List, Optional, Set, Tuple
 
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
+from rotkehlchen.assets.utils import add_ethereum_token_to_db
 from rotkehlchen.chain.ethereum.graph import (
     GRAPH_QUERY_LIMIT,
     GRAPH_QUERY_SKIP_LIMIT,
@@ -21,6 +21,7 @@ from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -44,7 +45,6 @@ from .typing import (
     BALANCER_TRADES_PREFIX,
     POOL_MAX_NUMBER_TOKENS,
     AddressToBPTEvents,
-    AddressToEventPool,
     AddressToEvents,
     AddressToEventsData,
     AddressToInvestEvents,
@@ -52,10 +52,8 @@ from .typing import (
     AddressToPoolEventsBalances,
     AddressToSwaps,
     AddressToTrades,
-    BalancerAggregatedEventsData,
     BalancerBPTEventType,
     BalancerEvent,
-    BalancerEventPool,
     BalancerEventsData,
     BalancerInvestEventType,
     BalancerPoolBalance,
@@ -79,6 +77,7 @@ from .utils import (
     deserialize_swap,
     deserialize_token_day_data,
     deserialize_token_price,
+    deserialize_transaction_id,
     get_trades_from_tx_swaps,
 )
 
@@ -129,48 +128,45 @@ class Balancer(EthereumModule):
     def _calculate_pool_events_balances(
             address: ChecksumEthAddress,
             events: List[BalancerEvent],
-            pools: List[BalancerEventPool],
             pool_balances: List[BalancerPoolBalance],
     ) -> List[BalancerPoolEventsBalance]:
         """Calculate the balance of the events on each pool the address has
         added or removed liquidity.
         """
         pool_addr_to_events: DDAddressToEvents = defaultdict(list)
-        pool_addr_to_pool: AddressToEventPool = {pool.address: pool for pool in pools}
         pool_addr_to_profit_loss_amounts: DDAddressToProfitLossAmounts = (
             defaultdict(lambda: [AssetAmount(ZERO)] * POOL_MAX_NUMBER_TOKENS)
         )
-        pool_addr_to_usd_value: DefaultDict[ChecksumEthAddress, FVal] = defaultdict(lambda: ZERO)
+        pool_addr_to_usd_value: DefaultDict[EthereumToken, FVal] = defaultdict(lambda: ZERO)
         pool_events_balances: List[BalancerPoolEventsBalance] = []
         # Calculate the profit and loss of the pool events
         for event in events:
-            pool_addr_to_events[event.pool_address].append(event)
+            pool_addr_to_events[event.pool_address_token].append(event)
             operator = sub if event.event_type == BalancerBPTEventType.MINT else add
-            profit_loss_amounts = pool_addr_to_profit_loss_amounts[event.pool_address]
+            profit_loss_amounts = pool_addr_to_profit_loss_amounts[event.pool_address_token]
             event_amounts = event.amounts + [AssetAmount(ZERO)] * (POOL_MAX_NUMBER_TOKENS - len(event.amounts))  # noqa: E501
-            pool_addr_to_profit_loss_amounts[event.pool_address] = list(
+            pool_addr_to_profit_loss_amounts[event.pool_address_token] = list(
                 map(operator, profit_loss_amounts, event_amounts),
             )
-            usd_value = pool_addr_to_usd_value[event.pool_address]
-            pool_addr_to_usd_value[event.pool_address] = operator(usd_value, event.lp_balance.usd_value)  # noqa: E501
+            usd_value = pool_addr_to_usd_value[event.pool_address_token]
+            pool_addr_to_usd_value[event.pool_address_token] = operator(usd_value, event.lp_balance.usd_value)  # noqa: E501
 
         # Take into account the current pool balances
         for pool_balance in pool_balances:
-            profit_loss_amounts = pool_addr_to_profit_loss_amounts[pool_balance.address]
-            for idx in range(len(pool_balance.tokens)):
-                profit_loss_amounts[idx] += pool_balance.tokens[idx].user_balance.amount  # type: ignore # noqa: E501
-                pool_addr_to_usd_value[pool_balance.address] += pool_balance.tokens[idx].user_balance.usd_value  # noqa: E501
+            profit_loss_amounts = pool_addr_to_profit_loss_amounts[pool_balance.pool_token]
+            for idx in range(len(pool_balance.underlying_tokens_balance)):
+                profit_loss_amounts[idx] += pool_balance.underlying_tokens_balance[idx].user_balance.amount  # type: ignore # noqa: E501
+                pool_addr_to_usd_value[pool_balance.pool_token] += pool_balance.underlying_tokens_balance[idx].user_balance.usd_value  # noqa: E501
 
-        for pool_address, pool_events in pool_addr_to_events.items():
-            pool_tokens = pool_addr_to_pool[pool_address].tokens
-            profit_loss_amounts = pool_addr_to_profit_loss_amounts[pool_address][:len(pool_tokens)]
+        for pool_address_token, pool_events in pool_addr_to_events.items():
+            pool_tokens = pool_address_token.underlying_tokens
+            profit_loss_amounts = pool_addr_to_profit_loss_amounts[pool_address_token][:len(pool_tokens)]  # noqa: E501
             pool_events_balance = BalancerPoolEventsBalance(
                 address=address,
-                pool_address=pool_address,
-                pool_tokens=pool_tokens,
+                pool_address_token=pool_address_token,
                 events=pool_events,  # Already sorted by timestamp and log_index
                 profit_loss_amounts=profit_loss_amounts,
-                usd_profit_loss=pool_addr_to_usd_value[pool_address],
+                usd_profit_loss=pool_addr_to_usd_value[pool_address_token],
             )
             pool_events_balances.append(pool_events_balance)
 
@@ -264,7 +260,7 @@ class Balancer(EthereumModule):
 
             for raw_event in raw_events:
                 try:
-                    bpt_event = deserialize_bpt_event(raw_event, event_type=event_type)
+                    bpt_event = deserialize_bpt_event(self.database, raw_event, event_type=event_type)  # noqa: E501
                 except DeserializationError as e:
                     log.error(
                         f'Failed to deserialize a {event_type} event',
@@ -327,38 +323,18 @@ class Balancer(EthereumModule):
         May raise RemoteError
         """
         # Get add liquidity and mint events per address
-        address_to_add_liquidity_events = self._get_address_to_invest_events_graph(
+        address_to_add_liquidity_events, address_to_mint_events = self._get_address_to_invest_events_graph(  # noqa: E501
             addresses=addresses,
             start_ts=from_timestamp,
             end_ts=to_timestamp,
             event_type=BalancerInvestEventType.ADD_LIQUIDITY,
         )
-        mint_transactions = {
-            event.tx_hash
-            for a_events in address_to_add_liquidity_events.values()
-            for event in a_events
-        }
-        address_to_mint_events = self._get_address_to_bpt_events_graph(
-            addresses=list(address_to_add_liquidity_events.keys()),
-            transactions=list(mint_transactions),
-            event_type=BalancerBPTEventType.MINT,
-        )
         # Get remove liquidity and burn events per address
-        address_to_remove_liquidity_events = self._get_address_to_invest_events_graph(
+        address_to_remove_liquidity_events, address_to_burn_events = self._get_address_to_invest_events_graph(  # noqa: E501
             addresses=addresses,
             start_ts=from_timestamp,
             end_ts=to_timestamp,
             event_type=BalancerInvestEventType.REMOVE_LIQUIDITY,
-        )
-        burn_transactions = {
-            event.tx_hash
-            for a_events in address_to_remove_liquidity_events.values()
-            for event in a_events
-        }
-        address_to_burn_events = self._get_address_to_bpt_events_graph(
-            addresses=list(address_to_remove_liquidity_events.keys()),
-            transactions=list(burn_transactions),
-            event_type=BalancerBPTEventType.BURN,
         )
         self._update_used_query_range(
             addresses=addresses,
@@ -389,7 +365,7 @@ class Balancer(EthereumModule):
             ],
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> AddressToInvestEvents:
+    ) -> Tuple[AddressToInvestEvents, AddressToBPTEvents]:
         """Get a mapping of addresses to invest events for a given time range
 
         May raise RemoteError
@@ -397,12 +373,15 @@ class Balancer(EthereumModule):
         addresses_lower = [address.lower() for address in addresses]
         querystr: str
         schema: Literal['addLiquidities', 'removeLiquidities']
+        mint_or_burn_type: BalancerBPTEventType
         if event_type == BalancerInvestEventType.ADD_LIQUIDITY:
             querystr = format_query_indentation(ADD_LIQUIDITIES_QUERY.format())
             schema = 'addLiquidities'
+            mint_or_burn_type = BalancerBPTEventType.MINT
         elif event_type == BalancerInvestEventType.REMOVE_LIQUIDITY:
             querystr = format_query_indentation(REMOVE_LIQUIDITIES_QUERY.format())
             schema = 'removeLiquidities'
+            mint_or_burn_type = BalancerBPTEventType.BURN
         else:
             raise AssertionError(f'Unexpected event type: {event_type}.')
 
@@ -445,6 +424,14 @@ class Balancer(EthereumModule):
                 )
                 raise RemoteError('Failed to deserialize balancer events') from e
 
+            # first do a run to gather all transaction hashes. We need it to get all pool data
+            mint_or_burn_transactions = {deserialize_transaction_id(x['id'])[0] for x in raw_events}  # noqa: E501
+            address_to_mint_events = self._get_address_to_bpt_events_graph(
+                addresses=addresses,
+                transactions=list(mint_or_burn_transactions),
+                event_type=mint_or_burn_type,
+            )
+
             for raw_event in raw_events:
                 try:
                     invest_event = deserialize_invest_event(raw_event, event_type=event_type)
@@ -482,7 +469,7 @@ class Balancer(EthereumModule):
                 invest_events,
                 key=lambda event: (event.tx_hash, event.log_index),
             )
-        return address_to_invest_events
+        return address_to_invest_events, address_to_mint_events
 
     def _get_address_to_pool_events_balances(
             self,
@@ -530,19 +517,15 @@ class Balancer(EthereumModule):
 
         # Aggregate the events, get the new pools and store them all in the DB
         if len(address_to_events_data) != 0:
-            pool_addresses = self._get_pool_addresses_from_address_to_events_data(address_to_events_data)  # noqa: E501
-            db_pools = self.database.get_balancer_pools(pool_addresses)
-            aggregated_events_data = self._get_balancer_aggregated_events_data(
+            balancer_events = self._get_balancer_aggregated_events_data(
                 address_to_events_data=address_to_events_data,
-                db_pools=db_pools,
             )
-            self.database.add_balancer_pools(aggregated_events_data.balancer_pools)
-            self.database.add_balancer_events(aggregated_events_data.balancer_events)
+            self.database.add_balancer_events(balancer_events)
 
         # Calculate the balance of the events per pool at the given timestamp per address.
         # NB: take into account the current balances of each address in the protocol
         db_address_to_events: AddressToEvents = {}
-        db_pool_addresses: Set[ChecksumEthAddress] = set()
+        db_pool_addresses: Set[EthereumToken] = set()
         for address in addresses:
             db_events = self.database.get_balancer_events(
                 from_timestamp=from_timestamp,
@@ -552,13 +535,12 @@ class Balancer(EthereumModule):
             if db_events:
                 db_events.sort(key=lambda event: (event.timestamp, event.log_index))
                 db_address_to_events[address] = db_events
-                db_pool_addresses.union({db_event.pool_address for db_event in db_events})
+                db_pool_addresses.union({db_event.pool_address_token for db_event in db_events})
 
         address_to_pool_events_balances: AddressToPoolEventsBalances = {}
         if len(db_address_to_events) == 0:
             return address_to_pool_events_balances
 
-        db_pools = self.database.get_balancer_pools(list(db_pool_addresses))
         # TODO: calculating the balances of an address at a particular timestamp
         # requires an archive node. Feature pending to be developed.
         address_to_pool_balances: AddressToPoolBalances = {}
@@ -570,7 +552,6 @@ class Balancer(EthereumModule):
             pool_events_balances = self._calculate_pool_events_balances(
                 address=address,
                 events=db_events,
-                pools=db_pools,
                 pool_balances=pool_balances,
             )
             address_to_pool_events_balances[address] = pool_events_balances
@@ -630,7 +611,7 @@ class Balancer(EthereumModule):
 
             for raw_swap in raw_swaps:
                 try:
-                    amm_swap = deserialize_swap(raw_swap)
+                    amm_swap = deserialize_swap(self.database, raw_swap)
                 except DeserializationError as e:
                     log.error(
                         'Failed to deserialize a balancer swap',
@@ -746,47 +727,43 @@ class Balancer(EthereumModule):
     def _get_balancer_aggregated_events_data(
             self,
             address_to_events_data: AddressToEventsData,
-            db_pools: List[BalancerEventPool],
-    ) -> BalancerAggregatedEventsData:
+    ) -> List[BalancerEvent]:
         """Get a structure that contains all the new pools and events to be
         stored in the DB.
 
         May raise RemoteError
         """
-        balancer_pools: List[BalancerEventPool] = []
+        balancer_pools: List[EthereumToken] = []
         balancer_events: List[BalancerEvent] = []
         pool_addr_to_token_addr_to_index: PoolAddrToTokenAddrToIndex = {}
         # Create a map that allows getting the index of a token in the pool
+        db_pools = GlobalDBHandler().get_ethereum_tokens(protocol='balancer')
         for db_pool in db_pools:
             token_addr_to_index = {
-                pool_token.token.ethereum_address: idx
-                for idx, pool_token in enumerate(db_pool.tokens)
+                pool_token.address: idx
+                for idx, pool_token in enumerate(db_pool.underlying_tokens)
             }
-            pool_addr_to_token_addr_to_index[db_pool.address] = token_addr_to_index
+            pool_addr_to_token_addr_to_index[db_pool] = token_addr_to_index
 
         for event_type in BalancerBPTEventType:
             self._get_balancer_aggregated_events_data_by_event_type(
                 address_to_events_data=address_to_events_data,
-                event_type=event_type,  # type: ignore # looping enum members and literals
+                event_type=event_type,
                 balancer_pools=balancer_pools,
                 balancer_events=balancer_events,
                 pool_addr_to_token_addr_to_index=pool_addr_to_token_addr_to_index,
             )
-        return BalancerAggregatedEventsData(
-            balancer_pools=balancer_pools,
-            balancer_events=balancer_events,
-        )
+        return balancer_events
 
     def _get_balancer_aggregated_events_data_by_event_type(
             self,
             address_to_events_data: AddressToEventsData,
             event_type: Literal[BalancerBPTEventType.MINT, BalancerBPTEventType.BURN],
-            balancer_pools: List[BalancerEventPool],
+            balancer_pools: List[EthereumToken],
             balancer_events: List[BalancerEvent],
             pool_addr_to_token_addr_to_index: PoolAddrToTokenAddrToIndex,
     ) -> None:
-        """Insert into `balancer_pools` and `balancer_events` the new pools and
-        events to be stored in the DB.
+        """Store pools and events in the DB
 
         The `event_type` (MINT or BURN) determines from which type of events the
         <BalancerEvent> is built:
@@ -826,14 +803,14 @@ class Balancer(EthereumModule):
             # Create a map that allows getting the invest events by (tx_hash, pool address)
             tx_hash_and_pool_addr_to_invest_events = defaultdict(list)
             for invest_event in getattr(events, attr_invest_events):  # noqa: E501
-                key = (invest_event.tx_hash, invest_event.pool_address)
+                key = (invest_event.tx_hash, invest_event.pool_address_token)
                 tx_hash_and_pool_addr_to_invest_events[key].append(invest_event)
 
             # Create a <BalancerEvent> by aggregating invest and bpt events that happened
             # in the same transaction and for the same pool. Optionally create a
-            # <BalancerEventPool> if it does not exist in the DB.
+            # BalancerPool token if it does not exist in the DB.
             for bpt_event in getattr(events, attr_bpt_events):
-                key = (bpt_event.tx_hash, bpt_event.pool_address)
+                key = (bpt_event.tx_hash, bpt_event.pool_address_token)
                 invest_events = tx_hash_and_pool_addr_to_invest_events[key]
                 # NB: 1 <BalancerBPTEvent> requires at least 1 <BalancerInvestEvent>
                 # Otherwise the subgraph is missing required data
@@ -845,29 +822,37 @@ class Balancer(EthereumModule):
                     raise RemoteError('Failed to deserialize balancer events')
 
                 # If the pool is new, add it into the `pool_addr_to_token_addr_to_index` map
-                # and create the <BalancerEventPool>
-                if bpt_event.pool_address not in pool_addr_to_token_addr_to_index:
+                # and create the BalancerPool token
+                if bpt_event.pool_address_token not in pool_addr_to_token_addr_to_index:
                     token_addr_to_index = {
-                        pool_token.token.ethereum_address: idx
-                        for idx, pool_token in enumerate(bpt_event.pool_tokens)
+                        underlying_token.address: idx
+                        for idx, underlying_token in enumerate(bpt_event.pool_address_token.underlying_tokens)  # noqa: E501
                     }
-                    pool_addr_to_token_addr_to_index[bpt_event.pool_address] = token_addr_to_index
-                    balancer_pool = BalancerEventPool(
+                    pool_addr_to_token_addr_to_index[bpt_event.pool_address_token] = token_addr_to_index  # noqa: E501
+                    underlying_tokens = [
+                        UnderlyingToken(
+                            address=x.token.ethereum_address,
+                            weight=x.weight / FVal(100),
+                        ) for x in bpt_event.pool_tokens
+                    ]
+                    token_data = EthereumToken.initialize(
                         address=bpt_event.pool_address,
-                        tokens=bpt_event.pool_tokens,
+                        underlying_tokens=underlying_tokens,
+                        protocol='balancer',
                     )
+                    balancer_pool = add_ethereum_token_to_db(token_data)
                     balancer_pools.append(balancer_pool)
 
                 # Aggregate the <BalancerInvestEvent> token amounts related with the
                 # <BalancerBPTEvent> and create the <BalancerEvent>
-                amounts = [AssetAmount(ZERO)] * len(bpt_event.pool_tokens)
+                amounts = [AssetAmount(ZERO)] * len(bpt_event.pool_address_token.underlying_tokens)
                 lp_balance = Balance(amount=bpt_event.amount)
                 is_missing_token_price = False
                 for invest_event in invest_events:
-                    pool_addr_to_token_addr = pool_addr_to_token_addr_to_index[bpt_event.pool_address]  # noqa: E501
-                    token_idx = pool_addr_to_token_addr[invest_event.token_address]
+                    tokenaddr_to_index = pool_addr_to_token_addr_to_index[bpt_event.pool_address_token]  # noqa: E501
+                    token_idx = tokenaddr_to_index[invest_event.token_address]
                     amounts[token_idx] += invest_event.amount
-                    token = bpt_event.pool_tokens[token_idx].token
+                    token = EthereumToken(invest_event.token_address)  # should exist at this point
                     if is_missing_token_price is False:
                         usd_price = self._get_token_price_at_timestamp_zero_if_error(
                             token=token,
@@ -892,7 +877,7 @@ class Balancer(EthereumModule):
                     address=bpt_event.address,
                     timestamp=invest_events[0].timestamp,
                     event_type=event_type,
-                    pool_address=bpt_event.pool_address,
+                    pool_address_token=bpt_event.pool_address_token,
                     lp_balance=lp_balance,
                     amounts=amounts,
                 )
@@ -913,19 +898,6 @@ class Balancer(EthereumModule):
             token_to_prices[token.ethereum_address] = usd_price
         return token_to_prices
 
-    @staticmethod
-    def _get_pool_addresses_from_address_to_events_data(
-            address_to_events_data: AddressToEventsData,
-    ) -> List[ChecksumEthAddress]:
-        pool_addresses: Set[ChecksumEthAddress] = set()
-        for events_data in address_to_events_data.values():
-            for mint_event in events_data.mints:
-                pool_addresses.add(mint_event.pool_address)
-            for burn_event in events_data.burns:
-                pool_addresses.add(burn_event.pool_address)
-
-        return list(pool_addresses)
-
     def _get_protocol_balance_graph(
             self,
             addresses: List[ChecksumEthAddress],
@@ -935,7 +907,7 @@ class Balancer(EthereumModule):
         May raise RemoteError
         """
         known_tokens: Set[EthereumToken] = set()
-        unknown_tokens: Set[UnknownEthereumToken] = set()
+        unknown_tokens: Set[EthereumToken] = set()
         addresses_lower = [address.lower() for address in addresses]
         querystr = format_query_indentation(POOLSHARES_QUERY.format())
         query_offset = 0
@@ -976,14 +948,13 @@ class Balancer(EthereumModule):
 
             for raw_pool_share in raw_pool_shares:
                 try:
-                    address, balancer_pool = deserialize_pool_share(raw_pool_share)
-                    for pool_token in balancer_pool.tokens:
-                        if isinstance(pool_token.token, EthereumToken):
-                            known_tokens.add(pool_token.token)
-                        elif isinstance(pool_token.token, UnknownEthereumToken):
-                            unknown_tokens.add(pool_token.token)
+                    address, balancer_pool = deserialize_pool_share(self.database, raw_pool_share)
+                    for pool_token in balancer_pool.pool_token.underlying_tokens:
+                        token = EthereumToken(pool_token.address)  # should not raise
+                        if token.has_oracle():
+                            known_tokens.add(token)
                         else:
-                            raise AssertionError(f'Unexpected type: {type(pool_token.token)}')
+                            unknown_tokens.add(token)
                 except DeserializationError as e:
                     log.error(
                         'Failed to deserialize a balancer pool balance',
@@ -1013,17 +984,17 @@ class Balancer(EthereumModule):
 
     def _get_token_price_at_timestamp_zero_if_error(
             self,
-            token: Union[EthereumToken, UnknownEthereumToken],
+            token: EthereumToken,
             timestamp: Timestamp,
     ) -> Price:
-        if isinstance(token, EthereumToken):
+        if token.has_oracle():
             usd_price = query_usd_price_or_use_default(
                 asset=token,
                 time=timestamp,
                 default_value=ZERO,
                 location=str(Location.BALANCER),
             )
-        elif isinstance(token, UnknownEthereumToken):
+        else:
             token_to_prices = {}
             try:
                 token_to_prices = self._get_unknown_token_to_prices_uniswap_graph(
@@ -1037,8 +1008,6 @@ class Balancer(EthereumModule):
                 pass
 
             usd_price = token_to_prices.get(token.ethereum_address, Price(ZERO))
-        else:
-            raise AssertionError(f'Unexpected token type: {type(token)}.')
 
         return usd_price
 
@@ -1135,7 +1104,7 @@ class Balancer(EthereumModule):
 
     def _get_unknown_token_to_prices_graph(
             self,
-            unknown_tokens: Set[UnknownEthereumToken],
+            unknown_tokens: Set[EthereumToken],
     ) -> TokenToPrices:
         """Get a mapping of unknown token addresses to USD price
 
@@ -1148,7 +1117,7 @@ class Balancer(EthereumModule):
         token_to_prices = dict(token_to_prices_bal)
         still_unknown_token_addresses = unknown_token_addresses - set(token_to_prices_bal.keys())
         if self.graph_uniswap is not None:
-            # Requesting the missing UnknownEthereumToken prices from Uniswap is
+            # Requesting the missing prices from Uniswap is
             # a nice to have alternative to the main oracle (Balancer). Therefore
             # in case of failing to request, it will just continue.
             try:
@@ -1255,22 +1224,22 @@ class Balancer(EthereumModule):
             unknown_token_to_prices: TokenToPrices,
     ) -> None:
         """Update the prices (in USD) of the underlying pool tokens"""
-        for balancer_pools in address_to_pool_balances.values():
-            for balancer_pool in balancer_pools:
+        for balancer_pool_balances in address_to_pool_balances.values():
+            for pool_balance in balancer_pool_balances:
                 total_usd_value = ZERO
-                for pool_token in balancer_pool.tokens:
-                    token_ethereum_address = pool_token.token.ethereum_address
+                for pool_token_balance in pool_balance.underlying_tokens_balance:
+                    token_ethereum_address = pool_token_balance.token.ethereum_address
                     usd_price = known_token_to_prices.get(
                         token_ethereum_address,
                         unknown_token_to_prices.get(token_ethereum_address, Price(ZERO)),
                     )
                     if usd_price != Price(ZERO):
-                        pool_token.usd_price = usd_price
-                        pool_token.user_balance.usd_value = FVal(
-                            pool_token.user_balance.amount * usd_price,
+                        pool_token_balance.usd_price = usd_price
+                        pool_token_balance.user_balance.usd_value = FVal(
+                            pool_token_balance.user_balance.amount * usd_price,
                         )
-                    total_usd_value += pool_token.user_balance.usd_value
-                balancer_pool.user_balance.usd_value = total_usd_value
+                    total_usd_value += pool_token_balance.user_balance.usd_value
+                pool_balance.user_balance.usd_value = total_usd_value
 
     def _update_used_query_range(
             self,

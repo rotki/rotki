@@ -18,8 +18,8 @@ from rotkehlchen.typing import AssetMovementCategory, Fee, Location, Timestamp, 
 TEST_END_TS = Timestamp(1617382780)
 
 
-def test_name():
-    exchange = Ftx('ftx1', 'a', b'a', object(), object())
+def test_name(database):
+    exchange = Ftx('ftx1', 'a', b'a', database, object(), None)
     assert exchange.location == Location.FTX
     assert exchange.name == 'ftx1'
 

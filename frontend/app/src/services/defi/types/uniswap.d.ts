@@ -1,9 +1,8 @@
 import { default as BigNumber } from 'bignumber.js';
-import { TokenDetails } from '@/services/defi/types';
 import { Balance } from '@/services/types-api';
 
 interface UniswapAsset {
-  readonly asset: TokenDetails;
+  readonly asset: string;
   readonly totalAmount: BigNumber | null;
   readonly usdPrice: BigNumber;
   readonly userBalance: Balance;

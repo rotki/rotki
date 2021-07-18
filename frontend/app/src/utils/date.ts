@@ -1,4 +1,8 @@
-import moment from 'moment';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 
 export function convertToTimestamp(date: string): number {
   let format: string = 'DD/MM/YYYY';
@@ -9,7 +13,7 @@ export function convertToTimestamp(date: string): number {
     }
   }
 
-  return moment(date, format).unix();
+  return dayjs(date, format).unix();
 }
 
 export function convertFromTimestamp(
@@ -21,5 +25,13 @@ export function convertFromTimestamp(
     format += ':ss';
   }
 
-  return moment(timestamp * 1000).format(format);
+  return dayjs(timestamp * 1000).format(format);
+}
+
+export function setupDayjs() {
+  dayjs.extend(customParseFormat);
+  dayjs.extend(utc);
+  dayjs.extend(timezone);
+  dayjs.extend(localizedFormat);
+  dayjs.tz.guess();
 }

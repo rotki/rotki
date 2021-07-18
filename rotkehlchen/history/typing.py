@@ -23,11 +23,11 @@ class HistoricalPriceOracle(DBEnumMixIn):
 
 
 NOT_EXPOSED_SOURCES = (
-    HistoricalPriceOracle.MANUAL,
     HistoricalPriceOracle.XRATESCOM,
 )
 
 DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER = [
+    HistoricalPriceOracle.MANUAL,
     HistoricalPriceOracle.CRYPTOCOMPARE,
     HistoricalPriceOracle.COINGECKO,
 ]

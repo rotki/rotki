@@ -2,7 +2,11 @@ import { AxiosInstance, AxiosTransformer } from 'axios';
 import {
   AssetIdResponse,
   ConflictResolution,
-  EthereumToken
+  EthereumToken,
+  HistoricalPrice,
+  HistoricalPriceDeletePayload,
+  HistoricalPricePayload,
+  SupportedAsset
 } from '@/services/assets/types';
 import {
   axiosSnakeCaseTransformer,
@@ -13,7 +17,6 @@ import {
   PendingTask,
   SupportedAssets
 } from '@/services/types-api';
-import { SupportedAsset } from '@/services/types-model';
 import {
   handleResponse,
   validStatus,
@@ -40,7 +43,9 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  addEthereumToken(token: EthereumToken): Promise<AssetIdResponse> {
+  addEthereumToken(
+    token: Omit<EthereumToken, 'identifier'>
+  ): Promise<AssetIdResponse> {
     return this.axios
       .put<ActionResult<AssetIdResponse>>(
         '/assets/ethereum',
@@ -53,7 +58,9 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  editEthereumToken(token: EthereumToken): Promise<AssetIdResponse> {
+  editEthereumToken(
+    token: Omit<EthereumToken, 'identifier'>
+  ): Promise<AssetIdResponse> {
     return this.axios
       .patch<ActionResult<AssetIdResponse>>(
         '/assets/ethereum',
@@ -145,7 +152,7 @@ export class AssetApi {
 
   async allAssets(): Promise<SupportedAssets> {
     return this.axios
-      .get<ActionResult<SupportedAssets>>('assets/all', {
+      .get<ActionResult<SupportedAssets>>('/assets/all', {
         validateStatus: validWithSessionAndExternalService,
         transformResponse: setupTransformer([], true)
       })
@@ -234,6 +241,53 @@ export class AssetApi {
       .put<ActionResult<boolean>>('/assets/replace', data, {
         validateStatus: validStatus,
         transformResponse: this.baseTransformer
+      })
+      .then(handleResponse);
+  }
+
+  historicalPrices(
+    payload?: Partial<HistoricalPricePayload>
+  ): Promise<HistoricalPrice[]> {
+    return this.axios
+      .get<ActionResult<HistoricalPrice[]>>('/assets/prices/historical', {
+        params: axiosSnakeCaseTransformer(payload),
+        validateStatus: validWithoutSessionStatus,
+        transformResponse: setupTransformer(['price'])
+      })
+      .then(handleResponse);
+  }
+
+  async addHistoricalPrice(price: HistoricalPrice): Promise<boolean> {
+    return this.axios
+      .put<ActionResult<boolean>>(
+        '/assets/prices/historical',
+        axiosSnakeCaseTransformer(price),
+        {
+          validateStatus: validWithoutSessionStatus
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async editHistoricalPrice(price: HistoricalPrice): Promise<boolean> {
+    return this.axios
+      .patch<ActionResult<boolean>>(
+        '/assets/prices/historical',
+        axiosSnakeCaseTransformer(price),
+        {
+          validateStatus: validWithoutSessionStatus
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async deleteHistoricalPrice(
+    payload: HistoricalPriceDeletePayload
+  ): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>('/assets/prices/historical', {
+        data: axiosSnakeCaseTransformer(payload),
+        validateStatus: validWithoutSessionStatus
       })
       .then(handleResponse);
   }

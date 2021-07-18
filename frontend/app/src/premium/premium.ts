@@ -128,6 +128,10 @@ export const ThemeManager = (): Promise<VueConstructor> => {
   return load('ThemeManager');
 };
 
+export const Grants = (): Promise<VueConstructor> => {
+  return load('Grants');
+};
+
 declare global {
   interface Window {
     Vue: any;

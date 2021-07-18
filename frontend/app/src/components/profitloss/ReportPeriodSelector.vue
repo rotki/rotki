@@ -54,7 +54,7 @@
 </template>
 
 <script lang="ts">
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { ALL, Q1, Q2, Q3, Q4, QUARTERS } from '@/store/settings/consts';
 import { Quarter } from '@/store/settings/types';
@@ -103,8 +103,7 @@ export default class ReportPeriodSelector extends Vue {
 
   isStartAfterNow(selection: Quarter) {
     const start = this.startDateTime(selection);
-    const startEpoch = moment(start, 'DD/MM/YYYY HH:mm:ss').unix();
-    return startEpoch >= moment().unix();
+    return dayjs(start, 'DD/MM/YYYY HH:mm').isAfter(dayjs());
   }
 
   startDateTime(selection: Quarter): string {

@@ -1,5 +1,5 @@
 import { BackendCode } from '@/electron-main/backend-code';
-import { BackendOptions, SystemVersion } from '@/electron-main/ipc';
+import { BackendOptions, SystemVersion, TrayUpdate } from '@/electron-main/ipc';
 import { WebVersion } from '@/types';
 import { assert } from '@/utils/assertions';
 
@@ -85,6 +85,14 @@ export class ElectronInterop {
 
   onAbout(cb: () => void) {
     window.interop?.onAbout(cb);
+  }
+
+  resetTray() {
+    window.interop?.updateTray({});
+  }
+
+  updateTray(update: TrayUpdate) {
+    window.interop?.updateTray(update);
   }
 }
 

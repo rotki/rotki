@@ -54,8 +54,8 @@ def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
         'started': 6,
         'forked': custom1_id,
         'swapped_for': 'ETH',
-        'coingecko': 'goo-token',
-        'cryptocompare': 'GOO',
+        'coingecko': 'internet-computer',
+        'cryptocompare': 'ICP',
     }
     response = requests.put(
         api_url_for(
@@ -137,6 +137,48 @@ def test_adding_custom_assets(rotkehlchen_api_server, globaldb):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    # try to add invalid coingecko
+    bad_id = 'dsadsad'
+    bad_asset = {
+        'asset_type': 'omni token',
+        'name': 'Euro',
+        'symbol': 'EUR',
+        'coingecko': bad_id,
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=bad_asset,
+    )
+    expected_msg = f'Given coingecko identifier {bad_id} is not valid'
+    assert_error_response(
+        response=response,
+        contained_in_msg=expected_msg,
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # try to add invalid cryptocompare
+    bad_id = 'dsadsad'
+    bad_asset = {
+        'asset_type': 'omni token',
+        'name': 'Euro',
+        'symbol': 'EUR',
+        'cryptocompare': bad_id,
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=bad_asset,
+    )
+    expected_msg = f'Given cryptocompare identifier {bad_id} isnt valid'
+    assert_error_response(
+        response=response,
+        contained_in_msg=expected_msg,
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -175,8 +217,8 @@ def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
         'started': 6,
         'forked': custom1_id,
         'swapped_for': 'ETH',
-        'coingecko': 'goo-token',
-        'cryptocompare': 'GOO',
+        'coingecko': 'internet-computer',
+        'cryptocompare': 'ICP',
     }
     response = requests.patch(
         api_url_for(
@@ -261,6 +303,50 @@ def test_editing_custom_assets(rotkehlchen_api_server, globaldb):
         contained_in_msg=expected_msg,
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    # try to edit invalid coingecko
+    bad_id = 'dsadsad'
+    bad_asset = {
+        'identifier': 'EUR',
+        'asset_type': 'omni token',
+        'name': 'Euro',
+        'symbol': 'EUR',
+        'coingecko': bad_id,
+    }
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=bad_asset,
+    )
+    expected_msg = f'Given coingecko identifier {bad_id} is not valid'
+    assert_error_response(
+        response=response,
+        contained_in_msg=expected_msg,
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # try to add invalid cryptocompare
+    bad_id = 'dsadsad'
+    bad_asset = {
+        'identifier': 'EUR',
+        'asset_type': 'omni token',
+        'name': 'Euro',
+        'symbol': 'EUR',
+        'cryptocompare': bad_id,
+    }
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=bad_asset,
+    )
+    expected_msg = f'Given cryptocompare identifier {bad_id} isnt valid'
+    assert_error_response(
+        response=response,
+        contained_in_msg=expected_msg,
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -291,8 +377,8 @@ def test_deleting_custom_assets(rotkehlchen_api_server, globaldb):
         'started': 6,
         'forked': custom1_id,
         'swapped_for': 'ETH',
-        'coingecko': 'goo-token',
-        'cryptocompare': 'GOO',
+        'coingecko': 'internet-computer',
+        'cryptocompare': 'ICP',
     }
     response = requests.put(
         api_url_for(

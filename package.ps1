@@ -1,3 +1,4 @@
+$PYINSTALLER_VERSION = if ($env:PYINSTALLER_VERSION) { $env:PYINSTALLER_VERSION } else { '3.5' }
 $SQLCIPHER_VERSION = if ($env:SQLCIPHER_VERSION) { $env:SQLCIPHER_VERSION } else { 'v4.4.0' }
 $PYSQLCIPHER3_VERSION = if ($env:PYSQLCIPHER3_VERSION) { $env:PYSQLCIPHER3_VERSION } else { 'c01b3bda144073eb34412ae64702fa2362a778e7' }
 $BUILD_DEPENDENCIES = if ($env:BUILD_DEPENDENCIES) { $env:BUILD_DEPENDENCIES } else { 'rotki-build-dependencies' }
@@ -208,7 +209,7 @@ if ($Env:CI) {
     echo "::group::pip install"
 }
 
-pip install pyinstaller==3.5
+pip install pyinstaller==$PYINSTALLER_VERSION
 pip install -r requirements.txt
 pip install -e.
 

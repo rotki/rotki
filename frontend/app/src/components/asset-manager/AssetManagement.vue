@@ -75,11 +75,13 @@ import { mapState } from 'vuex';
 import AssetForm from '@/components/asset-manager/AssetForm.vue';
 import AssetTable from '@/components/asset-manager/AssetTable.vue';
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
-import { ManagedAsset } from '@/components/asset-manager/types';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import { EthereumToken } from '@/services/assets/types';
-import { SupportedAsset } from '@/services/types-model';
+import {
+  EthereumToken,
+  ManagedAsset,
+  SupportedAsset
+} from '@/services/assets/types';
 import { showError } from '@/store/utils';
 import { Nullable } from '@/types';
 import { assert } from '@/utils/assertions';

@@ -1,7 +1,7 @@
 import functools
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.modules.uniswap.typing import (
     EventType,
     LiquidityPool,
@@ -23,24 +23,11 @@ TEST_ADDRESS_1 = string_to_ethereum_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B
 TEST_ADDRESS_2 = string_to_ethereum_address('0xcf2B8EeC2A9cE682822b252a1e9B78EedebEFB02')
 TEST_ADDRESS_3 = string_to_ethereum_address('0x7777777777777777777777777777777777777777')
 
-# Unknown tokens
-ASSET_SHUF = UnknownEthereumToken(
-    ethereum_address=string_to_ethereum_address('0x3A9FfF453d50D4Ac52A6890647b823379ba36B9E'),
-    symbol='SHUF',
-    name='Shuffle.Monster V3',
-    decimals=18,
-)
-ASSET_TGX = UnknownEthereumToken(
-    ethereum_address=string_to_ethereum_address('0x364A7381A5b378CeD7AB33d1CDf6ff1bf162Bfd6'),
-    symbol='TGX',
-    name='DeFi-X Token',
-    decimals=18,
-)
-TOKEN_DICE = UnknownEthereumToken(
-    ethereum_address=string_to_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),
-    symbol='DICE',
-    name='DICE.FINANCE TOKEN',
-)
+
+# Tokens without oracle data (unknown tokens)
+A_SHL = EthereumToken('0x8542325B72C6D9fC0aD2Ca965A78435413a915A0')
+A_CAR = EthereumToken('0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B')
+A_BTR = EthereumToken('0xcbf15FB8246F679F9Df0135881CB29a3746f734b')
 
 # Method: `_get_balances_graph`
 # 'liquidityPositions' subgraph response data for TEST_ADDRESS_1
@@ -53,9 +40,9 @@ LIQUIDITY_POSITION_1 = {
         'reserve1': '72.576018267058292417',
         'token0': {
             'decimals': '18',
-            'id': '0x3a9fff453d50d4ac52a6890647b823379ba36b9e',
-            'name': 'Shuffle.Monster V3',
-            'symbol': 'SHUF',
+            'id': '0x8542325b72c6d9fc0ad2ca965a78435413a915a0',
+            'name': 'Oyster Shell',
+            'symbol': 'SHL',
         },
         'token1': {
             'decimals': '18',
@@ -80,9 +67,9 @@ LIQUIDITY_POSITION_2 = {
         'reserve1': '2351046.688852',
         'token0': {
             'decimals': '18',
-            'id': '0x364a7381a5b378ced7ab33d1cdf6ff1bf162bfd6',
-            'name': 'DeFi-X Token',
-            'symbol': 'TGX',
+            'id': '0x4d9e23a3842fe7eb7682b9725cf6c507c424a41b',
+            'name': 'CarBlock',
+            'symbol': 'CAR',
         },
         'token1': {
             'decimals': '6',
@@ -103,7 +90,7 @@ EXP_LIQUIDITY_POOL_1 = (
         address=string_to_ethereum_address('0x260E069deAd76baAC587B5141bB606Ef8b9Bab6c'),
         assets=[
             LiquidityPoolAsset(
-                asset=ASSET_SHUF,
+                asset=A_SHL,
                 total_amount=FVal('135433.787685858453561892'),
                 user_balance=Balance(
                     amount=FVal('2486.554982222884623101272349'),
@@ -135,7 +122,7 @@ EXP_LIQUIDITY_POOL_2 = (
         address=string_to_ethereum_address('0x318BE2AA088FFb991e3F6E61AFb276744e36F4Ae'),
         assets=[
             LiquidityPoolAsset(
-                asset=ASSET_TGX,
+                asset=A_CAR,
                 total_amount=FVal('8898126.662476782539378895'),
                 user_balance=Balance(
                     amount=FVal('3773477.536528796798537134308'),
@@ -163,29 +150,29 @@ EXP_LIQUIDITY_POOL_2 = (
 
 # Expected `known_assets` and `unknown_assets` for LIQUIDITY_POSITION_1
 EXP_KNOWN_ASSETS_1 = {A_WETH}
-EXP_UNKNOWN_ASSETS_1 = {ASSET_SHUF}
+EXP_UNKNOWN_ASSETS_1 = {A_SHL}
 
 # Expected `known_assets` and `unknown_assets` for LIQUIDITY_POSITION_2
 EXP_KNOWN_ASSETS_2 = {A_USDT}
-EXP_UNKNOWN_ASSETS_2 = {ASSET_TGX}
+EXP_UNKNOWN_ASSETS_2 = {A_CAR}
 
 
 # Method: `_get_unknown_asset_price_graph`
-# 'tokenDayDatas' subgraph response data for SHUF
-TOKEN_DAY_DATA_SHUF = {
-    'token': {'id': ASSET_SHUF.ethereum_address},
+# 'tokenDayDatas' subgraph response data for SHL
+TOKEN_DAY_DATA_SHL = {
+    'token': {'id': A_SHL.ethereum_address},
     'priceUSD': '0.2373897544244518146892192714786454',
 }
-# 'tokenDayDatas' subgraph response data for TGX
-TOKEN_DAY_DATA_TGX = {
-    'token': {'id': ASSET_TGX.ethereum_address},
+# 'tokenDayDatas' subgraph response data for CAR
+TOKEN_DAY_DATA_CAR = {
+    'token': {'id': A_CAR.ethereum_address},
     'priceUSD': '0.2635575008126147388714187358722384',
 }
 
 USD_PRICE_WETH = Price(FVal('441.82'))
 USD_PRICE_USDT = Price(FVal('0.9998'))
-USD_PRICE_SHUF = Price(FVal('0.2373897544244518146892192714786454'))
-USD_PRICE_TGX = Price(FVal('0.2635575008126147388714187358722384'))
+USD_PRICE_SHL = Price(FVal('0.2373897544244518146892192714786454'))
+USD_PRICE_CAR = Price(FVal('0.2635575008126147388714187358722384'))
 
 
 # Method: `_update_assets_prices_in_address_balances`
@@ -195,7 +182,7 @@ UPDATED_LIQUIDITY_POOL_1 = (
         address=string_to_ethereum_address('0x260E069deAd76baAC587B5141bB606Ef8b9Bab6c'),
         assets=[
             LiquidityPoolAsset(
-                asset=ASSET_SHUF,
+                asset=A_SHL,
                 total_amount=FVal('135433.787685858453561892'),
                 user_balance=Balance(
                     amount=FVal('2486.554982222884623101272349'),
@@ -227,7 +214,7 @@ UPDATED_LIQUIDITY_POOL_2 = (
         address=string_to_ethereum_address('0x318BE2AA088FFb991e3F6E61AFb276744e36F4Ae'),
         assets=[
             LiquidityPoolAsset(
-                asset=ASSET_TGX,
+                asset=A_CAR,
                 total_amount=FVal('8898126.662476782539378895'),
                 user_balance=Balance(
                     amount=FVal('3773477.536528796798537134308'),
@@ -259,7 +246,7 @@ UPDATED_LIQUIDITY_POOL_2_ONLY_USDT = (
         address=string_to_ethereum_address('0x318BE2AA088FFb991e3F6E61AFb276744e36F4Ae'),
         assets=[
             LiquidityPoolAsset(
-                asset=ASSET_TGX,
+                asset=A_CAR,
                 total_amount=FVal('8898126.662476782539378895'),
                 user_balance=Balance(
                     amount=FVal('3773477.536528796798537134308'),
@@ -326,7 +313,7 @@ LP_2_EVENTS = [
         event_type=EventType.MINT,
         pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
         token0=A_WETH,
-        token1=TOKEN_DICE,
+        token1=A_BTR,
         amount0=AssetAmount(FVal('1.580431277572006656')),
         amount1=AssetAmount(FVal('3')),
         usd_price=Price(FVal('1281.249386421513581165086356450817')),
@@ -340,7 +327,7 @@ LP_2_EVENTS = [
         event_type=EventType.BURN,
         pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
         token0=A_WETH,
-        token1=TOKEN_DICE,
+        token1=A_BTR,
         amount0=AssetAmount(FVal('0.970300671842796406')),
         amount1=AssetAmount(FVal('4.971799615456732408')),
         usd_price=Price(FVal('928.8590296681781753390482605315881')),
@@ -364,7 +351,7 @@ LP_2_EVENTS_BALANCE = (
         address=TEST_ADDRESS_1,
         pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
         token0=A_WETH,
-        token1=TOKEN_DICE,
+        token1=A_BTR,
         events=LP_2_EVENTS,
         profit_loss0=AssetAmount(FVal('-0.610130605729210250')),
         profit_loss1=AssetAmount(FVal('1.971799615456732408')),

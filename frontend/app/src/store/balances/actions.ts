@@ -24,6 +24,7 @@ import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { MODULE_LOOPRING } from '@/services/session/consts';
+import { SupportedModules } from '@/services/session/types';
 import { XpubAccountData } from '@/services/types-api';
 import { chainSection } from '@/store/balances/const';
 import {
@@ -479,7 +480,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async addAccounts(
     { state, commit, dispatch, rootGetters },
-    { blockchain, payload }: AddAccountsPayload
+    { blockchain, payload, modules }: AddAccountsPayload
   ): Promise<void> {
     const taskType = TaskType.ADD_ACCOUNT;
     const isTaskRunning = rootGetters['tasks/isTaskRunning'];
@@ -508,7 +509,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     const addAccount = async (
       blockchain: Blockchain,
-      { address, label, tags }: AccountPayload
+      { address, label, tags }: AccountPayload,
+      modules?: SupportedModules[]
     ) => {
       const { taskId } = await api.addBlockchainAccount({
         blockchain,
@@ -538,11 +540,23 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         BlockchainBalances,
         BlockchainMetadata
       >(taskType, `${taskId}`);
+
+      if (modules && blockchain === ETH) {
+        await dispatch(
+          'session/enableModule',
+          {
+            enable: modules,
+            addresses: [address]
+          },
+          { root: true }
+        );
+      }
+
       await dispatch('updateBalances', { chain: blockchain, balances: result });
     };
 
     const additions = accounts.map(value =>
-      addAccount(blockchain, value).catch(() => {})
+      addAccount(blockchain, value, modules).catch(() => {})
     );
     Promise.all(additions)
       .then(async () => {
@@ -596,6 +610,17 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           chain: blockchain,
           balances: result
         });
+
+        if (blockchain === ETH && payload.modules) {
+          await dispatch(
+            'session/enableModule',
+            {
+              enable: payload.modules,
+              addresses: [address]
+            },
+            { root: true }
+          );
+        }
         await commit('defi/reset', undefined, { root: true });
         await dispatch('resetDefiStatus', {}, { root: true });
         await dispatch('refreshPrices', false);
@@ -814,7 +839,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const exchangeEntry: Exchange = {
         name: exchange.name,
         location: exchange.location,
-        krakenAccountType: exchange.krakenAccountType ?? undefined
+        krakenAccountType: exchange.krakenAccountType ?? undefined,
+        ftxSubaccount: exchange.ftxSubaccount ?? undefined
       };
 
       if (!edit) {

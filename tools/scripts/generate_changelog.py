@@ -48,7 +48,7 @@ def generate_changelog(version: str, path: str) -> str:
                     else:
                         changes['bugs'].append(text)
 
-            if start and 'release' in line:
+            if start and '* :release:' in line:
                 break
 
     result = [

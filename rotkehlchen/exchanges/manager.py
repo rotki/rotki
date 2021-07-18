@@ -8,11 +8,11 @@ from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
+    EXTERNAL_EXCHANGES,
     ApiKey,
     ApiSecret,
     ExchangeApiCredentials,
     Location,
-    EXTERNAL_EXCHANGES,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -41,6 +41,7 @@ SUPPORTED_EXCHANGES = [
     Location.ICONOMI,
     Location.KUCOIN,
     Location.FTX,
+    Location.INDEPENDENTRESERVE,
 ]
 EXCHANGES_WITH_PASSPHRASE = (Location.COINBASEPRO, Location.KUCOIN)
 # Exchanges for which we allow import via CSV
@@ -91,6 +92,7 @@ class ExchangeManager():
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[List[str]],
+            ftx_subaccount_name: Optional[str],
     ) -> Tuple[bool, str]:
         """Edits both the exchange object and the database entry
 
@@ -113,6 +115,7 @@ class ExchangeManager():
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
+            ftx_subaccount_name=ftx_subaccount_name,
             should_commit=False,
         )
 
@@ -124,6 +127,7 @@ class ExchangeManager():
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
+            ftx_subaccount_name=ftx_subaccount_name,
         )
         if success is False:
             self.database.conn.rollback()  # the database changes that happened need rollback
@@ -157,6 +161,10 @@ class ExchangeManager():
                 data = {"location": str(location), "name": exchangeobj.name}
                 if location == Location.KRAKEN:  # ignore type since we know this is kraken here
                     data['kraken_account_type'] = str(exchangeobj.account_type)  # type: ignore
+                if location == Location.FTX:
+                    subaccount = exchangeobj.subaccount  # type: ignore
+                    if subaccount is not None:
+                        data['ftx_subaccount'] = subaccount
                 exchange_info.append(data)
 
         return exchange_info
@@ -182,6 +190,7 @@ class ExchangeManager():
             database: 'DBHandler',
             passphrase: Optional[str] = None,
             kraken_account_type: Optional['KrakenAccountType'] = None,
+            ftx_subaccount_name: Optional[str] = None,
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key, an api secret.
@@ -201,9 +210,12 @@ class ExchangeManager():
             api_secret=api_secret,
             passphrase=passphrase,
         )
-        extras = {}
+        extras: Dict[str, Any] = {}
         if kraken_account_type is not None:
             extras['kraken_account_type'] = kraken_account_type
+        if ftx_subaccount_name is not None:
+            extras['ftx_subaccount_name'] = ftx_subaccount_name
+
         exchange = self.initialize_exchange(
             module=self._get_exchange_module(location),
             credentials=api_credentials,

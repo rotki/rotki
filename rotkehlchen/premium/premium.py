@@ -287,8 +287,8 @@ class Premium():
         )
         return metadata
 
-    def query_statistics_renderer(self) -> str:
-        """Queries for the source of the statistics_renderer from the server
+    def query_premium_components(self) -> str:
+        """Queries for the source code of the premium components from the server
 
         Raises RemoteError if there are problems reaching the server or if
         there is an error returned by the server

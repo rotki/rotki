@@ -1,6 +1,4 @@
-import { ManagedAsset } from '@/components/asset-manager/types';
-import { EthereumToken } from '@/services/assets/types';
-import { SupportedAsset } from '@/services/types-model';
+import { ManagedAsset } from '@/services/assets/types';
 
 function levenshtein(a: string, b: string) {
   let tmp;
@@ -40,10 +38,7 @@ function levenshtein(a: string, b: string) {
   return res;
 }
 
-function score(
-  keyword: string,
-  { name, symbol }: SupportedAsset | EthereumToken
-): number {
+function score(keyword: string, { name, symbol }: ManagedAsset): number {
   const symbolScore = levenshtein(keyword, symbol.toLocaleLowerCase());
   const nameScore = levenshtein(keyword, name.toLocaleLowerCase());
   return Math.min(symbolScore, nameScore);

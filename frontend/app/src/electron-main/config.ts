@@ -10,6 +10,8 @@ const LOGDIR = 'log-dir';
 const SLEEP_SECS = 'sleep-secs';
 const DATA_DIR = 'data-dir';
 const LOG_FROM_OTHER_MODULES = 'logfromothermodules';
+const MAX_LOG_SIZE = 'max_size_in_mb_all_logs';
+const MAX_LOG_NUMBER = 'max_logfiles_num';
 
 export function loadConfig(): Partial<BackendOptions> {
   const options: Writeable<Partial<BackendOptions>> = {};
@@ -43,6 +45,14 @@ export function loadConfig(): Partial<BackendOptions> {
 
     if (SLEEP_SECS in config) {
       options.sleepSeconds = parseInt(config[SLEEP_SECS]);
+    }
+
+    if (MAX_LOG_SIZE in config) {
+      options.maxSizeInMbAllLogs = parseInt(config[MAX_LOG_SIZE]);
+    }
+
+    if (MAX_LOG_NUMBER in config) {
+      options.maxLogfilesNum = parseInt(config[MAX_LOG_NUMBER]);
     }
 
     return options;

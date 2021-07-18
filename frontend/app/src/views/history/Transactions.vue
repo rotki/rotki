@@ -129,6 +129,7 @@ import {
   FETCH_FROM_CACHE,
   FETCH_FROM_SOURCE,
   FETCH_REFRESH,
+  HistoryActions,
   IGNORE_TRANSACTIONS
 } from '@/store/history/consts';
 import {
@@ -162,9 +163,9 @@ import { toUnit, Unit } from '@/utils/calculation';
   },
   methods: {
     ...mapActions('history', [
-      'fetchTransactions',
-      'ignoreActions',
-      'unignoreActions'
+      HistoryActions.FETCH_TRANSACTIONS,
+      HistoryActions.IGNORE_ACTIONS,
+      HistoryActions.UNIGNORE_ACTION
     ]),
     ...mapMutations(['setMessage'])
   }

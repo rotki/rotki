@@ -4,6 +4,7 @@ import {
   convertToGeneralSettings
 } from '@/data/converters';
 import { EXTERNAL_EXCHANGES, SUPPORTED_EXCHANGES } from '@/data/defaults';
+import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { DBSettings, Exchange } from '@/model/action-result';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
@@ -35,10 +36,7 @@ import {
 } from '@/services/session/types';
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
-import {
-  ACTION_PURGE_EXCHANGE,
-  ACTION_PURGE_TRANSACTIONS
-} from '@/store/history/consts';
+import { HistoryActions } from '@/store/history/consts';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { ACTION_PURGE_CACHED_DATA } from '@/store/session/const';
@@ -63,6 +61,7 @@ import {
   UnlockPayload
 } from '@/typing/types';
 import { backoff } from '@/utils/backoff';
+import { uniqueStrings } from '@/utils/data';
 
 const periodic = {
   isRunning: false
@@ -87,8 +86,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     let exchanges: Exchange[];
 
     try {
-      const { username, create } = payload;
-      const isLogged = await api.checkIfLogged(username);
+      const { username, create, restore } = payload;
+      const isLogged = restore || (await api.checkIfLogged(username));
       if (isLogged && !state.syncConflict.message) {
         [settings, exchanges] = await Promise.all([
           api.getSettings(),
@@ -190,11 +189,25 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   },
   async logout({ dispatch, state }) {
+    interop.resetTray();
     try {
       await api.logout(state.username);
       await dispatch('stop');
     } catch (e) {
       showError(e.message, 'Logout failed');
+    }
+  },
+  async logoutRemoteSession(): Promise<ActionStatus> {
+    try {
+      const loggedUsers = await api.loggedUsers();
+      for (let i = 0; i < loggedUsers.length; i++) {
+        const user = loggedUsers[i];
+        await api.logout(user);
+      }
+      return { success: true };
+    } catch (e) {
+      showError(e.message, 'Logout failed');
+      return { success: false, message: e.message };
     }
   },
   async stop({ commit }) {
@@ -214,14 +227,21 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('reset', payload, opts);
   },
 
-  async addTag({ commit }, tag: Tag) {
+  async addTag({ commit }, tag: Tag): Promise<ActionStatus> {
     try {
       commit('tags', await api.addTag(tag));
+      return {
+        success: true
+      };
     } catch (e) {
       showError(
         e.message,
         i18n.t('actions.session.tag_add.error.title').toString()
       );
+      return {
+        success: false,
+        message: e.message
+      };
     }
   },
 
@@ -370,6 +390,30 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
           })
           .toString()
       );
+    }
+  },
+
+  async enableModule(
+    { state, dispatch },
+    payload: {
+      readonly enable: SupportedModules[];
+      readonly addresses: string[];
+    }
+  ) {
+    const activeModules = state.generalSettings.activeModules;
+    const modules: SupportedModules[] = [
+      ...activeModules,
+      ...payload.enable
+    ].filter(uniqueStrings);
+    dispatch('updateSettings', { active_modules: modules });
+
+    for (const module of payload.enable) {
+      for (const address of payload.addresses) {
+        await dispatch('addQueriedAddress', {
+          module,
+          address
+        });
+      }
     }
   },
 
@@ -534,7 +578,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     const opts = { root: true };
     if (purgable === ALL_CENTRALIZED_EXCHANGES) {
       await dispatch(
-        `history/${ACTION_PURGE_EXCHANGE}`,
+        `history/${HistoryActions.PURGE_EXCHANGE}`,
         ALL_CENTRALIZED_EXCHANGES,
         opts
       );
@@ -542,7 +586,11 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, MODULE_UNISWAP, opts);
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, MODULE_BALANCER, opts);
     } else if (purgable === ALL_TRANSACTIONS) {
-      await dispatch(`history/${ACTION_PURGE_TRANSACTIONS}`, undefined, opts);
+      await dispatch(
+        `history/${HistoryActions.PURGE_TRANSACTIONS}`,
+        undefined,
+        opts
+      );
     } else if (purgable === ALL_MODULES) {
       await dispatch(`staking/${ACTION_PURGE_DATA}`, ALL_MODULES, opts);
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, ALL_MODULES, opts);
@@ -550,7 +598,11 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       SUPPORTED_EXCHANGES.includes(purgable as SupportedExchange) ||
       EXTERNAL_EXCHANGES.includes(purgable as SupportedExternalExchanges)
     ) {
-      await dispatch(`history/${ACTION_PURGE_EXCHANGE}`, purgable, opts);
+      await dispatch(
+        `history/${HistoryActions.PURGE_EXCHANGE}`,
+        purgable,
+        opts
+      );
     } else if (MODULES.includes(purgable as SupportedModules)) {
       if ([MODULE_ETH2, MODULE_ADEX].includes(purgable)) {
         await dispatch(`staking/${ACTION_PURGE_DATA}`, purgable, opts);

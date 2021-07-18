@@ -6,7 +6,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.chain.ethereum.trades import AMMTrade
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -16,7 +16,6 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.constants import (
     A_EUR,
-    A_LTC,
     A_RDN,
     A_XMR,
     ETH_ADDRESS1,
@@ -55,6 +54,11 @@ prices = {
     'EUR': {
         'USD': {
             1467279735: FVal('1.1001'),
+            1599221029: FVal('1.1001'),
+            1599492244: FVal('1.1001'),
+            1600380544: FVal('1.1001'),
+            1600395691: FVal('1.1001'),
+            1600473301: FVal('1.1001'),
         },
     },
     'BTC': {
@@ -122,6 +126,13 @@ prices = {
             1539713117: FVal(178.615),
             1539713237: FVal(178.615),
             1539713238: FVal(178.615),
+            1609537953: FVal(598.26),
+            1624395186: FVal(1862.06),
+            1624791600: FVal(1659.59),
+            1625001464: FVal(1837.31),
+        },
+        'USD': {
+            1624798800: FVal(1983.33),
         },
     },
     strethaddress_to_identifier('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'): {
@@ -219,10 +230,10 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
                 "isMaker": false,
                 "isBestMatch": true
                 }]"""
-        elif 'depositHistory.html' in url:
-            payload = '{"success": true, "depositList": []}'
-        elif 'withdrawHistory.html' in url:
-            payload = '{"success": true, "withdrawList": []}'
+        elif 'capital/deposit' in url:
+            payload = '[]'
+        elif 'capital/withdraw' in url:
+            payload = '[]'
         else:
             raise RuntimeError(f'Binance test mock got unexpected/unmocked url {url}')
 

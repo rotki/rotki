@@ -60,6 +60,9 @@ export default class BackendMixin extends Vue {
   }
 
   private async load() {
+    if (!this.$interop.isPackaged) {
+      return;
+    }
     this.userOptions = loadUserOptions();
     this.fileConfig = await this.$interop.config(false);
     const { logDirectory } = await this.$interop.config(true);
@@ -90,6 +93,9 @@ export default class BackendMixin extends Vue {
   }
 
   async restartBackend() {
+    if (!this.$interop.isPackaged) {
+      return;
+    }
     await this.load();
     await this.restartBackendWithOptions(this.options);
   }

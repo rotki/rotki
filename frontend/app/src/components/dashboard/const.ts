@@ -1,4 +1,4 @@
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Timeframe, Timeframes, TimeUnit } from '@/components/dashboard/types';
 import {
   TIMEFRAME_ALL,
@@ -23,7 +23,7 @@ export const TIME_UNITS = [
 ] as const;
 
 function startingDate(unit: TimeUnit, amount: number = 1): number {
-  return moment().subtract(amount, unit).startOf(TIME_UNIT_DAY).unix();
+  return dayjs().subtract(amount, unit).startOf(TIME_UNIT_DAY).unix();
 }
 
 type TimeframeDefaults = Pick<

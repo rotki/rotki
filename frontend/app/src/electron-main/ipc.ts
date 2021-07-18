@@ -26,6 +26,17 @@ export type BackendOptions = {
   readonly logDirectory: string;
   readonly sleepSeconds: number;
   readonly logFromOtherModules: boolean;
+  readonly maxSizeInMbAllLogs: number;
+  readonly maxLogfilesNum: number;
+};
+
+export type TrayUpdate = {
+  readonly percentage?: string;
+  readonly delta?: string;
+  readonly netWorth?: string;
+  readonly up?: boolean;
+  readonly currency?: string;
+  readonly period?: string;
 };
 
 export interface Interop {
@@ -40,6 +51,7 @@ export interface Interop {
   monitorDebugSettings(): void;
   debugSettings?(): DebugSettings | undefined;
   serverUrl(): string;
+  websocketUrl(): string;
   metamaskImport(): Promise<MetamaskImport>;
   checkForUpdates(): Promise<boolean>;
   downloadUpdate(progress: (percentage: number) => void): Promise<boolean>;
@@ -49,4 +61,5 @@ export interface Interop {
   version(): Promise<SystemVersion>;
   onAbout(callback: () => void): void;
   config(defaults: boolean): Promise<Partial<BackendOptions>>;
+  updateTray(trayUpdate: TrayUpdate): Promise<void>;
 }

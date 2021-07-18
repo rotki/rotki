@@ -121,8 +121,10 @@ TABLES_AT_INIT = [
     'ledger_action_type',
     'ignored_actions',
     'action_type',
-    'balancer_pools',
     'balancer_events',
+    'ledger_actions_gitcoin_data',
+    'gitcoin_tx_type',
+    'gitcoin_grant_metadata',
 ]
 
 

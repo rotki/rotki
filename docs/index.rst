@@ -31,6 +31,7 @@ Contents
    installation_guide
    usage_guide
    api
+   websockets
    contribute
    faq
    changelog

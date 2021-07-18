@@ -20,6 +20,7 @@ import {
   EXCHANGE_NEXO,
   EXCHANGE_POLONIEX,
   EXCHANGE_UNISWAP,
+  EXCHANGE_INDEPENDENTRESERVE,
   TRADE_LOCATION_BANKS,
   TRADE_LOCATION_BLOCKCHAIN,
   TRADE_LOCATION_COMMODITIES,
@@ -173,6 +174,13 @@ export const tradeLocations: TradeLocationData[] = [
     exchange: true
   },
   {
+    identifier: EXCHANGE_INDEPENDENTRESERVE,
+    name: 'IndepentReserve',
+    icon: require('@/assets/images/exchanges/independentreserve.png'),
+    imageIcon: true,
+    exchange: true
+  },
+  {
     identifier: TRADE_LOCATION_EXTERNAL,
     name: i18n.t('trade_location.external').toString(),
     icon: 'mdi-book',
@@ -212,6 +220,13 @@ export const tradeLocations: TradeLocationData[] = [
     name: i18n.t('trade_location.commodities').toString(),
     icon: 'mdi-basket',
     imageIcon: false,
+    exchange: false
+  },
+  {
+    identifier: 'gitcoin',
+    name: 'Gitcoin',
+    icon: require('@/assets/images/gitcoin.png'),
+    imageIcon: true,
     exchange: false
   }
 ];

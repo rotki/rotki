@@ -10,8 +10,9 @@
         <template #activator="{ on: tooltip }">
           <v-btn
             v-bind="attrs"
-            text
+            icon
             fab
+            small
             depressed
             :disabled="loading"
             v-on="{ ...menu, ...tooltip }"

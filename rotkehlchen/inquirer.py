@@ -3,15 +3,17 @@ from __future__ import unicode_literals  # isort:skip
 import logging
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
+import operator
+from typing import Any, TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
+from rotkehlchen.chain.ethereum.defi.curve_pools import get_curve_pools
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
-from rotkehlchen.chain.ethereum.utils import multicall_2
+from rotkehlchen.chain.ethereum.utils import multicall_2, token_normalized_value_decimals
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
 from rotkehlchen.constants.assets import (
+    A_3CRV,
     A_ALINK_V1,
     A_BTC,
     A_CRV_3CRV,
@@ -50,8 +52,9 @@ from rotkehlchen.constants.assets import (
     A_YV1_USDT,
     A_YV1_WETH,
     A_YV1_YFI,
+    A_WETH,
 )
-from rotkehlchen.constants.ethereum import UNISWAP_V2_LP_ABI
+from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, UNISWAP_V2_LP_ABI, YEARN_VAULT_V2_ABI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors import (
     DeserializationError,
@@ -66,10 +69,16 @@ from rotkehlchen.externalapis.xratescom import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Price, Timestamp, KnownProtocolsAssets
+from rotkehlchen.typing import (
+    CURVE_POOL_PROTOCOL,
+    KnownProtocolsAssets,
+    Price,
+    Timestamp,
+    UNISWAP_PROTOCOL,
+    YEARN_VAULTS_V2_PROTOCOL,
+)
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.network import request_get_dict
 
@@ -95,6 +104,21 @@ ASSETS_UNDERLYING_BTC = (
 
 
 CurrentPriceOracleInstance = Union['Coingecko', 'Cryptocompare']
+
+
+def _check_curve_contract_call(decoded: Tuple[Any, ...]) -> bool:
+    """
+    Checks the result of decoding curve contract methods to verify:
+    - The result is a tuple
+    - It should return only one value
+    - The value should be an integer
+    Returns true if the decode was correct
+    """
+    return (
+        isinstance(decoded, tuple) and
+        len(decoded) == 1 and
+        isinstance(decoded[0], int)
+    )
 
 
 class CurrentPriceOracle(Enum):
@@ -138,8 +162,12 @@ def get_underlying_asset_price(token: EthereumToken) -> Optional[Price]:
     due to recursive import problems
     """
     price = None
-    if token.protocol == 'UNI-V2':
+    if token.protocol == UNISWAP_PROTOCOL:
         price = Inquirer().find_uniswap_v2_lp_price(token)
+    elif token.protocol == CURVE_POOL_PROTOCOL:
+        price = Inquirer().find_curve_pool_price(token)
+    elif token.protocol == YEARN_VAULTS_V2_PROTOCOL:
+        price = Inquirer().find_yearn_price(token)
 
     if token == A_YV1_ALINK:
         price = Inquirer().find_usd_price(A_ALINK_V1)
@@ -213,7 +241,6 @@ class Inquirer():
     _oracles: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
     special_tokens: List[EthereumToken]
-    special_protocols: Tuple[str]
 
     def __new__(
             cls,
@@ -264,17 +291,8 @@ class Inquirer():
             A_FARM_WBTC,
             A_FARM_RENBTC,
             A_FARM_CRVRENWBTC,
+            A_3CRV,
         ]
-
-        Inquirer.special_protocols = KnownProtocolsAssets
-
-        # This asset may be missing if user has not yet updated their DB
-        try:
-            a3crv = EthereumToken('0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900')
-            Inquirer.special_tokens.append(a3crv)
-        except UnknownAsset:
-            pass
-
         return Inquirer.__instance
 
     @staticmethod
@@ -426,7 +444,14 @@ class Inquirer():
         if is_known_protocol is True or underlying_tokens is not None:
             assert token is not None
             result = get_underlying_asset_price(token)
-            usd_price = Price(ZERO) if result is None else Price(result)
+            if result is None:
+                usd_price = Price(ZERO)
+                if instance._ethereum is not None:
+                    instance._ethereum.msg_aggregator.add_warning(
+                        f'Could not find price for {token}',
+                    )
+            else:
+                usd_price = Price(result)
             Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
                 price=usd_price,
                 time=ts_now(),
@@ -437,7 +462,7 @@ class Inquirer():
 
     def find_uniswap_v2_lp_price(
         self,
-        token: Union[EthereumToken, UnknownEthereumToken],
+        token: EthereumToken,
     ) -> Optional[Price]:
         """
         Calculate the price for a uniswap v2 LP token. That is
@@ -511,6 +536,152 @@ class Inquirer():
         share_value = numerator / total_supply
         return Price(share_value)
 
+    def find_curve_pool_price(
+        self,
+        lp_token: EthereumToken,
+    ) -> Optional[Price]:
+        """
+        1. Obtain the pool for this token
+        2. Obtain prices for assets in pool
+        3. Obtain the virtual price for share and the balances of each
+        token in the pool
+        4. Calc the price for a share
+
+        Returns the price of 1 LP token from the pool
+        """
+        assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
+
+        pools = get_curve_pools()
+        if lp_token.ethereum_address not in pools:
+            return None
+        pool = pools[lp_token.ethereum_address]
+        tokens = []
+        # Translate addresses to tokens
+        try:
+            for asset in pool.assets:
+                if asset == '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
+                    tokens.append(A_WETH)
+                else:
+                    tokens.append(EthereumToken(asset))
+        except UnknownAsset:
+            return None
+
+        # Get price for each token in the pool
+        prices = []
+        for token in tokens:
+            price = self.find_usd_price(token)
+            if price == Price(ZERO):
+                log.error(
+                    f'Could not calculate price for {lp_token} due to inability to '
+                    f'fetch price for {token}.',
+                )
+                return None
+            prices.append(price)
+
+        # Query virtual price of LP share and balances in the pool for each token
+        contract = EthereumContract(
+            address=pool.pool_address,
+            abi=CURVE_POOL_ABI,
+            deployed_block=0,
+        )
+        calls = [(pool.pool_address, contract.encode(method_name='get_virtual_price'))]
+        calls += [
+            (pool.pool_address, contract.encode(method_name='balances', arguments=[i]))
+            for i in range(len(pool.assets))
+        ]
+        output = multicall_2(
+            ethereum=self._ethereum,
+            require_success=False,
+            calls=calls,
+        )
+
+        # Check that the output has the correct structure
+        if not all([len(call_result) == 2 for call_result in output]):
+            log.debug(
+                f'Failed to query contract methods while finding curve pool price. '
+                f'Not every outcome has length 2. {output}',
+            )
+            return None
+        # Check that all the requests were successful
+        if not all([contract_output[0] for contract_output in output]):
+            log.debug(f'Failed to query contract methods while finding curve price. {output}')
+            return None
+        # Deserialize information obtained in the multicall execution
+        data = []
+        virtual_price_decoded = contract.decode(output[0][1], 'get_virtual_price')
+        if not _check_curve_contract_call(virtual_price_decoded):
+            log.debug(f'Failed to decode get_virtual_price while finding curve price. {output}')
+            return None
+        data.append(FVal(virtual_price_decoded[0]))
+        for i in range(len(pool.assets)):
+            amount_decoded = contract.decode(output[i + 1][1], 'balances', arguments=[i])
+            if not _check_curve_contract_call(amount_decoded):
+                log.debug(f'Failed to decode balances {i} while finding curve price. {output}')
+                return None
+            amount = amount_decoded[0]
+            normalized_amount = token_normalized_value_decimals(amount, tokens[i].decimals)
+            data.append(normalized_amount)
+
+        # Prices and data should verify this relation for the following operations
+        if len(prices) != len(data) - 1:
+            log.debug(
+                f'Length of prices {len(prices)} does not match len of data {len(data)} '
+                f'while querying curve pool price.',
+            )
+            return None
+        # Total number of assets price in the pool
+        total_assets_price = sum(map(operator.mul, data[1:], prices))
+        if total_assets_price == 0:
+            log.error(
+                f'Curve pool price returned unexpected data {data} that lead to a zero price.',
+            )
+            return None
+
+        # Calculate weight of each asset as the proportion of tokens value
+        weights = map(lambda x: data[x + 1] * prices[x] / total_assets_price, range(len(tokens)))
+        assets_price = FVal(sum(map(operator.mul, weights, prices)))
+        return (assets_price * FVal(data[0])) / (10 ** lp_token.decimals)
+
+    def find_yearn_price(
+        self,
+        token: EthereumToken,
+    ) -> Optional[Price]:
+        """
+        Query price for a yearn vault v2 token using the pricePerShare method
+        and the price of the underlying token.
+        """
+        assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
+
+        maybe_underlying_token = GlobalDBHandler().fetch_underlying_tokens(token.ethereum_address)
+        if maybe_underlying_token is None or len(maybe_underlying_token) != 1:
+            log.error(f'Yearn vault token {token} without an underlying asset')
+            return None
+
+        underlying_token = EthereumToken(maybe_underlying_token[0].address)
+        underlying_token_price = self.find_usd_price(underlying_token)
+        # Get the price per share from the yearn contract
+        contract = EthereumContract(
+            address=token.ethereum_address,
+            abi=YEARN_VAULT_V2_ABI,
+            deployed_block=0,
+        )
+        output = multicall_2(
+            ethereum=self._ethereum,
+            require_success=True,
+            calls=[(token.ethereum_address, contract.encode(method_name='pricePerShare'))],
+        )
+        if isinstance(output, list) and len(output) != 0 and output[0][0] is True:
+            price_per_share = contract.decode(output[0][1], 'pricePerShare')
+            if len(price_per_share) != 0:
+                return price_per_share[0] * underlying_token_price
+            log.error(f'Failed to decode pricePerShare for yearn vault v2 token {token}')
+            # will return None right below
+        log.error(
+            f'Error to call multicall for price on Yearn vault v2 token {token} '
+            f'with output {output}.',
+        )
+        return None
+
     @staticmethod
     def get_fiat_usd_exchange_rates(currencies: Iterable[Asset]) -> Dict[Asset, Price]:
         """Gets the USD exchange rate of any of the given assets
@@ -564,31 +735,6 @@ class Inquirer():
                 rate = asset_price
 
         log.debug('Historical fiat exchange rate query succesful', rate=rate)
-        return rate
-
-    @staticmethod
-    def _get_cached_forex_data(
-            date: str,
-            from_currency: Asset,
-            to_currency: Asset,
-    ) -> Optional[Price]:
-        instance = Inquirer()
-        rate = None
-        if date in instance._cached_forex_data:
-            if from_currency in instance._cached_forex_data[date]:
-                rate = instance._cached_forex_data[date][from_currency].get(to_currency)
-                if rate:
-                    log.debug(
-                        'Got cached forex rate',
-                        from_currency=from_currency.identifier,
-                        to_currency=to_currency.identifier,
-                        rate=rate,
-                    )
-                    try:
-                        rate = deserialize_price(rate)
-                    except DeserializationError as e:
-                        log.error(f'Could not read cached forex entry due to {str(e)}')
-
         return rate
 
     @staticmethod

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { BackendCode } from '@/electron-main/backend-code';
-import { Interop } from '@/electron-main/ipc';
+import { Interop, TrayUpdate } from '@/electron-main/ipc';
 import {
   IPC_ABOUT,
   IPC_CHECK_FOR_UPDATES,
@@ -19,7 +19,9 @@ import {
   IPC_PREMIUM_LOGIN,
   IPC_RESTART_BACKEND,
   IPC_SERVER_URL,
-  IPC_VERSION
+  IPC_TRAY_UPDATE,
+  IPC_VERSION,
+  IPC_WEBSOCKET_URL
 } from '@/electron-main/ipc-commands';
 
 function ipcAction<T>(message: string, arg?: any): Promise<T> {
@@ -64,6 +66,7 @@ contextBridge.exposeInMainWorld('interop', {
       }
     : undefined,
   serverUrl: (): string => ipcRenderer.sendSync(IPC_SERVER_URL),
+  websocketUrl: (): string => ipcRenderer.sendSync(IPC_WEBSOCKET_URL),
   metamaskImport: () => ipcAction(IPC_METAMASK_IMPORT),
   restartBackend: options => ipcAction(IPC_RESTART_BACKEND, options),
   checkForUpdates: () => ipcAction(IPC_CHECK_FOR_UPDATES),
@@ -82,5 +85,7 @@ contextBridge.exposeInMainWorld('interop', {
     });
   },
   openPath: (path: string) => ipcRenderer.send(IPC_OPEN_PATH, path),
-  config: (defaults: boolean) => ipcAction(IPC_CONFIG, defaults)
+  config: (defaults: boolean) => ipcAction(IPC_CONFIG, defaults),
+  updateTray: (trayUpdate: TrayUpdate) =>
+    ipcRenderer.send(IPC_TRAY_UPDATE, trayUpdate)
 } as Interop);

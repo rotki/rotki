@@ -12,7 +12,7 @@
       :identifier="identifier"
       :symbol="symbol"
     />
-    <span class="asset-details-base__details">
+    <span class="asset-details-base__details ms-2">
       <span
         class="asset-details-base__details__symbol"
         data-cy="details-symbol"
@@ -40,15 +40,14 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { Routes } from '@/router/routes';
-import { UnknownToken } from '@/services/defi/types';
-import { SupportedAsset } from '@/services/types-model';
+import { SupportedAsset } from '@/services/assets/types';
 
 @Component({
   components: { AssetIcon }
 })
 export default class AssetDetailsBase extends Vue {
   @Prop({ required: true })
-  asset!: SupportedAsset | UnknownToken;
+  asset!: SupportedAsset;
   @Prop({ required: false, type: Boolean, default: false })
   opensDetails!: boolean;
   @Prop({ required: false, type: Boolean, default: false })

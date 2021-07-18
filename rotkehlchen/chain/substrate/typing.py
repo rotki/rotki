@@ -74,7 +74,7 @@ class SubstrateChain(Enum):
         the chains we introduce.
         """
         if self == SubstrateChain.KUSAMA:
-            return 'https://kusama.subscan.io/api'
+            return 'https://kusama.api.subscan.io/api'
         raise AssertionError(f'Unexpected Chain: {self}')
 
     def substrate_interface_attributes(self) -> SubstrateInterfaceAttributes:

@@ -24,6 +24,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import account_for_manually_tracked_balances
 from rotkehlchen.chain.ethereum.manager import (
@@ -139,6 +140,8 @@ class Rotkehlchen():
         self.api_task_greenlets: List[gevent.Greenlet] = []
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
+        self.rotki_notifier = RotkiNotifier(greenlet_manager=self.greenlet_manager)
+        self.msg_aggregator.rotki_notifier = self.rotki_notifier
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         # Initialize the GlobalDBHandler singleton. Has to be initialized BEFORE asset resolver
         GlobalDBHandler(data_dir=self.data_dir)
@@ -1050,6 +1053,7 @@ class Rotkehlchen():
             passphrase: Optional[str] = None,
             kraken_account_type: Optional['KrakenAccountType'] = None,
             binance_markets: Optional[List[str]] = None,
+            ftx_subaccount_name: Optional[str] = None,
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase
@@ -1061,6 +1065,7 @@ class Rotkehlchen():
             api_secret=api_secret,
             database=self.data.db,
             passphrase=passphrase,
+            ftx_subaccount_name=ftx_subaccount_name,
         )
 
         if is_success:
@@ -1073,6 +1078,7 @@ class Rotkehlchen():
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
                 binance_markets=binance_markets,
+                ftx_subaccount_name=ftx_subaccount_name,
             )
         return is_success, msg
 

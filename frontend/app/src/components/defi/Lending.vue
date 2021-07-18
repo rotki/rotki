@@ -3,7 +3,7 @@
     <template #message>{{ $t('lending.loading') }}</template>
   </progress-screen>
   <v-container v-else>
-    <v-row no-gutters>
+    <v-row no-gutters align="center">
       <v-col>
         <refresh-header
           :loading="anyRefreshing"
@@ -33,10 +33,19 @@
                   <v-btn icon :value="YEARN_VAULTS">
                     <defi-protocol-icon mode="icon" :protocol="YEARN_VAULTS" />
                   </v-btn>
+                  <v-btn icon :value="YEARN_VAULTS_V2">
+                    <defi-protocol-icon
+                      mode="icon"
+                      :protocol="YEARN_VAULTS_V2"
+                    />
+                  </v-btn>
                 </v-btn-toggle>
               </v-col>
             </v-row>
           </confirmable-reset>
+          <template #actions>
+            <active-modules :modules="modules" />
+          </template>
         </refresh-header>
       </v-col>
     </v-row>
@@ -109,7 +118,7 @@
         <defi-protocol-selector v-model="protocol" />
       </v-col>
     </v-row>
-    <v-row v-if="!isYearnVaults" class="mt-8" no-gutters>
+    <v-row v-if="!isYearnVaults && !isYearnVaultsV2" class="mt-8" no-gutters>
       <v-col>
         <stat-card :title="$t('lending.assets')">
           <lending-asset-table
@@ -122,12 +131,13 @@
       </v-col>
     </v-row>
     <v-row
-      v-if="isYearnVaults || selectedProtocols.length === 0"
+      v-if="isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0"
       class="mt-8"
       no-gutters
     >
       <v-col>
         <yearn-assets-table
+          :version="yearnVersion"
           :loading="refreshing"
           :selected-addresses="selectedAddresses"
         />
@@ -139,9 +149,12 @@
       :addresses="selectedAddresses"
     />
     <yearn-vaults-profit-details
-      v-if="premium && (isYearnVaults || selectedProtocols.length === 0)"
+      v-if="
+        premium &&
+        (isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0)
+      "
       class="mt-8"
-      :profit="yearnVaultsProfit(selectedAddresses)"
+      :profit="yearnProfit()"
     />
     <aave-earned-details
       v-if="premium && (isAave || selectedProtocols.length === 0)"
@@ -168,6 +181,7 @@ import { default as BigNumber } from 'bignumber.js';
 import Component from 'vue-class-component';
 import { Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
 import LendingAssetTable from '@/components/defi/display/LendingAssetTable.vue';
 import YearnAssetsTable from '@/components/defi/yearn/YearnAssetsTable.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -193,16 +207,30 @@ import {
   DEFI_AAVE,
   DEFI_COMPOUND,
   DEFI_PROTOCOLS,
-  DEFI_YEARN_VAULTS
+  DEFI_YEARN_VAULTS,
+  DEFI_YEARN_VAULTS_V2,
+  V1,
+  V2
 } from '@/services/defi/consts';
-import { SupportedDefiProtocols } from '@/services/defi/types';
+import { ProtocolVersion, SupportedDefiProtocols } from '@/services/defi/types';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
+import {
+  MODULE_AAVE,
+  MODULE_COMPOUND,
+  MODULE_MAKERDAO_DSR,
+  MODULE_YEARN,
+  MODULE_YEARN_V2
+} from '@/services/session/consts';
+import { SupportedModules } from '@/services/session/types';
 import { Section } from '@/store/const';
+import { DefiGetterTypes } from '@/store/defi/getters';
 import { BaseDefiBalance, ProfitLossModel } from '@/store/defi/types';
+import { Nullable } from '@/types';
 import { Account, DefiAccount } from '@/typing/types';
 
 @Component({
   components: {
+    ActiveModules,
     YearnAssetsTable,
     PercentageDisplay,
     CompoundLendingDetails,
@@ -264,7 +292,7 @@ export default class Lending extends Mixins(StatusMixin) {
     protocols: SupportedDefiProtocols[],
     addresses: string[]
   ) => BigNumber;
-  yearnVaultsProfit!: (addresses: string[]) => YearnVaultProfitLoss[];
+  yearnVaultsProfit!: DefiGetterTypes.YearnVaultProfitType;
   aaveTotalEarned!: (addresses: string[]) => ProfitLossModel[];
 
   section = Section.DEFI_LENDING;
@@ -274,15 +302,32 @@ export default class Lending extends Mixins(StatusMixin) {
 
   readonly AAVE = DEFI_AAVE;
   readonly YEARN_VAULTS = DEFI_YEARN_VAULTS;
+  readonly YEARN_VAULTS_V2 = DEFI_YEARN_VAULTS_V2;
+  readonly modules: SupportedModules[] = [
+    MODULE_AAVE,
+    MODULE_COMPOUND,
+    MODULE_YEARN,
+    MODULE_YEARN_V2,
+    MODULE_MAKERDAO_DSR
+  ];
+
+  yearnProfit(): YearnVaultProfitLoss[] {
+    const allSelected = this.selectedProtocols.length === 0;
+    const addresses = this.selectedAddresses;
+    let v1Profit: YearnVaultProfitLoss[] = [];
+    if (this.isYearnVaults || allSelected) {
+      v1Profit = this.yearnVaultsProfit(addresses, V1);
+    }
+
+    let v2Profit: YearnVaultProfitLoss[] = [];
+    if (this.isYearnVaultsV2 || allSelected) {
+      v2Profit = this.yearnVaultsProfit(addresses, V2);
+    }
+    return [...v1Profit, ...v2Profit];
+  }
 
   get selectedAddresses(): string[] {
     return this.selectedAccount ? [this.selectedAccount.address] : [];
-  }
-
-  get defiAddresses(): string[] {
-    return this.defiAccounts(this.selectedProtocols).map(
-      ({ address }) => address
-    );
   }
 
   get isCompound(): boolean {
@@ -292,10 +337,26 @@ export default class Lending extends Mixins(StatusMixin) {
     );
   }
 
+  get yearnVersion(): Nullable<ProtocolVersion> {
+    if (this.isYearnVaults) {
+      return V1;
+    } else if (this.isYearnVaultsV2) {
+      return V2;
+    }
+    return null;
+  }
+
   get isYearnVaults(): boolean {
     return (
       this.selectedProtocols.length === 1 &&
       this.selectedProtocols.includes(DEFI_YEARN_VAULTS)
+    );
+  }
+
+  get isYearnVaultsV2(): boolean {
+    return (
+      this.selectedProtocols.length === 1 &&
+      this.selectedProtocols.includes(DEFI_YEARN_VAULTS_V2)
     );
   }
 

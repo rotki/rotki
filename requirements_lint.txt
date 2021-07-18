@@ -1,4 +1,4 @@
-mypy==0.812
+mypy==0.910
 mypy-extensions==0.4.3
 pylint==2.8.3
 astroid==2.5.6  # engine of pylint, upgrade them together
@@ -10,5 +10,5 @@ flake8-comprehensions==3.5.0
 flake8-debugger==4.0.0
 flake8-executable==2.1.1
 flake8-mutable==1.2.0
-pep8-naming==0.11.1
-isort==5.8.0
+pep8-naming==0.12.0
+isort==5.9.2

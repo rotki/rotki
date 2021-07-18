@@ -1,19 +1,19 @@
 import { BigNumber } from 'bignumber.js';
 import { Exchange, PriceOracles } from '@/model/action-result';
+import { SupportedAsset } from '@/services/assets/types';
 import {
   BlockchainAssetBalances,
   BtcBalances,
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
-import { TokenDetails } from '@/services/defi/types';
+import { SupportedModules } from '@/services/session/types';
 import {
   Balance,
   BtcAccountData,
   GeneralAccountData,
   HasBalance
 } from '@/services/types-api';
-import { SupportedAsset } from '@/services/types-model';
 import { KRAKEN_ACCOUNT_TYPES } from '@/store/balances/const';
 import { Section } from '@/store/const';
 import { Nullable } from '@/types';
@@ -80,6 +80,7 @@ export interface ExchangePayload {
   readonly passphrase: Nullable<string>;
   readonly krakenAccountType: Nullable<KrakenAccountType>;
   readonly binanceMarkets: Nullable<string[]>;
+  readonly ftxSubaccount: Nullable<string>;
 }
 
 interface XpubPayload {
@@ -92,6 +93,7 @@ export interface BlockchainAccountPayload extends AccountPayload {
   readonly blockchain: Blockchain;
   readonly xpub?: XpubPayload;
   readonly accounts?: string[];
+  readonly modules?: SupportedModules[];
 }
 
 export interface AccountPayload {
@@ -136,6 +138,7 @@ export interface AssetBalance extends Balance {
 export type AddAccountsPayload = {
   readonly blockchain: Blockchain;
   readonly payload: AccountPayload[];
+  readonly modules?: SupportedModules[];
 };
 
 interface L2Totals {
@@ -208,6 +211,6 @@ export type AssetInfoGetter = (
 ) => SupportedAsset | undefined;
 
 export type IdentifierForSymbolGetter = (symbol: string) => string | undefined;
-export type AssetSymbolGetter = (identifier: TokenDetails) => string;
+export type AssetSymbolGetter = (identifier: string) => string;
 
 export type KrakenAccountType = typeof KRAKEN_ACCOUNT_TYPES[number];

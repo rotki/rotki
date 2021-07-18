@@ -9,10 +9,10 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.binance import (
-    Binance,
-    create_binance_symbols_to_pair,
     BINANCE_BASE_URL,
     BINANCEUS_BASE_URL,
+    Binance,
+    create_binance_symbols_to_pair,
 )
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
@@ -26,6 +26,7 @@ from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.iconomi import Iconomi
+from rotkehlchen.exchanges.independentreserve import Independentreserve
 from rotkehlchen.exchanges.kucoin import Kucoin
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import Poloniex
@@ -291,57 +292,49 @@ BINANCE_MYTRADES_RESPONSE = """
     "isBestMatch": true
     }]"""
 
-BINANCE_DEPOSITS_HISTORY_RESPONSE = """{
-    "depositList": [
-        {
-            "insertTime": 1508198532000,
-            "amount": 0.04670582,
-            "asset": "ETH",
-            "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
-            "txId": "0xef33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
-            "status": 1
-        },
-        {
-            "insertTime": 1508398632000,
-            "amount": 1000,
-            "asset": "XMR",
-            "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvV38",
-            "addressTag": "342341222",
-            "txId": "c3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
-            "status": 1
-        }
-    ],
-    "success": true
-}"""
+BINANCE_DEPOSITS_HISTORY_RESPONSE = """[
+    {
+        "insertTime": 1508198532000,
+        "amount": 0.04670582,
+        "coin": "ETH",
+        "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
+        "txId": "0xef33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
+        "status": 1
+    }, {
+        "insertTime": 1508398632000,
+        "amount": 1000,
+        "coin": "XMR",
+        "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvV38",
+        "addressTag": "342341222",
+        "txId": "c3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
+        "status": 1
+    }
+]"""
 
-BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """{
-    "withdrawList": [
+BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """[
         {
-            "id":"7213fea8e94b4a5593d507237e5a555b",
-            "withdrawOrderId": null,
-            "amount": 0.99,
-            "transactionFee": 0.01,
-            "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
-            "asset": "ETH",
-            "txId": "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
-            "applyTime": 1508198532000,
-            "status": 4
-        },
-        {
-            "id":"7213fea8e94b4a5534ggsd237e5a555b",
-            "withdrawOrderId": "withdrawtest",
-            "amount": 999.9999,
-            "transactionFee": 0.0001,
-            "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvyV3z8zctJLPCZy24jvb3NiTcTJ",
-            "addressTag": "342341222",
-            "txId": "b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
-            "asset": "XMR",
-            "applyTime": 1508198532000,
-            "status": 4
-        }
-    ],
-    "success": true
-}"""  # noqa: E501
+        "id":"7213fea8e94b4a5593d507237e5a555b",
+        "withdrawOrderId": null,
+        "amount": 0.99,
+        "transactionFee": 0.01,
+        "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
+        "coin": "ETH",
+        "txId": "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
+        "applyTime": "2017-10-17 00:02:12",
+        "status": 4
+    }, {
+        "id":"7213fea8e94b4a5534ggsd237e5a555b",
+        "withdrawOrderId": "withdrawtest",
+        "amount": 999.9999,
+        "transactionFee": 0.0001,
+        "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvyV3z8zctJLPCZy24jvb3NiTcTJ",
+        "addressTag": "342341222",
+        "txId": "b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
+        "coin": "XMR",
+        "applyTime": "2017-10-17 00:02:12",
+        "status": 4
+    }
+]"""  # noqa: E501
 
 
 def assert_binance_balances_result(balances: Dict[str, Any]) -> None:
@@ -578,6 +571,7 @@ def create_test_ftx(
         secret=make_api_secret(),
         database=database,
         msg_aggregator=msg_aggregator,
+        ftx_subaccount_name=None,
     )
     return mock
 
@@ -668,6 +662,19 @@ def create_test_poloniex(
 ) -> Poloniex:
     return Poloniex(
         name='poloniex',
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_independentreserve(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Independentreserve:
+    return Independentreserve(
+        name='independentreserve',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,

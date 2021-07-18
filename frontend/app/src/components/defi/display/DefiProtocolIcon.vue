@@ -13,7 +13,7 @@
           max-height="24"
           class="defi-protocol-icon__image"
           :class="mode !== 'icon' ? 'mr-2' : null"
-          :src="require(`@/assets/images/defi/${protocol}.svg`)"
+          :src="require(`@/assets/images/defi/${icon}.svg`)"
           v-on="on"
         />
         <span
@@ -31,7 +31,11 @@
 </template>
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { DEFI_MAKERDAO, DEFI_YEARN_VAULTS } from '@/services/defi/consts';
+import {
+  DEFI_MAKERDAO,
+  DEFI_YEARN_VAULTS,
+  DEFI_YEARN_VAULTS_V2
+} from '@/services/defi/consts';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 
 @Component({})
@@ -41,11 +45,21 @@ export default class DefiProtocolIcon extends Vue {
   @Prop({ required: false, type: String, default: 'both' })
   mode!: 'icon' | 'label' | 'both';
 
+  get icon(): string {
+    const protocol = this.protocol;
+    if (protocol.endsWith('_v2')) {
+      return protocol.replace('_v2', '');
+    }
+    return protocol;
+  }
+
   get name(): string {
     if (this.protocol === DEFI_MAKERDAO) {
       return 'MakerDAO DSR';
     } else if (this.protocol === DEFI_YEARN_VAULTS) {
       return 'yearn.finance Vaults';
+    } else if (this.protocol === DEFI_YEARN_VAULTS_V2) {
+      return 'yearn.finance Vaults v2';
     }
     return this.protocol;
   }

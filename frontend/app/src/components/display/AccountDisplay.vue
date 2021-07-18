@@ -1,13 +1,20 @@
 <template>
-  <span>
-    <v-avatar left>
-      <asset-icon size="24px" :identifier="account.chain" />
-    </v-avatar>
-    <span class="font-weight-bold mr-1">{{ account.label }}</span>
-    <span :class="privacyMode ? 'blur-content' : ''">
+  <v-row align="center" no-gutters class="flex-nowrap">
+    <v-col cols="auto">
+      <v-avatar left size="28px">
+        <asset-icon size="24px" :identifier="account.chain" />
+      </v-avatar>
+    </v-col>
+
+    <v-col class="font-weight-bold mr-1 account-display__label">
+      <span class="text-truncate">
+        {{ account.label }}
+      </span>
+    </v-col>
+    <v-col cols="auto" :class="privacyMode ? 'blur-content' : ''">
       ({{ address | truncateAddress }})
-    </span>
-  </span>
+    </v-col>
+  </v-row>
 </template>
 
 <script lang="ts">
@@ -39,5 +46,17 @@ export default class AccountDisplay extends Mixins(ScrambleMixin) {
 <style scoped lang="scss">
 .blur-content {
   filter: blur(0.75em);
+}
+
+.account-display {
+  &__label {
+    > span {
+      display: inline-block;
+      text-overflow: clip;
+      padding-top: 6px;
+      line-height: 20px;
+      max-width: 180px;
+    }
+  }
 }
 </style>

@@ -4,7 +4,8 @@
       <v-col cols="12">
         <v-select
           v-model="blockchain"
-          class="account-form__chain"
+          outlined
+          class="account-form__chain pt-2"
           :items="items"
           :label="$t('account_form.labels.blockchain')"
           :disabled="accountOperation || loading || !!edit"
@@ -18,7 +19,7 @@
         </v-select>
       </v-col>
     </v-row>
-    <v-row v-if="!edit" no-gutters>
+    <v-row v-if="!edit" no-gutters class="mb-5">
       <v-col cols="12">
         <input-mode-select v-model="inputMode" :blockchain="blockchain" />
       </v-col>
@@ -27,6 +28,7 @@
       <v-col cols="auto">
         <v-select
           v-model="xpubKeyPrefix"
+          outlined
           class="account-form__xpub-key-type"
           item-value="value"
           item-text="label"
@@ -37,32 +39,42 @@
       <v-col>
         <v-text-field
           v-model="xpub"
-          class="account-form__xpub"
+          outlined
+          class="account-form__xpub ml-2"
           :label="$t('account_form.labels.btc.xpub')"
           autocomplete="off"
           :error-messages="errorMessages[FIELD_XPUB]"
           :disabled="accountOperation || loading || !!edit"
           @paste="onPasteXpub"
-        />
-      </v-col>
-      <v-col cols="auto">
-        <v-tooltip open-delay="400" top>
-          <template #activator="{ on, attrs }">
-            <v-btn icon v-bind="attrs" v-on="on" @click="advanced = !advanced">
-              <v-icon v-if="advanced">mdi-chevron-up</v-icon>
-              <v-icon v-else>mdi-chevron-down</v-icon>
-            </v-btn>
+        >
+          <template #append-outer>
+            <v-tooltip open-delay="400" top>
+              <template #activator="{ on, attrs }">
+                <div class="account-form__advanced">
+                  <v-btn
+                    icon
+                    v-bind="attrs"
+                    v-on="on"
+                    @click="advanced = !advanced"
+                  >
+                    <v-icon v-if="advanced">mdi-chevron-up</v-icon>
+                    <v-icon v-else>mdi-chevron-down</v-icon>
+                  </v-btn>
+                </div>
+              </template>
+              <span>
+                {{ $tc('account_form.advanced_tooltip', advanced ? 0 : 1) }}
+              </span>
+            </v-tooltip>
           </template>
-          <span>
-            {{ $tc('account_form.advanced_tooltip', advanced ? 0 : 1) }}
-          </span>
-        </v-tooltip>
+        </v-text-field>
       </v-col>
     </v-row>
     <v-row v-if="isBtc && isXpub && advanced" no-gutters>
       <v-col>
         <v-text-field
           v-model="derivationPath"
+          outlined
           class="account-form__derivation-path"
           :label="$t('account_form.labels.btc.derivation_path')"
           :error-messages="errorMessages[FIELD_DERIVATION_PATH]"
@@ -71,6 +83,11 @@
           persistent-hint
           :hint="$t('account_form.labels.btc.derivation_path_hint')"
         />
+      </v-col>
+    </v-row>
+    <v-row v-if="isEth" no-gutters>
+      <v-col>
+        <module-activator @update:selection="selectedModules = $event" />
       </v-col>
     </v-row>
     <v-row
@@ -83,9 +100,19 @@
       class="mt-2"
     >
       <v-col>
+        <v-row v-if="!edit && !isXpub" no-gutters align="center">
+          <v-col cols="auto">
+            <v-checkbox
+              v-model="multiple"
+              :disabled="accountOperation || loading || !!edit"
+              :label="$t('account_form.labels.multiple')"
+            />
+          </v-col>
+        </v-row>
         <v-text-field
           v-if="!multiple"
           v-model="address"
+          outlined
           class="account-form__address"
           :label="$t('account_form.labels.account')"
           :rules="rules"
@@ -97,6 +124,7 @@
         <v-textarea
           v-else
           v-model="addresses"
+          outlined
           :disabled="accountOperation || loading || !!edit"
           :hint="$t('account_form.labels.addresses_hint')"
           :label="$t('account_form.labels.addresses')"
@@ -114,21 +142,13 @@
             />
           </v-col>
         </v-row>
-        <v-row v-if="!edit && !isXpub" no-gutters align="center">
-          <v-col cols="auto">
-            <v-checkbox
-              v-model="multiple"
-              :disabled="accountOperation || loading || !!edit"
-              :label="$t('account_form.labels.multiple')"
-            />
-          </v-col>
-        </v-row>
       </v-col>
     </v-row>
     <v-row no-gutters>
       <v-col cols="12">
         <v-text-field
           v-model="label"
+          outlined
           class="account-form__label"
           :label="$t('account_form.labels.label')"
           :disabled="accountOperation || loading"
@@ -137,7 +157,11 @@
     </v-row>
     <v-row no-gutters>
       <v-col cols="12">
-        <tag-input v-model="tags" :disabled="accountOperation || loading" />
+        <tag-input
+          v-model="tags"
+          outlined
+          :disabled="accountOperation || loading"
+        />
       </v-col>
     </v-row>
     <v-row no-gutters>
@@ -158,10 +182,12 @@ import {
   XPUB_ADD
 } from '@/components/accounts/const';
 import InputModeSelect from '@/components/accounts/InputModeSelect.vue';
+import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import { AccountInput } from '@/components/accounts/types';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TaskType } from '@/model/task-type';
 import { deserializeApiErrorMessage } from '@/services/converters';
+import { SupportedModules } from '@/services/session/types';
 import {
   AddAccountsPayload,
   BlockchainAccount,
@@ -229,7 +255,7 @@ const validationErrors: () => ValidationErrors = () => ({
 });
 
 @Component({
-  components: { InputModeSelect, TagInput },
+  components: { ModuleActivator, InputModeSelect, TagInput },
   computed: {
     ...mapGetters('tasks', ['isTaskRunning']),
     ...mapGetters('balances', ['account'])
@@ -258,6 +284,7 @@ export default class AccountForm extends Vue {
   editAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
   advanced: boolean = false;
   inputMode: AccountInput = MANUAL_ADD;
+  selectedModules: SupportedModules[] = [];
 
   readonly FIELD_XPUB = FIELD_XPUB;
   readonly FIELD_ADDRESS = FIELD_ADDRESS;
@@ -278,6 +305,10 @@ export default class AccountForm extends Vue {
       entries[lowerCase] = address;
     }
     return Object.values(entries);
+  }
+
+  get isEth(): boolean {
+    return this.blockchain === ETH;
   }
 
   get isBtc(): boolean {
@@ -492,7 +523,8 @@ export default class AccountForm extends Vue {
 
       await this.addAccounts({
         blockchain: ETH,
-        payload: payload
+        payload: payload,
+        modules: this.selectedModules
       });
       return true;
     } catch (e) {
@@ -527,7 +559,8 @@ export default class AccountForm extends Vue {
       address: this.address.trim(),
       label: this.label,
       tags: this.tags,
-      xpub: xpubPayload
+      xpub: xpubPayload,
+      modules: this.isEth ? this.selectedModules : undefined
     };
   }
 
@@ -543,7 +576,8 @@ export default class AccountForm extends Vue {
               address: address,
               label: this.label,
               tags: this.tags
-            }))
+            })),
+            modules: this.isEth ? this.selectedModules : undefined
           } as AddAccountsPayload);
         } else {
           await this.addAccount(this.payload());
@@ -631,6 +665,11 @@ export default class AccountForm extends Vue {
 
   &--progress {
     height: 15px;
+  }
+
+  &__advanced {
+    max-height: 56px;
+    margin-top: -6px;
   }
 }
 </style>

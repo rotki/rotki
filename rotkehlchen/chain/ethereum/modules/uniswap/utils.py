@@ -7,8 +7,7 @@ import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
-from rotkehlchen.assets.utils import get_ethereum_token
+from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.ethereum.typing import NodeName
@@ -22,6 +21,7 @@ from .typing import LiquidityPool, LiquidityPoolAsset
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 log = logging.getLogger(__name__)
@@ -54,9 +54,10 @@ def _decode_token(entry: Tuple) -> TokenDetails:
 
 
 def _decode_result(
+        userdb: 'DBHandler',
         data: Tuple,
         known_assets: Set[EthereumToken],
-        unknown_assets: Set[UnknownEthereumToken],
+        unknown_assets: Set[EthereumToken],
 ) -> LiquidityPool:
     pool_token = _decode_token(data[0])
     token0 = _decode_token(data[1][0])
@@ -64,16 +65,17 @@ def _decode_result(
 
     assets = []
     for token in (token0, token1):
-        asset = get_ethereum_token(
+        asset = get_or_create_ethereum_token(
+            userdb=userdb,
             symbol=token.symbol,
             ethereum_address=token.address,
             name=token.name,
             decimals=token.decimals,
         )
-        # Classify the asset either as known or unknown
-        if isinstance(asset, EthereumToken):
+        # Classify the asset either as price known or unknown
+        if asset.has_oracle():
             known_assets.add(asset)
-        elif isinstance(asset, UnknownEthereumToken):
+        else:
             unknown_assets.add(asset)
         assets.append(LiquidityPoolAsset(
             asset=asset,
@@ -91,11 +93,12 @@ def _decode_result(
 
 
 def uniswap_lp_token_balances(
+        userdb: 'DBHandler',
         address: ChecksumEthAddress,
         ethereum: 'EthereumManager',
         lp_addresses: List[ChecksumEthAddress],
         known_assets: Set[EthereumToken],
-        unknown_assets: Set[UnknownEthereumToken],
+        unknown_assets: Set[EthereumToken],
 ) -> List[LiquidityPool]:
     """Query uniswap token balances from ethereum chain
 
@@ -128,7 +131,7 @@ def uniswap_lp_token_balances(
         )
 
         for entry in result[1]:
-            balances.append(_decode_result(entry, known_assets, unknown_assets))
+            balances.append(_decode_result(userdb, entry, known_assets, unknown_assets))
 
     return balances
 

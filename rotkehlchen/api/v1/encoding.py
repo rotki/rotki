@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Sequence, Union
 
 import marshmallow
 import webargs
@@ -12,7 +12,7 @@ from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures import ActionType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
@@ -22,7 +22,6 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_btc_address,
 )
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken, UnderlyingToken
 from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_kusama_address_from_public_key,
@@ -71,6 +70,10 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.externalapis.coingecko import Coingecko
+    from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
 log = logging.getLogger(__name__)
 
@@ -806,15 +809,44 @@ class EthereumTransactionQuerySchema(Schema):
     only_cache = fields.Boolean(missing=False)
 
 
-class TimerangeLocationQuerySchema(Schema):
+class TimerangeQuerySchema(Schema):
     from_timestamp = TimestampField(missing=Timestamp(0))
     to_timestamp = TimestampField(missing=ts_now)
-    location = LocationField(missing=None)
     async_query = fields.Boolean(missing=False)
+
+
+class TimerangeLocationQuerySchema(TimerangeQuerySchema):
+    location = LocationField(missing=None)
 
 
 class TimerangeLocationCacheQuerySchema(TimerangeLocationQuerySchema):
     only_cache = fields.Boolean(missing=False)
+
+
+class GitcoinReportSchema(TimerangeQuerySchema):
+    grant_id = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=1,
+            error='Gitcoin grant id must be a positive integer',
+        ),
+        missing=None,
+    )
+
+
+class GitcoinEventsQuerySchema(GitcoinReportSchema):
+    only_cache = fields.Boolean(missing=False)
+
+
+class GitcoinEventsDeleteSchema(Schema):
+    grant_id = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=1,
+            error='Gitcoin grant id must be a positive integer',
+        ),
+        missing=None,
+    )
 
 
 class TradeSchema(Schema):
@@ -1147,6 +1179,7 @@ class ExchangesResourceEditSchema(Schema):
     passphrase = fields.String(missing=None)
     kraken_account_type = KrakenAccountTypeField(missing=None)
     binance_markets = fields.List(fields.String(), missing=None)
+    ftx_subaccount = fields.String(missing=None)
 
 
 class ExchangesResourceAddSchema(Schema):
@@ -1157,6 +1190,7 @@ class ExchangesResourceAddSchema(Schema):
     passphrase = fields.String(missing=None)
     kraken_account_type = KrakenAccountTypeField(missing=None)
     binance_markets = fields.List(fields.String(), missing=None)
+    ftx_subaccount = fields.String(missing=None)
 
 
 class ExchangesDataResourceSchema(Schema):
@@ -1560,6 +1594,28 @@ class UnderlyingTokenInfoSchema(Schema):
     weight = FloatingPercentageField(required=True)
 
 
+def _validate_external_ids(
+        data: Dict[str, Any],
+        coingecko_obj: 'Coingecko',
+        cryptocompare_obj: 'Cryptocompare',
+) -> None:
+    coingecko = data.get('coingecko')
+    if coingecko and coingecko not in coingecko_obj.all_coins():
+        raise ValidationError(
+            f'Given coingecko identifier {coingecko} is not valid. Make sure the identifier '
+            f'is correct and in this list https://api.coingecko.com/api/v3/coins/list',
+            field_name='coingecko',
+        )
+
+    cryptocompare = data.get('cryptocompare')
+    if cryptocompare and cryptocompare not in cryptocompare_obj.all_coins():
+        raise ValidationError(
+            f'Given cryptocompare identifier {cryptocompare} isnt valid. Make sure the identifier '
+            f'is correct and in this list https://min-api.cryptocompare.com/data/all/coinlist',
+            field_name='cryptocompare',
+        )
+
+
 class AssetSchema(Schema):
     asset_type = AssetTypeField(required=True, exclude_types=(AssetType.ETHEREUM_TOKEN,))
     name = fields.String(required=True)
@@ -1569,6 +1625,19 @@ class AssetSchema(Schema):
     swapped_for = AssetField(missing=None)
     coingecko = fields.String(missing=None)
     cryptocompare = fields.String(missing=None)
+
+    def __init__(self, coingecko: 'Coingecko', cryptocompare: 'Cryptocompare'):
+        super().__init__()
+        self.coingecko_obj = coingecko
+        self.cryptocompare_obj = cryptocompare
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        _validate_external_ids(data, self.coingecko_obj, self.cryptocompare_obj)
 
 
 class AssetSchemaWithIdentifier(AssetSchema):
@@ -1595,6 +1664,16 @@ class EthereumTokenSchema(Schema):
     protocol = fields.String(missing=None)
     underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), missing=None)
 
+    def __init__(
+            self,
+            coingecko: 'Coingecko' = None,
+            cryptocompare: 'Cryptocompare' = None,
+            **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.coingecko_obj = coingecko
+        self.cryptocompare_obj = cryptocompare
+
     @validates_schema
     def validate_ethereum_token_schema(  # pylint: disable=no-self-use
             self,
@@ -1620,12 +1699,18 @@ class EthereumTokenSchema(Schema):
                     f'is {weight_sum * 100} and does not add up to 100%',
                 )
 
+        if self.coingecko_obj is not None:
+            # most probably validation happens at ModifyEthereumTokenSchema
+            # so this is not needed. Kind of an ugly way to do this but can't
+            # find a way around it at the moment
+            _validate_external_ids(data, self.coingecko_obj, self.cryptocompare_obj)  # type: ignore  # noqa:E501
+
     @post_load
     def transform_data(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
-    ) -> CustomEthereumToken:
+    ) -> EthereumToken:
         given_underlying_tokens = data.pop('underlying_tokens', None)
         underlying_tokens = None
         if given_underlying_tokens is not None:
@@ -1635,16 +1720,38 @@ class EthereumTokenSchema(Schema):
                     address=entry['address'],
                     weight=entry['weight'],
                 ))
-        # TODO: How to give identifier here?
-        return CustomEthereumToken(**data, underlying_tokens=underlying_tokens)
+        return EthereumToken.initialize(**data, underlying_tokens=underlying_tokens)
 
 
 class ModifyEthereumTokenSchema(Schema):
-    token = fields.Nested(EthereumTokenSchema, required=True)
+    token = fields.Nested('EthereumTokenSchema', required=True)
 
+    def __init__(
+            self,
+            coingecko: 'Coingecko',
+            cryptocompare: 'Cryptocompare',
+            **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        token: fields.Nested = self.declared_fields['token']  # type: ignore
+        token.schema.coingecko_obj = coingecko
+        token.schema.cryptocompare_obj = cryptocompare
 
-class ModifyAssetSchema(Schema):
-    token = fields.Nested(AssetSchema, required=True)
+    @validates_schema
+    def validate_modify_ethereum_token_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        # Not the best way to do it. Need to manually validate, coingecko/cryptocompare id here
+        token: fields.Nested = self.declared_fields['token']  # type: ignore
+        serialized_token = data['token'].serialize_all_info()
+        serialized_token.pop('identifier')
+        _validate_external_ids(
+            data=serialized_token,
+            coingecko_obj=token.schema.coingecko_obj,
+            cryptocompare_obj=token.schema.cryptocompare_obj,
+        )
 
 
 class AssetsReplaceSchema(Schema):
@@ -1795,3 +1902,21 @@ class ERC20InfoSchema(Schema):
 class BinanceMarketsUserSchema(Schema):
     name = fields.String(required=True)
     location = LocationField(limit_to=[Location.BINANCEUS, Location.BINANCE], required=True)
+
+
+class ManualPriceSchema(Schema):
+    from_asset = AssetField(required=True)
+    to_asset = AssetField(required=True)
+    price = PriceField(required=True)
+    timestamp = TimestampField(required=True)
+
+
+class ManualPriceRegisteredSchema(Schema):
+    from_asset = AssetField(missing=None)
+    to_asset = AssetField(missing=None)
+
+
+class ManualPriceDeleteSchema(Schema):
+    from_asset = AssetField(required=True)
+    to_asset = AssetField(required=True)
+    timestamp = TimestampField(required=True)

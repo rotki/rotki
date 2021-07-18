@@ -46,6 +46,7 @@ from rotkehlchen.chain.ethereum.modules import (
     MakerdaoVaults,
     Uniswap,
     YearnVaults,
+    YearnVaultsV2,
 )
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
@@ -108,7 +109,6 @@ def _module_name_to_class(module_name: ModuleName) -> EthereumModule:
 
 
 DEFI_BALANCES_REQUERY_SECONDS = 600
-ETH2_DETAILS_REQUERY_SECONDS = 600
 
 # Mapping to token symbols to ignore. True means all
 DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
@@ -123,6 +123,7 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'Chi Gastoken by 1inch': True,  # True means all
     # yearn vault balances are detected by the yTokens
     'yearn.finance • Vaults': True,  # True means all
+    'Yearn Token Vaults': True,
     # Synthetix SNX token is in all_assets.json
     'Synthetix': ['SNX'],
     # Ampleforth's AMPL token is in all_assets.json
@@ -277,11 +278,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.defi_balances_last_query_ts = Timestamp(0)
         self.defi_balances: Dict[ChecksumEthAddress, List[DefiProtocolBalances]] = {}
 
-        self.eth2_details_last_query_ts = Timestamp(0)
         self.eth2_details: List['ValidatorDetails'] = []
 
         self.defi_lock = Semaphore()
-        self.eth2_lock = Semaphore()
         self.btc_lock = Semaphore()
         self.eth_lock = Semaphore()
         self.ksm_lock = Semaphore()
@@ -424,6 +423,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_module(self, module_name: Literal['yearn_vaults']) -> Optional[YearnVaults]:
+        ...
+
+    @overload
+    def get_module(self, module_name: Literal['yearn_vaults_v2']) -> Optional[YearnVaultsV2]:
         ...
 
     def get_module(self, module_name: ModuleName) -> Optional[Any]:

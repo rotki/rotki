@@ -764,7 +764,7 @@ def test_deleting_ens_account_works(rotkehlchen_api_server, ethereum_accounts):
 
 
 @pytest.mark.parametrize('method', ['PUT', 'DELETE'])
-def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, method):
+def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_port, method):
     """
     Test /api/(version)/blockchains/(name) for edge cases and errors.
 
@@ -789,7 +789,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
     # Provide no blockchain name
     response = requests.request(
         method,
-        f'http://localhost:{api_port}/api/1/blockchains',
+        f'http://localhost:{rest_api_port}/api/1/blockchains',
         json=data,
     )
     assert_error_response(

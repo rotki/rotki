@@ -9,9 +9,8 @@ import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures import BalanceType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
@@ -889,7 +888,6 @@ def test_upgrade_db_12_to_13(user_data_dir):
 
     # Make sure that current balances table is deleted
     cursor = db.conn.cursor()
-    # with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
     query = cursor.execute(
         'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name="current_balances"',
     )
@@ -1791,7 +1789,7 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
     globaldb.add_asset(
         asset_id='_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94',
         asset_type=AssetType.ETHEREUM_TOKEN,
-        data=CustomEthereumToken(
+        data=EthereumToken.initialize(
             address=ChecksumEthAddress('0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94'),
             decimals=18,
             name='foo',
@@ -2105,6 +2103,94 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 26
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 26 to version 27.
+
+    - Recreates balancer events, uniswap events, amm_swaps. Deletes balancer pools
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v26_rotkehlchen.db')
+    db_v26 = _init_db_with_target_version(
+        target_version=26,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    # Checks before migration
+    cursor = db_v26.conn.cursor()
+    assert cursor.execute(
+        'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "uniswap%";',
+    ).fetchone()[0] == 2
+    assert cursor.execute(
+        'SELECT COUNT(*) from used_query_ranges WHERE name LIKE "balancer%";',
+    ).fetchone()[0] == 2
+    assert cursor.execute('SELECT COUNT(*) from used_query_ranges;').fetchone()[0] == 6
+    assert cursor.execute('SELECT COUNT(*) from amm_swaps;').fetchone()[0] == 2
+    assert cursor.execute('SELECT COUNT(*) from balancer_pools;').fetchone()[0] == 1
+    assert cursor.execute('SELECT COUNT(*) from balancer_events;').fetchone()[0] == 1
+
+    # Migrate to v27
+    db = _init_db_with_target_version(
+        target_version=27,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+    assert cursor.execute('SELECT COUNT(*) from used_query_ranges;').fetchone()[0] == 2
+    assert cursor.execute('SELECT COUNT(*) from amm_swaps;').fetchone()[0] == 0
+    assert cursor.execute('SELECT COUNT(*) from balancer_events;').fetchone()[0] == 0
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 27
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 27 to version 28.
+
+    - Adds a new column 'version' to the 'yearn_vaults_events' table
+    - Delete aave events
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v27_rotkehlchen.db')
+    db_v27 = _init_db_with_target_version(
+        target_version=27,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db_v27.conn.cursor()
+
+    # Checks before migration
+    assert cursor.execute('SELECT COUNT(*) FROM aave_events;').fetchone()[0] == 1
+    assert cursor.execute('SELECT COUNT(*) from yearn_vaults_events;').fetchone()[0] == 1
+    # Migrate to v28
+    db = _init_db_with_target_version(
+        target_version=28,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    cursor.execute(
+        'SELECT COUNT(*) FROM pragma_table_info("yearn_vaults_events") '
+        'WHERE name="version"',
+    )
+    assert cursor.fetchone()[0] == 1
+
+    cursor.execute('SELECT count(*) from yearn_vaults_events;')
+    assert cursor.fetchone()[0] == 1
+
+    # Check that the version is correct for the event in db
+    cursor.execute('SELECT version from yearn_vaults_events;')
+    assert cursor.fetchone()[0] == 1
+
+    # Check that aave_events got deleted
+    assert cursor.execute('SELECT COUNT(*) FROM aave_events;').fetchone()[0] == 0
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 28
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

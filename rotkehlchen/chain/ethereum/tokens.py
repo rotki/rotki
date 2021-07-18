@@ -5,10 +5,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
-from rotkehlchen.chain.ethereum.typing import (
-    CustomEthereumTokenWithIdentifier,
-    string_to_ethereum_address,
-)
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.ethereum import ETH_SCAN
 from rotkehlchen.constants.misc import ZERO
@@ -70,8 +67,8 @@ class EthTokens():
             self,
             address: ChecksumEthAddress,
             token_usd_price: Dict[EthereumToken, Price],
-            etherscan_chunks: List[List[CustomEthereumTokenWithIdentifier]],
-            other_chunks: List[List[CustomEthereumTokenWithIdentifier]],
+            etherscan_chunks: List[List[EthereumToken]],
+            other_chunks: List[List[EthereumToken]],
     ) -> Dict[EthereumToken, FVal]:
         balances: Dict[EthereumToken, FVal] = defaultdict(FVal)
         if self.ethereum.connected_to_any_web3():
@@ -156,7 +153,7 @@ class EthTokens():
                 balances = defaultdict(FVal)
                 self._get_tokens_balance_and_price(
                     address=address,
-                    tokens=[x.to_custom_ethereum_token() for x in saved_list],
+                    tokens=saved_list,
                     balances=balances,
                     token_usd_price=token_usd_price,
                     call_order=None,  # use defaults
@@ -169,7 +166,7 @@ class EthTokens():
     def _get_tokens_balance_and_price(
             self,
             address: ChecksumEthAddress,
-            tokens: List[CustomEthereumTokenWithIdentifier],
+            tokens: List[EthereumToken],
             balances: Dict[EthereumToken, FVal],
             token_usd_price: Dict[EthereumToken, Price],
             call_order: Optional[Sequence[NodeName]],
@@ -197,45 +194,9 @@ class EthTokens():
                 usd_price = Price(ZERO)
             token_usd_price[token] = usd_price
 
-    def _get_multitoken_multiaccount_balance(
-            self,
-            tokens: List[CustomEthereumTokenWithIdentifier],
-            accounts: List[ChecksumEthAddress],
-    ) -> Dict[str, Dict[ChecksumEthAddress, FVal]]:
-        """Queries a list of accounts for balances of multiple tokens
-
-        Return a dictionary with keys being tokens and value a dictionary of
-        account to balances
-
-        May raise:
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
-        - BadFunctionCallOutput if a local node is used and the contract for the
-          token has no code. That means the chain is not synced
-        """
-        log.debug(
-            'Querying ethereum chain for multi token multi account balances',
-            eth_addresses=accounts,
-            tokens_num=len(tokens),
-        )
-        balances: Dict[str, Dict[ChecksumEthAddress, FVal]] = defaultdict(dict)
-        result = ETH_SCAN.call(
-            ethereum=self.ethereum,
-            method_name='tokensBalances',
-            arguments=[accounts, [x.address for x in tokens]],
-        )
-        for acc_idx, account in enumerate(accounts):
-            for tk_idx, token in enumerate(tokens):
-                token_amount = result[acc_idx][tk_idx]
-                if token_amount != 0:
-                    balances[token.identifier][account] = token_normalized_value(
-                        token_amount=token_amount, token=token,
-                    )
-        return balances
-
     def _get_multitoken_account_balance(
             self,
-            tokens: List[CustomEthereumTokenWithIdentifier],
+            tokens: List[EthereumToken],
             account: ChecksumEthAddress,
             call_order: Optional[Sequence[NodeName]],
     ) -> Dict[str, FVal]:
@@ -259,7 +220,7 @@ class EthTokens():
         result = ETH_SCAN.call(
             ethereum=self.ethereum,
             method_name='tokensBalance',
-            arguments=[account, [x.address for x in tokens]],
+            arguments=[account, [x.ethereum_address for x in tokens]],
             call_order=call_order,
         )
         for tk_idx, token in enumerate(tokens):
@@ -267,7 +228,7 @@ class EthTokens():
             if token_amount != 0:
                 normalized_amount = token_normalized_value(token_amount, token)
                 log.debug(
-                    f'Found {token.symbol}({token.address}) token balance for '
+                    f'Found {token.symbol}({token.ethereum_address}) token balance for '
                     f'{account} and amount {normalized_amount}',
                 )
                 balances[token.identifier] = normalized_amount

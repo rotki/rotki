@@ -9,7 +9,7 @@ import {
 import {
   FETCH_SOURCE,
   IGNORE_ACTION_TYPE,
-  LEDGER_ACTION_TYPES
+  LedgerActionType
 } from '@/store/history/consts';
 import { Nullable } from '@/types';
 
@@ -53,8 +53,6 @@ export type EthTransactionWithFee = EthTransactionEntry & {
   readonly gasFee: BigNumber;
   readonly key: string;
 };
-
-export type LedgerActionType = typeof LEDGER_ACTION_TYPES[number];
 
 export interface LedgerAction {
   readonly identifier: number;

@@ -45,7 +45,9 @@ export enum Section {
   L2_LOOPRING_BALANCES = 'loopring_balances',
   DEFI_BALANCER_BALANCES = 'balancer_balances',
   DEFI_BALANCER_TRADES = 'balancer_trades',
-  DEFI_BALANCER_EVENTS = 'balancer_events'
+  DEFI_BALANCER_EVENTS = 'balancer_events',
+  DEFI_YEARN_VAULTS_V2_HISTORY = 'defi_yearn_vaults_v2_history',
+  DEFI_YEARN_VAULTS_V2_BALANCES = 'defi_yearn_vaults_v2_balances'
 }
 
 export const defiSections: Section[] = [
@@ -65,6 +67,8 @@ export const defiSections: Section[] = [
   Section.DEFI_MAKERDAO_VAULTS,
   Section.DEFI_YEARN_VAULTS_BALANCES,
   Section.DEFI_YEARN_VAULTS_HISTORY,
+  Section.DEFI_YEARN_VAULTS_V2_BALANCES,
+  Section.DEFI_YEARN_VAULTS_V2_HISTORY,
   Section.DEFI_UNISWAP_BALANCES,
   Section.DEFI_UNISWAP_TRADES,
   Section.DEFI_UNISWAP_EVENTS,

@@ -2,6 +2,7 @@
   <v-chip
     class="tag font-weight-medium"
     label
+    :small="small"
     :color="`#${tag.background_color}`"
     :text-color="`#${tag.foreground_color}`"
   >
@@ -17,6 +18,8 @@ import { Tag } from '@/typing/types';
 export default class TagIcon extends Vue {
   @Prop({ required: true })
   tag!: Tag;
+  @Prop({ required: false, type: Boolean, default: false })
+  small!: boolean;
 }
 </script>
 

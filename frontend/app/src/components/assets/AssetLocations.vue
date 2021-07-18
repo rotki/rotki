@@ -31,6 +31,9 @@
               show-currency="symbol"
             />
           </template>
+          <template #item.percentage="{ item }">
+            <percentage-display :value="getPercentage(item.balance.usdValue)" />
+          </template>
         </data-table>
       </v-sheet>
     </v-card-text>
@@ -38,6 +41,7 @@
 </template>
 
 <script lang="ts">
+import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
@@ -45,13 +49,13 @@ import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vu
 import DataTable from '@/components/helper/DataTable.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { CURRENCY_USD } from '@/data/currencies';
-import { AssetBreakdown } from '@/store/balances/types';
+import { AssetBreakdown, AssetPriceInfo } from '@/store/balances/types';
 import { GeneralAccount } from '@/typing/types';
 
 @Component({
   components: { DataTable, LabeledAddressDisplay, CardTitle },
   computed: {
-    ...mapGetters('balances', ['breakdown', 'account']),
+    ...mapGetters('balances', ['breakdown', 'account', 'assetPriceInfo']),
     ...mapGetters('session', ['currencySymbol']),
     ...mapGetters(['detailsLoading'])
   }
@@ -80,6 +84,12 @@ export default class AssetLocations extends Vue {
         }).toString(),
         value: 'balance.usdValue',
         align: 'end'
+      },
+      {
+        text: this.$t('asset_locations.header.percentage').toString(),
+        value: 'percentage',
+        sortable: false,
+        align: 'end'
       }
     ];
   }
@@ -91,12 +101,21 @@ export default class AssetLocations extends Vue {
   account!: (address: string) => GeneralAccount | undefined;
   currencySymbol!: string;
   detailsLoading!: boolean;
+  assetPriceInfo!: (asset: string) => AssetPriceInfo;
+
+  get totalUsdValue(): BigNumber {
+    return this.assetPriceInfo(this.identifier).usdValue;
+  }
 
   get assetLocations(): (AssetBreakdown & { readonly label: string })[] {
     return this.breakdown(this.identifier).map(value => ({
       label: this.account(value.address)?.label ?? '',
       ...value
     }));
+  }
+
+  getPercentage(usdValue: BigNumber): string {
+    return usdValue.div(this.totalUsdValue).multipliedBy(100).toFixed(2);
   }
 }
 </script>

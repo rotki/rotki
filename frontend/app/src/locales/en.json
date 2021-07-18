@@ -19,6 +19,14 @@
     "subtitle": "These accounting setting were used during the report creation",
     "days": "{days} days"
   },
+  "active_modules": {
+    "activate": "Activate the {name} module",
+    "view_addresses": "View the queried addresses for the {name}",
+    "enable": {
+      "description": "Would you like to enable the {name} module?",
+      "title": "Enabled module"
+    }
+  },
   "adex_page": {
     "loading": "Please wait while your AdEx staking details are getting loaded..."
   },
@@ -42,13 +50,17 @@
     "loading": "Please wait while rotki queries the blockchain...",
     "total": "Total"
   },
+  "asset_icon": {
+    "tooltip": "[{symbol}] {name}"
+  },
   "asset_locations": {
     "title": "Asset Locations",
     "header": {
       "account": "Account",
       "amount": "Amount",
       "location": "Location",
-      "value": "{symbol} value"
+      "value": "{symbol} value",
+      "percentage": "Percentage"
     }
   },
   "asset_table": {
@@ -106,6 +118,14 @@
       "reset": "Reset to default",
       "save": "Save"
     },
+    "max_log_size": {
+      "label": "Max log size",
+      "hint": "This is the maximum size in megabytes that will be used for all rotki logs"
+    },
+    "max_log_files": {
+      "label": "Max num of log files",
+      "hint": "This is the maximum number of logfiles to keep"
+    },
     "advanced": "Advanced",
     "config_file_disabled": "This parameter is already set in the rotki_config.json",
     "confirm": {
@@ -148,7 +168,8 @@
   "blockchain_account_selector": {
     "all": "all",
     "default_label": "Filter account(s)",
-    "hint": "Showing results across {hintText} accounts."
+    "hint": "Showing results across {hintText} accounts.",
+    "no_data": "No more usable addresses"
   },
   "binance_market_selector": {
     "default_label": "Filter market pair(s)",
@@ -200,6 +221,7 @@
     "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input."
   },
   "connection_failure": {
+    "default": "Connect to default",
     "message": "A connection to the rotki backend was not possible, would you like to retry again?",
     "retry": "Retry",
     "terminate": "Terminate",
@@ -263,7 +285,8 @@
     "twd": "New Taiwan dollar",
     "nok": "Norwegian krone",
     "usd": "United States Dollar",
-    "zar": "South African Rand"
+    "zar": "South African Rand",
+    "inr": "Indian rupee"
   },
   "currency_drop_down": {
     "hint": "Select as the main currency",
@@ -333,6 +356,9 @@
     "address": "Addresses",
     "chain_selector": "Blockchain"
   },
+  "gitcoin_grants": {
+    "text": "Gitcoin Grants"
+  },
   "help_sidebar": {
     "about": "About",
     "about_subtitle": "About the application",
@@ -383,9 +409,89 @@
     },
     "title": "Merge Assets"
   },
+  "module_activator": {
+    "hint": "* Modules that are activated for all addresses will not appear here",
+    "subtitle": "Select which modules should be queried for this account",
+    "title": "Enabled modules"
+  },
   "notes_display": {
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
+  },
+  "price_form": {
+    "date": "Date",
+    "date_non_empty": "The date of the price cannot be empty",
+    "from_asset": "From Asset",
+    "from_non_empty": "The from asset cannot be empty",
+    "hint": "1 {fromAsset} was worth {price} {toAsset}",
+    "price": "Price",
+    "price_nan": "The specified price is not a valid number",
+    "price_non_empty": "The price cannot be empty",
+    "to_asset": "To Asset",
+    "to_non_empty": "The to asset cannot be empty"
+  },
+  "price_management": {
+    "add": {
+      "error": {
+        "description": "Adding the price was not successful: {message}",
+        "title": "Price addition failed"
+      }
+    },
+    "dialog": {
+      "add_title": "Add Price",
+      "edit_title": "Edit Price"
+    },
+    "edit": {
+      "error": {
+        "description": "Editing the price was not successful: {message}",
+        "title": "Price edit failed"
+      }
+    },
+    "filter_title": "Filter Prices",
+    "from_asset": "From Asset",
+    "title": "Price Management",
+    "to_asset": "To Asset"
+  },
+  "price_table": {
+    "actions": {
+      "delete": {
+        "tooltip": "Delete the price entry"
+      },
+      "edit": {
+        "tooltip": "Edit the price entry"
+      }
+    },
+    "delete": {
+      "dialog": {
+        "message": "Are you sure you want to delete this price entry?",
+        "title": "Delete the price"
+      },
+      "failure": {
+        "message": "There was an error while deleting the price entry: {message}",
+        "title": "Price delete failed"
+      }
+    },
+    "fetch": {
+      "failure": {
+        "message": "Failed to fetch prices {message}",
+        "title": "Price fetch failure"
+      }
+    },
+    "headers": {
+      "date": "Date",
+      "from_asset": "From Asset",
+      "price": "Price",
+      "to_asset": "To Asset"
+    },
+    "join_text": "was worth",
+    "title": "Manual Prices"
+  },
+  "queried_address_dialog": {
+    "add": "Add address",
+    "all_address_queried": "All your ethereum addresses are queried for {module}",
+    "remove_tooltip": "Remove the address from the queried addresses",
+    "subtitle": "Manage the addresses that will be queried for {module}",
+    "title": "Queried Addresses"
   },
   "rounding_settings": {
     "amount_rounding": "Amount Rounding",
@@ -478,12 +584,12 @@
     "default_format": "Date should be in DD/MM/YYYY or DD/MM/YYYY HH:MM format",
     "seconds_format": "Date should be in DD/MM/YYYY HH:MM:ss format"
   },
-  "defi_address_selector": {
+  "module_address_selector": {
     "back": "Back",
     "next": "Next"
   },
-  "defi_module_selector": {
-    "label": "Select modules(s)"
+  "module_selector": {
+    "label": "Select module(s)"
   },
   "defi_overview": {
     "multiple_assets": "Multiple assets"
@@ -493,16 +599,16 @@
     "filter_specific": "Showing results for selected protocol",
     "label": "Filter protocol(s)"
   },
-  "defi_queriable_addres": {
+  "module_queried_address": {
     "label": "Select address(es)"
   },
-  "defi_settings": {
-    "active_modules": "Active Defi modules",
+  "module_settings": {
+    "active_modules": "Active modules",
     "active_modules_description": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled.",
     "hint": "* Please remember that after activating a module, you need to logout and login again for the activation to take effect",
     "select_accounts": "Selected accounts",
     "select_accounts_description": "If no accounts are selected for a protocol, data for all accounts will be queried for that protocol.",
-    "title": "Defi Settings"
+    "title": "Module Settings"
   },
   "defi_wizard": {
     "steps": {
@@ -523,7 +629,7 @@
       "setup": {
         "continue": "Continue",
         "description_line_one": "rotki will attempt by default to retrieve information for all your accounts and available modules. The retrieval might require a lot of time based on the number of accounts you have.",
-        "description_line_three": "You can use the default settings if you want to have information for all protocols fetched for all accounts automatically. (Defi Settings can be changed at a later time).",
+        "description_line_three": "You can use the default settings if you want to have information for all protocols fetched for all accounts automatically. (Module Settings can be changed at a later time).",
         "description_line_two": "To reduce the query time you can specify only the DeFi modules and accounts you are interested in.",
         "subtitle": "Select options to improve your rotki DeFi experience",
         "title": "Setup DeFi",
@@ -919,6 +1025,9 @@
   "tag_filter": {
     "label": "Filter by tag(s)"
   },
+  "tag_input": {
+    "create_tag": "Create"
+  },
   "tag_manager": {
     "confirmation": {
       "message": "Are you sure you want to delete {tagToDelete}? This will also remove all mappings of this tag.",
@@ -1107,6 +1216,7 @@
     }
   },
   "login": {
+    "logout": "Logout",
     "custom_backend": {
       "session_only": "Save only for this session",
       "tooltip": "Connect to a different rotki backend",
@@ -1141,8 +1251,9 @@
     }
   },
   "module_not_active": {
-    "not_active": "{module} module(s) is/are not activated. Please visit the {link} to activate it/them",
-    "settings_link": "Defi settings"
+    "not_active": "{module} module(s) not active. Please visit the {link}. {text}",
+    "settings_link": "Module settings",
+    "at_least_one": "You need to activate at least one of them."
   },
   "premium_credentials": {
     "label_enable": "Enable Premium",
@@ -1259,7 +1370,8 @@
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
       "transactions": "Ethereum Transactions",
-      "ledger_actions": "Ledger Actions"
+      "ledger_actions": "Ledger Actions",
+      "gitcoin_grants": "Gitcoin Grants"
     }
   },
   "overview": {
@@ -1293,6 +1405,10 @@
     "title": "Details",
     "tooltip": "Show details about the pool assets",
     "liquidity": "Liquidity"
+  },
+  "update_notifier": {
+    "update": "Update",
+    "update_available": "An updated version of the frontend is available."
   },
   "update_indicator": {
     "version": "An Updated Version ({appVersion}) of rotki is available"
@@ -1631,20 +1747,20 @@
       },
       "yearn_vaults": {
         "task": {
-          "title": "Querying yearn.finance Vaults balances"
+          "title": "Querying yearn.finance Vaults {version} balances"
         },
         "error": {
-          "title": "yearn.finance Vaults balances",
-          "description": "Failed to retrieve yearn.finance Vaults balances: {error}"
+          "title": "yearn.finance Vaults {version} balances",
+          "description": "Failed to retrieve yearn.finance Vaults {version} balances: {error}"
         }
       },
       "yearn_vaults_history": {
         "task": {
-          "title": "Querying yearn.finance Vaults history"
+          "title": "Querying yearn.finance Vaults {version} history"
         },
         "error": {
-          "title": "yearn.finance Vaults history",
-          "description": "Failed to retrieve yearn.finance Vaults history: {error}"
+          "title": "yearn.finance Vaults {version} history",
+          "description": "Failed to retrieve yearn.finance Vaults {version} history: {error}"
         }
       },
       "uniswap": {
@@ -1716,6 +1832,11 @@
         "error": {
           "title": "{location} balance query",
           "message": "Failed to query {location} balances: {error}"
+        }
+      },
+      "gitcoin_grant": {
+        "task": {
+          "title": "Fetching events for Gitcoin grant {grant}"
         }
       },
       "historic_fetch_price": {
@@ -1929,12 +2050,14 @@
     "import_data": "Import Data",
     "history": "History",
     "history_sub": {
+      "gitcoin_grants": "Gitcoin Grants",
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
       "ethereum_transactions": "Ethereum Transactions",
       "ledger_actions": "Ledger Actions"
     },
     "defi": "DeFi",
+    "manage_prices": "Manage Prices",
     "statistics": "Statistics",
     "profit_loss_report": "Profit and Loss Report",
     "defi_sub": {
@@ -2168,7 +2291,7 @@
   },
   "decentralized_finance": {
     "title": "Decentralized Finance",
-    "settings_tooltip": "Opens the Defi settings",
+    "settings_tooltip": "Opens the Module settings",
     "tabs": {
       "overview": "Overview",
       "deposits": "Deposits",
@@ -2210,6 +2333,7 @@
     "headers": {
       "roi": "ROI",
       "vault": "Vault",
+      "version": "Version",
       "underlying_asset": "Underlying Asset",
       "vault_asset": "Vault Asset"
     }
@@ -2257,7 +2381,8 @@
       "api_key": "API Key",
       "api_secret": "API Secret",
       "passphrase": "Passphrase",
-      "kraken_account": "Select the type of your Kraken account"
+      "kraken_account": "Select the type of your Kraken account",
+      "ftx_subaccount": "[Optional] FTX subaccount name"
     },
     "confirmation": {
       "title": "Confirmation Required",
@@ -2354,7 +2479,7 @@
     "tabs": {
       "accounting": "Accounting",
       "data_security": "Data & Security",
-      "defi": "Defi",
+      "modules": "Modules",
       "general": "General"
     },
     "title": "Settings"
@@ -2411,6 +2536,9 @@
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "line_two": "BlockFi lets you export two different files. Trades will be imported from the file that only contains trades.",
       "note": "Important notes for importing data from {0}'s CSV exports."
+    },
+    "gitcoin": {
+      "description": "Import the Gitcoin Grant events from a CSV file"
     },
     "nexo": {
       "import": "Import {0} from Nexo",
@@ -2521,12 +2649,6 @@
     "about_tooltip": "Show the application's about modal",
     "creation": {
       "error": "Account creation failed"
-    },
-    "custom_backend": {
-      "failed": {
-        "title": "Could not connect to custom backend",
-        "description": "Connection to {url} failed after 5 attempts"
-      }
     }
   },
   "privacy_notice": {

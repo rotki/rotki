@@ -1,6 +1,6 @@
 import { AxiosInstance, AxiosTransformer } from 'axios';
 import { BigNumber } from 'bignumber.js';
-import { SupportedAsset } from '@/services/types-model';
+import { SupportedAsset } from '@/services/assets/types';
 import { IgnoreActionType } from '@/store/history/types';
 
 export const SYNC_UPLOAD = 'upload';

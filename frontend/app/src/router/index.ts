@@ -55,6 +55,10 @@ export default new Router({
         {
           path: Routes.HISTORY_LEDGER_ACTIONS,
           component: () => import('../views/history/LedgerActions.vue')
+        },
+        {
+          path: Routes.HISTORY_GITCOIN,
+          component: () => import('../views/history/GitcoinGrants.vue')
         }
       ]
     },
@@ -76,8 +80,8 @@ export default new Router({
           component: () => import('../views/settings/UserSecuritySettings.vue')
         },
         {
-          path: 'defi',
-          component: () => import('../views/settings/DefiSettings.vue')
+          path: 'modules',
+          component: () => import('../views/settings/ModuleSettings.vue')
         }
       ]
     },
@@ -225,6 +229,14 @@ export default new Router({
     {
       path: Routes.ASSETS,
       component: () => import('../views/Assets.vue'),
+      meta: {
+        canNavigateBack: true
+      },
+      props: true
+    },
+    {
+      path: Routes.PRICE_MANAGER,
+      component: () => import('../views/PriceManager.vue'),
       meta: {
         canNavigateBack: true
       },

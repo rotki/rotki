@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LINK, A_USD
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LINK, A_LTC, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
@@ -14,7 +14,7 @@ from rotkehlchen.tests.fixtures.exchanges.gemini import (
     SANDBOX_GEMINI_WP_API_KEY,
     SANDBOX_GEMINI_WP_API_SECRET,
 )
-from rotkehlchen.tests.utils.constants import A_LTC, A_PAXG, A_ZEC
+from rotkehlchen.tests.utils.constants import A_PAXG, A_ZEC
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now

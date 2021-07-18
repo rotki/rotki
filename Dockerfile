@@ -9,6 +9,7 @@ RUN npm run build -- --mode docker
 
 FROM python:3.7 as backend-build-stage
 
+ARG PYINSTALLER_VERSION=3.5
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
@@ -30,7 +31,7 @@ RUN pip install -r requirements.txt
 COPY . /app
 
 RUN pip install -e . && \
-    pip install pyinstaller==3.5 && \
+    pip install pyinstaller==$PYINSTALLER_VERSION && \
     python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 
@@ -63,4 +64,4 @@ COPY ./packaging/docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY ./packaging/docker/docker-entrypoint.sh ./opt/rotki
 CMD ["sh", "-c", "exec /opt/rotki/docker-entrypoint.sh"]
 
-HEALTHCHECK CMD curl --fail http://localhost/api/1/users || exit 1
+HEALTHCHECK CMD curl --fail http://localhost/api/1/ping || exit 1

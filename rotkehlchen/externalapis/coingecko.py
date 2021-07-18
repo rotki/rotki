@@ -169,6 +169,10 @@ DELISTED_ASSETS = [
     strethaddress_to_identifier('0x7f65BE7FAd0c22813e51746E7e8f13a20bAa9411'),
     strethaddress_to_identifier('0xe431a4c5DB8B73c773e06cf2587dA1EB53c41373'),
     strethaddress_to_identifier('0xAef38fBFBF932D1AeF3B808Bc8fBd8Cd8E1f8BC5'),
+    strethaddress_to_identifier('0xd341d1680Eeee3255b8C4c75bCCE7EB57f144dAe'),
+    'FLO',
+    strethaddress_to_identifier('0x06147110022B768BA8F99A8f385df11a151A9cc8'),
+    strethaddress_to_identifier('0x27695E09149AdC738A978e9A678F99E4c39e9eb9'),
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [
@@ -238,6 +242,7 @@ class Coingecko():
     def __init__(self) -> None:
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        self.all_coins_cache: Optional[Dict[str, Dict[str, Any]]] = None
 
     @overload
     def _query(
@@ -366,8 +371,22 @@ class Coingecko():
 
         return parsed_data
 
-    def all_coins(self) -> List[Dict[str, Any]]:
-        return self._query(module='coins/list')
+    def all_coins(self) -> Dict[str, Dict[str, Any]]:
+        if self.all_coins_cache is None:
+            response = self._query(module='coins/list')
+            self.all_coins_cache = {}
+            for entry in response:
+                if entry['id'] in self.all_coins_cache:
+                    log.warning(
+                        f'Found duplicate coingecko identifier {entry["id"]} when querying '
+                        f'the list of coingecko assets. Ignoring...',
+                    )
+                    continue
+
+                identifier = entry.pop('id')
+                self.all_coins_cache[identifier] = entry
+
+        return self.all_coins_cache
 
     @staticmethod
     def check_vs_currencies(from_asset: Asset, to_asset: Asset, location: str) -> Optional[str]:

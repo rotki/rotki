@@ -5,39 +5,13 @@
         <card-title>{{ $t('generate.title') }}</card-title>
       </v-card-title>
       <v-card-text>
-        <report-period-selector
-          :year="year"
-          :quarter="quarter"
-          @period-update="onPeriodChange"
-          @changed="onChanged"
-        />
-        <v-row v-if="custom">
-          <v-col cols="12">
-            <date-time-picker
-              v-model="start"
-              label="Start Date"
-              limit-now
-              :rules="startRules"
-            />
-          </v-col>
-          <v-col cols="12">
-            <date-time-picker
-              v-model="end"
-              label="End Date"
-              limit-now
-              :rules="endRules"
-            />
-          </v-col>
-        </v-row>
-        <v-alert v-model="invalidRange" type="error">
-          {{ message }}
-        </v-alert>
+        <range-selector v-model="range" />
       </v-card-text>
       <v-card-actions>
         <v-btn
           color="primary"
           depressed
-          :disabled="!valid || invalidRange"
+          :disabled="!valid"
           @click="generate()"
           v-text="$t('generate.generate')"
         />
@@ -47,116 +21,29 @@
 </template>
 
 <script lang="ts">
-import moment from 'moment';
-import { Component, Vue, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { Component, Vue } from 'vue-property-decorator';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
-import ReportPeriodSelector, {
-  PeriodChangedEvent,
-  SelectionChangedEvent
-} from '@/components/profitloss/ReportPeriodSelector.vue';
-import { ALL, PROFIT_LOSS_PERIOD } from '@/store/settings/consts';
-import {
-  FrontendSettingsPayload,
-  ProfitLossTimeframe,
-  Quarter
-} from '@/store/settings/types';
-import { ActionStatus } from '@/store/types';
+import RangeSelector, {
+  SelectedRange
+} from '@/components/helper/date/RangeSelector.vue';
+import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
 import { convertToTimestamp } from '@/utils/date';
 
 @Component({
   components: {
+    RangeSelector,
     ReportPeriodSelector,
     DateTimePicker
   },
-  computed: {
-    ...mapGetters('settings', [PROFIT_LOSS_PERIOD])
-  },
-  methods: {
-    ...mapActions('settings', ['updateSetting'])
-  }
+  methods: {}
 })
 export default class Generate extends Vue {
-  start: string = '';
-  end: string = '';
+  range: SelectedRange = { start: '', end: '' };
   valid: boolean = false;
-  invalidRange: boolean = false;
-  message: string = '';
-  year: string = new Date().getFullYear().toString();
-  quarter: Quarter = ALL;
-
-  [PROFIT_LOSS_PERIOD]!: ProfitLossTimeframe;
-  updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
-
-  startRules: ((v: string) => boolean | string)[] = [
-    (v: string) =>
-      !!v || this.$t('generate.validation.empty_start_date').toString()
-  ];
-
-  endRules: ((v: string) => boolean | string)[] = [
-    (v: string) =>
-      !!v || this.$t('generate.validation.empty_end_date').toString()
-  ];
-
-  mounted() {
-    this.year = this[PROFIT_LOSS_PERIOD].year;
-    this.quarter = this[PROFIT_LOSS_PERIOD].quarter;
-  }
-
-  get custom(): boolean {
-    return this.year === 'custom';
-  }
-
-  onPeriodChange(period: PeriodChangedEvent | null) {
-    if (period === null) {
-      this.start = '';
-      this.end = '';
-      return;
-    }
-
-    this.start = period.start;
-    if (convertToTimestamp(period.end) > moment().unix()) {
-      this.end = moment().format('DD/MM/YYYY HH:mm:ss');
-    } else {
-      this.end = period.end;
-    }
-  }
-
-  onChanged(event: SelectionChangedEvent) {
-    this.year = event.year;
-    this.quarter = event.quarter;
-
-    if (event.year === 'custom') {
-      this.start = '';
-      this.end = '';
-    }
-
-    this.updateSetting({
-      profitLossReportPeriod: event
-    });
-  }
-
-  @Watch('start')
-  onStartChange() {
-    this.invalidRange =
-      !!this.start &&
-      !!this.end &&
-      convertToTimestamp(this.start) > convertToTimestamp(this.end);
-    this.message = this.$t('generate.validation.end_after_start').toString();
-  }
-
-  @Watch('end')
-  onEndChange() {
-    this.invalidRange =
-      !!this.start &&
-      !!this.end &&
-      convertToTimestamp(this.start) > convertToTimestamp(this.end);
-    this.message = this.$t('generate.validation.end_after_start').toString();
-  }
 
   generate() {
-    const start = convertToTimestamp(this.start);
-    const end = convertToTimestamp(this.end);
+    const start = convertToTimestamp(this.range.start);
+    const end = convertToTimestamp(this.range.end);
     this.$emit('generate', {
       start,
       end

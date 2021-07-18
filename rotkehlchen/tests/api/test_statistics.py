@@ -7,11 +7,11 @@ import pytest
 import requests
 
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
-from rotkehlchen.tests.utils.constants import A_EUR, A_RDN
+from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
@@ -162,12 +162,12 @@ def test_query_statistics_asset_balance(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_query_statistics_asset_balance_errors(rotkehlchen_api_server, api_port):
+def test_query_statistics_asset_balance_errors(rotkehlchen_api_server, rest_api_port):
     """Test that errors at the statistics asset balance over time endpoint are hanled properly"""
     start_time = ts_now()
 
     # Check that no asset given is an error
-    response = requests.get(f'http://localhost:{api_port}/api/1/statistics/balance')
+    response = requests.get(f'http://localhost:{rest_api_port}/api/1/statistics/balance')
     assert_error_response(
         response=response,
         status_code=HTTPStatus.NOT_FOUND,

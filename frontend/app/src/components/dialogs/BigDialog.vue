@@ -10,8 +10,10 @@
     @input="cancel"
   >
     <v-card class="big-dialog" data-cy="bottom-dialog">
-      <v-card-title class="text-h5 big-dialog__title pt-6">
-        {{ title }}
+      <v-card-title>
+        <card-title>
+          {{ title }}
+        </card-title>
       </v-card-title>
       <v-card-subtitle v-if="subtitle">
         {{ subtitle }}

@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.bitcoinde import (
     BITCOINDE_TRADING_PAIRS,
@@ -11,7 +11,6 @@ from rotkehlchen.exchanges.bitcoinde import (
     bitcoinde_pair_to_world,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Location, TradeType
 

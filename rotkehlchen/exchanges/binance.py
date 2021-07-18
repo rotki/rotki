@@ -40,6 +40,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
     deserialize_fee,
     deserialize_timestamp_from_binance,
+    deserialize_timestamp_from_date,
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -57,30 +58,24 @@ log = RotkehlchenLogsAdapter(logger)
 # https://www.binance.com/en/support/articles/115000599831-Binance-Exchange-Launched-Date-Set
 BINANCE_LAUNCH_TS = Timestamp(1500001200)
 API_TIME_INTERVAL_CONSTRAINT_TS = Timestamp(7776000)  # 90 days
+
 V3_METHODS = (
     'account',
     'myTrades',
     'openOrders',
-)
-
-V1_METHODS = (
     'exchangeInfo',
     'time',
 )
-
-WAPI_METHODS = (
-    'depositHistory.html',
-    'withdrawHistory.html',
-)
-
+PUBLIC_METHODS = ('exchangeInfo', 'time')
 SAPI_METHODS = (
     'futures/loan/wallet',
     'lending/daily/token/position',
     'lending/daily/product/list',
     'lending/union/account',
     'bswap/liquidity',
+    'capital/deposit/hisrec',
+    'capital/withdraw/history',
 )
-
 FAPI_METHODS = (
     'balance',
     'account',
@@ -94,7 +89,7 @@ RETRY_AFTER_LIMIT = 60
 REJECTED_MBX_KEY = -2015
 
 
-BINANCE_API_TYPE = Literal['api', 'sapi', 'wapi', 'dapi', 'fapi']
+BINANCE_API_TYPE = Literal['api', 'sapi', 'dapi', 'fapi']
 
 BINANCE_BASE_URL = 'binance.com/'
 BINANCEUS_BASE_URL = 'binance.us/'
@@ -317,19 +312,13 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             is_v3_api_method = api_type == 'api' and method in V3_METHODS
             is_new_futures_api = api_type in ('fapi', 'dapi')
-            call_needs_signature = (
-                (api_type == 'fapi' and method in FAPI_METHODS) or
-                (api_type == 'dapi' and method in FAPI_METHODS) or  # same as fapi
-                (api_type == 'sapi' and method in SAPI_METHODS) or
-                (api_type == 'wapi' and method in WAPI_METHODS) or
-                is_v3_api_method
-            )
-            if call_needs_signature:
+            api_version = 3  # public methos are v3
+            if method not in PUBLIC_METHODS:  # api call needs signature
                 if api_type in ('sapi', 'dapi'):
                     api_version = 1
                 elif api_type == 'fapi':
                     api_version = 2
-                elif api_type == 'wapi' or is_v3_api_method:
+                elif is_v3_api_method:
                     api_version = 3
                 else:
                     raise AssertionError(
@@ -346,10 +335,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     hashlib.sha256,
                 ).hexdigest()
                 call_options['signature'] = signature
-            elif api_type == 'api' and method in V1_METHODS:
-                api_version = 1
-            else:
-                raise AssertionError(f'Unexpected {self.name} API method {method}')
 
             api_subdomain = api_type if is_new_futures_api else 'api'
             request_url = (
@@ -929,15 +914,19 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         try:
             if 'insertTime' in raw_data:
                 category = AssetMovementCategory.DEPOSIT
-                time_key = 'insertTime'
+                timestamp = deserialize_timestamp_from_binance(raw_data['insertTime'])
                 fee = Fee(ZERO)
             else:
                 category = AssetMovementCategory.WITHDRAWAL
-                time_key = 'applyTime'
+                timestamp = deserialize_timestamp_from_date(
+                    date=raw_data['applyTime'],
+                    formatstr='%Y-%m-%d %H:%M:%S',
+                    location='binance withdrawal',
+                    skip_milliseconds=True,
+                )
                 fee = Fee(deserialize_asset_amount(raw_data['transactionFee']))
 
-            timestamp = deserialize_timestamp_from_binance(raw_data[time_key])
-            asset = asset_from_binance(raw_data['asset'])
+            asset = asset_from_binance(raw_data['coin'])
             tx_id = get_key_if_has_val(raw_data, 'txId')
             internal_id = get_key_if_has_val(raw_data, 'id')
             link_str = str(internal_id) if internal_id else str(tx_id) if tx_id else ''
@@ -980,13 +969,13 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return None
 
-    def _api_query_dict_within_time_delta(
+    def _api_query_list_within_time_delta(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
             time_delta: Timestamp,
             api_type: BINANCE_API_TYPE,
-            method: Literal['depositHistory.html', 'withdrawHistory.html'],
+            method: Literal['capital/deposit/hisrec', 'capital/withdraw/history'],
     ) -> List[Dict[str, Any]]:
         """Request via `api_query_dict()` from `start_ts` `end_ts` using a time
         delta (offset) less than `time_delta`.
@@ -997,13 +986,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
           `used_query_ranges` table, but 0.
           - Timestamps are converted to milliseconds.
         """
-        if method == 'depositHistory.html':
-            query_schema = 'depositList'
-        elif method == 'withdrawHistory.html':
-            query_schema = 'withdrawList'
-        else:
-            raise AssertionError(f'Unexpected {self.name} method case: {method}.')
-
         results: List[Dict[str, Any]] = []
 
         # Create required time references in milliseconds
@@ -1026,8 +1008,8 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 'startTime': from_ts,
                 'endTime': to_ts,
             }
-            result = self.api_query_dict(api_type, method, options=options)
-            results.extend(result.get(query_schema, []))
+            result = self.api_query_list(api_type, method, options=options)
+            results.extend(result)
             # Case stop requesting
             if to_ts >= end_ts:
                 break
@@ -1051,21 +1033,21 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         https://binance-docs.github.io/apidocs/spot/en/#deposit-history-user_data
         https://binance-docs.github.io/apidocs/spot/en/#withdraw-history-user_data
         """
-        deposits = self._api_query_dict_within_time_delta(
+        deposits = self._api_query_list_within_time_delta(
             start_ts=start_ts,
             end_ts=end_ts,
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
-            api_type='wapi',
-            method='depositHistory.html',
+            api_type='sapi',
+            method='capital/deposit/hisrec',
         )
         log.debug(f'{self.name} deposit history result', results_num=len(deposits))
 
-        withdraws = self._api_query_dict_within_time_delta(
+        withdraws = self._api_query_list_within_time_delta(
             start_ts=start_ts,
             end_ts=end_ts,
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
-            api_type='wapi',
-            method='withdrawHistory.html',
+            api_type='sapi',
+            method='capital/withdraw/history',
         )
         log.debug(f'{self.name} withdraw history result', results_num=len(withdraws))
 

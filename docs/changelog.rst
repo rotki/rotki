@@ -2,10 +2,47 @@
 Changelog
 =========
 
+* :release:`1.19.0 <2021-07-15>`
+* :feature:`3116` Support for INR (Indian Rupee) as a profit currency has been added.
+* :feature:`1520` Users can now manually add prices for tokens/assets.
+* :feature:`692` Gitcoin Grant owners will now be able to track and generate reports of their grants.
+* :feature:`1666` Users will now be able to see their yearn v2 vaults in in the defi section.
+* :feature:`2456` Users will now be able to correctly retrive prices for Curve LP tokens.
+* :feature:`2778` Users will now be able to enable modules and queried addresses when adding an ethereum account
+* :feature:`1857` Premium users will now be able to query Aave V2 events. 
+* :feature:`2722` The sync conflict dialog dates will now be consistent with the user specified date format.
+* :feature:`3114` Users can easily check and manage which addresses are queried for each defi module directly from the respective module page.
+* :feature:`3069` When adding an asset coingecko/cryptocompare identifiers will now be validated and non-existing ones will be rejected.
+* :bug:`3145` Docker users will now have the ability to logout any other sessions when attempting to connect from a new browser window.
+* :bug:`2685` Invoking `--version` from the rotki backend binary in Windows should no longer raise a Permission error.
+* :bug:`3142` During v26->v27 upgrade if a user has balancer LP events the upgrade should no longer fail.
+* :bug:`3172` COIN should now be properly mapped to Coinbase tokenized stock in both bittrex and FTX.
+* :bug:`3134` The new cWBTC token should now be properly recognized for compound users.
+
+* :release:`1.18.1 <2021-06-30>`
+* :bug:`2447` When fee of a trade is paid in crypto that crypto's asset will now be deducted from the cost basis calculation.
+* :bug:`3133` Users will now properly see a MakerDAO entry in the Defi Overview.
+* :bug:`2887` Upgrade the deprecated binance exchangeInfo and deposit/withdrawal APIs.
+* :bug:`3118` Users will now be able to properly connect to the dockerized backend through the app. (It will not work if the docker container is a previous release).
+* :bug:`3101` Editing ethereum token details via the asset manager in the frontend should now work properly again.
+* :bug:`3100` FTX API keys with permission for subaccounts only will now be correctly validated.
+* :bug:`3096` The Uniswap module will ignore swaps not made by the queried address.
+
+* :release:`1.18.0 <2021-06-18>`
+* :feature:`2064` Users will now be able to close rotki to tray. When logged the tray icon will update based on the net worth value during the selected period (week, two weeks etc).
+* :feature:`2939` Rotki logs will now persist after restart. Number of logs and maximum size for all logs of a run can be now specified.
+* :feature:`1800` Users will now be greeted with an informational notice when trying to access a page that requires a module to be activated.
+* :feature:`1692` IndependentReserve users will now be able to see their balances and have their deposit/withdrawal/trade history taken into account during profit/loss calculation.
+* :feature:`3025` Users will now see the percentage of each location when looking into an asset's details.
+* :feature:`2596` Users will now be able to create new tags directly from the tag selection input.
 * :feature:`2954` On login screen, the password field will now be focused for users that have remember user enabled.
+* :feature:`2786` FTX users will be able to query information for subaccounts only.
 * :feature:`2670` Users will now get results in a better order when using the asset selector.
 * :feature:`2951` Users will now get results in a better order when searching for an asset in asset management. Search will now consider both name and symbol.
+* :feature:`3014` Users will now get a suggested name when adding a new exchange.
 * :feature:`1073` Binance users will now be able to select which markets should be queried for trades history considerably improving the speed of binance history queries.
+* :feature:`3058` Docker users will now get notified when running an outdated version of the frontend cached in their browser.
+* :bug:`3057` Nexo CSV importer will now use the correct time format.
 
 * :release:`1.17.2 <2021-06-04>`
 * :bug:`3043` Collapsed xpubs should now be included in the totals in the btc accounts table.

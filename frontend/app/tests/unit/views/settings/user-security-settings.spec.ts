@@ -17,7 +17,13 @@ describe('UserSecuritySettings.vue', () => {
     return mount(UserSecuritySettings, {
       store,
       vuetify,
-      stubs: ['v-tooltip', 'card-title', 'asset-select'],
+      stubs: [
+        'v-tooltip',
+        'card-title',
+        'asset-select',
+        'asset-update',
+        'card'
+      ],
       mocks: {
         $api: {
           balances: {

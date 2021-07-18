@@ -1,5 +1,5 @@
 <template>
-  <module-not-active v-if="!isUniswapEnabled" :modules="[MODULE_UNISWAP]" />
+  <module-not-active v-if="!isEnabled" :modules="modules" />
   <progress-screen v-else-if="loading">
     <template #message>
       {{ $t('uniswap.loading') }}
@@ -18,7 +18,11 @@
       :title="$t('uniswap.title')"
       :loading="anyRefreshing"
       @refresh="refresh()"
-    />
+    >
+      <template #actions>
+        <active-modules :modules="modules" />
+      </template>
+    </refresh-header>
     <v-row class="mt-4">
       <v-col>
         <blockchain-account-selector
@@ -58,7 +62,7 @@
           </template>
           <template #icon>
             <uniswap-pool-asset
-              :assets="entry.assets.map(({ asset }) => getIdentifier(asset))"
+              :assets="entry.assets.map(({ asset }) => asset)"
             />
           </template>
           <v-row align="center">
@@ -81,7 +85,7 @@
 
           <v-row
             v-for="asset in entry.assets"
-            :key="`${getIdentifier(asset.asset)}-${entry.poolAddress}-balances`"
+            :key="`${asset.asset}-${entry.poolAddress}-balances`"
             class="uniswap__tokens"
             align="center"
             justify="end"
@@ -120,6 +124,7 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
 import UniswapPoolFilter from '@/components/defi/uniswap/UniswapPoolFilter.vue';
@@ -127,16 +132,19 @@ import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import AssetMixin from '@/mixins/asset-mixin';
-import DefiModuleMixin from '@/mixins/defi-module-mixin';
+import ModuleMixin from '@/mixins/module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { UniswapDetails } from '@/premium/premium';
+import { MODULE_UNISWAP } from '@/services/session/consts';
+import { SupportedModules } from '@/services/session/types';
 import { Section } from '@/store/const';
 import { UniswapBalance } from '@/store/defi/types';
 import { ETH, GeneralAccount } from '@/typing/types';
 
 @Component({
   components: {
+    ActiveModules,
     UniswapPoolDetails,
     UniswapPoolFilter,
     BaseExternalLink,
@@ -155,11 +163,12 @@ import { ETH, GeneralAccount } from '@/typing/types';
 })
 export default class Uniswap extends Mixins(
   StatusMixin,
-  DefiModuleMixin,
+  ModuleMixin,
   PremiumMixin,
   AssetMixin
 ) {
   readonly ETH = ETH;
+  readonly modules: SupportedModules[] = [MODULE_UNISWAP];
   section = Section.DEFI_UNISWAP_BALANCES;
   secondSection = Section.DEFI_UNISWAP_EVENTS;
 
@@ -169,6 +178,10 @@ export default class Uniswap extends Mixins(
   selectedPools: string[] = [];
   fetchUniswapBalances!: (refresh: boolean) => Promise<void>;
   fetchUniswapEvents!: (refresh: boolean) => Promise<void>;
+
+  get isEnabled(): boolean {
+    return this.isModuleEnabled(MODULE_UNISWAP);
+  }
 
   get selectedAddresses(): string[] {
     return this.selectedAccount ? [this.selectedAccount.address] : [];

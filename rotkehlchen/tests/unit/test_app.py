@@ -3,7 +3,7 @@ import os
 import pytest
 
 from rotkehlchen.errors import SystemPermissionError
-from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, EXCHANGES_WITH_PASSPHRASE
+from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE, SUPPORTED_EXCHANGES
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.typing import Location
@@ -53,6 +53,13 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
 
 def test_initializing_rotki_with_datadir_with_wrong_permissions(cli_args, data_dir):
     os.chmod(data_dir, 0o200)
-    with pytest.raises(SystemPermissionError):
-        Rotkehlchen(args=cli_args)
-    os.chmod(data_dir, 0o777)
+    success = True
+    try:
+        with pytest.raises(SystemPermissionError):
+            Rotkehlchen(args=cli_args)
+    except Exception:  # pylint: disable=broad-except
+        success = False
+    finally:
+        os.chmod(data_dir, 0o777)
+
+    assert success is True

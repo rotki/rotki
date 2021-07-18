@@ -1,6 +1,13 @@
 import { TimeUnit } from '@/components/dashboard/types';
 import { DebugSettings } from '@/electron-main/ipc';
-import { SupportedAsset } from '@/services/types-model';
+import { SupportedAsset } from '@/services/assets/types';
+import {
+  GitcoinGrants,
+  GitcoinGrantEventsPayload,
+  GitcoinGrantReport,
+  GitcoinReportPayload
+} from '@/services/history/types';
+import { ActionResult } from '@/services/types-api';
 import { FrontendSettingsPayload, Themes } from '@/store/settings/types';
 
 export interface RotkiPremiumInterface {
@@ -8,6 +15,14 @@ export interface RotkiPremiumInterface {
   readonly version: number;
   readonly utils: ExposedUtilities;
   readonly debug?: DebugSettings;
+}
+
+interface GitCoinApi {
+  deleteGrant(grantId: number): Promise<boolean>;
+  fetchGrantEvents(
+    payload: GitcoinGrantEventsPayload
+  ): Promise<ActionResult<GitcoinGrants>>;
+  generateReport(payload: GitcoinReportPayload): Promise<GitcoinGrantReport>;
 }
 
 interface DateUtilities {
@@ -23,6 +38,7 @@ interface DateUtilities {
 interface DataUtilities {
   assetInfo(identifier: string): SupportedAsset | undefined;
   getIdentifierForSymbol(symbol: string): string | undefined;
+  readonly gitcoin: GitCoinApi;
 }
 
 interface SettingsApi {

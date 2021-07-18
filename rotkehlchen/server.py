@@ -38,6 +38,7 @@ class RotkehlchenServer():
                 domain_list.append(str(self.args.api_cors))
         self.api_server = APIServer(
             rest_api=RestAPI(rotkehlchen=self.rotkehlchen),
+            ws_notifier=self.rotkehlchen.rotki_notifier,
             cors_domain_list=domain_list,
         )
 
@@ -52,5 +53,9 @@ class RotkehlchenServer():
         gevent.hub.signal(signal.SIGINT, self.shutdown)
         gevent.hub.signal(signal.SIGTERM, self.shutdown)
         # The api server's RestAPI starts rotki main loop
-        self.api_server.start(host=self.args.api_host, port=self.args.api_port)
+        self.api_server.start(
+            host=self.args.api_host,
+            rest_port=self.args.rest_api_port,
+            websockets_port=self.args.websockets_api_port,
+        )
         self.stop_event.wait()

@@ -1,18 +1,32 @@
 <template>
-  <generated-icon
-    v-if="!!currency || error || isUnknown"
-    :asset="displayAsset"
-    :currency="!!currency"
-    :size="size"
-  />
-  <v-img
-    v-else-if="!error"
-    :src="url"
-    :max-width="size"
-    :min-width="size"
-    contain
-    @error="error = true"
-  />
+  <v-tooltip top open-delay="400">
+    <template #activator="{ on, attrs }">
+      <div v-bind="attrs" v-on="on">
+        <generated-icon
+          v-if="!!currency || error"
+          :asset="displayAsset"
+          :currency="!!currency"
+          :size="size"
+        />
+        <v-img
+          v-else-if="!error"
+          :src="url"
+          :max-width="size"
+          :min-width="size"
+          contain
+          @error="error = true"
+        />
+      </div>
+    </template>
+    <span>
+      {{
+        $t('asset_icon.tooltip', {
+          symbol: getSymbol(identifier),
+          name: getAssetName(identifier)
+        })
+      }}
+    </span>
+  </v-tooltip>
 </template>
 
 <script lang="ts">
@@ -20,7 +34,6 @@ import { Component, Mixins, Prop, Watch } from 'vue-property-decorator';
 import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import { currencies } from '@/data/currencies';
 import AssetMixin from '@/mixins/asset-mixin';
-import { TokenDetails } from '@/services/defi/types';
 import { BTC, ETH } from '@/typing/types';
 
 @Component({
@@ -28,7 +41,7 @@ import { BTC, ETH } from '@/typing/types';
 })
 export default class AssetIcon extends Mixins(AssetMixin) {
   @Prop({ required: true })
-  identifier!: TokenDetails;
+  identifier!: string;
   @Prop({ required: false, type: String, default: '' })
   symbol!: string;
   @Prop({ required: true, type: String })
@@ -53,20 +66,12 @@ export default class AssetIcon extends Mixins(AssetMixin) {
     this.error = false;
   }
 
-  get isUnknown(): boolean {
-    return typeof this.identifier !== 'string';
-  }
-
   get asset(): string {
-    return this.getIdentifier(this.identifier);
+    return this.identifier;
   }
 
   get displayAsset(): string {
-    if (typeof this.identifier !== 'string') {
-      return this.identifier.symbol ?? '';
-    }
-
-    const symbol = this.symbol;
+    const symbol = this.symbol ? this.symbol : this.getSymbol(this.identifier);
     if (this.error && symbol) {
       return symbol;
     }
@@ -88,7 +93,7 @@ export default class AssetIcon extends Mixins(AssetMixin) {
     ) {
       return require(`@/assets/images/defi/weth.svg`);
     }
-    const url = `${process.env.VUE_APP_BACKEND_URL}/api/1/assets/${this.asset}/icon`;
+    const url = `${this.$api.serverUrl}/api/1/assets/${this.asset}/icon`;
     return this.changeable ? `${url}?t=${Date.now()}` : url;
   }
 }

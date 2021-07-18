@@ -8,9 +8,8 @@ from eth_utils import is_checksum_address
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
-from rotkehlchen.assets.utils import get_ethereum_token, symbol_to_ethereum_token
-from rotkehlchen.constants.assets import A_DAI
+from rotkehlchen.assets.utils import get_or_create_ethereum_token, symbol_to_ethereum_token
+from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError, UnknownAsset
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
@@ -125,6 +124,9 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0x6D0F5149c502faf215C89ab306ec3E50b15e2892'),  # noqa: E501 # Portion (PRT) but another PRT in CC
         'ANI',     # Animecoin (ANI) but another ANI in CC
         'XEP',     # Electra Protocol (XEP) but another XEP in CC
+        ethaddress_to_identifier('0xcbb20D755ABAD34cb4a9b5fF6Dd081C76769f62e'),  # noqa: E501 # Cash Global Coin (CGC) but another CGC in CC
+        ethaddress_to_identifier('0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'),  # noqa: E501 # Binance Wrapped BTC (BBTC) but another BBTC in CC
+        'NRV',     # Nerve Finance (NRV) but another NRV in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -257,6 +259,7 @@ def test_coingecko_identifiers_are_reachable():
         'FLAP',  # no FlappyCoin coin in Coingecko. Got other FLAP symbol token
         'HC-2',  # no Harvest Masternode Coin in Coingecko. Got other HC symbol token
         'KEY-3',  # no KeyCoin Coin in Coingecko. Got other KEY symbol token
+        'MUSIC',  # Music in coingecko is nftmusic and not our MUSIC
         'NAUT',  # Token suggestion doesn't match token in db
         'OCC',  # no Octoin Coin in Coingecko. Got other OCC symbol token
         'SPA',  # no SpainCoin Coin in Coingecko. Got other SPA symbol token
@@ -270,6 +273,28 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B'),
         # coingecko listed newb farm with symbol NEWB that is not our newb
         ethaddress_to_identifier('0x5A63Eb358a751b76e58325eadD86c2473fC40e87'),
+        # coingecko has BigBang Core (BBC) that is not tradove
+        ethaddress_to_identifier('0xe7D3e4413E29ae35B0893140F4500965c74365e5'),
+        # MNT is Meownaut in coingecko and not media network token
+        ethaddress_to_identifier('0xA9877b1e05D035899131DBd1e403825166D09f92'),
+        # Project quantum in coingecko but we have Qubitica
+        ethaddress_to_identifier('0xCb5ea3c190d8f82DEADF7ce5Af855dDbf33e3962'),
+        # We have Cashbery Coin for symbol CBC that is not listed in the coingecko list
+        'CBC-2',
+        # We have Air token for symbol AIR. Got another AIR symbol token
+        ethaddress_to_identifier('0x27Dce1eC4d3f72C3E457Cc50354f1F975dDEf488'),
+        # We have Acorn Collective for symbol OAK. Got another OAK symbol token
+        ethaddress_to_identifier('0x5e888B83B7287EED4fB7DA7b7d0A0D4c735d94b3'),
+        # Coingecko has yearn v1 vault yUSD
+        ethaddress_to_identifier('0x0ff3773a6984aD900f7FB23A9acbf07AC3aDFB06'),
+        # Coingecko has yearn v1 vault yUSD (different vault from above but same symbol)
+        ethaddress_to_identifier('0x4B5BfD52124784745c1071dcB244C6688d2533d3'),
+        # Coingecko has Aston Martin Cognizant Fan Token and we have AeroME
+        'AM',
+        # Coingecko has Swarm (BZZ) and we have SwarmCoin
+        'SWARM',
+        # Coingecko has aircoin and we have a different airtoken
+        'AIR-2',
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
@@ -285,21 +310,17 @@ def test_coingecko_identifiers_are_reachable():
         have_id = True
         if coingecko_str is not None or coingecko_str != '':
             have_id = False
-            found = False
-            for entry in all_coins:
-                if coingecko_str == entry['id']:
-                    found = True
-                    break
+            found = coingecko_str in all_coins
 
         suggestions = []
         if not found:
-            for entry in all_coins:
+            for cc_id, entry in all_coins.items():
                 if entry['symbol'].upper() == asset_data.symbol.upper():
-                    suggestions.append((entry['id'], entry['name'], entry['symbol']))
+                    suggestions.append((cc_id, entry['name'], entry['symbol']))
                     continue
 
                 if entry['name'].upper() == asset_data.symbol.upper():
-                    suggestions.append((entry['id'], entry['name'], entry['symbol']))
+                    suggestions.append((cc_id, entry['name'], entry['symbol']))
                     continue
 
         if have_id is False and (len(suggestions) == 0 or identifier in symbol_checked_exceptions):
@@ -351,26 +372,38 @@ def test_asset_with_unknown_type_does_not_crash(asset_resolver):  # pylint: disa
     AssetResolver._AssetResolver__instance = None
 
 
-def test_get_ethereum_token():
-    assert A_DAI == get_ethereum_token(
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
+def test_get_or_create_ethereum_token(globaldb, database):
+    cursor = globaldb._conn.cursor()
+    assets_num = cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0]
+    assert A_DAI == get_or_create_ethereum_token(
+        userdb=database,
         symbol='DAI',
         ethereum_address='0x6B175474E89094C44Da98b954EedeAC495271d0F',
     )
-    unknown_token = UnknownEthereumToken(
+    # Try getting a DAI token of a different address. Shold add new token to DB
+    new_token = get_or_create_ethereum_token(
+        userdb=database,
         symbol='DAI',
         ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
-        decimals=18,
     )
-    assert unknown_token == get_ethereum_token(
-        symbol='DAI',
-        ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
-    ), 'correct symbol but wrong address should result in unknown token'
-    unknown_token = UnknownEthereumToken(
+    assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 1
+    assert new_token.symbol == 'DAI'
+    assert new_token.ethereum_address == '0xA379B8204A49A72FF9703e18eE61402FAfCCdD60'
+    # Try getting a symbol of normal chain with different address. Should add new token to DB
+    new_token = get_or_create_ethereum_token(
+        userdb=database,
         symbol='DOT',
-        ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
-        decimals=18,
+        ethereum_address='0xB179B8204A49672FF9703e18eE61402FAfCCdD60',
     )
-    assert unknown_token == get_ethereum_token(
-        symbol='DOT',
-        ethereum_address='0xA379B8204A49A72FF9703e18eE61402FAfCCdD60',
-    ), 'symbol of normal chain (polkadot here) should result in unknown token'
+    assert new_token.symbol == 'DOT'
+    assert new_token.ethereum_address == '0xB179B8204A49672FF9703e18eE61402FAfCCdD60'
+    assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 2
+    # Check that token with wrong symbol but existing address is returned
+    assert A_USDT == get_or_create_ethereum_token(
+        userdb=database,
+        symbol='ROFL',
+        ethereum_address='0xdAC17F958D2ee523a2206206994597C13D831ec7',
+    )
+    assert cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0] == assets_num + 2

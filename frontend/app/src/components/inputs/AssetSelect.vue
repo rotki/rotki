@@ -48,7 +48,7 @@ import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { SupportedAsset } from '@/services/types-model';
+import { SupportedAsset } from '@/services/assets/types';
 import { compareAssets } from '@/utils/assets';
 
 @Component({
@@ -103,6 +103,11 @@ export default class AssetSelect extends Vue {
     this.visibleAssets = this.getAvailableAssets();
   }
 
+  @Watch('items')
+  onItemsUpdate() {
+    this.visibleAssets = this.getAvailableAssets();
+  }
+
   @Watch('search')
   onSearchUpdate() {
     const assets = this.getAvailableAssets();
@@ -112,7 +117,7 @@ export default class AssetSelect extends Vue {
   }
 
   private getAvailableAssets() {
-    if (this.items) {
+    if (this.items && this.items.length > 0) {
       return this.supportedAssets.filter(asset =>
         this.items!.includes(asset.identifier)
       );
@@ -121,9 +126,12 @@ export default class AssetSelect extends Vue {
   }
 
   customFilter(item: SupportedAsset, queryText: string): boolean {
-    const keyword = queryText?.toLocaleLowerCase()?.trim() ?? '';
-    const name = item.name.trim().toLocaleLowerCase();
-    const symbol = item.symbol.trim().toLocaleLowerCase();
+    const toLower = (string?: string | null) => {
+      return string?.toLocaleLowerCase()?.trim() ?? '';
+    };
+    const keyword = toLower(queryText);
+    const name = toLower(item.name);
+    const symbol = toLower(item.symbol);
     return name.indexOf(keyword) >= 0 || symbol.indexOf(keyword) >= 0;
   }
 

@@ -2,7 +2,8 @@ import { default as BigNumber } from 'bignumber.js';
 import {
   AAVE_BORROWING_EVENTS,
   AAVE_LENDING_EVENTS,
-  DEFI_PROTOCOLS
+  DEFI_PROTOCOLS,
+  PROTOCOL_VERSION
 } from '@/services/defi/consts';
 import { CompoundEventType } from '@/services/defi/types/compound';
 import { Balance } from '@/services/types-api';
@@ -40,10 +41,4 @@ export interface ApiMakerDAOVault {
   readonly stabilityFee: string;
 }
 
-interface UnknownToken {
-  readonly ethereumAddress: string;
-  readonly name: string;
-  readonly symbol: string;
-}
-
-export type TokenDetails = UnknownToken | string;
+export type ProtocolVersion = typeof PROTOCOL_VERSION[number];

@@ -117,6 +117,25 @@
       />
     </div>
 
+    <div v-if="exchange.location === 'ftx'">
+      <v-text-field
+        v-if="edit"
+        outlined
+        :value="exchange.ftxSubaccount"
+        data-cy="ftxSubaccount"
+        :label="$t('exchange_settings.inputs.ftx_subaccount')"
+        @input="onUpdateExchange({ ...exchange, ftxSubaccount: $event })"
+      />
+      <v-text-field
+        v-else
+        outlined
+        :value="exchange.ftxSubaccount"
+        data-cy="ftxSubaccount"
+        :label="$t('exchange_settings.inputs.ftx_subaccount')"
+        @input="onUpdateExchange({ ...exchange, ftxSubaccount: $event })"
+      />
+    </div>
+
     <binance-pairs-selector
       v-if="isBinance & edit"
       :value="binancePairs"
@@ -129,8 +148,10 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { mapGetters } from 'vuex';
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
+import { tradeLocations } from '@/components/history/consts';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import {
   EXCHANGE_BINANCE,
@@ -147,11 +168,15 @@ import { trimOnPaste } from '@/utils/event';
 
 @Component({
   name: 'ExchangeKeysForm',
-  components: { RevealableInput, ExchangeDisplay, BinancePairsSelector }
+  components: { RevealableInput, ExchangeDisplay, BinancePairsSelector },
+  computed: {
+    ...mapGetters('balances', ['exchangeNonce'])
+  }
 })
 export default class ExchangeKeysForm extends Vue {
   readonly krakenAccountTypes = KRAKEN_ACCOUNT_TYPES;
   readonly exchanges = SUPPORTED_EXCHANGES;
+  exchangeNonce!: (exchange: SupportedExchange) => number;
 
   @Prop({ required: true, type: Boolean })
   value!: boolean;
@@ -212,18 +237,37 @@ export default class ExchangeKeysForm extends Vue {
     return exchange === EXCHANGE_BINANCE || exchange === EXCHANGE_BINANCEUS;
   }
 
+  mounted() {
+    if (this.edit) {
+      return;
+    }
+    this.onUpdateExchange({
+      ...this.exchange,
+      name: this.suggestedName(this.exchange.location)
+    });
+  }
+
   onExchangeChange(exchange: SupportedExchange) {
     (this.$refs.form as any).reset();
+    const name = this.suggestedName(exchange);
     this.onUpdateExchange({
-      name: '',
+      name: name,
       newName: null,
       location: exchange,
       apiKey: null,
       apiSecret: null,
       passphrase: null,
       krakenAccountType: exchange === EXCHANGE_KRAKEN ? 'starter' : null,
-      binanceMarkets: null
+      binanceMarkets: null,
+      ftxSubaccount: null
     });
+  }
+
+  private suggestedName(exchange: SupportedExchange): string {
+    const location = tradeLocations.find(
+      ({ identifier }) => identifier === exchange
+    );
+    return location ? `${location.name} ${this.exchangeNonce(exchange)}` : '';
   }
 
   onApiKeyPaste(event: ClipboardEvent) {

@@ -9,10 +9,11 @@ import {
   MODULE_MAKERDAO_DSR,
   MODULE_MAKERDAO_VAULTS,
   MODULE_UNISWAP,
-  MODULE_YEARN
+  MODULE_YEARN,
+  MODULE_YEARN_V2
 } from '@/services/session/consts';
 
-export const DEFI_MODULES: Module[] = [
+export const SUPPORTED_MODULES: Module[] = [
   {
     identifier: MODULE_AAVE,
     name: 'Aave',
@@ -36,6 +37,11 @@ export const DEFI_MODULES: Module[] = [
   {
     identifier: MODULE_YEARN,
     name: 'yearn.finance',
+    icon: require('@/assets/images/defi/yearn_vaults.svg')
+  },
+  {
+    identifier: MODULE_YEARN_V2,
+    name: 'yearn.finance v2',
     icon: require('@/assets/images/defi/yearn_vaults.svg')
   },
   {
@@ -64,3 +70,8 @@ export const DEFI_MODULES: Module[] = [
     icon: require('@/assets/images/modules/eth.svg')
   }
 ];
+
+export function moduleName(module: string): string {
+  const data = SUPPORTED_MODULES.find(value => value.identifier === module);
+  return data?.name ?? '';
+}

@@ -188,12 +188,9 @@ import StatusMixin from '@/mixins/status-mixin';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { Section } from '@/store/const';
 import {
-  ACTION_ADD_LEDGER_ACTION,
-  ACTION_DELETE_LEDGER_ACTION,
-  ACTION_EDIT_LEDGER_ACTION,
-  ACTION_FETCH_LEDGER_ACTIONS,
-  ACTION_INCOME,
-  IGNORE_LEDGER_ACTION
+  HistoryActions,
+  IGNORE_LEDGER_ACTION,
+  LedgerActionType
 } from '@/store/history/consts';
 import {
   HistoricData,
@@ -208,7 +205,7 @@ import { Zero } from '@/utils/bignumbers';
 
 const emptyAction: () => UnsavedAction = () => ({
   timestamp: 0,
-  actionType: ACTION_INCOME,
+  actionType: LedgerActionType.ACTION_INCOME,
   location: TRADE_LOCATION_EXTERNAL,
   amount: Zero,
   asset: ''
@@ -234,12 +231,12 @@ const emptyAction: () => UnsavedAction = () => ({
   },
   methods: {
     ...mapActions('history', [
-      ACTION_FETCH_LEDGER_ACTIONS,
-      ACTION_ADD_LEDGER_ACTION,
-      ACTION_EDIT_LEDGER_ACTION,
-      ACTION_DELETE_LEDGER_ACTION,
-      'ignoreActions',
-      'unignoreActions'
+      HistoryActions.FETCH_LEDGER_ACTIONS,
+      HistoryActions.ADD_LEDGER_ACTION,
+      HistoryActions.EDIT_LEDGER_ACTION,
+      HistoryActions.DELETE_LEDGER_ACTION,
+      HistoryActions.IGNORE_ACTIONS,
+      HistoryActions.UNIGNORE_ACTION
     ]),
     ...mapMutations(['setMessage'])
   }
@@ -281,10 +278,16 @@ export default class LedgerActions extends Mixins(StatusMixin) {
     },
     { text: '', value: 'data-table-expand' }
   ];
-  [ACTION_FETCH_LEDGER_ACTIONS]!: (refresh: boolean) => Promise<void>;
-  [ACTION_ADD_LEDGER_ACTION]!: (action: UnsavedAction) => Promise<ActionStatus>;
-  [ACTION_EDIT_LEDGER_ACTION]!: (action: LedgerAction) => Promise<ActionStatus>;
-  [ACTION_DELETE_LEDGER_ACTION]!: (identifier: number) => Promise<ActionStatus>;
+  [HistoryActions.FETCH_LEDGER_ACTIONS]!: (refresh: boolean) => Promise<void>;
+  [HistoryActions.ADD_LEDGER_ACTION]!: (
+    action: UnsavedAction
+  ) => Promise<ActionStatus>;
+  [HistoryActions.EDIT_LEDGER_ACTION]!: (
+    action: LedgerAction
+  ) => Promise<ActionStatus>;
+  [HistoryActions.DELETE_LEDGER_ACTION]!: (
+    identifier: number
+  ) => Promise<ActionStatus>;
   ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   unignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   setMessage!: (message: Message) => void;
@@ -380,11 +383,11 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   }
 
   async refresh() {
-    await this[ACTION_FETCH_LEDGER_ACTIONS](true);
+    await this[HistoryActions.FETCH_LEDGER_ACTIONS](true);
   }
 
   async mounted() {
-    await this[ACTION_FETCH_LEDGER_ACTIONS](false);
+    await this[HistoryActions.FETCH_LEDGER_ACTIONS](false);
   }
 
   async showForm(action: LedgerActionEntry | UnsavedAction = emptyAction()) {
@@ -407,10 +410,14 @@ export default class LedgerActions extends Mixins(StatusMixin) {
 
     if ('identifier' in action) {
       const { ignoredInAccounting, ...payload } = action as LedgerActionEntry;
-      ({ success, message } = await this[ACTION_EDIT_LEDGER_ACTION](payload));
+      ({ success, message } = await this[HistoryActions.EDIT_LEDGER_ACTION](
+        payload
+      ));
     } else {
       const payload = { ...action };
-      ({ success, message } = await this[ACTION_ADD_LEDGER_ACTION](payload));
+      ({ success, message } = await this[HistoryActions.ADD_LEDGER_ACTION](
+        payload
+      ));
     }
 
     if (success) {
@@ -437,9 +444,9 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   async deleteAction() {
     const identifier = this.deleteIdentifier;
     this.deleteIdentifier = 0;
-    const { success, message } = await this[ACTION_DELETE_LEDGER_ACTION](
-      identifier
-    );
+    const { success, message } = await this[
+      HistoryActions.DELETE_LEDGER_ACTION
+    ](identifier);
     if (!success && message) {
       this.setMessage({
         success: false,

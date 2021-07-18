@@ -1,7 +1,6 @@
 import calendar
 import datetime
 import functools
-import logging
 import operator
 import platform
 import re
@@ -11,16 +10,10 @@ from typing import Any, Callable, DefaultDict, Dict, Iterator, List, TypeVar, Un
 
 import pkg_resources
 from eth_utils.address import to_checksum_address
-from rlp.sedes import big_endian_int
 
-from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Fee, Timestamp, TimestampMS
-
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
 
 
 def ts_now() -> Timestamp:
@@ -164,13 +157,6 @@ def combine_stat_dicts(list_of_dicts: List[Dict]) -> Dict:
     return combined_dict
 
 
-def dict_get_sumof(d: Dict[str, Dict[str, FVal]], attribute: str) -> FVal:
-    sum_ = ZERO
-    for _, value in d.items():
-        sum_ += value[attribute]
-    return sum_
-
-
 def convert_to_int(
         val: Union[FVal, bytes, str, int, float],
         accept_only_exact: bool = True,
@@ -214,10 +200,6 @@ def taxable_gain_for_sell(
         rate_in_profit_currency * taxable_amount -
         total_fee_in_profit_currency * (taxable_amount / selling_amount)
     )
-
-
-def int_to_big_endian(x: int) -> bytes:
-    return big_endian_int.serialize(x)
 
 
 def hexstring_to_bytes(hexstr: str) -> bytes:
@@ -314,15 +296,6 @@ def get_chunks(lst: List[T], n: int) -> Iterator[List[T]]:
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
-
-
-def rsetattr(obj: Any, attr: str, val: Any) -> None:
-    """
-    Recursive setattr for nested hierarchies. Taken from:
-    https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-subobjects-chained-properties
-    """
-    pre, _, post = attr.rpartition('.')
-    return setattr(rgetattr(obj, pre) if pre else obj, post, val)
 
 
 def rgetattr(obj: Any, attr: str, *args: Any) -> Any:

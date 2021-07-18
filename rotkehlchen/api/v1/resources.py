@@ -45,6 +45,9 @@ from rotkehlchen.api.v1.encoding import (
     ExchangesResourceRemoveSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
+    GitcoinEventsDeleteSchema,
+    GitcoinEventsQuerySchema,
+    GitcoinReportSchema,
     HistoricalAssetsPriceSchema,
     HistoryExportingSchema,
     HistoryProcessingSchema,
@@ -56,6 +59,9 @@ from rotkehlchen.api.v1.encoding import (
     LedgerActionSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
+    ManualPriceDeleteSchema,
+    ManualPriceRegisteredSchema,
+    ManualPriceSchema,
     ModifyEthereumTokenSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
@@ -86,7 +92,7 @@ from rotkehlchen.api.v1.encoding import (
     XpubPatchSchema,
 )
 from rotkehlchen.api.v1.parser import resource_parser
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -114,7 +120,6 @@ from rotkehlchen.typing import (
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
-    from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 
@@ -254,6 +259,7 @@ class ExchangesResource(BaseResource):
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[List[str]],
+            ftx_subaccount: Optional[str],
     ) -> Response:
         return self.rest_api.setup_exchange(
             name=name,
@@ -263,6 +269,7 @@ class ExchangesResource(BaseResource):
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
+            ftx_subaccount_name=ftx_subaccount,
         )
 
     @use_kwargs(patch_schema, location='json')
@@ -276,6 +283,7 @@ class ExchangesResource(BaseResource):
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[List[str]],
+            ftx_subaccount: Optional[str],
     ) -> Response:
         return self.rest_api.edit_exchange(
             name=name,
@@ -286,6 +294,7 @@ class ExchangesResource(BaseResource):
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
+            ftx_subaccount_name=ftx_subaccount,
         )
 
     @use_kwargs(delete_schema, location='json')
@@ -389,18 +398,28 @@ class OwnedAssetsResource(BaseResource):
 
 class AllAssetsResource(BaseResource):
 
-    add_schema = AssetSchema()
-    edit_schema = AssetSchemaWithIdentifier()
     delete_schema = StringIdentifierSchema()
+
+    def make_add_schema(self) -> AssetSchema:
+        return AssetSchema(
+            coingecko=self.rest_api.rotkehlchen.coingecko,
+            cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
+        )
+
+    def make_edit_schema(self) -> AssetSchemaWithIdentifier:
+        return AssetSchemaWithIdentifier(
+            coingecko=self.rest_api.rotkehlchen.coingecko,
+            cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
+        )
 
     def get(self) -> Response:
         return self.rest_api.query_all_assets()
 
-    @use_kwargs(add_schema, location='json')
+    @resource_parser.use_kwargs(make_add_schema, location='json')
     def put(self, asset_type: AssetType, **kwargs: Any) -> Response:
         return self.rest_api.add_custom_asset(asset_type, **kwargs)
 
-    @use_kwargs(edit_schema, location='json')
+    @resource_parser.use_kwargs(make_edit_schema, location='json')
     def patch(self, **kwargs: Any) -> Response:
         return self.rest_api.edit_custom_asset(kwargs)
 
@@ -427,19 +446,25 @@ class AssetsReplaceResource(BaseResource):
 class EthereumAssetsResource(BaseResource):
 
     get_schema = OptionalEthereumAddressSchema()
+    # edit_schema = ModifyEthereumTokenSchema()
     delete_schema = RequiredEthereumAddressSchema()
-    edit_schema = ModifyEthereumTokenSchema()
+
+    def make_edit_schema(self) -> ModifyEthereumTokenSchema:
+        return ModifyEthereumTokenSchema(
+            coingecko=self.rest_api.rotkehlchen.coingecko,
+            cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
+        )
 
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, address: Optional[ChecksumEthAddress]) -> Response:
         return self.rest_api.get_custom_ethereum_tokens(address=address)
 
-    @use_kwargs(edit_schema, location='json')
-    def put(self, token: 'CustomEthereumToken') -> Response:
+    @resource_parser.use_kwargs(make_edit_schema, location='json')
+    def put(self, token: EthereumToken) -> Response:
         return self.rest_api.add_custom_ethereum_token(token=token)
 
-    @use_kwargs(edit_schema, location='json')
-    def patch(self, token: 'CustomEthereumToken') -> Response:
+    @resource_parser.use_kwargs(make_edit_schema, location='json')
+    def patch(self, token: EthereumToken) -> Response:
         return self.rest_api.edit_custom_ethereum_token(token=token)
 
     @use_kwargs(delete_schema, location='json')
@@ -849,7 +874,7 @@ class StatisticsValueDistributionResource(BaseResource):
 class StatisticsRendererResource(BaseResource):
 
     def get(self) -> Response:
-        return self.rest_api.query_statistics_renderer()
+        return self.rest_api.query_premium_components()
 
 
 class MessagesResource(BaseResource):
@@ -1309,6 +1334,15 @@ class YearnVaultsBalancesResource(BaseResource):
         return self.rest_api.get_yearn_vaults_balances(async_query)
 
 
+class YearnVaultsV2BalancesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_yearn_vaults_v2_balances(async_query)
+
+
 class YearnVaultsHistoryResource(BaseResource):
 
     get_schema = AsyncHistoricalQuerySchema()
@@ -1322,6 +1356,26 @@ class YearnVaultsHistoryResource(BaseResource):
             to_timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.get_yearn_vaults_history(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
+class YearnVaultsV2HistoryResource(BaseResource):
+
+    get_schema = AsyncHistoricalQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_yearn_vaults_v2_history(
             async_query=async_query,
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
@@ -1512,6 +1566,10 @@ class CurrentAssetsPriceResource(BaseResource):
 class HistoricalAssetsPriceResource(BaseResource):
 
     post_schema = HistoricalAssetsPriceSchema()
+    put_schema = ManualPriceSchema()
+    patch_schema = ManualPriceSchema()
+    get_schema = ManualPriceRegisteredSchema()
+    delete_schema = ManualPriceDeleteSchema()
 
     @use_kwargs(post_schema, location='json')
     def post(
@@ -1525,6 +1583,49 @@ class HistoricalAssetsPriceResource(BaseResource):
             target_asset=target_asset,
             async_query=async_query,
         )
+
+    @use_kwargs(put_schema, location='json')
+    def put(
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        price: Price,
+        timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.add_manual_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            price=price,
+            timestamp=timestamp,
+        )
+
+    @use_kwargs(patch_schema, location='json')
+    def patch(
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        price: Price,
+        timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.edit_manual_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            price=price,
+            timestamp=timestamp,
+        )
+
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(self, from_asset: Optional[Asset], to_asset: Optional[Asset]) -> Response:
+        return self.rest_api.get_manual_prices(from_asset, to_asset)
+
+    @use_kwargs(delete_schema)
+    def delete(
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.delete_manual_price(from_asset, to_asset, timestamp)
 
 
 class NamedOracleCacheResource(BaseResource):
@@ -1595,3 +1696,48 @@ class BinanceUserMarkets(BaseResource):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(self, name: str, location: Location) -> Response:
         return self.rest_api.get_user_binance_pairs(name, location)
+
+
+class GitcoinEventsResource(BaseResource):
+    post_schema = GitcoinEventsQuerySchema()
+    delete_schema = GitcoinEventsDeleteSchema()
+
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            async_query: bool,
+            grant_id: Optional[int],
+            only_cache: bool,
+    ) -> Response:
+        return self.rest_api.get_gitcoin_events(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            async_query=async_query,
+            grant_id=grant_id,
+            only_cache=only_cache,
+        )
+
+    @use_kwargs(delete_schema, location='json_and_query')
+    def delete(self, grant_id: Optional[int]) -> Response:
+        return self.rest_api.purge_gitcoin_grant_data(grant_id=grant_id)
+
+
+class GitcoinReportResource(BaseResource):
+    put_schema = GitcoinReportSchema()
+
+    @use_kwargs(put_schema, location='json_and_query')
+    def put(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            async_query: bool,
+            grant_id: Optional[int],
+    ) -> Response:
+        return self.rest_api.process_gitcoin(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            async_query=async_query,
+            grant_id=grant_id,
+        )

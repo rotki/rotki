@@ -9,7 +9,7 @@ import gevent
 import requests
 from typing_extensions import Literal
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_BAT,
@@ -25,6 +25,7 @@ from rotkehlchen.constants.assets import (
     A_CZRX,
     A_DAI,
     A_DPI,
+    A_KRW,
     A_MCB,
     A_REP,
     A_SAI,
@@ -38,6 +39,7 @@ from rotkehlchen.constants.assets import (
     A_YFII,
     A_ZRX,
 )
+from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import (
     DeserializationError,
@@ -67,111 +69,99 @@ RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 CRYPTOCOMPARE_QUERY_RETRY_TIMES = 3
 CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME = 60
 CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
-    Asset('ADADOWN'): A_USDT,
-    Asset('ADAUP'): A_USDT,
-    Asset('BNBDOWN'): A_USDT,
-    Asset('BNBUP'): A_USDT,
-    Asset('BTCDOWN'): A_USDT,
-    Asset('BTCUP'): A_USDT,
-    Asset('ETHDOWN'): A_USDT,
-    Asset('ETHUP'): A_USDT,
-    Asset('EOSDOWN'): A_USDT,
-    Asset('EOSUP'): A_USDT,
-    Asset('DOTDOWN'): A_USDT,
-    Asset('DOTUP'): A_USDT,
-    Asset('LTCDOWN'): A_USDT,
-    Asset('LTCUP'): A_USDT,
-    Asset('TRXDOWN'): A_USDT,
-    Asset('TRXUP'): A_USDT,
-    Asset('XRPDOWN'): A_USDT,
-    Asset('XRPUP'): A_USDT,
-    Asset('LINKDOWN'): A_USDT,
-    Asset('LINKUP'): A_USDT,
-    Asset('XTZDOWN'): A_USDT,
-    Asset('XTZUP'): A_USDT,
-    Asset('ANK'): A_USDT,
-    Asset('CORN'): A_USDT,
-    Asset('SAL'): A_USDT,
-    Asset('CRT'): A_USDT,
-    Asset('JFI'): A_USDT,
-    Asset('PEARL'): A_USDT,
-    Asset('TAI'): A_USDT,
-    Asset('KLV'): A_USDT,
-    Asset('KRT'): Asset('KRW'),
-    Asset('RVC'): A_USDT,
-    Asset('SDT'): A_USDT,
-    Asset('BAKE'): A_BNB,
-    Asset('BURGER'): A_BNB,
-    Asset('CAKE'): A_BNB,
-    Asset('FILDOWN'): A_USDT,
-    Asset('FILUP'): A_USDT,
-    Asset('YFIDOWN'): A_USDT,
-    Asset('YFIUP'): A_USDT,
-    Asset('SPARTA'): A_BNB,
-    EthereumToken('0x679131F591B4f369acB8cd8c51E68596806c3916'): A_WETH,  # Trustlines
-    EthereumToken('0xf8aD7dFe656188A23e89da09506Adf7ad9290D5d'): A_USDT,  # Blocery
+    'ADADOWN': A_USDT,
+    'ADAUP': A_USDT,
+    'BNBDOWN': A_USDT,
+    'BNBUP': A_USDT,
+    'BTCDOWN': A_USDT,
+    'BTCUP': A_USDT,
+    'ETHDOWN': A_USDT,
+    'ETHUP': A_USDT,
+    'EOSDOWN': A_USDT,
+    'EOSUP': A_USDT,
+    'DOTDOWN': A_USDT,
+    'DOTUP': A_USDT,
+    'LTCDOWN': A_USDT,
+    'LTCUP': A_USDT,
+    'TRXDOWN': A_USDT,
+    'TRXUP': A_USDT,
+    'XRPDOWN': A_USDT,
+    'XRPUP': A_USDT,
+    'LINKDOWN': A_USDT,
+    'LINKUP': A_USDT,
+    'XTZDOWN': A_USDT,
+    'XTZUP': A_USDT,
+    'ANK': A_USDT,
+    'CORN': A_USDT,
+    'SAL': A_USDT,
+    'CRT': A_USDT,
+    'JFI': A_USDT,
+    'PEARL': A_USDT,
+    'TAI': A_USDT,
+    'KLV': A_USDT,
+    'KRT': A_KRW,
+    'RVC': A_USDT,
+    'SDT': A_USDT,
+    'BAKE': A_BNB,
+    'BURGER': A_BNB,
+    'CAKE': A_BNB,
+    'FILDOWN': A_USDT,
+    'FILUP': A_USDT,
+    'YFIDOWN': A_USDT,
+    'YFIUP': A_USDT,
+    'SPARTA': A_BNB,
+    strethaddress_to_identifier('0x679131F591B4f369acB8cd8c51E68596806c3916'): A_WETH,  # Trustlines  # noqa: E501
+    strethaddress_to_identifier('0xf8aD7dFe656188A23e89da09506Adf7ad9290D5d'): A_USDT,  # Blocery
     A_CDAI: A_DAI,  # Compound DAI
-    EthereumToken('0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4'): A_COMP,  # Compound Comp
+    strethaddress_to_identifier('0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4'): A_COMP,  # Compound Comp  # noqa: E501
     A_CBAT: A_BAT,  # Comppound BAT
     A_CREP: A_REP,  # Compound REP
-    EthereumToken('0xF5DCe57282A584D2746FaF1593d3121Fcac444dC'): A_SAI,  # Compound SAI
+    strethaddress_to_identifier('0xF5DCe57282A584D2746FaF1593d3121Fcac444dC'): A_SAI,  # Compound SAI  # noqa: E501
     A_CUSDC: A_USDC,  # Compound USDC
     A_CUSDT: A_USDT,  # Compound USDT
     A_CWBTC: A_WBTC,  # Compound WBTC
-    EthereumToken('0x35A18000230DA775CAc24873d00Ff85BccdeD550'): A_UNI,  # Compound UNI
+    strethaddress_to_identifier('0x35A18000230DA775CAc24873d00Ff85BccdeD550'): A_UNI,  # Compound UNI  # noqa: E501
     A_CZRX: A_ZRX,  # Compound ZRX
-    EthereumToken('0x26CE25148832C04f3d7F26F32478a9fe55197166'): A_USDT,  # DEXTools
-    EthereumToken('0x0A913beaD80F321E7Ac35285Ee10d9d922659cB7'): A_USDT,  # DOS Network token
-    EthereumToken('0x6B9f031D718dDed0d681c20cB754F97b3BB81b78'): A_USDT,  # GEEQ
+    strethaddress_to_identifier('0x26CE25148832C04f3d7F26F32478a9fe55197166'): A_USDT,  # DEXTools
+    strethaddress_to_identifier('0x0A913beaD80F321E7Ac35285Ee10d9d922659cB7'): A_USDT,  # DOS Network token  # noqa: E501
+    strethaddress_to_identifier('0x6B9f031D718dDed0d681c20cB754F97b3BB81b78'): A_USDT,  # GEEQ
     A_STAKE: A_USDT,  # xDAI STAKE
     A_MCB: A_USDT,  # MCDEX Token
-    EthereumToken('0x0Ba45A8b5d5575935B8158a88C631E9F9C95a2e5'): A_USDT,  # Tellor Tributes
-    EthereumToken('0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e'): A_USDT,  # YFI
-    EthereumToken('0x0AaCfbeC6a24756c20D41914F2caba817C0d8521'): A_USDT,  # YAM
-    EthereumToken('0x30f271C9E86D2B7d00a6376Cd96A1cFBD5F0b9b3'): A_USDT,  # Decentr
-    EthereumToken('0x0258F474786DdFd37ABCE6df6BBb1Dd5dfC4434a'): A_USDT,  # Orion protocol
-    EthereumToken('0x3C6ff50c9Ec362efa359317009428d52115fe643'): A_USDT,  # PeerEx Network
-    EthereumToken('0xFE2786D7D1cCAb8B015f6Ef7392F67d778f8d8D7'): A_USDT,  # Parsiq Token
-    EthereumToken('0x9469D013805bFfB7D3DEBe5E7839237e535ec483'): A_USDT,  # Darwinia Network
-    EthereumToken('0x25377ddb16c79C93B0CBf46809C8dE8765f03FCd'): A_USDT,  # Synthetic CBDAO
+    strethaddress_to_identifier('0x0Ba45A8b5d5575935B8158a88C631E9F9C95a2e5'): A_USDT,  # Tellor Tributes  # noqa: E501
+    strethaddress_to_identifier('0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e'): A_USDT,  # YFI
+    strethaddress_to_identifier('0x0AaCfbeC6a24756c20D41914F2caba817C0d8521'): A_USDT,  # YAM
+    strethaddress_to_identifier('0x30f271C9E86D2B7d00a6376Cd96A1cFBD5F0b9b3'): A_USDT,  # Decentr
+    strethaddress_to_identifier('0x0258F474786DdFd37ABCE6df6BBb1Dd5dfC4434a'): A_USDT,  # Orion protocol  # noqa: E501
+    strethaddress_to_identifier('0x3C6ff50c9Ec362efa359317009428d52115fe643'): A_USDT,  # PeerEx Network  # noqa: E501
+    strethaddress_to_identifier('0xFE2786D7D1cCAb8B015f6Ef7392F67d778f8d8D7'): A_USDT,  # Parsiq Token  # noqa: E501
+    strethaddress_to_identifier('0x9469D013805bFfB7D3DEBe5E7839237e535ec483'): A_USDT,  # Darwinia Network  # noqa: E501
+    strethaddress_to_identifier('0x25377ddb16c79C93B0CBf46809C8dE8765f03FCd'): A_USDT,  # Synthetic CBDAO  # noqa: E501
     A_YFII: A_USDT,  # Yfii.finance
     A_BZRX: A_USDT,  # bZx Protocol
-    EthereumToken('0x2ba592F78dB6436527729929AAf6c908497cB200'): A_USDT,  # Cream finance
-    EthereumToken('0x94d863173EE77439E4292284fF13fAD54b3BA182'): A_USDT,  # Akropolis delphi
-    EthereumToken('0xfffffffFf15AbF397dA76f1dcc1A1604F45126DB'): A_USDT,  # FalconSwap Token
-    EthereumToken('0x28cb7e841ee97947a86B06fA4090C8451f64c0be'): A_USDT,  # YFLink
-    EthereumToken('0x073aF3f70516380654Ba7C5812c4Ab0255F081Bc'): A_USDT,  # TRUMPWIN
-    EthereumToken('0x70878b693A57a733A79560e33cF6a828E685d19a'): A_USDT,  # TRUMPLOSE
-    EthereumToken('0x0000000000004946c0e9F43F4Dee607b0eF1fA1c'): A_USDT,  # Chi Gas Token
-    EthereumToken('0x4639cd8cd52EC1CF2E496a606ce28D8AfB1C792F'): A_USDT,  # CBDAO
-    EthereumToken('0x3F382DbD960E3a9bbCeaE22651E88158d2791550'): A_USDT,  # AaveGotchi GHST
-    EthereumToken('0xDe201dAec04ba73166d9917Fdf08e1728E270F06'): A_USDT,  # Moji Experience Points
-    EthereumToken('0x83e6f1E41cdd28eAcEB20Cb649155049Fac3D5Aa'): A_USDT,  # Polkastarter
-    EthereumToken('0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'): A_USDT,  # Rarible
-    EthereumToken('0x49E833337ECe7aFE375e44F4E3e8481029218E5c'): A_USDT,  # Value Liquidity
-    EthereumToken('0x68A118Ef45063051Eac49c7e647CE5Ace48a68a5'): A_WETH,  # Based Money
+    strethaddress_to_identifier('0x2ba592F78dB6436527729929AAf6c908497cB200'): A_USDT,  # Cream finance  # noqa: E501
+    strethaddress_to_identifier('0x94d863173EE77439E4292284fF13fAD54b3BA182'): A_USDT,  # Akropolis delphi  # noqa: E501
+    strethaddress_to_identifier('0xfffffffFf15AbF397dA76f1dcc1A1604F45126DB'): A_USDT,  # FalconSwap Token  # noqa: E501
+    strethaddress_to_identifier('0x28cb7e841ee97947a86B06fA4090C8451f64c0be'): A_USDT,  # YFLink
+    strethaddress_to_identifier('0x073aF3f70516380654Ba7C5812c4Ab0255F081Bc'): A_USDT,  # TRUMPWIN
+    strethaddress_to_identifier('0x70878b693A57a733A79560e33cF6a828E685d19a'): A_USDT,  # TRUMPLOSE
+    strethaddress_to_identifier('0x0000000000004946c0e9F43F4Dee607b0eF1fA1c'): A_USDT,  # Chi Gas Token  # noqa: E501
+    strethaddress_to_identifier('0x4639cd8cd52EC1CF2E496a606ce28D8AfB1C792F'): A_USDT,  # CBDAO
+    strethaddress_to_identifier('0x3F382DbD960E3a9bbCeaE22651E88158d2791550'): A_USDT,  # AaveGotchi GHST  # noqa: E501
+    strethaddress_to_identifier('0xDe201dAec04ba73166d9917Fdf08e1728E270F06'): A_USDT,  # Moji Experience Points  # noqa: E501
+    strethaddress_to_identifier('0x83e6f1E41cdd28eAcEB20Cb649155049Fac3D5Aa'): A_USDT,  # Polkastarter  # noqa: E501
+    strethaddress_to_identifier('0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF'): A_USDT,  # Rarible
+    strethaddress_to_identifier('0x49E833337ECe7aFE375e44F4E3e8481029218E5c'): A_USDT,  # Value Liquidity  # noqa: E501
+    strethaddress_to_identifier('0x68A118Ef45063051Eac49c7e647CE5Ace48a68a5'): A_WETH,  # Based Money  # noqa: E501
     A_DPI: A_WETH,  # Defipulse index
-    EthereumToken('0x8A9C67fee641579dEbA04928c4BC45F66e26343A'): A_USDT,  # Jarvis reward token
-    EthereumToken('0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5'): A_USDT,  # Pickle token
-    EthereumToken('0x5bEaBAEBB3146685Dd74176f68a0721F91297D37'): A_USDT,  # Bounce token
-    EthereumToken('0xdDF7Fd345D54ff4B40079579d4C4670415DbfD0A'): A_USDT,  # Social good
-    EthereumToken('0x09a3EcAFa817268f77BE1283176B946C4ff2E608'): A_USDC,  # Mirror protocol
-    EthereumToken('0x1966d718A565566e8E202792658D7b5Ff4ECe469'): A_WETH,  # nDex
+    strethaddress_to_identifier('0x8A9C67fee641579dEbA04928c4BC45F66e26343A'): A_USDT,  # Jarvis reward token  # noqa: E501
+    strethaddress_to_identifier('0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5'): A_USDT,  # Pickle token  # noqa: E501
+    strethaddress_to_identifier('0x5bEaBAEBB3146685Dd74176f68a0721F91297D37'): A_USDT,  # Bounce token  # noqa: E501
+    strethaddress_to_identifier('0xdDF7Fd345D54ff4B40079579d4C4670415DbfD0A'): A_USDT,  # Social good  # noqa: E501
+    strethaddress_to_identifier('0x09a3EcAFa817268f77BE1283176B946C4ff2E608'): A_USDC,  # Mirror protocol  # noqa: E501
+    strethaddress_to_identifier('0x1966d718A565566e8E202792658D7b5Ff4ECe469'): A_WETH,  # nDex
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 CRYPTOCOMPARE_HOURQUERYLIMIT = 2000
-
-
-class PriceHistoryEntry(NamedTuple):
-    time: Timestamp
-    low: Price
-    high: Price
-
-
-class PriceHistoryData(NamedTuple):
-    data: List[PriceHistoryEntry]
-    start_time: Timestamp
-    end_time: Timestamp
 
 
 class HistoHourAssetData(NamedTuple):
@@ -187,26 +177,6 @@ CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES: Dict[Asset, HistoHourAssetData] = {
         usd_price=Price(FVal('239.13')),
     ),
 }
-
-
-def _dict_history_to_entries(data: List[Dict[str, Any]]) -> List[PriceHistoryEntry]:
-    """Turns a list of dict of history entries to a list of proper objects"""
-    return [
-        PriceHistoryEntry(
-            time=Timestamp(entry['time']),
-            low=Price(FVal(entry['low'])),
-            high=Price(FVal(entry['high'])),
-        ) for entry in data
-    ]
-
-
-def _dict_history_to_data(data: Dict[str, Any]) -> PriceHistoryData:
-    """Turns a price history data dict entry into a proper object"""
-    return PriceHistoryData(
-        data=_dict_history_to_entries(data['data']),
-        start_time=Timestamp(data['start_time']),
-        end_time=Timestamp(data['end_time']),
-    )
 
 
 def _multiply_str_nums(a: str, b: str) -> str:
@@ -388,7 +358,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         For some assets cryptocompare can only figure out the price via intermediaries.
         This function takes care of these special cases."""
         method = getattr(self, method_name)
-        intermediate_asset = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING[from_asset]
+        intermediate_asset = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING[from_asset.identifier]
         result1 = method(
             from_asset=from_asset,
             to_asset=intermediate_asset,
@@ -447,7 +417,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
         - May raise PriceQueryUnsupportedAsset if from/to assets are not known to cryptocompare
         """
         special_asset = (
-            from_asset in CRYPTOCOMPARE_SPECIAL_CASES or to_asset in CRYPTOCOMPARE_SPECIAL_CASES
+            from_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES or
+            to_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES
         )
         if special_asset and not handling_special_case:
             return self._special_case_handling(
@@ -484,7 +455,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
         - May raise PriceQueryUnsupportedAsset if from/to assets are not known to cryptocompare
         """
         special_asset = (
-            from_asset in CRYPTOCOMPARE_SPECIAL_CASES or to_asset in CRYPTOCOMPARE_SPECIAL_CASES
+            from_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES or
+            to_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES
         )
         if special_asset and not handling_special_case:
             return self._special_case_handling(
@@ -527,7 +499,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
             timestamp=timestamp,
         )
         special_asset = (
-            from_asset in CRYPTOCOMPARE_SPECIAL_CASES or to_asset in CRYPTOCOMPARE_SPECIAL_CASES
+            from_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES or
+            to_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES
         )
         if special_asset and not handling_special_case:
             return self._special_case_handling(
@@ -880,7 +853,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
     def all_coins(self) -> Dict[str, Any]:
         """
-        Gets the list of all the cryptocompare coins
+        Gets the mapping of all the cryptocompare coins
 
         May raise:
         - RemoteError if there is a problem reaching the cryptocompare server

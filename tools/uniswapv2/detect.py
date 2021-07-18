@@ -1,12 +1,11 @@
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Set
-import sys
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.manager import (
@@ -16,6 +15,7 @@ from rotkehlchen.chain.ethereum.manager import (
 )
 from rotkehlchen.chain.ethereum.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.ethereum.utils import multicall_specific
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
@@ -214,10 +214,12 @@ if __name__ == "__main__":
             write_result_to_file(result, 'uniswap_lp_tokens_ethereum.json')
 
         if args.no_query_balances is False:
+            database = DBHandler('fill', 'me', ethereum.msg_aggregator, None)
             start = ts_now()
             known_assets: Set[EthereumToken] = set()
-            unknown_assets: Set[UnknownEthereumToken] = set()
+            unknown_assets: Set[EthereumToken] = set()
             balances = uniswap_lp_token_balances(
+                userdb=database,
                 address='0x1554d34D46842778999cB4eb1381b19f651e4a9d',  # test address
                 ethereum=ethereum,
                 lp_addresses=results['ethereum'],

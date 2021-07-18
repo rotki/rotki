@@ -1,5 +1,7 @@
 import { AxiosInstance, AxiosTransformer } from 'axios';
 import { setupTransformer } from '@/services/axios-tranformers';
+import { V1 } from '@/services/defi/consts';
+import { ProtocolVersion } from '@/services/defi/types';
 import { ApiImplementation, PendingTask } from '@/services/types-api';
 import { fetchExternalAsync } from '@/services/utils';
 
@@ -64,14 +66,21 @@ export class DefiApi {
     return fetchExternalAsync(this.api, url);
   }
 
-  async fetchYearnVaultsHistory(reset?: boolean): Promise<PendingTask> {
-    const url = '/blockchains/ETH/modules/yearn/vaults/history';
+  async fetchYearnVaultsHistory(
+    protocolVersion: ProtocolVersion = V1,
+    reset?: boolean
+  ): Promise<PendingTask> {
+    const path = protocolVersion === V1 ? 'vaults' : 'vaultsv2';
+    const url = `/blockchains/ETH/modules/yearn/${path}/history`;
     const params = reset ? { resetDbData: true } : undefined;
     return fetchExternalAsync(this.api, url, params);
   }
 
-  async fetchYearnVaultsBalances(): Promise<PendingTask> {
-    const url = '/blockchains/ETH/modules/yearn/vaults/balances';
+  async fetchYearnVaultsBalances(
+    protocolVersion: ProtocolVersion = V1
+  ): Promise<PendingTask> {
+    const path = protocolVersion === V1 ? 'vaults' : 'vaultsv2';
+    const url = `/blockchains/ETH/modules/yearn/${path}/balances`;
     return fetchExternalAsync(this.api, url);
   }
 

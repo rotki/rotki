@@ -6,7 +6,6 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.modules.uniswap import UniswapPoolEvent, UniswapPoolEventsBalance
@@ -27,7 +26,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED, A_SLP, A_YAM_V1
+from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED, A_YAM_V1
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
@@ -156,283 +155,277 @@ def test_get_balances(
             assert lp_asset['user_balance']['usd_value']
 
 
-EXPECTED_TRADES = [AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=A_WETH,
-    quote_asset=A_YAM_V1,
-    amount=AssetAmount(FVal('1.170318698476688004')),
-    rate=Price(FVal('10.74584229464304934592083644')),
-    trade_index=0,
-    swaps=[AMMSwap(
-        tx_hash='0x3a9013edd5d7554699c9edcb316d4658dbf673e1940061b6f9c95f91a2c2d0a9',
-        log_index=113,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        timestamp=Timestamp(1597186835),
-        location=Location.UNISWAP,
-        token0=A_YAM_V1,
-        token1=A_WETH,
-        amount0_in=AssetAmount(FVal('12.5760601683024')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('1.170318698476688004')),
-    )],
-), AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=A_WETH,
-    quote_asset=A_YAM_V1,
-    amount=AssetAmount(FVal('0.408291837660462176')),
-    rate=Price(FVal('7.312663563501178473215709887')),
-    trade_index=0,
-    swaps=[AMMSwap(
-        tx_hash='0x7293791b92306c2081432438fbf666c917577e373ba178d4232dbebc18875a78',
-        log_index=54,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        timestamp=Timestamp(1597183725),
-        location=Location.UNISWAP,
-        token0=A_YAM_V1,
-        token1=A_WETH,
-        amount0_in=AssetAmount(FVal('2.9857008445346')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('0.408291837660462176')),
-    )],
-), AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=A_WETH,
-    quote_asset=A_YAM_V1,
-    amount=AssetAmount(FVal('1.396503415128306884')),
-    rate=Price(FVal('8.652682034981347560720977038')),
-    trade_index=0,
-    swaps=[AMMSwap(
-        tx_hash='0x7e254511474ee9cb2ea033ebb6743845c3d44d9f31165e7f69aa6bfd768192d0',
-        log_index=7,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        timestamp=Timestamp(1597182868),
-        location=Location.UNISWAP,
-        token0=A_YAM_V1,
-        token1=A_WETH,
-        amount0_in=AssetAmount(FVal('12.0835000118708')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('1.396503415128306884')),
-    )],
-), AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=A_DAI,
-    quote_asset=UnknownEthereumToken(
-        ethereum_address=string_to_ethereum_address('0xC0134b5B924c2FCA106eFB33C45446c466FBe03e'),  # noqa: E501
-        symbol='ALEPH',
-        name='aleph.im',
-    ),
-    amount=AssetAmount(FVal('3801.255053678779873244')),
-    rate=Price(FVal('4.367565528950839496292511829')),
-    trade_index=0,
-    swaps=[AMMSwap(
-        tx_hash='0xe1ab3767684e9ae1859e78fc8dea00927b078be238b51426a5a01acbc3eabfa1',
-        log_index=102,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        timestamp=Timestamp(1595787897),
-        location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0xC0134b5B924c2FCA106eFB33C45446c466FBe03e'),  # noqa: E501
-            symbol='ALEPH',
-            name='aleph.im',
-        ),
-        token1=A_WETH,
-        amount0_in=AssetAmount(FVal('16602.230539197612')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('16.759630910942965985')),
-    ), AMMSwap(
-        tx_hash='0xe1ab3767684e9ae1859e78fc8dea00927b078be238b51426a5a01acbc3eabfa1',
-        log_index=108,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        timestamp=Timestamp(1595787897),
-        location=Location.UNISWAP,
-        token0=A_DAI,
-        token1=A_WETH,
-        amount0_in=AssetAmount(ZERO),
-        amount1_in=AssetAmount(FVal('12.569723183207224488')),
-        amount0_out=AssetAmount(FVal('3801.255053678779873244')),
-        amount1_out=AssetAmount(ZERO),
-    )],
-), AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=A_LEND,
-    quote_asset=A_WETH,
-    amount=AssetAmount(FVal('783.815545775206396604')),
-    rate=Price(FVal('0.001336937475067974904054378106')),
-    trade_index=0,
-    swaps=[AMMSwap(
-        tx_hash='0x7070ac300cfe44f2791bb53a272eddb6c04cf5b2a34c7b30f223034bf0fbc9f5',
-        log_index=88,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        timestamp=Timestamp(1595252547),
-        location=Location.UNISWAP,
-        token0=A_LEND,
-        token1=A_WETH,
-        amount0_in=AssetAmount(ZERO),
-        amount1_in=AssetAmount(FVal('1.047912376687731144')),
-        amount0_out=AssetAmount(FVal('783.815545775206396604')),
-        amount1_out=AssetAmount(ZERO),
-    )],
-), AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=A_LEND,
-    quote_asset=A_WETH,
-    amount=AssetAmount(FVal('3818.889005228581791673')),
-    rate=Price(FVal('0.001121122145540436399587918681')),
-    trade_index=0,
-    swaps=[AMMSwap(
-        tx_hash='0x28f73d8691b0b448d3cf49292aafeccb0574d0ca25706e4998e37275eaf568c2',
-        log_index=109,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        timestamp=Timestamp(1594917107),
-        location=Location.UNISWAP,
-        token0=A_DAI,
-        token1=A_WETH,
-        amount0_in=AssetAmount(ZERO),
-        amount1_in=AssetAmount(FVal('4.281441035122650458')),
-        amount0_out=AssetAmount(FVal('980.087534272890506353')),
-        amount1_out=AssetAmount(ZERO),
-    ), AMMSwap(
-        tx_hash='0x28f73d8691b0b448d3cf49292aafeccb0574d0ca25706e4998e37275eaf568c2',
-        log_index=113,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        timestamp=Timestamp(1594917107),
-        location=Location.UNISWAP,
-        token0=A_DAI,
-        token1=A_LEND,
-        amount0_in=AssetAmount(FVal('980.087534272890506353')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('3811.261176919173284002')),
-    ), AMMSwap(
-        tx_hash='0x28f73d8691b0b448d3cf49292aafeccb0574d0ca25706e4998e37275eaf568c2',
-        log_index=118,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        timestamp=Timestamp(1594917107),
-        location=Location.UNISWAP,
-        token0=A_USDC,
-        token1=A_WETH,
-        amount0_in=AssetAmount(ZERO),
-        amount1_in=AssetAmount(FVal('4.281441035122650458')),
-        amount0_out=AssetAmount(FVal('998.970468')),
-        amount1_out=AssetAmount(ZERO),
-    ), AMMSwap(
-        tx_hash='0x28f73d8691b0b448d3cf49292aafeccb0574d0ca25706e4998e37275eaf568c2',
-        log_index=122,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
-        timestamp=Timestamp(1594917107),
-        location=Location.UNISWAP,
-        token0=A_LEND,
-        token1=A_USDC,
-        amount0_in=AssetAmount(ZERO),
-        amount1_in=AssetAmount(FVal('998.970468')),
-        amount0_out=AssetAmount(FVal('3818.889005228581791673')),
-        amount1_out=AssetAmount(ZERO),
-    )],
-), AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=A_LEND,
-    quote_asset=A_WETH,
-    amount=AssetAmount(FVal('21928.266845570798012768')),
-    rate=Price(FVal('0.0005748315837851012488579182153')),
-    trade_index=0,
-    swaps=[AMMSwap(
-        tx_hash='0xefaf420db6bc00e007724c9f109cc2513886bf572cec52ce5c4fc4ea0c6691d6',
-        log_index=108,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0x9Ca13029232C8f4AAC1D42FaA54A36aDE41aA10d'),
-        to_address=string_to_ethereum_address('0x9Ca13029232C8f4AAC1D42FaA54A36aDE41aA10d'),
-        timestamp=Timestamp(1592944381),
-        location=Location.UNISWAP,
-        token0=A_LEND,
-        token1=A_WETH,
-        amount0_in=AssetAmount(ZERO),
-        amount1_in=AssetAmount(FVal('12.605060360501788046')),
-        amount0_out=AssetAmount(FVal('21928.266845570798012768')),
-        amount1_out=AssetAmount(ZERO),
-    )],
-), AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=A_WETH,
-    quote_asset=A_DAI,
-    amount=AssetAmount(FVal('4.136051879013406343')),
-    rate=Price(FVal('232.4798219165320015500724464')),
-    trade_index=0,
-    swaps=[AMMSwap(
-        tx_hash='0x983676d8ff7568f2502d73cdca96150be26dd033da86c4e05ea3a2c4ecb66182',
-        log_index=43,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0x09e3B36DbDc641d73c38656605538C4B666dB82B'),
-        to_address=string_to_ethereum_address('0x09e3B36DbDc641d73c38656605538C4B666dB82B'),
-        timestamp=Timestamp(1592398831),
-        location=Location.UNISWAP,
-        token0=A_DAI,
-        token1=A_WETH,
-        amount0_in=AssetAmount(FVal('961.548604270574270408')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('4.136051879013406343')),
-    )],
-), AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=A_LEND,
-    quote_asset=A_DAI,
-    amount=AssetAmount(FVal('2340.535105624007589249')),
-    rate=Price(FVal('0.09658784621963269841181632766')),
-    trade_index=0,
-    swaps=[AMMSwap(
-        tx_hash='0xb41eeed3fde0b6376bba43523d1f8e18127587ffa269b343b7155805bda27270',
-        log_index=124,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0xc3037b2A1a9E9268025FF6d45Fe7095436446D52'),
-        to_address=string_to_ethereum_address('0xc3037b2A1a9E9268025FF6d45Fe7095436446D52'),
-        timestamp=Timestamp(1592090465),
-        location=Location.UNISWAP,
-        token0=A_DAI,
-        token1=A_WETH,
-        amount0_in=AssetAmount(FVal('226.067244853663419909')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('0.947308435652157362')),
-    ), AMMSwap(
-        tx_hash='0xb41eeed3fde0b6376bba43523d1f8e18127587ffa269b343b7155805bda27270',
-        log_index=128,
-        address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
-        from_address=string_to_ethereum_address('0xc3037b2A1a9E9268025FF6d45Fe7095436446D52'),
-        to_address=string_to_ethereum_address('0xc3037b2A1a9E9268025FF6d45Fe7095436446D52'),
-        timestamp=Timestamp(1592090465),
-        location=Location.UNISWAP,
-        token0=A_LEND,
-        token1=A_WETH,
-        amount0_in=AssetAmount(ZERO),
-        amount1_in=AssetAmount(FVal('0.947308435652157362')),
-        amount0_out=AssetAmount(FVal('2340.535105624007589249')),
-        amount1_out=AssetAmount(ZERO),
-    )],
-)]
+def get_expected_trades():
+    """Function so no price (unknown) assets can be resolved only when existing in the DB"""
+    return [AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_WETH,
+        quote_asset=A_YAM_V1,
+        amount=AssetAmount(FVal('1.170318698476688004')),
+        rate=Price(FVal('10.74584229464304934592083644')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0x3a9013edd5d7554699c9edcb316d4658dbf673e1940061b6f9c95f91a2c2d0a9',
+            log_index=113,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+            to_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+            timestamp=Timestamp(1597186835),
+            location=Location.UNISWAP,
+            token0=A_YAM_V1,
+            token1=A_WETH,
+            amount0_in=AssetAmount(FVal('12.5760601683024')),
+            amount1_in=AssetAmount(ZERO),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('1.170318698476688004')),
+        )],
+    ), AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_WETH,
+        quote_asset=A_YAM_V1,
+        amount=AssetAmount(FVal('0.408291837660462176')),
+        rate=Price(FVal('7.312663563501178473215709887')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0x7293791b92306c2081432438fbf666c917577e373ba178d4232dbebc18875a78',
+            log_index=54,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+            to_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+            timestamp=Timestamp(1597183725),
+            location=Location.UNISWAP,
+            token0=A_YAM_V1,
+            token1=A_WETH,
+            amount0_in=AssetAmount(FVal('2.9857008445346')),
+            amount1_in=AssetAmount(ZERO),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('0.408291837660462176')),
+        )],
+    ), AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_WETH,
+        quote_asset=A_YAM_V1,
+        amount=AssetAmount(FVal('1.396503415128306884')),
+        rate=Price(FVal('8.652682034981347560720977038')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0x7e254511474ee9cb2ea033ebb6743845c3d44d9f31165e7f69aa6bfd768192d0',
+            log_index=7,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+            to_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+            timestamp=Timestamp(1597182868),
+            location=Location.UNISWAP,
+            token0=A_YAM_V1,
+            token1=A_WETH,
+            amount0_in=AssetAmount(FVal('12.0835000118708')),
+            amount1_in=AssetAmount(ZERO),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('1.396503415128306884')),
+        )],
+    ), AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_DAI,
+        quote_asset=EthereumToken('0xC0134b5B924c2FCA106eFB33C45446c466FBe03e'),  # ALEPH
+        amount=AssetAmount(FVal('3801.255053678779873244')),
+        rate=Price(FVal('4.367565528950839496292511829')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0xe1ab3767684e9ae1859e78fc8dea00927b078be238b51426a5a01acbc3eabfa1',
+            log_index=102,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            timestamp=Timestamp(1595787897),
+            location=Location.UNISWAP,
+            token0=EthereumToken('0xC0134b5B924c2FCA106eFB33C45446c466FBe03e'),  # ALEPH
+            token1=A_WETH,
+            amount0_in=AssetAmount(FVal('16602.230539197612')),
+            amount1_in=AssetAmount(ZERO),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('16.759630910942965985')),
+        ), AMMSwap(
+            tx_hash='0xe1ab3767684e9ae1859e78fc8dea00927b078be238b51426a5a01acbc3eabfa1',
+            log_index=108,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            timestamp=Timestamp(1595787897),
+            location=Location.UNISWAP,
+            token0=A_DAI,
+            token1=A_WETH,
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('12.569723183207224488')),
+            amount0_out=AssetAmount(FVal('3801.255053678779873244')),
+            amount1_out=AssetAmount(ZERO),
+        )],
+    ), AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_LEND,
+        quote_asset=A_WETH,
+        amount=AssetAmount(FVal('783.815545775206396604')),
+        rate=Price(FVal('0.001336937475067974904054378106')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0x7070ac300cfe44f2791bb53a272eddb6c04cf5b2a34c7b30f223034bf0fbc9f5',
+            log_index=88,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            timestamp=Timestamp(1595252547),
+            location=Location.UNISWAP,
+            token0=A_LEND,
+            token1=A_WETH,
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('1.047912376687731144')),
+            amount0_out=AssetAmount(FVal('783.815545775206396604')),
+            amount1_out=AssetAmount(ZERO),
+        )],
+    ), AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_LEND,
+        quote_asset=A_WETH,
+        amount=AssetAmount(FVal('3818.889005228581791673')),
+        rate=Price(FVal('0.001121122145540436399587918681')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0x28f73d8691b0b448d3cf49292aafeccb0574d0ca25706e4998e37275eaf568c2',
+            log_index=109,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            timestamp=Timestamp(1594917107),
+            location=Location.UNISWAP,
+            token0=A_DAI,
+            token1=A_WETH,
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('4.281441035122650458')),
+            amount0_out=AssetAmount(FVal('980.087534272890506353')),
+            amount1_out=AssetAmount(ZERO),
+        ), AMMSwap(
+            tx_hash='0x28f73d8691b0b448d3cf49292aafeccb0574d0ca25706e4998e37275eaf568c2',
+            log_index=113,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            timestamp=Timestamp(1594917107),
+            location=Location.UNISWAP,
+            token0=A_DAI,
+            token1=A_LEND,
+            amount0_in=AssetAmount(FVal('980.087534272890506353')),
+            amount1_in=AssetAmount(ZERO),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('3811.261176919173284002')),
+        ), AMMSwap(
+            tx_hash='0x28f73d8691b0b448d3cf49292aafeccb0574d0ca25706e4998e37275eaf568c2',
+            log_index=118,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            timestamp=Timestamp(1594917107),
+            location=Location.UNISWAP,
+            token0=A_USDC,
+            token1=A_WETH,
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('4.281441035122650458')),
+            amount0_out=AssetAmount(FVal('998.970468')),
+            amount1_out=AssetAmount(ZERO),
+        ), AMMSwap(
+            tx_hash='0x28f73d8691b0b448d3cf49292aafeccb0574d0ca25706e4998e37275eaf568c2',
+            log_index=122,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            to_address=string_to_ethereum_address('0x9021C84f3900B610ab8625d26d739e3B7bFf86aB'),
+            timestamp=Timestamp(1594917107),
+            location=Location.UNISWAP,
+            token0=A_LEND,
+            token1=A_USDC,
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('998.970468')),
+            amount0_out=AssetAmount(FVal('3818.889005228581791673')),
+            amount1_out=AssetAmount(ZERO),
+        )],
+    ), AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_LEND,
+        quote_asset=A_WETH,
+        amount=AssetAmount(FVal('21928.266845570798012768')),
+        rate=Price(FVal('0.0005748315837851012488579182153')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0xefaf420db6bc00e007724c9f109cc2513886bf572cec52ce5c4fc4ea0c6691d6',
+            log_index=108,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0x9Ca13029232C8f4AAC1D42FaA54A36aDE41aA10d'),
+            to_address=string_to_ethereum_address('0x9Ca13029232C8f4AAC1D42FaA54A36aDE41aA10d'),
+            timestamp=Timestamp(1592944381),
+            location=Location.UNISWAP,
+            token0=A_LEND,
+            token1=A_WETH,
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('12.605060360501788046')),
+            amount0_out=AssetAmount(FVal('21928.266845570798012768')),
+            amount1_out=AssetAmount(ZERO),
+        )],
+    ), AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_WETH,
+        quote_asset=A_DAI,
+        amount=AssetAmount(FVal('4.136051879013406343')),
+        rate=Price(FVal('232.4798219165320015500724464')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0x983676d8ff7568f2502d73cdca96150be26dd033da86c4e05ea3a2c4ecb66182',
+            log_index=43,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0x09e3B36DbDc641d73c38656605538C4B666dB82B'),
+            to_address=string_to_ethereum_address('0x09e3B36DbDc641d73c38656605538C4B666dB82B'),
+            timestamp=Timestamp(1592398831),
+            location=Location.UNISWAP,
+            token0=A_DAI,
+            token1=A_WETH,
+            amount0_in=AssetAmount(FVal('961.548604270574270408')),
+            amount1_in=AssetAmount(ZERO),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('4.136051879013406343')),
+        )],
+    ), AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_LEND,
+        quote_asset=A_DAI,
+        amount=AssetAmount(FVal('2340.535105624007589249')),
+        rate=Price(FVal('0.09658784621963269841181632766')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0xb41eeed3fde0b6376bba43523d1f8e18127587ffa269b343b7155805bda27270',
+            log_index=124,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0xc3037b2A1a9E9268025FF6d45Fe7095436446D52'),
+            to_address=string_to_ethereum_address('0xc3037b2A1a9E9268025FF6d45Fe7095436446D52'),
+            timestamp=Timestamp(1592090465),
+            location=Location.UNISWAP,
+            token0=A_DAI,
+            token1=A_WETH,
+            amount0_in=AssetAmount(FVal('226.067244853663419909')),
+            amount1_in=AssetAmount(ZERO),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('0.947308435652157362')),
+        ), AMMSwap(
+            tx_hash='0xb41eeed3fde0b6376bba43523d1f8e18127587ffa269b343b7155805bda27270',
+            log_index=128,
+            address=string_to_ethereum_address('0x21d05071cA08593e13cd3aFD0b4869537e015C92'),
+            from_address=string_to_ethereum_address('0xc3037b2A1a9E9268025FF6d45Fe7095436446D52'),
+            to_address=string_to_ethereum_address('0xc3037b2A1a9E9268025FF6d45Fe7095436446D52'),
+            timestamp=Timestamp(1592090465),
+            location=Location.UNISWAP,
+            token0=A_LEND,
+            token1=A_WETH,
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('0.947308435652157362')),
+            amount0_out=AssetAmount(FVal('2340.535105624007589249')),
+            amount1_out=AssetAmount(ZERO),
+        )],
+    )]
 
 
 def _query_and_assert_simple_uniswap_trades(setup, api_server, async_query):
@@ -451,10 +444,11 @@ def _query_and_assert_simple_uniswap_trades(setup, api_server, async_query):
         else:
             result = assert_proper_response_with_result(response)
 
+    expected_trades = get_expected_trades()
     for idx, trade in enumerate(result[AAVE_TEST_ACC_1]):
-        if idx == len(EXPECTED_TRADES):
-            break  # test up to last EXPECTED_TRADES trades from 1597186900
-        assert trade == EXPECTED_TRADES[idx].serialize()
+        if idx == len(expected_trades):
+            break  # test up to last expected_trades trades from 1597186900
+        assert trade == expected_trades[idx].serialize()
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
@@ -489,243 +483,187 @@ def test_get_uniswap_trades_history(
     _query_and_assert_simple_uniswap_trades(setup, rotkehlchen_api_server, async_query)
 
 
-CRAZY_UNISWAP_ADDRESS = string_to_ethereum_address('0xB1637bE0173330664adecB343faF112Ca837dA06')
-EXPECTED_CRAZY_TRADES = [AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=A_WETH,
-    quote_asset=A_WETH,
-    amount=AssetAmount(FVal('0.088104479651219417')),
-    rate=Price(FVal('0.9584427736363110293711465160')),
-    trade_index=0,
-    swaps=[AMMSwap(
-        tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
-        log_index=140,
-        address=CRAZY_UNISWAP_ADDRESS,
-        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=string_to_ethereum_address('0x21aD02e972E968D9c76a7081a483d782001d6558'),
-        timestamp=Timestamp(1605431265),
-        location=Location.UNISWAP,
-        token0=A_SLP,
-        token1=A_WETH,
-        amount0_in=AssetAmount(ZERO),
-        amount1_in=AssetAmount(FVal('0.084443101846698663')),
-        amount0_out=AssetAmount(FVal('876')),
-        amount1_out=AssetAmount(ZERO),
-    ), AMMSwap(
-        tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
-        log_index=143,
-        address=CRAZY_UNISWAP_ADDRESS,
-        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=CRAZY_UNISWAP_ADDRESS,
-        timestamp=Timestamp(1605431265),
-        location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
-            symbol='🐟',
-            name='Penguin Party Fish',
-        ),
-        token1=A_SLP,
-        amount0_in=AssetAmount(ZERO),
-        amount1_in=AssetAmount(FVal('876')),
-        amount0_out=AssetAmount(FVal('20.085448793024895802')),
-        amount1_out=AssetAmount(ZERO),
-    ), AMMSwap(
-        tx_hash='0x06d91cb3501019ac9f01f5e48d4790cfc69c1aa0593a7c4e80d83aaba3539578',
-        log_index=146,
-        address=CRAZY_UNISWAP_ADDRESS,
-        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=string_to_ethereum_address('0xB8db34F834E9dF42F2002CeB7B829DaD89d08E14'),
-        timestamp=Timestamp(1605431265),
-        location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
-            symbol='🐟',
-            name='Penguin Party Fish',
-        ),
-        token1=A_WETH,
-        amount0_in=AssetAmount(FVal('20.085448793024895802')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('0.088104479651219417')),
-    )],
-), AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=UnknownEthereumToken(
-        ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
-        symbol='🐟',
-        name='Penguin Party Fish',
-    ),
-    quote_asset=UnknownEthereumToken(
-        ethereum_address=string_to_ethereum_address('0x86B0Aa51eB489585D88d2e671E5ee1b9e457Be60'),  # noqa: E501
-        symbol='FMK',
-        name='https://t.me/fomok',
-    ),
-    amount=AssetAmount(FVal('5.311132913120564692')),
-    rate=Price(FVal('0.2482572293550899816477686816')),
-    trade_index=0,
-    swaps=[AMMSwap(
-        tx_hash='0xde838fff85d4df6d1b4270477456bab1b644e7f4830f606fc2dc522608b6194f',
-        log_index=20,
-        address=CRAZY_UNISWAP_ADDRESS,
-        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=CRAZY_UNISWAP_ADDRESS,
-        timestamp=Timestamp(1605420918),
-        location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0x86B0Aa51eB489585D88d2e671E5ee1b9e457Be60'),  # noqa: E501
-            symbol='FMK',
-            name='https://t.me/fomok',
-        ),
-        token1=A_WETH,
-        amount0_in=AssetAmount(FVal('1.318527141747939222')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('0.023505635029170072')),
-    ), AMMSwap(
-        tx_hash='0xde838fff85d4df6d1b4270477456bab1b644e7f4830f606fc2dc522608b6194f',
-        log_index=23,
-        address=CRAZY_UNISWAP_ADDRESS,
-        from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        to_address=string_to_ethereum_address('0xc61288821b4722Ce29249F0BA03b633F0bE46a5A'),
-        timestamp=Timestamp(1605420918),
-        location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
-            symbol='🐟',
-            name='Penguin Party Fish',
-        ),
-        token1=A_WETH,
-        amount0_in=AssetAmount(ZERO),
-        amount1_in=AssetAmount(FVal('0.023505635029170072')),
-        amount0_out=AssetAmount(FVal('5.311132913120564692')),
-        amount1_out=AssetAmount(ZERO),
-    )],
-)]
-
-# Should be trade index 41 in the returned array
-# This is a multi token trade. At log index 166 both amount0In and amount1In are
-# positive. Test that we handle it in some way. Still not 100% sure this is the right way
-# https://etherscan.io/tx/0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017
-BOTH_IN_TRADES = [AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=A_WETH,
-    quote_asset=A_WETH,
-    amount=AssetAmount(FVal('0.106591333983182783')),
-    rate=Price(FVal('1.744688945746953393022811238')),
-    trade_index=0,
-    swaps=[AMMSwap(
-        tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
-        log_index=166,
-        address=CRAZY_UNISWAP_ADDRESS,
-        from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-        to_address=string_to_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
-        timestamp=Timestamp(1604657395),
-        location=Location.UNISWAP,
-        token0=A_WETH,
-        token1=A_ADAI_V1,
-        amount0_in=AssetAmount(FVal('0.185968722112880576')),
-        amount1_in=AssetAmount(FVal('0.150214308402939121')),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('77.422341021064126448')),
-    ), AMMSwap(
-        tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
-        log_index=169,
-        address=CRAZY_UNISWAP_ADDRESS,
-        from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-        to_address=CRAZY_UNISWAP_ADDRESS,
-        timestamp=Timestamp(1604657395),
-        location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
-            symbol='🐟',
-            name='Penguin Party Fish',
-        ),
-        token1=A_ADAI_V1,
-        amount0_in=AssetAmount(ZERO),
-        amount1_in=AssetAmount(FVal('77.451074341665209573')),
-        amount0_out=AssetAmount(FVal('105.454952420015590185')),
-        amount1_out=AssetAmount(ZERO),
-    ), AMMSwap(
-        tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
-        log_index=172,
-        address=CRAZY_UNISWAP_ADDRESS,
-        from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-        to_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-        timestamp=Timestamp(1604657395),
-        location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
-            symbol='🐟',
-            name='Penguin Party Fish',
-        ),
-        token1=A_WETH,
-        amount0_in=AssetAmount(FVal('105.454952420015590185')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('0.213182667966365566')),
-    )],
-), AMMTrade(
-    trade_type=TradeType.BUY,
-    base_asset=A_WETH,
-    quote_asset=A_ADAI_V1,
-    amount=AssetAmount(FVal('0.106591333983182783')),
-    rate=Price(FVal('1.409254418625053124546000710')),
-    trade_index=1,
-    swaps=[AMMSwap(
-        tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
-        log_index=166,
-        address=CRAZY_UNISWAP_ADDRESS,
-        from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-        to_address=string_to_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
-        timestamp=Timestamp(1604657395),
-        location=Location.UNISWAP,
-        token0=A_WETH,
-        token1=A_ADAI_V1,
-        amount0_in=AssetAmount(FVal('0.185968722112880576')),
-        amount1_in=AssetAmount(FVal('0.150214308402939121')),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('77.422341021064126448')),
-    ), AMMSwap(
-        tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
-        log_index=169,
-        address=CRAZY_UNISWAP_ADDRESS,
-        from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-        to_address=CRAZY_UNISWAP_ADDRESS,
-        timestamp=Timestamp(1604657395),
-        location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
-            symbol='🐟',
-            name='Penguin Party Fish',
-        ),
-        token1=A_ADAI_V1,
-        amount0_in=AssetAmount(ZERO),
-        amount1_in=AssetAmount(FVal('77.451074341665209573')),
-        amount0_out=AssetAmount(FVal('105.454952420015590185')),
-        amount1_out=AssetAmount(ZERO),
-    ), AMMSwap(
-        tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
-        log_index=172,
-        address=CRAZY_UNISWAP_ADDRESS,
-        from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-        to_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
-        timestamp=Timestamp(1604657395),
-        location=Location.UNISWAP,
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # noqa: E501
-            symbol='🐟',
-            name='Penguin Party Fish',
-        ),
-        token1=A_WETH,
-        amount0_in=AssetAmount(FVal('105.454952420015590185')),
-        amount1_in=AssetAmount(ZERO),
-        amount0_out=AssetAmount(ZERO),
-        amount1_out=AssetAmount(FVal('0.213182667966365566')),
-    )],
-)]
+CRAZY_UNISWAP_ADDRESS = string_to_ethereum_address('0xc61288821b4722Ce29249F0BA03b633F0bE46a5A')
+CRAZY_UNISWAP_ADDRESS2 = string_to_ethereum_address('0x4cB251099BaE191d0faE838CC5ac85C67FE6D419')
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[CRAZY_UNISWAP_ADDRESS]])
+def get_expected_crazy_trades():
+    """Function so no price (unknown) assets can be resolved only when existing in the DB"""
+    A_MOONYIELD = EthereumToken('0xc2C11C4F315a99976AD8A6Ff2b46D8bf69FC8177')  # noqa: N806
+    A_PENGUIN_PARTY = EthereumToken('0x30BCd71b8d21FE830e493b30e90befbA29de9114')  # noqa: N806
+    A_FMK = EthereumToken('0x86B0Aa51eB489585D88d2e671E5ee1b9e457Be60')  # noqa: N806
+    return [AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_MOONYIELD,
+        quote_asset=A_WETH,
+        amount=AssetAmount(FVal('15.4')),
+        rate=Price(FVal('0.007309082368793852662337662338')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0xe4a6a3759abeba7fe5d79bd77955b3ce6545f593efb445137b2eb29d3b685a55',
+            log_index=217,
+            address=CRAZY_UNISWAP_ADDRESS,
+            from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+            to_address=CRAZY_UNISWAP_ADDRESS,
+            timestamp=Timestamp(1605423297),
+            location=Location.UNISWAP,
+            token0=A_WETH,
+            token1=A_MOONYIELD,
+            amount0_in=AssetAmount(FVal('0.112559868479425331')),
+            amount1_in=AssetAmount(ZERO),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('15.4')),
+        )],
+    ), AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_PENGUIN_PARTY,
+        quote_asset=A_FMK,
+        amount=AssetAmount(FVal('5.311132913120564692')),
+        rate=Price(FVal('0.2482572293550899816477686816')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0xde838fff85d4df6d1b4270477456bab1b644e7f4830f606fc2dc522608b6194f',
+            log_index=20,
+            address=CRAZY_UNISWAP_ADDRESS,
+            from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+            to_address=string_to_ethereum_address('0xB1637bE0173330664adecB343faF112Ca837dA06'),
+            timestamp=Timestamp(1605420918),
+            location=Location.UNISWAP,
+            token0=A_FMK,
+            token1=A_WETH,
+            amount0_in=AssetAmount(FVal('1.318527141747939222')),
+            amount1_in=AssetAmount(ZERO),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('0.023505635029170072')),
+        ), AMMSwap(
+            tx_hash='0xde838fff85d4df6d1b4270477456bab1b644e7f4830f606fc2dc522608b6194f',
+            log_index=143,
+            address=CRAZY_UNISWAP_ADDRESS,
+            from_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+            to_address=CRAZY_UNISWAP_ADDRESS,
+            timestamp=Timestamp(1605420918),
+            location=Location.UNISWAP,
+            token0=A_PENGUIN_PARTY,
+            token1=A_WETH,
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('0.023505635029170072')),
+            amount0_out=AssetAmount(FVal('5.311132913120564692')),
+            amount1_out=AssetAmount(ZERO),
+        )],
+    )]
+
+
+def get_bothin_trades():
+    """
+    Should be trade index 41 in the returned array
+    This is a multi token trade. At log index 166 both amount0In and amount1In are
+    positive. Test that we handle it in some way. Still not 100% sure this is the right way
+    https://etherscan.io/tx/0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017
+    """
+    return [AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_WETH,
+        quote_asset=A_WETH,
+        amount=AssetAmount(FVal('0.106591333983182783')),
+        rate=Price(FVal('1.744688945746953393022811238')),
+        trade_index=0,
+        swaps=[AMMSwap(
+            tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
+            log_index=166,
+            address=CRAZY_UNISWAP_ADDRESS2,
+            from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+            to_address=string_to_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
+            timestamp=Timestamp(1604657395),
+            location=Location.UNISWAP,
+            token0=A_WETH,
+            token1=A_ADAI_V1,
+            amount0_in=AssetAmount(FVal('0.185968722112880576')),
+            amount1_in=AssetAmount(FVal('0.150214308402939121')),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('77.422341021064126448')),
+        ), AMMSwap(
+            tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
+            log_index=169,
+            address=CRAZY_UNISWAP_ADDRESS2,
+            from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+            to_address=string_to_ethereum_address('0xB1637bE0173330664adecB343faF112Ca837dA06'),
+            timestamp=Timestamp(1604657395),
+            location=Location.UNISWAP,
+            token0=EthereumToken('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # Penguin Party
+            token1=A_ADAI_V1,
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('77.451074341665209573')),
+            amount0_out=AssetAmount(FVal('105.454952420015590185')),
+            amount1_out=AssetAmount(ZERO),
+        ), AMMSwap(
+            tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
+            log_index=172,
+            address=CRAZY_UNISWAP_ADDRESS2,
+            from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+            to_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+            timestamp=Timestamp(1604657395),
+            location=Location.UNISWAP,
+            token0=EthereumToken('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # Penguin Party
+            token1=A_WETH,
+            amount0_in=AssetAmount(FVal('105.454952420015590185')),
+            amount1_in=AssetAmount(ZERO),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('0.213182667966365566')),
+        )],
+    ), AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_WETH,
+        quote_asset=A_ADAI_V1,
+        amount=AssetAmount(FVal('0.106591333983182783')),
+        rate=Price(FVal('1.409254418625053124546000710')),
+        trade_index=1,
+        swaps=[AMMSwap(
+            tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
+            log_index=166,
+            address=CRAZY_UNISWAP_ADDRESS2,
+            from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+            to_address=string_to_ethereum_address('0x5aBC567A74983Dff7f0185731e5043F77CDEEbd4'),
+            timestamp=Timestamp(1604657395),
+            location=Location.UNISWAP,
+            token0=A_WETH,
+            token1=A_ADAI_V1,
+            amount0_in=AssetAmount(FVal('0.185968722112880576')),
+            amount1_in=AssetAmount(FVal('0.150214308402939121')),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('77.422341021064126448')),
+        ), AMMSwap(
+            tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
+            log_index=169,
+            address=CRAZY_UNISWAP_ADDRESS,
+            from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+            to_address=string_to_ethereum_address('0xB1637bE0173330664adecB343faF112Ca837dA06'),
+            timestamp=Timestamp(1604657395),
+            location=Location.UNISWAP,
+            token0=EthereumToken('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # Penguin Party
+            token1=A_ADAI_V1,
+            amount0_in=AssetAmount(ZERO),
+            amount1_in=AssetAmount(FVal('77.451074341665209573')),
+            amount0_out=AssetAmount(FVal('105.454952420015590185')),
+            amount1_out=AssetAmount(ZERO),
+        ), AMMSwap(
+            tx_hash='0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017',
+            log_index=172,
+            address=CRAZY_UNISWAP_ADDRESS,
+            from_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+            to_address=string_to_ethereum_address('0xfe7f0897239ce9cc6645D9323E6fE428591b821c'),
+            timestamp=Timestamp(1604657395),
+            location=Location.UNISWAP,
+            token0=EthereumToken('0x30BCd71b8d21FE830e493b30e90befbA29de9114'),  # Penguin Party
+            token1=A_WETH,
+            amount0_in=AssetAmount(FVal('105.454952420015590185')),
+            amount1_in=AssetAmount(ZERO),
+            amount0_out=AssetAmount(ZERO),
+            amount1_out=AssetAmount(FVal('0.213182667966365566')),
+        )],
+    )]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[CRAZY_UNISWAP_ADDRESS, CRAZY_UNISWAP_ADDRESS2]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_uniswap_exotic_history(
@@ -740,7 +678,7 @@ def test_get_uniswap_exotic_history(
     setup = setup_balances(
         rotki,
         ethereum_accounts=ethereum_accounts,
-        eth_balances=['33000030003'],
+        eth_balances=['33000030003', '23322222222'],
         token_balances={},
         btc_accounts=None,
         original_queries=['zerion', 'logs', 'blocknobytime'],
@@ -760,21 +698,23 @@ def test_get_uniswap_exotic_history(
         else:
             result = assert_proper_response_with_result(response)
 
+    expected_crazy_trades = get_expected_crazy_trades()
     for idx, trade in enumerate(result[CRAZY_UNISWAP_ADDRESS]):
-        if idx == len(EXPECTED_CRAZY_TRADES):
-            break  # test up to last EXPECTED_CRAZY_TRADES trades from 1605437542
-        assert trade == EXPECTED_CRAZY_TRADES[idx].serialize()
+        if idx == len(expected_crazy_trades) - 1:
+            break  # test up to last expected_crazy_trades trades from 1605437542
+        assert trade == expected_crazy_trades[idx].serialize()
 
     found_idx = -1
-    for idx, trade in enumerate(result[CRAZY_UNISWAP_ADDRESS]):
+    for idx, trade in enumerate(result[CRAZY_UNISWAP_ADDRESS2]):
         if trade['tx_hash'] == '0x09f6c9863a97053ecbc4e4aeece3284f1d983473ef0e351fe69188adc52af017':  # noqa: E501
             found_idx = idx
             break
     assert found_idx != -1, 'Could not find the transaction hash index'
 
     # Also test for the swaps that have both tokens at amountIn or amountOut
-    for idx, trade in enumerate(BOTH_IN_TRADES):
-        assert trade.serialize() == result[CRAZY_UNISWAP_ADDRESS][found_idx + idx]
+    both_in_trades = get_bothin_trades()
+    for idx, trade in enumerate(both_in_trades):
+        assert trade.serialize() == result[CRAZY_UNISWAP_ADDRESS2][found_idx + idx]
 
     # Make sure they end up in the DB
     assert len(rotki.data.db.get_amm_swaps()) != 0
@@ -832,112 +772,93 @@ EXPECTED_EVENTS_BALANCES_1 = [
         usd_profit_loss=Price(FVal('-35.19515540870021242982170811')),
     ),
 ]
-EXPECTED_EVENTS_BALANCES_2 = [
-    # Response index 0
-    UniswapPoolEventsBalance(
-        address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
-        pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
-        token0=A_WETH,
-        token1=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
-            symbol='DICE',
-            name='DICE.FINANCE TOKEN',
+
+
+def get_expected_events_balances_2():
+    """Function so no price (unknown) assets can be resolved only when existing in the DB"""
+    A_DICE = EthereumToken('0xCF67CEd76E8356366291246A9222169F4dBdBe64')  # noqa: N806
+    return [
+        # Response index 0
+        UniswapPoolEventsBalance(
+            address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
+            pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),
+            token0=A_WETH,
+            token1=A_DICE,
+            events=[
+                UniswapPoolEvent(
+                    tx_hash='0x1e7fd116b316af49f6c52b3ca44f3c5d24c2a6f80a5b5e674b5f94155bd2cec4',
+                    log_index=99,
+                    address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                    timestamp=Timestamp(1598270334),
+                    event_type=EventType.MINT,
+                    pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
+                    token0=A_WETH,
+                    token1=A_DICE,
+                    amount0=AssetAmount(FVal('1.580431277572006656')),
+                    amount1=AssetAmount(FVal('3')),
+                    usd_price=Price(FVal('1281.249386421513581165086356450817')),
+                    lp_amount=AssetAmount(FVal('2.074549918528068811')),
+                ),
+                UniswapPoolEvent(
+                    tx_hash='0x140bdba831f9494cf0ead6d57009e1eae45ed629a78ee74ccbf49018afae0ffa',
+                    log_index=208,
+                    address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                    timestamp=Timestamp(1599000975),
+                    event_type=EventType.BURN,
+                    pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
+                    token0=A_WETH,
+                    token1=A_DICE,
+                    amount0=AssetAmount(FVal('0.970300671842796406')),
+                    amount1=AssetAmount(FVal('4.971799615456732408')),
+                    usd_price=Price(FVal('928.8590296681781753390482605315881')),
+                    lp_amount=AssetAmount(FVal('2.074549918528068811')),
+                ),
+            ],
+            profit_loss0=AssetAmount(FVal('-0.610130605729210250')),
+            profit_loss1=AssetAmount(FVal('1.971799615456732408')),
+            usd_profit_loss=Price(FVal('-352.3903567533354058260380955')),
         ),
-        events=[
-            UniswapPoolEvent(
-                tx_hash='0x1e7fd116b316af49f6c52b3ca44f3c5d24c2a6f80a5b5e674b5f94155bd2cec4',
-                log_index=99,
-                address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
-                timestamp=Timestamp(1598270334),
-                event_type=EventType.MINT,
-                pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
-                token0=A_WETH,
-                token1=UnknownEthereumToken(
-                    ethereum_address=string_to_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
-                    symbol='DICE',
-                    name='DICE.FINANCE TOKEN',
+        # Response index 3
+        UniswapPoolEventsBalance(
+            address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
+            pool_address=string_to_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
+            token0=EthereumToken('0x26E43759551333e57F073bb0772F50329A957b30'),  # DGVC
+            token1=A_WETH,
+            events=[
+                UniswapPoolEvent(
+                    tx_hash='0xc612f05bf9f3d814ffbe3649feacbf5bda213297bf7af53a56956814652fe9cc',
+                    log_index=171,
+                    address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                    timestamp=Timestamp(1598391968),
+                    event_type=EventType.MINT,
+                    pool_address=string_to_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
+                    token0=EthereumToken('0x26E43759551333e57F073bb0772F50329A957b30'),  # DGVC
+                    token1=A_WETH,
+                    amount0=AssetAmount(FVal('322.230285353834005677')),
+                    amount1=AssetAmount(FVal('1.247571217823345601')),
+                    usd_price=Price(FVal('945.2160925652988117900888961551871')),
+                    lp_amount=AssetAmount(FVal('18.297385821424685079')),
                 ),
-                amount0=AssetAmount(FVal('1.580431277572006656')),
-                amount1=AssetAmount(FVal('3')),
-                usd_price=Price(FVal('1281.249386421513581165086356450817')),
-                lp_amount=AssetAmount(FVal('2.074549918528068811')),
-            ),
-            UniswapPoolEvent(
-                tx_hash='0x140bdba831f9494cf0ead6d57009e1eae45ed629a78ee74ccbf49018afae0ffa',
-                log_index=208,
-                address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
-                timestamp=Timestamp(1599000975),
-                event_type=EventType.BURN,
-                pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
-                token0=A_WETH,
-                token1=UnknownEthereumToken(
-                    ethereum_address=string_to_ethereum_address('0xCF67CEd76E8356366291246A9222169F4dBdBe64'),  # noqa: E501
-                    symbol='DICE',
-                    name='DICE.FINANCE TOKEN',
+                UniswapPoolEvent(
+                    tx_hash='0x597f8790a3b9353114b364777c9d32373930e5ad6b8c8f97a58cd2dd58f12b89',
+                    log_index=201,
+                    address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
+                    timestamp=Timestamp(1598607431),
+                    event_type=EventType.BURN,
+                    pool_address=string_to_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
+                    token0=EthereumToken('0x26E43759551333e57F073bb0772F50329A957b30'),  # DGVC
+                    token1=A_WETH,
+                    amount0=AssetAmount(FVal('224.7799861151427733')),
+                    amount1=AssetAmount(FVal('1.854907037058682998')),
+                    usd_price=Price(FVal('1443.169924855633931959022716230101')),
+                    lp_amount=AssetAmount(FVal('18.297385821424685079')),
                 ),
-                amount0=AssetAmount(FVal('0.970300671842796406')),
-                amount1=AssetAmount(FVal('4.971799615456732408')),
-                usd_price=Price(FVal('928.8590296681781753390482605315881')),
-                lp_amount=AssetAmount(FVal('2.074549918528068811')),
-            ),
-        ],
-        profit_loss0=AssetAmount(FVal('-0.610130605729210250')),
-        profit_loss1=AssetAmount(FVal('1.971799615456732408')),
-        usd_profit_loss=Price(FVal('-352.3903567533354058260380955')),
-    ),
-    # Response index 3
-    UniswapPoolEventsBalance(
-        address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
-        pool_address=string_to_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
-        token0=UnknownEthereumToken(
-            ethereum_address=string_to_ethereum_address('0x26E43759551333e57F073bb0772F50329A957b30'),  # noqa: E501
-            symbol='DGVC',
-            name='DegenVC',
+            ],
+            profit_loss0=AssetAmount(FVal('-97.450299238691232377')),
+            profit_loss1=AssetAmount(FVal('0.607335819235337397')),
+            usd_profit_loss=Price(FVal('497.9538322903351201689338200')),
         ),
-        token1=A_WETH,
-        events=[
-            UniswapPoolEvent(
-                tx_hash='0xc612f05bf9f3d814ffbe3649feacbf5bda213297bf7af53a56956814652fe9cc',
-                log_index=171,
-                address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
-                timestamp=Timestamp(1598391968),
-                event_type=EventType.MINT,
-                pool_address=string_to_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
-                token0=UnknownEthereumToken(
-                    ethereum_address=string_to_ethereum_address('0x26E43759551333e57F073bb0772F50329A957b30'),  # noqa: E501
-                    symbol='DGVC',
-                    name='DegenVC',
-                ),
-                token1=A_WETH,
-                amount0=AssetAmount(FVal('322.230285353834005677')),
-                amount1=AssetAmount(FVal('1.247571217823345601')),
-                usd_price=Price(FVal('945.2160925652988117900888961551871')),
-                lp_amount=AssetAmount(FVal('18.297385821424685079')),
-            ),
-            UniswapPoolEvent(
-                tx_hash='0x597f8790a3b9353114b364777c9d32373930e5ad6b8c8f97a58cd2dd58f12b89',
-                log_index=201,
-                address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
-                timestamp=Timestamp(1598607431),
-                event_type=EventType.BURN,
-                pool_address=string_to_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
-                token0=UnknownEthereumToken(
-                    ethereum_address=string_to_ethereum_address('0x26E43759551333e57F073bb0772F50329A957b30'),  # noqa: E501
-                    symbol='DGVC',
-                    name='DegenVC',
-                ),
-                token1=A_WETH,
-                amount0=AssetAmount(FVal('224.7799861151427733')),
-                amount1=AssetAmount(FVal('1.854907037058682998')),
-                usd_price=Price(FVal('1443.169924855633931959022716230101')),
-                lp_amount=AssetAmount(FVal('18.297385821424685079')),
-            ),
-        ],
-        profit_loss0=AssetAmount(FVal('-97.450299238691232377')),
-        profit_loss1=AssetAmount(FVal('0.607335819235337397')),
-        usd_profit_loss=Price(FVal('497.9538322903351201689338200')),
-    ),
-]
+    ]
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_EVENTS_ADDRESS_1]])
@@ -1084,8 +1005,9 @@ def test_get_events_history_filtering_by_timestamp_case2(
     events_balances = result[TEST_EVENTS_ADDRESS_1]
 
     assert len(events_balances) == 4
-    assert EXPECTED_EVENTS_BALANCES_2[0].serialize() == events_balances[0]
-    assert EXPECTED_EVENTS_BALANCES_2[1].serialize() == events_balances[3]
+    expected_events_balances_2 = get_expected_events_balances_2()
+    assert expected_events_balances_2[0].serialize() == events_balances[0]
+    assert expected_events_balances_2[1].serialize() == events_balances[3]
 
     # Make sure they end up in the DB
     assert len(rotki.data.db.get_uniswap_events()) != 0

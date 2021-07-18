@@ -4,7 +4,7 @@ import { Currency } from '@/model/currency';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 import { SupportedModules } from '@/services/session/types';
 import { AssetBalances } from '@/store/balances/types';
-import { LedgerActionType } from '@/store/history/types';
+import { LedgerActionType } from '@/store/history/consts';
 import { SyncConflictPayload } from '@/store/session/types';
 
 export const CURRENCY_BEFORE = 'before';
@@ -105,6 +105,7 @@ export interface UnlockPayload {
   readonly apiKey?: string;
   readonly apiSecret?: string;
   readonly submitUsageAnalytics?: boolean;
+  readonly restore?: boolean;
 }
 
 export type SettingsUpdate = {

@@ -1,4 +1,4 @@
-rotki API
+rotki REST API
 ##################################################
 .. toctree::
   :maxdepth: 2
@@ -973,6 +973,191 @@ Query the historical price of assets
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
+
+
+.. http:put:: /api/(version)/assets/prices/historical
+
+    Manually adds the price of an asset against another asset at a certain timestamp to the database.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/prices/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+       {
+            "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
+            "to_asset": "USD",
+            "timestamp": 1611166335,
+            "price": "1.20"
+       }
+
+   :reqjson string from_asset: The asset for which the price is given.
+   :reqjson string to_asset: The asset against which the price is given.
+   :reqjson int timestamp: The unix timestamp for which to save the price
+   :reqjson string price: Price at the timestamp given.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson object result: true if the manual price was correctly stored in the database, false otherwise.
+   :statuscode 200: Operation sent to database.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 500: Internal rotki error
+
+
+.. http:patch:: /api/(version)/assets/prices/historical
+
+    Edits price for a manually added price if it already exists in the database. Returns false
+    if no entry was updated.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/prices/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+       {
+            "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
+            "to_asset": "USD",
+            "timestamp": 1611166335,
+            "price": "1.20"
+       }
+
+   :reqjson string from_asset: The asset for which the price is given.
+   :reqjson string to_asset: The asset against which the price is given.
+   :reqjson int timestamp: The unix timestamp for which the price was saved
+   :reqjson string price: New price at the timestamp given.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson object result: true if any entry was updated, false otherwise.
+   :statuscode 200: Operation sent to database.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 500: Internal rotki error
+
+
+.. http:get:: /api/(version)/assets/prices/historical
+
+    Queries prices of an asset against another asset at a certain timestamp to the database.
+    If none of the fields are provided returns all the prices manually added.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/prices/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+       {
+          "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620"
+       }
+
+   :reqjson string from_asset: Optional. The from_asset for which the price is retrieved.
+   :reqjson string to_asset: Optional. The to_asset for which the price is retrieved.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+            {
+              "from_asset": "_ceth_0xD533a949740bb3306d119CC777fa900bA034cd52",
+              "to_asset": "USD",
+              "timestamp": 1611166335,
+              "price": "1.20"
+            }, 
+            {
+              "from_asset": "_ceth_0xD533a949740bb3306d119CC777fa900bA034cd52",
+              "to_asset": "USD",
+              "timestamp": 1611166340,
+              "price": "1.40"
+            }
+          ],
+          "message": ""
+      }
+
+   :resjson object result: List with information for each historical price.
+   :statuscode 200: Operation executed.
+   :statuscode 400: Provided information is in some way malformed.
+   :statuscode 500: Internal rotki error
+
+
+.. http:delete:: /api/(version)/assets/prices/historical
+
+    Deletes price of an asset against another asset at a certain timestamp from the database.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/assets/prices/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+       {
+        "from_asset": "_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
+        "to_asset": "USD",
+        "timestamp": 1611166335
+       }
+
+   :reqjson string from_asset: The asset for which the price is given.
+   :reqjson string to_asset: The asset against which the price is given.
+   :reqjson int timestamp: The unix timestamp for which to save the price
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+   :statuscode 200: true if any entry was deleted, false otherwise.
+   :statuscode 400: Provided information is in some way malformed.
+   :statuscode 500: Internal rotki error
+
+
+
 Get a list of setup exchanges
 ==============================
 
@@ -1023,7 +1208,7 @@ Setup or remove an exchange
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"name": "my kraken key", "location": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret", "binance_markets": ["ETHUSDC", "BTCUSDC"]}
+      {"name": "my kraken key", "location": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret", "binance_markets": ["ETHUSDC", "BTCUSDC"], "ftx_subaccount": "Dragon"}
 
    :reqjson string name: A name to give to this exchange's key
    :reqjson string location: The location of the exchange to setup
@@ -1032,6 +1217,7 @@ Setup or remove an exchange
    :reqjson string passphrase: An optional passphrase, only for exchanges, like coinbase pro, which need a passphrase.
    :reqjson string kraken_account_type: An optional setting for kraken. The type of the user's kraken account. Valid values are "starter", "intermediate" and "pro".
    :reqjson list binance_markets: An optional setting for binance and binanceus. A list of string for markets that should be queried.
+   :reqjson string ftx_subaccount: An optional setting for FTX. This sets the subaccount that will be queried from FTX.
 
    **Example Response**:
 
@@ -5859,11 +6045,7 @@ Getting Uniswap events
                       "pool_address": "0x2C7a51A357d5739C5C74Bf3C96816849d2c9F726",
                       "profit_loss0": "264.089867496935331902",
                       "profit_loss1": "88.677078283001177264",
-                      "token0": {
-                          "ethereum_address": "0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16",
-                          "name": "YAM",
-                          "symbol": "YAM"
-                      },
+                      "token0": "_ceth_0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16",
                       "token1": "_ceth_0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
                       "usd_profit_loss": "162.1876736563418464415499063"
                   }
@@ -5888,8 +6070,8 @@ Getting Uniswap events
    :resjson string pool_address: The contract address of the pool.
    :resjson string profit_loss0: The token0 profit/loss.
    :resjson string profit_loss1: The token1 profit/loss.
-   :resjson object token0: The pool's pair left token. Either an identifier if it's a known token or the address/symbol/name object.
-   :resjson object token1: The pool's pair right token. Either an identifier if it's a known token or the address/symbol/name object.
+   :resjson object token0: The pool's pair left token identifier
+   :resjson object token1: The pool's pair right token identifier.
    :resjson string usd_profit_loss: The total profit/loss in USD.
 
 
@@ -5959,11 +6141,7 @@ Getting Uniswap trades
               "fee": "0",
               "fee_currency": "ALEPH",
               "location": "uniswap",
-              "quote_asset": {
-                  "ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
-                  "name": "aleph.im v2",
-                  "symbol": "ALEPH"
-              },
+              "quote_asset": "_ceth_0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
               "rate": "0.1604821621994156262081817395",
               "swaps": [{
                   "amount0_in": "5634.092979176915803392",
@@ -5973,7 +6151,7 @@ Getting Uniswap trades
                   "from_address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
                   "log_index": 98,
                   "to_address": "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11",
-                  "token0": {"ethereum_address": "0x27702a26126e0B3702af63Ee09aC4d1A084EF628", "name": "aleph.im v2", "symbol": "ALEPH"},
+                  "token0": "_ceth_0x27702a26126e0B3702af63Ee09aC4d1A084EF628",
                   "token1": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
                   "tx_hash": "0x296c750be451687a6e95de55a85c1b86182e44138902599fb277990447d5ded6"}, {
                   "amount0_in": "0",
@@ -6010,8 +6188,8 @@ Getting Uniswap trades
    :resjson string tx_hash: The transaction hash
    :resjson list[object] swaps: A list of all the swaps that the trade is made of. Each swap is an object with the following attributes:
 
-       - token0: Either an identifier if it's a known token or the address/symbol/name object for token0 of the swap.
-       - token1: Either an identifier if it's a known token or the address/symbol/name object for token1 of the swap.
+       - token0: The identifier of the token.
+       - token1: The identifier of the token.
        - amount0_in: The amount (can be zero) of token0 that the user is putting in the swap.
        - amount1_in: The amount (can be zero) of token1 that the user is putting in the swap.
        - amount0_out: The amount (can be zero) of token0 that the user is getting out of the swap.
@@ -6263,6 +6441,227 @@ Getting yearn finance vaults historical data
    :statuscode 409: User is not logged in. Or yearn module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+Getting yearn finance V2 vaults balances
+==========================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/yearn/vaultsv2/balances
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on the yearn finance vaults V2 balances resource will return all yearn vault balances.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/yearn/vaultsv2/balances HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result":{
+            "0x915C4580dFFD112db25a6cf06c76cDd9009637b7":{
+              "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9":{
+                  "underlying_token":"_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                  "vault_token":"_ceth_0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+                  "underlying_value":{
+                    "amount":"74.292820",
+                    "usd_value":"105.0"
+                  },
+                  "vault_value":{
+                    "amount":"70",
+                    "usd_value":"105.0"
+                  },
+                  "roi":"-238.20%"
+              },
+              "0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67":{
+                  "underlying_token":"_ceth_0x111111111117dC0aa78b770fA6A738034120C302",
+                  "vault_token":"_ceth_0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67",
+                  "underlying_value":{
+                    "amount":"2627.246068139435250",
+                    "usd_value":"3825.0"
+                  },
+                  "vault_value":{
+                    "amount":"2550",
+                    "usd_value":"3825.0"
+                  },
+                  "roi":"9.14%"
+              }
+            }
+        },
+        "message":""
+      }
+
+   :resjson object result: A mapping of addresses to a mapping of vault names to vault balances
+   :resjsonarr string underlying_token: The identifier of the token that is deposited to the vault
+   :resjsonarr string vault_token: The identifier of the token that is minted when you deposit underlying token to the vault
+   :resjsonarr object underlying_value: The value of the underlying token for the vault.
+   :resjsonarr object vault_value: The value of the vault token for the vault.
+   :resjsonarr str roi: The Return of Investment for the vault since its creation
+
+
+   :statuscode 200: Yearn vault V2 balances succesfully queried.
+   :statuscode 409: User is not logged in. Or yearn module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+
+Getting yearn finance V2 vaults historical data
+================================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/yearn/vaultsv2/history
+
+   .. note::
+      This endpoint is only available for premium users
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on the yearn finance vaults V2 history resource will return all yearn vault related events for addresses that have utilized yearn finance vaults.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/yearn/vaultsv2/history HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson bool reset_db_data: Boolean denoting whether all yearn event data saved in the DB are going to be deleted and rewritten after this query. False by default.
+   :reqjson int from_timestamp: Timestamp from which to query yearn vaults historical data. If not given 0 is implied.
+   :reqjson int to_timestamp: Timestamp until which to query yearn vaults historical data. If not given current timestamp is implied.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result":{
+            "0x915C4580dFFD112db25a6cf06c76cDd9009637b7":{
+              "_ceth_0xF29AE508698bDeF169B89834F76704C3B205aedf":{
+                  "events":[
+                    {
+                        "event_type":"deposit",
+                        "block_number":12588754,
+                        "timestamp":1623087604,
+                        "from_asset":"_ceth_0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F",
+                        "from_value":{
+                          "amount":"273.682277822922514201",
+                          "usd_value":"273.682277822922514201"
+                        },
+                        "to_asset":"_ceth_0xF29AE508698bDeF169B89834F76704C3B205aedf",
+                        "to_value":{
+                          "amount":"269.581682615706959373",
+                          "usd_value":"269.581682615706959373"
+                        },
+                        "realized_pnl":null,
+                        "tx_hash":"0x01ed01b47b8c7bdab961dd017e8412d1e9d181163e72cbfbce931395004bda4b",
+                        "log_index":149
+                    }
+                  ],
+                  "profit_loss":{
+                    "amount":"-273.682277822922514201",
+                    "usd_value":"-273.682277822922514201"
+                  }
+              },
+              "_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44":{
+                  "events":[
+                    {
+                        "event_type":"deposit",
+                        "block_number":12462638,
+                        "timestamp":1621397797,
+                        "from_asset":"_ceth_0x94e131324b6054c0D789b190b2dAC504e4361b53",
+                        "from_value":{
+                          "amount":"32064.715735449204040742",
+                          "usd_value":"32064.715735449204040742"
+                        },
+                        "to_asset":"_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44",
+                        "to_value":{
+                          "amount":"32064.715735449204040742",
+                          "usd_value":"32064.715735449204040742"
+                        },
+                        "realized_pnl":null,
+                        "tx_hash":"0x0a53f8817f44ac0f8b516b7fa7ecba2861c001f506dbc465fe289a7110fcc1ca",
+                        "log_index":16
+                    },
+                    {
+                        "event_type":"withdraw",
+                        "block_number":12494161,
+                        "timestamp":1621820621,
+                        "from_asset":"_ceth_0x1C6a9783F812b3Af3aBbf7de64c3cD7CC7D1af44",
+                        "from_value":{
+                          "amount":"32064.715735449204040742",
+                          "usd_value":"32064.715735449204040742"
+                        },
+                        "to_asset":"_ceth_0x94e131324b6054c0D789b190b2dAC504e4361b53",
+                        "to_value":{
+                          "amount":"32092.30659836985292638",
+                          "usd_value":"32092.30659836985292638"
+                        },
+                        "realized_pnl":{
+                          "amount":"27.590862920648885638",
+                          "usd_value":"27.590862920648885638"
+                        },
+                        "tx_hash":"0xda0694c6b3582fe03b2eb9edb0169d23c8413157e233d0c8f678a7cc9ab4f918",
+                        "log_index":134
+                    }
+                  ],
+                  "profit_loss":{
+                    "amount":"27.590862920648885638",
+                    "usd_value":"27.590862920648885638"
+                  }
+                }
+          }
+        },
+        "message":""
+      }
+
+
+   :resjson object result: A mapping of addresses to vault history results
+   :resjsonarr string event_type: The type of the yearn vault event.
+       - ``"deposit"``: when you deposit a token in the vault
+       - ``"withdraw"``: when you withdraw a token from the vault
+   :resjsonarr int timestamp: The unix timestamp at which the event occured.
+   :resjsonarr int block_number: The block number at which the event occured.
+   :resjsonarr string from_asset: The source asset involved in the event.
+       - For ``"deposit"`` events this is the asset being deposited in the vault
+       - For ``"withdraw"`` events this is the vault token that is being burned and converted to the original asset.
+   :resjsonarr object from_value: The value of the from asset for the event. The rate should be the asset/USD rate at the events's timestamp. But in reality due to current limitations of our implementation is the USD value at the current timestamp. We will address this soon.
+   :resjsonarr string to_asset: The target asset involved in the event.
+       - For ``"deposit"`` events this is the vault token that is minted to represent the equivalent of the deposited asset.
+       - For ``"withdraw"`` events this is the original token that the user withdrew from the vault
+   :resjsonarr object to_value: The value of the to asset for the event. The rate should be the asset/USD rate at the events's timestamp. But in reality due to current limitations of our implementation is the USD value at the current timestamp. We will address this soon.
+   :resjsonarr object realized_pnl: [Optional]. Realized profit/loss at this event if any. May happen for withdraw events. Same limitation as the usd value in from/to value applies.
+   :resjsonarr int tx_hash: The transaction hash of the event.
+   :resjsonarr int log_index: The log index of the event.
+   :resjson object profit_loss: The total profit/loss for the vault
+
+   :statuscode 200: Yearn vaults V2 history succesfully queried.
+   :statuscode 409: User is not logged in. Or yearn module is not activated.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
 
 Getting Loopring balances
 ==============================
@@ -7324,7 +7723,7 @@ Adding manually tracked balances
    :reqjsonarr string label: A label to describe where is this balance stored. Must be unique between all manually tracked balance labels.
    :reqjsonarr string amount: The amount of asset that is stored.
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the this manually tracked balance.
-   :reqjsonarr string location: The location where the balance is saved. Can be one of: ["external", "kraken", "poloniex", "bittrex", "binance", "bitmex", "coinbase", "banks", "blockchain", "coinbasepro", "gemini"]
+   :reqjsonarr string location: The location where the balance is saved. Can be one of: ["external", "kraken", "poloniex", "bittrex", "binance", "bitmex", "coinbase", "banks", "blockchain", "coinbasepro", "gemini", "ftx", "independentreserve"]
 
    **Example Response**:
 
@@ -8037,7 +8436,7 @@ Data imports
 
       {"source": "cointracking.info", "filepath": "/path/to/data/file"}
 
-   :reqjson str source: The source of the data to import. Valid values are ``"cointracking.info"``
+   :reqjson str source: The source of the data to import. Valid values are ``"cointracking.info"``, ``"cryptocom"``, ``"blockfi-transactions"``, ``"blockfi-trades"``, ``"nexo"``, ``"gitcoin"``.
    :reqjson str filepath: The filepath to the data for importing
 
    **Example Response**:
@@ -8055,7 +8454,7 @@ Data imports
    :resjson bool result: The result field in this response is a simple boolean value indicating success or failure.
    :statuscode 200: Data imported. Check user messages for warnings.
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in.
+   :statuscode 409: User is not logged in. Or premium was needed for the import and not found.
    :statuscode 500: Internal rotki error
 
 ERC20 token info
@@ -8162,3 +8561,193 @@ User selected Binance markets
           "result": ["BTCUSD", "ETHUSD"],
           "message": ""
       }
+
+Gitcoin gather event data
+==========================
+
+.. http:post:: /api/(version)/gitcoin/events
+
+   Doing a POST to this endpoint will initiate a query for all gitcoin events for a specific grant in a specific period. Events will be aggregated from querying the gitcoin api and the local database.
+
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/gitcoin/events HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"from_timestamp": 0, "to_timestamp": 1624828416, "grant_id": 149, "only_cache": false }
+
+   :reqjson integer from_timestamp: The timestamp from which to query grant events
+   :reqjson integer to_timestamp: The timestamp until which to query grant events
+   :reqjson integer grant_id: The id of the grant for which to query events. In the case of only_cache, this can be omitted so that all saved events are returned from the DB.
+   :reqjson bool only_cache: Signifying if caller only wants what's in the DB or if the remote API should also be queried.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              149: {
+                  "events": [{
+                      "timestamp": 1624791600,
+                      "amount": "0.00053",
+                      "asset": "ETH",
+                      "usd_value": "1.55",
+                      "grant_id": 149,
+                      "tx_id": "0x00298f72ad40167051e111e6dc2924de08cce7cf0ad00d04ad5a9e58426536a1",
+                      "tx_type": "ethereum",
+                      "clr_round": null,
+                  }, {
+                      "timestamp": 1624791600,
+                      "amount": "5",
+                      "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                      "usd_value": "5.01",
+                      "grant_id": 149,
+                      "tx_id": "5612f84bc20cda25b911af39b792c973bdd5916b3b6868db2420b5dafd705a90",
+                      "tx_type": "zksync",
+                      "clr_round": 9,
+                  }],
+                  "name": "rotki",
+		  "created_on": 1624791600
+             }
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of integer grant ids to events, grant name and created_on.
+   :resjson string name: The name of the grant. Can be null if there was a problem querying it.
+   :resjson integer created_on: The timestamp the grant was created in. Can be null if there was a problem querying it.
+   :resjson integer timestamp: The timestamp of the event
+   :resjson string amount: The amount donated in asset
+   :resjson string asset: The identifier of the donated asset.
+   :resjson string usd_value: The value of the donated asset amount in usd.
+   :resjson integer grant_id: The identifier of the grant for which the event is
+   :resjson string tx_id: The etherscan or zksync transaction identifier.
+   :resjson string tx_type: The type of transaction. Either "ethereum" or "zksync".
+   :resjson string clr_round: Optional. Can be null. The CLR round the event belongs to.
+   :statuscode 200: Events succesfully queried
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal rotki error.
+
+
+Gitcoin delete event data
+==========================
+
+.. http:delete:: /api/(version)/gitcoin/events
+
+   Doing a DELETE to this endpoint will delete all gitcoin event data for the given grant id or if no grant id is given for all grants.
+
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/gitcoin/events HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"grant_id": 149 }
+
+   :reqjson integer grant_id: The id of the grant for which to delete events. If not given all gitcoin events are deleted.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :statuscode 200: Events succesfully deleted
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal rotki error.
+
+
+Gitcoin report
+===================
+
+.. http:put:: /api/(version)/gitcoin/report
+
+   Doing a PUT to this endpoint will process a report for the user's gitcoin grant events in the given period and return it. Each report contains a breakdown of how much was earned in the current profit currency in total. And also how much was earned in the current profit currency per asset and what amount per asset.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/gitcoin/report HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"from_timestamp": 0, "to_timestamp": 1624828416, "grant_id": 149 }
+
+   :reqjson integer from_timestamp: The timestamp from which to start the report
+   :reqjson integer to_timestamp: The timestamp until which to perform the report.
+   :reqjson integer grant_id: Optional. The id of the grant for which to create the report. If missing all grant events in the given range are used from the DB.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "profit_currencty": "EUR",
+	      "reports": {
+		  "149": {
+		      "per_asset": {
+			  "ETH": {
+			      "amount": "5",
+			      "value": "5500"
+			  },
+			  "_ceth_0x1A175474E89094C44Da98b954EedeAC495271d9A": {
+			      "amount": "150",
+			      "value": "131.44"
+			  },
+			  "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+			      "amount": "101",
+			      "value": "93.21"
+			  }
+		      },
+		      "total": "5724.65"
+	          },
+		  "184": {
+		      "per_asset": {
+			  "ETH": {
+			      "amount": "5",
+			      "value": "5500"
+			  },
+		      },
+		      "total": "5500"
+		  }
+	  }
+          "message": ""
+      }
+
+   :resjson object reports: A mapping of grant ids to report results.
+   :resjson string profit_currency: The profit currency used in the report. The "value" field is in this currency.
+   :resjson object per_asset: A mapping of each asset to amount earned in the given period and its value in the user chosen profit currency.
+   :resjson string total: The total amount earned in profit currency during the given period.
+   :statuscode 200: Report succesfully generated
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal rotki error

@@ -25,13 +25,14 @@ import gevent
 from flask import Response, make_response, send_file
 from gevent.event import Event
 from gevent.lock import Semaphore
+from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType
 from rotkehlchen.api.v1.encoding import TradeSchema
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import (
@@ -43,9 +44,11 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
+from rotkehlchen.chain.ethereum.gitcoin.api import GitcoinAPI
+from rotkehlchen.chain.ethereum.gitcoin.importer import GitcoinDataImporter
+from rotkehlchen.chain.ethereum.gitcoin.processor import GitcoinProcessor
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
-from rotkehlchen.chain.ethereum.typing import CustomEthereumToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -76,7 +79,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPriceOracle
+from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -482,6 +485,7 @@ class RestAPI():
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[List[str]],
+            ftx_subaccount_name: Optional[str],
     ) -> Response:
         result = None
         status_code = HTTPStatus.OK
@@ -494,6 +498,7 @@ class RestAPI():
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
+            ftx_subaccount_name=ftx_subaccount_name,
         )
         if not result:
             result = None
@@ -512,6 +517,7 @@ class RestAPI():
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: Optional[List[str]],
+            ftx_subaccount_name: Optional[str],
     ) -> Response:
         result: Optional[bool] = True
         status_code = HTTPStatus.OK
@@ -526,6 +532,7 @@ class RestAPI():
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
                 binance_markets=binance_markets,
+                ftx_subaccount_name=ftx_subaccount_name,
             )
         except InputError as e:
             edited = False
@@ -979,7 +986,13 @@ class RestAPI():
     @require_loggedin_user()
     def add_ledger_action(self, action: LedgerAction) -> Response:
         db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
-        identifier = db.add_ledger_action(action)
+        try:
+            identifier = db.add_ledger_action(action)
+        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            db.db.conn.rollback()
+            error_msg = 'Failed to add Ledger action due to entry already existing in the DB'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
         result_dict = _wrap_in_ok_result({'identifier': identifier})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
@@ -1286,7 +1299,7 @@ class RestAPI():
     def query_all_assets() -> Response:
         """Returns all supported assets"""
         # type ignore is due to: https://github.com/python/mypy/issues/7781
-        assets = GlobalDBHandler().get_all_asset_data(mapping=True)  # type: ignore
+        assets = GlobalDBHandler().get_all_asset_data(mapping=True, serialized=True)  # type: ignore  # noqa: E501
         return api_response(
             _wrap_in_ok_result(assets),
             status_code=HTTPStatus.OK,
@@ -1396,7 +1409,7 @@ class RestAPI():
                 result = wrap_in_fail_result(f'Custom token with address {address} not found')
                 status_code = HTTPStatus.NOT_FOUND
             else:
-                result = _wrap_in_ok_result(token.serialize())
+                result = _wrap_in_ok_result(token.serialize_all_info())
                 status_code = HTTPStatus.OK
 
             return api_response(result, status_code)
@@ -1404,14 +1417,14 @@ class RestAPI():
         # else return all custom tokens
         tokens = GlobalDBHandler().get_ethereum_tokens()
         return api_response(
-            _wrap_in_ok_result([x.serialize() for x in tokens]),
+            _wrap_in_ok_result([x.serialize_all_info() for x in tokens]),
             status_code=HTTPStatus.OK,
             log_result=False,
         )
 
     @require_loggedin_user()
-    def add_custom_ethereum_token(self, token: CustomEthereumToken) -> Response:
-        identifier = ethaddress_to_identifier(token.address)
+    def add_custom_ethereum_token(self, token: EthereumToken) -> Response:
+        identifier = ethaddress_to_identifier(token.ethereum_address)
         try:
             GlobalDBHandler().add_asset(
                 asset_id=identifier,
@@ -1431,7 +1444,7 @@ class RestAPI():
         )
 
     @staticmethod
-    def edit_custom_ethereum_token(token: CustomEthereumToken) -> Response:
+    def edit_custom_ethereum_token(token: EthereumToken) -> Response:
         try:
             identifier = GlobalDBHandler().edit_ethereum_token(token)
         except InputError as e:
@@ -1508,18 +1521,22 @@ class RestAPI():
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @require_premium_user(active_check=True)
-    def query_statistics_renderer(self) -> Response:
+    def query_premium_components(self) -> Response:
         result_dict = {'result': None, 'message': ''}
         try:
             # Here we ignore mypy error since we use @require_premium_user() decorator
-            result = self.rotkehlchen.premium.query_statistics_renderer()  # type: ignore
+            result = self.rotkehlchen.premium.query_premium_components()  # type: ignore
             result_dict['result'] = result
             status_code = HTTPStatus.OK
         except RemoteError as e:
             result_dict['message'] = str(e)
             status_code = HTTPStatus.CONFLICT
 
-        return api_response(process_result(result_dict), status_code=status_code)
+        return api_response(
+            result=process_result(result_dict),
+            status_code=status_code,
+            log_result=False,
+        )
 
     def get_messages(self) -> Response:
         warnings = self.rotkehlchen.msg_aggregator.consume_warnings()
@@ -2041,6 +2058,15 @@ class RestAPI():
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+        elif source == 'gitcoin':
+            if self.rotkehlchen.premium is None:
+                return api_response(wrap_in_fail_result(
+                    'Gitcoin grants importing is premium only',
+                    status_code=HTTPStatus.CONFLICT,
+                ))
+
+            gitcoin_importer = GitcoinDataImporter(db=self.rotkehlchen.data.db)
+            gitcoin_importer.import_gitcoin_csv(filepath)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
@@ -2361,6 +2387,21 @@ class RestAPI():
             given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
         )
 
+    @require_loggedin_user()
+    def get_yearn_vaults_v2_balances(self, async_query: bool) -> Response:
+        # Once that has ran we can be sure that defi_balances mapping is populated
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='yearn_vaults_v2',
+            method='get_balances',
+            # We need to query defi balances before since eth balances must be populated
+            query_specific_balances_before=['defi'],
+            # Giving the eth balances as a lambda function here so that they
+            # are retrieved only after we are sure the eth balances have been
+            # queried.
+            given_eth_balances=lambda: self.rotkehlchen.chain_manager.balances.eth,
+        )
+
     @require_premium_user(active_check=False)
     def get_yearn_vaults_history(
             self,
@@ -2380,6 +2421,31 @@ class RestAPI():
             # queried.
             given_defi_balances=lambda: self.rotkehlchen.chain_manager.defi_balances,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('yearn_vaults'),
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+    @require_premium_user(active_check=False)
+    def get_yearn_vaults_v2_history(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='yearn_vaults_v2',
+            method='get_history',
+            query_specific_balances_before=['defi'],
+            # Giving the eth balances as a lambda function here so that they
+            # are retrieved only after we are sure the eth balances have been
+            # queried.
+            given_eth_balances=lambda: self.rotkehlchen.chain_manager.balances.eth,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module(
+                'yearn_vaults_v2',
+            ),
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
@@ -3024,4 +3090,173 @@ class RestAPI():
                 self.rotkehlchen.exchange_manager.get_user_binance_pairs(name, location),
             ),
             status_code=HTTPStatus.OK,
+        )
+
+    def _process_gitcoin(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            grant_id: Optional[int],
+    ) -> Dict[str, Any]:
+        processor = GitcoinProcessor(self.rotkehlchen.data.db)
+        profit_currency, reports = processor.process_gitcoin(
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+            grant_id=grant_id,
+        )
+        result = {
+            'reports': {grantid: report.serialize() for grantid, report in reports.items()},
+            'profit_currency': profit_currency.identifier,
+        }
+        return {'result': result, 'message': ''}
+
+    @require_premium_user(active_check=False)
+    def process_gitcoin(
+            self,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            grant_id: Optional[int],
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_process_gitcoin',
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                grant_id=grant_id,
+            )
+
+        response = self._process_gitcoin(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            grant_id=grant_id,
+        )
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+
+    def _get_gitcoin_events(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            grant_id: Optional[int],
+            only_cache: bool,
+    ) -> Dict[str, Any]:
+        api = GitcoinAPI(self.rotkehlchen.data.db)
+        try:
+            grantid_to_data = api.query_grant_history(
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+                grant_id=grant_id,
+                only_cache=only_cache,
+            )
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+        except InputError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+
+        return {'result': grantid_to_data, 'message': '', 'status_code': HTTPStatus.OK}
+
+    @require_premium_user(active_check=False)
+    def get_gitcoin_events(
+            self,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            grant_id: Optional[int],
+            only_cache: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_gitcoin_events',
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                grant_id=grant_id,
+                only_cache=only_cache,
+            )
+
+        response = self._get_gitcoin_events(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            grant_id=grant_id,
+            only_cache=only_cache,
+        )
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(
+            result=result_dict,
+            status_code=response.get('status_code', HTTPStatus.OK),
+        )
+
+    @require_loggedin_user()
+    def purge_gitcoin_grant_data(self, grant_id: Optional[int]) -> Response:
+        DBLedgerActions(
+            self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator,
+        ).delete_gitcoin_ledger_actions(grant_id)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def add_manual_price(  # pylint: disable=no-self-use
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        price: Price,
+        timestamp: Timestamp,
+    ) -> Response:
+        historical_price = HistoricalPrice(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            source=HistoricalPriceOracle.MANUAL,
+            timestamp=timestamp,
+            price=price,
+        )
+        added = GlobalDBHandler().add_single_historical_price(historical_price)
+        if added:
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(
+            result={'result': False, 'message': 'Failed to store manual price'},
+            status_code=HTTPStatus.CONFLICT,
+        )
+
+    def edit_manual_price(  # pylint: disable=no-self-use
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        price: Price,
+        timestamp: Timestamp,
+    ) -> Response:
+        historical_price = HistoricalPrice(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            source=HistoricalPriceOracle.MANUAL,
+            timestamp=timestamp,
+            price=price,
+        )
+        edited = GlobalDBHandler().edit_manual_price(historical_price)
+        if edited:
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(
+            result={'result': False, 'message': 'Failed to edit manual price'},
+            status_code=HTTPStatus.CONFLICT,
+        )
+
+    def get_manual_prices(  # pylint: disable=no-self-use
+        self,
+        from_asset: Optional[Asset],
+        to_asset: Optional[Asset],
+    ) -> Response:
+        return api_response(
+            _wrap_in_ok_result(GlobalDBHandler().get_manual_prices(from_asset, to_asset)),
+            status_code=HTTPStatus.OK,
+        )
+
+    def delete_manual_price(  # pylint: disable=no-self-use
+        self,
+        from_asset: Asset,
+        to_asset: Asset,
+        timestamp: Timestamp,
+    ) -> Response:
+        deleted = GlobalDBHandler().delete_manual_price(from_asset, to_asset, timestamp)
+        if deleted:
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return api_response(
+            result={'result': False, 'message': 'Failed to delete manual price'},
+            status_code=HTTPStatus.CONFLICT,
         )

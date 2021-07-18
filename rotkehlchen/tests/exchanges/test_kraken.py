@@ -6,14 +6,24 @@ import pytest
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_ETH2, A_USD, A_USDT
+from rotkehlchen.constants.assets import (
+    A_ADA,
+    A_BCH,
+    A_BTC,
+    A_DAI,
+    A_ETH,
+    A_ETH2,
+    A_LTC,
+    A_USD,
+    A_USDT,
+    A_XRP,
+)
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken, kraken_to_world_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_kraken
 from rotkehlchen.tests.utils.constants import (
-    A_ADA,
     A_AUD,
     A_CAD,
     A_CHF,
@@ -22,12 +32,10 @@ from rotkehlchen.tests.utils.constants import (
     A_EWT,
     A_GBP,
     A_JPY,
-    A_LTC,
     A_OCEAN,
     A_QTUM,
     A_SC,
     A_WAVES,
-    A_XRP,
     A_XTZ,
 )
 from rotkehlchen.tests.utils.history import TEST_END_TS
@@ -61,6 +69,8 @@ def test_coverage_of_kraken_balances(kraken):
     got_assets.remove('FLOWH.S')
     got_assets.remove('FLOWH')  # what is FLOWH?
     got_assets.remove('ADA.S')
+    got_assets.remove('SOL.S')
+    got_assets.remove('KSM.P')  # kusama bonded for parachains
 
     diff = expected_assets.symmetric_difference(got_assets)
     if len(diff) != 0:

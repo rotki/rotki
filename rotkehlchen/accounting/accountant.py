@@ -7,7 +7,6 @@ import gevent
 from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import ActionType, DefiEvent
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -255,6 +254,8 @@ class Accountant():
                 receiving_amount=trade.amount * trade.rate,
                 gain_in_profit_currency=gain_in_profit_currency,
                 total_fee_in_profit_currency=fee_in_profit_currency,
+                fee_currency=trade.fee_currency,
+                fee_amount=trade.fee,
                 trade_rate=trade.rate,
                 rate_in_profit_currency=selling_rate,
                 timestamp=trade.timestamp,
@@ -268,6 +269,8 @@ class Accountant():
                 receiving_amount=None,
                 gain_in_profit_currency=gain_in_profit_currency,
                 total_fee_in_profit_currency=fee_in_profit_currency,
+                fee_currency=trade.fee_currency,
+                fee_amount=trade.fee,
                 rate_in_profit_currency=selling_rate,
                 timestamp=trade.timestamp,
                 loan_settlement=True,
@@ -544,14 +547,6 @@ class Accountant():
             )
             return True, prev_time
 
-        for x in action_assets:
-            if isinstance(x, UnknownEthereumToken):
-                self.msg_aggregator.add_error(
-                    f'Ignoring action {action_type} with unknown token asset {x}. '
-                    f'Add it as a token in rotki manually with a working price oracle to fix this',
-                )
-                return True, prev_time
-
         if any(x in ignored_assets for x in action_assets):
             log.debug(
                 'Ignoring action with ignored asset',
@@ -628,6 +623,8 @@ class Accountant():
                 paid_with_asset=trade.quote_asset,
                 trade_rate=trade.rate,
                 fee_in_profit_currency=self.get_fee_in_profit_currency(trade),
+                fee_currency=trade.fee_currency,
+                fee_amount=trade.fee,
                 timestamp=trade.timestamp,
             )
         elif trade.trade_type == TradeType.SELL:
@@ -658,6 +655,8 @@ class Accountant():
                 receiving_amount=None,
                 gain_in_profit_currency=gain_in_profit_currency,
                 total_fee_in_profit_currency=fee_in_profit_currency,
+                fee_currency=trade.fee_currency,
+                fee_amount=trade.fee,
                 rate_in_profit_currency=selling_asset_rate,
                 timestamp=trade.timestamp,
                 loan_settlement=True,

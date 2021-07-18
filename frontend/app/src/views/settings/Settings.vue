@@ -30,8 +30,8 @@ export default class Settings extends Vue {
       routeTo: '/settings/data-security'
     },
     {
-      name: this.$t('settings.tabs.defi').toString(),
-      routeTo: '/settings/defi'
+      name: this.$t('settings.tabs.modules').toString(),
+      routeTo: '/settings/modules'
     }
   ];
 }

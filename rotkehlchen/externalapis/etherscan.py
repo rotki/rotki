@@ -1,12 +1,16 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Union, overload
+from typing import Any, Dict, List, Optional, Tuple, Union, overload
 
 import gevent
 import requests
 from typing_extensions import Literal
 
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.constants.timing import (
+    DEFAULT_CONNECT_TIMEOUT,
+    DEFAULT_READ_TIMEOUT,
+    DEFAULT_TIMEOUT_TUPLE,
+)
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import ConversionError, DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -104,6 +108,7 @@ class Etherscan(ExternalServiceWithApiKey):
                 'getLogs',
             ],
             options: Optional[Dict[str, Any]] = None,
+            timeout: Optional[Tuple[int, int]] = None,
     ) -> List[Dict[str, Any]]:
         ...
 
@@ -113,6 +118,7 @@ class Etherscan(ExternalServiceWithApiKey):
             module: str,
             action: Literal['eth_getBlockByNumber', 'eth_getTransactionReceipt'],
             options: Optional[Dict[str, Any]] = None,
+            timeout: Optional[Tuple[int, int]] = None,
     ) -> Dict[str, Any]:
         ...
 
@@ -129,6 +135,7 @@ class Etherscan(ExternalServiceWithApiKey):
                 'getblocknobytime',
             ],
             options: Optional[Dict[str, Any]] = None,
+            timeout: Optional[Tuple[int, int]] = None,
     ) -> str:
         ...
 
@@ -137,6 +144,7 @@ class Etherscan(ExternalServiceWithApiKey):
             module: str,
             action: str,
             options: Optional[Dict[str, Any]] = None,
+            timeout: Optional[Tuple[int, int]] = None,
     ) -> Union[List[Dict[str, Any]], str, List[EthereumTransaction], Dict[str, Any]]:
         """Queries etherscan
 
@@ -168,7 +176,7 @@ class Etherscan(ExternalServiceWithApiKey):
         while backoff < backoff_limit:
             logger.debug(f'Querying etherscan: {query_str}')
             try:
-                response = self.session.get(query_str, timeout=DEFAULT_TIMEOUT_TUPLE)
+                response = self.session.get(query_str, timeout=timeout if timeout else DEFAULT_TIMEOUT_TUPLE)  # noqa: E501
             except requests.exceptions.RequestException as e:
                 if 'Max retries exceeded with url' in str(e):
                     log.debug(
@@ -367,25 +375,6 @@ class Etherscan(ExternalServiceWithApiKey):
         )
         return result
 
-    def get_token_transfers(
-            self,
-            from_address: ChecksumEthAddress,
-            token_address: ChecksumEthAddress,
-    ) -> List[Dict[str, Any]]:
-        """Gets the token transfers associated with from_address
-
-        May raise:
-        - RemoteError if there are any problems with reaching Etherscan or if
-        an unexpected response is returned
-        """
-        options = {'address': from_address, 'contractaddress': token_address, 'sort': 'asc'}
-        result = self._query(
-            module='account',
-            action='tokentx',
-            options=options,
-        )
-        return result
-
     def get_logs(
             self,
             contract_address: ChecksumEthAddress,
@@ -410,6 +399,7 @@ class Etherscan(ExternalServiceWithApiKey):
             module='logs',
             action='getLogs',
             options=options,
+            timeout=(DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT * 2),
         )
         return result
 

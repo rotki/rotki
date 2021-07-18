@@ -126,11 +126,12 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
     assert msg in warnings[12]
 
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 4
+    assert len(errors) == 5
     assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in errors[0]
     assert 'kraken trade with unprocessable pair IDONTEXISTZEUR' in errors[1]
     assert 'kraken trade with unprocessable pair %$#%$#%$#%$#%$#%' in errors[2]
     assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[3]  # noqa: E501
+    assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[4]  # noqa: E501
 
 
 @pytest.mark.parametrize(

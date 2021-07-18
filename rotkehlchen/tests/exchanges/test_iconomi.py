@@ -3,11 +3,10 @@ from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_iconomi
-from rotkehlchen.constants.assets import A_ETH, A_REP
+from rotkehlchen.constants.assets import A_ETH, A_EUR, A_REP
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Location, TradeType

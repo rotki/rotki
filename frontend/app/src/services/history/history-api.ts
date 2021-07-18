@@ -9,6 +9,9 @@ import {
 } from '@/services/consts';
 import { tradeNumericKeys } from '@/services/history/const';
 import {
+  GitcoinGrantEventsPayload,
+  GitcoinGrantReport,
+  GitcoinReportPayload,
   LedgerActionResult,
   NewTrade,
   Trade,
@@ -198,6 +201,42 @@ export class HistoryApi {
       .get<ActionResult<ReportProgress>>(`/history/status`, {
         validateStatus: validWithSessionStatus,
         transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async gatherGitcoinGrandEvents(
+    payload: GitcoinGrantEventsPayload
+  ): Promise<PendingTask> {
+    return this.axios
+      .post<ActionResult<PendingTask>>(
+        '/gitcoin/events',
+        axiosSnakeCaseTransformer({ ...payload, asyncQuery: true }),
+        {
+          validateStatus: validStatus,
+          transformResponse: balanceAxiosTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async deleteGitcoinGrantEvents(grantId: number): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>('/gitcoin/events', {
+        data: axiosSnakeCaseTransformer({ grantId }),
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
+  }
+
+  async generateReport(
+    payload: GitcoinReportPayload
+  ): Promise<GitcoinGrantReport> {
+    return this.axios
+      .put<ActionResult<GitcoinGrantReport>>('/gitcoin/report', payload, {
+        validateStatus: validStatus,
+        transformResponse: setupTransformer(['total', 'amount', 'value']),
+        transformRequest: this.requestTransformer
       })
       .then(handleResponse);
   }

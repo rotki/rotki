@@ -76,6 +76,10 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('Z', 26);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('[', 27);
 /* BlockFI */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('\\', 28);
+/* IndependentReserve */
+INSERT OR IGNORE INTO location(location, seq) VALUES (']', 29);
+/* Gitcoin */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('^', 30);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
@@ -236,6 +240,7 @@ CREATE TABLE IF NOT EXISTS yearn_vaults_events (
     timestamp INTEGER NOT NULL,
     tx_hash VARCHAR[66] NOT NULL,
     log_index INTEGER NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY(from_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     PRIMARY KEY (event_type, tx_hash, log_index)
@@ -397,6 +402,39 @@ CREATE TABLE IF NOT EXISTS ledger_actions (
 );
 """
 
+# Custom enum table for gicoin transaction types
+DB_CREATE_GITCOIN_TX_TYPE = """
+CREATE TABLE IF NOT EXISTS gitcoin_tx_type (
+  type    CHAR(1)       PRIMARY KEY NOT NULL,
+  seq     INTEGER UNIQUE
+);
+/* Ethereum Transaction */
+INSERT OR IGNORE INTO gitcoin_tx_type(type, seq) VALUES ('A', 1);
+/* ZKSync Transaction */
+INSERT OR IGNORE INTO gitcoin_tx_type(type, seq) VALUES ('B', 2);
+"""
+
+
+DB_CREATE_LEDGER_ACTIONS_GITCOIN_DATA = """
+CREATE TABLE IF NOT EXISTS ledger_actions_gitcoin_data (
+    parent_id INTEGER NOT NULL,
+    tx_id TEXT NOT NULL UNIQUE,
+    grant_id INTEGER NOT NULL,
+    clr_round INTEGER,
+    tx_type NOT NULL DEFAULT('A') REFERENCES gitcoin_tx_type(type),
+    FOREIGN KEY(parent_id) REFERENCES ledger_actions(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(parent_id, tx_id, grant_id)
+);
+"""  # noqa: E501
+
+DB_CREATE_GITCOIN_GRANT_METADATA = """
+CREATE TABLE IF NOT EXISTS gitcoin_grant_metadata (
+    grant_id INTEGER NOT NULL PRIMARY KEY,
+    grant_name TEXT NOT NULL,
+    created_on INTEGER NOT NULL
+);
+"""
+
 DB_CREATE_ETHEREUM_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS ethereum_transactions (
     tx_hash BLOB,
@@ -440,20 +478,14 @@ CREATE TABLE IF NOT EXISTS amm_swaps (
     to_address VARCHAR[42] NOT NULL,
     timestamp INTEGER NOT NULL,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-    is_token0_unknown INTEGER NOT NULL,
-    token0_address VARCHAR[42] NOT NULL,
-    token0_symbol TEXT NOT NULL,
-    token0_name TEXT,
-    token0_decimals INTEGER,
-    is_token1_unknown INTEGER NOT NULL,
-    token1_address VARCHAR[42] NOT NULL,
-    token1_symbol TEXT NOT NULL,
-    token1_name TEXT,
-    token1_decimals INTEGER,
+    token0_identifier TEXT NOT NULL,
+    token1_identifier TEXT NOT NULL,
     amount0_in TEXT,
     amount1_in TEXT,
     amount0_out TEXT,
     amount1_out TEXT,
+    FOREIGN KEY(token0_identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(token1_identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
     PRIMARY KEY (tx_hash, log_index)
 );
 """
@@ -466,20 +498,14 @@ CREATE TABLE IF NOT EXISTS uniswap_events (
     timestamp INTEGER NOT NULL,
     type TEXT NOT NULL,
     pool_address VARCHAR[42] NOT NULL,
-    is_token0_unknown INTEGER NOT NULL,
-    token0_address VARCHAR[42] NOT NULL,
-    token0_symbol TEXT NOT NULL,
-    token0_name TEXT,
-    token0_decimals INTEGER,
-    is_token1_unknown INTEGER NOT NULL,
-    token1_address VARCHAR[42] NOT NULL,
-    token1_symbol TEXT NOT NULL,
-    token1_name TEXT,
-    token1_decimals INTEGER,
+    token0_identifier TEXT NOT NULL,
+    token1_identifier TEXT NOT NULL,
     amount0 TEXT,
     amount1 TEXT,
     usd_price TEXT,
     lp_amount TEXT,
+    FOREIGN KEY(token0_identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(token1_identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
     PRIMARY KEY (tx_hash, log_index)
 );
 """
@@ -543,62 +569,6 @@ CREATE TABLE IF NOT EXISTS adex_events (
 );
 """
 
-# Balancer pools contain at least 2 tokens
-DB_CREATE_BALANCER_POOLS = """
-CREATE TABLE IF NOT EXISTS balancer_pools (
-    address VARCHAR[42] NOT NULL PRIMARY KEY,
-    tokens_number INTEGER NOT NULL,
-    is_token0_unknown INTEGER NOT NULL,
-    token0_address VARCHAR[42] NOT NULL,
-    token0_symbol TEXT NOT NULL,
-    token0_name TEXT,
-    token0_decimals INTEGER,
-    token0_weight TEXT NOT NULL,
-    is_token1_unknown INTEGER NOT NULL,
-    token1_address VARCHAR[42] NOT NULL,
-    token1_symbol TEXT NOT NULL,
-    token1_name TEXT,
-    token1_decimals INTEGER,
-    token1_weight TEXT NOT NULL,
-    is_token2_unknown INTEGER,
-    token2_address VARCHAR[42],
-    token2_symbol TEXT,
-    token2_name TEXT,
-    token2_decimals INTEGER,
-    token2_weight TEXT,
-    is_token3_unknown INTEGER,
-    token3_address VARCHAR[42],
-    token3_symbol TEXT,
-    token3_name TEXT,
-    token3_decimals INTEGER,
-    token3_weight TEXT,
-    is_token4_unknown INTEGER,
-    token4_address VARCHAR[42],
-    token4_symbol TEXT,
-    token4_name TEXT,
-    token4_decimals INTEGER,
-    token4_weight TEXT,
-    is_token5_unknown INTEGER,
-    token5_address VARCHAR[42],
-    token5_symbol TEXT,
-    token5_name TEXT,
-    token5_decimals INTEGER,
-    token5_weight TEXT,
-    is_token6_unknown INTEGER,
-    token6_address VARCHAR[42],
-    token6_symbol TEXT,
-    token6_name TEXT,
-    token6_decimals INTEGER,
-    token6_weight TEXT,
-    is_token7_unknown INTEGER,
-    token7_address VARCHAR[42],
-    token7_symbol TEXT,
-    token7_name TEXT,
-    token7_decimals INTEGER,
-    token7_weight TEXT
-);
-"""
-
 DB_CREATE_BALANCER_EVENTS = """
 CREATE TABLE IF NOT EXISTS balancer_events (
     tx_hash VARCHAR[42] NOT NULL,
@@ -606,7 +576,7 @@ CREATE TABLE IF NOT EXISTS balancer_events (
     address VARCHAR[42] NOT NULL,
     timestamp INTEGER NOT NULL,
     type TEXT NOT NULL,
-    pool_address VARCHAR[42] NOT NULL,
+    pool_address_token TEXT NOT NULL,
     lp_amount TEXT NOT NULL,
     usd_value TEXT NOT NULL,
     amount0 TEXT NOT NULL,
@@ -617,7 +587,7 @@ CREATE TABLE IF NOT EXISTS balancer_events (
     amount5 TEXT,
     amount6 TEXT,
     amount7 TEXT,
-    FOREIGN KEY (pool_address) REFERENCES balancer_pools(address)
+    FOREIGN KEY (pool_address_token) REFERENCES assets(identifier) ON UPDATE CASCADE,
     PRIMARY KEY (tx_hash, log_index)
 );
 """
@@ -625,7 +595,7 @@ CREATE TABLE IF NOT EXISTS balancer_events (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -664,6 +634,8 @@ PRAGMA foreign_keys=on;
     DB_CREATE_LEDGER_ACTIONS,
     DB_CREATE_ACTION_TYPE,
     DB_CREATE_IGNORED_ACTIONS,
-    DB_CREATE_BALANCER_POOLS,
     DB_CREATE_BALANCER_EVENTS,
+    DB_CREATE_LEDGER_ACTIONS_GITCOIN_DATA,
+    DB_CREATE_GITCOIN_TX_TYPE,
+    DB_CREATE_GITCOIN_GRANT_METADATA,
 )

@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetMovementDisplay from '@/components/display/AssetMovementDisplay.vue';
@@ -13,6 +14,7 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import Card from '@/components/helper/Card.vue';
 import DataTable from '@/components/helper/DataTable.vue';
+import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
@@ -59,4 +61,7 @@ export function registerComponents() {
   Vue.component('TableExpandContainer', TableExpandContainer);
   // version 11
   Vue.component('AssetIcon', AssetIcon);
+  // version 12 - 1.19
+  Vue.component('RangeSelector', RangeSelector);
+  Vue.component('ConfirmDialog', ConfirmDialog);
 }

@@ -9,9 +9,11 @@ from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAs
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.manual_price_oracle import ManualPriceOracle
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import (
     DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER,
+    HistoricalPrice,
     HistoricalPriceOracle,
 )
 from rotkehlchen.tests.utils.constants import A_GBP
@@ -41,6 +43,8 @@ def test_all_common_methods_implemented():
             instance = Coingecko
         elif oracle == HistoricalPriceOracle.CRYPTOCOMPARE:
             instance = Cryptocompare
+        elif oracle == HistoricalPriceOracle.MANUAL:
+            instance = ManualPriceOracle
         else:
             raise AssertionError(
                 f'Unexpected historical price oracle: {oracle}. Update this test',
@@ -91,7 +95,8 @@ def test_token_to_fiat_all_can_query_history_no_price_found_exception(fake_price
     price_historian = fake_price_historian
 
     for oracle_instance in price_historian._oracle_instances:
-        oracle_instance.can_query_history.return_value = False
+        if not isinstance(oracle_instance, ManualPriceOracle):
+            oracle_instance.can_query_history.return_value = False
 
     with pytest.raises(NoPriceForGivenTimestamp):
         price_historian.query_historical_price(
@@ -100,8 +105,9 @@ def test_token_to_fiat_all_can_query_history_no_price_found_exception(fake_price
             timestamp=Timestamp(1611595466),
         )
     for oracle_instance in price_historian._oracle_instances:
-        assert oracle_instance.can_query_history.call_count == 1
-        assert oracle_instance.query_historical_price.call_count == 0
+        if not isinstance(oracle_instance, ManualPriceOracle):
+            assert oracle_instance.can_query_history.call_count == 1
+            assert oracle_instance.query_historical_price.call_count == 0
 
 
 def test_token_to_fiat_no_price_found_exception(fake_price_historian):
@@ -111,7 +117,8 @@ def test_token_to_fiat_no_price_found_exception(fake_price_historian):
     price_historian = fake_price_historian
 
     for oracle_instance in price_historian._oracle_instances:
-        oracle_instance.query_historical_price.return_value = Price(ZERO)
+        if not isinstance(oracle_instance, ManualPriceOracle):
+            oracle_instance.query_historical_price.return_value = Price(ZERO)
 
     with pytest.raises(NoPriceForGivenTimestamp):
         price_historian.query_historical_price(
@@ -120,7 +127,8 @@ def test_token_to_fiat_no_price_found_exception(fake_price_historian):
             timestamp=Timestamp(1611595466),
         )
     for oracle_instance in price_historian._oracle_instances:
-        assert oracle_instance.query_historical_price.call_count == 1
+        if not isinstance(oracle_instance, ManualPriceOracle):
+            assert oracle_instance.query_historical_price.call_count == 1
 
 
 def test_token_to_fiat_via_second_oracle(fake_price_historian):
@@ -131,8 +139,8 @@ def test_token_to_fiat_via_second_oracle(fake_price_historian):
 
     expected_price = Price(FVal('30000'))
     oracle_instances = price_historian._oracle_instances
-    oracle_instances[0].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')
-    oracle_instances[1].query_historical_price.return_value = expected_price
+    oracle_instances[1].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')
+    oracle_instances[2].query_historical_price.return_value = expected_price
 
     price = price_historian.query_historical_price(
         from_asset=A_BTC,
@@ -140,5 +148,39 @@ def test_token_to_fiat_via_second_oracle(fake_price_historian):
         timestamp=Timestamp(1611595466),
     )
     assert price == expected_price
-    for oracle_instance in price_historian._oracle_instances[0:2]:
+    for oracle_instance in price_historian._oracle_instances[1:3]:
         assert oracle_instance.query_historical_price.call_count == 1
+
+
+def test_manual_oracle_correctly_returns_price(globaldb, fake_price_historian):
+    """Test that the manual oracle correctly returns price for asset"""
+    price_historian = fake_price_historian
+    # Add price at timestamp
+    globaldb.add_single_historical_price(
+        HistoricalPrice(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            price=30000,
+            timestamp=Timestamp(1611595470),
+            source=HistoricalPriceOracle.MANUAL,
+        ),
+    )
+    # Make the other oracles fail
+    expected_price = Price(FVal('30000'))
+    oracle_instances = price_historian._oracle_instances
+    oracle_instances[1].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')
+    oracle_instances[2].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')
+    # Query price, should return the manual price
+    price = price_historian.query_historical_price(
+        from_asset=A_BTC,
+        to_asset=A_USD,
+        timestamp=Timestamp(1611595466),
+    )
+    assert price == expected_price
+    # Try to get manual price for a timestamp not in db
+    with pytest.raises(NoPriceForGivenTimestamp):
+        price = price_historian.query_historical_price(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            timestamp=Timestamp(1610595466),
+        )

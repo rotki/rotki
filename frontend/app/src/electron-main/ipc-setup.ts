@@ -10,7 +10,7 @@ import { ProgressInfo } from 'electron-builder';
 import { autoUpdater } from 'electron-updater';
 import { loadConfig } from '@/electron-main/config';
 import { startHttp, stopHttp } from '@/electron-main/http';
-import { BackendOptions, SystemVersion } from '@/electron-main/ipc';
+import { BackendOptions, SystemVersion, TrayUpdate } from '@/electron-main/ipc';
 import {
   IPC_CHECK_FOR_UPDATES,
   IPC_CLOSE_APP,
@@ -27,10 +27,13 @@ import {
   IPC_PREMIUM_LOGIN,
   IPC_RESTART_BACKEND,
   IPC_SERVER_URL,
-  IPC_VERSION
+  IPC_TRAY_UPDATE,
+  IPC_VERSION,
+  IPC_WEBSOCKET_URL
 } from '@/electron-main/ipc-commands';
 import { debugSettings, getUserMenu } from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
+import { TrayManager } from '@/electron-main/tray-manager';
 import PyHandler from '@/py-handler';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -118,10 +121,17 @@ function setupDarkModeSupport() {
   });
 }
 
+function setupTrayInterop(trayManager: TrayManager) {
+  ipcMain.on(IPC_TRAY_UPDATE, async (event, trayUpdate: TrayUpdate) => {
+    trayManager.update(trayUpdate);
+  });
+}
+
 export function ipcSetup(
   pyHandler: PyHandler,
   getWindow: WindowProvider,
-  closeApp: () => Promise<void>
+  closeApp: () => Promise<void>,
+  tray: TrayManager
 ) {
   ipcMain.on(IPC_GET_DEBUG, event => {
     event.returnValue = debugSettings;
@@ -129,6 +139,10 @@ export function ipcSetup(
 
   ipcMain.on(IPC_SERVER_URL, event => {
     event.returnValue = pyHandler.serverUrl;
+  });
+
+  ipcMain.on(IPC_WEBSOCKET_URL, event => {
+    event.returnValue = pyHandler.websocketUrl;
   });
 
   ipcMain.on(IPC_PREMIUM_LOGIN, (event, args) => {
@@ -165,6 +179,7 @@ export function ipcSetup(
   setupUpdaterInterop(pyHandler, getWindow);
   setupDarkModeSupport();
   setupBackendRestart(getWindow, pyHandler);
+  setupTrayInterop(tray);
 }
 
 function setupInstallUpdate(pyHandler: PyHandler) {

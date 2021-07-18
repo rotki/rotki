@@ -141,6 +141,17 @@ following::
        -v $HOME/.rotki/logs:/logs \
        rotki/rotki:latest
 
+.. warning::
+    On Linux the mounted volume folders for data and logs will be
+    owned by the ``root`` user. If the owner of these folder changes
+    to some other user than root this will make them inaccessible
+    by the the container, which can result in 500 errors when
+    accessing rotki in the container.
+
+    If you run into this issue you can fix it by changing the
+    directory owner back to ``root``.
+
+
 This will start a new container that stores the data and logs into a
 ``.rotki`` directory under the user’s home directory. You will be able
 to find your account data (databases etc) under the ``.rotki/data``
@@ -150,6 +161,20 @@ any other available port.
 At this point the rotki docker container should be running and you
 should be able to access rotki frontend, open your browser and go to
 it at ``http://localhost:8084``. You should be able to see the rotki login screen.
+
+Time in Profit / Loss Report is in wrong.
+--------------------------------------------
+To set the timezone in the docker environment you can use the option ``-e TZ=Timezone`` when starting the container::
+
+    docker run -d --name rotki \
+        -p 8084:80 \
+        -v $HOME/.rotki/data:/data \
+        -v $HOME/.rotki/logs:/logs \
+        -e TZ=America/New_York \
+        rotki/rotki:latest
+       
+You can find all TimeZone Databases on Wikipedia:
+https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 
 Updating to a newer version
 ---------------------------
@@ -187,6 +212,55 @@ again. If you don’t use the same volumes, then your old accounts and
 data will be unavailable.
 
 .. _DockerHub: https://hub.docker.com/r/rotki/rotki/
+
+Docker Compose
+================
+
+If you prefer to use docker compose, a docker-compose.yml template is provided below for convienence.
+
+Using Docker Defined Volume:
+
+.. code-block:: yaml
+
+   version: '3.7'
+   services:
+     rotki:
+       environment: 
+         - TZ=America/Chicago  # TimeZone Databases on Wikipedia: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+       image: rotki/rotki:latest
+       ports:
+         - "8084:80"  # Container exposes port 80, 8084 can be any port of your choosing.
+       networks:
+         - rotki-net
+       volumes:
+         - rotki-data:/data 
+         - rotki-logs:/logs
+   volumes:
+     rotki-data:
+     rotki-logs:
+   networks: 
+     rotki-net:
+
+Using $home (or which ever path to your local data) Defined directed volume:
+
+.. code-block:: yaml
+
+   version: '3.7'
+   services:
+     rotki:
+       environment: 
+         - TZ=America/Chicago  # TimeZone Databases on Wikipedia: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+       image: rotki/rotki:latest
+       ports:
+         - "8084:80"  # Container exposes port 80, 8084 can be any port of your choosing.
+       networks:
+         - rotki-net
+       volumes:
+         - $HOME/.rotki/data:/data 
+         - $HOME/.rotki/logs:/logs
+   networks: 
+     rotki-net:
+
 
 Moving the accounts from the desktop application
 -------------------------------------------------
@@ -228,7 +302,7 @@ Get `sqlcipher <https://www.zetetic.net/sqlcipher/>`_ version 4:
 
 - If you are running Archlinux you can install the `package <https://www.archlinux.org/packages/community/x86_64/sqlcipher/>`_ with ``pacman``.
 
-- If you are running Ubuntu, at the time of writing of this article Ubuntu is still using sqlcipher v3 which is not supported by rotki. So you should build sqlcipher v4 by hand. We have a script for that which is also used by our CI. Check it out `here <https://github.com/rotki/rotki/blob/7573bcbd9bfc83e0ef352701ae2772a040b4ab5b/install_deps.sh>`__.
+- If you are running Ubuntu, at the time of writing of this article Ubuntu is still using sqlcipher v3 which is not supported by rotki. So you should build sqlcipher v4 by hand. We have a script for that which is also used by our CI. Check it out `here <https://github.com/rotki/rotki/blob/7573bcbd9bfc83e0ef352701ae2772a040b4ab5b/install_deps.sh>`__. Install libssl-dev and tclsh by running ``sudo apt-get install libssl-dev tclsh`` if not already installed.
 
 - If you are running openSUSE Tumbleweed, you can install sqlcipher v4 as follows::
 

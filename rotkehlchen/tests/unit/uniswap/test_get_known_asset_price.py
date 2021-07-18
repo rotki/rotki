@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_WETH
 from rotkehlchen.typing import Price
@@ -27,7 +26,7 @@ def test_known_asset_has_usd_price(mock_uniswap, inquirer):  # pylint: disable=u
 
 @pytest.mark.parametrize('mocked_current_prices', [{A_WETH: Price(ZERO)}])
 def test_known_asset_has_zero_usd_price(mock_uniswap, inquirer):  # pylint: disable=unused-argument
-    """Test `known_asset_price` is empty and that an <UnknownEthereumToken>
+    """Test `known_asset_price` is empty and that an token
     has been added in `unknown_assets` when Inquirer returns a price eq
     ZERO.
     """
@@ -40,11 +39,4 @@ def test_known_asset_has_zero_usd_price(mock_uniswap, inquirer):  # pylint: disa
     )
 
     assert known_asset_price == {}
-    assert unknown_assets == {
-        UnknownEthereumToken(
-            ethereum_address=A_WETH.ethereum_address,
-            symbol=A_WETH.symbol,
-            name=A_WETH.name,
-            decimals=A_WETH.decimals,
-        ),
-    }
+    assert unknown_assets == {A_WETH}

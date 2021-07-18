@@ -38,16 +38,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def iconomi_pair_to_world(pair: str) -> Tuple[Asset, Asset]:
-    """May raise:
-    - UnsupportedAsset
-    - UnknownAsset
-    """
-    tx_asset = asset_from_iconomi(pair[:3])
-    native_asset = asset_from_iconomi(pair[3:])
-    return tx_asset, native_asset
-
-
 def trade_from_iconomi(raw_trade: Dict) -> Trade:
     """Turn an iconomi trade entry to our own trade format
 

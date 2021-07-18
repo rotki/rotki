@@ -1,6 +1,7 @@
 import { EXTERNAL_EXCHANGES, SUPPORTED_EXCHANGES } from '@/data/defaults';
 
 export const MODULE_YEARN = 'yearn_vaults';
+export const MODULE_YEARN_V2 = 'yearn_vaults_v2';
 export const MODULE_COMPOUND = 'compound';
 export const MODULE_MAKERDAO_VAULTS = 'makerdao_vaults';
 export const MODULE_MAKERDAO_DSR = 'makerdao_dsr';
@@ -17,6 +18,7 @@ export const MODULES = [
   MODULE_MAKERDAO_VAULTS,
   MODULE_COMPOUND,
   MODULE_YEARN,
+  MODULE_YEARN_V2,
   MODULE_UNISWAP,
   MODULE_BALANCER,
   MODULE_ADEX,

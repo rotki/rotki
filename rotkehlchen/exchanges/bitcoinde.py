@@ -13,6 +13,7 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
@@ -105,7 +106,7 @@ def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
     amount = tx_amount
     rate = Price(native_amount / tx_amount)
     fee_amount = deserialize_fee(raw_trade['fee_currency_to_pay'])
-    fee_asset = Asset('EUR')
+    fee_asset = A_EUR
 
     return Trade(
         timestamp=timestamp,

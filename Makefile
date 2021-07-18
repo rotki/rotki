@@ -1,5 +1,6 @@
 lint:
 	flake8 rotkehlchen/ tools/data_faker
+	yes | mypy rotkehlchen/ tools/data_faker --install-types || true
 	mypy rotkehlchen/ tools/data_faker
 	pylint --rcfile .pylint.rc rotkehlchen/ tools/data_faker
 

@@ -9,45 +9,113 @@ import requests
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.aave.constants import A_ALINK_V1
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import (
     A_1INCH,
     A_AAVE,
+    A_AC,
     A_ADX,
+    A_AMP,
+    A_AUC,
+    A_AUSDC_V1,
+    A_BADGER,
     A_BAL,
+    A_BAND,
     A_BAT,
+    A_BCP,
+    A_BEL,
     A_BNB,
+    A_BNT,
+    A_BOR,
+    A_BTU,
     A_BUSD,
     A_BZRX,
     A_CDAI,
+    A_CEL,
+    A_CETH,
     A_COMP,
     A_CRV,
     A_CUSDC,
+    A_CVT,
     A_DAI,
+    A_DEFI_L,
+    A_DEFI_S,
+    A_DOUGH,
     A_DPI,
+    A_DXD,
     A_ENJ,
+    A_ENTRP,
     A_ETH,
+    A_FARM,
+    A_FIN,
+    A_FUSE,
+    A_GNO,
+    A_GRG,
+    A_GRID,
+    A_GRT,
+    A_HBTC,
+    A_HEX,
+    A_HT,
+    A_INDEX,
+    A_KEEP,
     A_KNC,
+    A_KP3R,
     A_LINK,
     A_LRC,
+    A_MASK,
     A_MCB,
     A_MKR,
+    A_MTA,
+    A_NEC,
+    A_NEST,
+    A_NIOX,
+    A_NMR,
+    A_OBTC,
+    A_OGN,
+    A_OKB,
+    A_OMG,
+    A_ONG,
     A_PAX,
+    A_PBTC,
+    A_PLTC,
+    A_PNK,
+    A_PNT,
+    A_QCAD,
+    A_RAI,
     A_REN,
     A_RENBTC,
+    A_RFOX,
+    A_RGT,
+    A_RPL,
+    A_RSPT,
+    A_SMARTCREDIT,
+    A_SNT,
     A_SNX,
     A_STAKE,
     A_SUSD,
+    A_SUSHI,
+    A_SX,
+    A_TEL,
+    A_TON,
+    A_TRB,
+    A_TRYB,
+    A_TTV,
     A_TUSD,
+    A_UMA,
     A_UNI,
     A_USDC,
     A_USDT,
+    A_VBZRX,
+    A_VSP,
     A_WBTC,
     A_WETH,
+    A_WNXM,
+    A_WOO,
     A_YFI,
     A_YFII,
+    A_YPIE,
     A_ZRX,
 )
 from rotkehlchen.constants.misc import ZERO
@@ -70,75 +138,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-
-A_HT = EthereumToken('0x6f259637dcD74C767781E37Bc6133cd6A68aa161')
-A_OKB = EthereumToken('0x75231F58b43240C9718Dd58B4967c5114342a86c')
-A_KEEP = EthereumToken('0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC')
-A_DXD = EthereumToken('0xa1d65E8fB6e87b60FECCBc582F7f97804B725521')
-A_TRB = EthereumToken('0x0Ba45A8b5d5575935B8158a88C631E9F9C95a2e5')
-A_AUC = EthereumToken('0xc12d099be31567add4e4e4d0D45691C3F58f5663')
-A_RPL = EthereumToken('0xB4EFd85c19999D84251304bDA99E90B92300Bd93')
-A_GNO = EthereumToken('0x6810e776880C02933D47DB1b9fc05908e5386b96')
-A_BNT = EthereumToken('0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C')
-A_PBTC = EthereumToken('0x5228a22e72ccC52d415EcFd199F99D0665E7733b')
-A_PNT = EthereumToken('0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD')
-A_GRID = EthereumToken('0x12B19D3e2ccc14Da04FAe33e63652ce469b3F2FD')
-A_PNK = EthereumToken('0x93ED3FBe21207Ec2E8f2d3c3de6e058Cb73Bc04d')
-A_NEST = EthereumToken('0x04abEdA201850aC0124161F037Efd70c74ddC74C')
-A_BTU = EthereumToken('0xb683D83a532e2Cb7DFa5275eED3698436371cc9f')
-A_VBZRX = EthereumToken('0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F')
-A_CETH = EthereumToken('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5')
-A_AUSDC = EthereumToken('0x9bA00D6856a4eDF4665BcA2C2309936572473B7E')
-A_OMG = EthereumToken('0xd26114cd6EE289AccF82350c8d8487fedB8A0C07')
-A_NMR = EthereumToken('0x1776e1F26f98b1A5dF9cD347953a26dd3Cb46671')
-A_SNT = EthereumToken('0x744d70FDBE2Ba4CF95131626614a1763DF805B9E')
-A_MTA = EthereumToken('0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2')
-A_ONG = EthereumToken('0xd341d1680Eeee3255b8C4c75bCCE7EB57f144dAe')
-A_GRG = EthereumToken('0x4FbB350052Bca5417566f188eB2EBCE5b19BC964')
-A_QCAD = EthereumToken('0x4A16BAf414b8e637Ed12019faD5Dd705735DB2e0')
-A_TON = EthereumToken('0x6a6c2adA3Ce053561C2FbC3eE211F23d9b8C520a')
-A_BAND = EthereumToken('0xBA11D00c5f74255f56a5E366F4F77f5A186d7f55')
-A_UMA = EthereumToken('0x04Fa0d235C4abf4BcF4787aF4CF447DE572eF828')
-A_WNXM = EthereumToken('0x0d438F3b5175Bebc262bF23753C1E53d03432bDE')
-A_ENTRP = EthereumToken('0x5BC7e5f0Ab8b2E10D2D0a3F21739FCe62459aeF3')
-A_NIOX = EthereumToken('0xc813EA5e3b48BEbeedb796ab42A30C5599b01740')
-A_OGN = EthereumToken('0x8207c1FfC5B6804F6024322CcF34F29c3541Ae26')
-A_HEX = EthereumToken('0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39')
-A_HBTC = EthereumToken('0x0316EB71485b0Ab14103307bf65a021042c6d380')
-A_PLTC = EthereumToken('0x5979F50f1D4c08f9A53863C2f39A7B0492C38d0f')
-A_FIN = EthereumToken('0x054f76beED60AB6dBEb23502178C52d6C5dEbE40')
-A_DOUGH = EthereumToken('0xad32A8e6220741182940c5aBF610bDE99E737b2D')
-A_DEFI_L = EthereumToken('0x78F225869c08d478c34e5f645d07A87d3fe8eb78')
-A_DEFI_S = EthereumToken('0xaD6A626aE2B43DCb1B39430Ce496d2FA0365BA9C')
-A_TRYB = EthereumToken('0x2C537E5624e4af88A7ae4060C022609376C8D0EB')
-A_CEL = EthereumToken('0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d')
-A_AMP = EthereumToken('0xfF20817765cB7f73d4bde2e66e067E58D11095C2')
-A_KP3R = EthereumToken('0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44')
-A_AC = EthereumToken('0x9A0aBA393aac4dFbFf4333B06c407458002C6183')
-A_CVT = EthereumToken('0xBe428c3867F05deA2A89Fc76a102b544eaC7f772')
-A_WOO = EthereumToken('0x4691937a7508860F876c9c0a2a617E7d9E945D4B')
-A_BEL = EthereumToken('0xA91ac63D040dEB1b7A5E4d4134aD23eb0ba07e14')
-A_OBTC = EthereumToken('0x8064d9Ae6cDf087b1bcd5BDf3531bD5d8C537a68')
-A_INDEX = EthereumToken('0x0954906da0Bf32d5479e25f46056d22f08464cab')
-A_GRT = EthereumToken('0xc944E90C64B2c07662A292be6244BDf05Cda44a7')
-A_TTV = EthereumToken('0xa838be6E4b760E6061D4732D6B9F11Bf578f9A76')
-A_FARM = EthereumToken('0xa0246c9032bC3A600820415aE600c6388619A14D')
-A_BOR = EthereumToken('0x3c9d6c1C73b31c837832c72E04D3152f051fc1A9')
-A_RFOX = EthereumToken('0xa1d6Df714F91DeBF4e0802A542E13067f31b8262')
-A_NEC = EthereumToken('0xCc80C051057B774cD75067Dc48f8987C4Eb97A5e')
-A_RGT = EthereumToken('0xD291E7a03283640FDc51b121aC401383A46cC623')
-A_VSP = EthereumToken('0x1b40183EFB4Dd766f11bDa7A7c3AD8982e998421')
-A_SMARTCREDIT = EthereumToken('0x72e9D9038cE484EE986FEa183f8d8Df93f9aDA13')
-A_RAI = EthereumToken('0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919')
-A_TEL = EthereumToken('0x467Bccd9d29f223BcE8043b84E8C8B282827790F')
-A_BCP = EthereumToken('0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14')
-A_BADGER = EthereumToken('0x3472A5A71965499acd81997a54BBA8D852C6E53d')
-A_SUSHI = EthereumToken('0x6B3595068778DD592e39A122f4f5a5cF09C90fE2')
-A_MASK = EthereumToken('0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074')
-A_YPIE = EthereumToken('0x17525E4f4Af59fbc29551bC4eCe6AB60Ed49CE31')
-A_FUSE = EthereumToken('0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d')
-A_SX = EthereumToken('0x99fE3B1391503A1bC1788051347A1324bff41452')
-A_RSPT = EthereumToken('0x016bf078ABcaCB987f0589a6d3BEAdD4316922B0')
 
 
 # Taken from https://github.com/Loopring/protocols/blob/master/packages/loopring_v3/deployment_mainnet_v3.6.md  # noqa: E501
@@ -190,7 +189,7 @@ TOKENID_TO_ASSET = {
     41: A_CUSDC,
     # 42: aLEND delisted
     43: A_ALINK_V1,
-    44: A_AUSDC,
+    44: A_AUSDC_V1,
     45: A_OMG,
     46: A_ENJ,
     47: A_NMR,

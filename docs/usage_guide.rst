@@ -26,10 +26,14 @@ For creating an account press "Create New Account" and provide a username and a 
   - **Username**: it is just an identifier for your database; a local user.
   - **Password**: :red:`Do not forget this password`. It is used to encrypt all your local files.
 
-If you have purchased a premium subscription you can also add the **API Key** and the **secret** here. See the section :ref:`sync-data-with-rotki-server` to know how to sync your data with Roki Server (this option is disabled by default).
+If you want to restore an account using premium sync during the account creation, then you can **Enable premium**,
+and insert your **API Key** and the **secret** here.
+
+For a completely new account it is suggested to add your premium API key and secret using :ref:`set-up-rotki-premium`
+after logging in with the new account.
 
 .. image:: images/rotki_create_account.png
-   :alt: Creating a new account with a premium rotki API key/secret pair
+   :alt: Creating a new account
    :align: center
 
 All accounts are created in the rotki directory, see the section :ref:`rotki_data_directory` to know where it is located.
@@ -52,6 +56,7 @@ Sign-in
 
 If you already have an account just write the name and the password at the sign in prompt.
 
+.. _set-up-rotki-premium:
 
 Set up rotki Premium
 ======================
@@ -99,7 +104,7 @@ Changing the Profit Currency
 
 rotki calculates everything, including your total profit/loss during the PnL report into a given fiat currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
 
-.. image:: images/profit_currency.gif
+.. image:: images/sc_profit_currency.png
    :alt: Changing the profit currency
    :align: center
 
@@ -244,7 +249,7 @@ The rotki frontend continuously queries the backend for various data and updates
    :align: center
 
 Blockchain explorer customization
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can customize in which explorer the transaction and addresses links open.
 
@@ -365,16 +370,18 @@ Users can also manage the existing historical price cache entries. They can insp
    :alt: Managing the historical price cache
    :align: center
 
-Customizing the DeFi settings
+.. _customize-module-settings:
+
+Customizing the Module settings
 ====================================
 
-By choosing the "Defi" section of the settings you can customize the DeFi settings of the application.
+By choosing the "Module" section of the settings you can customize the enabled modules and the queried addresses for each module for the application.
 
 The benefit of enabling only the modules you use, and specifying the addresses, is that rotki will only
 query the specified addresses for the enabled modules. This can considerably improve the querying speed.
 
-.. image:: images/defi_settings.png
-   :alt: Changing the user's password
+.. image:: images/module_settings.png
+   :alt: Managing module settings
    :align: center
 
 
@@ -414,6 +421,13 @@ After selecting a new data directory, log directory etc you can press the save b
 Keep in mind that any accounts that where created in the previous directory will not be accessible anymore and you will
 have to manually move them to the new location.
 
+In the advanced section of the backend settings you can also modify the following settings:
+
+- **Logging from other modules**: If enabled then logging will also include log entries from other dependent libraries and not only rotki. It is disabled by default.
+- **Main Loop sleep**: This is the amount of seconds that the main loop of rotki sleeps for. It is set to 20 seconds by default.
+- **Max log size**: This is the maximum size in megabytes all logs of a single run can have
+- **Max num of log files**: This is the maximum number of backup (rotated) logs a single run can have.
+
 Importing data
 *******************
 
@@ -423,8 +437,8 @@ In this section we will explain how you can import data by integrating with exte
 Adding an exchange
 =====================
 
-.. image:: images/add_exchange.gif
-   :alt: Add API keys for a new exchange
+.. image:: images/rotki_add_exchange_1.png
+   :alt: Adding exchanges
    :align: center
 
 You can integrate many different exchanges with rotki. Currently supported exchanges are:
@@ -433,9 +447,20 @@ Coinbase Pro, Gemini, Iconomi, Bitstamp, KuCoin, FTX.
 
 To do so you have to go to your exchange and create an API key (see the section :ref:`api-key-permissions`).
 
-Click on the "API keys" on the left sidebar. This will take you to the place where you can add new exchange API keys. Select the exchanges panel and select your exchange from the dropdown menu. Then copy and paste the ``API Key`` and the ``API Secret`` in the respective text fields and press submit.
+Click on the "API keys" on the left sidebar. This will take you to the place where you can add new exchange API keys.
+Press the plus button to open the exchange addition menu.
 
-If all went well, then you will get a confirmation that the connection was successful. If not please doublecheck that the key and secret are correct.
+.. image:: images/rotki_add_exchange_2.png
+   :alt: Add API keys for a new exchange
+   :align: center
+
+Then copy and paste the ``API Key`` and the ``API Secret`` in the respective text fields and press Save.
+
+If all went well, you should be able to see your newly added exchange. If not please doublecheck that the key and secret are correct.
+
+.. image:: images/rotki_add_exchange_3.png
+   :alt: Add API keys for a new exchange
+   :align: center
 
 .. _api-key-permissions:
 
@@ -456,12 +481,31 @@ In case of an exchange providing a more granular permissions scheme (e.g. Coinba
 
 You may as well try creating an API key with the minimum read-related permissions, then adding it in rotki and finally checking that the connection was successful and data was loaded as expected. Otherwise, try again adding more read-related premissions.
 
+Binance / Binance US
+-----------------------------
+
+Binance API is engineered in a way that makes it really slow to query information for trades since every possible market pair has to be queried. This process can also fail since many requests have to be made to binance servers and rate limits may apply.
+To avoid having to query all existing trade pairs, it is possible to select what markets should be queried. This will considerably increase the speed as the amount of queries to binance will be reduced to only the markets you specify.
+To select which what markets you want to query edit your binance exchange instance
+
+.. image:: images/exchanges_edit_binance.png
+   :alt: Edit binance in the exchanges section
+   :align: center
+
+And choose the markets in the `Filter market pair(s)` search.
+
+.. image:: images/binance_markets_selection.png
+   :alt: Edit binance in the exchanges section
+   :align: center
+
+Once finished click on save.
+
 Adding an external service API Key
 =====================================
 
 rotki relies on various external services for data such as historical crypto prices or ethereum transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the section of the API keys page.
 
-.. image:: images/add_external_service.gif
+.. image:: images/add_external_service.png
    :alt: Add API keys for an external service
    :align: center
 
@@ -522,7 +566,8 @@ Adding Manual Balances
 
 With rotki you can also add balances/accounts for any type of asset and location that may not be supported at the moment. For example real estate, equity holdings or holdings in a not yet supported blockchain or exchange.
 
-To add or modify a manually tracked balance navigate to the "Manual Balances" sub-page and click the large "+" icon. There choose the asset from the dropdown menu, input a unique label for the account, decorate it with any number of tags and choose an amount and location.
+To add or modify a manually tracked balance navigate to the "Manual Balances" sub-page and click the large "+" icon.
+There choose the asset from the dropdown menu, input a unique label for the account, decorate it with any number of tags and choose an amount and location.
 
 .. image:: images/sc_manually_tracked_balances.png
    :alt: The manually tracked balances
@@ -536,11 +581,15 @@ rotki allows to track balances of blockchain accounts.
 
 To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Ethereum and Kusama chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button.
 
-.. image:: images/add_blockchain_balance.gif
+.. image:: images/add_blockchain_account.png
    :alt: Add a blockchain account
    :align: center
 
-To stop tracking a particular account scroll down to the accounts tables and click the "Delete" icon (trashcan) under Actions.
+To stop tracking one or more accounts you can check the corresponding box in the accounts table and click the "Delete" button.
+
+.. image:: images/delete_blockchain_account.png
+   :alt: Delete a blockchain account
+   :align: center
 
 If an ethereum account also contains tracked tokens you can click on the arrow under "Actions" in order to expand its view and show the balance breakdown for the account over all assets it holds.
 
@@ -568,7 +617,7 @@ Adding/Editing Labels and tags
 
 You can edit any of your blockchain accounts and add a label. The label is unique to the account and will show up in the accounts tables instead of the address. You will still be able to see the address if you hover over the label in the tables.
 
-.. image:: images/add_tag_label.gif
+.. image:: images/add_tag_label.png
    :alt: Add a label and create a tag
    :align: center
 
@@ -580,7 +629,7 @@ Filtering by tags
 
 You can filter the tables by a combination of tags.
 
-.. image:: images/filter_by_tag.gif
+.. image:: images/filter_by_tag.png
    :alt: Filter the accounts by tag
    :align: center
 
@@ -745,53 +794,109 @@ When both the source identifier and target asset are selected you can press the 
 On a successful merge you will be notified to to either re-login or refresh the balances manually to see the changes
 on the frontend.
 
+Adding missing prices
+**********************
+
+Some times rotki might be unable to retrieve a historical price for an asset from CoinGecko or CryptoCompare.
+In this case you can use the price management interface to insert your own price entries.
+
+.. image:: images/price_management.png
+   :alt: Price management
+   :align: center
+
+To add a new price you have to press the plus button. This will open the add form.
+
+.. image:: images/price_management_add.png
+   :alt: Adding a new price
+   :align: center
+
+There you can specify the assets, the price and the date of the price. Then you can proceed to save the entry.
+After saving you should be able to see the new entry.
+
 Decentralized Finance
 **********************
 
 To track and analyze your DeFi actions use the Decentralized Finance tab from the left side menu. You can choose from the different types of DeFi actions presented in the submenu.
 
-
-Lending
+Overview
 ===========
 
-In the lending section you can see the status of your DAI in the DAI Savings Rate (DSR). The accounts that use DSR are auto-detected from your given blockchain accounts. You can see how much DAI you have locked over all of your accounts and how much DAI is locked for each account in the DSR.
+Rotki provides an overview of your assets in the different Defi protocols.
 
-.. image:: images/sc_dsr_nonpremium_all.png
+.. image:: images/defi_overview.png
+   :alt: Defi Overview
+   :align: center
+
+Deposits
+===========
+
+In the deposits section you can see the status of your different Defi lending protocols.
+You can see the status of your Yearn Vaults, Aave lending, Compound supply along with
+your DAI in MakerDAO DSR.
+
+The accounts are auto-detected from your given blockchain accounts.
+However you can, and most probably should, manage the different modules and addresses that are queried to make the retrieval faster.
+For more information you can check :ref:`customize-module-settings`.
+
+You can see how much of each asset you have locked over all of your accounts and how much of each is locked
+for each account across the different protocols.
+
+.. image:: images/sc_decentralized_deposits_no_premium.png
    :alt: DSR without premium
    :align: center
 
-You can also filter by account and see how much DAI is locked in the DSR for each account.
+You can also filter by account and protocol and you can see how the assets are locked in the various protocols.
 
-If you have a premium subscription you can also see how much DAI you have gained in total or over each account, the history of deposits/withdrawals and how much DAI was earned at the point in time for each action.
-
-.. image:: images/sc_dsr_premium_all.png
-   :alt: DSR with premium
+.. image:: images/sc_decentralized_deposits.png
+   :alt: Defi Deposits with premium
    :align: center
 
-Finally you need to have premium in order for the total amount of DAI earned in a given time period to be counted in the profit/loss report.
+You can see details about the assets locked in your Yearn vaults and check the profit/loss per asset.
 
-Below you can see a small demonstration of the usage of DSR by a premium account.
+.. image:: images/sc_decentralized_deposits_yearn.png
+  :alt: Defi Deposits Yearn Vaults
+  :align: center
 
-.. image:: images/dsr_premium_demo.gif
-   :alt: DSR premium demo
-   :align: center
+You can also get a detailed list of historical actions performed in the supported Defi protocols such as deposits withdrawals etc.
 
-Borrowing
+.. image:: images/sc_decentralized_deposits_history.png
+  :alt: Defi Deposits history
+  :align: center
+
+Finally you need to have a premium subscription in order for the total amount of earned or lost value per asset in a given time period to be counted in the profit/loss report.
+
+Liquidity Pools
+================
+
+.. image:: images/sc_decentralized_lp.png
+  :alt: Defi Deposits history
+  :align: center
+
+Rotki provides support for Uniswap v2 and Balancer liquidity pools. With the exception of Uniswap v2 lp balances
+this feature is only available to premium users.
+
+The liquidity pool support allows premium users to see their balances, the per pool profit/loss and any events
+(such as mint/burn) performed.
+
+Liabilities
 =============
 
-In the borrowing section you can find information on your makerdao vaults. The vaults are autodetected from your ethereum accounts and information about each one of them is displayed.
+In the liabilities section you can find information on your Aave Borrowing, Compound Borrow, and MakerDAO Vaults.
+These collateralized loans can be autodetected from your ethereum accounts and information about each one of them is displayed.
+However you can manage the different modules and addresses that are queried to make the retrieval faster.
+For more information you can check :ref:`customize-module-settings`.
 
 As a normal non-premium user you can see all your vaults, and for each one inspect the locked collateral, collateralization, debt generated and the liquidation price.
 
 .. image:: images/sc_vaults_nonpremium.png
-   :alt: Makerdao vaults without a premium account
+   :alt: MakerDAO vaults without a premium account
    :align: center
 
 
 With a premium subscription you can also see additional information such as the creation time of the vault, list of historical activities, total interest owed and liquidation events.
 
 .. image:: images/sc_vaults_premium.png
-   :alt: Makerdao vaults with a premium account
+   :alt: MakerDAO vaults with a premium account
    :align: center
 
 Premium users can also have makervault interest taken into account in the profit/loss report.
@@ -799,10 +904,12 @@ Premium users can also have makervault interest taken into account in the profit
 Finally premium users can create watchers for their vaults.
 
 .. image:: images/sc_vaults_premium_watchers.png
-   :alt: Makerdao vaults with a premium account
+   :alt: MakerDAO vault watchers
    :align: center
 
-They can add a target collateralization ratio they would like rotki to watch for in a vault. If the collateralization ratio becomes less/greater than that ratio then an alert is sent to your email. This watcher service runs on the rotki server so you don't even need to leave the application open.
+They can add a target collateralization ratio they would like rotki to watch for in a vault.
+If the collateralization ratio becomes less/greater than that ratio then an alert is sent to your email.
+This watcher service runs on the rotki server so you don't even need to leave the application open.
 
 Below you can see a small demonstration of the usage of makerdao vaults by a premium account.
 
@@ -852,7 +959,7 @@ Finally you can get a CSV export by pressing the "Export CSV" button. This expor
 - ``is_virtual`` is a boolean describing if an event is a virtually generated event. Only appears if the crypto to crypto setting is set. In many jurisdictions, crypto to crypto trades are taxable at the rate of the equivalent fiat currency. So an additional virtual buy is always generated for a crypto to crypto sell and the opposite for a crypto to crypto buy. So for example selling BSV for BTC would also make the user buy BTC with EUR as a virtual event, assuming EUR is the set profit currency.
 - ``paid_in_XXX``, where XXX is the user's customized ``profit_currency`` is a number describing the amount of ``paid_in_asset`` converted to the user`s ``profit_currency``.
 - ``taxable_received_in_XXX`` where XXX is the user's customized ``profit_currency`` is a number describing the amount of ``received_in_asset`` converted to the user's ``profit_currency``. Note that rotki additionally subtracts an exchange's trading fees from this number.
-- ``taxable_bought_cost_in_EUR`` where XXX is the user's customized ``profit_currency`` is a float simulating the total amount of ``paid_in_asset`` given the user's customized accounting strategy in the user's ``profit_currency``.
+- ``taxable_bought_cost_in_XXX`` where XXX is the user's customized ``profit_currency`` is a float simulating the total amount of ``paid_in_asset`` given the user's customized accounting strategy in the user's ``profit_currency``.
 - ``cost_basis`` If this is a spending event, this field contains information about where the amount that is spent came from according to the user's setting. Which buys contributed to this spend. If not enough information is known then this is also stated.
 
 .. note::
@@ -862,7 +969,7 @@ Finally you can get a CSV export by pressing the "Export CSV" button. This expor
 Analytics
 **********
 
-If you have a premium subscription you can get analytics on your all your assets and trades.
+If you have a premium subscription you can get analytics on all your assets and trades.
 
 .. note::
     The starting point of the for these analytics will be when you started using the application as rotki takes balance snapshots daily. We also plan to provide analytics on data before that in a best effort basis as detailed in `this <https://github.com/rotki/rotki/issues/1379>`_ issue.
@@ -893,6 +1000,32 @@ Finally you can see a piechart of the distribution of your netvalue across all o
    :alt: Distribution of networth by asset
    :align: center
 
+
+Gitcoin Grants
+***************
+
+As a premium user you can also keep track of your Gitcoin grants and generate reports for them.
+
+.. image:: images/gitcoin_grants.png
+   :alt: Gitcoin grant events
+   :align: center
+
+You need to first find the id ofthe grant you are interested in. When you visit the grant, the id is what comes after the ``grants/`` part of the url. For example for rotki (https://gitcoin.co/grants/149/rotki) the id is ``149``.
+
+ You type the grant id, select a period you are interested in and press the fetch button to retrieve the events for this
+period. After the the retrieval completes you should be able to see the list of the events for this Grant.
+
+.. image:: images/gitcoin_grants_report.png
+   :alt: Gitcoin grant events
+   :align: center
+
+With the events retrieved you can also generate reports for specific periods. In these reports you can see a breakdown
+of the assets received for the specified grant over the selected period.
+
+.. warning::
+    The report depends on the already fetched events. If any events are missing during the selected report period
+    then they will not be included in the generated report.
+
 .. _set-the-backend-s-arguments:
 
 Set the backend's arguments
@@ -906,8 +1039,10 @@ Create or edit if it exists a file with the name ``rotki_config.json`` in the sa
       "loglevel": "debug",
       "logfromothermodules": false,
       "log-dir": "/path/to/dir",
-      "data-dir": "/path/to/dir"
-      "sleep-secs": 20
+      "data-dir": "/path/to/dir",
+      "sleep-secs": 20,
+      "max_size_in_mb_all_logs": 500,
+      "max_logfiles_num": 2
   }
 
 The above arguments are:
@@ -917,6 +1052,8 @@ The above arguments are:
 - **log-dir**: The name for the log directory.
 - **data-dir**: The path to the directory where all rotki data will be saved. Default depends on the user's OS. Check next section
 - **sleep-secs**: This is the amount of seconds that the main loop of rotki sleeps for. Default is 20.
+- **max_size_in_mb_all_logs**: This is the maximum size in megabytes all logs of a single run can have
+- **max_logfiles_num**: This is the maximum number of backup (rotated) logs a single run can have.
 
 
 .. _rotki_data_directory:

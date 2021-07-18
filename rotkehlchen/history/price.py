@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, List, Optional
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.globaldb.manual_price_oracle import ManualPriceOracle
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -16,7 +17,7 @@ from rotkehlchen.utils.misc import timestamp_to_date
 from .typing import HistoricalPriceOracle, HistoricalPriceOracleInstance
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures import AssetBalance, Balance
+    from rotkehlchen.accounting.structures import Balance
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
@@ -91,29 +92,11 @@ def get_balance_asset_rate_at_time_zero_if_error(
     return usd_rate / price
 
 
-def get_asset_balance_rate_at_time_zero_if_error(
-        asset_balance: 'AssetBalance',
-        timestamp: Timestamp,
-        location_hint: str,
-        msg_aggregator: MessagesAggregator,
-) -> FVal:
-    """How many of asset, 1 unit of balance is worth at the given timestamp
-
-    If an error occurs at query we return an asset rate of zero
-    """
-    return get_balance_asset_rate_at_time_zero_if_error(
-        balance=asset_balance.balance,
-        asset=asset_balance.asset,
-        timestamp=timestamp,
-        location_hint=location_hint,
-        msg_aggregator=msg_aggregator,
-    )
-
-
 class PriceHistorian():
     __instance: Optional['PriceHistorian'] = None
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
+    _manual: ManualPriceOracle
     _oracles: Optional[List[HistoricalPriceOracle]] = None
     _oracle_instances: Optional[List[HistoricalPriceOracleInstance]] = None
 
@@ -133,6 +116,7 @@ class PriceHistorian():
         PriceHistorian.__instance = object.__new__(cls)
         PriceHistorian._cryptocompare = cryptocompare
         PriceHistorian._coingecko = coingecko
+        PriceHistorian._manual = ManualPriceOracle()
 
         return PriceHistorian.__instance
 
@@ -217,7 +201,6 @@ class PriceHistorian():
                     timestamp=timestamp,
                 )
                 continue
-
             if price != Price(ZERO):
                 log.debug(
                     f'Historical price oracle {oracle} got price',

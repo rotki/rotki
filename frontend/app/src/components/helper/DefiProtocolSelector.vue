@@ -4,7 +4,7 @@
       <v-autocomplete
         :value="value"
         :search-input.sync="search"
-        :items="supportedProtocols"
+        :items="protocols"
         hide-details
         hide-selected
         hide-no-data
@@ -42,7 +42,8 @@ import {
   DEFI_AAVE,
   DEFI_COMPOUND,
   DEFI_MAKERDAO,
-  DEFI_YEARN_VAULTS
+  DEFI_YEARN_VAULTS,
+  DEFI_YEARN_VAULTS_V2
 } from '@/services/defi/consts';
 import { SupportedDefiProtocols } from '@/services/defi/types';
 
@@ -58,8 +59,17 @@ export interface Protocol {
 export default class DefiProtocolSelector extends Vue {
   @Prop({ required: true })
   value!: SupportedDefiProtocols | null;
+  @Prop({ required: false, type: Boolean, default: false })
+  liabilities!: boolean;
 
-  readonly supportedProtocols: Protocol[] = [
+  get protocols(): Protocol[] {
+    if (this.liabilities) {
+      return this.dual;
+    }
+    return [...this.dual, ...this.lending];
+  }
+
+  private readonly dual: Protocol[] = [
     {
       identifier: DEFI_AAVE,
       name: 'Aave',
@@ -74,10 +84,18 @@ export default class DefiProtocolSelector extends Vue {
       identifier: DEFI_COMPOUND,
       name: 'Compound',
       icon: require('@/assets/images/defi/compound.svg')
-    },
+    }
+  ];
+
+  private readonly lending: Protocol[] = [
     {
       identifier: DEFI_YEARN_VAULTS,
       name: 'yearn.finance',
+      icon: require('@/assets/images/defi/yearn_vaults.svg')
+    },
+    {
+      identifier: DEFI_YEARN_VAULTS_V2,
+      name: 'yearn.finance v2',
       icon: require('@/assets/images/defi/yearn_vaults.svg')
     }
   ];

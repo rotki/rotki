@@ -28,6 +28,8 @@ from rotkehlchen.db.upgrades.v22_v23 import upgrade_v22_to_v23
 from rotkehlchen.db.upgrades.v23_v24 import upgrade_v23_to_v24
 from rotkehlchen.db.upgrades.v24_v25 import upgrade_v24_to_v25
 from rotkehlchen.db.upgrades.v25_v26 import upgrade_v25_to_v26
+from rotkehlchen.db.upgrades.v26_v27 import upgrade_v26_to_v27
+from rotkehlchen.db.upgrades.v27_v28 import upgrade_v27_to_v28
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
@@ -184,6 +186,14 @@ UPGRADES_LIST = [
         from_version=25,
         function=upgrade_v25_to_v26,
     ),
+    UpgradeRecord(
+        from_version=26,
+        function=upgrade_v26_to_v27,
+    ),
+    UpgradeRecord(
+        from_version=27,
+        function=upgrade_v27_to_v28,
+    ),
 ]
 
 
@@ -262,7 +272,7 @@ class DBUpgradeManager():
                 raise DBUpgradeError(error_message) from e
 
             # for some upgrades even for success keep the backup of the previous db
-            if upgrade.from_version in (24, 25):
+            if upgrade.from_version >= 24:
                 shutil.copyfile(
                     tmp_db_path,
                     os.path.join(self.db.user_data_dir, tmp_db_filename),

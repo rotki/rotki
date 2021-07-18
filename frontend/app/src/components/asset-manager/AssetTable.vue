@@ -119,7 +119,6 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { ManagedAsset } from '@/components/asset-manager/types';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -127,7 +126,7 @@ import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { capitalize } from '@/filters';
-import { EthereumToken } from '@/services/assets/types';
+import { EthereumToken, ManagedAsset } from '@/services/assets/types';
 import { Nullable } from '@/types';
 import { compareAssets } from '@/utils/assets';
 

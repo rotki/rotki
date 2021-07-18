@@ -14,14 +14,17 @@
             <v-icon color="primary">mdi-refresh</v-icon>
           </v-btn>
         </template>
-        <span v-text="$t('tag_creator.refresh_tooltip')" />
+        <span>
+          {{ $t('tag_creator.refresh_tooltip') }}
+        </span>
       </v-tooltip>
     </v-row>
-    <v-row no-gutters align="center">
+    <v-row no-gutters align="center" class="mt-4">
       <v-col cols="12">
         <v-row no-gutters>
           <v-col cols="12">
             <v-text-field
+              outlined
               class="tag_creator__name"
               :label="$t('tag_creator.labels.name')"
               :rules="rules"
@@ -34,6 +37,7 @@
         <v-row no-gutters>
           <v-col cols="12">
             <v-text-field
+              outlined
               class="tag_creator__description"
               :value="tag.description"
               :label="$t('tag_creator.labels.description')"
@@ -47,10 +51,9 @@
       <v-col cols="6">
         <v-row>
           <v-col cols="12">
-            <div
-              class="text-h6 text-center"
-              v-text="$t('tag_creator.labels.foreground')"
-            />
+            <div class="text-h6 text-center">
+              {{ $t('tag_creator.labels.foreground') }}
+            </div>
           </v-col>
         </v-row>
         <v-row no-gutters>
@@ -71,10 +74,9 @@
       <v-col cols="6">
         <v-row>
           <v-col cols="12">
-            <div
-              class="text-h6 text-center"
-              v-text="$t('tag_creator.labels.background')"
-            />
+            <div class="text-h6 text-center">
+              {{ $t('tag_creator.labels.background') }}
+            </div>
           </v-col>
         </v-row>
         <v-row no-gutters>
@@ -93,7 +95,7 @@
         </v-row>
       </v-col>
     </v-row>
-    <v-row>
+    <v-row class="mb-2">
       <v-col cols="12">
         <v-btn
           class="tag-creator__buttons__save"
@@ -102,15 +104,12 @@
           color="primary"
           :disabled="!valid"
           @click="save"
-          v-text="$t('tag_creator.buttons.save')"
-        />
-        <v-btn
-          v-if="editMode"
-          width="100"
-          depressed
-          @click="cancel"
-          v-text="$t('tag_creator.buttons.cancel')"
-        />
+        >
+          {{ $t('tag_creator.buttons.save') }}
+        </v-btn>
+        <v-btn v-if="editMode" width="100" depressed @click="cancel">
+          {{ $t('tag_creator.buttons.cancel') }}
+        </v-btn>
       </v-col>
     </v-row>
   </v-form>

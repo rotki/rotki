@@ -22,6 +22,7 @@ import {
   Version
 } from '@/store/types';
 import { isLoading } from '@/store/utils';
+import { Nullable } from '@/types';
 
 Vue.use(Vuex);
 
@@ -101,21 +102,20 @@ const store: StoreOptions<RotkehlchenState> = {
         clearInterval(intervalId);
       }
 
-      function connectToDefaultBackend() {
-        const serverUrl = window.interop?.serverUrl();
-        const defaultServerUrl = process.env.VUE_APP_BACKEND_URL;
-        if (serverUrl && serverUrl !== defaultServerUrl) {
-          api.setup(serverUrl);
+      function updateApi(payload?: Nullable<string>) {
+        const interopServerUrl = window.interop?.serverUrl();
+        let backend = process.env.VUE_APP_BACKEND_URL!;
+        if (payload) {
+          backend = payload;
+        } else if (interopServerUrl) {
+          backend = interopServerUrl;
         }
+        api.setup(backend);
       }
 
       const attemptConnect = async function () {
         try {
-          if (!payload) {
-            connectToDefaultBackend();
-          } else {
-            api.setup(payload);
-          }
+          updateApi(payload);
 
           const connected = await api.ping();
           if (connected) {

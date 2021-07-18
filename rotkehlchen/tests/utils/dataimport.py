@@ -1,12 +1,12 @@
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.db.ledger_actions import DBLedgerActions
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_UNI, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_DOT, A_ETH, A_EUR, A_UNI, A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.tests.utils.constants import A_CRO, A_DOT, A_EUR, A_MCO, A_XMR
+from rotkehlchen.tests.utils.constants import A_CRO, A_MCO, A_XMR
 from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
@@ -481,7 +481,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
 
     expected_actions = [LedgerAction(
         identifier=3,
-        timestamp=Timestamp(1565888460),
+        timestamp=Timestamp(1565888464),
         action_type=LedgerActionType.INCOME,
         location=Location.NEXO,
         amount=AssetAmount(FVal('22.5653042')),
@@ -492,7 +492,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
         notes='Dividend from Nexo',
     ), LedgerAction(
         identifier=2,
-        timestamp=Timestamp(1597492860),
+        timestamp=Timestamp(1597492915),
         action_type=LedgerActionType.INCOME,
         location=Location.NEXO,
         amount=AssetAmount(FVal('10.3585507')),
@@ -503,7 +503,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
         notes='Dividend from Nexo',
     ), LedgerAction(
         identifier=1,
-        timestamp=Timestamp(1614993600),
+        timestamp=Timestamp(1614993620),
         action_type=LedgerActionType.INCOME,
         location=Location.NEXO,
         amount=AssetAmount(FVal('1')),
@@ -517,7 +517,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
     expected_movements = [AssetMovement(
         location=Location.NEXO,
         category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1556116920),
+        timestamp=Timestamp(1556116964),
         address=None,
         transaction_id=None,
         asset=A_BTC,
@@ -528,7 +528,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
     ), AssetMovement(
         location=Location.NEXO,
         category=AssetMovementCategory.WITHDRAWAL,
-        timestamp=Timestamp(1556122680),
+        timestamp=Timestamp(1556122699),
         address=None,
         transaction_id=None,
         asset=A_BTC,
@@ -539,7 +539,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
     ), AssetMovement(
         location=Location.NEXO,
         category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1558720200),
+        timestamp=Timestamp(1558720210),
         address=None,
         transaction_id=None,
         asset=symbol_to_asset_or_token('NEXO'),
@@ -550,7 +550,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
     ), AssetMovement(
         location=Location.NEXO,
         category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1565912820),
+        timestamp=Timestamp(1565912821),
         address=None,
         transaction_id=None,
         asset=A_EUR,
@@ -561,7 +561,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
     ), AssetMovement(
         location=Location.NEXO,
         category=AssetMovementCategory.WITHDRAWAL,
-        timestamp=Timestamp(1608131340),
+        timestamp=Timestamp(1608131364),
         address=None,
         transaction_id=None,
         asset=A_EUR,
@@ -583,7 +583,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
     ), AssetMovement(
         location=Location.NEXO,
         category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1615024260),
+        timestamp=Timestamp(1615024314),
         address=None,
         transaction_id=None,
         asset=symbol_to_asset_or_token('USDC'),
@@ -592,5 +592,6 @@ def assert_nexo_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         link='NXT0000000001',
     )]
+
     assert ledger_actions == expected_actions
     assert asset_movements == expected_movements

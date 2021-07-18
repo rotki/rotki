@@ -9,7 +9,7 @@ import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.converters import asset_from_bitstamp
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD
 from rotkehlchen.errors import RemoteError, UnknownAsset
 from rotkehlchen.exchanges.bitstamp import (
     API_ERR_AUTH_NONCE_CODE,
@@ -27,7 +27,7 @@ from rotkehlchen.exchanges.data_structures import (
     TradeType,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_EUR, A_GBP
+from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Fee, Location, Timestamp
 from rotkehlchen.utils.serialization import jsonloads_list

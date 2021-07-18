@@ -6,13 +6,13 @@ from typing import Any, Dict, Iterator, List, TextIO, Tuple
 
 import requests
 
-from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import (
     A_1INCH,
     A_COMBO,
     A_CORN,
     A_CRV,
+    A_CVX,
     A_GRAIN,
     A_LDO,
     A_TORN,
@@ -73,7 +73,7 @@ AIRDROPS = {
     ),
     'convex': (
         'https://gist.githubusercontent.com/LefterisJP/fd0ebccbc645f7de2b142907bd207363/raw/0613689dd5212b81788ed1a108c751b29b2ce93a/convex_airdrop.csv',  # noqa: E501
-        EthereumToken('0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B'),
+        A_CVX,
         'https://www.convexfinance.com/',
     ),
 }

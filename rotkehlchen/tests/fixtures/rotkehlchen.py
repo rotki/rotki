@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
+from rotkehlchen.args import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
@@ -50,6 +51,12 @@ def fixture_start_with_valid_premium():
     return False
 
 
+@pytest.fixture(name='legacy_messages_via_websockets')
+def fixture_legacy_messages_via_websockets():
+    """Decide whether rotki notifier will be instantiated for message aggregator in tests"""
+    return False
+
+
 @pytest.fixture(name='rotki_premium_credentials')
 def fixture_rotki_premium_credentials() -> PremiumCredentials:
     return PremiumCredentials(
@@ -69,12 +76,16 @@ def fixture_cli_args(data_dir, ethrpc_endpoint):
         'logtarget',
         'loglevel',
         'logfromothermodules',
+        'max_size_in_mb_all_logs',
+        'max_logfiles_num',
     ])
     args.loglevel = 'debug'
     args.logfromothermodules = False
     args.sleep_secs = 60
     args.data_dir = data_dir
     args.ethrpc_endpoint = ethrpc_endpoint
+    args.max_size_in_mb_all_logs = DEFAULT_MAX_LOG_SIZE_IN_MB
+    args.max_logfiles_num = DEFAULT_MAX_LOG_BACKUP_FILES
     return args
 
 
@@ -102,6 +113,7 @@ def initialize_mock_rotkehlchen_instance(
         ksm_rpc_endpoint,
         aave_use_graph,
         max_tasks_num,
+        legacy_messages_via_websockets,
 ):
     if not start_with_logged_in_user:
         return
@@ -149,6 +161,9 @@ def initialize_mock_rotkehlchen_instance(
     if start_with_valid_premium:
         rotki.premium = Premium(rotki_premium_credentials)
         rotki.premium_sync_manager.premium = rotki.premium
+
+    if legacy_messages_via_websockets is False:
+        rotki.msg_aggregator.rotki_notifier = None
 
     # After unlocking when all objects are created we need to also include
     # customized fixtures that may have been set by the tests
@@ -198,7 +213,8 @@ def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, global
 @pytest.fixture(name='rotkehlchen_api_server')
 def fixture_rotkehlchen_api_server(
         uninitialized_rotkehlchen,
-        api_port,
+        rest_api_port,
+        websockets_api_port,
         start_with_logged_in_user,
         start_with_valid_premium,
         db_password,
@@ -221,10 +237,15 @@ def fixture_rotkehlchen_api_server(
         ksm_rpc_endpoint,
         aave_use_graph,
         max_tasks_num,
+        legacy_messages_via_websockets,
 ):
     """A partially mocked rotkehlchen server instance"""
 
-    api_server = create_api_server(rotki=uninitialized_rotkehlchen, port_number=api_port)
+    api_server = create_api_server(
+        rotki=uninitialized_rotkehlchen,
+        rest_port_number=rest_api_port,
+        websockets_port_number=websockets_api_port,
+    )
 
     initialize_mock_rotkehlchen_instance(
         rotki=api_server.rest_api.rotkehlchen,
@@ -250,6 +271,7 @@ def fixture_rotkehlchen_api_server(
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         aave_use_graph=aave_use_graph,
         max_tasks_num=max_tasks_num,
+        legacy_messages_via_websockets=legacy_messages_via_websockets,
     )
     yield api_server
     api_server.stop()
@@ -280,6 +302,7 @@ def rotkehlchen_instance(
         ksm_rpc_endpoint,
         aave_use_graph,
         max_tasks_num,
+        legacy_messages_via_websockets,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -307,6 +330,7 @@ def rotkehlchen_instance(
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         aave_use_graph=aave_use_graph,
         max_tasks_num=max_tasks_num,
+        legacy_messages_via_websockets=legacy_messages_via_websockets,
     )
     return uninitialized_rotkehlchen
 

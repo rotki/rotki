@@ -3,7 +3,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.constants.assets import A_ETH, A_USD
+from rotkehlchen.constants.assets import A_ETH, A_EUR, A_KRW, A_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -11,7 +11,6 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_response_with_result,
 )
-from rotkehlchen.tests.utils.constants import A_EUR, A_KRW
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])

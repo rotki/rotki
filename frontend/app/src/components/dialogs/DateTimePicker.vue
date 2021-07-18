@@ -15,6 +15,7 @@
           :value="value"
           :label="label"
           :hint="hint"
+          :disabled="disabled"
           prepend-inner-icon="mdi-calendar"
           :persistent-hint="persistentHint"
           :rules="allRules"
@@ -45,7 +46,7 @@
 </template>
 
 <script lang="ts">
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 
 @Component({})
@@ -68,6 +69,8 @@ export default class DateTimePicker extends Vue {
   seconds!: boolean;
   @Prop({ required: false, default: false, type: Boolean })
   outlined!: boolean;
+  @Prop({ required: false, default: false, type: Boolean })
+  disabled!: boolean;
 
   private date = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))?$/;
   private withSeconds = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d)(:[0-5]\d))$/;
@@ -85,7 +88,7 @@ export default class DateTimePicker extends Vue {
     );
   }
 
-  timeModel: string = moment().format(this.timeFormat);
+  timeModel: string = dayjs().format(this.timeFormat);
   dateModel: string = '';
 
   maxDate: string = '';
@@ -107,13 +110,13 @@ export default class DateTimePicker extends Vue {
 
   private setMaxTime() {
     if (this.limitNow) {
-      this.maxTime = moment().format(this.timeFormat);
+      this.maxTime = dayjs().format(this.timeFormat);
     }
   }
 
   private setMaxDate() {
     if (this.limitNow) {
-      this.maxDate = moment().format(DateTimePicker.dateFormat);
+      this.maxDate = dayjs().format(DateTimePicker.dateFormat);
     }
   }
 
@@ -185,7 +188,7 @@ export default class DateTimePicker extends Vue {
   }
 
   setNow() {
-    const now = moment();
+    const now = dayjs();
     this.timeModel = now.format(this.timeFormat);
     this.dateModel = now.format(DateTimePicker.dateFormat);
     this.updateActualDate();

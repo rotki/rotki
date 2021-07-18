@@ -12,7 +12,7 @@ from rotkehlchen.assets.converters import (
     UNSUPPORTED_BITFINEX_ASSETS,
     asset_from_bitfinex,
 )
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USD, A_USDT, A_WBTC
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD, A_USDT, A_WBTC
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.bitfinex import (
     API_ERR_AUTH_NONCE_CODE,
@@ -24,7 +24,7 @@ from rotkehlchen.exchanges.bitfinex import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_EUR, A_GLM, A_NEO
+from rotkehlchen.tests.utils.constants import A_GLM, A_NEO
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Fee, Location, Price, Timestamp
 

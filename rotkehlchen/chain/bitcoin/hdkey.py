@@ -29,12 +29,6 @@ class PrefixParsingResult(NamedTuple):
     hint: str
 
 
-class BTCAddressType(Enum):
-    BASE58 = 1
-    BECH32 = 2
-    P2SH_P2WPKH = 3
-
-
 class XpubType(Enum):
     P2PKH = 1          # lecacy/xpub
     P2SH_P2WPKH = 2    # segwit/ypyb
@@ -139,7 +133,6 @@ class HDKey():
     chain_code: Optional[bytes]
     fingerprint: bytes
     xpub: Optional[str]
-    xpriv: Optional[str]
     pubkey: PublicKey
     privkey: Optional[PrivateKey]
     hint: str
@@ -200,7 +193,6 @@ class HDKey():
             parent=None,
             chain_code=xpub_bytes[13:45],
             fingerprint=hash160(pubkey.format(COMPRESSED_PUBKEY))[:4],
-            xpriv=None,
             xpub=xpub,
             privkey=None,
             pubkey=pubkey,
@@ -255,7 +247,6 @@ class HDKey():
             parent=self,
             chain_code=xpub_bytes[13:45],
             fingerprint=hash160(pubkey)[:4],
-            xpriv=None,
             xpub=child_xpub,
             privkey=None,
             pubkey=PublicKey(pubkey),
@@ -404,17 +395,6 @@ class HDKey():
             child_pubkey, index=index, chain_code=chain_code,
         )
         return self._child_from_xpub(index=index, child_xpub=child_xpub)
-
-    def generate_specific_address(self, addr_type: BTCAddressType) -> str:
-        if addr_type == BTCAddressType.BASE58:
-            return pubkey_to_base58_address(self.pubkey.format(COMPRESSED_PUBKEY))
-        if addr_type == BTCAddressType.P2SH_P2WPKH:
-            return pubkey_to_p2sh_p2wpkh_address(self.pubkey.format(COMPRESSED_PUBKEY))
-        # else
-        return pubkey_to_bech32_address(
-            data=self.pubkey.format(COMPRESSED_PUBKEY),
-            witver=0,
-        )
 
     def address(self) -> BTCAddress:
         if self.hint == 'xpub':

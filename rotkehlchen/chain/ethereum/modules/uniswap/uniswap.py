@@ -1,14 +1,13 @@
 import logging
 from collections import defaultdict
 from datetime import datetime, time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.unknown_asset import UnknownEthereumToken
-from rotkehlchen.assets.utils import get_ethereum_token
+from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
@@ -36,20 +35,20 @@ from .graph import (
     LIQUIDITY_POSITIONS_QUERY,
     MINTS_QUERY,
     SWAPS_QUERY,
-    V3_SWAPS_QUERY,
     TOKEN_DAY_DATAS_QUERY,
+    V3_SWAPS_QUERY,
 )
 from .typing import (
     UNISWAP_EVENTS_PREFIX,
     UNISWAP_TRADES_PREFIX,
-    AddressBalances,
     AddressEvents,
     AddressEventsBalances,
+    AddressToLPBalances,
     AddressTrades,
     AggregatedAmount,
-    AssetPrice,
-    DDAddressBalances,
+    AssetToPrice,
     DDAddressEvents,
+    DDAddressToLPBalances,
     EventType,
     LiquidityPool,
     LiquidityPoolAsset,
@@ -73,7 +72,7 @@ def add_trades_from_swaps(
         both_in: bool,
         quote_assets: Sequence[Tuple[Any, ...]],
         token_amount: AssetAmount,
-        token: Union[EthereumToken, UnknownEthereumToken],
+        token: EthereumToken,
         trade_index: int,
 ) -> List[AMMTrade]:
     bought_amount = AssetAmount(token_amount / 2) if both_in else token_amount
@@ -208,9 +207,9 @@ class Uniswap(EthereumModule):
 
         Each liquidity position is converted into a <LiquidityPool>.
         """
-        address_balances: DDAddressBalances = defaultdict(list)
+        address_balances: DDAddressToLPBalances = defaultdict(list)
         known_assets: Set[EthereumToken] = set()
-        unknown_assets: Set[UnknownEthereumToken] = set()
+        unknown_assets: Set[EthereumToken] = set()
 
         addresses_lower = [address.lower() for address in addresses]
         querystr = format_query_indentation(LIQUIDITY_POSITIONS_QUERY.format())
@@ -263,7 +262,6 @@ class Uniswap(EthereumModule):
                 liquidity_pool_assets = []
 
                 for token in token0, token1:
-                    # Get the token <EthereumToken> or <UnknownEthereumToken>
                     try:
                         deserialized_eth_address = deserialize_ethereum_address(token['id'])
                     except DeserializationError as e:
@@ -274,17 +272,16 @@ class Uniswap(EthereumModule):
                         log.error(msg)
                         raise RemoteError(msg) from e
 
-                    asset = get_ethereum_token(
+                    asset = get_or_create_ethereum_token(
+                        userdb=self.database,
                         symbol=token['symbol'],
                         ethereum_address=deserialized_eth_address,
                         name=token['name'],
                         decimals=int(token['decimals']),
                     )
-
-                    # Classify the asset either as known or unknown
-                    if isinstance(asset, EthereumToken):
+                    if asset.has_oracle():
                         known_assets.add(asset)
-                    elif isinstance(asset, UnknownEthereumToken):
+                    else:
                         unknown_assets.add(asset)
 
                     # Estimate the underlying asset total_amount
@@ -329,12 +326,13 @@ class Uniswap(EthereumModule):
         """Get the addresses' pools data via chain queries.
         """
         known_assets: Set[EthereumToken] = set()
-        unknown_assets: Set[UnknownEthereumToken] = set()
+        unknown_assets: Set[EthereumToken] = set()
         lp_addresses = get_latest_lp_addresses(self.data_directory)
 
         address_mapping = {}
         for address in addresses:
             pool_balances = uniswap_lp_token_balances(
+                userdb=self.database,
                 address=address,
                 ethereum=self.ethereum,
                 lp_addresses=lp_addresses,
@@ -354,14 +352,14 @@ class Uniswap(EthereumModule):
     @staticmethod
     def _get_known_asset_price(
             known_assets: Set[EthereumToken],
-            unknown_assets: Set[UnknownEthereumToken],
-    ) -> AssetPrice:
+            unknown_assets: Set[EthereumToken],
+    ) -> AssetToPrice:
         """Get the tokens prices via Inquirer
 
         Given an asset, if `find_usd_price()` returns zero, it will be added
         into `unknown_assets`.
         """
-        asset_price: AssetPrice = {}
+        asset_price: AssetToPrice = {}
 
         for known_asset in known_assets:
             asset_usd_price = Inquirer().find_usd_price(known_asset)
@@ -369,13 +367,7 @@ class Uniswap(EthereumModule):
             if asset_usd_price != Price(ZERO):
                 asset_price[known_asset.ethereum_address] = asset_usd_price
             else:
-                unknown_asset = UnknownEthereumToken(
-                    ethereum_address=known_asset.ethereum_address,
-                    symbol=known_asset.identifier,
-                    name=known_asset.name,
-                    decimals=known_asset.decimals,
-                )
-                unknown_assets.add(unknown_asset)
+                unknown_assets.add(known_asset)
 
         return asset_price
 
@@ -533,7 +525,7 @@ class Uniswap(EthereumModule):
         # TODO: when this endpoint is called with a specific time range,
         # getting the balances and underlying tokens within that time range
         # requires an archive node. Feature pending to be developed.
-        address_balances: AddressBalances = {}  # Empty when specific time range
+        address_balances: AddressToLPBalances = {}  # Empty when specific time range
         if from_timestamp == Timestamp(0):
             address_balances = self.get_balances(addresses)
 
@@ -616,13 +608,15 @@ class Uniswap(EthereumModule):
                     log.error(msg)
                     raise RemoteError(msg) from e
 
-                token0 = get_ethereum_token(
+                token0 = get_or_create_ethereum_token(
+                    userdb=self.database,
                     symbol=token0_['symbol'],
                     ethereum_address=token0_deserialized,
                     name=token0_['name'],
                     decimals=token0_['decimals'],
                 )
-                token1 = get_ethereum_token(
+                token1 = get_or_create_ethereum_token(
+                    userdb=self.database,
                     symbol=token1_['symbol'],
                     ethereum_address=token1_deserialized,
                     name=token1_['name'],
@@ -801,14 +795,14 @@ class Uniswap(EthereumModule):
             trades.extend(self._get_trades_graph_v2_for_address(address, start_ts, end_ts))
         except RemoteError as e:
             log.error(
-                f'Error querying uniswap v2 trades using graph for address {address} ',
+                f'Error querying uniswap v2 trades using graph for address {address} '
                 f'between {start_ts} and {end_ts}. {str(e)}',
             )
         try:
             trades.extend(self._get_trades_graph_v3_for_address(address, start_ts, end_ts))
         except RemoteError as e:
             log.error(
-                f'Error querying uniswap v3 trades using graph for address {address} ',
+                f'Error querying uniswap v3 trades using graph for address {address} '
                 f'between {start_ts} and {end_ts}. {str(e)}',
             )
         return trades
@@ -865,20 +859,9 @@ class Uniswap(EthereumModule):
                 self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
                 raise
 
-            # Combine the two list of the query
-            result_data = result['swaps_from']
-            result_data.extend(result['swaps_to'])
-
-            # Store ids of swaps to avoid possible duplicates
-            fetched_ids = set()
-
-            for entry in result_data:
+            for entry in result['swaps']:
                 swaps = []
                 for swap in entry['transaction']['swaps']:
-                    if swap['id'] in fetched_ids:
-                        continue
-                    fetched_ids.add(swap['id'])
-
                     timestamp = swap['timestamp']
                     swap_token0 = swap['pair']['token0']
                     swap_token1 = swap['pair']['token1']
@@ -897,13 +880,15 @@ class Uniswap(EthereumModule):
                         log.error(msg)
                         continue
 
-                    token0 = get_ethereum_token(
+                    token0 = get_or_create_ethereum_token(
+                        userdb=self.database,
                         symbol=swap_token0['symbol'],
                         ethereum_address=token0_deserialized,
                         name=swap_token0['name'],
                         decimals=swap_token0['decimals'],
                     )
-                    token1 = get_ethereum_token(
+                    token1 = get_or_create_ethereum_token(
+                        userdb=self.database,
                         symbol=swap_token1['symbol'],
                         ethereum_address=token1_deserialized,
                         name=swap_token1['name'],
@@ -947,7 +932,7 @@ class Uniswap(EthereumModule):
                 trades.extend(self._tx_swaps_to_trades(swaps))
 
             # Check whether an extra request is needed
-            if len(result_data) < GRAPH_QUERY_LIMIT:
+            if len(result['swaps']) < GRAPH_QUERY_LIMIT:
                 break
 
             # Update pagination step
@@ -1031,13 +1016,15 @@ class Uniswap(EthereumModule):
                         log.error(msg)
                         continue
 
-                    token0 = get_ethereum_token(
+                    token0 = get_or_create_ethereum_token(
+                        userdb=self.database,
                         symbol=swap_token0['symbol'],
                         ethereum_address=token0_deserialized,
                         name=swap_token0['name'],
                         decimals=swap_token0['decimals'],
                     )
-                    token1 = get_ethereum_token(
+                    token1 = get_or_create_ethereum_token(
+                        userdb=self.database,
                         symbol=swap_token1['symbol'],
                         ethereum_address=token1_deserialized,
                         name=swap_token1['name'],
@@ -1098,22 +1085,18 @@ class Uniswap(EthereumModule):
 
     def _get_unknown_asset_price_graph(
             self,
-            unknown_assets: Set[UnknownEthereumToken],
-    ) -> AssetPrice:
+            unknown_assets: Set[EthereumToken],
+    ) -> AssetToPrice:
         """Get today's tokens prices via the Uniswap subgraph
 
         Uniswap provides a token price every day at 00:00:00 UTC
         This function can raise RemoteError
         """
-        asset_price: AssetPrice = {}
+        asset_price: AssetToPrice = {}
 
         unknown_assets_addresses = (
-            [asset.ethereum_address for asset in unknown_assets]
+            [asset.ethereum_address.lower() for asset in unknown_assets]
         )
-        unknown_assets_addresses_lower = (
-            [address.lower() for address in unknown_assets_addresses]
-        )
-
         querystr = format_query_indentation(TOKEN_DAY_DATAS_QUERY.format())
         today_epoch = int(
             datetime.combine(datetime.utcnow().date(), time.min).timestamp(),
@@ -1127,7 +1110,7 @@ class Uniswap(EthereumModule):
         param_values = {
             'limit': GRAPH_QUERY_LIMIT,
             'offset': 0,
-            'token_ids': unknown_assets_addresses_lower,
+            'token_ids': unknown_assets_addresses,
             'datetime': today_epoch,
         }
         while True:
@@ -1169,9 +1152,9 @@ class Uniswap(EthereumModule):
 
     @staticmethod
     def _update_assets_prices_in_address_balances(
-            address_balances: AddressBalances,
-            known_asset_price: AssetPrice,
-            unknown_asset_price: AssetPrice,
+            address_balances: AddressToLPBalances,
+            known_asset_price: AssetToPrice,
+            unknown_asset_price: AssetToPrice,
     ) -> None:
         """Update the pools underlying assets prices in USD (prices obtained
         via Inquirer and the Uniswap subgraph)
@@ -1202,7 +1185,7 @@ class Uniswap(EthereumModule):
     def get_balances(
         self,
         addresses: List[ChecksumEthAddress],
-    ) -> AddressBalances:
+    ) -> AddressToLPBalances:
         """Get the addresses' balances in the Uniswap protocol
 
         Premium users can request balances either via the Uniswap subgraph or
@@ -1221,7 +1204,7 @@ class Uniswap(EthereumModule):
             unknown_assets=unknown_assets,
         )
 
-        unknown_asset_price: AssetPrice = {}
+        unknown_asset_price: AssetToPrice = {}
         if self.premium:
             unknown_asset_price = self._get_unknown_asset_price_graph(unknown_assets=unknown_assets)  # noqa:E501
 

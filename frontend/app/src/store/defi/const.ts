@@ -41,6 +41,7 @@ const DYDX = 'dYdX';
 const MELON = 'Melon';
 const ENZYME = 'Enzyme';
 export const YEARN_FINANCE_VAULTS = 'yearn.finance • Vaults';
+export const YEARN_FINANCE_VAULTS_V2 = 'yearn.finance • Vaults (v2)';
 const YEARN_TOKEN_VAULTS = 'Yearn Token Vaults';
 const KEEPERDAO = 'KeeperDAO';
 const MSTABLE = 'mStable';
@@ -99,6 +100,9 @@ const REFLEXER = 'Reflexer';
 const COMETH_TUBE = 'Cometh • Tube';
 const COMETH_STAKING = 'Cometh • Staking';
 const LIVEPEER = 'Livepeer';
+const COZY = 'Cozy';
+const COZY_YEARN = 'Cozy • Yearn';
+const COZY_COMPOUND = 'Cozy • Compound';
 
 export const OVERVIEW_PROTOCOLS = [
   YGOVFINANCEV1,
@@ -129,6 +133,7 @@ export const OVERVIEW_PROTOCOLS = [
   MELON,
   ENZYME,
   YEARN_FINANCE_VAULTS,
+  YEARN_FINANCE_VAULTS_V2,
   YEARN_TOKEN_VAULTS,
   KEEPERDAO,
   MSTABLE,
@@ -194,7 +199,10 @@ export const OVERVIEW_PROTOCOLS = [
   REFLEXER,
   COMETH_TUBE,
   COMETH_STAKING,
-  LIVEPEER
+  LIVEPEER,
+  COZY,
+  COZY_COMPOUND,
+  COZY_YEARN
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
@@ -276,6 +284,7 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [UNISWAPV1]: 'uniswap.svg',
   [UNISWAPV2]: 'uniswap.svg',
   [YEARN_FINANCE_VAULTS]: 'yearn_vaults.svg',
+  [YEARN_FINANCE_VAULTS_V2]: 'yearn_vaults.svg',
   [YEARN_TOKEN_VAULTS]: 'yearn_vaults.svg',
   [MAKERDAO]: 'makerdao.svg',
   [AAVE_V2_VARIABLE_DEBT]: 'aave.svg',
@@ -291,7 +300,10 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [REFLEXER]: 'reflexer.png',
   [COMETH_TUBE]: 'cometh.jpg',
   [COMETH_STAKING]: 'cometh.jpg',
-  [LIVEPEER]: 'livepeer.svg'
+  [LIVEPEER]: 'livepeer.svg',
+  [COZY]: 'cozy.svg',
+  [COZY_COMPOUND]: 'cozy.svg',
+  [COZY_YEARN]: 'cozy.svg'
 };
 
 export function getProtcolIcon(name: OverviewDefiProtocol): string {

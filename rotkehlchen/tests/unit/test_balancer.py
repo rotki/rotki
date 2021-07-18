@@ -5,7 +5,7 @@ from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_REN, A_SNX, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.api.test_balancer import BALANCER_TEST_ADDR2_EXPECTED_TRADES
+from rotkehlchen.tests.api.test_balancer import get_balancer_test_addr2_expected_trades
 from rotkehlchen.tests.utils.constants import A_AMPL
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
 
@@ -177,11 +177,12 @@ def test_get_trades_from_tx_swaps_3():
 
 
 def test_get_trades_from_swaps():
+    addr2_expected_trades = get_balancer_test_addr2_expected_trades()
     swaps = [
-        BALANCER_TEST_ADDR2_EXPECTED_TRADES[1].swaps[0],  # log_index 18
-        BALANCER_TEST_ADDR2_EXPECTED_TRADES[0].swaps[0],  # log_index 24
-        BALANCER_TEST_ADDR2_EXPECTED_TRADES[2].swaps[0],  # log_index 143
+        addr2_expected_trades[1].swaps[0],  # log_index 18
+        addr2_expected_trades[0].swaps[0],  # log_index 24
+        addr2_expected_trades[2].swaps[0],  # log_index 143
     ]
-    expected_trades = BALANCER_TEST_ADDR2_EXPECTED_TRADES[0:3][::-1]
+    expected_trades = addr2_expected_trades[0:3][::-1]
     trades = Balancer._get_trades_from_swaps(swaps)
     assert trades == expected_trades

@@ -32,13 +32,6 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-def _atoken_to_reserve_asset(atoken: EthereumToken) -> Asset:
-    reserve_symbol = atoken.identifier[1:]
-    if reserve_symbol == 'SUSD':
-        reserve_symbol = 'sUSD'
-    return Asset(reserve_symbol)
-
-
 class AaveBlockchainInquirer(AaveInquirer):
     """Reads Aave historical data from the chain by querying logs"""
 

@@ -65,7 +65,8 @@ const SOURCES = [
   'icon',
   'nexo',
   'blockfi-transactions',
-  'blockfi-trades'
+  'blockfi-trades',
+  'gitcoin'
 ];
 
 @Component({})
@@ -169,7 +170,7 @@ export default class FileUpload extends Vue {
       return;
     }
 
-    if (this.$interop.isPackaged) {
+    if (this.$interop.isPackaged && this.$api.defaultBackend) {
       this.uploadPackaged(files[0].path);
     } else {
       const formData = new FormData();

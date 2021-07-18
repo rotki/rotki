@@ -72,6 +72,7 @@
                   :label="$t('login.custom_backend.label')"
                   :placeholder="$t('login.custom_backend.placeholder')"
                   :hint="$t('login.custom_backend.hint')"
+                  @keypress.enter="saveCustomBackend"
                 />
               </v-col>
               <v-col cols="auto">
@@ -120,14 +121,14 @@
                   <li>
                     <i18n path="login.sync_error.local_modified">
                       <div class="font-weight-medium">
-                        {{ localLastModified }}
+                        <date-display :timestamp="localLastModified" />
                       </div>
                     </i18n>
                   </li>
                   <li class="mt-2">
                     <i18n path="login.sync_error.remote_modified">
                       <div class="font-weight-medium">
-                        {{ remoteLastModified }}
+                        <date-display :timestamp="remoteLastModified" />
                       </div>
                     </i18n>
                   </li>
@@ -172,7 +173,21 @@
             type="error"
             icon="mdi-alert-circle-outline"
           >
-            <span v-for="(error, i) in errors" :key="i" v-text="error" />
+            <v-row>
+              <v-col class="grow">
+                <span v-for="(error, i) in errors" :key="i" v-text="error" />
+              </v-col>
+              <v-col class="shrink">
+                <v-btn
+                  v-if="isLoggedInError"
+                  depressed
+                  color="primary"
+                  @click="logout"
+                >
+                  {{ $t('login.logout') }}
+                </v-btn>
+              </v-col>
+            </v-row>
           </v-alert>
         </transition>
       </v-form>
@@ -206,6 +221,7 @@
 </template>
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import { mapActions } from 'vuex';
 import {
   deleteBackendUrl,
   getBackendUrl,
@@ -213,13 +229,17 @@ import {
 } from '@/components/account-management/utils';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { SyncConflict } from '@/store/session/types';
+import { ActionStatus } from '@/store/types';
 import { Credentials, SyncApproval } from '@/typing/types';
 
 const KEY_REMEMBER = 'rotki.remember';
 const KEY_USERNAME = 'rotki.username';
 
 @Component({
-  components: { RevealableInput }
+  components: { RevealableInput },
+  methods: {
+    ...mapActions('session', ['logoutRemoteSession'])
+  }
 })
 export default class Login extends Vue {
   @Prop({ required: true })
@@ -234,6 +254,8 @@ export default class Login extends Vue {
   @Prop({ required: false, type: Array, default: () => [] })
   errors!: string[];
 
+  logoutRemoteSession!: () => Promise<ActionStatus>;
+
   @Watch('username')
   onUsernameChange() {
     this.touched();
@@ -244,12 +266,25 @@ export default class Login extends Vue {
     this.touched();
   }
 
-  get localLastModified(): string {
-    return this.syncConflict.payload?.localLastModified ?? '';
+  get isLoggedInError(): boolean {
+    return !!this.errors.find(error => error.includes('is already logged in'));
   }
 
-  get remoteLastModified(): string {
-    return this.syncConflict.payload?.remoteLastModified ?? '';
+  async logout() {
+    const { success } = await this.logoutRemoteSession();
+    if (success) {
+      this.touched();
+    }
+  }
+
+  get localLastModified(): number {
+    const payload = this.syncConflict.payload;
+    return payload?.localLastModified ?? 0;
+  }
+
+  get remoteLastModified(): number {
+    const payload = this.syncConflict.payload;
+    return payload?.remoteLastModified ?? 0;
   }
 
   get localSize(): string {

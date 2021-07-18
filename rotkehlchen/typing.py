@@ -14,12 +14,14 @@ ModuleName = Literal[
     'aave',
     'compound',
     'yearn_vaults',
+    'yearn_vaults_v2',
     'uniswap',
     'adex',
     'loopring',
     'balancer',
     'eth2',
 ]
+
 # TODO: Turn this into some kind of light data structure and not just a mapping
 # This is a mapping of module ids to human readable names
 AVAILABLE_MODULES_MAP = {
@@ -28,6 +30,7 @@ AVAILABLE_MODULES_MAP = {
     'aave': 'Aave',
     'compound': 'Compound',
     'yearn_vaults': 'Yearn Vaults',
+    'yearn_vaults_v2': 'Yearn V2 Vaults',
     'uniswap': 'Uniswap',
     'adex': 'AdEx',
     'loopring': 'Loopring',
@@ -42,14 +45,19 @@ IMPORTABLE_LOCATIONS = Literal[
     'blockfi-transactions',
     'blockfi-trades',
     'nexo',
+    'gitcoin',
 ]
 
+UNISWAP_PROTOCOL = 'UNI-V2'
+YEARN_VAULTS_V2_PROTOCOL = 'yearn_vaults_v2'
+CURVE_POOL_PROTOCOL = 'curve_pool'
 
-KnownProtocolsAssets = ('UNI-V2', )
 
-
-T_BinaryEthAddress = bytes
-BinaryEthAddress = NewType('BinaryEthAddress', T_BinaryEthAddress)
+KnownProtocolsAssets = (
+    UNISWAP_PROTOCOL,
+    YEARN_VAULTS_V2_PROTOCOL,
+    CURVE_POOL_PROTOCOL,
+)
 
 
 T_Timestamp = int
@@ -288,6 +296,8 @@ class Location(DBEnumMixIn):
     FTX = 26
     NEXO = 27
     BLOCKFI = 28
+    INDEPENDENTRESERVE = 29
+    GITCOIN = 30
 
 
 class AssetMovementCategory(Enum):

@@ -1,72 +1,71 @@
 import logging
-from typing import Any, Dict, Optional, Union, overload
+from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.typing import ChecksumEthAddress
 
-from .asset import Asset, EthereumToken
+from .asset import Asset, EthereumToken, UnderlyingToken
 from .typing import AssetType
-from .unknown_asset import UNKNOWN_TOKEN_KEYS, SerializeAsDictKeys, UnknownEthereumToken
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 log = logging.getLogger(__name__)
 
 
-def get_ethereum_token(
+def add_ethereum_token_to_db(token_data: EthereumToken) -> EthereumToken:
+    """Adds an ethereum token to the DB and returns it
+
+    May raise:
+    - InputError if token already exists in the DB
+    """
+    globaldb = GlobalDBHandler()
+    globaldb.add_asset(
+        asset_id=token_data.identifier,
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        data=token_data,
+    )
+    # This can, but should not raise UnknownAsset, DeserializationError
+    return EthereumToken(token_data.ethereum_address, form_with_incomplete_data=True)
+
+
+def get_or_create_ethereum_token(
+        userdb: 'DBHandler',
         symbol: str,
         ethereum_address: ChecksumEthAddress,
         name: Optional[str] = None,
         decimals: Optional[int] = None,
-) -> Union[EthereumToken, UnknownEthereumToken]:
-    """Given a token symbol and address return the <EthereumToken>, otherwise
-    an <UnknownEthereumToken>.
+        protocol: Optional[str] = None,
+        underlying_tokens: Optional[List[UnderlyingToken]] = None,
+) -> EthereumToken:
+    """Given a token symbol and address return the <EthereumToken>
+
+    If the token exists in the GlobalDB it's returned. If not it's created and added.
+    Note: if the token already exists but the other arguments don't match the
+    existing token will still be silently returned
     """
-    ethereum_token: Union[EthereumToken, UnknownEthereumToken]
     try:
         ethereum_token = EthereumToken(ethereum_address)
     except (UnknownAsset, DeserializationError):
-        log.warning(
+        log.info(
             f'Encountered unknown asset {symbol} with address '
-            f'{ethereum_address}. Instantiating UnknownEthereumToken',
+            f'{ethereum_address}. Adding it to the global DB',
         )
-        ethereum_token = UnknownEthereumToken(
-            ethereum_address=ethereum_address,
-            symbol=symbol,
+        token_data = EthereumToken.initialize(
+            address=ethereum_address,
             name=name,
             decimals=decimals,
+            symbol=symbol,
+            protocol=protocol,
+            underlying_tokens=underlying_tokens,
         )
+        # This can but should not raise InputError since it should not already exist
+        ethereum_token = add_ethereum_token_to_db(token_data)
+        userdb.add_asset_identifiers([ethereum_token.identifier])
 
     return ethereum_token
-
-
-@overload
-def serialize_ethereum_token(
-        ethereum_token: EthereumToken,
-        unknown_ethereum_token_keys: SerializeAsDictKeys = UNKNOWN_TOKEN_KEYS,
-) -> str:
-    ...
-
-
-@overload
-def serialize_ethereum_token(
-        ethereum_token: UnknownEthereumToken,
-        unknown_ethereum_token_keys: SerializeAsDictKeys = UNKNOWN_TOKEN_KEYS,
-) -> Dict[str, Any]:
-    ...
-
-
-def serialize_ethereum_token(
-        ethereum_token: Union[EthereumToken, UnknownEthereumToken],
-        unknown_ethereum_token_keys: SerializeAsDictKeys = UNKNOWN_TOKEN_KEYS,
-) -> Union[str, Dict[str, Any]]:
-    if isinstance(ethereum_token, EthereumToken):
-        return ethereum_token.serialize()
-
-    if isinstance(ethereum_token, UnknownEthereumToken):
-        return ethereum_token.serialize_as_dict(keys=unknown_ethereum_token_keys)
-
-    raise AssertionError(f'Unexpected ethereum token type: {type(ethereum_token)}')
 
 
 def get_asset_by_symbol(symbol: str, asset_type: Optional[AssetType] = None) -> Optional[Asset]:

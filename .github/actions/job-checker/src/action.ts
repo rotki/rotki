@@ -10,7 +10,7 @@ export async function getPullRequestFiles(): Promise<string[] | null> {
   }
   const {number} = context.payload.pull_request
 
-  const {data} = await client.pulls.listFiles({
+  const {data} = await client.rest.pulls.listFiles({
     ...context.repo,
     pull_number: number
   })
@@ -29,7 +29,7 @@ async function tagInCommitMessage(tag: RegExp): Promise<boolean> {
   }
   const {sha} = context.payload.pull_request.head
 
-  const response = await client.git.getCommit({
+  const response = await client.rest.git.getCommit({
     ...context.repo,
     commit_sha: sha
   })

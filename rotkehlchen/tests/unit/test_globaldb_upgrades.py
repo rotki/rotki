@@ -1,6 +1,11 @@
 import pytest
 
-from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE, strethaddress_to_identifier
+from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.constants.resolver import (
+    ETHEREUM_DIRECTIVE,
+    ethaddress_to_identifier,
+    strethaddress_to_identifier,
+)
 
 
 @pytest.mark.parametrize('globaldb_version', [1])
@@ -8,18 +13,18 @@ def test_upgrade_v1_v2(globaldb):
     # at this point upgrade should have happened
     assert globaldb.get_setting_value('version', None) == 2
 
-    for identifier, entry in globaldb.get_all_asset_data(mapping=True).items():
-        if entry['asset_type'] == 'ethereum token':
-            assert identifier == ETHEREUM_DIRECTIVE + entry['ethereum_address']
+    for identifier, entry in globaldb.get_all_asset_data(mapping=True, serialized=False).items():
+        if entry.asset_type == AssetType.ETHEREUM_TOKEN:
+            assert identifier == ethaddress_to_identifier(entry.ethereum_address)
 
-        swapped_for = entry['swapped_for']
+        swapped_for = entry.swapped_for
 
         # check the swapped_for key also changed for one we know
-        if entry['name'] == 'Aurora DAO':
-            assert entry['swapped_for'] == ETHEREUM_DIRECTIVE + '0xB705268213D593B8FD88d3FDEFF93AFF5CbDcfAE'  # noqa: E501
+        if entry.name == 'Aurora DAO':
+            assert entry.swapped_for == strethaddress_to_identifier('0xB705268213D593B8FD88d3FDEFF93AFF5CbDcfAE')  # noqa: E501
 
         if swapped_for and swapped_for not in ('AM', 'PHB', 'FIRO', 'DIVI', 'SCRT', 'HAI', 'MED', 'NOAHP', 'VET', 'XDC'):  # noqa: E501
-            assert entry['swapped_for'].startswith(ETHEREUM_DIRECTIVE)
+            assert entry.swapped_for.startswith(ETHEREUM_DIRECTIVE)
 
     # Check some swapped for that we know should have changed. DIVX -> DIVI
     asset_data = globaldb.get_asset_data(strethaddress_to_identifier('0x13f11C9905A08ca76e3e853bE63D4f0944326C72'), form_with_incomplete_data=True)  # noqa: E501

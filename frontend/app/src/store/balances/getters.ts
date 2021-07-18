@@ -2,7 +2,10 @@ import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
-import { BlockchainAssetBalances } from '@/services/balances/types';
+import {
+  BlockchainAssetBalances,
+  SupportedExchange
+} from '@/services/balances/types';
 import { Balance, GeneralAccountData, HasBalance } from '@/services/types-api';
 import {
   AccountAssetBalances,
@@ -67,6 +70,7 @@ export interface BalanceGetters {
   blockchainAssets: AssetBalance[];
   getIdentifierForSymbol: IdentifierForSymbolGetter;
   byLocation: BalanceByLocation;
+  exchangeNonce: (exchange: SupportedExchange) => number;
 }
 
 function balances(
@@ -680,11 +684,8 @@ export const getters: Getters<
     return asset?.identifier;
   },
   assetSymbol: (_bs, { assetInfo }) => identifier => {
-    if (typeof identifier === 'string') {
-      const asset = assetInfo(identifier);
-      return asset?.symbol ?? identifier;
-    }
-    return identifier.symbol;
+    const asset = assetInfo(identifier);
+    return asset?.symbol ?? identifier;
   },
   byLocation: (
     state,
@@ -713,5 +714,8 @@ export const getters: Getters<
     }
 
     return byLocation;
+  },
+  exchangeNonce: ({ connectedExchanges: exchanges }) => exchange => {
+    return exchanges.filter(({ location }) => location === exchange).length + 1;
   }
 };

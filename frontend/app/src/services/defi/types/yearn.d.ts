@@ -1,8 +1,6 @@
-import { YEARN_EVENTS, YEARN_VAULTS } from '@/services/defi/types/consts';
+import { ProtocolVersion } from '@/services/defi/types';
+import { YEARN_EVENTS } from '@/services/defi/types/consts';
 import { Balance } from '@/services/types-api';
-
-export type SupportedYearnVault = typeof YEARN_VAULTS[number];
-
 type YearnEventType = typeof YEARN_EVENTS[number];
 
 interface YearnVaultEvent {
@@ -24,7 +22,7 @@ interface YearnVault {
 }
 
 type AccountYearnVault = {
-  readonly [vault in SupportedYearnVault]?: YearnVault;
+  readonly [vault: string]: YearnVault;
 };
 
 export interface YearnVaultsHistory {
@@ -34,7 +32,7 @@ export interface YearnVaultsHistory {
 export interface YearnVaultProfitLoss {
   readonly value: Balance;
   readonly asset: string;
-  readonly vault: SupportedYearnVault;
+  readonly vault: string;
 }
 
 interface YearnVaultBalance {
@@ -46,11 +44,12 @@ interface YearnVaultBalance {
 }
 
 export interface YearnVaultAsset extends YearnVaultBalance {
-  readonly vault: SupportedYearnVault;
+  readonly vault: string;
+  readonly version: ProtocolVersion;
 }
 
 type AccountYearnVaultEntry = {
-  readonly [vault in SupportedYearnVault]?: YearnVaultBalance;
+  readonly [vault: string]: YearnVaultBalance;
 };
 
 export interface YearnVaultsBalances {

@@ -225,7 +225,6 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # https://coinmarketcap.com/currencies/nas/
     # Note: This is not the Nebulas NAS token
     'NAS',
-    'NFT',  # Couldn't find any reference to this token
     # Nanolite. No data found except from here:
     # https://www.reddit.com/r/CryptoCurrency/comments/26neqz/nanolite_a_new_x11_cryptocurrency_which_launched/
     'NL',
@@ -336,6 +335,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'BTCTRON',  # neither in coingecko nor cryptocompare
     'FCT2',  # neither in coingecko nor cryptocompare
     'XFLR',  # neither in coingecko nor cryptocompare (is an iou for FLR - SPARK)
+    'SUNX',  # neither in coingecko nor cryptocompare
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
@@ -424,6 +424,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'JASMY',  # neither in coingecko nor cryptocompare
     'MFA',
     'FCT2',  # neither in coingecko nor cryptocompare
+    'PAR',  # Couldn't find what asset is this
     'UPXAU',  # neither in coingecko nor cryptocompare
     'TEA',  # neither in coingecko nor cryptocompare
     'PANDO',  # neither in coingecko nor cryptocompare (own blockchain, released on 2020)
@@ -507,6 +508,7 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'IDX',  # no cryptocompare/coingecko data
     'CHEX',  # no cryptocompare/coingecko data (chintai)
     'PLANETS',  # PlanetWatch (PLANETS) but has no cryptocompare/coingecko
+    'MCS',  # no cryptocompare/coingecko data yet
 )
 
 UNSUPPORTED_FTX_ASSETS = (
@@ -551,6 +553,7 @@ UNSUPPORTED_FTX_ASSETS = (
     'UBER',
     'USO',
     'ZM',
+    'DKNG',  # no cc/coingecko data https://twitter.com/FTX_Official/status/1404867122598072321
     'ETHE',  # no cryptocompare/coingecko data
     'GBTC',  # no cryptocompare/coingecko data
     'GDX',  # no cryptocompare/coingecko data
@@ -573,6 +576,7 @@ UNSUPPORTED_FTX_ASSETS = (
 
 # https://api.kucoin.com/api/v1/currencies
 UNSUPPORTED_KUCOIN_ASSETS = (
+    'AI',  # no cryptocompare/coingecko data
     'AGIX',  # no cryptocompare/coingecko data
     'AXE',  # delisted
     'BCH3L',  # no cryptocompare/coingecko data
@@ -588,6 +592,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'ETH3L',  # no cryptocompare/coingecko data
     'ETH3S',  # no cryptocompare/coingecko data
     'ETF',  # delisted and no cryptocompare/coingecko data
+    'GENS',  # Genesis. no cryptocompare/coingecko data
     'GGC',  # delisted and no cryptocompare/coingecko data
     'GMB',  # delisted
     'GOD',  # delisted
@@ -599,6 +604,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'LTC3L',  # no cryptocompare/coingecko data
     'LTC3S',  # no cryptocompare/coingecko data
     'MAP2',  # delisted
+    'MEM',  # meme.com, no cryptocompare/coingecko data
     'SATT',  # delisted
     'SERO',  # delisted
     'SPRK',  # delisted
@@ -613,6 +619,10 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'ADA3L',  # no cryptocompare/coingecko data
     'FEAR',  # no cryptocompare/coingecko data
     'DAPPX',  # no cryptocompare/coingecko data
+    'OOE',  # no cryptocompare/coingecko data
+    'SPHRI',  # no cryptocompare/coingecko data SpheriumFinance
+    'CFG',  # not released yet. TODO: Review this one later
+    'MUSH',  # Couldn't find a listing post saying what asset is this one
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
@@ -657,12 +667,6 @@ RENAMED_BINANCE_ASSETS = {
     # Red pulse got swapped for Phoenix
     # https://support.binance.com/hc/en-us/articles/360012507711-Binance-Supports-Red-Pulse-RPX-Token-Swap-to-PHOENIX-PHX-
     'RPX': 'PHX',
-}
-
-ETH_TOKENS_MOVED_TO_OWN_CHAIN = {
-    'NET': 'NIM',
-    'EOS': 'EOS',
-    'META': 'META',
 }
 
 
