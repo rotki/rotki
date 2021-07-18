@@ -2352,6 +2352,16 @@
         "symbol": "CAPP",
         "type": "ethereum token"
     },
+    "CAPS": {
+        "coingecko": "ternoa",
+        "cryptocompare": "caps",
+        "ethereum_address": "0x03Be5C903c727Ee2C8C4e9bc0AcC860Cca4715e2",
+        "ethereum_token_decimals": 18,
+        "name": "Ternoa (CAPS)",
+        "started": 1614363963,
+        "symbol": "CAPS",
+        "type": "ethereum token and more"
+    },
     "CAR": {
         "coingecko": "",
         "ethereum_address": "0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B",
