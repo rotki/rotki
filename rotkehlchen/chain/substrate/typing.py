@@ -41,7 +41,7 @@ class KusamaNodeName(Enum):
                 'via "own_rpc_endpoint" or the specific db setting',
             )
         if self == KusamaNodeName.PARITY:
-            return 'https://rpc.polkadot.io/'
+            return 'https://kusama-rpc.polkadot.io/'
         if self == KusamaNodeName.ONFINALITY:
             return 'https://kusama.api.onfinality.io/public-https'
         if self == KusamaNodeName.ELARA:

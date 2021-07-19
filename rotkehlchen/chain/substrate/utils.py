@@ -136,7 +136,7 @@ def get_substrate_address_from_public_key(
     if chain == SubstrateChain.KUSAMA:
         ss58_format = 2
     elif chain == SubstrateChain.POLKADOT:
-        ss58_format = 2
+        ss58_format = 0
     else:
         raise AssertionError(f'Unexpected chain: {chain}')
 
