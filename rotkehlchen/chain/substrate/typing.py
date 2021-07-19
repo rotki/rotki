@@ -138,10 +138,7 @@ class SubstrateChain(Enum):
     def blocks_threshold(self) -> BlockNumber:
         """Return the blocks difference that marks a node as unsynced.
         """
-        if self == SubstrateChain.KUSAMA:
-            return BlockNumber(10)
-
-        elif self == SubstrateChain.POLKADOT:
+        if self in (SubstrateChain.KUSAMA, SubstrateChain.POLKADOT):
             return BlockNumber(10)
 
         raise AssertionError(f'Unexpected Chain: {self}')

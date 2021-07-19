@@ -22,7 +22,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_btc_address,
 )
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress, SubstratePublicKey
+from rotkehlchen.chain.substrate.typing import SubstrateAddress, KusamaAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_kusama_address_from_public_key,
     is_valid_kusama_address,
@@ -1452,65 +1452,12 @@ def _transform_eth_address(
 
     return address
 
-
-def _transform_ksm_address(
+def _transform_substrate_address(
         ethereum: EthereumManager,
         given_address: str,
-) -> KusamaAddress:
-    """Returns a KSM address (if exists) given an ENS domain. At this point any
-    given address has been already validated either as an ENS name or as a
-    valid Kusama address (ss58 format).
-
-    NB: ENS domains for Substrate chains (e.g. KSM, DOT) store the Substrate
-    public key. It requires to encode it with a specific ss58 format for
-    obtaining the specific chain address.
-
-    Kusama/Polkadot ENS domain accounts:
-    https://guide.kusama.network/docs/en/mirror-ens
-
-    ENS domain substrate public key encoding:
-    https://github.com/ensdomains/address-encoder/blob/master/src/index.ts
-    """
-    if not given_address.endswith('.eth'):
-        return KusamaAddress(given_address)
-
-    try:
-        resolved_address = ethereum.ens_lookup(
-            given_address,
-            blockchain=SupportedBlockchain.KUSAMA,
-        )
-    except (RemoteError, InputError) as e:
-        raise ValidationError(
-            f'Given ENS address {given_address} could not be resolved '
-            f'for Kusama due to: {str(e)}',
-            field_name='address',
-        ) from None
-
-    if resolved_address is None:
-        raise ValidationError(
-            f'Given ENS address {given_address} could not be resolved for Kusama',
-            field_name='address',
-        ) from None
-
-    try:
-        address = get_kusama_address_from_public_key(SubstratePublicKey(resolved_address))
-    except (TypeError, ValueError) as e:
-        raise ValidationError(
-            f'Given ENS address {given_address} does not contain a valid '
-            f"Substrate public key: {resolved_address}. Kusama address can't be obtained.",
-            field_name='address',
-        ) from e
-
-    log.debug(f'Resolved KSM ENS {given_address} to {address}')
-
-    return address
-
-
-def _transform_dot_address(
-        ethereum: EthereumManager,
-        given_address: str,
-) -> PolkadotAddress:
-    """Returns a DOT address (if exists) given an ENS domain. At this point any
+        chain: str,
+) -> SubstrateAddress:
+    """Returns a DOT or KSM address (if exists) given an ENS domain. At this point any
     given address has been already validated either as an ENS name or as a
     valid Polkadot address (ss58 format).
 
@@ -1525,38 +1472,47 @@ def _transform_dot_address(
     https://github.com/ensdomains/address-encoder/blob/master/src/index.ts
     """
     if not given_address.endswith('.eth'):
-        return PolkadotAddress(given_address)
+        return SubstrateAddress(given_address)
 
     try:
-        resolved_address = ethereum.ens_lookup(
-            given_address,
-            blockchain=SupportedBlockchain.POLKADOT,
-        )
+        if(chain == "Polkadot"):
+            resolved_address = ethereum.ens_lookup(
+                given_address,
+                blockchain=SupportedBlockchain.POLKADOT,
+            )
+        if(chain == "Kusama"):
+            resolved_address = ethereum.ens_lookup(
+                given_address,
+                blockchain=SupportedBlockchain.KUSAMA,
+            )
     except (RemoteError, InputError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} could not be resolved '
-            f'for Polkadot due to: {str(e)}',
+            f'for ' + chain + ' due to: {str(e)}',
             field_name='address',
         ) from None
 
     if resolved_address is None:
         raise ValidationError(
-            f'Given ENS address {given_address} could not be resolved for Polkadot',
+            f'Given ENS address {given_address} could not be resolved for ' + chain,
             field_name='address',
         ) from None
 
     try:
-        address = get_polkadot_address_from_public_key(SubstratePublicKey(resolved_address))
+        if(chain == "Polkadot"):
+            address = get_polkadot_address_from_public_key(SubstratePublicKey(resolved_address))
+        if(chain == "Kusama"):
+            address = get_kusama_address_from_public_key(SubstratePublicKey(resolved_address))
     except (TypeError, ValueError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} does not contain a valid '
-            f"Substrate public key: {resolved_address}. Polkadot address can't be obtained.",
+            f'Substrate public key: {resolved_address}. ' + chain + ' address cannot be obtained.',
             field_name='address',
         ) from e
 
-    log.debug(f'Resolved DOT ENS {given_address} to {address}')
+    log.debug(f'Resolved ' + chain + ' ENS {given_address} to {address}')
 
-    return address
+    return SubstrateAddress(address)
 
 
 class BlockchainAccountsPatchSchema(Schema):
@@ -1595,9 +1551,17 @@ class BlockchainAccountsPatchSchema(Schema):
                 )
         if data['blockchain'] == SupportedBlockchain.KUSAMA:
             for idx, account in enumerate(data['accounts']):
-                data['accounts'][idx]['address'] = _transform_ksm_address(
+                data['accounts'][idx]['address'] = _transform_substrate_address(
                     ethereum=self.ethereum_manager,
                     given_address=account['address'],
+                    chain = "Kusama",
+                )
+        if data['blockchain'] == SupportedBlockchain.POLKADOT:
+            for idx, account in enumerate(data['accounts']):
+                data['accounts'][idx]['address'] = _transform_substrate_address(
+                    ethereum=self.ethereum_manager,
+                    given_address=account['address'],
+                    chain = 'Polkadot',
                 )
 
         return data
@@ -1640,7 +1604,11 @@ class BlockchainAccountsDeleteSchema(Schema):
             ]
         if data['blockchain'] == SupportedBlockchain.KUSAMA:
             data['accounts'] = [
-                _transform_ksm_address(self.ethereum_manager, x) for x in data['accounts']
+                _transform_substrate_address(self.ethereum_manager, x, 'Kusama') for x in data['accounts']
+            ]
+        if data['blockchain'] == SupportedBlockchain.POLKADOT:
+            data['accounts'] = [
+                _transform_substrate_address(self.ethereum_manager, x, 'Polkadot') for x in data['accounts']
             ]
         return data
 

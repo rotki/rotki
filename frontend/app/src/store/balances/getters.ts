@@ -571,7 +571,8 @@ export const getters: Getters<
     btc: { standalone, xpubs },
     eth,
     exchangeBalances,
-    ksm,
+      ksm,
+      dot,
     avax,
     manualBalances,
     loopringBalances
@@ -675,6 +676,19 @@ export const getters: Getters<
       breakdown.push({
         address,
         location: KSM,
+        balance: assetBalance
+      });
+    }
+
+    for (const address in dot) {
+      const balances = dot[address];
+      const assetBalance = balances.assets[asset];
+      if (!assetBalance) {
+        continue;
+      }
+      breakdown.push({
+        address,
+        location: DOT,
         balance: assetBalance
       });
     }
