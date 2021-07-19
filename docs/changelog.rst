@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3224` Users will now be able to properly select an end time in earlier dates.
 * :bug:`3198` Firefox docker users will now see a regularly sized Gitcoin icon under the history menu.
 * :bug:`3199` Users will now properly see the node connection status/last sync information update.
 * :bug:`3214` UNIUP and UNIDOWN will now be correctly detected.

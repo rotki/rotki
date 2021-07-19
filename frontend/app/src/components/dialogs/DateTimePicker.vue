@@ -91,8 +91,19 @@ export default class DateTimePicker extends Vue {
   timeModel: string = dayjs().format(this.timeFormat);
   dateModel: string = '';
 
-  maxDate: string = '';
-  maxTime: string = '';
+  get maxDate(): string {
+    if (this.limitNow) {
+      return dayjs().format(DateTimePicker.dateFormat);
+    }
+    return '';
+  }
+
+  get maxTime(): string {
+    if (this.limitNow && dayjs(this.dateModel).isToday()) {
+      return dayjs().format(this.timeFormat);
+    }
+    return '';
+  }
 
   menu: boolean = false;
 
@@ -106,18 +117,6 @@ export default class DateTimePicker extends Vue {
 
   get allRules(): ((v: string) => boolean | string)[] {
     return this.rules.concat([this.dateFormatRule.bind(this)]);
-  }
-
-  private setMaxTime() {
-    if (this.limitNow) {
-      this.maxTime = dayjs().format(this.timeFormat);
-    }
-  }
-
-  private setMaxDate() {
-    if (this.limitNow) {
-      this.maxDate = dayjs().format(DateTimePicker.dateFormat);
-    }
   }
 
   private updateActualDate() {
@@ -138,11 +137,6 @@ export default class DateTimePicker extends Vue {
     return this.seconds ? this.withSeconds.test(date) : this.date.test(date);
   }
 
-  created() {
-    this.setMaxDate();
-    this.setMaxTime();
-  }
-
   mounted() {
     this.onValueChange(this.value);
   }
@@ -150,13 +144,11 @@ export default class DateTimePicker extends Vue {
   onTimeChange(time: string) {
     this.timeModel = time;
     this.updateActualDate();
-    this.setMaxTime();
   }
 
   onDateChange(date: string) {
     this.dateModel = date;
     this.updateActualDate();
-    this.setMaxDate();
   }
 
   @Watch('value')
