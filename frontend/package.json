@@ -10,5 +10,10 @@
   "homepage": "https://rotki.com",
   "license": "AGPL-3.0",
   "repository": "https://github.com/rotki/rotki",
-  "workspaces": ["app","common"]
+  "workspaces": ["app","common"],
+  "scripts": {
+    "electron:build": "npm run build --workspace=@rotki/common && npm run electron:build --workspace rotki",
+    "build": "npm run build --workspace=@rotki/common && npm run electron:build --workspace rotki",
+    "lint": "npm run lint -ws"
+  }
 }

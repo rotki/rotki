@@ -8,12 +8,7 @@
     "outDir": "./lib",
     "target": "es2020",
     "strict": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "src/*"
-      ]
-    }
+    "baseUrl": "."
   },
   "include": [
     "src/**/*"
