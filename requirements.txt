@@ -4,7 +4,7 @@ gevent-websocket==0.10.1
 wsaccel==0.6.3  # recommended for acceleration of gevent-websocket. But abandoned.
 web3==5.21.0
 pysqlcipher3==1.0.4
-requests==2.25.1
+requests==2.26.0
 pycryptodome==3.6.6
 pycryptodomex==3.6.6
 coincurve==13.0.0
@@ -16,7 +16,7 @@ gql==2.0.0
 py-sr25519-bindings==0.1.2
 py-ed25519-bindings==0.1.2
 py-bip39-bindings==0.1.6
-substrate-interface==0.13.9
+substrate-interface==0.13.11
 beautifulsoup4==4.9.3
 
 # For the rest api
