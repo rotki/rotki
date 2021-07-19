@@ -103,7 +103,7 @@
     "nyc": "15.1.0",
     "prettier": "2.2.1",
     "promise-retry": "2.0.1",
-    "sass": "1.35.1",
+    "sass": "1.32.13",
     "sass-loader": "10.2.0",
     "semver": "7.3.5",
     "source-map-support": "0.5.19",
