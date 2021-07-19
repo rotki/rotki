@@ -1,3 +1,8 @@
+import {
+  DARK_MODE_ENABLED,
+  DARK_THEME,
+  LIGHT_THEME
+} from '@rotki/common/lib/settings';
 import { default as BigNumber } from 'bignumber.js';
 import {
   CURRENCY_LOCATION,
@@ -16,9 +21,6 @@ import {
   ITEMS_PER_PAGE,
   VALUE_ROUNDING_MODE,
   AMOUNT_ROUNDING_MODE,
-  DARK_MODE_ENABLED,
-  LIGHT_THEME,
-  DARK_THEME,
   GRAPH_ZERO_BASED
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';

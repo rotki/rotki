@@ -1,5 +1,6 @@
+import { TimeUnit } from '@rotki/common/lib/settings';
 import dayjs from 'dayjs';
-import { Timeframe, Timeframes, TimeUnit } from '@/components/dashboard/types';
+import { Timeframe, Timeframes } from '@/components/dashboard/types';
 import {
   TIMEFRAME_ALL,
   TIMEFRAME_MONTH,
@@ -10,20 +11,8 @@ import {
 } from '@/store/settings/consts';
 import { TimeFramePeriod } from '@/store/settings/types';
 
-const TIME_UNIT_YEAR = 'year';
-const TIME_UNIT_MONTH = 'month';
-const TIME_UNIT_WEEK = 'week';
-export const TIME_UNIT_DAY = 'day';
-
-export const TIME_UNITS = [
-  TIME_UNIT_YEAR,
-  TIME_UNIT_MONTH,
-  TIME_UNIT_WEEK,
-  TIME_UNIT_DAY
-] as const;
-
 function startingDate(unit: TimeUnit, amount: number = 1): number {
-  return dayjs().subtract(amount, unit).startOf(TIME_UNIT_DAY).unix();
+  return dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix();
 }
 
 type TimeframeDefaults = Pick<
@@ -32,19 +21,19 @@ type TimeframeDefaults = Pick<
 >;
 
 function unitDefaults(timeUnit: TimeUnit): TimeframeDefaults {
-  if (timeUnit === TIME_UNIT_DAY) {
+  if (timeUnit === TimeUnit.DAY) {
     return {
       xAxisTimeUnit: timeUnit,
       xAxisLabelDisplayFormat: 'ddd',
       tooltipTimeFormat: 'ddd'
     };
-  } else if (timeUnit === TIME_UNIT_WEEK) {
+  } else if (timeUnit === TimeUnit.WEEK) {
     return {
       xAxisTimeUnit: timeUnit,
       xAxisLabelDisplayFormat: 'MMM D',
       tooltipTimeFormat: 'MMM D'
     };
-  } else if (timeUnit === TIME_UNIT_MONTH) {
+  } else if (timeUnit === TimeUnit.MONTH) {
     return {
       xAxisTimeUnit: timeUnit,
       xAxisLabelDisplayFormat: 'MMMM YYYY',
@@ -65,11 +54,11 @@ function createTimeframe(
   } else {
     let startUnit: TimeUnit;
     if (frame === TIMEFRAME_YEAR) {
-      startUnit = TIME_UNIT_YEAR;
+      startUnit = TimeUnit.YEAR;
     } else if ([TIMEFRAME_MONTH, TIMEFRAME_THREE_MONTHS].includes(frame)) {
-      startUnit = TIME_UNIT_MONTH;
+      startUnit = TimeUnit.MONTH;
     } else if ([TIMEFRAME_WEEK, TIMEFRAME_TWO_WEEKS].includes(frame)) {
-      startUnit = TIME_UNIT_WEEK;
+      startUnit = TimeUnit.WEEK;
     } else {
       throw new Error(`unsupported timeframe: ${frame}`);
     }
@@ -84,14 +73,14 @@ function createTimeframe(
 }
 
 export const timeframes: Timeframes = {
-  [TIMEFRAME_ALL]: createTimeframe(TIMEFRAME_ALL, TIME_UNIT_MONTH),
-  [TIMEFRAME_YEAR]: createTimeframe(TIMEFRAME_YEAR, TIME_UNIT_MONTH),
+  [TIMEFRAME_ALL]: createTimeframe(TIMEFRAME_ALL, TimeUnit.MONTH),
+  [TIMEFRAME_YEAR]: createTimeframe(TIMEFRAME_YEAR, TimeUnit.MONTH),
   [TIMEFRAME_THREE_MONTHS]: createTimeframe(
     TIMEFRAME_THREE_MONTHS,
-    TIME_UNIT_WEEK,
+    TimeUnit.WEEK,
     3
   ),
-  [TIMEFRAME_MONTH]: createTimeframe(TIMEFRAME_MONTH, TIME_UNIT_WEEK),
-  [TIMEFRAME_TWO_WEEKS]: createTimeframe(TIMEFRAME_TWO_WEEKS, TIME_UNIT_DAY, 2),
-  [TIMEFRAME_WEEK]: createTimeframe(TIMEFRAME_WEEK, TIME_UNIT_DAY)
+  [TIMEFRAME_MONTH]: createTimeframe(TIMEFRAME_MONTH, TimeUnit.WEEK),
+  [TIMEFRAME_TWO_WEEKS]: createTimeframe(TIMEFRAME_TWO_WEEKS, TimeUnit.DAY, 2),
+  [TIMEFRAME_WEEK]: createTimeframe(TIMEFRAME_WEEK, TimeUnit.DAY)
 };

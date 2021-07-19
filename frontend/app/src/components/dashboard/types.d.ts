@@ -1,4 +1,4 @@
-import { TIME_UNITS } from '@/components/dashboard/const';
+import { TimeUnit } from '@rotki/common/lib/settings';
 import { TimeFramePeriod } from '@/store/settings/types';
 
 export interface Timeframe {
@@ -9,8 +9,6 @@ export interface Timeframe {
   readonly xAxisLabelDisplayFormat: string;
   readonly tooltipTimeFormat: string;
 }
-
-export type TimeUnit = typeof TIME_UNITS[number];
 
 export type Timeframes = {
   readonly [timeframe in TimeFramePeriod]: Timeframe;

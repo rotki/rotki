@@ -1,29 +1,10 @@
+import { BaseAsset, SupportedAsset } from '@rotki/common/lib/data';
 import { BigNumber } from 'bignumber.js';
 import { CONFLICT_RESOLUTION } from '@/services/assets/consts';
-import { Nullable } from '@/types';
 
 export interface UnderlyingToken {
   readonly address: string;
   readonly weight: string;
-}
-
-export interface BaseAsset {
-  readonly identifier: string;
-  readonly coingecko?: Nullable<string>;
-  readonly cryptocompare?: string;
-  readonly started?: Nullable<number>;
-  readonly name: string;
-  readonly symbol: string;
-  readonly swappedFor?: Nullable<string>;
-}
-
-export interface SupportedAsset extends BaseAsset {
-  readonly active?: boolean;
-  readonly ended?: number | null;
-  readonly decimals?: number | null;
-  readonly assetType: string;
-  readonly forked?: string | null;
-  readonly ethereumAddress?: string | null;
 }
 
 export interface EthereumToken extends BaseAsset {

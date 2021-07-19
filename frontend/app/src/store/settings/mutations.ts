@@ -1,3 +1,9 @@
+import {
+  DARK_MODE_ENABLED,
+  DARK_THEME,
+  LIGHT_THEME,
+  ThemeColors
+} from '@rotki/common/lib/settings';
 import { default as BigNumber } from 'bignumber.js';
 import {
   TIMEFRAME_SETTING,
@@ -13,9 +19,6 @@ import {
   ITEMS_PER_PAGE,
   AMOUNT_ROUNDING_MODE,
   VALUE_ROUNDING_MODE,
-  DARK_MODE_ENABLED,
-  LIGHT_THEME,
-  DARK_THEME,
   GRAPH_ZERO_BASED
 } from '@/store/settings/consts';
 import { defaultState } from '@/store/settings/state';
@@ -25,8 +28,7 @@ import {
   TimeFramePeriod,
   TimeFrameSetting,
   RefreshPeriod,
-  ExplorersSettings,
-  ThemeColors
+  ExplorersSettings
 } from '@/store/settings/types';
 import { Writeable } from '@/types';
 import { CurrencyLocation } from '@/typing/types';

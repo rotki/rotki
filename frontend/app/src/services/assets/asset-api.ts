@@ -1,3 +1,4 @@
+import { ActionResult, SupportedAsset } from '@rotki/common/lib/data';
 import { AxiosInstance, AxiosTransformer } from 'axios';
 import {
   AssetIdResponse,
@@ -5,18 +6,13 @@ import {
   EthereumToken,
   HistoricalPrice,
   HistoricalPriceDeletePayload,
-  HistoricalPricePayload,
-  SupportedAsset
+  HistoricalPricePayload
 } from '@/services/assets/types';
 import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import {
-  ActionResult,
-  PendingTask,
-  SupportedAssets
-} from '@/services/types-api';
+import { PendingTask, SupportedAssets } from '@/services/types-api';
 import {
   handleResponse,
   validStatus,

@@ -1,3 +1,4 @@
+import { ActionResult } from '@rotki/common/lib/data';
 import {
   GitcoinGrantEventsPayload,
   GitcoinGrants
@@ -25,11 +26,7 @@ import {
 } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
-import {
-  ActionResult,
-  EntryWithMeta,
-  LimitedResponse
-} from '@/services/types-api';
+import { EntryWithMeta, LimitedResponse } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
   FETCH_FROM_CACHE,

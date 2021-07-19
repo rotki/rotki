@@ -1,3 +1,4 @@
+import { ActionResult } from '@rotki/common/lib/data';
 import { AxiosInstance } from 'axios';
 import { PriceOracles } from '@/model/action-result';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
@@ -12,7 +13,7 @@ import {
   basicAxiosTransformer
 } from '@/services/consts';
 import { SupportedModules } from '@/services/session/types';
-import { ActionResult, PendingTask } from '@/services/types-api';
+import { PendingTask } from '@/services/types-api';
 import {
   handleResponse,
   validStatus,

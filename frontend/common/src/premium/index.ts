@@ -1,14 +1,6 @@
-import {
-  GitcoinGrantEventsPayload,
-  GitcoinGrantReport,
-  GitcoinGrants,
-  GitcoinReportPayload
-} from '@rotki/common/lib/gitcoin';
-import { TimeUnit } from '@/components/dashboard/types';
-import { DebugSettings } from '@/electron-main/ipc';
-import { SupportedAsset } from '@/services/assets/types';
-import { ActionResult } from '@/services/types-api';
-import { FrontendSettingsPayload, Themes } from '@/store/settings/types';
+import { ActionResult, SupportedAsset } from "../data";
+import { GitcoinGrantEventsPayload, GitcoinGrantReport, GitcoinGrants, GitcoinReportPayload } from "../gitcoin";
+import { DebugSettings, FrontendSettingsPayload, Themes, TimeUnit } from "../settings";
 
 export interface RotkiPremiumInterface {
   readonly useHostComponents: boolean;
@@ -17,7 +9,7 @@ export interface RotkiPremiumInterface {
   readonly debug?: DebugSettings;
 }
 
-interface GitCoinApi {
+export interface GitCoinApi {
   deleteGrant(grantId: number): Promise<boolean>;
   fetchGrantEvents(
     payload: GitcoinGrantEventsPayload
@@ -25,7 +17,7 @@ interface GitCoinApi {
   generateReport(payload: GitcoinReportPayload): Promise<GitcoinGrantReport>;
 }
 
-interface DateUtilities {
+export interface DateUtilities {
   epoch(): number;
   format(date: string, oldFormat: string, newFormat: string): string;
   now(format: string): string;
@@ -35,13 +27,13 @@ interface DateUtilities {
   toUserSelectedFormat(timestamp: number): string;
 }
 
-interface DataUtilities {
+export interface DataUtilities {
   assetInfo(identifier: string): SupportedAsset | undefined;
   getIdentifierForSymbol(symbol: string): string | undefined;
   readonly gitcoin: GitCoinApi;
 }
 
-interface SettingsApi {
+export interface SettingsApi {
   update(settings: FrontendSettingsPayload): Promise<void>;
   defaultThemes(): Themes;
   themes(): Themes;

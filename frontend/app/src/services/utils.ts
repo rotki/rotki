@@ -1,10 +1,7 @@
+import { ActionResult } from '@rotki/common/lib/data';
 import { AxiosResponse } from 'axios';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
-import {
-  ActionResult,
-  ApiImplementation,
-  PendingTask
-} from '@/services/types-api';
+import { ApiImplementation, PendingTask } from '@/services/types-api';
 
 export function fetchExternalAsync(
   api: ApiImplementation,

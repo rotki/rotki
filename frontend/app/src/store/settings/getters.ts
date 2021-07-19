@@ -1,6 +1,6 @@
+import { DARK_MODE_ENABLED } from '@rotki/common/lib/settings';
 import {
   CURRENCY_LOCATION,
-  DARK_MODE_ENABLED,
   DECIMAL_SEPARATOR,
   PROFIT_LOSS_PERIOD,
   THOUSAND_SEPARATOR

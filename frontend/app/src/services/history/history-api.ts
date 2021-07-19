@@ -1,3 +1,4 @@
+import { ActionResult } from '@rotki/common/lib/data';
 import {
   GitcoinGrantEventsPayload,
   GitcoinGrantReport,
@@ -20,7 +21,6 @@ import {
   TradeLocation
 } from '@/services/history/types';
 import {
-  ActionResult,
   EntryWithMeta,
   LimitedResponse,
   PendingTask
