@@ -318,7 +318,7 @@ If you are on an older version of npm, you can install it by::
 
 Install electron and any other npm dependencies by::
 
-    cd frontend/app
+    cd frontend
     npm ci
 
 Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`__ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
@@ -338,7 +338,10 @@ Since the electron application is located in a different directory you also need
 
     pip install -e .
 
-Now to start the application you need to change to the ``frontend/app`` directory and type ``npm run electron:serve``.
+Before starting the application you need to build the common package. To do this you can go to ``frontend`` and
+run ``npm run build -w @rotki/common``.
+
+After thant you can start the application by going to the ``frontend/app`` directory and typing ``npm run electron:serve``.
 
 OSX
 =====
