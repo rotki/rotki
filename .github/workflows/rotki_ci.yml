@@ -59,21 +59,21 @@ jobs:
             ~/.cache/Cypress
           key: ${{ runner.os }}-node--ci-${{ hashFiles('**/app/package-lock.json') }}
       - name: Install dependencies
-        working-directory: ./frontend/app
+        working-directory: ./frontend
         run: |
           npm install -g npm@7
           if ! npm ci --exit-code; then
             npm ci
           fi
+      - name: Build
+        working-directory: ./frontend
+        run: npm run build
       - name: Lint code
-        working-directory: ./frontend/app
-        run: npm run lint:check
+        working-directory: ./frontend
+        run: npm run lint
       - name: Lint style
         working-directory: ./frontend/app
         run: npm run lint:style
-      - name: Build
-        working-directory: ./frontend/app
-        run: npm run build
       - name: Run unit tests
         working-directory: ./frontend/app
         run: npm run test:unit
@@ -233,7 +233,7 @@ jobs:
           pip install -r requirements_dev.txt
           pip install -e .
       - name: Restore dependencies
-        working-directory: ./frontend/app
+        working-directory: ./frontend
         run: |
           npm install -g npm@7
           if ! npm ci --exit-code; then

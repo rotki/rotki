@@ -128,12 +128,13 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
       - name: Run integration tests
-        working-directory: ./frontend/app
+        working-directory: ./frontend
         run: |
           npm install -g npm@7
           if ! npm ci --exit-code; then
            npm ci
           fi
+          cd app
           npm run test:integration-ci
       - name: Upload coverage
         working-directory: ./frontend/app
