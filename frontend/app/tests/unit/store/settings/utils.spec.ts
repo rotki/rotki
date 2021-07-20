@@ -3,14 +3,16 @@ import {
   DARK_THEME,
   LIGHT_THEME
 } from '@rotki/common/lib/settings';
+import {
+  TimeFramePeriod,
+  TimeFramePersist
+} from '@rotki/common/lib/settings/graphs';
 import { default as BigNumber } from 'bignumber.js';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
   TIMEFRAME_SETTING,
   DEFI_SETUP_DONE,
-  TIMEFRAME_ALL,
-  TIMEFRAME_REMEMBER,
   LAST_KNOWN_TIMEFRAME,
   QUERY_PERIOD,
   PROFIT_LOSS_PERIOD,
@@ -63,9 +65,9 @@ describe('settings:utils', () => {
     expect(commit).toHaveBeenCalledWith(
       'settings/restore',
       {
-        [TIMEFRAME_SETTING]: TIMEFRAME_REMEMBER,
+        [TIMEFRAME_SETTING]: TimeFramePersist.REMEMBER,
         [DEFI_SETUP_DONE]: true,
-        [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_ALL,
+        [LAST_KNOWN_TIMEFRAME]: TimeFramePeriod.ALL,
         [QUERY_PERIOD]: 5,
         [PROFIT_LOSS_PERIOD]: {
           year: new Date().getFullYear().toString(),

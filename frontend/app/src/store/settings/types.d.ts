@@ -4,12 +4,14 @@ import {
   LIGHT_THEME,
   ThemeColors
 } from '@rotki/common/lib/settings';
+import {
+  TimeFramePeriod,
+  TimeFrameSetting
+} from '@rotki/common/lib/settings/graphs';
 import { default as BigNumber } from 'bignumber.js';
 import {
   TIMEFRAME_SETTING,
   DEFI_SETUP_DONE,
-  TIMEFRAME_PERIOD,
-  TIMEFRAME_REMEMBER,
   LAST_KNOWN_TIMEFRAME,
   QUERY_PERIOD,
   PROFIT_LOSS_PERIOD,
@@ -25,11 +27,7 @@ import {
   GRAPH_ZERO_BASED
 } from '@/store/settings/consts';
 import { CurrencyLocation } from '@/typing/types';
-
 import RoundingMode = BigNumber.RoundingMode;
-
-export type TimeFramePeriod = typeof TIMEFRAME_PERIOD[number];
-export type TimeFrameSetting = TimeFramePeriod | typeof TIMEFRAME_REMEMBER;
 
 export type Quarter = typeof QUARTERS[number];
 

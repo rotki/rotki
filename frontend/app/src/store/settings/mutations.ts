@@ -4,6 +4,10 @@ import {
   LIGHT_THEME,
   ThemeColors
 } from '@rotki/common/lib/settings';
+import {
+  TimeFramePeriod,
+  TimeFrameSetting
+} from '@rotki/common/lib/settings/graphs';
 import { default as BigNumber } from 'bignumber.js';
 import {
   TIMEFRAME_SETTING,
@@ -25,8 +29,6 @@ import { defaultState } from '@/store/settings/state';
 import {
   SettingsState,
   ProfitLossTimeframe,
-  TimeFramePeriod,
-  TimeFrameSetting,
   RefreshPeriod,
   ExplorersSettings
 } from '@/store/settings/types';

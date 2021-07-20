@@ -3,6 +3,10 @@ import {
   DARK_THEME,
   LIGHT_THEME
 } from '@rotki/common/lib/settings';
+import {
+  TimeFramePeriod,
+  TimeFramePersist
+} from '@rotki/common/lib/settings/graphs';
 import { default as BigNumber } from 'bignumber.js';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
@@ -11,8 +15,6 @@ import { api } from '@/services/rotkehlchen-api';
 import {
   TIMEFRAME_SETTING,
   DEFI_SETUP_DONE,
-  TIMEFRAME_ALL,
-  TIMEFRAME_REMEMBER,
   LAST_KNOWN_TIMEFRAME,
   QUERY_PERIOD,
   PROFIT_LOSS_PERIOD,
@@ -47,8 +49,8 @@ describe('settings:actions', () => {
         frontend_settings: JSON.stringify(
           axiosSnakeCaseTransformer({
             [DEFI_SETUP_DONE]: true,
-            [TIMEFRAME_SETTING]: TIMEFRAME_REMEMBER,
-            [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_ALL,
+            [TIMEFRAME_SETTING]: TimeFramePersist.REMEMBER,
+            [LAST_KNOWN_TIMEFRAME]: TimeFramePeriod.ALL,
             [QUERY_PERIOD]: 5,
             [PROFIT_LOSS_PERIOD]: {
               year: new Date().getFullYear().toString(),

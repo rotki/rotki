@@ -43,16 +43,16 @@ interface GitcoinGrantEvents {
   readonly clrRound: Nullable<number>;
 }
 
-interface GitcoinGrantEarnings {
+export interface GitcoinGrantEarnings {
   readonly amount: BigNumber;
   readonly value: BigNumber;
 }
 
-interface GitcoinGrantPerAssetDetails {
+export interface GitcoinGrantPerAssetDetails {
   readonly [asset: string]: GitcoinGrantEarnings;
 }
 
-interface GitcoinGrantDetails {
+export interface GitcoinGrantDetails {
   readonly perAsset: GitcoinGrantPerAssetDetails;
   readonly total: BigNumber;
 }

@@ -28,10 +28,14 @@
 </template>
 
 <script lang="ts">
+import {
+  TimeFramePeriod,
+  TimeFramePersist,
+  TimeFrameSetting
+} from '@rotki/common/lib/settings/graphs';
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import PremiumMixin from '@/mixins/premium-mixin';
-import { TIMEFRAME_PERIOD, TIMEFRAME_REMEMBER } from '@/store/settings/consts';
-import { TimeFrameSetting } from '@/store/settings/types';
+
 import { isPeriodAllowed } from '@/store/settings/utils';
 
 @Component({})
@@ -47,7 +51,7 @@ export default class TimeframeSelector extends Mixins(PremiumMixin) {
   input(_value: TimeFrameSetting) {}
 
   worksWithoutPremium(period: TimeFrameSetting): boolean {
-    return isPeriodAllowed(period) || period === TIMEFRAME_REMEMBER;
+    return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
   }
 
   activeClass(timeframePeriod: TimeFrameSetting): string {
@@ -55,10 +59,11 @@ export default class TimeframeSelector extends Mixins(PremiumMixin) {
   }
 
   get timeframes() {
+    const period = Object.values(TimeFramePeriod);
     if (this.setting) {
-      return [TIMEFRAME_REMEMBER, ...TIMEFRAME_PERIOD] as const;
+      return [TimeFramePersist.REMEMBER, ...period] as const;
     }
-    return TIMEFRAME_PERIOD;
+    return period;
   }
 }
 </script>

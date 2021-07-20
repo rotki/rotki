@@ -1,4 +1,4 @@
 package.json
 package-lock.json
-dist
+lib
 node_modules

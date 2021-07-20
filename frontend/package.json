@@ -13,7 +13,8 @@
   "workspaces": ["app","common"],
   "scripts": {
     "electron:build": "npm run build --workspace=@rotki/common && npm run electron:build --workspace rotki",
-    "build": "npm run build --workspace=@rotki/common && npm run electron:build --workspace rotki",
-    "lint": "npm run lint -ws"
+    "build": "npm run build --workspace=@rotki/common && npm run build --workspace rotki",
+    "lint": "npm run lint -ws",
+    "check": "npm run lint && npm run build && npm run test:unit --workspace=rotki && npm run test:integration-ci --workspace=rotki"
   }
 }

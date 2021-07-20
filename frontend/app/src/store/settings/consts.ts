@@ -13,23 +13,6 @@ export const AMOUNT_ROUNDING_MODE = 'amountRoundingMode' as const;
 export const VALUE_ROUNDING_MODE = 'valueRoundingMode' as const;
 export const GRAPH_ZERO_BASED = 'graphZeroBased' as const;
 
-export const TIMEFRAME_ALL = 'All';
-export const TIMEFRAME_YEAR = '1Y';
-export const TIMEFRAME_THREE_MONTHS = '3M';
-export const TIMEFRAME_MONTH = '1M';
-export const TIMEFRAME_TWO_WEEKS = '2W';
-export const TIMEFRAME_WEEK = '1W';
-export const TIMEFRAME_REMEMBER = 'REMEMBER';
-
-export const TIMEFRAME_PERIOD = [
-  TIMEFRAME_ALL,
-  TIMEFRAME_YEAR,
-  TIMEFRAME_THREE_MONTHS,
-  TIMEFRAME_MONTH,
-  TIMEFRAME_TWO_WEEKS,
-  TIMEFRAME_WEEK
-] as const;
-
 export const Q1 = 'Q1';
 export const Q2 = 'Q2';
 export const Q3 = 'Q3';
