@@ -7,10 +7,8 @@ import {
   AAVE_LENDING_EVENTS,
   DEFI_EVENT_LIQUIDATION,
   DefiProtocol,
-  V1,
-  V2
+  ProtocolVersion
 } from '@/services/defi/consts';
-import { ProtocolVersion } from '@/services/defi/types';
 import {
   AaveEvent,
   AaveHistoryEvents,
@@ -642,7 +640,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       );
 
     function yearnData(
-      version: ProtocolVersion = V1
+      version: ProtocolVersion = ProtocolVersion.V1
     ): { weight: BigNumber; usdValue: BigNumber } {
       return yearnVaultsAssets([], version)
         .filter(({ underlyingValue }) => underlyingValue.usdValue.gt(Zero))
@@ -691,7 +689,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       .map(value => value.balance.usdValue)
       .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
 
-    function getYearnDeposit(version: ProtocolVersion = V1) {
+    function getYearnDeposit(version: ProtocolVersion = ProtocolVersion.V1) {
       return yearnVaultsAssets(addresses, version)
         .map(value => value.underlyingValue.usdValue)
         .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
@@ -708,7 +706,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       protocols.length === 0 ||
       protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
     ) {
-      lendingDeposit = lendingDeposit.plus(getYearnDeposit(V2));
+      lendingDeposit = lendingDeposit.plus(getYearnDeposit(ProtocolVersion.V2));
     }
 
     return lendingDeposit;
@@ -954,8 +952,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
     }
 
-    function yearnHistory(version: ProtocolVersion = V1) {
-      const isV1 = version === V1;
+    function yearnHistory(version: ProtocolVersion = ProtocolVersion.V1) {
+      const isV1 = version === ProtocolVersion.V1;
       const vaultsHistory = isV1 ? yearnVaultsHistory : yearnVaultsV2History;
       for (const address in vaultsHistory) {
         if (!allAddresses && !addresses.includes(address)) {
@@ -1001,7 +999,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     }
 
     if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS_V2)) {
-      yearnHistory(V2);
+      yearnHistory(ProtocolVersion.V2);
     }
     return sortBy(defiLendingHistory, 'timestamp').reverse();
   },
@@ -1231,10 +1229,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     { 'balances/assetSymbol': assetSymbol }
   ) => (
     addresses: string[],
-    version: ProtocolVersion = V1
+    version: ProtocolVersion = ProtocolVersion.V1
   ): YearnVaultProfitLoss[] => {
     const vaultsHistory =
-      version === V1 ? yearnVaultsHistory : yearnVaultsV2History;
+      version === ProtocolVersion.V1
+        ? yearnVaultsHistory
+        : yearnVaultsV2History;
     const yearnVaultsProfit: { [vault: string]: YearnVaultProfitLoss } = {};
     const allAddresses = addresses.length === 0;
     for (const address in vaultsHistory) {
@@ -1280,10 +1280,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     { 'balances/assetSymbol': assetSymbol }
   ) => (
     addresses: string[],
-    version: ProtocolVersion = V1
+    version: ProtocolVersion = ProtocolVersion.V1
   ): YearnVaultAsset[] => {
     const vaultsBalances =
-      version === V1 ? yearnVaultsBalances : yearnVaultsV2Balances;
+      version === ProtocolVersion.V1
+        ? yearnVaultsBalances
+        : yearnVaultsV2Balances;
     const balances: { [vault: string]: YearnVaultBalance[] } = {};
     const allAddresses = addresses.length === 0;
     for (const address in vaultsBalances) {

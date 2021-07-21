@@ -203,8 +203,7 @@ import {
   LendingHistory,
   YearnVaultsProfitDetails
 } from '@/premium/premium';
-import { DefiProtocol, V1, V2 } from '@/services/defi/consts';
-import { ProtocolVersion } from '@/services/defi/types';
+import { DefiProtocol, ProtocolVersion } from '@/services/defi/consts';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
 import {
   MODULE_AAVE,
@@ -308,12 +307,12 @@ export default class Lending extends Mixins(StatusMixin) {
     const addresses = this.selectedAddresses;
     let v1Profit: YearnVaultProfitLoss[] = [];
     if (this.isYearnVaults || allSelected) {
-      v1Profit = this.yearnVaultsProfit(addresses, V1);
+      v1Profit = this.yearnVaultsProfit(addresses, ProtocolVersion.V1);
     }
 
     let v2Profit: YearnVaultProfitLoss[] = [];
     if (this.isYearnVaultsV2 || allSelected) {
-      v2Profit = this.yearnVaultsProfit(addresses, V2);
+      v2Profit = this.yearnVaultsProfit(addresses, ProtocolVersion.V2);
     }
     return [...v1Profit, ...v2Profit];
   }
@@ -331,9 +330,9 @@ export default class Lending extends Mixins(StatusMixin) {
 
   get yearnVersion(): Nullable<ProtocolVersion> {
     if (this.isYearnVaults) {
-      return V1;
+      return ProtocolVersion.V1;
     } else if (this.isYearnVaultsV2) {
-      return V2;
+      return ProtocolVersion.V2;
     }
     return null;
   }

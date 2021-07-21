@@ -48,7 +48,7 @@ export const aaveHistoryKeys = [
   'borrow_rate'
 ];
 
-export const V1 = 'v1' as const;
-export const V2 = 'v2' as const;
-
-export const PROTOCOL_VERSION = [V1, V2] as const;
+export enum ProtocolVersion {
+  V1 = 'v1',
+  V2 = 'v2'
+}

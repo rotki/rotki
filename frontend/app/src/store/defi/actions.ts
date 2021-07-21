@@ -7,12 +7,11 @@ import {
   aaveHistoryKeys,
   DefiProtocol,
   dsrKeys,
-  V1,
-  V2,
+  ProtocolVersion,
   vaultDetailsKeys,
   vaultKeys
 } from '@/services/defi/consts';
-import { ApiMakerDAOVault, ProtocolVersion } from '@/services/defi/types';
+import { ApiMakerDAOVault } from '@/services/defi/types';
 import { AaveBalances, AaveHistory } from '@/services/defi/types/aave';
 import {
   CompoundBalances,
@@ -422,8 +421,14 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       dispatch('fetchDSRBalances', refresh),
       dispatch('fetchMakerDAOVaults', refresh),
       dispatch('fetchCompoundBalances', refresh),
-      dispatch('fetchYearnVaultBalances', { refresh, version: V1 }),
-      dispatch('fetchYearnVaultBalances', { refresh, version: V2 })
+      dispatch('fetchYearnVaultBalances', {
+        refresh,
+        version: ProtocolVersion.V1
+      }),
+      dispatch('fetchYearnVaultBalances', {
+        refresh,
+        version: ProtocolVersion.V2
+      })
     ]);
 
     setStatus(Status.LOADED, section, status, commit);
@@ -456,16 +461,18 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         dispatch('fetchCompoundBalances', refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section, status, commit);
         }),
-        dispatch('fetchYearnVaultBalances', { refresh, version: V1 }).then(
-          () => {
-            setStatus(Status.PARTIALLY_LOADED, section, status, commit);
-          }
-        ),
-        dispatch('fetchYearnVaultBalances', { refresh, version: V2 }).then(
-          () => {
-            setStatus(Status.PARTIALLY_LOADED, section, status, commit);
-          }
-        )
+        dispatch('fetchYearnVaultBalances', {
+          refresh,
+          version: ProtocolVersion.V1
+        }).then(() => {
+          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+        }),
+        dispatch('fetchYearnVaultBalances', {
+          refresh,
+          version: ProtocolVersion.V2
+        }).then(() => {
+          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+        })
       ]);
 
       setStatus(Status.LOADED, section, status, commit);
@@ -487,8 +494,14 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       dispatch('fetchDSRHistory', refresh),
       dispatch('fetchAaveHistory', { refresh }),
       dispatch('fetchCompoundHistory', refresh),
-      dispatch('fetchYearnVaultsHistory', { refresh, version: V1 }),
-      dispatch('fetchYearnVaultsHistory', { refresh, version: V2 })
+      dispatch('fetchYearnVaultsHistory', {
+        refresh,
+        version: ProtocolVersion.V1
+      }),
+      dispatch('fetchYearnVaultsHistory', {
+        refresh,
+        version: ProtocolVersion.V2
+      })
     ]);
 
     setStatus(Status.LOADED, premiumSection, status, commit);
@@ -514,7 +527,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         dispatch('fetchYearnVaultsHistory', {
           refresh: true,
           reset: true,
-          version: V1
+          version: ProtocolVersion.V1
         })
       );
     }
@@ -524,7 +537,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         dispatch('fetchYearnVaultsHistory', {
           refresh: true,
           reset: true,
-          version: V2
+          version: ProtocolVersion.V2
         })
       );
     }
@@ -695,12 +708,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     { commit, rootGetters: { status }, rootState: { session } },
     { refresh, version }: { refresh: boolean; version: ProtocolVersion } = {
       refresh: false,
-      version: V1
+      version: ProtocolVersion.V1
     }
   ) {
     const { activeModules } = session!.generalSettings;
-    const isV1 = version === V1;
-    const isV2 = version === V2;
+    const isV1 = version === ProtocolVersion.V1;
+    const isV2 = version === ProtocolVersion.V2;
     const isYearnV1AndActive = activeModules.includes(MODULE_YEARN) && isV1;
     const isYearnV2AndActive = activeModules.includes(MODULE_YEARN_V2) && isV2;
     const isModuleActive = isYearnV1AndActive || isYearnV2AndActive;
@@ -773,8 +786,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const reset = payload?.reset;
     const { activeModules } = session!.generalSettings;
 
-    const isV1 = payload.version === V1;
-    const isV2 = payload.version === V2;
+    const isV1 = payload.version === ProtocolVersion.V1;
+    const isV2 = payload.version === ProtocolVersion.V2;
     const isYearnV1AndActive = activeModules.includes(MODULE_YEARN) && isV1;
     const isYearnV2AndActive = activeModules.includes(MODULE_YEARN_V2) && isV2;
     const isModuleActive = isYearnV1AndActive || isYearnV2AndActive;
