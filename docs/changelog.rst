@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`3061` When inserting ledger actions users will now be able to skip the specific time on date input (00:00:00 will be assumed).
 * :feature:`3061` Users will now get the last used location pre-selected when adding ledger actions.
+* :feature:`3138` Users will now see separate cards on the Defi overview for MakerDAO Vaults and MakerDAO DSR.
 
 * :release:`1.19.1 <2021-07-22>`
 * :bug:`3236` Users will now see the proper total networth for the current day in the graph tooltip.
@@ -17,7 +18,7 @@ Changelog
 * :feature:`1520` Users can now manually add prices for tokens/assets.
 * :feature:`692` Gitcoin Grant owners will now be able to track and generate reports of their grants.
 * :feature:`1666` Users will now be able to see their yearn v2 vaults in in the defi section.
-* :feature:`2456` Users will now be able to correctly retrive prices for Curve LP tokens.
+* :feature:`2456` Users will now be able to correctly retrieve prices for Curve LP tokens.
 * :feature:`2778` Users will now be able to enable modules and queried addresses when adding an ethereum account
 * :feature:`1857` Premium users will now be able to query Aave V2 events. 
 * :feature:`2722` The sync conflict dialog dates will now be consistent with the user specified date format.
