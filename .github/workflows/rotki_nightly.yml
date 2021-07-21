@@ -134,6 +134,7 @@ jobs:
           if ! npm ci --exit-code; then
            npm ci
           fi
+          npm run build -w @rotki/common
           cd app
           npm run test:integration-ci
       - name: Upload coverage
