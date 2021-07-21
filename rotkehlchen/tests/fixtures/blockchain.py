@@ -5,11 +5,13 @@ import pytest
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
+from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstrateChain
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -48,16 +50,23 @@ def fixture_ksm_accounts() -> List[KusamaAddress]:
     return []
 
 
+@pytest.fixture(name='avax_accounts')
+def fixture_avax_accounts() -> List[ChecksumEthAddress]:
+    return []
+
+
 @pytest.fixture(name='blockchain_accounts')
 def fixture_blockchain_accounts(
         ethereum_accounts: List[ChecksumEthAddress],
         btc_accounts: List[BTCAddress],
         ksm_accounts: List[KusamaAddress],
+        avax_accounts: List[ChecksumEthAddress],
 ) -> BlockchainAccounts:
     return BlockchainAccounts(
         eth=ethereum_accounts,
         btc=btc_accounts.copy(),
         ksm=ksm_accounts.copy(),
+        avax=avax_accounts.copy(),
     )
 
 
@@ -74,6 +83,11 @@ def fixture_ethereum_manager_connect_at_start() -> Sequence[NodeName]:
 @pytest.fixture(name='etherscan')
 def fixture_etherscan(database, messages_aggregator):
     return Etherscan(database=database, msg_aggregator=messages_aggregator)
+
+
+@pytest.fixture(name='covalent_avalanche')
+def fixture_covalent_avalanche(messages_aggregator):
+    return Covalent(msg_aggregator=messages_aggregator, chain_id='43114')
 
 
 @pytest.fixture(name='ethereum_manager')
@@ -162,6 +176,19 @@ def fixture_kusama_manager(
     return kusama_manager
 
 
+@pytest.fixture(name='avalanche_manager')
+def fixture_avalanche_manager(
+    messages_aggregator,
+    covalent_avalanche,
+):
+    avalanche_manager = AvalancheManager(
+        avaxrpc_endpoint="https://api.avax.network/ext/bc/C/rpc",
+        covalent=covalent_avalanche,
+        msg_aggregator=messages_aggregator,
+    )
+    return avalanche_manager
+
+
 @pytest.fixture(name='ethereum_modules')
 def fixture_ethereum_modules() -> List[str]:
     return []
@@ -181,6 +208,7 @@ def fixture_btc_derivation_gap_limit():
 def blockchain(
         ethereum_manager,
         kusama_manager,
+        avalanche_manager,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
@@ -201,6 +229,7 @@ def blockchain(
         blockchain_accounts=blockchain_accounts,
         ethereum_manager=ethereum_manager,
         kusama_manager=kusama_manager,
+        avalanche_manager=avalanche_manager,
         msg_aggregator=messages_aggregator,
         database=database,
         greenlet_manager=greenlet_manager,

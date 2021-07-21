@@ -101,6 +101,8 @@ from rotkehlchen.api.v1.resources import (
     YearnVaultsV2BalancesResource,
     YearnVaultsV2HistoryResource,
     create_blueprint,
+    AvalancheTransactionsResource,
+    ERC20TokenInfoAVAX,
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -199,6 +201,13 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/loopring/balances', LoopringBalancesResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
     ('/blockchains/BTC/xpub', BTCXpubResource),
+    ('/blockchains/AVAX/transactions', AvalancheTransactionsResource),
+    (
+        '/blockchains/AVAX/transactions/<string:address>',
+        AvalancheTransactionsResource,
+        'per_address_avalanche_transactions_resource',
+    ),
+    ('/blockchains/AVAX/erc20details/', ERC20TokenInfoAVAX),
     ('/assets', OwnedAssetsResource),
     ('/assets/types', AssetsTypesResource),
     ('/assets/replace', AssetsReplaceResource),

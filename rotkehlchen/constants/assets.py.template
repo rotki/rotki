@@ -16,6 +16,7 @@ A_ETH = Asset('ETH')
 A_ETH2 = Asset('ETH2')
 A_ETC = Asset('ETC')
 A_KSM = Asset('KSM')
+A_AVAX = Asset('AVAX')
 
 A_BAL = EthereumToken('0xba100000625a3754423978a60c9317c58a424e3D')
 A_BAT = EthereumToken('0x0D8775F648430679A709E98d2b0Cb6250d2887EF')

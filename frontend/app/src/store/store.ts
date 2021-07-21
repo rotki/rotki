@@ -167,6 +167,7 @@ const store: StoreOptions<RotkehlchenState> = {
         isLoading(state.status[Section.BLOCKCHAIN_ETH]) ||
         isLoading(state.status[Section.BLOCKCHAIN_BTC]) ||
         isLoading(state.status[Section.BLOCKCHAIN_KSM]) ||
+        isLoading(state.status[Section.BLOCKCHAIN_AVAX]) ||
         isLoading(state.status[Section.EXCHANGES]) ||
         isLoading(state.status[Section.MANUAL_BALANCES])
       );

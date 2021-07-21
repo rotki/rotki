@@ -31,6 +31,9 @@ export const mutations: MutationTree<BalanceState> = {
   updateKsm(state: BalanceState, payload: BlockchainAssetBalances) {
     state.ksm = { ...payload };
   },
+  updateAvax(state: BalanceState, payload: BlockchainAssetBalances) {
+    state.avax = { ...payload };
+  },
   updateTotals(state: BalanceState, payload: Balances) {
     state.totals = { ...state.totals, ...payload };
   },
@@ -98,6 +101,9 @@ export const mutations: MutationTree<BalanceState> = {
   },
   ksmAccounts(state: BalanceState, accounts: GeneralAccountData[]) {
     state.ksmAccounts = accounts;
+  },
+  avaxAccounts(state: BalanceState, accounts: GeneralAccountData[]) {
+    state.avaxAccounts = accounts;
   },
   supportedAssets(state: BalanceState, supportedAssets: SupportedAsset[]) {
     state.supportedAssets = supportedAssets;

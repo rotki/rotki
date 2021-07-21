@@ -77,8 +77,9 @@ export interface TaskResult<T> {
 export const ETH = 'ETH';
 export const BTC = 'BTC';
 export const KSM = 'KSM';
+export const AVAX = 'AVAX';
 
-export const SupportedBlockchains = [ETH, BTC, KSM] as const;
+export const SupportedBlockchains = [ETH, BTC, KSM, AVAX] as const;
 
 export type Blockchain = typeof SupportedBlockchains[number];
 

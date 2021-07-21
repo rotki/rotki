@@ -2058,7 +2058,7 @@ Querying onchain balances
 
 .. http:get:: /api/(version)/balances/blockchains/(blockchain)/
 
-   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH`` and ``KSM``.
+   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``KSM`` and ``AVAX``.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
@@ -4128,7 +4128,7 @@ Getting blockchain account data
 .. http:get:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "AVAX"``
 
    Doing a GET on the blokchcains endpoint with a specific blockchain queries account data information for that blockchain.
 
@@ -7085,7 +7085,7 @@ Adding blockchain accounts
 .. http:put:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "AVAX"``
 
       Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
 
@@ -7479,7 +7479,7 @@ Editing blockchain account data
 .. http:patch:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "AVAX"``
 
       Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
 
@@ -7550,7 +7550,7 @@ Removing blockchain accounts
 .. http:delete:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "AVAX"``
 
       Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
 
