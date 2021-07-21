@@ -203,16 +203,8 @@ import {
   LendingHistory,
   YearnVaultsProfitDetails
 } from '@/premium/premium';
-import {
-  DEFI_AAVE,
-  DEFI_COMPOUND,
-  DEFI_PROTOCOLS,
-  DEFI_YEARN_VAULTS,
-  DEFI_YEARN_VAULTS_V2,
-  V1,
-  V2
-} from '@/services/defi/consts';
-import { ProtocolVersion, SupportedDefiProtocols } from '@/services/defi/types';
+import { DefiProtocol, V1, V2 } from '@/services/defi/consts';
+import { ProtocolVersion } from '@/services/defi/types';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
 import {
   MODULE_AAVE,
@@ -273,23 +265,23 @@ export default class Lending extends Mixins(StatusMixin) {
   floatingPrecision!: number;
   selectedAccount: Account | null = null;
   totalLendingDeposit!: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ) => BigNumber;
-  defiAccounts!: (protocols: SupportedDefiProtocols[]) => DefiAccount[];
+  defiAccounts!: (protocols: DefiProtocol[]) => DefiAccount[];
   aggregatedLendingBalances!: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ) => BaseDefiBalance[];
   effectiveInterestRate!: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ) => string;
-  protocol: SupportedDefiProtocols | null = null;
+  protocol: DefiProtocol | null = null;
   fetchLending!: (refresh?: boolean) => Promise<void>;
-  resetDB!: (protocols: SupportedDefiProtocols[]) => Promise<void>;
+  resetDB!: (protocols: DefiProtocol[]) => Promise<void>;
   totalUsdEarned!: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ) => BigNumber;
   yearnVaultsProfit!: DefiGetterTypes.YearnVaultProfitType;
@@ -298,11 +290,11 @@ export default class Lending extends Mixins(StatusMixin) {
   section = Section.DEFI_LENDING;
   secondSection = Section.DEFI_LENDING_HISTORY;
 
-  resetSelection: SupportedDefiProtocols[] = [];
+  resetSelection: DefiProtocol[] = [];
 
-  readonly AAVE = DEFI_AAVE;
-  readonly YEARN_VAULTS = DEFI_YEARN_VAULTS;
-  readonly YEARN_VAULTS_V2 = DEFI_YEARN_VAULTS_V2;
+  readonly AAVE = DefiProtocol.AAVE;
+  readonly YEARN_VAULTS = DefiProtocol.YEARN_VAULTS;
+  readonly YEARN_VAULTS_V2 = DefiProtocol.YEARN_VAULTS_V2;
   readonly modules: SupportedModules[] = [
     MODULE_AAVE,
     MODULE_COMPOUND,
@@ -333,7 +325,7 @@ export default class Lending extends Mixins(StatusMixin) {
   get isCompound(): boolean {
     return (
       this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes(DEFI_COMPOUND)
+      this.selectedProtocols.includes(DefiProtocol.COMPOUND)
     );
   }
 
@@ -349,21 +341,21 @@ export default class Lending extends Mixins(StatusMixin) {
   get isYearnVaults(): boolean {
     return (
       this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes(DEFI_YEARN_VAULTS)
+      this.selectedProtocols.includes(DefiProtocol.YEARN_VAULTS)
     );
   }
 
   get isYearnVaultsV2(): boolean {
     return (
       this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes(DEFI_YEARN_VAULTS_V2)
+      this.selectedProtocols.includes(DefiProtocol.YEARN_VAULTS_V2)
     );
   }
 
   get isAave(): boolean {
     return (
       this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes(DEFI_AAVE)
+      this.selectedProtocols.includes(DefiProtocol.AAVE)
     );
   }
 
@@ -377,16 +369,17 @@ export default class Lending extends Mixins(StatusMixin) {
 
   async created() {
     const queryElement = this.$route.query['protocol'];
-    const protocolIndex = DEFI_PROTOCOLS.findIndex(
+    const protocols = Object.values(DefiProtocol);
+    const protocolIndex = protocols.findIndex(
       protocol => protocol === queryElement
     );
     if (protocolIndex >= 0) {
-      this.protocol = DEFI_PROTOCOLS[protocolIndex];
+      this.protocol = protocols[protocolIndex];
     }
     await this.fetchLending();
   }
 
-  get selectedProtocols(): SupportedDefiProtocols[] {
+  get selectedProtocols(): DefiProtocol[] {
     return this.protocol ? [this.protocol] : [];
   }
 

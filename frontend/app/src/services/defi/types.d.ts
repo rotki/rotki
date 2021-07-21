@@ -2,7 +2,6 @@ import { default as BigNumber } from 'bignumber.js';
 import {
   AAVE_BORROWING_EVENTS,
   AAVE_LENDING_EVENTS,
-  DEFI_PROTOCOLS,
   PROTOCOL_VERSION
 } from '@/services/defi/consts';
 import { CompoundEventType } from '@/services/defi/types/compound';
@@ -23,8 +22,6 @@ export type AaveEventType = AaveLendingEventType | AaveBorrowingEventType;
 
 export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
 export type DefiBalanceType = 'Asset' | 'Debt';
-
-export type SupportedDefiProtocols = typeof DEFI_PROTOCOLS[number];
 
 export type EventType = DSRMovementType | AaveEventType | CompoundEventType;
 

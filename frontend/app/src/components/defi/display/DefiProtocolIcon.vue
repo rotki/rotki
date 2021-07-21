@@ -1,6 +1,6 @@
 <template>
   <div
-    class="defi-protocol-icon d-flex flex-row align-center"
+    class="d-flex flex-row align-center"
     :class="mode === 'icon' ? 'justify-center' : null"
   >
     <v-tooltip top :disabled="mode !== 'icon'" open-delay="300ms">
@@ -11,69 +11,83 @@
           v-bind="attrs"
           max-width="24px"
           max-height="24"
-          class="defi-protocol-icon__image"
-          :class="mode !== 'icon' ? 'mr-2' : null"
+          :class="{
+            'mr-2': mode !== 'icon',
+            [$style.icon]: true
+          }"
           :src="require(`@/assets/images/defi/${icon}.svg`)"
           v-on="on"
         />
         <span
           v-if="mode === 'label' || mode === 'both'"
-          class="defi-protocol-icon__label text--secondary"
+          class="text--secondary"
+          :class="$style.label"
         >
-          {{ name | capitalize }}
+          {{ capitalize(name) }}
         </span>
       </template>
       <span>
-        {{ name | capitalize }}
+        {{ capitalize(name) }}
       </span>
     </v-tooltip>
   </div>
 </template>
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import {
-  DEFI_MAKERDAO,
-  DEFI_YEARN_VAULTS,
-  DEFI_YEARN_VAULTS_V2
-} from '@/services/defi/consts';
-import { SupportedDefiProtocols } from '@/services/defi/types';
+import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { capitalize } from '@/filters';
+import { DefiProtocol } from '@/services/defi/consts';
 
-@Component({})
-export default class DefiProtocolIcon extends Vue {
-  @Prop({ required: true, type: String })
-  protocol!: SupportedDefiProtocols;
-  @Prop({ required: false, type: String, default: 'both' })
-  mode!: 'icon' | 'label' | 'both';
-
-  get icon(): string {
-    const protocol = this.protocol;
-    if (protocol.endsWith('_v2')) {
-      return protocol.replace('_v2', '');
+export default defineComponent({
+  name: 'DefiProtocolIcon',
+  props: {
+    protocol: {
+      required: true,
+      type: String as PropType<DefiProtocol>
+    },
+    mode: {
+      required: false,
+      default: 'both',
+      type: String as PropType<'icon' | 'label' | 'both'>
     }
-    return protocol;
-  }
+  },
+  setup() {
+    const icon = computed(({ protocol }) => {
+      if (protocol.endsWith('_v2')) {
+        return protocol.replace('_v2', '');
+      }
+      if (protocol.startsWith('makerdao')) {
+        return 'makerdao';
+      }
+      return protocol;
+    });
 
-  get name(): string {
-    if (this.protocol === DEFI_MAKERDAO) {
-      return 'MakerDAO DSR';
-    } else if (this.protocol === DEFI_YEARN_VAULTS) {
-      return 'yearn.finance Vaults';
-    } else if (this.protocol === DEFI_YEARN_VAULTS_V2) {
-      return 'yearn.finance Vaults v2';
-    }
-    return this.protocol;
+    const name = computed(({ protocol }) => {
+      if (protocol === DefiProtocol.MAKERDAO_DSR) {
+        return 'MakerDAO DSR';
+      } else if (protocol === DefiProtocol.MAKERDAO_VAULTS) {
+        return 'MakerDAO Vaults';
+      } else if (protocol === DefiProtocol.YEARN_VAULTS) {
+        return 'yearn.finance Vaults';
+      } else if (protocol === DefiProtocol.YEARN_VAULTS_V2) {
+        return 'yearn.finance Vaults v2';
+      }
+      return protocol;
+    });
+    return {
+      icon,
+      name,
+      capitalize: capitalize
+    };
   }
-}
+});
 </script>
 
-<style lang="scss" scoped>
-.defi-protocol-icon {
-  &--icon {
-    max-width: 30px;
-  }
+<style lang="scss" module>
+.icon {
+  max-width: 30px;
+}
 
-  &__label {
-    font-size: 12px;
-  }
+.label {
+  font-size: 12px;
 }
 </style>

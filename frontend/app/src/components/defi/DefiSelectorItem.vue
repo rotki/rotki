@@ -14,11 +14,10 @@
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import ScrambleMixin from '@/mixins/scramble-mixin';
-import { SupportedDefiProtocols } from '@/services/defi/types';
 
 type DefiProtocol = {
   readonly identifier: string;
-  readonly protocol: SupportedDefiProtocols;
+  readonly protocol: DefiProtocol;
 };
 
 @Component({})

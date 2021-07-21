@@ -5,20 +5,14 @@ import { TaskType } from '@/model/task-type';
 import { balanceKeys } from '@/services/consts';
 import {
   aaveHistoryKeys,
-  DEFI_AAVE,
-  DEFI_YEARN_VAULTS,
-  DEFI_YEARN_VAULTS_V2,
+  DefiProtocol,
   dsrKeys,
   V1,
   V2,
   vaultDetailsKeys,
   vaultKeys
 } from '@/services/defi/consts';
-import {
-  ApiMakerDAOVault,
-  ProtocolVersion,
-  SupportedDefiProtocols
-} from '@/services/defi/types';
+import { ApiMakerDAOVault, ProtocolVersion } from '@/services/defi/types';
 import { AaveBalances, AaveHistory } from '@/services/defi/types/aave';
 import {
   CompoundBalances,
@@ -502,7 +496,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
   async resetDB(
     { commit, dispatch, rootState: { session }, rootGetters: { status } },
-    protocols: SupportedDefiProtocols[]
+    protocols: DefiProtocol[]
   ) {
     const premiumSection = Section.DEFI_LENDING_HISTORY;
     const currentPremiumStatus = status(premiumSection);
@@ -515,7 +509,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     setStatus(Status.REFRESHING, premiumSection, status, commit);
 
     const toReset: Promise<void>[] = [];
-    if (protocols.includes(DEFI_YEARN_VAULTS)) {
+    if (protocols.includes(DefiProtocol.YEARN_VAULTS)) {
       toReset.push(
         dispatch('fetchYearnVaultsHistory', {
           refresh: true,
@@ -525,7 +519,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       );
     }
 
-    if (protocols.includes(DEFI_YEARN_VAULTS_V2)) {
+    if (protocols.includes(DefiProtocol.YEARN_VAULTS_V2)) {
       toReset.push(
         dispatch('fetchYearnVaultsHistory', {
           refresh: true,
@@ -535,7 +529,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       );
     }
 
-    if (protocols.includes(DEFI_AAVE)) {
+    if (protocols.includes(DefiProtocol.AAVE)) {
       toReset.push(
         dispatch('fetchAaveHistory', { refresh: true, reset: true })
       );
