@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3236` Users will now see the proper total networth for the current day in the graph tooltip.
 * :bug:`3224` Users will now be able to properly select an end time in earlier dates.
 * :bug:`3198` Firefox docker users will now see a regularly sized Gitcoin icon under the history menu.
 * :bug:`3199` Users will now properly see the node connection status/last sync information update.

@@ -58,7 +58,7 @@ export const getters: Getters<
     }
 
     const now = Math.floor(new Date().getTime() / 1000);
-    const netWorth = Math.floor(getters.totalNetWorth.toNumber());
+    const netWorth = getters.totalNetWorth.toNumber();
     return {
       times: netWorth > 0 ? [...netValue.times, now] : [...netValue.times],
       data: netWorth > 0 ? [...netValue.data, netWorth] : [...netValue.data]
