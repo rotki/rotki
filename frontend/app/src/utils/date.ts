@@ -21,12 +21,16 @@ export function convertFromTimestamp(
   timestamp: number,
   seconds: boolean = false
 ): string {
-  let format = 'DD/MM/YYYY HH:mm';
-  if (seconds) {
-    format += ':ss';
+  const time = dayjs(timestamp * 1000);
+  let format = 'DD/MM/YYYY';
+  if (time.hour() !== 0 || time.minute() !== 0) {
+    format += ' HH:mm';
+    if (seconds && time.second() !== 0) {
+      format += ':ss';
+    }
   }
 
-  return dayjs(timestamp * 1000).format(format);
+  return time.format(format);
 }
 
 export function setupDayjs() {

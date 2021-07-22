@@ -151,7 +151,7 @@
         v-model="validForm"
         :action="action"
         :errors="errors"
-        @action:update="action = $event"
+        @action:update="updateAction($event)"
       />
     </big-dialog>
     <confirm-dialog
@@ -186,6 +186,7 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import StatusMixin from '@/mixins/status-mixin';
 import { deserializeApiErrorMessage } from '@/services/converters';
+import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
 import {
   HistoryActions,
@@ -206,10 +207,24 @@ import { Zero } from '@/utils/bignumbers';
 const emptyAction: () => UnsavedAction = () => ({
   timestamp: 0,
   actionType: LedgerActionType.ACTION_INCOME,
-  location: TRADE_LOCATION_EXTERNAL,
+  location: lastSelectedLocation(),
   amount: Zero,
   asset: ''
 });
+
+const LAST_LOCATION = 'rotki.ledger_action.location';
+
+function setLastSelectedLocation(location: TradeLocation) {
+  localStorage.setItem(LAST_LOCATION, location);
+}
+
+function lastSelectedLocation(): TradeLocation {
+  const item = localStorage.getItem(LAST_LOCATION);
+  if (item) {
+    return item as TradeLocation;
+  }
+  return TRADE_LOCATION_EXTERNAL;
+}
 
 @Component({
   components: {
@@ -301,6 +316,11 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   errors: { [key in keyof UnsavedAction]?: string } = {};
 
   selected: number[] = [];
+
+  updateAction(action: LedgerAction | UnsavedAction) {
+    this.action = action;
+    setLastSelectedLocation(action.location);
+  }
 
   setSelected(selected: boolean) {
     const selection = this.selected;
