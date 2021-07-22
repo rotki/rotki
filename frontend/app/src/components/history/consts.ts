@@ -175,7 +175,7 @@ export const tradeLocations: TradeLocationData[] = [
   },
   {
     identifier: EXCHANGE_INDEPENDENTRESERVE,
-    name: 'IndepentReserve',
+    name: 'IndependentReserve',
     icon: require('@/assets/images/exchanges/independentreserve.png'),
     imageIcon: true,
     exchange: true

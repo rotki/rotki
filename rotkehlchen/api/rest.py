@@ -3059,6 +3059,7 @@ class RestAPI():
             'status_code': HTTPStatus.CONFLICT,
         }
 
+    @require_loggedin_user()
     def perform_assets_updates(
             self,
             async_query: bool,
