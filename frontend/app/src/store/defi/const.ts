@@ -80,7 +80,8 @@ const CHIGASTOKEN = 'Chi Gastoken by 1inch';
 const ONEINCH_LIQUIDITY = '1inch Liquidity Protocol';
 const ONEINCH_LP_STAKING = '1inch LP • Staking';
 const ZLOTFINANCE = 'zlot.finance';
-export const MAKERDAO = 'MakerDAO';
+export const MAKERDAO_DSR = 'MakerDAO DSR';
+export const MAKERDAO_VAULTS = 'MakerDAO Vaults';
 const AAVE_V2 = 'Aave V2';
 const AAVE_V2_VARIABLE_DEBT = 'Aave V2 • Variable Debt';
 const AAVE_V2_STABLE_DEBT = 'Aave V2 • Stable Debt';
@@ -178,7 +179,8 @@ export const OVERVIEW_PROTOCOLS = [
   AAVE,
   AAVE_STAKING,
   AAVE_UNISWAPMARKET,
-  MAKERDAO,
+  MAKERDAO_DSR,
+  MAKERDAO_VAULTS,
   AAVE_V2,
   AAVE_V2_VARIABLE_DEBT,
   AAVE_V2_STABLE_DEBT,
@@ -286,7 +288,8 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [YEARN_FINANCE_VAULTS]: 'yearn_vaults.svg',
   [YEARN_FINANCE_VAULTS_V2]: 'yearn_vaults.svg',
   [YEARN_TOKEN_VAULTS]: 'yearn_vaults.svg',
-  [MAKERDAO]: 'makerdao.svg',
+  [MAKERDAO_DSR]: 'makerdao.svg',
+  [MAKERDAO_VAULTS]: 'makerdao.svg',
   [AAVE_V2_VARIABLE_DEBT]: 'aave.svg',
   [AAVE_V2_STABLE_DEBT]: 'aave.svg',
   [SNOW_SWAP]: 'snowswap.svg',

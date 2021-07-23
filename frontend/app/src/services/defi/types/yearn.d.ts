@@ -1,4 +1,4 @@
-import { ProtocolVersion } from '@/services/defi/types';
+import { ProtocolVersion } from '@/services/defi/consts';
 import { YEARN_EVENTS } from '@/services/defi/types/consts';
 import { Balance } from '@/services/types-api';
 type YearnEventType = typeof YEARN_EVENTS[number];

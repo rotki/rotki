@@ -1,7 +1,7 @@
 import { default as BigNumber } from 'bignumber.js';
 import { PriceOracles } from '@/model/action-result';
 import { Currency } from '@/model/currency';
-import { SupportedDefiProtocols } from '@/services/defi/types';
+import { DefiProtocol } from '@/services/defi/consts';
 import { SupportedModules } from '@/services/session/types';
 import { AssetBalances } from '@/store/balances/types';
 import { LedgerActionType } from '@/store/history/consts';
@@ -166,7 +166,7 @@ export interface Account {
 }
 
 export interface DefiAccount extends Account {
-  readonly protocols: SupportedDefiProtocols[];
+  readonly protocols: DefiProtocol[];
 }
 
 export interface GeneralAccount extends AccountData, Account {}

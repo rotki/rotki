@@ -94,8 +94,7 @@ import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import StatusMixin from '@/mixins/status-mixin';
-import { DEFI_PROTOCOLS } from '@/services/defi/consts';
-import { SupportedDefiProtocols } from '@/services/defi/types';
+import { DefiProtocol } from '@/services/defi/consts';
 import {
   MODULE_AAVE,
   MODULE_COMPOUND,
@@ -132,10 +131,10 @@ import {
 export default class Borrowing extends Mixins(StatusMixin) {
   selection?: string = '';
   loan!: (identifier?: string) => MakerDAOVaultModel | AaveLoan | null;
-  loans!: (protocol: SupportedDefiProtocols[]) => DefiLoan[];
-  loanSummary!: (protocol: SupportedDefiProtocols[]) => LoanSummary;
+  loans!: (protocol: DefiProtocol[]) => DefiLoan[];
+  loanSummary!: (protocol: DefiProtocol[]) => LoanSummary;
   fetchBorrowing!: (refreshing: boolean) => Promise<void>;
-  protocol: SupportedDefiProtocols | null = null;
+  protocol: DefiProtocol | null = null;
 
   section = Section.DEFI_BORROWING;
   secondSection = Section.DEFI_BORROWING_HISTORY;
@@ -146,17 +145,18 @@ export default class Borrowing extends Mixins(StatusMixin) {
     MODULE_MAKERDAO_VAULTS
   ];
 
-  get selectedProtocols(): SupportedDefiProtocols[] {
+  get selectedProtocols(): DefiProtocol[] {
     return this.protocol ? [this.protocol] : [];
   }
 
   async created() {
     const queryElement = this.$route.query['protocol'];
-    const protocolIndex = DEFI_PROTOCOLS.findIndex(
+    const protocols = Object.values(DefiProtocol);
+    const protocolIndex = protocols.findIndex(
       protocol => protocol === queryElement
     );
     if (protocolIndex >= 0) {
-      this.protocol = DEFI_PROTOCOLS[protocolIndex];
+      this.protocol = protocols[protocolIndex];
     }
     await this.fetchBorrowing(false);
   }

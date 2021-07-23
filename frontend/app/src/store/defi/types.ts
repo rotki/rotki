@@ -1,11 +1,11 @@
 import { default as BigNumber } from 'bignumber.js';
+import { DefiProtocol } from '@/services/defi/consts';
 import {
   CollateralAssetType,
   DefiBalanceType,
   DSRMovementType,
   EventType,
-  MakerDAOVaultEventType,
-  SupportedDefiProtocols
+  MakerDAOVaultEventType
 } from '@/services/defi/types';
 import {
   AaveBalances,
@@ -189,7 +189,7 @@ export interface AaveLoan
 
 export interface DefiBalance extends BaseDefiBalance {
   readonly address: string;
-  readonly protocol: SupportedDefiProtocols;
+  readonly protocol: DefiProtocol;
 }
 
 export interface BaseDefiBalance extends HasBalance {
@@ -212,14 +212,15 @@ interface HistoryExtras<T> {
 
 interface LendingHistoryExtras {
   readonly aave: {};
-  readonly makerdao: MakerDAOLendingHistoryExtras;
+  readonly makerdao_dsr: MakerDAOLendingHistoryExtras;
+  readonly makerdao_vaults: {};
   readonly compound: HistoryExtras<CompoundEventType>;
   readonly yearn_vaults: HistoryExtras<YearnEventType>;
   readonly yearn_vaults_v2: HistoryExtras<YearnEventType>;
   readonly uniswap: {};
 }
 
-export interface DefiLendingHistory<T extends SupportedDefiProtocols> {
+export interface DefiLendingHistory<T extends DefiProtocol> {
   id: string;
   eventType: EventType;
   protocol: T;
@@ -235,7 +236,7 @@ export interface DefiLendingHistory<T extends SupportedDefiProtocols> {
 
 export interface DefiLoan {
   readonly identifier: string;
-  readonly protocol: SupportedDefiProtocols;
+  readonly protocol: DefiProtocol;
   readonly asset?: string;
   readonly owner?: string;
 }

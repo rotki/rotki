@@ -5,16 +5,10 @@ import i18n from '@/i18n';
 import {
   AAVE_BORROWING_EVENTS,
   AAVE_LENDING_EVENTS,
-  DEFI_AAVE,
-  DEFI_COMPOUND,
   DEFI_EVENT_LIQUIDATION,
-  DEFI_MAKERDAO,
-  DEFI_YEARN_VAULTS,
-  DEFI_YEARN_VAULTS_V2,
-  V1,
-  V2
+  DefiProtocol,
+  ProtocolVersion
 } from '@/services/defi/consts';
-import { ProtocolVersion, SupportedDefiProtocols } from '@/services/defi/types';
 import {
   AaveEvent,
   AaveHistoryEvents,
@@ -39,7 +33,8 @@ import {
   getProtcolIcon,
   GETTER_BALANCER_BALANCES,
   GETTER_UNISWAP_ASSETS,
-  MAKERDAO,
+  MAKERDAO_DSR,
+  MAKERDAO_VAULTS,
   YEARN_FINANCE_VAULTS,
   YEARN_FINANCE_VAULTS_V2
 } from '@/store/defi/const';
@@ -100,36 +95,33 @@ export namespace DefiGetterTypes {
 }
 
 interface DefiGetters {
-  totalUsdEarned: (
-    protocols: SupportedDefiProtocols[],
-    addresses: string[]
-  ) => BigNumber;
+  totalUsdEarned: (protocols: DefiProtocol[], addresses: string[]) => BigNumber;
   totalLendingDeposit: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ) => BigNumber;
   loan: (
     identifier: string
   ) => MakerDAOVaultModel | AaveLoan | CompoundLoan | null;
-  defiAccounts: (protocols: SupportedDefiProtocols[]) => DefiAccount[];
-  loans: (protocols: SupportedDefiProtocols[]) => DefiLoan[];
-  loanSummary: (protocol: SupportedDefiProtocols[]) => LoanSummary;
+  defiAccounts: (protocols: DefiProtocol[]) => DefiAccount[];
+  loans: (protocols: DefiProtocol[]) => DefiLoan[];
+  loanSummary: (protocol: DefiProtocol[]) => LoanSummary;
   effectiveInterestRate: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ) => string;
   aggregatedLendingBalances: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ) => BaseDefiBalance[];
   lendingBalances: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ) => DefiBalance[];
   lendingHistory: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
-  ) => DefiLendingHistory<SupportedDefiProtocols>[];
+  ) => DefiLendingHistory<DefiProtocol>[];
   defiOverview: DefiProtocolSummary[];
   compoundRewards: ProfitLossModel[];
   compoundInterestProfit: ProfitLossModel[];
@@ -162,14 +154,14 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     yearnVaultsHistory,
     yearnVaultsV2History
   }: DefiState) => (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ): BigNumber => {
     let total = Zero;
     const showAll = protocols.length === 0;
     const allAddresses = addresses.length === 0;
 
-    if (showAll || protocols.includes('makerdao')) {
+    if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
       for (const address of Object.keys(dsrHistory)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -178,7 +170,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
     }
 
-    if (showAll || protocols.includes(DEFI_AAVE)) {
+    if (showAll || protocols.includes(DefiProtocol.AAVE)) {
       for (const address of Object.keys(aaveHistory)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -190,7 +182,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
     }
 
-    if (showAll || protocols.includes(DEFI_COMPOUND)) {
+    if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
       for (const address in compoundHistory.interestProfit) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -222,11 +214,11 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       return yearnEarned;
     }
 
-    if (showAll || protocols.includes(DEFI_YEARN_VAULTS)) {
+    if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS)) {
       total = total.plus(yearnTotalEarned(yearnVaultsHistory));
     }
 
-    if (showAll || protocols.includes(DEFI_YEARN_VAULTS_V2)) {
+    if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS_V2)) {
       total = total.plus(yearnTotalEarned(yearnVaultsV2History));
     }
     return total;
@@ -237,10 +229,10 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     aaveHistory,
     dsrBalances,
     dsrHistory
-  }: DefiState) => (protocols: SupportedDefiProtocols[]): DefiAccount[] => {
+  }: DefiState) => (protocols: DefiProtocol[]): DefiAccount[] => {
     const aaveAddresses: string[] = [];
     const makerAddresses: string[] = [];
-    if (protocols.length === 0 || protocols.includes(DEFI_AAVE)) {
+    if (protocols.length === 0 || protocols.includes(DefiProtocol.AAVE)) {
       const uniqueAddresses: string[] = [
         ...Object.keys(aaveBalances),
         ...Object.keys(aaveHistory)
@@ -248,7 +240,10 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       aaveAddresses.push(...uniqueAddresses);
     }
 
-    if (protocols.length === 0 || protocols.includes(DEFI_MAKERDAO)) {
+    if (
+      protocols.length === 0 ||
+      protocols.includes(DefiProtocol.MAKERDAO_DSR)
+    ) {
       const uniqueAddresses: string[] = [
         ...Object.keys(dsrHistory),
         ...Object.keys(dsrBalances.balances)
@@ -258,10 +253,10 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
     const accounts: DefiAccount[] = [];
     for (const address of aaveAddresses) {
-      const protocols: SupportedDefiProtocols[] = [DEFI_AAVE];
+      const protocols: DefiProtocol[] = [DefiProtocol.AAVE];
       const index = makerAddresses.indexOf(address);
       if (index >= 0) {
-        protocols.push(DEFI_MAKERDAO);
+        protocols.push(DefiProtocol.MAKERDAO_DSR);
         makerAddresses.splice(index, 1);
       }
       accounts.push({
@@ -275,7 +270,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       accounts.push({
         address,
         chain: ETH,
-        protocols: [DEFI_MAKERDAO]
+        protocols: [DefiProtocol.MAKERDAO_DSR]
       });
     }
 
@@ -293,23 +288,23 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     _dg,
     _rs,
     { 'balances/assetInfo': assetInfo }
-  ) => (protocols: SupportedDefiProtocols[]): DefiLoan[] => {
+  ) => (protocols: DefiProtocol[]): DefiLoan[] => {
     const loans: DefiLoan[] = [];
     const showAll = protocols.length === 0;
 
-    if (showAll || protocols.includes(DEFI_MAKERDAO)) {
+    if (showAll || protocols.includes(DefiProtocol.MAKERDAO_VAULTS)) {
       loans.push(
         ...makerDAOVaults.map(
           value =>
             ({
               identifier: `${value.identifier}`,
-              protocol: DEFI_MAKERDAO
+              protocol: DefiProtocol.MAKERDAO_VAULTS
             } as DefiLoan)
         )
       );
     }
 
-    if (showAll || protocols.includes(DEFI_AAVE)) {
+    if (showAll || protocols.includes(DefiProtocol.AAVE)) {
       const knownAssets: string[] = [];
       for (const address of Object.keys(aaveBalances)) {
         const { borrowing } = aaveBalances[address];
@@ -322,7 +317,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           const symbol = assetInfo(asset)?.symbol ?? asset;
           loans.push({
             identifier: `${symbol} - ${truncateAddress(address, 6)}`,
-            protocol: DEFI_AAVE,
+            protocol: DefiProtocol.AAVE,
             owner: address,
             asset
           });
@@ -347,7 +342,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           const symbol = assetInfo(asset)?.symbol ?? asset;
           loans.push({
             identifier: `${symbol} - ${truncateAddress(address, 6)}`,
-            protocol: DEFI_AAVE,
+            protocol: DefiProtocol.AAVE,
             owner: address,
             asset
           });
@@ -355,7 +350,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
     }
 
-    if (showAll || protocols.includes(DEFI_COMPOUND)) {
+    if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
       const assetAddressPair = events
         .filter(
           ({ eventType }) => !['mint', 'redeem', 'comp'].includes(eventType)
@@ -385,7 +380,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         .forEach(({ address, asset }) => {
           loans.push({
             identifier: `${asset} - ${truncateAddress(address, 6)}`,
-            protocol: DEFI_COMPOUND,
+            protocol: DefiProtocol.COMPOUND,
             owner: address,
             asset
           });
@@ -417,7 +412,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       return null;
     }
 
-    if (loan.protocol === DEFI_MAKERDAO) {
+    if (loan.protocol === DefiProtocol.MAKERDAO_VAULTS) {
       const vault = makerDAOVaults.find(
         vault => vault.identifier.toString().toLocaleLowerCase() === id
       );
@@ -433,7 +428,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       return details ? { ...vault, ...details, asset: 'DAI' } : vault;
     }
 
-    if (loan.protocol === DEFI_AAVE) {
+    if (loan.protocol === DefiProtocol.AAVE) {
       const owner = loan.owner ?? '';
       const asset = loan.asset ?? '';
 
@@ -529,7 +524,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       } as AaveLoan;
     }
 
-    if (loan.protocol === DEFI_COMPOUND) {
+    if (loan.protocol === DefiProtocol.COMPOUND) {
       const owner = loan.owner ?? '';
       const asset = loan.asset ?? '';
 
@@ -574,12 +569,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     makerDAOVaults,
     aaveBalances,
     compoundBalances
-  }: DefiState) => (protocols: SupportedDefiProtocols[]): LoanSummary => {
+  }: DefiState) => (protocols: DefiProtocol[]): LoanSummary => {
     let totalCollateralUsd = Zero;
     let totalDebt = Zero;
 
     const showAll = protocols.length === 0;
-    if (showAll || protocols.includes(DEFI_MAKERDAO)) {
+    if (showAll || protocols.includes(DefiProtocol.MAKERDAO_VAULTS)) {
       totalCollateralUsd = makerDAOVaults
         .map(({ collateral: { usdValue } }) => usdValue)
         .reduce((sum, collateralUsdValue) => sum.plus(collateralUsdValue), Zero)
@@ -591,7 +586,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         .plus(totalDebt);
     }
 
-    if (showAll || protocols.includes(DEFI_AAVE)) {
+    if (showAll || protocols.includes(DefiProtocol.AAVE)) {
       for (const address of Object.keys(aaveBalances)) {
         const { borrowing, lending } = aaveBalances[address];
         totalCollateralUsd = balanceUsdValueSum(Object.values(lending)).plus(
@@ -604,7 +599,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
     }
 
-    if (showAll || protocols.includes(DEFI_COMPOUND)) {
+    if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
       for (const address of Object.keys(compoundBalances)) {
         const { borrowing, lending } = compoundBalances[address];
         totalCollateralUsd = balanceUsdValueSum(Object.values(lending)).plus(
@@ -621,7 +616,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   },
 
   effectiveInterestRate: (_, { lendingBalances, yearnVaultsAssets }) => (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ): string => {
     let { usdValue, weight } = lendingBalances(protocols, addresses)
@@ -645,7 +640,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       );
 
     function yearnData(
-      version: ProtocolVersion = V1
+      version: ProtocolVersion = ProtocolVersion.V1
     ): { weight: BigNumber; usdValue: BigNumber } {
       return yearnVaultsAssets([], version)
         .filter(({ underlyingValue }) => underlyingValue.usdValue.gt(Zero))
@@ -662,13 +657,19 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         );
     }
 
-    if (protocols.length === 0 || protocols.includes(DEFI_YEARN_VAULTS)) {
+    if (
+      protocols.length === 0 ||
+      protocols.includes(DefiProtocol.YEARN_VAULTS)
+    ) {
       const { usdValue: yUsdValue, weight: yWeight } = yearnData();
       usdValue = usdValue.plus(yUsdValue);
       weight = weight.plus(yWeight);
     }
 
-    if (protocols.length === 0 || protocols.includes(DEFI_YEARN_VAULTS_V2)) {
+    if (
+      protocols.length === 0 ||
+      protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
+    ) {
       const { usdValue: yUsdValue, weight: yWeight } = yearnData();
       usdValue = usdValue.plus(yUsdValue);
       weight = weight.plus(yWeight);
@@ -683,33 +684,36 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   totalLendingDeposit: (
     _: DefiState,
     { lendingBalances, yearnVaultsAssets }
-  ) => (
-    protocols: SupportedDefiProtocols[],
-    addresses: string[]
-  ): BigNumber => {
+  ) => (protocols: DefiProtocol[], addresses: string[]): BigNumber => {
     let lendingDeposit = lendingBalances(protocols, addresses)
       .map(value => value.balance.usdValue)
       .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
 
-    function getYearnDeposit(version: ProtocolVersion = V1) {
+    function getYearnDeposit(version: ProtocolVersion = ProtocolVersion.V1) {
       return yearnVaultsAssets(addresses, version)
         .map(value => value.underlyingValue.usdValue)
         .reduce((sum, usdValue) => sum.plus(usdValue), Zero);
     }
 
-    if (protocols.length === 0 || protocols.includes(DEFI_YEARN_VAULTS)) {
+    if (
+      protocols.length === 0 ||
+      protocols.includes(DefiProtocol.YEARN_VAULTS)
+    ) {
       lendingDeposit = lendingDeposit.plus(getYearnDeposit());
     }
 
-    if (protocols.length === 0 || protocols.includes(DEFI_YEARN_VAULTS_V2)) {
-      lendingDeposit = lendingDeposit.plus(getYearnDeposit(V2));
+    if (
+      protocols.length === 0 ||
+      protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
+    ) {
+      lendingDeposit = lendingDeposit.plus(getYearnDeposit(ProtocolVersion.V2));
     }
 
     return lendingDeposit;
   },
 
   aggregatedLendingBalances: (_, { lendingBalances }) => (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ): BaseDefiBalance[] => {
     const balances = lendingBalances(protocols, addresses).reduce(
@@ -771,15 +775,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     _dg,
     _rs,
     { 'balances/getIdentifierForSymbol': getIdentifierForSymbol }
-  ) => (
-    protocols: SupportedDefiProtocols[],
-    addresses: string[]
-  ): DefiBalance[] => {
+  ) => (protocols: DefiProtocol[], addresses: string[]): DefiBalance[] => {
     const balances: DefiBalance[] = [];
     const showAll = protocols.length === 0;
     const allAddresses = addresses.length === 0;
 
-    if (showAll || protocols.includes(DEFI_MAKERDAO)) {
+    if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
       for (const address of Object.keys(dsrBalances.balances)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -791,7 +792,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         const format = isBigNumber ? currentDsr.toFormat(2) : 0;
         balances.push({
           address,
-          protocol: DEFI_MAKERDAO,
+          protocol: DefiProtocol.MAKERDAO_DSR,
           asset: getIdentifierForSymbol('DAI'),
           balance: { ...balance },
           effectiveInterestRate: `${format}%`
@@ -799,7 +800,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
     }
 
-    if (showAll || protocols.includes(DEFI_AAVE)) {
+    if (showAll || protocols.includes(DefiProtocol.AAVE)) {
       for (const address of Object.keys(aaveBalances)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -810,7 +811,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           const aaveAsset = lending[asset];
           balances.push({
             address,
-            protocol: DEFI_AAVE,
+            protocol: DefiProtocol.AAVE,
             asset,
             effectiveInterestRate: aaveAsset.apy,
             balance: { ...aaveAsset.balance }
@@ -819,7 +820,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
     }
 
-    if (showAll || protocols.includes(DEFI_COMPOUND)) {
+    if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
       for (const address of Object.keys(compoundBalances)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -829,7 +830,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           const assetDetails = lending[asset];
           balances.push({
             address,
-            protocol: DEFI_COMPOUND,
+            protocol: DefiProtocol.COMPOUND,
             asset,
             effectiveInterestRate: assetDetails.apy ?? '0%',
             balance: { ...assetDetails.balance }
@@ -853,15 +854,15 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     _rs,
     { 'balances/getIdentifierForSymbol': getIdentifierForSymbol }
   ) => (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
-  ): DefiLendingHistory<SupportedDefiProtocols>[] => {
-    const defiLendingHistory: DefiLendingHistory<SupportedDefiProtocols>[] = [];
+  ): DefiLendingHistory<DefiProtocol>[] => {
+    const defiLendingHistory: DefiLendingHistory<DefiProtocol>[] = [];
     const showAll = protocols.length === 0;
     const allAddresses = addresses.length === 0;
     let id = 1;
 
-    if (showAll || protocols.includes(DEFI_MAKERDAO)) {
+    if (showAll || protocols.includes(DefiProtocol.MAKERDAO_DSR)) {
       for (const address of Object.keys(dsrHistory)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -873,7 +874,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           defiLendingHistory.push({
             id: `${movement.txHash}-${id++}`,
             eventType: movement.movementType,
-            protocol: DEFI_MAKERDAO,
+            protocol: DefiProtocol.MAKERDAO_DSR,
             address,
             asset: getIdentifierForSymbol('DAI'),
             value: movement.value,
@@ -888,7 +889,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
     }
 
-    if (showAll || protocols.includes(DEFI_AAVE)) {
+    if (showAll || protocols.includes(DefiProtocol.AAVE)) {
       for (const address of Object.keys(aaveHistory)) {
         if (!allAddresses && !addresses.includes(address)) {
           continue;
@@ -904,7 +905,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           const items = {
             id: `${event.txHash}-${event.logIndex}`,
             eventType: event.eventType,
-            protocol: DEFI_AAVE,
+            protocol: DefiProtocol.AAVE,
             address,
             asset: event.asset,
             atoken: event.atoken,
@@ -913,13 +914,13 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
             timestamp: event.timestamp,
             txHash: event.txHash,
             extras: {}
-          } as DefiLendingHistory<typeof DEFI_AAVE>;
+          } as DefiLendingHistory<typeof DefiProtocol.AAVE>;
           defiLendingHistory.push(items);
         }
       }
     }
 
-    if (showAll || protocols.includes(DEFI_COMPOUND)) {
+    if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
       for (const event of compoundHistory.events) {
         if (!allAddresses && !addresses.includes(event.address)) {
           continue;
@@ -931,7 +932,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         const item = {
           id: `${event.txHash}-${event.logIndex}`,
           eventType: event.eventType,
-          protocol: DEFI_COMPOUND,
+          protocol: DefiProtocol.COMPOUND,
           address: event.address,
           asset: event.asset,
           value: event.value,
@@ -946,13 +947,13 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
             toValue: event.toValue,
             realizedPnl: event.realizedPnl
           }
-        } as DefiLendingHistory<typeof DEFI_COMPOUND>;
+        } as DefiLendingHistory<typeof DefiProtocol.COMPOUND>;
         defiLendingHistory.push(item);
       }
     }
 
-    function yearnHistory(version: ProtocolVersion = V1) {
-      const isV1 = version === V1;
+    function yearnHistory(version: ProtocolVersion = ProtocolVersion.V1) {
+      const isV1 = version === ProtocolVersion.V1;
       const vaultsHistory = isV1 ? yearnVaultsHistory : yearnVaultsV2History;
       for (const address in vaultsHistory) {
         if (!allAddresses && !addresses.includes(address)) {
@@ -969,7 +970,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
             const item = {
               id: `${event.txHash}-${event.logIndex}`,
               eventType: event.eventType,
-              protocol: isV1 ? DEFI_YEARN_VAULTS : DEFI_YEARN_VAULTS_V2,
+              protocol: isV1
+                ? DefiProtocol.YEARN_VAULTS
+                : DefiProtocol.YEARN_VAULTS_V2,
               address: address,
               asset: event.fromAsset,
               value: event.fromValue,
@@ -984,19 +987,19 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
                 toValue: event.toValue,
                 realizedPnl: event.realizedPnl
               }
-            } as DefiLendingHistory<typeof DEFI_YEARN_VAULTS>;
+            } as DefiLendingHistory<typeof DefiProtocol.YEARN_VAULTS>;
             defiLendingHistory.push(item);
           }
         }
       }
     }
 
-    if (showAll || protocols.includes(DEFI_YEARN_VAULTS)) {
+    if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS)) {
       yearnHistory();
     }
 
-    if (showAll || protocols.includes(DEFI_YEARN_VAULTS_V2)) {
-      yearnHistory(V2);
+    if (showAll || protocols.includes(DefiProtocol.YEARN_VAULTS_V2)) {
+      yearnHistory(ProtocolVersion.V2);
     }
     return sortBy(defiLendingHistory, 'timestamp').reverse();
   },
@@ -1016,7 +1019,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     }
 
     const protocolSummary = (
-      protocol: SupportedDefiProtocols,
+      protocol: DefiProtocol,
       section: Section,
       name: OverviewDefiProtocol,
       noLiabilities?: boolean
@@ -1028,7 +1031,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       ) {
         return undefined;
       }
-      const filter: SupportedDefiProtocols[] = [protocol];
+      const filter: DefiProtocol[] = [protocol];
       const { totalCollateralUsd, totalDebt } = noLiabilities
         ? { totalCollateralUsd: Zero, totalDebt: Zero }
         : loanSummary(filter);
@@ -1058,7 +1061,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
         if (protocol === AAVE) {
           const aaveSummary = protocolSummary(
-            DEFI_AAVE,
+            DefiProtocol.AAVE,
             Section.DEFI_AAVE_BALANCES,
             protocol
           );
@@ -1071,7 +1074,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
         if (protocol === COMPOUND) {
           const compoundSummary = protocolSummary(
-            DEFI_COMPOUND,
+            DefiProtocol.COMPOUND,
             Section.DEFI_COMPOUND_BALANCES,
             protocol
           );
@@ -1084,7 +1087,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
         if (protocol === YEARN_FINANCE_VAULTS) {
           const yearnVaultsSummary = protocolSummary(
-            DEFI_YEARN_VAULTS,
+            DefiProtocol.YEARN_VAULTS,
             Section.DEFI_YEARN_VAULTS_BALANCES,
             protocol,
             true
@@ -1151,34 +1154,52 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       overviewStatus === Status.LOADED ||
       overviewStatus === Status.REFRESHING
     ) {
-      const filter: SupportedDefiProtocols[] = [DEFI_MAKERDAO];
-      const { totalCollateralUsd, totalDebt } = loanSummary(filter);
-      const makerDAOSummary: DefiProtocolSummary = {
+      const filter: DefiProtocol[] = [DefiProtocol.MAKERDAO_DSR];
+      const makerDAODSRSummary: DefiProtocolSummary = {
         protocol: {
-          name: MAKERDAO,
-          icon: getProtcolIcon(MAKERDAO)
+          name: MAKERDAO_DSR,
+          icon: getProtcolIcon(MAKERDAO_DSR)
+        },
+        tokenInfo: null,
+        assets: [],
+        depositsUrl: '/defi/deposits?protocol=makerdao',
+        totalCollateralUsd: Zero,
+        totalDebtUsd: Zero,
+        totalLendingDepositUsd: totalLendingDeposit(filter, [])
+      };
+
+      const { totalCollateralUsd, totalDebt } = loanSummary([
+        DefiProtocol.MAKERDAO_VAULTS
+      ]);
+      const makerDAOVaultSummary: DefiProtocolSummary = {
+        protocol: {
+          name: MAKERDAO_VAULTS,
+          icon: getProtcolIcon(MAKERDAO_VAULTS)
         },
         tokenInfo: null,
         assets: [],
         liabilitiesUrl: '/defi/liabilities?protocol=makerdao',
-        depositsUrl: '/defi/deposits?protocol=makerdao',
-        totalCollateralUsd,
         totalDebtUsd: totalDebt,
-        totalLendingDepositUsd: totalLendingDeposit(filter, [])
+        totalCollateralUsd,
+        totalLendingDepositUsd: Zero
       };
 
-      if (shouldDisplay(makerDAOSummary)) {
-        summary[DEFI_MAKERDAO] = makerDAOSummary;
+      if (shouldDisplay(makerDAODSRSummary)) {
+        summary[DefiProtocol.MAKERDAO_DSR] = makerDAODSRSummary;
+      }
+
+      if (shouldDisplay(makerDAOVaultSummary)) {
+        summary[DefiProtocol.MAKERDAO_VAULTS] = makerDAOVaultSummary;
       }
 
       const yearnV2Summary = protocolSummary(
-        DEFI_YEARN_VAULTS_V2,
+        DefiProtocol.YEARN_VAULTS_V2,
         Section.DEFI_YEARN_VAULTS_V2_BALANCES,
         YEARN_FINANCE_VAULTS_V2,
         true
       );
       if (yearnV2Summary && shouldDisplay(yearnV2Summary)) {
-        summary[DEFI_YEARN_VAULTS_V2] = yearnV2Summary;
+        summary[DefiProtocol.YEARN_VAULTS_V2] = yearnV2Summary;
       }
     }
 
@@ -1208,10 +1229,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     { 'balances/assetSymbol': assetSymbol }
   ) => (
     addresses: string[],
-    version: ProtocolVersion = V1
+    version: ProtocolVersion = ProtocolVersion.V1
   ): YearnVaultProfitLoss[] => {
     const vaultsHistory =
-      version === V1 ? yearnVaultsHistory : yearnVaultsV2History;
+      version === ProtocolVersion.V1
+        ? yearnVaultsHistory
+        : yearnVaultsV2History;
     const yearnVaultsProfit: { [vault: string]: YearnVaultProfitLoss } = {};
     const allAddresses = addresses.length === 0;
     for (const address in vaultsHistory) {
@@ -1257,10 +1280,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     { 'balances/assetSymbol': assetSymbol }
   ) => (
     addresses: string[],
-    version: ProtocolVersion = V1
+    version: ProtocolVersion = ProtocolVersion.V1
   ): YearnVaultAsset[] => {
     const vaultsBalances =
-      version === V1 ? yearnVaultsBalances : yearnVaultsV2Balances;
+      version === ProtocolVersion.V1
+        ? yearnVaultsBalances
+        : yearnVaultsV2Balances;
     const balances: { [vault: string]: YearnVaultBalance[] } = {};
     const allAddresses = addresses.length === 0;
     for (const address in vaultsBalances) {

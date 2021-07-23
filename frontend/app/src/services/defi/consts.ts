@@ -1,20 +1,14 @@
 import { balanceKeys } from '@/services/consts';
 
-export const DEFI_YEARN_VAULTS = 'yearn_vaults';
-export const DEFI_YEARN_VAULTS_V2 = 'yearn_vaults_v2';
-export const DEFI_AAVE = 'aave';
-export const DEFI_MAKERDAO = 'makerdao';
-export const DEFI_COMPOUND = 'compound';
-export const DEFI_UNISWAP = 'uniswap';
-
-export const DEFI_PROTOCOLS = [
-  DEFI_AAVE,
-  DEFI_MAKERDAO,
-  DEFI_COMPOUND,
-  DEFI_YEARN_VAULTS,
-  DEFI_YEARN_VAULTS_V2,
-  DEFI_UNISWAP
-] as const;
+export enum DefiProtocol {
+  YEARN_VAULTS = 'yearn_vaults',
+  YEARN_VAULTS_V2 = 'yearn_vaults_v2',
+  AAVE = 'aave',
+  MAKERDAO_DSR = 'makerdao_dsr',
+  MAKERDAO_VAULTS = 'makerdao_vaults',
+  COMPOUND = 'compound',
+  UNISWAP = 'uniswap'
+}
 
 export const DEFI_EVENT_REPAY = 'repay';
 export const DEFI_EVENT_LIQUIDATION = 'liquidation';
@@ -54,7 +48,7 @@ export const aaveHistoryKeys = [
   'borrow_rate'
 ];
 
-export const V1 = 'v1' as const;
-export const V2 = 'v2' as const;
-
-export const PROTOCOL_VERSION = [V1, V2] as const;
+export enum ProtocolVersion {
+  V1 = 'v1',
+  V2 = 'v2'
+}
