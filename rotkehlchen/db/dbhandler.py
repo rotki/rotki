@@ -36,6 +36,11 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
     BALANCER_TRADES_PREFIX,
     BalancerEvent,
 )
+from rotkehlchen.chain.ethereum.modules.sushiswap import (
+    SUSHISWAP_EVENTS_PREFIX,
+    SUSHISWAP_TRADES_PREFIX,
+    SushiswapPoolEvent,
+)
 from rotkehlchen.chain.ethereum.modules.uniswap import (
     UNISWAP_EVENTS_PREFIX,
     UNISWAP_TRADES_PREFIX,
@@ -1221,6 +1226,28 @@ class DBHandler:
         cursor.execute('DELETE FROM uniswap_events;')
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_EVENTS_PREFIX}%";',
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_sushiswap_trades_data(self) -> None:
+        """Delete all historical Sushiswap trades data"""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            f'DELETE FROM amm_swaps WHERE location="{Location.SUSHISWAP.serialize_for_db()}";',  # pylint: disable=no-member  # noqa: E501
+        )
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{SUSHISWAP_TRADES_PREFIX}%";',
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_sushiswap_events_data(self) -> None:
+        """Delete all historical Sushiswap events data"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM sushiswap_events;')
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{SUSHISWAP_EVENTS_PREFIX}%";',
         )
         self.conn.commit()
         self.update_last_write()

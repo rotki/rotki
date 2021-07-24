@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.modules.balancer.typing import (
     BALANCER_EVENTS_PREFIX,
     BALANCER_TRADES_PREFIX,
 )
-from rotkehlchen.chain.ethereum.modules.uniswap.typing import (
+from rotkehlchen.chain.ethereum.modules.uniswap import (
     UNISWAP_EVENTS_PREFIX,
     UNISWAP_TRADES_PREFIX,
 )

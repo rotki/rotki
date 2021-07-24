@@ -355,6 +355,7 @@ class Location(DBEnumMixIn):
     BLOCKFI = 28
     INDEPENDENTRESERVE = 29
     GITCOIN = 30
+    SUSHISWAP = 31
 
 
 class AssetMovementCategory(Enum):

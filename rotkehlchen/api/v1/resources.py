@@ -1433,6 +1433,55 @@ class UniswapTradesHistoryResource(BaseResource):
         )
 
 
+class SushiswapBalancesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_sushiswap_balances(async_query=async_query)
+
+
+class SushiswapEventsHistoryResource(BaseResource):
+
+    get_schema = AsyncHistoricalQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_sushiswap_events_history(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
+class SushiswapTradesHistoryResource(BaseResource):
+
+    get_schema = AsyncHistoricalQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_sushiswap_trades_history(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
 class LoopringBalancesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()

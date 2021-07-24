@@ -63,16 +63,15 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-UNISWAP_EVENTS_PREFIX = 'uniswap_events'
-UNISWAP_TRADES_PREFIX = 'uniswap_trades'
+SUSHISWAP_EVENTS_PREFIX = 'sushiswap_events'
+SUSHISWAP_TRADES_PREFIX = 'sushiswap_trades'
 
 
-class Uniswap(AMMSwapPlatform, EthereumModule):
+class Sushiswap(AMMSwapPlatform, EthereumModule):
     """Uniswap integration module
 
-    * Uniswap subgraph:
-    https://github.com/Uniswap/uniswap-v2-subgraph
-    https://github.com/Uniswap/uniswap-v3-subgraph
+    * Sushiswap subgraph:
+    https://github.com/sushiswap/sushiswap-subgraph
     """
     def __init__(
             self,
@@ -87,13 +86,10 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             premium=premium,
             msg_aggregator=msg_aggregator,
         )
-        self.location = Location.UNISWAP
+        self.location = Location.SUSHISWAP
         try:
             self.graph = Graph(
-                'https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v2',
-            )
-            self.graph_v3 = Graph(
-                'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
+                'https://api.thegraph.com/subgraphs/name/sushiswap/exchange',
             )
         except RemoteError as e:
             self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
@@ -444,29 +440,6 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AMMTrade]:
-        trades = []
-        try:
-            trades.extend(self._get_trades_graph_v2_for_address(address, start_ts, end_ts))
-        except RemoteError as e:
-            log.error(
-                f'Error querying uniswap v2 trades using graph for address {address} '
-                f'between {start_ts} and {end_ts}. {str(e)}',
-            )
-        try:
-            trades.extend(self._get_trades_graph_v3_for_address(address, start_ts, end_ts))
-        except RemoteError as e:
-            log.error(
-                f'Error querying uniswap v3 trades using graph for address {address} '
-                f'between {start_ts} and {end_ts}. {str(e)}',
-            )
-        return trades
-
-    def _get_trades_graph_v2_for_address(
-            self,
-            address: ChecksumEthAddress,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> List[AMMTrade]:
         """Get the address' trades data querying the Uniswap subgraph
 
         Each trade (swap) instantiates an <AMMTrade>.
@@ -511,7 +484,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                 )
             except RemoteError as e:
                 self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
-                raise
+                break
 
             for entry in result['swaps']:
                 swaps = []
@@ -568,7 +541,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                         from_address=from_address_deserialized,
                         to_address=to_address_deserialized,
                         timestamp=Timestamp(int(timestamp)),
-                        location=Location.UNISWAP,
+                        location=self.location,
                         token0=token0,
                         token1=token1,
                         amount0_in=AssetAmount(amount0_in),
@@ -587,147 +560,6 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
 
             # Check whether an extra request is needed
             if len(result['swaps']) < GRAPH_QUERY_LIMIT:
-                break
-
-            # Update pagination step
-            param_values = {
-                **param_values,
-                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
-            }
-        return trades
-
-    def _get_trades_graph_v3_for_address(
-            self,
-            address: ChecksumEthAddress,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> List[AMMTrade]:
-        """Get the address' trades data querying the Uniswap subgraph
-
-        Each trade (swap) instantiates an <AMMTrade>.
-
-        The trade pair (i.e. BASE_QUOTE) is determined by `reserve0_reserve1`.
-        Translated to Uniswap lingo:
-
-        Trade type BUY:
-        - `amount1` (QUOTE, reserve1) is gt 0.
-        - `amount0` (BASE, reserve0) is lt 0.
-
-        Trade type SELL:
-        - `amount0` (BASE, reserve0) is gt 0.
-        - `amount1` (QUOTE, reserve1) is lt 0.
-
-        May raise:
-        - RemoteError
-        """
-        trades: List[AMMTrade] = []
-        param_types = {
-            '$limit': 'Int!',
-            '$offset': 'Int!',
-            '$address': 'Bytes!',
-            '$start_ts': 'BigInt!',
-            '$end_ts': 'BigInt!',
-        }
-        param_values = {
-            'limit': GRAPH_QUERY_LIMIT,
-            'offset': 0,
-            'address': address.lower(),
-            'start_ts': str(start_ts),
-            'end_ts': str(end_ts),
-        }
-        querystr = format_query_indentation(V3_SWAPS_QUERY.format())
-
-        while True:
-            try:
-                result = self.graph_v3.query(
-                    querystr=querystr,
-                    param_types=param_types,
-                    param_values=param_values,
-                )
-            except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
-                raise
-
-            result_data = result['swaps']
-            for entry in result_data:
-                swaps = []
-                for swap in entry['transaction']['swaps']:
-                    timestamp = swap['timestamp']
-                    swap_token0 = swap['token0']
-                    swap_token1 = swap['token1']
-
-                    try:
-                        token0_deserialized = deserialize_ethereum_address(swap_token0['id'])
-                        token1_deserialized = deserialize_ethereum_address(swap_token1['id'])
-                        from_address_deserialized = deserialize_ethereum_address(swap['sender'])
-                        to_address_deserialized = deserialize_ethereum_address(swap['recipient'])
-                    except DeserializationError:
-                        msg = (
-                            f'Failed to deserialize addresses in trade from uniswap graph with '
-                            f'token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '
-                            f'swap sender: {swap["sender"]}, swap receiver {swap["to"]}'
-                        )
-                        log.error(msg)
-                        continue
-
-                    token0 = get_or_create_ethereum_token(
-                        userdb=self.database,
-                        symbol=swap_token0['symbol'],
-                        ethereum_address=token0_deserialized,
-                        name=swap_token0['name'],
-                        decimals=swap_token0['decimals'],
-                    )
-                    token1 = get_or_create_ethereum_token(
-                        userdb=self.database,
-                        symbol=swap_token1['symbol'],
-                        ethereum_address=token1_deserialized,
-                        name=swap_token1['name'],
-                        decimals=int(swap_token1['decimals']),
-                    )
-
-                    try:
-                        if swap['amount0'].startswith('-'):
-                            amount0_in = AssetAmount(FVal(ZERO))
-                            amount0_out = deserialize_asset_amount_force_positive(swap['amount0'])
-                            amount1_in = deserialize_asset_amount_force_positive(swap['amount1'])
-                            amount1_out = AssetAmount(FVal(ZERO))
-                        else:
-                            amount0_in = deserialize_asset_amount_force_positive(swap['amount0'])
-                            amount0_out = AssetAmount(FVal(ZERO))
-                            amount1_in = AssetAmount(FVal(ZERO))
-                            amount1_out = deserialize_asset_amount_force_positive(swap['amount1'])
-                    except ValueError as e:
-                        log.error(
-                            f'Failed to read amounts in Uniswap V3 swap {str(swap)}. '
-                            f'{str(e)}.',
-                        )
-                        continue
-
-                    swaps.append(AMMSwap(
-                        tx_hash=swap['id'].split('#')[0],
-                        log_index=int(swap['logIndex']),
-                        address=address,
-                        from_address=from_address_deserialized,
-                        to_address=to_address_deserialized,
-                        timestamp=Timestamp(int(timestamp)),
-                        location=Location.UNISWAP,
-                        token0=token0,
-                        token1=token1,
-                        amount0_in=amount0_in,
-                        amount1_in=amount1_in,
-                        amount0_out=amount0_out,
-                        amount1_out=amount1_out,
-                    ))
-
-                # with the new logic the list of swaps can be empty, in that case don't try
-                # to make trades from the swaps
-                if len(swaps) == 0:
-                    continue
-
-                # Now that we got all swaps for a transaction, create the trade object
-                trades.extend(self._tx_swaps_to_trades(swaps))
-            # Check whether an extra request is needed
-            if len(result_data) < GRAPH_QUERY_LIMIT:
                 break
 
             # Update pagination step
@@ -849,7 +681,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         """
         with self.trades_lock:
             if reset_db_data is True:
-                self.database.delete_uniswap_trades_data()
+                self.database.delete_sushiswap_trades_data()
 
             trades = self._get_trades(
                 addresses=addresses,
@@ -860,27 +692,6 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
 
         return trades
 
-    def _fetch_trades_from_db(
-            self,
-            addresses: List[ChecksumEthAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> AddressTrades:
-        """Fetch all DB Uniswap trades within the time range"""
-        db_address_trades: AddressTrades = {}
-        for address in addresses:
-            db_swaps = self.database.get_amm_swaps(
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-                location=Location.UNISWAP,
-                address=address,
-            )
-            db_trades = self.swaps_to_trades(db_swaps)
-            if db_trades:
-                db_address_trades[address] = db_trades
-
-        return db_address_trades
-
     def deactivate(self) -> None:
-        self.database.delete_uniswap_trades_data()
-        self.database.delete_uniswap_events_data()
+        self.database.delete_sushiswap_trades_data()
+        self.database.delete_sushiswap_events_data()

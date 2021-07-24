@@ -20,12 +20,7 @@ from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Price, Timestamp
 
 log = logging.getLogger(__name__)
 
-UNISWAP_EVENTS_PREFIX = 'uniswap_events'
-UNISWAP_TRADES_PREFIX = 'uniswap_trades'
-
 # Get balances
-
-
 @dataclass(init=True, repr=True)
 class LiquidityPoolAsset:
     asset: EthereumToken

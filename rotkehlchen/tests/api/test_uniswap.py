@@ -8,8 +8,8 @@ import requests
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.manager import NodeName
-from rotkehlchen.chain.ethereum.modules.uniswap import UniswapPoolEvent, UniswapPoolEventsBalance
-from rotkehlchen.chain.ethereum.modules.uniswap.typing import UNISWAP_EVENTS_PREFIX, EventType
+from rotkehlchen.chain.ethereum.modules.uniswap import UniswapPoolEvent, UniswapPoolEventsBalance, UNISWAP_EVENTS_PREFIX
+from rotkehlchen.chain.ethereum.modules.ammswap.typing import EventType
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_ADAI_V1, A_DAI, A_LEND, A_USDC, A_WETH
