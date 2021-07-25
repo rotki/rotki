@@ -917,6 +917,15 @@ Below you can see a small demonstration of the usage of makerdao vaults by a pre
    :alt: Makerdao vaults premium demo
    :align: center
 
+DEX trades
+================
+
+.. image:: images/sc_dex_trades.png
+  :alt: DEX trades
+  :align: center
+
+In the DEX Trades section you can monitor all trades made in the supported decentralized exchanges. Each trade is also broken down to the separate swaps that it is comprised of.
+
 Creating a profit/loss report
 *****************************
 
