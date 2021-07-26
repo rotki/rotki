@@ -31,7 +31,7 @@ import {
   IPC_VERSION,
   IPC_WEBSOCKET_URL
 } from '@/electron-main/ipc-commands';
-import { debugSettings, getUserMenu } from '@/electron-main/menu';
+import { debugSettings, getUserMenu, MenuActions } from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
 import { TrayManager } from '@/electron-main/tray-manager';
 import PyHandler from '@/py-handler';
@@ -131,7 +131,8 @@ export function ipcSetup(
   pyHandler: PyHandler,
   getWindow: WindowProvider,
   closeApp: () => Promise<void>,
-  tray: TrayManager
+  tray: TrayManager,
+  menuActions: MenuActions
 ) {
   ipcMain.on(IPC_GET_DEBUG, event => {
     event.returnValue = debugSettings;
@@ -146,7 +147,9 @@ export function ipcSetup(
   });
 
   ipcMain.on(IPC_PREMIUM_LOGIN, (event, args) => {
-    Menu.setApplicationMenu(Menu.buildFromTemplate(getUserMenu(!args)));
+    Menu.setApplicationMenu(
+      Menu.buildFromTemplate(getUserMenu(!args, menuActions))
+    );
   });
 
   ipcMain.on(IPC_CLOSE_APP, async () => await closeApp());

@@ -42,7 +42,7 @@ const onReady = async () => {
   };
 
   trayManager = new TrayManager(getWindow, closeApp);
-  ipcSetup(pyHandler, getWindow, closeApp, trayManager);
+  ipcSetup(pyHandler, getWindow, closeApp, trayManager, menuActions);
   await createWindow();
   trayManager.listen();
 };
@@ -72,6 +72,16 @@ if (!lock) {
     await closeApp();
   });
 }
+
+const menuActions = {
+  displayTray: (display: boolean) => {
+    if (display) {
+      trayManager?.build();
+    } else {
+      trayManager?.destroy();
+    }
+  }
+};
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -120,7 +130,9 @@ async function createWindow() {
     await win.loadURL('app://./index.html');
   }
 
-  Menu.setApplicationMenu(Menu.buildFromTemplate(getUserMenu(true)));
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate(getUserMenu(true, menuActions))
+  );
   // Register and deregister listeners to window events (resize, move, close) so that window state is saved
   mainWindowState.manage(win);
 

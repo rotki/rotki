@@ -1,12 +1,17 @@
 import { app, BrowserWindow, MenuItem, shell } from 'electron';
+import { settingsManager } from '@/electron-main/app-settings';
 import { IPC_ABOUT, IPC_DEBUG_SETTINGS } from '@/electron-main/ipc-commands';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const isMac = process.platform === 'darwin';
 
+export type MenuActions = { displayTray: (display: boolean) => void };
+
 export const debugSettings = {
   vuex: false
 };
+
+let actions: MenuActions = { displayTray: () => {} };
 
 const debugMenu = {
   label: '&Debug',
@@ -119,6 +124,18 @@ const developmentViewMenu = [
   { role: 'toggleDevTools' },
   separator
 ];
+
+const displayTrayIcon = {
+  label: 'Display Tray Icon',
+  type: 'checkbox',
+  checked: settingsManager.appSettings.displayTray,
+  click: async (item: MenuItem) => {
+    settingsManager.appSettings.displayTray = item.checked;
+    settingsManager.save();
+    actions.displayTray(item.checked);
+  }
+};
+
 const viewMenu = {
   label: '&View',
   submenu: [
@@ -135,7 +152,9 @@ const viewMenu = {
       click: (_: KeyboardEvent, window: BrowserWindow) => {
         window.hide();
       }
-    }
+    },
+    separator,
+    displayTrayIcon
   ]
 };
 const defaultMenuTemplate: any[] = [
@@ -163,7 +182,8 @@ const defaultMenuTemplate: any[] = [
   ...(isDevelopment ? [debugMenu] : [])
 ];
 
-export function getUserMenu(showPremium: boolean) {
+export function getUserMenu(showPremium: boolean, menuActions: MenuActions) {
+  actions = menuActions;
   const getRotkiPremiumButton = {
     label: '&Get rotki Premium',
     ...(isMac
