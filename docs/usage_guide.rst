@@ -428,6 +428,11 @@ In the advanced section of the backend settings you can also modify the followin
 - **Max log size**: This is the maximum size in megabytes all logs of a single run can have
 - **Max num of log files**: This is the maximum number of backup (rotated) logs a single run can have.
 
+Disabling the tray icon
+====================================
+Users can disable the application tray icon by clicking the ``View`` menu entry in the application menu bar.
+There you can select ``Display Tray Icon`` to enable or disable the application tray icon.
+
 Importing data
 *******************
 
