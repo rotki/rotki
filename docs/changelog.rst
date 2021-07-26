@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`3125` Native support for Polkadot blockchain.
 * :feature:`3242` Native support for Avalanche Blockchain and Covalent API.
+* :feature:`3097` Users will now have the option to disable the application tray icon.
 * :feature:`3061` When inserting ledger actions users will now be able to skip the specific time on date input (00:00:00 will be assumed).
 * :feature:`3061` Users will now get the last used location pre-selected when adding ledger actions.
 * :feature:`3138` Users will now see separate cards on the Defi overview for MakerDAO Vaults and MakerDAO DSR.
