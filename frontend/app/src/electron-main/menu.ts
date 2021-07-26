@@ -125,14 +125,24 @@ const developmentViewMenu = [
   separator
 ];
 
+const minimize = {
+  id: 'MINIMIZE_TO_TRAY',
+  label: 'Minimize to tray',
+  enabled: settingsManager.appSettings.displayTray,
+  click: (_: KeyboardEvent, window: BrowserWindow) => {
+    window.hide();
+  }
+};
+
 const displayTrayIcon = {
   label: 'Display Tray Icon',
   type: 'checkbox',
   checked: settingsManager.appSettings.displayTray,
   click: async (item: MenuItem) => {
-    settingsManager.appSettings.displayTray = item.checked;
+    const displayTray = item.checked;
+    settingsManager.appSettings.displayTray = displayTray;
     settingsManager.save();
-    actions.displayTray(item.checked);
+    actions.displayTray(displayTray);
   }
 };
 
@@ -147,12 +157,7 @@ const viewMenu = {
     { role: 'zoomOut' },
     separator,
     { role: 'togglefullscreen' },
-    {
-      label: 'Minimize to tray',
-      click: (_: KeyboardEvent, window: BrowserWindow) => {
-        window.hide();
-      }
-    },
+    minimize,
     separator,
     displayTrayIcon
   ]

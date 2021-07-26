@@ -62,6 +62,9 @@ export class TrayManager {
   }
 
   update({ currency, delta, percentage, up, period, netWorth }: TrayUpdate) {
+    if (!this._tray) {
+      return;
+    }
     if (up === undefined) {
       this.setIcon(isMac ? 'rotki-trayTemplate.png' : 'rotki_tray.png');
       this.tray.setTitle('');

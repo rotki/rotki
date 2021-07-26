@@ -75,6 +75,14 @@ if (!lock) {
 
 const menuActions = {
   displayTray: (display: boolean) => {
+    const applicationMenu = Menu.getApplicationMenu();
+    if (applicationMenu) {
+      const menuItem = applicationMenu.getMenuItemById('MINIMIZE_TO_TRAY');
+      if (menuItem) {
+        menuItem.enabled = display;
+      }
+    }
+
     if (display) {
       trayManager?.build();
     } else {
