@@ -387,7 +387,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('updateKsm', ksmBalances ?? {});
     }
 
-    if (!chain || chain === DOT){
+    if (!chain || chain === DOT) {
       commit('updateDot', dotBalances ?? {});
     }
 
@@ -666,9 +666,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       if (blockchain === ETH) {
         commit('ethAccounts', accountData);
-      } else if (blockchain == KSM){
+      } else if (blockchain === KSM) {
         commit('ksmAccounts', accountData);
-      } else if (blockchain == DOT){
+      } else if (blockchain == DOT) {
           commit('dotAccounts', accountData);
       } else {
         commit('avaxAccounts', accountData);

@@ -22,12 +22,15 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_btc_address,
 )
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.substrate.typing import SubstrateAddress, KusamaAddress, SubstratePublicKey
+from rotkehlchen.chain.substrate.typing import (
+    SubstrateAddress, KusamaAddress,
+    PolkadotAddress, SubstratePublicKey,
+)
 from rotkehlchen.chain.substrate.utils import (
     get_kusama_address_from_public_key,
     is_valid_kusama_address,
     get_polkadot_address_from_public_key,
-    is_valid_polkadot_address
+    is_valid_polkadot_address,
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -1452,10 +1455,11 @@ def _transform_eth_address(
 
     return address
 
+
 def _transform_substrate_address(
         ethereum: EthereumManager,
         given_address: str,
-        chain: str,
+        chain: Literal['Kusama', 'Polkadot'],
 ) -> SubstrateAddress:
     """Returns a DOT or KSM address (if exists) given an ENS domain. At this point any
     given address has been already validated either as an ENS name or as a
@@ -1472,15 +1476,18 @@ def _transform_substrate_address(
     https://github.com/ensdomains/address-encoder/blob/master/src/index.ts
     """
     if not given_address.endswith('.eth'):
-        return SubstrateAddress(given_address)
+        if chain == 'Polkadot':
+            return PolkadotAddress(given_address)
+        elif chain == 'Kusama':
+            return KusamaAddress(given_address)
 
     try:
-        if(chain == "Polkadot"):
+        if(chain == 'Polkadot'):
             resolved_address = ethereum.ens_lookup(
                 given_address,
                 blockchain=SupportedBlockchain.POLKADOT,
             )
-        if(chain == "Kusama"):
+        if(chain == 'Kusama'):
             resolved_address = ethereum.ens_lookup(
                 given_address,
                 blockchain=SupportedBlockchain.KUSAMA,
@@ -1499,20 +1506,20 @@ def _transform_substrate_address(
         ) from None
 
     try:
-        if(chain == "Polkadot"):
+        if(chain == 'Polkadot'):
             address = get_polkadot_address_from_public_key(SubstratePublicKey(resolved_address))
-        if(chain == "Kusama"):
+            log.debug(f'Resolved polkadot ENS {given_address} to {address}')
+            return PolkadotAddress(address)
+        if(chain == 'Kusama'):
             address = get_kusama_address_from_public_key(SubstratePublicKey(resolved_address))
+            log.debug(f'Resolved kusama ENS {given_address} to {address}')
+            return KusamaAddress(address)
     except (TypeError, ValueError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} does not contain a valid '
             f'Substrate public key: {resolved_address}. ' + chain + ' address cannot be obtained.',
             field_name='address',
         ) from e
-
-    log.debug(f'Resolved ' + chain + ' ENS {given_address} to {address}')
-
-    return SubstrateAddress(address)
 
 
 class BlockchainAccountsPatchSchema(Schema):
@@ -1554,14 +1561,14 @@ class BlockchainAccountsPatchSchema(Schema):
                 data['accounts'][idx]['address'] = _transform_substrate_address(
                     ethereum=self.ethereum_manager,
                     given_address=account['address'],
-                    chain = "Kusama",
+                    chain='Kusama',
                 )
         if data['blockchain'] == SupportedBlockchain.POLKADOT:
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_substrate_address(
                     ethereum=self.ethereum_manager,
                     given_address=account['address'],
-                    chain = 'Polkadot',
+                    chain='Polkadot',
                 )
 
         return data
@@ -1604,11 +1611,13 @@ class BlockchainAccountsDeleteSchema(Schema):
             ]
         if data['blockchain'] == SupportedBlockchain.KUSAMA:
             data['accounts'] = [
-                _transform_substrate_address(self.ethereum_manager, x, 'Kusama') for x in data['accounts']
+                _transform_substrate_address(
+                    self.ethereum_manager, x, 'Kusama') for x in data['accounts']
             ]
         if data['blockchain'] == SupportedBlockchain.POLKADOT:
             data['accounts'] = [
-                _transform_substrate_address(self.ethereum_manager, x, 'Polkadot') for x in data['accounts']
+                _transform_substrate_address(
+                    self.ethereum_manager, x, 'Polkadot') for x in data['accounts']
             ]
         return data
 

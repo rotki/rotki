@@ -2,17 +2,16 @@ from typing import List, Optional, Sequence
 
 import pytest
 
+from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
-from rotkehlchen.chain.avalanche.manager import AvalancheManager
-from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstrateChain
-from rotkehlchen.chain.substrate.typing import PolkadotAddress, SubstrateChain
+from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress, SubstrateChain
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.beaconchain import BeaconChain
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.covalent import Covalent
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -21,9 +20,6 @@ from rotkehlchen.tests.utils.substrate import (
     KUSAMA_SS58_FORMAT,
     KUSAMA_TOKEN,
     KUSAMA_TOKEN_DECIMALS,
-    wait_until_all_substrate_nodes_connected,
-)
-from rotkehlchen.tests.utils.substrate import (
     POLKADOT_DEFAULT_OWN_RPC_ENDPOINT,
     POLKADOT_SS58_FORMAT,
     POLKADOT_TOKEN,

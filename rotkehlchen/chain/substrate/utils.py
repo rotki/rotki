@@ -1,6 +1,7 @@
 from substrateinterface import Keypair
 from substrateinterface.utils.ss58 import ss58_decode
 
+
 from .typing import (
     KusamaAddress,
     KusamaNodeName,
@@ -144,4 +145,7 @@ def get_substrate_address_from_public_key(
         public_key=public_key,
         ss58_format=ss58_format,
     )
-    return SubstrateAddress(keypair.ss58_address)
+    if chain == SubstrateChain.KUSAMA:
+        return KusamaAddress(keypair.ss58_address)
+    if chain == SubstrateChain.POLKADOT:
+        return PolkadotAddress(keypair.ss58_address)
