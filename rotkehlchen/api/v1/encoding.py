@@ -1,6 +1,17 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    overload,
+)
 
 import marshmallow
 import webargs
@@ -25,12 +36,11 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.substrate.typing import (
     KusamaAddress,
     PolkadotAddress,
-    SubstrateAddress,
+    SubstrateChain,
     SubstratePublicKey,
 )
 from rotkehlchen.chain.substrate.utils import (
-    get_kusama_address_from_public_key,
-    get_polkadot_address_from_public_key,
+    get_substrate_address_from_public_key,
     is_valid_kusama_address,
     is_valid_polkadot_address,
 )
@@ -1458,21 +1468,39 @@ def _transform_eth_address(
     return address
 
 
+@overload
+def _transform_substrate_address(
+        ethereum: EthereumManager,
+        given_address: str,
+        chain: Literal['Kusama'],
+) -> KusamaAddress:
+    ...
+
+
+@overload
+def _transform_substrate_address(
+        ethereum: EthereumManager,
+        given_address: str,
+        chain: Literal['Polkadot'],
+) -> PolkadotAddress:
+    ...
+
+
 def _transform_substrate_address(
         ethereum: EthereumManager,
         given_address: str,
         chain: Literal['Kusama', 'Polkadot'],
-) -> SubstrateAddress:
+) -> Union[KusamaAddress, PolkadotAddress]:
     """Returns a DOT or KSM address (if exists) given an ENS domain. At this point any
     given address has been already validated either as an ENS name or as a
-    valid Polkadot address (ss58 format).
+    valid Substrate address (ss58 format).
 
     NB: ENS domains for Substrate chains (e.g. KSM, DOT) store the Substrate
     public key. It requires to encode it with a specific ss58 format for
     obtaining the specific chain address.
 
     Polkadot/Polkadot ENS domain accounts:
-    https://guide.Polkadot.network/docs/en/mirror-ens
+    https://guide.kusama.network/docs/en/mirror-ens
 
     ENS domain substrate public key encoding:
     https://github.com/ensdomains/address-encoder/blob/master/src/index.ts
@@ -1480,20 +1508,14 @@ def _transform_substrate_address(
     if not given_address.endswith('.eth'):
         if chain == 'Polkadot':
             return PolkadotAddress(given_address)
-        elif chain == 'Kusama':
+        if chain == 'Kusama':
             return KusamaAddress(given_address)
 
     try:
-        if(chain == 'Polkadot'):
-            resolved_address = ethereum.ens_lookup(
-                given_address,
-                blockchain=SupportedBlockchain.POLKADOT,
-            )
-        if(chain == 'Kusama'):
-            resolved_address = ethereum.ens_lookup(
-                given_address,
-                blockchain=SupportedBlockchain.KUSAMA,
-            )
+        resolved_address = ethereum.ens_lookup(
+            given_address,
+            blockchain=SupportedBlockchain.POLKADOT if chain == 'Polkadot' else SupportedBlockchain.KUSAMA,  # noqa: E501
+        )
     except (RemoteError, InputError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} could not be resolved '
@@ -1507,19 +1529,28 @@ def _transform_substrate_address(
             field_name='address',
         ) from None
 
+    address: Union[PolkadotAddress, KusamaAddress]
     try:
-        if(chain == 'Polkadot'):
-            address = get_polkadot_address_from_public_key(SubstratePublicKey(resolved_address))
+        if chain == 'Polkadot':
+            address = get_substrate_address_from_public_key(
+                chain=SubstrateChain.POLKADOT,
+                public_key=SubstratePublicKey(resolved_address),
+            )
             log.debug(f'Resolved polkadot ENS {given_address} to {address}')
             return PolkadotAddress(address)
-        if(chain == 'Kusama'):
-            address = get_kusama_address_from_public_key(SubstratePublicKey(resolved_address))
-            log.debug(f'Resolved kusama ENS {given_address} to {address}')
-            return KusamaAddress(address)
+
+        # else can only be kusama
+        address = get_substrate_address_from_public_key(
+            chain=SubstrateChain.KUSAMA,
+            public_key=SubstratePublicKey(resolved_address),
+        )
+        log.debug(f'Resolved kusama ENS {given_address} to {address}')
+        return KusamaAddress(address)
+
     except (TypeError, ValueError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} does not contain a valid '
-            f'Substrate public key: {resolved_address}. ' + chain + ' address cannot be obtained.',
+            f'Substrate public key: {resolved_address}. {chain} address cannot be obtained.',
             field_name='address',
         ) from e
 

@@ -554,8 +554,11 @@ class SubstrateManager():
         """
         return self._get_account_balance(account=account, node_interface=node_interface)
 
+    # # Create a generic TypeVar that can be either Kusama or PolkadotAddress
+    # T = TypeVar('T', KusamaAddress, PolkadotAddress)
     def get_accounts_balance(
             self,
+            # accounts: Union[List[KusamaAddress, PolkadotAddress]],
             accounts: List[SubstrateAddress],
     ) -> Dict[SubstrateAddress, FVal]:
         """Given a list of accounts get their amount of chain native token.

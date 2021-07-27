@@ -220,6 +220,7 @@ def fixture_btc_derivation_gap_limit():
 def blockchain(
         ethereum_manager,
         kusama_manager,
+        polkadot_manager,
         avalanche_manager,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
@@ -241,6 +242,7 @@ def blockchain(
         blockchain_accounts=blockchain_accounts,
         ethereum_manager=ethereum_manager,
         kusama_manager=kusama_manager,
+        polkadot_manager=polkadot_manager,
         avalanche_manager=avalanche_manager,
         msg_aggregator=messages_aggregator,
         database=database,

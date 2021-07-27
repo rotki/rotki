@@ -51,11 +51,12 @@ from rotkehlchen.chain.ethereum.modules import (
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
-from rotkehlchen.chain.substrate.typing import KusamaAddress
-from rotkehlchen.chain.substrate.utils import KUSAMA_NODE_CONNECTION_TIMEOUT
-from rotkehlchen.constants.assets import A_ADX, A_BTC, A_DAI, A_ETH, A_ETH2, A_KSM, A_AVAX, A_DOT
-from rotkehlchen.chain.substrate.typing import PolkadotAddress
-from rotkehlchen.chain.substrate.utils import POLKADOT_NODE_CONNECTION_TIMEOUT
+from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress
+from rotkehlchen.chain.substrate.utils import (
+    KUSAMA_NODE_CONNECTION_TIMEOUT,
+    POLKADOT_NODE_CONNECTION_TIMEOUT,
+)
+from rotkehlchen.constants.assets import A_ADX, A_AVAX, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -88,12 +89,12 @@ from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_ti
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDetails
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain import BeaconChain
-    from rotkehlchen.chain.avalanche.manager import AvalancheManager
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -895,8 +896,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
         dot_usd_price = Inquirer().find_usd_price(A_DOT)
         if append_or_remove == 'append':
-            # Wait until a node is connected when adding a DOT address for the
-            # first time.
+            # Wait until a node is connected when adding a DOT address for the first time.
             if len(self.polkadot.available_nodes_call_order) == 0:
                 self.polkadot.attempt_connections()
                 wait_until_a_node_is_available(

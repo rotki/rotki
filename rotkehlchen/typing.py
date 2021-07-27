@@ -4,8 +4,7 @@ from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tup
 from eth_typing import ChecksumAddress
 from typing_extensions import Literal
 
-from rotkehlchen.chain.substrate.typing import KusamaAddress
-from rotkehlchen.chain.substrate.typing import PolkadotAddress
+from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 

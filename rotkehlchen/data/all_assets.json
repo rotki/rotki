@@ -3892,13 +3892,6 @@
         "symbol": "DOR",
         "type": "ethereum token"
     },
-    "DOT": {
-        "coingecko": "polkadot",
-        "name": "Polkadot",
-        "started": 1590451200,
-        "symbol": "DOT",
-        "type": "own chain"
-    },
     "DOTDOWN": {
         "coingecko": "",
         "name": "Binance leveraged token DOTDOWN",

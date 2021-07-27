@@ -1,11 +1,12 @@
 from enum import Enum
-from typing import Dict, List, NamedTuple, NewType, Tuple, Type, Union
+from typing import Dict, List, NamedTuple, NewType, Tuple, Type, TypeVar, Union
 
 from substrateinterface import SubstrateInterface
 
 KusamaAddress = NewType('KusamaAddress', str)
 PolkadotAddress = NewType('PolkadotAddress', str)
-SubstrateAddress = Union[KusamaAddress, PolkadotAddress]
+# SubstrateAddress = Union[KusamaAddress, PolkadotAddress]
+SubstrateAddress = TypeVar('SubstrateAddress', KusamaAddress, PolkadotAddress)
 SubstratePublicKey = NewType('SubstratePublicKey', str)
 
 SubstrateChainId = NewType('SubstrateChainId', str)
@@ -100,12 +101,10 @@ class SubstrateChain(Enum):
     POLKADOT = 2
 
     def __str__(self) -> SubstrateChainId:
-        """Return the official chain identifier/name.
-        """
+        """Return the official chain identifier/name"""
         if self == SubstrateChain.KUSAMA:
             return SubstrateChainId('Kusama')
-
-        elif self == SubstrateChain.POLKADOT:
+        if self == SubstrateChain.POLKADOT:
             return SubstrateChainId('Polkadot')
 
         raise AssertionError(f'Unexpected Chain: {self}')
@@ -118,8 +117,7 @@ class SubstrateChain(Enum):
         """
         if self == SubstrateChain.KUSAMA:
             return 'https://kusama.api.subscan.io/api'
-
-        elif self == SubstrateChain.POLKADOT:
+        if self == SubstrateChain.POLKADOT:
             return 'https://polkadot.api.subscan.io/api'
 
         raise AssertionError(f'Unexpected Chain: {self}')
@@ -129,8 +127,7 @@ class SubstrateChain(Enum):
         """
         if self == SubstrateChain.KUSAMA:
             return SubstrateInterfaceAttributes(type_registry_preset='kusama')
-
-        elif self == SubstrateChain.POLKADOT:
+        if self == SubstrateChain.POLKADOT:
             return SubstrateInterfaceAttributes(type_registry_preset='polkadot')
 
         raise AssertionError(f'Unexpected Chain: {self}')
@@ -148,8 +145,7 @@ class SubstrateChain(Enum):
         """
         if self == SubstrateChain.KUSAMA:
             return KusamaNodeName
-
-        elif self == SubstrateChain.POLKADOT:
+        if self == SubstrateChain.POLKADOT:
             return PolkadotNodeName
         raise AssertionError(f'Unexpected Chain: {self}')
 

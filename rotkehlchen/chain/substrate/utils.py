@@ -1,13 +1,14 @@
+from typing import Union, overload
+
 from substrateinterface import Keypair
 from substrateinterface.utils.ss58 import ss58_decode
-
+from typing_extensions import Literal
 
 from .typing import (
     KusamaAddress,
     KusamaNodeName,
     PolkadotAddress,
     PolkadotNodeName,
-    SubstrateAddress,
     SubstrateChain,
     SubstratePublicKey,
 )
@@ -86,44 +87,26 @@ def is_valid_substrate_address(
     return True
 
 
-def get_kusama_address_from_public_key(public_key: SubstratePublicKey) -> KusamaAddress:
-    """Return a valid Kusama address given a Substrate public key.
-
-    Public key: 32 len str, leading '0x' is optional.
-
-    May raise:
-    - AttributeError: if public key is not a string.
-    - TypeError: if ss58_format is not an int.
-    - ValueError: if public key is not 32 bytes long or the ss58_format is not
-    a valid int.
-    """
-    return get_substrate_address_from_public_key(
-        chain=SubstrateChain.KUSAMA,
-        public_key=public_key,
-    )
+@overload
+def get_substrate_address_from_public_key(
+        chain: Literal[SubstrateChain.POLKADOT],
+        public_key: SubstratePublicKey,
+) -> PolkadotAddress:
+    ...
 
 
-def get_polkadot_address_from_public_key(public_key: SubstratePublicKey) -> PolkadotAddress:
-    """Return a valid Polkadot address given a Substrate public key.
-
-    Public key: 32 len str, leading '0x' is optional.
-
-    May raise:
-    - AttributeError: if public key is not a string.
-    - TypeError: if ss58_format is not an int.
-    - ValueError: if public key is not 32 bytes long or the ss58_format is not
-    a valid int.
-    """
-    return get_substrate_address_from_public_key(
-        chain=SubstrateChain.POLKADOT,
-        public_key=public_key,
-    )
+@overload
+def get_substrate_address_from_public_key(
+        chain: Literal[SubstrateChain.KUSAMA],
+        public_key: SubstratePublicKey,
+) -> KusamaAddress:
+    ...
 
 
 def get_substrate_address_from_public_key(
         chain: SubstrateChain,
         public_key: SubstratePublicKey,
-) -> SubstrateAddress:
+) -> Union[KusamaAddress, PolkadotAddress]:
     """Return a valid address for the given Substrate chain and public key.
 
     Public key: 32 len str, leading '0x' is optional.
@@ -147,5 +130,5 @@ def get_substrate_address_from_public_key(
     )
     if chain == SubstrateChain.KUSAMA:
         return KusamaAddress(keypair.ss58_address)
-    if chain == SubstrateChain.POLKADOT:
-        return PolkadotAddress(keypair.ss58_address)
+    # else can only be polkadot
+    return PolkadotAddress(keypair.ss58_address)
