@@ -3261,3 +3261,98 @@ class RestAPI():
             result={'result': False, 'message': 'Failed to delete manual price'},
             status_code=HTTPStatus.CONFLICT,
         )
+
+    def _get_avalanche_transactions(
+        self,
+        address: ChecksumEthAddress,
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Dict[str, Any]:
+        avalanche = self.rotkehlchen.chain_manager.avalanche
+        response = avalanche.covalent.get_transactions(address, from_timestamp, to_timestamp)
+        if response is None:
+            return {
+                'result': [],
+                'message': 'Not found.',
+                'status_code': HTTPStatus.NOT_FOUND,
+            }
+
+        entries_result = []
+        for transaction in response:
+            entries_result.append(transaction.serialize())
+
+        result = {
+            'entries': entries_result,
+            'entries_found': len(entries_result),
+        }
+        msg = ''
+        return {'result': result, 'message': msg, 'status_code': HTTPStatus.OK}
+
+    @require_loggedin_user()
+    def get_avalanche_transactions(
+        self,
+        async_query: bool,
+        address: ChecksumEthAddress,
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_avalanche_transactions',
+                address=address,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        response = self._get_avalanche_transactions(
+            address=address,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+        result = response['result']
+        if len(result) == 0:
+            return api_response(
+                wrap_in_fail_result('Not found.'),
+                status_code=HTTPStatus.NOT_FOUND,
+            )
+
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(process_result(result_dict), status_code=status_code)
+
+    def _get_avax_token_info(self, address: ChecksumEthAddress) -> Dict[str, Any]:
+        avax_manager = self.rotkehlchen.chain_manager.avalanche
+        try:
+            info = avax_manager.get_basic_contract_info(address=address)
+        except BadFunctionCallOutput:
+            return wrap_in_fail_result(
+                f'Address {address} seems to not be a deployed contract',
+                status_code=HTTPStatus.CONFLICT,
+            )
+        return _wrap_in_ok_result(info)
+
+    @require_loggedin_user()
+    def get_avax_token_information(
+        self,
+        token_address: ChecksumEthAddress,
+        async_query: bool,
+    ) -> Response:
+
+        if async_query:
+            return self._query_async(command='_get_avax_token_info', address=token_address)
+
+        response = self._get_avax_token_info(token_address)
+
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+
+        # Success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(result_dict, status_code=status_code)

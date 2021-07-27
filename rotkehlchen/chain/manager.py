@@ -53,7 +53,7 @@ from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.typing import KusamaAddress
 from rotkehlchen.chain.substrate.utils import KUSAMA_NODE_CONNECTION_TIMEOUT
-from rotkehlchen.constants.assets import A_ADX, A_BTC, A_DAI, A_ETH, A_ETH2, A_KSM
+from rotkehlchen.constants.assets import A_ADX, A_BTC, A_DAI, A_ETH, A_ETH2, A_KSM, A_AVAX
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -91,6 +91,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain import BeaconChain
+    from rotkehlchen.chain.avalanche.manager import AvalancheManager
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -153,23 +154,27 @@ class BlockchainBalances:
     eth: DefaultDict[ChecksumEthAddress, BalanceSheet] = field(init=False)
     btc: Dict[BTCAddress, Balance] = field(init=False)
     ksm: Dict[KusamaAddress, BalanceSheet] = field(init=False)
+    avax: DefaultDict[ChecksumEthAddress, BalanceSheet] = field(init=False)
 
     def copy(self) -> 'BlockchainBalances':
         balances = BlockchainBalances(db=self.db)
         balances.eth = self.eth.copy()
         balances.btc = self.btc.copy()
         balances.ksm = self.ksm.copy()
+        balances.avax = self.avax.copy()
         return balances
 
     def __post_init__(self) -> None:
         self.eth = defaultdict(BalanceSheet)
         self.btc = defaultdict(Balance)
         self.ksm = defaultdict(BalanceSheet)
+        self.avax = defaultdict(BalanceSheet)
 
     def serialize(self) -> Dict[str, Dict]:
         eth_balances = {k: v.serialize() for k, v in self.eth.items()}
         btc_balances: Dict[str, Any] = {}
         ksm_balances = {k: v.serialize() for k, v in self.ksm.items()}
+        avax_balances = {k: v.serialize() for k, v in self.avax.items()}
         xpub_mappings = self.db.get_addresses_to_xpub_mapping(list(self.btc.keys()))
         for btc_account, balances in self.btc.items():
             xpub_result = xpub_mappings.get(btc_account, None)
@@ -210,6 +215,8 @@ class BlockchainBalances:
             blockchain_balances['BTC'] = btc_balances
         if ksm_balances != {}:
             blockchain_balances['KSM'] = ksm_balances
+        if avax_balances != {}:
+            blockchain_balances['AVAX'] = avax_balances
         return blockchain_balances
 
     def is_queried(self, blockchain: SupportedBlockchain) -> bool:
@@ -219,6 +226,8 @@ class BlockchainBalances:
             return self.btc != {}
         if blockchain == SupportedBlockchain.KUSAMA:
             return self.ksm != {}
+        if blockchain == SupportedBlockchain.AVALANCHE:
+            return self.avax != {}
         # else
         raise AssertionError('Invalid blockchain value')
 
@@ -233,6 +242,8 @@ class BlockchainBalances:
             return account in self.btc
         if blockchain == SupportedBlockchain.KUSAMA:
             return account in self.ksm
+        if blockchain == SupportedBlockchain.AVALANCHE:
+            return account in self.avax
         # else
         raise AssertionError('Invalid blockchain value')
 
@@ -256,6 +267,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             blockchain_accounts: BlockchainAccounts,
             ethereum_manager: 'EthereumManager',
             kusama_manager: 'SubstrateManager',
+            avalanche_manager: 'AvalancheManager',
             msg_aggregator: MessagesAggregator,
             database: 'DBHandler',
             greenlet_manager: GreenletManager,
@@ -269,6 +281,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         super().__init__()
         self.ethereum = ethereum_manager
         self.kusama = kusama_manager
+        self.avalanche = avalanche_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.accounts = blockchain_accounts
@@ -284,6 +297,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.btc_lock = Semaphore()
         self.eth_lock = Semaphore()
         self.ksm_lock = Semaphore()
+        self.avax_lock = Semaphore()
 
         # Per account balances
         self.balances = BlockchainBalances(db=database)
@@ -480,6 +494,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         should_query_eth = not blockchain or blockchain == SupportedBlockchain.ETHEREUM
         should_query_btc = not blockchain or blockchain == SupportedBlockchain.BITCOIN
         should_query_ksm = not blockchain or blockchain == SupportedBlockchain.KUSAMA
+        should_query_avax = not blockchain or blockchain == SupportedBlockchain.AVALANCHE
 
         if should_query_eth:
             self.query_ethereum_balances(force_token_detection=force_token_detection)
@@ -487,7 +502,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self.query_btc_balances()
         if should_query_ksm:
             self.query_kusama_balances()
-
+        if should_query_avax:
+            self.query_avalanche_balances()
         return self.get_balances_update()
 
     @protect_with_lock()
@@ -543,6 +559,32 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             )
             total_balance += balance
         self.totals.assets[A_KSM] = total_balance
+
+    @protect_with_lock()
+    @cache_response_timewise()
+    def query_avalanche_balances(self) -> None:
+        """Queries the AVAX balances of the accounts via Avalanche/Covalent endpoints.
+        May raise:
+        - RemotError: if no nodes are available or the balances request fails.
+        """
+        if len(self.accounts.avax) == 0:
+            return
+
+        # Query avax balance
+        avax_usd_price = Inquirer().find_usd_price(A_AVAX)
+        account_amount = self.avalanche.get_multiavax_balance(self.accounts.avax)
+        avax_total = FVal(0)
+        for account, amount in account_amount.items():
+            avax_total += amount
+            usd_value = amount * avax_usd_price
+            self.balances.avax[account] = BalanceSheet(
+                assets=defaultdict(Balance, {A_AVAX: Balance(amount, usd_value)}),
+            )
+
+        self.totals.assets[A_AVAX] = Balance(
+            amount=avax_total,
+            usd_value=avax_total * avax_usd_price,
+        )
 
     def sync_btc_accounts_with_db(self) -> None:
         """Call this function after having deleted BTC accounts from the DB to
@@ -725,6 +767,55 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 self.totals.assets[A_KSM] = Balance()
             self.balances.ksm.pop(account, None)
             self.accounts.ksm.remove(account)
+
+    def modify_avalanche_account(
+            self,
+            account: ChecksumEthAddress,
+            append_or_remove: Literal['append', 'remove'],
+    ) -> None:
+        """Either appends or removes a kusama acccount.
+        Call with 'append' to add the account
+        Call with 'remove' remove the account
+        May raise:
+        - Input error if the given_account is not a valid kusama address
+        - RemoteError if there is a problem with a query to an external
+        service such as Kusama nodes or cryptocompare
+        """
+        if append_or_remove not in ('append', 'remove'):
+            raise AssertionError(f'Unexpected action: {append_or_remove}')
+        if append_or_remove == 'remove' and account not in self.accounts.avax:
+            raise InputError('Tried to remove a non existing AVAX account')
+
+        avax_usd_price = Inquirer().find_usd_price(A_AVAX)
+        remove_with_populated_balance = (
+            append_or_remove == 'remove' and len(self.balances.avax) != 0
+        )
+        # Query the balance of the account except for the case when it's removed
+        # and there is no other account in the balances
+        if append_or_remove == 'append' or remove_with_populated_balance:
+            amount = self.avalanche.get_avax_balance(account)
+            usd_value = amount * avax_usd_price
+
+        if append_or_remove == 'append':
+            self.accounts.avax.append(account)
+            self.balances.avax[account] = BalanceSheet(
+                assets=defaultdict(Balance, {A_AVAX: Balance(amount, usd_value)}),
+            )
+
+        elif append_or_remove == 'remove':
+            if len(self.balances.avax) > 1:
+                if account in self.balances.avax:
+                    self.totals.assets[A_AVAX] -= self.balances.avax[account].assets[A_AVAX]
+            else:  # If the last account was removed balance should be 0
+                self.totals.assets[A_AVAX] = Balance()
+            self.balances.avax.pop(account, None)
+            self.accounts.avax.remove(account)
+
+        if len(self.balances.avax) == 0:
+            # If the last account was removed balance should be 0
+            self.totals.assets[A_AVAX] = Balance()
+        elif append_or_remove == 'append':
+            self.totals.assets[A_AVAX] += Balance(amount, usd_value)
 
     def add_blockchain_accounts(
             self,
@@ -916,6 +1007,21 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 for account in accounts:
                     self.modify_kusama_account(
                         account=KusamaAddress(account),
+                        append_or_remove=append_or_remove,
+                    )
+        elif blockchain == SupportedBlockchain.AVALANCHE:
+            with self.avax_lock:
+                if append_or_remove == 'append':
+                    self.check_accounts_exist(blockchain, accounts)
+
+                # we are adding/removing accounts, make sure query cache is flushed
+                self.flush_cache('query_avalanche_balances', arguments_matter=True)
+                self.flush_cache('query_balances', arguments_matter=True)
+                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.AVALANCHE)  # noqa: E501
+                for account in accounts:
+                    address = string_to_ethereum_address(account)
+                    self.modify_avalanche_account(
+                        account=address,
                         append_or_remove=append_or_remove,
                     )
         else:

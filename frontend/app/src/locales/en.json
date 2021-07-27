@@ -2277,7 +2277,8 @@
     "balances": {
       "eth": "Ethereum balances",
       "btc": "Bitcoin balances",
-      "ksm": "Kusama balances"
+      "ksm": "Kusama balances",
+      "avax": "Avalanche balances"
     },
     "metamask_import": {
       "error": {
@@ -2662,7 +2663,8 @@
   "blockchains": {
     "eth": "Ethereum",
     "btc": "Bitcoin",
-    "ksm": "Kusama"
+    "ksm": "Kusama",
+    "avax": "Avalanche"
   },
   "sync_buttons": {
     "upload_tooltip": "Push your local database to the server and replace all data there",

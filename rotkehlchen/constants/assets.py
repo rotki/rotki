@@ -119,6 +119,18 @@ A_KSM = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_KSM)
+A_AVAX = Asset.initialize(
+    identifier='AVAX',
+    asset_type=AssetType.OWN_CHAIN,
+    name="Avalanche",
+    symbol='AVAX',
+    started=Timestamp(1600646400),
+    forked=None,
+    swapped_for=None,
+    coingecko='avalanche-2',
+    cryptocompare=None,
+)
+CONSTANT_ASSETS.append(A_AVAX)
 
 A_BAL = EthereumToken.initialize(
     address=string_to_ethereum_address('0xba100000625a3754423978a60c9317c58a424e3D'),

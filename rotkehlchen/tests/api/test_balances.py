@@ -39,6 +39,10 @@ from rotkehlchen.tests.utils.substrate import (
     SUBSTRATE_ACC1_KSM_ADDR,
     SUBSTRATE_ACC2_KSM_ADDR,
 )
+from rotkehlchen.tests.utils.avalanche import (
+    AVALANCHE_ACC1_AVAX_ADDR,
+    AVALANCHE_ACC2_AVAX_ADDR,
+)
 from rotkehlchen.typing import Location, SupportedBlockchain, Timestamp
 
 
@@ -676,3 +680,54 @@ def test_query_ksm_balances(rotkehlchen_api_server):
     total_ksm = result['totals']['assets']['KSM']
     assert FVal(total_ksm['amount']) >= ZERO
     assert FVal(total_ksm['usd_value']) >= ZERO
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('avax_accounts', [[AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR]])
+def test_query_avax_balances(rotkehlchen_api_server):
+    """Test query the AVAX balances when multiple accounts are set up works as
+    expected.
+    """
+    async_query = random.choice([False, True])
+    setup = setup_balances(
+        rotki=rotkehlchen_api_server.rest_api.rotkehlchen,
+        ethereum_accounts=None,
+        btc_accounts=None,
+        eth_balances=None,
+        token_balances=None,
+        btc_balances=None,
+    )
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                "named_blockchain_balances_resource",
+                blockchain=SupportedBlockchain.AVALANCHE.value,
+            ),
+            json={'async_query': async_query},
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+        else:
+            result = assert_proper_response_with_result(response)
+
+    # Check per account
+    account_1_balances = result['per_account']['AVAX'][AVALANCHE_ACC1_AVAX_ADDR]
+    assert 'liabilities' in account_1_balances
+    asset_avax = account_1_balances['assets']['AVAX']
+    assert FVal(asset_avax['amount']) >= ZERO
+    assert FVal(asset_avax['usd_value']) >= ZERO
+
+    account_2_balances = result['per_account']['AVAX'][AVALANCHE_ACC2_AVAX_ADDR]
+    assert 'liabilities' in account_2_balances
+    asset_avax = account_2_balances['assets']['AVAX']
+    assert FVal(asset_avax['amount']) >= ZERO
+    assert FVal(asset_avax['usd_value']) >= ZERO
+
+    # Check totals
+    assert 'liabilities' in result['totals']
+    total_avax = result['totals']['assets']['AVAX']
+    assert FVal(total_avax['amount']) >= ZERO
+    assert FVal(total_avax['usd_value']) >= ZERO

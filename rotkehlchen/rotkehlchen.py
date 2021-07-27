@@ -32,6 +32,7 @@ from rotkehlchen.chain.ethereum.manager import (
     EthereumManager,
     NodeName,
 )
+from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
@@ -56,6 +57,7 @@ from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.covalent import Covalent, chains_id
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.globaldb.updates import AssetsUpdater
@@ -279,6 +281,15 @@ class Rotkehlchen():
             connect_on_startup=self._connect_ksm_manager_on_startup(),
             own_rpc_endpoint=settings.ksm_rpc_endpoint,
         )
+        self.covalent_avalanche = Covalent(
+            msg_aggregator=self.msg_aggregator,
+            chain_id=chains_id['avalanche'],
+        )
+        avalanche_manager = AvalancheManager(
+            avaxrpc_endpoint="https://api.avax.network/ext/bc/C/rpc",
+            covalent=self.covalent_avalanche,
+            msg_aggregator=self.msg_aggregator,
+        )
 
         Inquirer().inject_ethereum(ethereum_manager)
         Inquirer().set_oracles_order(settings.current_price_oracles)
@@ -287,6 +298,7 @@ class Rotkehlchen():
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             ethereum_manager=ethereum_manager,
             kusama_manager=kusama_manager,
+            avalanche_manager=avalanche_manager,
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
             greenlet_manager=self.greenlet_manager,

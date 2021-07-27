@@ -12,7 +12,7 @@ from rotkehlchen.constants.timing import (
     DEFAULT_TIMEOUT_TUPLE,
 )
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import ConversionError, DeserializationError, RemoteError
+from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -22,33 +22,14 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import convert_to_int, hex_or_bytes_to_int, hexstring_to_bytes
+from rotkehlchen.utils.misc import hex_or_bytes_to_int
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.externalapis.utils import read_hash, read_integer
 
 ETHERSCAN_TX_QUERY_LIMIT = 10000
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def read_hash(data: Dict[str, Any], key: str) -> bytes:
-    try:
-        result = hexstring_to_bytes(data[key])
-    except ValueError as e:
-        raise DeserializationError(
-            f'Failed to read {key} as a hash during etherscan transaction query',
-        ) from e
-    return result
-
-
-def read_integer(data: Dict[str, Any], key: str) -> int:
-    try:
-        result = convert_to_int(data[key])
-    except ConversionError as e:
-        raise DeserializationError(
-            f'Failed to read {key} as an integer during etherscan transaction query',
-        ) from e
-    return result
 
 
 def deserialize_transaction_from_etherscan(

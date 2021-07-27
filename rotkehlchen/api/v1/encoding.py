@@ -342,6 +342,8 @@ class BlockchainField(fields.Field):
             return SupportedBlockchain.ETHEREUM
         if value in ('ksm', 'KSM'):
             return SupportedBlockchain.KUSAMA
+        if value in ('avax', 'AVAX'):
+            return SupportedBlockchain.AVALANCHE
         raise ValidationError(f'Unrecognized value {value} given for blockchain name')
 
 
@@ -1299,8 +1301,8 @@ def _validate_blockchain_account_schemas(
     """Validates schema input for the PUT/PATCH/DELETE on blockchain account data"""
     # Make sure no duplicates addresses are given
     given_addresses = set()
-    # Make sure ethereum addresses are checksummed
-    if data['blockchain'] == SupportedBlockchain.ETHEREUM:
+    # Make sure EVM based addresses are checksummed
+    if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
         for account_data in data['accounts']:
             address_string = address_getter(account_data)
             if not address_string.endswith('.eth'):
@@ -1510,7 +1512,7 @@ class BlockchainAccountsPatchSchema(Schema):
                     ethereum=self.ethereum_manager,
                     given_address=account['address'],
                 )
-        if data['blockchain'] == SupportedBlockchain.ETHEREUM:
+        if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_eth_address(
                     ethereum=self.ethereum_manager,
@@ -1557,7 +1559,7 @@ class BlockchainAccountsDeleteSchema(Schema):
             data['accounts'] = [
                 _transform_btc_address(self.ethereum_manager, x) for x in data['accounts']
             ]
-        if data['blockchain'] == SupportedBlockchain.ETHEREUM:
+        if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
             data['accounts'] = [
                 _transform_eth_address(self.ethereum_manager, x) for x in data['accounts']
             ]
@@ -1920,3 +1922,10 @@ class ManualPriceDeleteSchema(Schema):
     from_asset = AssetField(required=True)
     to_asset = AssetField(required=True)
     timestamp = TimestampField(required=True)
+
+
+class AvalancheTransactionQuerySchema(Schema):
+    async_query = fields.Boolean(missing=False)
+    address = EthereumAddressField(missing=None)
+    from_timestamp = TimestampField(missing=Timestamp(0))
+    to_timestamp = TimestampField(missing=ts_now)

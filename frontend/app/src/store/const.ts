@@ -30,6 +30,7 @@ export enum Section {
   BLOCKCHAIN_BTC = 'blockchain_btc',
   BLOCKCHAIN_ETH = 'blockchain_eth',
   BLOCKCHAIN_KSM = 'blockchain_ksm',
+  BLOCKCHAIN_AVAX = 'blockchain_avax',
   DEFI_UNISWAP_BALANCES = 'defi_uniswap_balances',
   DEFI_UNISWAP_TRADES = 'defi_uniswap_trades',
   DEFI_UNISWAP_EVENTS = 'defi_uniswap_events',

@@ -48,14 +48,13 @@ from rotkehlchen.typing import ChecksumEthAddress, SupportedBlockchain, Timestam
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
 from rotkehlchen.utils.network import request_get_dict
+from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 
 from .typing import NodeName
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-DEFAULT_ETH_RPC_TIMEOUT = 10
 
 
 def _is_synchronized(current_block: int, latest_block: int) -> Tuple[bool, str]:
@@ -201,7 +200,7 @@ class EthereumManager():
             msg_aggregator: MessagesAggregator,
             greenlet_manager: GreenletManager,
             connect_at_start: Sequence[NodeName],
-            eth_rpc_timeout: int = DEFAULT_ETH_RPC_TIMEOUT,
+            eth_rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
         log.debug(f'Initializing Ethereum Manager with own rpc endpoint: {ethrpc_endpoint}')
         self.greenlet_manager = greenlet_manager
