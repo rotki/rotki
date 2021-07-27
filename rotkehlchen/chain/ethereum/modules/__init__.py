@@ -10,7 +10,7 @@ __all__ = [
     'YearnVaults',
     'Eth2',
     'YearnVaultsV2',
-    'Sushiswap'
+    'Sushiswap',
 ]
 
 from .aave.aave import Aave

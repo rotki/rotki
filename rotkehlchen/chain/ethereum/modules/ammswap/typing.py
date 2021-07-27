@@ -20,6 +20,7 @@ from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Price, Timestamp
 
 log = logging.getLogger(__name__)
 
+
 # Get balances
 @dataclass(init=True, repr=True)
 class LiquidityPoolAsset:

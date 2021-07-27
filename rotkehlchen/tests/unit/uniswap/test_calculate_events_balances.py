@@ -1,6 +1,6 @@
 from typing import List
 
-from rotkehlchen.chain.ethereum.modules.uniswap.typing import LiquidityPool, LiquidityPoolEvent
+from rotkehlchen.chain.ethereum.modules.ammswap.typing import LiquidityPool, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
 
 from .utils import (

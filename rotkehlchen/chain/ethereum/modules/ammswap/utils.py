@@ -1,26 +1,16 @@
-import json
 import logging
-from pathlib import Path
-from typing import TYPE_CHECKING, List, NamedTuple, Set, Tuple
-
-import requests
+from typing import TYPE_CHECKING, NamedTuple, Set, Tuple
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
-from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
-from rotkehlchen.chain.ethereum.typing import NodeName
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.constants.ethereum import ZERION_ABI
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress
-from rotkehlchen.utils.misc import get_chunks
 
 from .typing import LiquidityPool, LiquidityPoolAsset
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
 

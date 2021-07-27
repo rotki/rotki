@@ -1167,10 +1167,90 @@ class DBHandler:
 
         return events
 
+    def add_sushiswap_events(self, events: Sequence[SushiswapPoolEvent]) -> None:
+        query = (
+            """
+            INSERT INTO sushiswap_events (
+                tx_hash,
+                log_index,
+                address,
+                timestamp,
+                type,
+                pool_address,
+                token0_identifier,
+                token1_identifier,
+                amount0,
+                amount1,
+                usd_price,
+                lp_amount
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+        )
+        cursor = self.conn.cursor()
+        for event in events:
+            event_tuple = event.to_db_tuple()
+            try:
+                cursor.execute(query, event_tuple)
+            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                self.msg_aggregator.add_warning(
+                    f'Tried to add a Sushiswap event that already exists in the DB. '
+                    f'Event data: {event_tuple}. Skipping event.',
+                )
+                continue
+
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_sushiswap_events(
+            self,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            address: Optional[ChecksumEthAddress] = None,
+    ) -> List[SushiswapPoolEvent]:
+        """Returns a list of Uniswap events optionally filtered by time, location
+        and address
+        """
+        cursor = self.conn.cursor()
+        query = 'SELECT * FROM sushiswap_events '
+        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
+        filters = []
+        if address is not None:
+            filters.append(f'address="{address}" ')
+
+        if filters:
+            query += 'WHERE '
+            query += 'AND '.join(filters)
+
+        query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
+        results = cursor.execute(query, bindings)
+
+        events = []
+        for event_tuple in results:
+            try:
+                event = UniswapPoolEvent.deserialize_from_db(event_tuple)
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing Sushiswap event from the DB. Skipping event. '
+                    f'Error was: {str(e)}',
+                )
+                continue
+            except UnknownAsset as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing Sushiswap event from the DB. Skipping event. '
+                    f'Unknown asset {e.asset_name} found',
+                )
+                continue
+            events.append(event)
+
+        return events
+
     def purge_module_data(self, module_name: Optional[ModuleName]) -> None:
         if module_name is None:
             self.delete_uniswap_trades_data()
             self.delete_uniswap_events_data()
+            self.delete_sushiswap_trades_data()
+            self.delete_sushiswap_events_data()
             self.delete_balancer_trades_data()
             self.delete_balancer_events_data()
             self.delete_aave_data()
@@ -1186,6 +1266,9 @@ class DBHandler:
         if module_name == 'uniswap':
             self.delete_uniswap_trades_data()
             self.delete_uniswap_events_data()
+        elif module_name == 'sushiswap':
+            self.delete_sushiswap_trades_data()
+            self.delete_sushiswap_events_data()
         elif module_name == 'balancer':
             self.delete_balancer_trades_data()
             self.delete_balancer_events_data()

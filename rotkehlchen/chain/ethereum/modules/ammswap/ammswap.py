@@ -9,51 +9,38 @@ This interface is used at the moment in:
 """
 import abc
 import logging
-from collections import defaultdict
-from datetime import datetime, time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
-from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
+from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, format_query_indentation
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount_force_positive,
-    deserialize_ethereum_address,
-)
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
     AssetAmount,
     ChecksumEthAddress,
-    Location,
     Price,
     Timestamp,
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.chain.ethereum.modules.ammswap.typing import (
-    AddressEvents,
     AddressEventsBalances,
     AddressToLPBalances,
     AddressTrades,
     AggregatedAmount,
     AssetToPrice,
-    DDAddressEvents,
-    DDAddressToLPBalances,
     EventType,
     LiquidityPool,
-    LiquidityPoolAsset,
     LiquidityPoolEvent,
     LiquidityPoolEventsBalance,
-    ProtocolBalance,
 )
 from rotkehlchen.chain.ethereum.modules.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 
@@ -63,6 +50,9 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.structures import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+
+
+log = logging.getLogger(__name__)
 
 
 def add_trades_from_swaps(
@@ -357,7 +347,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
         while True:
             try:
-                result = self.graph.query(
+                result = self.graph.query(  # type: ignore
                     querystr=querystr,
                     param_types=param_types,
                     param_values=param_values,
@@ -365,6 +355,8 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             except RemoteError as e:
                 self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
                 raise
+            except AttributeError as e:
+                raise ModuleInitializationFailure('subgraph remote error') from e
 
             result_data = result[query_schema]
 
@@ -426,15 +418,6 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             }
 
         return address_events
-
-    @abc.abstractmethod
-    def _fetch_trades_from_db(
-            self,
-            addresses: List[ChecksumEthAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> AddressTrades:
-        raise NotImplementedError
 
     def _get_trades_graph(
             self,
@@ -501,12 +484,17 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             to_timestamp: Timestamp,
     ) -> AddressTrades:
         """Fetch all DB Sushiswap trades within the time range"""
+        try:
+            location = self.location  # type: ignore
+        except AttributeError as e:
+            raise ModuleInitializationFailure('Location not properly set') from e
+
         db_address_trades: AddressTrades = {}
         for address in addresses:
             db_swaps = self.database.get_amm_swaps(
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
-                location=self.location,
+                location=location,
                 address=address,
             )
             db_trades = self.swaps_to_trades(db_swaps)

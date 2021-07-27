@@ -1,29 +1,24 @@
 import logging
 from collections import defaultdict
 from datetime import datetime, time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple
-
-from gevent.lock import Semaphore
+from typing import TYPE_CHECKING, List, Optional, Set
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
-from rotkehlchen.chain.ethereum.modules.ammswap.ammswap import AMMSwapPlatform, BURNS_QUERY, MINTS_QUERY
+from rotkehlchen.chain.ethereum.modules.ammswap.ammswap import AMMSwapPlatform
 from rotkehlchen.chain.ethereum.modules.ammswap.typing import (
     AddressEvents,
     AddressEventsBalances,
     AddressToLPBalances,
     AddressTrades,
-    AggregatedAmount,
     AssetToPrice,
     DDAddressEvents,
     DDAddressToLPBalances,
     EventType,
     LiquidityPool,
     LiquidityPoolAsset,
-    LiquidityPoolEvent,
-    LiquidityPoolEventsBalance,
     ProtocolBalance,
 )
 from rotkehlchen.chain.ethereum.modules.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
@@ -31,7 +26,6 @@ from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
@@ -43,7 +37,6 @@ from rotkehlchen.typing import (
     Location,
     Price,
     Timestamp,
-    TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
@@ -57,7 +50,6 @@ from .graph import (
 from .utils import get_latest_lp_addresses, uniswap_lp_token_balances
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 

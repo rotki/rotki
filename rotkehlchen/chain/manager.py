@@ -44,6 +44,7 @@ from rotkehlchen.chain.ethereum.modules import (
     Loopring,
     MakerdaoDsr,
     MakerdaoVaults,
+    Sushiswap,
     Uniswap,
     YearnVaults,
     YearnVaultsV2,
@@ -455,6 +456,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_module(self, module_name: Literal['uniswap']) -> Optional[Uniswap]:
+        ...
+
+    @overload
+    def get_module(self, module_name: Literal['sushiswap']) -> Optional[Sushiswap]:
         ...
 
     @overload

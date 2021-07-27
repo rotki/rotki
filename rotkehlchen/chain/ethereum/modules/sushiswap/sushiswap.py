@@ -1,49 +1,38 @@
 import logging
 from collections import defaultdict
 from datetime import datetime, time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple
-
-from gevent.lock import Semaphore
+from typing import TYPE_CHECKING, List, Optional, Set
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
-from rotkehlchen.chain.ethereum.modules.ammswap.ammswap import AMMSwapPlatform, BURNS_QUERY, MINTS_QUERY
+from rotkehlchen.chain.ethereum.modules.ammswap.ammswap import AMMSwapPlatform
 from rotkehlchen.chain.ethereum.modules.ammswap.typing import (
     AddressEvents,
     AddressEventsBalances,
     AddressToLPBalances,
     AddressTrades,
-    AggregatedAmount,
     AssetToPrice,
     DDAddressEvents,
     DDAddressToLPBalances,
     EventType,
     LiquidityPool,
     LiquidityPoolAsset,
-    LiquidityPoolEvent,
-    LiquidityPoolEventsBalance,
     ProtocolBalance,
 )
 from rotkehlchen.chain.ethereum.modules.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
-from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount_force_positive,
-    deserialize_ethereum_address,
-)
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
     AssetAmount,
     ChecksumEthAddress,
     Location,
     Price,
     Timestamp,
-    TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
@@ -56,7 +45,6 @@ from .graph import (
 from .utils import get_latest_lp_addresses, uniswap_lp_token_balances
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -67,7 +55,7 @@ SUSHISWAP_TRADES_PREFIX = 'sushiswap_trades'
 
 
 class Sushiswap(AMMSwapPlatform, EthereumModule):
-    """Uniswap integration module
+    """Sushiswap integration module
 
     * Sushiswap subgraph:
     https://github.com/sushiswap/sushiswap-subgraph
@@ -98,7 +86,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
             self,
             addresses: List[ChecksumEthAddress],
     ) -> ProtocolBalance:
-        """Get the addresses' pools data querying the Uniswap subgraph
+        """Get the addresses' pools data querying the Sushiswap subgraph
 
         Each liquidity position is converted into a <LiquidityPool>.
         """
@@ -262,9 +250,9 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         existing_addresses: List[ChecksumEthAddress] = []
         min_end_ts: Timestamp = to_timestamp
 
-        # Get addresses' last used query range for Uniswap events
+        # Get addresses' last used query range for Sushiswap events
         for address in addresses:
-            entry_name = f'{UNISWAP_EVENTS_PREFIX}_{address}'
+            entry_name = f'{SUSHISWAP_EVENTS_PREFIX}_{address}'
             events_range = self.database.get_used_query_range(name=entry_name)
 
             if not events_range:
@@ -289,7 +277,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
                 # Insert new address' last used query range
                 self.database.update_used_query_range(
-                    name=f'{UNISWAP_EVENTS_PREFIX}_{address}',
+                    name=f'{SUSHISWAP_EVENTS_PREFIX}_{address}',
                     start_ts=start_ts,
                     end_ts=to_timestamp,
                 )
@@ -309,7 +297,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
                 # Update existing address' last used query range
                 self.database.update_used_query_range(
-                    name=f'{UNISWAP_EVENTS_PREFIX}_{address}',
+                    name=f'{SUSHISWAP_EVENTS_PREFIX}_{address}',
                     start_ts=min_end_ts,
                     end_ts=to_timestamp,
                 )
@@ -319,11 +307,11 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         for address in filter(lambda address: address in address_events, addresses):
             all_events.extend(address_events[address])
 
-        self.database.add_uniswap_events(all_events)
+        self.database.add_sushiswap_events(all_events)
 
         # Fetch all DB events within the time range
         for address in addresses:
-            db_events = self.database.get_uniswap_events(
+            db_events = self.database.get_sushiswap_events(
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 address=address,
@@ -375,7 +363,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         if only_cache:
             return self._fetch_trades_from_db(addresses, from_timestamp, to_timestamp)
 
-        # Get addresses' last used query range for Uniswap trades
+        # Get addresses' last used query range for Sushiswap trades
         for address in addresses:
             entry_name = f'{SUSHISWAP_TRADES_PREFIX}_{address}'
             trades_range = self.database.get_used_query_range(name=entry_name)
@@ -439,12 +427,12 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AMMTrade]:
-        """Get the address' trades data querying the Uniswap subgraph
+        """Get the address' trades data querying the Sushiswap subgraph
 
         Each trade (swap) instantiates an <AMMTrade>.
 
         The trade pair (i.e. BASE_QUOTE) is determined by `reserve0_reserve1`.
-        Translated to Uniswap lingo:
+        Translated to Sushiswap lingo:
 
         Trade type BUY:
         - `asset1In` (QUOTE, reserve1) is gt 0.
@@ -499,7 +487,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
                         to_address_deserialized = deserialize_ethereum_address(swap['to'])
                     except DeserializationError:
                         msg = (
-                            f'Failed to deserialize addresses in trade from uniswap graph with '
+                            f'Failed to deserialize addresses in trade from sushiswap graph with '
                             f'token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '
                             f'swap sender: {swap["sender"]}, swap receiver {swap["to"]}'
                         )
@@ -528,7 +516,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
                         amount1_out = FVal(swap['amount1Out'])
                     except ValueError as e:
                         log.error(
-                            f'Failed to read amounts in Uniswap V2 swap {str(swap)}. '
+                            f'Failed to read amounts in sushiswap V2 swap {str(swap)}. '
                             f'{str(e)}.',
                         )
                         continue
@@ -572,9 +560,9 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
             self,
             unknown_assets: Set[EthereumToken],
     ) -> AssetToPrice:
-        """Get today's tokens prices via the Uniswap subgraph
+        """Get today's tokens prices via the Sushiswap subgraph
 
-        Uniswap provides a token price every day at 00:00:00 UTC
+        Sushiswap provides a token price every day at 00:00:00 UTC
         This function can raise RemoteError
         """
         asset_price: AssetToPrice = {}
@@ -617,7 +605,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
                 except DeserializationError as e:
                     msg = (
                         f'Error deserializing address {tdd["token"]["id"]} '
-                        f'during uniswap prices query from graph.'
+                        f'during sushiswap prices query from graph.'
                     )
                     log.error(msg)
                     raise RemoteError(msg) from e
@@ -639,9 +627,9 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         self,
         addresses: List[ChecksumEthAddress],
     ) -> AddressToLPBalances:
-        """Get the addresses' balances in the Uniswap protocol
+        """Get the addresses' balances in the Sushiswap protocol
 
-        Premium users can request balances either via the Uniswap subgraph or
+        Premium users can request balances either via the Sushiswap subgraph or
         on-chain.
         """
         if self.premium:
@@ -676,7 +664,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> AddressTrades:
-        """Get the addresses' trades history in the Uniswap protocol
+        """Get the addresses' trades history in the Sushiswap protocol
         """
         with self.trades_lock:
             if reset_db_data is True:
