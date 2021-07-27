@@ -67,7 +67,7 @@ SWAPS_QUERY = (
         first: $limit,
         skip: $offset,
         where: {{
-            from: $address,
+            to: $address,
             timestamp_gte: $start_ts,
             timestamp_lte: $end_ts,
         }}
@@ -97,45 +97,6 @@ SWAPS_QUERY = (
                 amount0Out
                 amount1In
                 amount1Out
-            }}
-        }}
-    }}}}
-    """
-)
-
-V3_SWAPS_QUERY = (
-    """
-    swaps
-    (
-        first: $limit,
-        skip: $offset,
-        where: {{
-            recipient: $address,
-            timestamp_gte: $start_ts,
-            timestamp_lte: $end_ts,
-        }}
-    ) {{
-        transaction {{
-            swaps {{
-                id
-                logIndex
-                sender
-                recipient
-                timestamp
-                token0 {{
-                    id
-                    decimals
-                    name
-                    symbol
-                }}
-                token1 {{
-                    id
-                    decimals
-                    name
-                    symbol
-                }}
-                amount0
-                amount1
             }}
         }}
     }}}}

@@ -52,7 +52,6 @@ from .graph import (
     LIQUIDITY_POSITIONS_QUERY,
     SWAPS_QUERY,
     TOKEN_DAY_DATAS_QUERY,
-    V3_SWAPS_QUERY,
 )
 from .utils import get_latest_lp_addresses, uniswap_lp_token_balances
 
@@ -378,7 +377,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
         # Get addresses' last used query range for Uniswap trades
         for address in addresses:
-            entry_name = f'{UNISWAP_TRADES_PREFIX}_{address}'
+            entry_name = f'{SUSHISWAP_TRADES_PREFIX}_{address}'
             trades_range = self.database.get_used_query_range(name=entry_name)
 
             if not trades_range:
@@ -399,7 +398,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
             # Insert last used query range for new addresses
             for address in new_addresses:
-                entry_name = f'{UNISWAP_TRADES_PREFIX}_{address}'
+                entry_name = f'{SUSHISWAP_TRADES_PREFIX}_{address}'
                 self.database.update_used_query_range(
                     name=entry_name,
                     start_ts=start_ts,
@@ -417,7 +416,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
             # Update last used query range for existing addresses
             for address in existing_addresses:
-                entry_name = f'{UNISWAP_TRADES_PREFIX}_{address}'
+                entry_name = f'{SUSHISWAP_TRADES_PREFIX}_{address}'
                 self.database.update_used_query_range(
                     name=entry_name,
                     start_ts=min_end_ts,
