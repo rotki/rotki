@@ -9,6 +9,7 @@
   ],
   "types": "lib/index.d.ts",
   "scripts": {
+    "preinstall": "node ../check-versions.js",
     "build": "rimraf lib && tsc",
     "watch": "rimraf lib && tsc -w",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -33,5 +34,9 @@
   },
   "peerDependencies": {
     "bignumber.js": "9.0.1"
+  },
+  "engines": {
+    "node": ">=14 <15",
+    "npm": ">=7.19 <8"
   }
 }

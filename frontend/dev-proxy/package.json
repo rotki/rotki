@@ -9,7 +9,7 @@
     "build": "webpack --mode production",
     "lint": "eslint --fix .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "preinstall": "node ../app/check-versions.js"
+    "preinstall": "node ../check-versions.js"
   },
   "keywords": [],
   "author": "Rotki Solutions GmbH",
