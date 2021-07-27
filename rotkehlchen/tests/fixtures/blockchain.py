@@ -20,10 +20,6 @@ from rotkehlchen.tests.utils.substrate import (
     KUSAMA_SS58_FORMAT,
     KUSAMA_TOKEN,
     KUSAMA_TOKEN_DECIMALS,
-    POLKADOT_DEFAULT_OWN_RPC_ENDPOINT,
-    POLKADOT_SS58_FORMAT,
-    POLKADOT_TOKEN,
-    POLKADOT_TOKEN_DECIMALS,
     wait_until_all_substrate_nodes_connected,
 )
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress

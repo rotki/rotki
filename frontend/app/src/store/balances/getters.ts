@@ -33,8 +33,8 @@ import {
   ETH,
   ExchangeInfo,
   GeneralAccount,
-    KSM,
-     DOT,
+  KSM,
+  DOT,
   AVAX,
   L2_LOOPRING
 } from '@/typing/types';
@@ -520,12 +520,11 @@ export const getters: Getters<
 
   accounts: (
     _,
-          { ethAccounts, btcAccounts, kusamaBalances, polkadotBalances, avaxAccounts }
-
+    { ethAccounts, btcAccounts, kusamaBalances, polkadotBalances, avaxAccounts }
   ): GeneralAccount[] => {
     return ethAccounts
       .concat(btcAccounts)
-        .concat(kusamaBalances)
+      .concat(kusamaBalances)
       .concat(polkadotBalances)
       .concat(avaxAccounts)
       .filter((account: BlockchainAccountWithBalance) => !!account.address)
@@ -571,8 +570,8 @@ export const getters: Getters<
     btc: { standalone, xpubs },
     eth,
     exchangeBalances,
-      ksm,
-      dot,
+    ksm,
+    dot,
     avax,
     manualBalances,
     loopringBalances

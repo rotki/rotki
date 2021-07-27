@@ -23,13 +23,15 @@ from rotkehlchen.chain.bitcoin.utils import (
 )
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.substrate.typing import (
-    SubstrateAddress, KusamaAddress,
-    PolkadotAddress, SubstratePublicKey,
+    KusamaAddress,
+    PolkadotAddress,
+    SubstrateAddress,
+    SubstratePublicKey,
 )
 from rotkehlchen.chain.substrate.utils import (
     get_kusama_address_from_public_key,
-    is_valid_kusama_address,
     get_polkadot_address_from_public_key,
+    is_valid_kusama_address,
     is_valid_polkadot_address,
 )
 from rotkehlchen.constants.misc import ZERO
@@ -1495,7 +1497,7 @@ def _transform_substrate_address(
     except (RemoteError, InputError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} could not be resolved '
-            f'for ' + chain + ' due to: {str(e)}',
+            f'for {chain} due to: {str(e)}',
             field_name='address',
         ) from None
 

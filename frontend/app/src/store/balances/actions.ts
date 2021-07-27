@@ -61,8 +61,8 @@ import {
   BTC,
   ETH,
   ExchangeRates,
-    KSM,
-    DOT,
+  KSM,
+  DOT,
   AVAX,
   SupportedBlockchains
 } from '@/typing/types';
@@ -373,8 +373,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const {
       ETH: ethBalances,
       BTC: btcBalances,
-        KSM: ksmBalances,
-        DOT: dotBalances,
+      KSM: ksmBalances,
+      DOT: dotBalances,
       AVAX: avaxBalances
     } = perAccount;
     const chain = payload.chain;
@@ -669,7 +669,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       } else if (blockchain === KSM) {
         commit('ksmAccounts', accountData);
       } else if (blockchain == DOT) {
-          commit('dotAccounts', accountData);
+        commit('dotAccounts', accountData);
       } else {
         commit('avaxAccounts', accountData);
       }
@@ -684,21 +684,21 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const [
         ethAccounts,
         btcAccounts,
-          ksmAccounts,
-          dotAccounts,
+        ksmAccounts,
+        dotAccounts,
         avaxAccounts
       ] = await Promise.all([
         api.accounts(ETH),
         api.btcAccounts(),
-          api.accounts(KSM),
-          api.accounts(DOT),
+        api.accounts(KSM),
+        api.accounts(DOT),
         api.accounts(AVAX)
       ]);
 
       commit('ethAccounts', ethAccounts);
       commit('btcAccounts', btcAccounts);
-        commit('ksmAccounts', ksmAccounts);
-commit('dotAccounts', dotAccounts);
+      commit('ksmAccounts', ksmAccounts);
+      commit('dotAccounts', dotAccounts);
       commit('avaxAccounts', avaxAccounts);
     } catch (e) {
       notify(
@@ -712,8 +712,8 @@ commit('dotAccounts', dotAccounts);
   /* Remove a tag from all accounts of the state */
   async removeTag({ commit, state }, tagName: string) {
     commit('ethAccounts', removeTags(state.ethAccounts, tagName));
-      commit('ksmAccounts', removeTags(state.ksmAccounts, tagName));
-      commit('dotAccounts', removeTags(state.dotAccounts, tagName));
+    commit('ksmAccounts', removeTags(state.ksmAccounts, tagName));
+    commit('dotAccounts', removeTags(state.dotAccounts, tagName));
     commit('avaxAccounts', removeTags(state.avaxAccounts, tagName));
     const btcAccounts = state.btcAccounts;
     const standalone = removeTags(btcAccounts.standalone, tagName);
@@ -955,8 +955,8 @@ commit('dotAccounts', dotAccounts);
       standalone: state.btc.standalone ? { ...state.btc.standalone } : {},
       xpubs: state.btc.xpubs ? [...state.btc.xpubs] : []
     };
-      const kusama = { ...state.ksm };
-      const polkadot = { ...state.dot };
+    const kusama = { ...state.ksm };
+    const polkadot = { ...state.dot };
     const avalanche = { ...state.avax };
 
     const exchanges = { ...state.exchangeBalances };

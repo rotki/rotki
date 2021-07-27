@@ -31,9 +31,9 @@ export const mutations: MutationTree<BalanceState> = {
   updateKsm(state: BalanceState, payload: BlockchainAssetBalances) {
     state.ksm = { ...payload };
   },
-    updateDot(state: BalanceState, payload: BlockchainAssetBalances) {
-        state.dot = { ...payload };
-    },
+  updateDot(state: BalanceState, payload: BlockchainAssetBalances) {
+    state.dot = { ...payload };
+  },
   updateAvax(state: BalanceState, payload: BlockchainAssetBalances) {
     state.avax = { ...payload };
   },
@@ -106,7 +106,7 @@ export const mutations: MutationTree<BalanceState> = {
     state.ksmAccounts = accounts;
   },
   dotAccounts(state: BalanceState, accounts: GeneralAccountData[]) {
-      state.dotAccounts = accounts;
+    state.dotAccounts = accounts;
   },
   avaxAccounts(state: BalanceState, accounts: GeneralAccountData[]) {
     state.avaxAccounts = accounts;
