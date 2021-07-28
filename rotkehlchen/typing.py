@@ -4,9 +4,10 @@ from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tup
 from eth_typing import ChecksumAddress
 from typing_extensions import Literal
 
-from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
+
+from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress  # isort:skip # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 
 ModuleName = Literal[
     'makerdao_dsr',

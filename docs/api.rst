@@ -2060,7 +2060,7 @@ Querying onchain balances
 
 .. http:get:: /api/(version)/balances/blockchains/(blockchain)/
 
-   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``KSM`` and ``AVAX``.
+   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``KSM``, ``DOT`` and ``AVAX``.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
@@ -4130,7 +4130,7 @@ Getting blockchain account data
 .. http:get:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM", "AVAX"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
 
    Doing a GET on the blokchcains endpoint with a specific blockchain queries account data information for that blockchain.
 
@@ -7087,9 +7087,9 @@ Adding blockchain accounts
 .. http:put:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM", "AVAX"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
 
-      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
@@ -7481,9 +7481,9 @@ Editing blockchain account data
 .. http:patch:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM", "AVAX"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
 
-      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
 
    Doing a PATCH on the the blockchains endpoint with a specific blockchain URL and a list of accounts to edit will edit the label and tags for those accounts.
 
@@ -7552,9 +7552,9 @@ Removing blockchain accounts
 .. http:delete:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM", "AVAX"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
 
-      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
