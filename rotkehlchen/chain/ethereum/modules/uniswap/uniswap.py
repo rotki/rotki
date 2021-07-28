@@ -50,6 +50,7 @@ from .graph import (
 from .utils import get_latest_lp_addresses, uniswap_lp_token_balances
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -78,6 +79,8 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             database=database,
             premium=premium,
             msg_aggregator=msg_aggregator,
+            mint_event=EventType.MINT_UNISWAP,
+            burn_event=EventType.BURN_UNISWAP,
         )
         self.location = Location.UNISWAP
         try:
@@ -316,11 +319,12 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         for address in filter(lambda address: address in address_events, addresses):
             all_events.extend(address_events[address])
 
-        self.database.add_uniswap_events(all_events)
+        self.database.add_amm_events(all_events)
 
         # Fetch all DB events within the time range
         for address in addresses:
-            db_events = self.database.get_uniswap_events(
+            db_events = self.database.get_amm_events(
+                events=[EventType.MINT_UNISWAP, EventType.BURN_UNISWAP],
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 address=address,
@@ -876,3 +880,12 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
     def deactivate(self) -> None:
         self.database.delete_uniswap_trades_data()
         self.database.delete_uniswap_events_data()
+
+    def on_startup(self) -> None:
+        pass
+
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
+        pass
+
+    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+        pass

@@ -113,7 +113,7 @@ def test_get_balances(
 
     if SWAP_ADDRESS not in result or len(result[SWAP_ADDRESS]) == 0:
         test_warnings.warn(
-            UserWarning(f'Test account {SWAP_ADDRESS} has no uniswap balances'),
+            UserWarning(f'Test account {SWAP_ADDRESS} has no sushiswap balances'),
         )
         return
 
@@ -421,7 +421,7 @@ EXPECTED_EVENTS_BALANCES_1 = [
                 log_index=137,
                 address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                 timestamp=Timestamp(1627401170),
-                event_type=EventType.MINT,
+                event_type=EventType.MINT_SUSHISWAP,
                 pool_address=string_to_ethereum_address("0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8"),  # noqa: E501
                 token0=EthereumToken('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
                 token1=EthereumToken('0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF'),
@@ -496,7 +496,8 @@ def test_get_events_history_filtering_by_timestamp(
     assert EXPECTED_EVENTS_BALANCES_1[0].serialize() == events_balances[0]
 
     # Make sure they end up in the DB
-    assert len(rotki.data.db.get_sushiswap_events()) != 0
+    events = rotki.data.db.get_amm_events([EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP])
+    assert len(events) != 0
     # test sushiswap data purging from the db works
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
@@ -504,4 +505,5 @@ def test_get_events_history_filtering_by_timestamp(
         module_name='sushiswap',
     ))
     assert_simple_ok_response(response)
-    assert len(rotki.data.db.get_sushiswap_events()) == 0
+    events = rotki.data.db.get_amm_events([EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP])
+    assert len(events) == 0

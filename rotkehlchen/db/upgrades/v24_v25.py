@@ -469,7 +469,25 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     cursor.execute(
         f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_EVENTS_PREFIX}%";',
     )
-    cursor.execute('DELETE FROM uniswap_events;')
+    cursor.execute('DROP TABLE IF EXISTS uniswap_events;')
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS uniswap_events (
+        tx_hash VARCHAR[42] NOT NULL,
+        log_index INTEGER NOT NULL,
+        address VARCHAR[42] NOT NULL,
+        timestamp INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        pool_address VARCHAR[42] NOT NULL,
+        token0_identifier TEXT NOT NULL,
+        token1_identifier TEXT NOT NULL,
+        amount0 TEXT,
+        amount1 TEXT,
+        usd_price TEXT,
+        lp_amount TEXT,
+        FOREIGN KEY(token0_identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
+        FOREIGN KEY(token1_identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
+        PRIMARY KEY (tx_hash, log_index)
+    );""")
     cursor.execute(
         f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_EVENTS_PREFIX}%";',
     )

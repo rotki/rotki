@@ -75,14 +75,20 @@ AddressTrades = Dict[ChecksumEthAddress, List[AMMTrade]]
 
 class EventType(Enum):
     """Supported events"""
-    MINT = 1
-    BURN = 2
+    MINT_UNISWAP = 1
+    BURN_UNISWAP = 2
+    MINT_SUSHISWAP = 3
+    BURN_SUSHISWAP = 4
 
     def __str__(self) -> str:
-        if self == EventType.MINT:
-            return 'mint'
-        if self == EventType.BURN:
-            return 'burn'
+        if self == EventType.MINT_UNISWAP:
+            return 'mint uniswap'
+        if self == EventType.BURN_UNISWAP:
+            return 'burn uniswap'
+        if self == EventType.MINT_SUSHISWAP:
+            return 'mint sushiswap'
+        if self == EventType.BURN_SUSHISWAP:
+            return 'burn sushiswap'
         # else
         raise RuntimeError(f'Corrupt value {self} for EventType -- Should never happen')
 
@@ -147,10 +153,14 @@ class LiquidityPoolEvent(NamedTuple):
                 f'Failed to deserialize event type. Unknown event: {db_event_type}.',
             )
 
-        if db_event_type == str(EventType.MINT):
-            event_type = EventType.MINT
-        elif db_event_type == str(EventType.BURN):
-            event_type = EventType.BURN
+        if db_event_type == str(EventType.MINT_UNISWAP):
+            event_type = EventType.MINT_UNISWAP
+        elif db_event_type == str(EventType.BURN_UNISWAP):
+            event_type = EventType.BURN_UNISWAP
+        elif db_event_type == str(EventType.MINT_SUSHISWAP):
+            event_type = EventType.MINT_SUSHISWAP
+        elif db_event_type == str(EventType.BURN_SUSHISWAP):
+            event_type = EventType.BURN_SUSHISWAP
         else:
             raise ValueError(f'Unexpected event type case: {db_event_type}.')
 

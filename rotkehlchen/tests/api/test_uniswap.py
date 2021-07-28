@@ -747,7 +747,7 @@ EXPECTED_EVENTS_BALANCES_1 = [
                 log_index=263,
                 address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                 timestamp=Timestamp(1604273256),
-                event_type=EventType.MINT,
+                event_type=EventType.MINT_UNISWAP,
                 pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
                 token0=A_DOLLAR_BASED,
                 token1=A_WETH,
@@ -761,7 +761,7 @@ EXPECTED_EVENTS_BALANCES_1 = [
                 log_index=66,
                 address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                 timestamp=Timestamp(1604283808),
-                event_type=EventType.BURN,
+                event_type=EventType.BURN_UNISWAP,
                 pool_address=string_to_ethereum_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
                 token0=A_DOLLAR_BASED,
                 token1=A_WETH,
@@ -794,7 +794,7 @@ def get_expected_events_balances_2():
                     log_index=99,
                     address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                     timestamp=Timestamp(1598270334),
-                    event_type=EventType.MINT,
+                    event_type=EventType.MINT_UNISWAP,
                     pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
                     token0=A_WETH,
                     token1=A_DICE,
@@ -808,7 +808,7 @@ def get_expected_events_balances_2():
                     log_index=208,
                     address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                     timestamp=Timestamp(1599000975),
-                    event_type=EventType.BURN,
+                    event_type=EventType.BURN_UNISWAP,
                     pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
                     token0=A_WETH,
                     token1=A_DICE,
@@ -834,7 +834,7 @@ def get_expected_events_balances_2():
                     log_index=171,
                     address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                     timestamp=Timestamp(1598391968),
-                    event_type=EventType.MINT,
+                    event_type=EventType.MINT_UNISWAP,
                     pool_address=string_to_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
                     token0=EthereumToken('0x26E43759551333e57F073bb0772F50329A957b30'),  # DGVC
                     token1=A_WETH,
@@ -848,7 +848,7 @@ def get_expected_events_balances_2():
                     log_index=201,
                     address=string_to_ethereum_address(TEST_EVENTS_ADDRESS_1),
                     timestamp=Timestamp(1598607431),
-                    event_type=EventType.BURN,
+                    event_type=EventType.BURN_UNISWAP,
                     pool_address=string_to_ethereum_address("0x7CDc560CC66126a5Eb721e444abC30EB85408f7A"),  # noqa: E501
                     token0=EthereumToken('0x26E43759551333e57F073bb0772F50329A957b30'),  # DGVC
                     token1=A_WETH,
@@ -931,7 +931,8 @@ def test_get_events_history_filtering_by_timestamp_case1(
     assert EXPECTED_EVENTS_BALANCES_1[0].serialize() == events_balances[0]
 
     # Make sure they end up in the DB
-    assert len(rotki.data.db.get_uniswap_events()) != 0
+    events = rotki.data.db.get_amm_events([EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])
+    assert len(events) != 0
     # test uniswap data purging from the db works
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
@@ -939,7 +940,8 @@ def test_get_events_history_filtering_by_timestamp_case1(
         module_name='uniswap',
     ))
     assert_simple_ok_response(response)
-    assert len(rotki.data.db.get_uniswap_events()) == 0
+    events = rotki.data.db.get_amm_events([EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])
+    assert len(events) == 0
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_EVENTS_ADDRESS_1]])
@@ -1014,14 +1016,16 @@ def test_get_events_history_filtering_by_timestamp_case2(
     assert expected_events_balances_2[1].serialize() == events_balances[3]
 
     # Make sure they end up in the DB
-    assert len(rotki.data.db.get_uniswap_events()) != 0
+    events = rotki.data.db.get_amm_events([EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])
+    assert len(events) != 0
     # test all data purging from the db works and also deletes uniswap data
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,
         'ethereummoduledataresource',
     ))
     assert_simple_ok_response(response)
-    assert len(rotki.data.db.get_uniswap_events()) == 0
+    events = rotki.data.db.get_amm_events([EventType.MINT_UNISWAP, EventType.BURN_UNISWAP])
+    assert len(events) == 0
 
 
 PNL_TEST_ACC = '0x1F9fbD2F6a8754Cd56D4F56ED35338A63C5Bfd1f'
@@ -1081,10 +1085,10 @@ def test_events_pnl(
     # Assert some event details
     assert events_balances[0]['events'][0]['amount0'] == '42.247740079122297434'
     assert events_balances[0]['events'][0]['amount1'] == '0.453409755976350622'
-    assert events_balances[0]['events'][0]['event_type'] == 'mint'
+    assert events_balances[0]['events'][0]['event_type'] == 'mint uniswap'
     assert events_balances[0]['events'][1]['amount0'] == '64.052160560025177012'
     assert events_balances[0]['events'][1]['amount1'] == '0.455952395125600548'
-    assert events_balances[0]['events'][1]['event_type'] == 'burn'
+    assert events_balances[0]['events'][1]['event_type'] == 'burn uniswap'
     # Most importantly assert the profit loss
     assert FVal(events_balances[0]['profit_loss0']) >= FVal('21.8')
     assert FVal(events_balances[0]['profit_loss1']) >= FVal('0.00254')

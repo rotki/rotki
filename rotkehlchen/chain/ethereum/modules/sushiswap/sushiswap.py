@@ -42,9 +42,9 @@ from .graph import (
     SWAPS_QUERY,
     TOKEN_DAY_DATAS_QUERY,
 )
-from .utils import get_latest_lp_addresses, uniswap_lp_token_balances
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -72,6 +72,8 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
             database=database,
             premium=premium,
             msg_aggregator=msg_aggregator,
+            mint_event=EventType.MINT_SUSHISWAP,
+            burn_event=EventType.BURN_SUSHISWAP,
         )
         self.location = Location.SUSHISWAP
         try:
@@ -205,33 +207,6 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         )
         return protocol_balance
 
-    def get_balances_chain(self, addresses: List[ChecksumEthAddress]) -> ProtocolBalance:
-        """Get the addresses' pools data via chain queries.
-        """
-        known_assets: Set[EthereumToken] = set()
-        unknown_assets: Set[EthereumToken] = set()
-        lp_addresses = get_latest_lp_addresses(self.data_directory)
-
-        address_mapping = {}
-        for address in addresses:
-            pool_balances = uniswap_lp_token_balances(
-                userdb=self.database,
-                address=address,
-                ethereum=self.ethereum,
-                lp_addresses=lp_addresses,
-                known_assets=known_assets,
-                unknown_assets=unknown_assets,
-            )
-            if len(pool_balances) != 0:
-                address_mapping[address] = pool_balances
-
-        protocol_balance = ProtocolBalance(
-            address_balances=address_mapping,
-            known_assets=known_assets,
-            unknown_assets=unknown_assets,
-        )
-        return protocol_balance
-
     def _get_events_balances(
             self,
             addresses: List[ChecksumEthAddress],
@@ -307,11 +282,12 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         for address in filter(lambda address: address in address_events, addresses):
             all_events.extend(address_events[address])
 
-        self.database.add_sushiswap_events(all_events)
+        self.database.add_amm_events(all_events)
 
         # Fetch all DB events within the time range
         for address in addresses:
-            db_events = self.database.get_sushiswap_events(
+            db_events = self.database.get_amm_events(
+                events=[EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP],
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 address=address,
@@ -632,10 +608,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         Premium users can request balances either via the Sushiswap subgraph or
         on-chain.
         """
-        if self.premium:
-            protocol_balance = self._get_balances_graph(addresses=addresses)
-        else:
-            protocol_balance = self.get_balances_chain(addresses)
+        protocol_balance = self._get_balances_graph(addresses=addresses)
 
         known_assets = protocol_balance.known_assets
         unknown_assets = protocol_balance.unknown_assets
@@ -682,3 +655,12 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
     def deactivate(self) -> None:
         self.database.delete_sushiswap_trades_data()
         self.database.delete_sushiswap_events_data()
+
+    def on_startup(self) -> None:
+        pass
+
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
+        pass
+
+    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+        pass

@@ -47,7 +47,6 @@ from rotkehlchen.chain.ethereum.modules.ammswap.utils import SUBGRAPH_REMOTE_ERR
 from .graph import MINTS_QUERY, BURNS_QUERY
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -92,6 +91,8 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
+            mint_event: EventType,
+            burn_event: EventType,
     ) -> None:
         self.ethereum = ethereum_manager
         self.database = database
@@ -99,12 +100,14 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         self.msg_aggregator = msg_aggregator
         self.data_directory = database.user_data_dir.parent
         self.trades_lock = Semaphore()
+        self.mint_event = mint_event
+        self.burn_event = burn_event
 
-    @staticmethod
     def _calculate_events_balances(
-            address: ChecksumEthAddress,
-            events: List[LiquidityPoolEvent],
-            balances: List[LiquidityPool],
+        self,
+        address: ChecksumEthAddress,
+        events: List[LiquidityPoolEvent],
+        balances: List[LiquidityPool],
     ) -> List[LiquidityPoolEventsBalance]:
         """Given an address, its LP events and the current LPs participating in
         (`balances`), process each event (grouped by pool) aggregating the
@@ -131,7 +134,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
             pool_aggregated_amount[pool].events.append(event)
 
-            if event.event_type == EventType.MINT:
+            if event.event_type == self.mint_event:
                 pool_aggregated_amount[pool].profit_loss0 -= event.amount0
                 pool_aggregated_amount[pool].profit_loss1 -= event.amount1
                 pool_aggregated_amount[pool].usd_profit_loss -= event.usd_price
@@ -283,7 +286,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             unknown_asset_price: AssetToPrice,
     ) -> None:
         """Update the pools underlying assets prices in USD (prices obtained
-        via Inquirer and the Uniswap subgraph)
+        via Inquirer and the subgraph)
         """
         for lps in address_balances.values():
             for lp in lps:
@@ -319,10 +322,10 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         Each event data is stored in a <LiquidityPoolEvent>.
         """
         address_events: List[LiquidityPoolEvent] = []
-        if event_type == EventType.MINT:
+        if event_type == self.mint_event:
             query = MINTS_QUERY
             query_schema = 'mints'
-        elif event_type == EventType.BURN:
+        elif event_type == self.burn_event:
             query = BURNS_QUERY
             query_schema = 'burns'
         else:
@@ -552,14 +555,6 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     # -- Methods following the EthereumModule interface -- #
-    def on_startup(self) -> None:
-        pass
-
-    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
-        pass
-
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:
-        pass
 
     @abc.abstractmethod
     def deactivate(self) -> None:

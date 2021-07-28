@@ -113,7 +113,7 @@ TABLES_AT_INIT = [
     'xpubs',
     'xpub_mappings',
     'amm_swaps',
-    'uniswap_events',
+    'amm_events',
     'eth2_deposits',
     'eth2_daily_staking_details',
     'adex_events',
@@ -125,7 +125,6 @@ TABLES_AT_INIT = [
     'ledger_actions_gitcoin_data',
     'gitcoin_tx_type',
     'gitcoin_grant_metadata',
-    'sushiswap_events',
 ]
 
 
