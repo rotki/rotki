@@ -35,5 +35,9 @@ export const explorerUrls: AssetExplorerUrls = {
   zksync: {
     address: 'https://zkscan.io/explorer/accounts/',
     transaction: 'https://zkscan.io/explorer/transactions/'
+  },
+  DOT: {
+    address: 'https://polkascan.io/polkadot/account/',
+    transaction: 'https://polkascan.io/polkadot/transaction/'
   }
 };

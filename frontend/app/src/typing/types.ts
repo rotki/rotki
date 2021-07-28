@@ -18,6 +18,7 @@ export interface GeneralSettings {
   readonly anonymousUsageAnalytics: boolean;
   readonly ethRpcEndpoint: string;
   readonly ksmRpcEndpoint: string;
+  readonly dotRpcEndpoint: string;
   readonly balanceSaveFrequency: number;
   readonly dateDisplayFormat: string;
   readonly selectedCurrency: Currency;
@@ -77,9 +78,10 @@ export interface TaskResult<T> {
 export const ETH = 'ETH';
 export const BTC = 'BTC';
 export const KSM = 'KSM';
+export const DOT = 'DOT';
 export const AVAX = 'AVAX';
 
-export const SupportedBlockchains = [ETH, BTC, KSM, AVAX] as const;
+export const SupportedBlockchains = [ETH, BTC, KSM, DOT, AVAX] as const;
 
 export type Blockchain = typeof SupportedBlockchains[number];
 
@@ -119,6 +121,7 @@ interface SettingsPayload {
   submit_usage_analytics: boolean;
   eth_rpc_endpoint: string;
   ksm_rpc_endpoint: string;
+  dot_rpc_endpoint: string;
   ui_floating_precision: number;
   date_display_format: string;
   include_gas_costs: boolean;

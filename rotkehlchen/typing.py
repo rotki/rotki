@@ -4,9 +4,10 @@ from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tup
 from eth_typing import ChecksumAddress
 from typing_extensions import Literal
 
-from rotkehlchen.chain.substrate.typing import KusamaAddress
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
+
+from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress  # isort:skip # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 
 ModuleName = Literal[
     'makerdao_dsr',
@@ -130,12 +131,14 @@ BlockchainAddress = Union[
     BTCAddress,
     ChecksumEthAddress,
     KusamaAddress,
+    PolkadotAddress,
     str,
 ]
 ListOfBlockchainAddresses = Union[
     List[BTCAddress],
     List[ChecksumEthAddress],
     List[KusamaAddress],
+    List[PolkadotAddress],
 ]
 
 
@@ -257,6 +260,7 @@ class SupportedBlockchain(Enum):
     BITCOIN = 'BTC'
     KUSAMA = 'KSM'
     AVALANCHE = 'AVAX'
+    POLKADOT = 'DOT'
 
     def get_address_type(self) -> Callable:
         if self in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
@@ -265,6 +269,8 @@ class SupportedBlockchain(Enum):
             return BTCAddress
         if self == SupportedBlockchain.KUSAMA:
             return KusamaAddress
+        if self == SupportedBlockchain.POLKADOT:
+            return PolkadotAddress
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
     def ens_coin_type(self) -> int:
@@ -279,6 +285,8 @@ class SupportedBlockchain(Enum):
             return 0
         if self == SupportedBlockchain.KUSAMA:
             return 434
+        if self == SupportedBlockchain.POLKADOT:
+            return 354
         if self == SupportedBlockchain.AVALANCHE:
             return 9000
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')

@@ -1667,7 +1667,9 @@ class DBHandler:
         eth_list = []
         btc_list = []
         ksm_list = []
+        dot_list = []
         avax_list = []
+
         supported_blockchains = {blockchain.value for blockchain in SupportedBlockchain}
         for entry in query:
             if entry[0] not in supported_blockchains:
@@ -1691,8 +1693,10 @@ class DBHandler:
                 ksm_list.append(entry[1])
             elif entry[0] == SupportedBlockchain.AVALANCHE.value:
                 avax_list.append(entry[1])
+            elif entry[0] == SupportedBlockchain.POLKADOT.value:
+                dot_list.append(entry[1])
 
-        return BlockchainAccounts(eth=eth_list, btc=btc_list, ksm=ksm_list, avax=avax_list)
+        return BlockchainAccounts(eth=eth_list, btc=btc_list, ksm=ksm_list, dot=dot_list, avax=avax_list)  # noqa: E501
 
     def get_blockchain_account_data(
             self,

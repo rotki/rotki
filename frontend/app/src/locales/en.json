@@ -1153,7 +1153,8 @@
       "date_display_format": "Date display format",
       "display_date_in_localtime": "Display date in localtime and not in UTC in CSV export, backend logs and other locations",
       "rpc_endpoint": "Ethereum Node RPC Endpoint",
-      "ksm_rpc_endpoint": "Kusama Node RPC Endpoint"
+      "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
+      "dot_rpc_endpoint": "Polkadot Node RPC Endpoint"
     },
     "local_nodes": {
       "title": "Local Nodes"
@@ -1199,6 +1200,11 @@
         "success_set": "The Kusama node RPC endpoint was set to {endpoint}",
         "success_unset": "The Kusama node RPC endpoint was successfully unset",
         "error": "There was an error setting the Kusama node RPC endpoint"
+      },
+      "dot_rpc": {
+        "success_set": "The Polkadot node RPC endpoint was set to {endpoint}",
+        "success_unset": "The Polkadot node RPC endpoint was successfully unset",
+        "error": "There was an error setting the Polkadot node RPC endpoint"
       },
       "thousand_separator": {
         "error": "Error setting thousand separator",
@@ -2278,7 +2284,8 @@
       "eth": "Ethereum balances",
       "btc": "Bitcoin balances",
       "ksm": "Kusama balances",
-      "avax": "Avalanche balances"
+      "avax": "Avalanche balances",
+      "dot": "Polkadot balances"
     },
     "metamask_import": {
       "error": {
@@ -2664,7 +2671,8 @@
     "eth": "Ethereum",
     "btc": "Bitcoin",
     "ksm": "Kusama",
-    "avax": "Avalanche"
+    "avax": "Avalanche",
+    "dot": "Polkadot"
   },
   "sync_buttons": {
     "upload_tooltip": "Push your local database to the server and replace all data there",

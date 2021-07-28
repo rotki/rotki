@@ -34,6 +34,7 @@ export interface DBSettings {
   readonly balance_save_frequency: number;
   readonly eth_rpc_endpoint: string;
   readonly ksm_rpc_endpoint: string;
+  readonly dot_rpc_endpoint: string;
   readonly main_currency: string;
   readonly last_balance_save: number;
   readonly date_display_format: string;

@@ -231,6 +231,22 @@
             @click:clear="onKsmRpcEndpointChange('')"
             @change="onKsmRpcEndpointChange($event)"
           />
+
+          <v-text-field
+            v-model="dotRpcEndpoint"
+            outlined
+            class="general-settings__fields__dot-rpc-endpoint"
+            :label="$t('general_settings.labels.dot_rpc_endpoint')"
+            type="text"
+            :success-messages="settingsMessages[DOT_RPC_ENDPOINT].success"
+            :error-messages="settingsMessages[DOT_RPC_ENDPOINT].error"
+            clearable
+            @paste="
+              onDotRpcEndpointChange($event.clipboardData.getData('text'))
+            "
+            @click:clear="onDotRpcEndpointChange('')"
+            @change="onDotRpcEndpointChange($event)"
+          />
         </card>
         <price-oracle-settings />
         <frontend-settings />
@@ -277,6 +293,7 @@ const SETTING_FLOATING_PRECISION = 'floatingPrecision';
 const SETTING_ANONYMOUS_USAGE_ANALYTICS = 'anonymousUsageAnalytics';
 const SETTING_RPC_ENDPOINT = 'rpcEndpoint';
 const SETTING_KSM_RPC_ENDPOINT = 'ksmRpcEndpoint';
+const SETTING_DOT_RPC_ENDPOINT = 'dotRpcEndpoint';
 const SETTING_BALANCE_SAVE_FREQUENCY = 'balanceSaveFrequency';
 const SETTING_DATE_DISPLAY_FORMAT = 'dateDisplayFormat';
 const SETTING_THOUSAND_SEPARATOR = 'thousandSeparator';
@@ -291,6 +308,7 @@ const SETTINGS = [
   SETTING_ANONYMOUS_USAGE_ANALYTICS,
   SETTING_RPC_ENDPOINT,
   SETTING_KSM_RPC_ENDPOINT,
+  SETTING_DOT_RPC_ENDPOINT,
   SETTING_BALANCE_SAVE_FREQUENCY,
   SETTING_DATE_DISPLAY_FORMAT,
   SETTING_THOUSAND_SEPARATOR,
@@ -326,6 +344,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   anonymousUsageAnalytics: boolean = false;
   rpcEndpoint: string = Defaults.RPC_ENDPOINT;
   ksmRpcEndpoint: string = Defaults.KSM_RPC_ENDPOINT;
+  dotRpcEndpoint: string = Defaults.DOT_RPC_ENDPOINT;
   balanceSaveFrequency: string = '0';
   dateDisplayFormat: string = '';
   thousandSeparator: string = '';
@@ -342,6 +361,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   readonly ANONYMOUS_USAGE_ANALYTICS = SETTING_ANONYMOUS_USAGE_ANALYTICS;
   readonly RPC_ENDPOINT = SETTING_RPC_ENDPOINT;
   readonly KSM_RPC_ENDPOINT = SETTING_KSM_RPC_ENDPOINT;
+  readonly DOT_RPC_ENDPOINT = SETTING_DOT_RPC_ENDPOINT;
   readonly BALANCE_SAVE_FREQUENCY = SETTING_BALANCE_SAVE_FREQUENCY;
   readonly DATE_DISPLAY_FORMAT = SETTING_DATE_DISPLAY_FORMAT;
   readonly THOUSAND_SEPARATOR = SETTING_THOUSAND_SEPARATOR;
@@ -650,6 +670,35 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
 
     if (!success) {
       this.ksmRpcEndpoint = previousValue || '';
+    }
+  }
+
+  async onDotRpcEndpointChange(endpoint: string) {
+    const previousValue = this.generalSettings.dotRpcEndpoint;
+
+    if (!this.notTheSame(endpoint, previousValue) && endpoint !== '') {
+      return;
+    }
+
+    const message = makeMessage(
+      this.$t('general_settings.validation.dot_rpc.error').toString(),
+      endpoint
+        ? this.$t('general_settings.validation.dot_rpc.success_set', {
+            endpoint
+          }).toString()
+        : this.$t(
+            'general_settings.validation.dot_rpc.success_unset'
+          ).toString()
+    );
+
+    const success = await this.update(
+      { dot_rpc_endpoint: endpoint },
+      SETTING_DOT_RPC_ENDPOINT,
+      message
+    );
+
+    if (!success) {
+      this.dotRpcEndpoint = previousValue || '';
     }
   }
 

@@ -46,6 +46,7 @@ export type ExplorersSettings = {
   readonly ETH?: ExplorerEndpoints;
   readonly BTC?: ExplorerEndpoints;
   readonly KSM?: ExplorerEndpoints;
+  readonly DOT?: ExplorerEndpoints;
   readonly AVAX?: ExplorerEndpoints;
 };
 

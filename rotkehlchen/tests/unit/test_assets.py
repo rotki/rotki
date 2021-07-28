@@ -1,6 +1,4 @@
-import json
 import warnings as test_warnings
-from pathlib import Path
 
 import pytest
 from eth_utils import is_checksum_address
@@ -14,7 +12,6 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError, UnknownAsset
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.utils.hashing import file_md5
 
 
 def test_unknown_asset():
@@ -332,24 +329,6 @@ def test_coingecko_identifiers_are_reachable():
                 msg += f'\nSuggestion: id:{s[0]} name:{s[1]} symbol:{s[2]}'
         if not found:
             test_warnings.warn(UserWarning(msg))
-
-
-def test_assets_json_meta():
-    """Test that all_assets.json md5 matches and that if md5 changes since last
-    time then version is also bumped"""
-    last_meta = {'md5': '51bddc1b4e8bd6d30027c4380cdf9d4f', 'version': 72}
-    data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
-    data_md5 = file_md5(data_dir / 'all_assets.json')
-
-    with open(data_dir / 'all_assets.meta', 'r') as f:
-        saved_meta = json.loads(f.read())
-
-    assert data_md5 == saved_meta['md5']
-
-    msg = 'The last meta md5 of the test does not match the one in all_assets.meta'
-    assert saved_meta['md5'] == last_meta['md5'], msg
-    msg = 'The last meta version of the test does not match the one in all_assets.meta'
-    assert saved_meta['version'] == last_meta['version'], msg
 
 
 @pytest.mark.parametrize('mock_asset_meta_github_response', ['{"md5": "", "version": 99999999}'])

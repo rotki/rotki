@@ -6,8 +6,8 @@ from typing import List
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.typing import Timestamp
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.typing import Timestamp
 
 CONSTANT_ASSETS: List[Asset] = []
 
@@ -131,7 +131,6 @@ A_AVAX = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_AVAX)
-
 A_BAL = EthereumToken.initialize(
     address=string_to_ethereum_address('0xba100000625a3754423978a60c9317c58a424e3D'),
     decimals=18,

@@ -5,6 +5,7 @@ export const chainSection: ChainSections = {
   BTC: Section.BLOCKCHAIN_BTC,
   ETH: Section.BLOCKCHAIN_ETH,
   KSM: Section.BLOCKCHAIN_KSM,
+  DOT: Section.BLOCKCHAIN_DOT,
   AVAX: Section.BLOCKCHAIN_AVAX
 };
 
