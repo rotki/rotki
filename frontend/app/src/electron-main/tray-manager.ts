@@ -1,5 +1,6 @@
 import path from 'path';
 import { app, BrowserWindow, Menu, Tray } from 'electron';
+import { settingsManager } from '@/electron-main/app-settings';
 import { TrayUpdate } from '@/electron-main/ipc';
 import { Nullable } from '@/types';
 import { assert } from '@/utils/assertions';
@@ -21,7 +22,9 @@ export class TrayManager {
   constructor(getWindow: WindowProvider, closeApp: () => void) {
     this.getWindow = getWindow;
     this.closeApp = closeApp;
-    this.build();
+    if (settingsManager.appSettings.displayTray) {
+      this.build();
+    }
   }
 
   private static get iconPath(): string {
@@ -59,6 +62,9 @@ export class TrayManager {
   }
 
   update({ currency, delta, percentage, up, period, netWorth }: TrayUpdate) {
+    if (!this._tray) {
+      return;
+    }
     if (up === undefined) {
       this.setIcon(isMac ? 'rotki-trayTemplate.png' : 'rotki_tray.png');
       this.tray.setTitle('');
@@ -127,7 +133,7 @@ export class TrayManager {
   }
 
   destroy() {
-    this.tray.destroy();
+    this._tray?.destroy();
     this._tray = null;
   }
 

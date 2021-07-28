@@ -1,12 +1,17 @@
 import { app, BrowserWindow, MenuItem, shell } from 'electron';
+import { settingsManager } from '@/electron-main/app-settings';
 import { IPC_ABOUT, IPC_DEBUG_SETTINGS } from '@/electron-main/ipc-commands';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 const isMac = process.platform === 'darwin';
 
+export type MenuActions = { displayTray: (display: boolean) => void };
+
 export const debugSettings = {
   vuex: false
 };
+
+let actions: MenuActions = { displayTray: () => {} };
 
 const debugMenu = {
   label: '&Debug',
@@ -119,6 +124,28 @@ const developmentViewMenu = [
   { role: 'toggleDevTools' },
   separator
 ];
+
+const minimize = {
+  id: 'MINIMIZE_TO_TRAY',
+  label: 'Minimize to tray',
+  enabled: settingsManager.appSettings.displayTray,
+  click: (_: KeyboardEvent, window: BrowserWindow) => {
+    window.hide();
+  }
+};
+
+const displayTrayIcon = {
+  label: 'Display Tray Icon',
+  type: 'checkbox',
+  checked: settingsManager.appSettings.displayTray,
+  click: async (item: MenuItem) => {
+    const displayTray = item.checked;
+    settingsManager.appSettings.displayTray = displayTray;
+    settingsManager.save();
+    actions.displayTray(displayTray);
+  }
+};
+
 const viewMenu = {
   label: '&View',
   submenu: [
@@ -130,12 +157,9 @@ const viewMenu = {
     { role: 'zoomOut' },
     separator,
     { role: 'togglefullscreen' },
-    {
-      label: 'Minimize to tray',
-      click: (_: KeyboardEvent, window: BrowserWindow) => {
-        window.hide();
-      }
-    }
+    minimize,
+    separator,
+    displayTrayIcon
   ]
 };
 const defaultMenuTemplate: any[] = [
@@ -163,7 +187,8 @@ const defaultMenuTemplate: any[] = [
   ...(isDevelopment ? [debugMenu] : [])
 ];
 
-export function getUserMenu(showPremium: boolean) {
+export function getUserMenu(showPremium: boolean, menuActions: MenuActions) {
+  actions = menuActions;
   const getRotkiPremiumButton = {
     label: '&Get rotki Premium',
     ...(isMac
