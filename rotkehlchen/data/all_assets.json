@@ -3892,6 +3892,13 @@
         "symbol": "DOR",
         "type": "ethereum token"
     },
+    "DOT": {
+        "coingecko": "polkadot",
+        "name": "Polkadot",
+        "started": 1590500178,
+        "symbol": "DOT",
+        "type": "own chain"
+    },
     "DOTDOWN": {
         "coingecko": "",
         "name": "Binance leveraged token DOTDOWN",
@@ -7069,13 +7076,6 @@
         "name": "Kusama",
         "started": 1576142353,
         "symbol": "KSM",
-        "type": "own chain"
-    },
-    "DOT": {
-        "coingecko": "polkadot",
-        "name": "Polkadot",
-        "started": 1590500178,
-        "symbol": "DOT",
         "type": "own chain"
     },
     "KUE": {
