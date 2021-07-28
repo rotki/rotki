@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress, SubstrateChain
+from rotkehlchen.constants.assets import A_DOT
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -20,6 +21,7 @@ from rotkehlchen.tests.utils.substrate import (
     KUSAMA_SS58_FORMAT,
     KUSAMA_TOKEN,
     KUSAMA_TOKEN_DECIMALS,
+    POLKADOT_SS58_FORMAT,
     wait_until_all_substrate_nodes_connected,
 )
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
@@ -137,14 +139,78 @@ def fixture_ksm_rpc_endpoint() -> Optional[str]:
     return None
 
 
+@pytest.fixture(name='dot_rpc_endpoint')
+def fixture_dot_rpc_endpoint() -> Optional[str]:
+    return None
+
+
 @pytest.fixture(name='kusama_manager_connect_at_start')
 def fixture_kusama_manager_connect_at_start() -> Sequence[NodeName]:
+    return ()
+
+
+@pytest.fixture(name='polkadot_manager_connect_at_start')
+def fixture_polkadot_manager_connect_at_start() -> Sequence[NodeName]:
     return ()
 
 
 @pytest.fixture(name='kusama_available_node_attributes_map')
 def fixture_kusama_available_node_attributes_map():
     return {}
+
+
+@pytest.fixture(name='polkadot_available_node_attributes_map')
+def fixture_polkadot_available_node_attributes_map():
+    return {}
+
+
+def _make_substrate_manager(
+        messages_aggregator,
+        greenlet_manager,
+        accounts,
+        chain_type,
+        rpc_endpoint,
+        available_node_attributes_map,
+        connect_at_start,
+):
+    own_rpc_endpoint = (
+        rpc_endpoint if rpc_endpoint is not None else KUSAMA_DEFAULT_OWN_RPC_ENDPOINT
+    )
+    substrate_manager = SubstrateManager(
+        chain=SubstrateChain.KUSAMA,
+        msg_aggregator=messages_aggregator,
+        greenlet_manager=greenlet_manager,
+        connect_at_start=connect_at_start,
+        connect_on_startup=bool(accounts),
+        own_rpc_endpoint=own_rpc_endpoint,
+    )
+    if len(available_node_attributes_map) != 0:
+        # When connection is persisted <SubstrateManager.chain_properties> must
+        # be set manually (either requesting the chain or hard coded)
+        substrate_manager.available_node_attributes_map = available_node_attributes_map
+        substrate_manager._set_available_nodes_call_order()
+        # NB: for speeding up tests, instead of requesting the properties of
+        # the chain, we manually set them.
+        if chain_type == SubstrateChain.KUSAMA:
+            substrate_manager.chain_properties = SubstrateChainProperties(
+                ss58_format=KUSAMA_SS58_FORMAT,
+                token=KUSAMA_TOKEN,
+                token_decimals=KUSAMA_TOKEN_DECIMALS,
+            )
+        else:
+            substrate_manager.chain_properties = SubstrateChainProperties(
+                ss58_format=POLKADOT_SS58_FORMAT,
+                token=A_DOT,
+                token_decimals=10,
+            )
+
+    else:
+        wait_until_all_substrate_nodes_connected(
+            substrate_manager_connect_at_start=connect_at_start,
+            substrate_manager=substrate_manager,
+        )
+
+    return substrate_manager
 
 
 @pytest.fixture(name='kusama_manager')
@@ -156,36 +222,35 @@ def fixture_kusama_manager(
         kusama_available_node_attributes_map,
         kusama_manager_connect_at_start,
 ):
-    own_rpc_endpoint = (
-        ksm_rpc_endpoint if ksm_rpc_endpoint is not None else KUSAMA_DEFAULT_OWN_RPC_ENDPOINT
-    )
-    kusama_manager = SubstrateManager(
-        chain=SubstrateChain.KUSAMA,
-        msg_aggregator=messages_aggregator,
+    return _make_substrate_manager(
+        messages_aggregator=messages_aggregator,
         greenlet_manager=greenlet_manager,
+        accounts=ksm_accounts,
+        chain_type=SubstrateChain.KUSAMA,
+        rpc_endpoint=ksm_rpc_endpoint,
+        available_node_attributes_map=kusama_available_node_attributes_map,
         connect_at_start=kusama_manager_connect_at_start,
-        connect_on_startup=bool(ksm_accounts),
-        own_rpc_endpoint=own_rpc_endpoint,
     )
-    if len(kusama_available_node_attributes_map) != 0:
-        # When connection is persisted <SubstrateManager.chain_properties> must
-        # be set manually (either requesting the chain or hard coded)
-        kusama_manager.available_node_attributes_map = kusama_available_node_attributes_map
-        kusama_manager._set_available_nodes_call_order()
-        # NB: for speeding up tests, instead of requesting the properties of
-        # the chain, we manually set them.
-        kusama_manager.chain_properties = SubstrateChainProperties(
-            ss58_format=KUSAMA_SS58_FORMAT,
-            token=KUSAMA_TOKEN,
-            token_decimals=KUSAMA_TOKEN_DECIMALS,
-        )
-    else:
-        wait_until_all_substrate_nodes_connected(
-            substrate_manager_connect_at_start=kusama_manager_connect_at_start,
-            substrate_manager=kusama_manager,
-        )
 
-    return kusama_manager
+
+@pytest.fixture(name='polkadot_manager')
+def fixture_polkadot_manager(
+        messages_aggregator,
+        greenlet_manager,
+        dot_accounts,
+        dot_rpc_endpoint,
+        polkadot_available_node_attributes_map,
+        polkadot_manager_connect_at_start,
+):
+    return _make_substrate_manager(
+        messages_aggregator=messages_aggregator,
+        greenlet_manager=greenlet_manager,
+        accounts=dot_accounts,
+        chain_type=SubstrateChain.POLKADOT,
+        rpc_endpoint=dot_rpc_endpoint,
+        available_node_attributes_map=polkadot_available_node_attributes_map,
+        connect_at_start=polkadot_manager_connect_at_start,
+    )
 
 
 @pytest.fixture(name='avalanche_manager')
