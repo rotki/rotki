@@ -61,6 +61,7 @@ INTEGER_KEYS = (
 STRING_KEYS = (
     'eth_rpc_endpoint',
     'ksm_rpc_endpoint',
+    'dot_rpc_endpoint',
     'date_display_format',
     'frontend_settings',
 )
@@ -105,6 +106,7 @@ class ModifiableDBSettings(NamedTuple):
     include_gas_costs: Optional[bool] = None
     eth_rpc_endpoint: Optional[str] = None
     ksm_rpc_endpoint: Optional[str] = None
+    dot_rpc_endpoint: Optional[str] = None
     main_currency: Optional[Asset] = None
     date_display_format: Optional[str] = None
     submit_usage_analytics: Optional[bool] = None
