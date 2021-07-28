@@ -1,6 +1,6 @@
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { MutationTree } from 'vuex';
 import { Exchange } from '@/model/action-result';
-import { SupportedAsset } from '@/services/assets/types';
 import {
   Balances,
   BtcBalances,

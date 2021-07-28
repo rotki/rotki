@@ -1,0 +1,27 @@
+{
+  "name": "rotki-workspace",
+  "version": "1.0.0",
+  "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets that protects your privacy",
+  "author": "Rotki Solutions GmbH <info@rotki.com>",
+  "engines": {
+    "node": ">=14 <15",
+    "npm": ">=7.19 <8"
+  },
+  "homepage": "https://rotki.com",
+  "license": "AGPL-3.0",
+  "repository": "https://github.com/rotki/rotki",
+  "workspaces": [
+    "app",
+    "common"
+  ],
+  "scripts": {
+    "preinstall": "node check-versions.js",
+    "electron:build": "npm run build --workspace=@rotki/common && npm run electron:build --workspace rotki",
+    "build": "npm run build --workspace=@rotki/common && npm run build --workspace rotki",
+    "lint": "npm run lint -w @rotki/common && npm run lint:check -w rotki",
+    "check": "npm run lint && npm run build && npm run test:unit --workspace=rotki && npm run test:integration-ci --workspace=rotki"
+  },
+  "devDependencies": {
+    "semver": "7.3.5"
+  }
+}

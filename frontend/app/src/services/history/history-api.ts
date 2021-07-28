@@ -1,3 +1,9 @@
+import { ActionResult } from '@rotki/common/lib/data';
+import {
+  GitcoinGrantEventsPayload,
+  GitcoinGrantReport,
+  GitcoinReportPayload
+} from '@rotki/common/lib/gitcoin';
 import { AxiosInstance, AxiosTransformer } from 'axios';
 import {
   axiosSnakeCaseTransformer,
@@ -9,16 +15,12 @@ import {
 } from '@/services/consts';
 import { tradeNumericKeys } from '@/services/history/const';
 import {
-  GitcoinGrantEventsPayload,
-  GitcoinGrantReport,
-  GitcoinReportPayload,
   LedgerActionResult,
   NewTrade,
   Trade,
   TradeLocation
 } from '@/services/history/types';
 import {
-  ActionResult,
   EntryWithMeta,
   LimitedResponse,
   PendingTask

@@ -1,25 +1,26 @@
+import {
+  DARK_MODE_ENABLED,
+  DARK_THEME,
+  LIGHT_THEME
+} from '@rotki/common/lib/settings';
+import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { default as BigNumber } from 'bignumber.js';
 import {
+  AMOUNT_ROUNDING_MODE,
   CURRENCY_LOCATION,
   DECIMAL_SEPARATOR,
   DEFI_SETUP_DONE,
+  EXPLORERS,
+  GRAPH_ZERO_BASED,
+  ITEMS_PER_PAGE,
   LAST_KNOWN_TIMEFRAME,
+  PROFIT_LOSS_PERIOD,
   Q3,
   QUERY_PERIOD,
-  PROFIT_LOSS_PERIOD,
+  REFRESH_PERIOD,
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
-  TIMEFRAME_TWO_WEEKS,
-  TIMEFRAME_YEAR,
-  REFRESH_PERIOD,
-  EXPLORERS,
-  ITEMS_PER_PAGE,
-  VALUE_ROUNDING_MODE,
-  AMOUNT_ROUNDING_MODE,
-  DARK_MODE_ENABLED,
-  LIGHT_THEME,
-  DARK_THEME,
-  GRAPH_ZERO_BASED
+  VALUE_ROUNDING_MODE
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 import store from '@/store/store';
@@ -29,8 +30,8 @@ describe('settings:mutations', () => {
   test('restore', async () => {
     const state: SettingsState = {
       [DEFI_SETUP_DONE]: true,
-      [TIMEFRAME_SETTING]: TIMEFRAME_YEAR,
-      [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_TWO_WEEKS,
+      [TIMEFRAME_SETTING]: TimeFramePeriod.YEAR,
+      [LAST_KNOWN_TIMEFRAME]: TimeFramePeriod.TWO_WEEKS,
       [QUERY_PERIOD]: 5,
       [PROFIT_LOSS_PERIOD]: {
         year: '2018',
@@ -64,8 +65,8 @@ describe('settings:mutations', () => {
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
     expect(settings[DEFI_SETUP_DONE]).toBe(true);
-    expect(settings[TIMEFRAME_SETTING]).toBe(TIMEFRAME_YEAR);
-    expect(settings[LAST_KNOWN_TIMEFRAME]).toBe(TIMEFRAME_TWO_WEEKS);
+    expect(settings[TIMEFRAME_SETTING]).toBe(TimeFramePeriod.YEAR);
+    expect(settings[LAST_KNOWN_TIMEFRAME]).toBe(TimeFramePeriod.TWO_WEEKS);
     expect(settings[QUERY_PERIOD]).toBe(5);
     expect(settings[PROFIT_LOSS_PERIOD]).toMatchObject({
       year: '2018',

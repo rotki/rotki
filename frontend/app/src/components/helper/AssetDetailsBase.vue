@@ -37,10 +37,10 @@
 </template>
 
 <script lang="ts">
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { Routes } from '@/router/routes';
-import { SupportedAsset } from '@/services/assets/types';
 
 @Component({
   components: { AssetIcon }

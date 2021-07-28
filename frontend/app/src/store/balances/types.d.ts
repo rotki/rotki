@@ -1,6 +1,6 @@
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { BigNumber } from 'bignumber.js';
 import { Exchange, PriceOracles } from '@/model/action-result';
-import { SupportedAsset } from '@/services/assets/types';
 import {
   BlockchainAssetBalances,
   BtcBalances,

@@ -32,14 +32,18 @@
 </template>
 
 <script lang="ts">
+import {
+  TimeFramePeriod,
+  TimeFramePersist,
+  TimeFrameSetting
+} from '@rotki/common/lib/settings/graphs';
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import Fragment from '@/components/helper/Fragment';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
-import { TIMEFRAME_PERIOD, TIMEFRAME_REMEMBER } from '@/store/settings/consts';
-import { TimeFrameSetting } from '@/store/settings/types';
 
 const validator = (value: any) =>
-  TIMEFRAME_PERIOD.includes(value) || value === TIMEFRAME_REMEMBER;
+  Object.values(TimeFramePeriod).includes(value) ||
+  value === TimeFramePersist.REMEMBER;
 
 @Component({
   components: { TimeframeSelector, Fragment }

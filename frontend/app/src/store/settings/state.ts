@@ -1,34 +1,38 @@
+import {
+  DARK_MODE_ENABLED,
+  DARK_THEME,
+  LIGHT_THEME
+} from '@rotki/common/lib/settings';
+import {
+  TimeFramePeriod,
+  TimeFramePersist
+} from '@rotki/common/lib/settings/graphs';
 import { default as BigNumber } from 'bignumber.js';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
   ALL,
+  AMOUNT_ROUNDING_MODE,
   CURRENCY_LOCATION,
   DECIMAL_SEPARATOR,
   DEFI_SETUP_DONE,
-  LAST_KNOWN_TIMEFRAME,
-  QUERY_PERIOD,
-  PROFIT_LOSS_PERIOD,
-  THOUSAND_SEPARATOR,
-  TIMEFRAME_ALL,
-  TIMEFRAME_REMEMBER,
-  TIMEFRAME_SETTING,
-  REFRESH_PERIOD,
   EXPLORERS,
+  GRAPH_ZERO_BASED,
   ITEMS_PER_PAGE,
-  AMOUNT_ROUNDING_MODE,
-  VALUE_ROUNDING_MODE,
-  DARK_MODE_ENABLED,
-  DARK_THEME,
-  LIGHT_THEME,
-  GRAPH_ZERO_BASED
+  LAST_KNOWN_TIMEFRAME,
+  PROFIT_LOSS_PERIOD,
+  QUERY_PERIOD,
+  REFRESH_PERIOD,
+  THOUSAND_SEPARATOR,
+  TIMEFRAME_SETTING,
+  VALUE_ROUNDING_MODE
 } from '@/store/settings/consts';
 import { SettingsState } from '@/store/settings/types';
 
 export const defaultState: () => SettingsState = () => ({
   [DEFI_SETUP_DONE]: false,
-  [TIMEFRAME_SETTING]: TIMEFRAME_REMEMBER,
-  [LAST_KNOWN_TIMEFRAME]: TIMEFRAME_ALL,
+  [TIMEFRAME_SETTING]: TimeFramePersist.REMEMBER,
+  [LAST_KNOWN_TIMEFRAME]: TimeFramePeriod.ALL,
   [QUERY_PERIOD]: Defaults.DEFAULT_QUERY_PERIOD,
   [PROFIT_LOSS_PERIOD]: {
     year: new Date().getFullYear().toString(),

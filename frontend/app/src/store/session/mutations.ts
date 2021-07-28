@@ -1,3 +1,4 @@
+import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { MutationTree } from 'vuex';
 import {
   QueriedAddresses,
@@ -6,7 +7,6 @@ import {
 } from '@/services/session/types';
 import { defaultState } from '@/store/session/state';
 import { SessionState, SyncConflict } from '@/store/session/types';
-import { TimeFramePeriod } from '@/store/settings/types';
 import {
   AccountingSettings,
   AccountingSettingsUpdate,
