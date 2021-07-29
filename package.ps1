@@ -262,7 +262,6 @@ if ($Env:CI) {
 cd frontend
 npm ci
 ExitOnFailure("Restoring the node dependencies with npm ci failed")
-cd app
 
 if ($Env:CI) {
     echo "::endgroup::"
@@ -276,6 +275,7 @@ if ($Env:CI) {
     echo "::endgroup::"
 }
 
+cd app
 $BINARY_NAME = @(Get-ChildItem -Path $PWD\dist -Filter *.exe -Recurse -File -Name)[0]
 
 if (-not ($BINARY_NAME)) {

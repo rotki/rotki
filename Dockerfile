@@ -2,10 +2,9 @@
 FROM node:lts-alpine as frontend-build-stage
 
 WORKDIR /app
-COPY frontend/app/package*.json frontend/app/check-versions.js ./
+COPY frontend/ .
 RUN npm install -g npm@7 && if ! npm ci --exit-code; then npm ci; fi
-COPY frontend/app/ .
-RUN npm run build -- --mode docker
+RUN npm run docker:build
 
 FROM python:3.7 as backend-build-stage
 
@@ -50,7 +49,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=backend-build-stage /tmp/dist /opt/rotki
-COPY --from=frontend-build-stage /app/dist /opt/rotki/frontend
+COPY --from=frontend-build-stage /app/app/dist /opt/rotki/frontend
 
 RUN APP=$(find "/opt/rotki" -name "rotkehlchen-*-linux"  | head -n 1) && \
     echo ${APP} && \

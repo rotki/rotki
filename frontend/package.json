@@ -18,6 +18,7 @@
     "preinstall": "node check-versions.js",
     "electron:build": "npm run build --workspace=@rotki/common && npm run electron:build --workspace rotki",
     "build": "npm run build --workspace=@rotki/common && npm run build --workspace rotki",
+    "docker:build": "npm run build -w @rotki/common && npm run build -w rotki -- --mode docker",
     "lint": "npm run lint -w @rotki/common && npm run lint:check -w rotki",
     "check": "npm run lint && npm run build && npm run test:unit --workspace=rotki && npm run test:integration-ci --workspace=rotki"
   },
