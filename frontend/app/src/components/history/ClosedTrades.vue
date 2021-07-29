@@ -31,12 +31,15 @@
             />
           </v-col>
           <v-col>
-            <table-filter :matchers="matchers" />
+            <table-filter
+              :matchers="matchers"
+              @update:matches="updateFilter($event)"
+            />
           </v-col>
         </v-row>
         <v-sheet outlined rounded>
           <data-table
-            :items="data"
+            :items="visibleTrades"
             :headers="headersClosed"
             :expanded.sync="expanded"
             single-expand
@@ -233,18 +236,21 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
-import { SearchMatcher } from '@/components/history/filtering/types';
+import {
+  MatchedKeyword,
+  SearchMatcher
+} from '@/components/history/filtering/types';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import { formatDate } from '@/filters';
 import AssetMixin from '@/mixins/asset-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
 import { HistoryActions, IGNORE_TRADES } from '@/store/history/consts';
 import { IgnoreActionPayload, TradeEntry } from '@/store/history/types';
-import { ActionStatus, Message } from '@/store/types';
-import { ExternalTrade } from '../../../tests/e2e/support/types';
+import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
 
 @Component({
   components: {
@@ -344,29 +350,30 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
   section = Section.TRADES;
 
   selected: string[] = [];
+  filter: Partial<MatchedKeyword<TradeEntry>> = {};
 
-  readonly matchers: SearchMatcher<ExternalTrade>[] = [
+  readonly matchers: SearchMatcher<TradeEntry>[] = [
     {
       key: 'base',
-      matchingProperty: 'base',
+      matchingProperty: 'baseAsset',
       description: 'filter by the base asset of the trade',
       validator: () => true
     },
     {
       key: 'quote',
-      matchingProperty: 'quote',
+      matchingProperty: 'quoteAsset',
       description: 'filter by the quote asset of the trade',
       validator: () => true
     },
     {
       key: 'action',
-      matchingProperty: 'trade_type',
+      matchingProperty: 'tradeType',
       description: 'filter by the trade action (buy or sell)',
       validator: () => true
     },
     {
       key: 'date',
-      matchingProperty: 'time',
+      matchingProperty: 'timestamp',
       description: 'filter by the date of the trade',
       validator: () => true
     }
@@ -461,11 +468,44 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
   @Prop({ required: true })
   data!: TradeEntry[];
 
+  visibleTrades: TradeEntry[] = [];
+
+  mounted() {
+    this.applyFilter();
+  }
+
+  updateFilter(filter: Partial<MatchedKeyword<TradeEntry>>) {
+    this.filter = filter;
+    this.applyFilter();
+  }
+
+  applyFilter() {
+    const filter = this.filter;
+    const dateFormat = (this.$store.state as RotkehlchenState).session!
+      .generalSettings.dateDisplayFormat;
+    this.visibleTrades = this.data.filter(trade => {
+      const quoteMatch = filter.quoteAsset
+        ? this.getSymbol(trade.quoteAsset).startsWith(filter.quoteAsset)
+        : true;
+      const baseMatch = filter.baseAsset
+        ? this.getSymbol(trade.baseAsset).startsWith(filter.baseAsset)
+        : true;
+      const dateMatch = filter.timestamp
+        ? formatDate(trade.timestamp, dateFormat).indexOf(filter.timestamp) >= 0
+        : true;
+      const actionMatch = filter.tradeType
+        ? filter.tradeType === trade.tradeType
+        : true;
+      return quoteMatch && actionMatch && dateMatch && baseMatch;
+    });
+  }
+
   @Watch('data')
   onDataUpdate(newData: TradeEntry[], oldData?: TradeEntry[]) {
     if (oldData && newData.length < oldData.length) {
       this.page = 1;
     }
+    this.applyFilter();
   }
 
   newExternalTrade() {

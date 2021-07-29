@@ -11,6 +11,7 @@
     prepend-inner-icon="mdi-filter-variant"
     :search-input.sync="search"
     @input="searchUpdated($event)"
+    @update:search-input="onSearch($event)"
   >
     <template #no-data>
       <no-filter-available
@@ -26,11 +27,11 @@
 <script lang="ts">
 import { computed, defineComponent, PropType, ref } from '@vue/composition-api';
 import NoFilterAvailable from '@/components/history/filtering/NoFilterAvailable.vue';
-import { SearchMatcher } from '@/components/history/filtering/types';
-
-export type MatchedKeyword<T> = {
-  readonly [key in keyof T]: string;
-};
+import {
+  MatchedKeyword,
+  SearchMatcher
+} from '@/components/history/filtering/types';
+import { assert } from '@/utils/assertions';
 
 export default defineComponent({
   name: 'TableFilter',
@@ -41,7 +42,12 @@ export default defineComponent({
       type: Array as PropType<SearchMatcher<any>[]>
     }
   },
-  setup(props) {
+  emits: {
+    'update:matches'(matches: MatchedKeyword<any>) {
+      return !!matches;
+    }
+  },
+  setup(props, { emit }) {
     const selection = ref<string[]>([]);
     const search = ref('');
     const validKeys = props.matchers.map(({ key }) => key);
@@ -77,7 +83,10 @@ export default defineComponent({
           continue;
         }
 
-        matched[searchKey] = filter[1].trim();
+        const matcher = props.matchers.find(value => value.key === searchKey);
+        assert(matcher);
+
+        matched[matcher.matchingProperty] = filter[1].trim();
         if (usedKeys.value.includes(searchKey)) {
           const index = strings.findIndex(
             value => value.split(':').map(text => text.trim())[0] === searchKey
@@ -88,8 +97,8 @@ export default defineComponent({
         }
       }
 
-      console.log(strings);
       selection.value = strings;
+      emit('update:matches', matched);
     };
     const appendToSearch = (key: string) => {
       const filter = `${key}:`;
@@ -99,11 +108,15 @@ export default defineComponent({
         search.value = filter;
       }
     };
+    const onSearch = (key: string) => {
+      console.log(key);
+    };
     return {
       search,
       selection,
       usedKeys,
       suggestion,
+      onSearch,
       searchUpdated,
       appendToSearch
     };
