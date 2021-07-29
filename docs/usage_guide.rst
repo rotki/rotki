@@ -931,6 +931,13 @@ DEX trades
 
 In the DEX Trades section you can monitor all trades made in the supported decentralized exchanges. Each trade is also broken down to the separate swaps that it is comprised of.
 
+The currently supported DEXes are:
+
+- Uniswap v2
+- Uniswap v3
+- Balancer
+- Sushiswap
+
 Creating a profit/loss report
 *****************************
 
