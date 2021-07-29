@@ -11,7 +11,7 @@
         class="closed-trades__add-trade"
         @click="newExternalTrade()"
       >
-        <v-icon> mdi-plus </v-icon>
+        <v-icon> mdi-plus</v-icon>
       </v-btn>
       <v-card-title>
         <refresh-button
@@ -23,10 +23,17 @@
         <card-title class="ms-2">{{ $t('closed_trades.title') }}</card-title>
       </v-card-title>
       <v-card-text>
-        <ignore-buttons
-          :disabled="selected.length === 0 || loading || refreshing"
-          @ignore="ignoreTrades"
-        />
+        <v-row>
+          <v-col>
+            <ignore-buttons
+              :disabled="selected.length === 0 || loading || refreshing"
+              @ignore="ignoreTrades"
+            />
+          </v-col>
+          <v-col>
+            <table-filter :matchers="matchers" />
+          </v-col>
+        </v-row>
         <v-sheet outlined rounded>
           <data-table
             :items="data"
@@ -225,6 +232,8 @@ import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
+import TableFilter from '@/components/history/filtering/TableFilter.vue';
+import { SearchMatcher } from '@/components/history/filtering/types';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
@@ -235,9 +244,11 @@ import { Section } from '@/store/const';
 import { HistoryActions, IGNORE_TRADES } from '@/store/history/consts';
 import { IgnoreActionPayload, TradeEntry } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
+import { ExternalTrade } from '../../../tests/e2e/support/types';
 
 @Component({
   components: {
+    TableFilter,
     NotesDisplay,
     AssetDetailsBase,
     DataTable,
@@ -333,6 +344,33 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
   section = Section.TRADES;
 
   selected: string[] = [];
+
+  readonly matchers: SearchMatcher<ExternalTrade>[] = [
+    {
+      key: 'base',
+      matchingProperty: 'base',
+      description: 'filter by the base asset of the trade',
+      validator: () => true
+    },
+    {
+      key: 'quote',
+      matchingProperty: 'quote',
+      description: 'filter by the quote asset of the trade',
+      validator: () => true
+    },
+    {
+      key: 'action',
+      matchingProperty: 'trade_type',
+      description: 'filter by the trade action (buy or sell)',
+      validator: () => true
+    },
+    {
+      key: 'date',
+      matchingProperty: 'time',
+      description: 'filter by the date of the trade',
+      validator: () => true
+    }
+  ];
 
   setSelected(selected: boolean) {
     const selection = this.selected;
