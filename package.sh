@@ -155,8 +155,6 @@ if [[ $? -ne 0 ]]; then
     fi
 fi
 
-cd app || exit 1
-
 if [[ -n "${CI-}" ]]; then
   echo "::endgroup::"
 fi
