@@ -11,7 +11,7 @@
     clearable
     prepend-inner-icon="mdi-filter-variant"
     :search-input.sync="search"
-    @input="searchUpdated($event)"
+    @input="onSelectionUpdate($event)"
     @keydown.enter="applySuggestion"
   >
     <template #no-data>
@@ -37,6 +37,7 @@ import {
   onMounted,
   PropType,
   ref,
+  toRefs,
   watch
 } from '@vue/composition-api';
 import NoFilterAvailable from '@/components/history/filtering/NoFilterAvailable.vue';
@@ -67,62 +68,27 @@ export default defineComponent({
     const selection = ref<string[]>([]);
     const search = ref('');
     const validKeys = props.matchers.map(({ key }) => key);
+
+    const { matchers } = toRefs(props);
+
+    const matcherForKey = (searchKey: string | undefined) => {
+      return matchers.value.find(({ key }) => key === searchKey);
+    };
+
     const suggestion = computed(() => {
       const searchKey = splitSearch(search.value);
       const key = validKeys.find(value => value.startsWith(searchKey[0]));
-      return props.matchers.find(matcher => matcher.key === key) ?? null;
+      return matcherForKey(key) ?? null;
     });
     const usedKeys = computed(() =>
       selection.value.map(entry => splitSearch(entry)[0])
     );
-    const searchUpdated = (selected: string[]) => {
-      let strings: string[] = [...selection.value].filter(
-        value =>
-          selected.includes(value) ||
-          selected.find(selection => value.startsWith(selection))
-      );
-      const matched: Partial<MatchedKeyword<any>> = {};
-      for (const entry of selected) {
-        const trimmed = entry.trim();
-        if (!trimmed) {
-          continue;
-        }
-        const filter = splitSearch(entry);
-        const searchKey = filter[0];
-        const keyword = filter[1];
 
-        if (!keyword) {
-          continue;
-        }
-
-        const fullMatch = validKeys.find(key => searchKey === key);
-        if (!fullMatch) {
-          continue;
-        }
-
-        const matcher = props.matchers.find(value => value.key === searchKey);
-        assert(matcher);
-
-        if (!matcher.validate(keyword)) {
-          strings = strings.filter(filter => filter !== entry);
-          continue;
-        }
-
-        matched[matcher.matchingProperty] = filter[1].trim();
-        const searchTerm = `${searchKey}: ${keyword}`;
-        if (usedKeys.value.includes(searchKey)) {
-          const index = strings.findIndex(
-            value => splitSearch(value)[0] === searchKey
-          );
-          strings[index] = searchTerm;
-        } else {
-          strings.push(searchTerm);
-        }
-      }
-
-      selection.value = strings;
-      emit('update:matches', matched);
+    const onSelectionUpdate = (pairs: string[]) => {
+      updateMatches(pairs);
+      selection.value = pairs;
     };
+
     const appendToSearch = (key: string) => {
       const filter = `${key}:`;
       if (search.value) {
@@ -132,6 +98,18 @@ export default defineComponent({
       }
       input.value.focus();
     };
+
+    function updateMatches(pairs: string[]) {
+      const matched: Partial<MatchedKeyword<any>> = {};
+      for (const entry of pairs) {
+        const [key, keyword] = splitSearch(entry);
+        const matcher = matcherForKey(key);
+        assert(matcher);
+        matched[matcher.matchingProperty as string] = keyword;
+      }
+
+      emit('update:matches', matched);
+    }
 
     const applyFilter = (filter: string) => {
       const newSelection = [...selection.value];
@@ -148,17 +126,8 @@ export default defineComponent({
 
       selection.value = newSelection;
 
-      const matched: Partial<MatchedKeyword<any>> = {};
-
-      for (const entry of selection.value) {
-        const entryFilter = splitSearch(entry);
-        const searchKey = entryFilter[0];
-        const matcher = props.matchers.find(value => value.key === searchKey);
-        assert(matcher);
-        matched[matcher.matchingProperty] = entryFilter[1].trim();
-      }
-
-      emit('update:matches', matched);
+      updateMatches(selection.value);
+      search.value = '';
     };
 
     const selectedSuggestion = ref(0);
@@ -174,8 +143,17 @@ export default defineComponent({
         nextTick(() => {
           applyFilter(suggestion);
         });
+      } else {
+        const [key, keyword] = splitSearch(search.value);
+        const matcher = matcherForKey(key);
+        if (matcher && matcher.suggestions().length === 0) {
+          if (matcher.validate(keyword)) {
+            nextTick(() => applyFilter(`${key}: ${keyword}`));
+          }
+        }
       }
       selectedSuggestion.value = 0;
+      search.value = '';
     };
 
     onMounted(() => {
@@ -187,6 +165,10 @@ export default defineComponent({
         } else {
           selectedSuggestion.value = 0;
         }
+      };
+      input.value.onEnterDown = function (e: KeyboardEvent) {
+        e.preventDefault();
+        e.stopPropagation();
       };
     });
 
@@ -201,7 +183,7 @@ export default defineComponent({
       suggestion,
       suggestedFilter,
       selectedSuggestion,
-      searchUpdated,
+      onSelectionUpdate,
       appendToSearch,
       applyFilter,
       applySuggestion,

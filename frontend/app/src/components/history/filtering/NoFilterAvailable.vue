@@ -24,17 +24,20 @@
       <span>{{ $t('no_filter_available.unsupported_filter') }}</span>
       <span class="font-weight-medium ms-2">{{ keyword }}</span>
     </div>
-    <div class="caption-text text--secondary">
-      {{ $t('no_filter_available.title') }}
+    <div v-if="!suggestion">
+      <div class="caption-text text--secondary">
+        {{ $t('no_filter_available.title') }}
+      </div>
+      <v-divider class="my-2" />
+      <filter-entry
+        v-for="matcher in available"
+        :key="matcher.key"
+        :matcher="matcher"
+        @click="click($event)"
+      />
+      <v-divider class="mt-2" />
     </div>
-    <v-divider class="my-2" />
-    <filter-entry
-      v-for="matcher in available"
-      :key="matcher.key"
-      :matcher="matcher"
-      @click="click($event)"
-    />
-    <v-divider class="mt-2" />
+
     <div class="caption-text text--secondary text--lighten-2 mt-2">
       <span>{{ $t('no_filter_available.hint.description') }}</span>
       <span class="font-weight-medium">
@@ -117,7 +120,7 @@ export default defineComponent({
         suggestion: Nullable<SearchMatcher<any>>;
       }) => {
         if (!keyword || !suggestion) {
-          return '';
+          return [];
         }
 
         const search = splitSearch(keyword);
@@ -129,6 +132,9 @@ export default defineComponent({
           .sort((a, b) => compareSymbols(a, b, searchString))
           .map(sug => `${suggestedFilter}: ${sug}`)
           .slice(0, 5);
+        if (suggestions.includes(keyword)) {
+          return [keyword];
+        }
 
         return suggestions;
       }
@@ -137,7 +143,7 @@ export default defineComponent({
     const lastSuggestion = ref('');
     const { selectedSuggestion } = toRefs(props);
 
-    function updateSuggestion(value: string[], index: Number) {
+    function updateSuggestion(value: string[], index: number) {
       lastSuggestion.value = value[index];
       emit('suggest', {
         suggestion: value[index],
