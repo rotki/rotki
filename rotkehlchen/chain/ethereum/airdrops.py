@@ -17,6 +17,7 @@ from rotkehlchen.constants.assets import (
     A_LDO,
     A_TORN,
     A_UNI,
+    A_FOX,
 )
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.typing import ChecksumEthAddress
@@ -75,6 +76,11 @@ AIRDROPS = {
         'https://gist.githubusercontent.com/LefterisJP/fd0ebccbc645f7de2b142907bd207363/raw/0613689dd5212b81788ed1a108c751b29b2ce93a/convex_airdrop.csv',  # noqa: E501
         A_CVX,
         'https://www.convexfinance.com/',
+    ),
+    'fox': (
+        'https://raw.githubusercontent.com/rotki/data/main/airdrops/shapeshift.csv',
+        A_FOX,
+        'https://shapeshift.com/shapeshift-decentralize-airdrop',
     ),
 }
 
