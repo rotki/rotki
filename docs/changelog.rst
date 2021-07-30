@@ -8,6 +8,7 @@ Changelog
 * :feature:`3061` When inserting ledger actions users will now be able to skip the specific time on date input (00:00:00 will be assumed).
 * :feature:`3061` Users will now get the last used location pre-selected when adding ledger actions.
 * :feature:`3138` Users will now see separate cards on the Defi overview for MakerDAO Vaults and MakerDAO DSR.
+* :bug:`3264` Users should now be able to properly download the PnL CSV when using docker.
 
 * :release:`1.19.1 <2021-07-22>`
 * :bug:`3236` Users will now see the proper total networth for the current day in the graph tooltip.

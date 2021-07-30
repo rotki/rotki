@@ -918,7 +918,7 @@ export class RotkehlchenApi {
 
   downloadCSV(): Promise<ActionStatus> {
     return this.axios
-      .get('/history/download', {
+      .get('/history/download/', {
         responseType: 'blob',
         validateStatus: validTaskStatus
       })
