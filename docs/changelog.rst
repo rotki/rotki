@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`3264` Users should now be able to properly download the PnL CSV when using docker.
+
 * :release:`1.19.1 <2021-07-22>`
 * :bug:`3236` Users will now see the proper total networth for the current day in the graph tooltip.
 * :bug:`3224` Users will now be able to properly select an end time in earlier dates.
