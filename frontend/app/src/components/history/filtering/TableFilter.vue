@@ -1,5 +1,6 @@
 <template>
   <v-combobox
+    ref="input"
     :value="selection"
     outlined
     dense
@@ -48,11 +49,12 @@ export default defineComponent({
     }
   },
   setup(props, { emit }) {
+    const input = ref();
     const selection = ref<string[]>([]);
     const search = ref('');
     const validKeys = props.matchers.map(({ key }) => key);
-    const suggestion = computed(() =>
-      validKeys.find(value => value.startsWith(search.value))
+    const suggestion = computed(
+      () => validKeys.find(value => value.startsWith(search.value)) ?? ''
     );
     const usedKeys = computed(() =>
       selection.value.map(
@@ -87,13 +89,14 @@ export default defineComponent({
         assert(matcher);
 
         matched[matcher.matchingProperty] = filter[1].trim();
+        const searchTerm = `${searchKey}: ${keyword}`;
         if (usedKeys.value.includes(searchKey)) {
           const index = strings.findIndex(
             value => value.split(':').map(text => text.trim())[0] === searchKey
           );
-          strings[index] = entry;
+          strings[index] = searchTerm;
         } else {
-          strings.push(entry);
+          strings.push(searchTerm);
         }
       }
 
@@ -107,6 +110,7 @@ export default defineComponent({
       } else {
         search.value = filter;
       }
+      input.value.focus();
     };
     const onSearch = (key: string) => {
       console.log(key);
@@ -118,7 +122,8 @@ export default defineComponent({
       suggestion,
       onSearch,
       searchUpdated,
-      appendToSearch
+      appendToSearch,
+      input
     };
   }
 });
