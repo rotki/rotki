@@ -414,6 +414,14 @@
     "subtitle": "Select which modules should be queried for this account",
     "title": "Enabled modules"
   },
+  "no_filter_available": {
+    "hint": {
+      "description": "* type the filter and then press enter e.g.",
+      "example": "quote: ETH"
+    },
+    "title": "Available filters",
+    "unsupported_filter": "Unsupported filter:"
+  },
   "notes_display": {
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
@@ -1299,6 +1307,12 @@
     "description": {
       "with": "With",
       "for": "For"
+    },
+    "filter": {
+      "base_asset": "filter by the base asset of the trade",
+      "date": "filter by the date of the trade",
+      "quote_asset": "filter by the quote asset of the trade",
+      "trade_type": "filter by the trade action (buy or sell)"
     },
     "title": "Closed Orders",
     "headers": {

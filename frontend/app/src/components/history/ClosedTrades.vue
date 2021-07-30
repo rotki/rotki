@@ -251,6 +251,7 @@ import { Section } from '@/store/const';
 import { HistoryActions, IGNORE_TRADES } from '@/store/history/consts';
 import { IgnoreActionPayload, TradeEntry } from '@/store/history/types';
 import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
+import { uniqueStrings } from '@/utils/data';
 
 @Component({
   components: {
@@ -356,28 +357,46 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
     {
       key: 'base',
       matchingProperty: 'baseAsset',
-      description: 'filter by the base asset of the trade',
+      description: this.$t('closed_trades.filter.base_asset').toString(),
+      suggestions: () => this.baseAssets,
       validator: () => true
     },
     {
       key: 'quote',
       matchingProperty: 'quoteAsset',
-      description: 'filter by the quote asset of the trade',
+      description: this.$t('closed_trades.filter.quote_asset').toString(),
+      suggestions: () => this.quoteAssets,
       validator: () => true
     },
     {
       key: 'action',
       matchingProperty: 'tradeType',
-      description: 'filter by the trade action (buy or sell)',
+      description: this.$t('closed_trades.filter.trade_type').toString(),
+      suggestions: () => ['buy', 'sell'],
       validator: () => true
     },
     {
       key: 'date',
       matchingProperty: 'timestamp',
-      description: 'filter by the date of the trade',
+      description: this.$t('closed_trades.filter.date').toString(),
+      suggestions: () => [],
       validator: () => true
     }
   ];
+
+  get quoteAssets(): string[] {
+    return this.data
+      .map(value => value.quoteAsset)
+      .filter(uniqueStrings)
+      .map(value => this.getSymbol(value));
+  }
+
+  get baseAssets(): string[] {
+    return this.data
+      .map(value => value.baseAsset)
+      .filter(uniqueStrings)
+      .map(value => this.getSymbol(value));
+  }
 
   setSelected(selected: boolean) {
     const selection = this.selected;
@@ -485,10 +504,10 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
       .generalSettings.dateDisplayFormat;
     this.visibleTrades = this.data.filter(trade => {
       const quoteMatch = filter.quoteAsset
-        ? this.getSymbol(trade.quoteAsset).startsWith(filter.quoteAsset)
+        ? this.getSymbol(trade.quoteAsset) === filter.quoteAsset
         : true;
       const baseMatch = filter.baseAsset
-        ? this.getSymbol(trade.baseAsset).startsWith(filter.baseAsset)
+        ? this.getSymbol(trade.baseAsset) === filter.baseAsset
         : true;
       const dateMatch = filter.timestamp
         ? formatDate(trade.timestamp, dateFormat).indexOf(filter.timestamp) >= 0

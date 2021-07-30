@@ -1,6 +1,29 @@
 <template>
-  <div class="pa-4">
-    <div class="caption-text text--secondary">Available filters</div>
+  <div class="px-4 py-2">
+    <div v-if="suggestion" class="pb-2">
+      <div v-for="(text, index) in suggest" :key="text" :tabindex="index">
+        <v-btn
+          text
+          color="primary"
+          :class="$style.fullwidth"
+          class="text-none text-body-1"
+          @click="applyFilter(text)"
+        >
+          <span class="text-start" :class="$style.fullwidth">
+            <span class="font-weight-medium">
+              {{ text }}
+            </span>
+          </span>
+        </v-btn>
+      </div>
+    </div>
+    <div v-else-if="keyword" class="py-2">
+      <span>{{ $t('no_filter_available.unsupported_filter') }}</span>
+      <span class="font-weight-medium ms-2">{{ keyword }}</span>
+    </div>
+    <div class="caption-text text--secondary">
+      {{ $t('no_filter_available.title') }}
+    </div>
     <v-divider class="my-2" />
     <filter-entry
       v-for="matcher in available"
@@ -8,13 +31,29 @@
       :matcher="matcher"
       @click="click($event)"
     />
+    <v-divider class="mt-2" />
+    <div class="caption-text text--secondary text--lighten-2 mt-2">
+      <span>{{ $t('no_filter_available.hint.description') }}</span>
+      <span class="font-weight-medium">
+        {{ $t('no_filter_available.hint.example') }}
+      </span>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { Nullable } from '@rotki/common';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  watch
+} from '@vue/composition-api';
 import FilterEntry from '@/components/history/filtering/FilterEntry.vue';
 import { SearchMatcher } from '@/components/history/filtering/types';
+import { splitSearch } from '@/components/history/filtering/utils';
+import { compareSymbols } from '@/utils/assets';
 
 export default defineComponent({
   name: 'NoFilterAvailable',
@@ -27,11 +66,24 @@ export default defineComponent({
     used: {
       required: true,
       type: Array as PropType<string[]>
+    },
+    suggestion: {
+      required: false,
+      type: Object as PropType<SearchMatcher<any> | null>,
+      default: null
+    },
+    keyword: {
+      required: false,
+      type: String,
+      default: null
     }
   },
   emits: {
     click: (key: string) => {
       return key.trim().length > 0;
+    },
+    'apply:filter': (filter: string) => {
+      return filter.length > 0;
     }
   },
   setup(props, { emit }) {
@@ -44,13 +96,64 @@ export default defineComponent({
         used: string[];
       }) => matchers.filter(({ key }) => !used.includes(key))
     );
+
+    const suggest = computed<string[]>(
+      ({
+        keyword,
+        suggestion
+      }: {
+        keyword: Nullable<string>;
+        suggestion: Nullable<SearchMatcher<any>>;
+      }) => {
+        if (!keyword || !suggestion) {
+          return '';
+        }
+
+        const search = splitSearch(keyword);
+        const suggestedFilter = suggestion.key;
+
+        const searchString = search[1] ?? '';
+        const suggestions: string[] = suggestion
+          .suggestions()
+          .sort((a, b) => compareSymbols(a, b, searchString))
+          .map(sug => `${suggestedFilter}: ${sug}`)
+          .slice(0, 5);
+
+        return suggestions;
+      }
+    );
+
+    const lastSuggestion = ref('');
+    watch(suggest, value => {
+      if (value.length > 0) {
+        if (lastSuggestion.value !== value[0]) {
+          lastSuggestion.value = value[0];
+          emit('suggest', value[0]);
+        }
+      } else {
+        lastSuggestion.value = '';
+        emit('suggest', '');
+      }
+    });
+
     const click = (key: string) => {
       emit('click', key);
     };
+    const applyFilter = (filter: string) => {
+      emit('apply:filter', filter);
+    };
     return {
       click,
+      applyFilter,
+      suggest,
       available
     };
   }
 });
 </script>
+
+<style module>
+.fullwidth {
+  width: 100%;
+}
+</style>

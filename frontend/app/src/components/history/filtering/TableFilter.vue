@@ -13,12 +13,17 @@
     :search-input.sync="search"
     @input="searchUpdated($event)"
     @update:search-input="onSearch($event)"
+    @keydown.enter="selectFirst()"
+    @keydown.tab="selectFirst()"
   >
     <template #no-data>
       <no-filter-available
         :matchers="matchers"
         :used="usedKeys"
+        :keyword="search"
         :suggestion="suggestion"
+        @apply:filter="applyFilter($event)"
+        @suggest="firstSuggestion = $event"
         @click="appendToSearch($event)"
       />
     </template>
@@ -26,12 +31,19 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, ref } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  nextTick,
+  PropType,
+  ref
+} from '@vue/composition-api';
 import NoFilterAvailable from '@/components/history/filtering/NoFilterAvailable.vue';
 import {
   MatchedKeyword,
   SearchMatcher
 } from '@/components/history/filtering/types';
+import { splitSearch } from '@/components/history/filtering/utils';
 import { assert } from '@/utils/assertions';
 
 export default defineComponent({
@@ -53,13 +65,13 @@ export default defineComponent({
     const selection = ref<string[]>([]);
     const search = ref('');
     const validKeys = props.matchers.map(({ key }) => key);
-    const suggestion = computed(
-      () => validKeys.find(value => value.startsWith(search.value)) ?? ''
-    );
+    const suggestion = computed(() => {
+      const searchKey = splitSearch(search.value);
+      const key = validKeys.find(value => value.startsWith(searchKey[0]));
+      return props.matchers.find(matcher => matcher.key === key) ?? null;
+    });
     const usedKeys = computed(() =>
-      selection.value.map(
-        entry => entry.split(':').map(value => value.trim())[0]
-      )
+      selection.value.map(entry => splitSearch(entry)[0])
     );
     const searchUpdated = (selected: string[]) => {
       const strings: string[] = [...selection.value].filter(value =>
@@ -71,7 +83,7 @@ export default defineComponent({
         if (!trimmed) {
           continue;
         }
-        const filter = entry.split(':').map(value => value.trim());
+        const filter = splitSearch(entry);
         const searchKey = filter[0];
         const keyword = filter[1];
 
@@ -92,7 +104,7 @@ export default defineComponent({
         const searchTerm = `${searchKey}: ${keyword}`;
         if (usedKeys.value.includes(searchKey)) {
           const index = strings.findIndex(
-            value => value.split(':').map(text => text.trim())[0] === searchKey
+            value => splitSearch(value)[0] === searchKey
           );
           strings[index] = searchTerm;
         } else {
@@ -115,14 +127,58 @@ export default defineComponent({
     const onSearch = (key: string) => {
       console.log(key);
     };
+
+    const applyFilter = (filter: string) => {
+      const newSelection = [...selection.value];
+      const splitFilter = splitSearch(filter);
+      const index = newSelection.findIndex(
+        value => splitSearch(value)[0] === splitFilter[0]
+      );
+
+      if (index >= 0) {
+        newSelection[index] = filter;
+      } else {
+        newSelection.push(filter);
+      }
+
+      selection.value = newSelection;
+      search.value = '';
+
+      const matched: Partial<MatchedKeyword<any>> = {};
+
+      for (const entry of selection.value) {
+        console.log(entry);
+        const entryFilter = splitSearch(entry);
+        const searchKey = entryFilter[0];
+        const matcher = props.matchers.find(value => value.key === searchKey);
+        assert(matcher);
+        matched[matcher.matchingProperty] = entryFilter[1].trim();
+      }
+
+      emit('update:matches', matched);
+    };
+
+    const firstSuggestion = ref('');
+    const selectFirst = () => {
+      console.log(firstSuggestion.value);
+      if (firstSuggestion.value.length > 0) {
+        nextTick(() => {
+          applyFilter(firstSuggestion.value);
+        });
+      }
+    };
+
     return {
       search,
       selection,
       usedKeys,
       suggestion,
+      firstSuggestion,
       onSearch,
       searchUpdated,
       appendToSearch,
+      applyFilter,
+      selectFirst,
       input
     };
   }
