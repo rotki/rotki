@@ -27,18 +27,20 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import account_for_manually_tracked_balances
+from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.manager import (
     ETHEREUM_NODES_TO_CONNECT_AT_START,
     EthereumManager,
     NodeName,
 )
-from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.typing import SubstrateChain
-from rotkehlchen.chain.substrate.utils import KUSAMA_NODES_TO_CONNECT_AT_START
-from rotkehlchen.chain.substrate.utils import POLKADOT_NODES_TO_CONNECT_AT_START
+from rotkehlchen.chain.substrate.utils import (
+    KUSAMA_NODES_TO_CONNECT_AT_START,
+    POLKADOT_NODES_TO_CONNECT_AT_START,
+)
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data.importer import DataImporter
@@ -56,9 +58,9 @@ from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
+from rotkehlchen.externalapis.covalent import Covalent, chains_id
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
-from rotkehlchen.externalapis.covalent import Covalent, chains_id
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.globaldb.updates import AssetsUpdater
@@ -1044,6 +1046,11 @@ class Rotkehlchen():
 
         if settings.ksm_rpc_endpoint is not None:
             result, msg = self.chain_manager.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
+            if not result:
+                return False, msg
+
+        if settings.dot_rpc_endpoint is not None:
+            result, msg = self.chain_manager.set_dot_rpc_endpoint(settings.dot_rpc_endpoint)
             if not result:
                 return False, msg
 
