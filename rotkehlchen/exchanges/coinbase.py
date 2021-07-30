@@ -371,14 +371,10 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if 'data' not in json_ret:
                 raise RemoteError(f'Coinbase json response does not contain data: {response.text}')
 
-            # add to list
-            # the `data` attr is a list in itself
+            # `data` attr is a list in itself
             all_items.extend(json_ret['data'])
-
             if ignore_pagination or 'pagination' not in json_ret:
-                # break loop if,
-                # ignore_pagination is True
-                # we didn't get `pagination` in response
+                # break out of the loop, no need to handle pagination
                 break
 
             if 'next_uri' not in json_ret['pagination']:

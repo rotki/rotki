@@ -323,7 +323,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             for lp in lps:
                 # Try to get price from either known or unknown asset price.
                 # Otherwise keep existing price (zero)
-                total_user_balance = FVal(0)
+                total_user_balance = ZERO
                 for asset in lp.assets:
                     asset_ethereum_address = asset.asset.ethereum_address
                     asset_usd_price = known_asset_price.get(
@@ -635,7 +635,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         if only_cache:
             return self._fetch_trades_from_db(addresses, from_timestamp, to_timestamp)
 
-        # Get addresses' last used query range for Sushiswap trades
+        # Get addresses' last used query range for this AMM's trades
         for address in addresses:
             entry_name = f'{self.trades_prefix}_{address}'
             trades_range = self.database.get_used_query_range(name=entry_name)
@@ -830,7 +830,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             self,
             addresses: List[ChecksumEthAddress],
     ) -> ProtocolBalance:
-        """Get the addresses' pools data querying the Sushiswap subgraph
+        """Get the addresses' pools data querying this AMM's subgraph
 
         Each liquidity position is converted into a <LiquidityPool>.
         """
@@ -878,8 +878,8 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     lp_address = deserialize_ethereum_address(lp_pair['id'])
                 except DeserializationError as e:
                     msg = (
-                        f'Failed to Deserialize address. Skipping pool {lp_pair} '
-                        f'with user address {lp["user"]["id"]}'
+                        f'Failed to Deserialize address. Skipping {self.location} '
+                        f'pool {lp_pair} with user address {lp["user"]["id"]}'
                     )
                     log.error(msg)
                     raise RemoteError(msg) from e
@@ -897,7 +897,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     except DeserializationError as e:
                         msg = (
                             f'Failed to deserialize token address {token["id"]} '
-                            f'Bad token address in lp pair came from the graph.'
+                            f'Bad token address in {self.location} lp pair came from the graph.'
                         )
                         log.error(msg)
                         raise RemoteError(msg) from e
