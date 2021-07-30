@@ -16,7 +16,7 @@ from rotkehlchen.chain.ethereum.graph import (
     Graph,
     format_query_indentation,
 )
-from rotkehlchen.chain.ethereum.modules.uniswap.graph import TOKEN_DAY_DATAS_QUERY
+from rotkehlchen.chain.ethereum.interfaces.ammswap.graph import TOKEN_DAY_DATAS_QUERY
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError

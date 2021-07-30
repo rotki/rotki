@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from rotkehlchen.chain.ethereum.modules.ammswap.typing import LiquidityPool, LiquidityPoolEvent
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import LiquidityPool, LiquidityPoolEvent
 
 from .utils import (
     LP_1_EVENTS,

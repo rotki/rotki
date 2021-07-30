@@ -8,10 +8,8 @@ from rotkehlchen.chain.ethereum.modules.balancer.typing import (
     BALANCER_EVENTS_PREFIX,
     BALANCER_TRADES_PREFIX,
 )
-from rotkehlchen.chain.ethereum.modules.uniswap import (
-    UNISWAP_EVENTS_PREFIX,
-    UNISWAP_TRADES_PREFIX,
-)
+from rotkehlchen.chain.ethereum.interfaces.ammswap import UNISWAP_TRADES_PREFIX
+from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.exchanges.data_structures import hash_id

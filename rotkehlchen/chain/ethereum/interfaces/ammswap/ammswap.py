@@ -8,6 +8,7 @@ This interface is used at the moment in:
 - Sushiswap Module
 """
 import abc
+from datetime import datetime, time
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple
 
@@ -15,7 +16,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
-from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, format_query_indentation
+from rotkehlchen.chain.ethereum.graph import Graph, GRAPH_QUERY_LIMIT, format_query_indentation
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
@@ -26,12 +27,13 @@ from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
     AssetAmount,
     ChecksumEthAddress,
+    Location,
     Price,
     Timestamp,
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.chain.ethereum.modules.ammswap.typing import (
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
     AddressEventsBalances,
     AddressToLPBalances,
     AddressTrades,
@@ -42,9 +44,15 @@ from rotkehlchen.chain.ethereum.modules.ammswap.typing import (
     LiquidityPoolEvent,
     LiquidityPoolEventsBalance,
 )
-from rotkehlchen.chain.ethereum.modules.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
+from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 
-from .graph import MINTS_QUERY, BURNS_QUERY
+from .graph import (
+    MINTS_QUERY,
+    BURNS_QUERY,
+    SWAPS_QUERY,
+    SUSHISWAP_SWAPS_QUERY,
+    TOKEN_DAY_DATAS_QUERY,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -83,25 +91,42 @@ def add_trades_from_swaps(
     return trades
 
 
+UNISWAP_TRADES_PREFIX = 'uniswap_trades'
+SUSHISWAP_TRADES_PREFIX = 'sushiswap_trades'
+
+
 class AMMSwapPlatform(metaclass=abc.ABCMeta):
     """AMM Module interace"""
     def __init__(
             self,
+            location: Location,
             ethereum_manager: 'EthereumManager',
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
-            mint_event: EventType,
-            burn_event: EventType,
+            graph: Graph,
     ) -> None:
+        self.location = location
         self.ethereum = ethereum_manager
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
         self.data_directory = database.user_data_dir.parent
         self.trades_lock = Semaphore()
-        self.mint_event = mint_event
-        self.burn_event = burn_event
+        self.graph = graph
+
+        if self.location == Location.UNISWAP:
+            self.mint_event = EventType.MINT_UNISWAP
+            self.burn_event = EventType.BURN_UNISWAP
+            self.swaps_query = SWAPS_QUERY
+            self.trades_prefix = UNISWAP_TRADES_PREFIX
+        elif self.location == Location.SUSHISWAP:
+            self.mint_event = EventType.MINT_SUSHISWAP
+            self.burn_event = EventType.BURN_SUSHISWAP
+            self.swaps_query = SUSHISWAP_SWAPS_QUERY
+            self.trades_prefix = SUSHISWAP_TRADES_PREFIX
+        else:
+            raise NotImplementedError(f'AMM platform with location {self.location} not valid.')
 
     def _calculate_events_balances(
         self,
@@ -151,7 +176,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             profit_loss1 = aggregated_amount.profit_loss1
             usd_profit_loss = aggregated_amount.usd_profit_loss
 
-            # Add current pool balances looking up the pool
+            # Add current pool balances by looking up the pool
             if pool in pool_balance:
                 token0 = pool_balance[pool].assets[0].asset
                 token1 = pool_balance[pool].assets[1].asset
@@ -318,7 +343,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             end_ts: Timestamp,
             event_type: EventType,
     ) -> List[LiquidityPoolEvent]:
-        """Get the address' events (mints & burns) querying the Uniswap subgraph
+        """Get the address' events (mints & burns) querying the AMM's subgraph
         Each event data is stored in a <LiquidityPoolEvent>.
         """
         address_events: List[LiquidityPoolEvent] = []
@@ -329,7 +354,9 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             query = BURNS_QUERY
             query_schema = 'burns'
         else:
-            log.error(f'Unexpected event_type: {event_type}. Skipping events query.')
+            log.error(
+                f'Unexpected {self.location} event_type: {event_type}. Skipping events query.',
+            )
             return address_events
 
         param_types = {
@@ -350,7 +377,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
         while True:
             try:
-                result = self.graph.query(  # type: ignore
+                result = self.graph.query(
                     querystr=querystr,
                     param_types=param_types,
                     param_values=param_values,
@@ -359,7 +386,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                 self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
                 raise
             except AttributeError as e:
-                raise ModuleInitializationFailure('subgraph remote error') from e
+                raise ModuleInitializationFailure(f'{self.location} subgraph remote error') from e
 
             result_data = result[query_schema]
 
@@ -373,8 +400,8 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     pool_deserialized = deserialize_ethereum_address(event['pair']['id'])
                 except DeserializationError as e:
                     msg = (
-                        f'Failed to deserialize address involved in liquidity pool event. '
-                        f'Token 0: {token0_["id"]}, token 1: {token0_["id"]},'
+                        f'Failed to deserialize address involved in liquidity pool event for'
+                        f' {self.location}. Token 0: {token0_["id"]}, token 1: {token0_["id"]},'
                         f' pair: {event["pair"]["id"]}.'
                     )
                     log.error(msg)
@@ -422,6 +449,142 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
         return address_events
 
+    def _read_subgraph_trades(
+            self,
+            address: ChecksumEthAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[AMMTrade]:
+        """Get the address' trades data querying the AMM subgraph
+
+        Each trade (swap) instantiates an <AMMTrade>.
+
+        The trade pair (i.e. BASE_QUOTE) is determined by `reserve0_reserve1`.
+        Translated to AMM lingo:
+
+        Trade type BUY:
+        - `asset1In` (QUOTE, reserve1) is gt 0.
+        - `asset0Out` (BASE, reserve0) is gt 0.
+
+        Trade type SELL:
+        - `asset0In` (BASE, reserve0) is gt 0.
+        - `asset1Out` (QUOTE, reserve1) is gt 0.
+
+        May raise
+        - RemoteError
+        """
+        trades: List[AMMTrade] = []
+        param_types = {
+            '$limit': 'Int!',
+            '$offset': 'Int!',
+            '$address': 'Bytes!',
+            '$start_ts': 'BigInt!',
+            '$end_ts': 'BigInt!',
+        }
+        param_values = {
+            'limit': GRAPH_QUERY_LIMIT,
+            'offset': 0,
+            'address': address.lower(),
+            'start_ts': str(start_ts),
+            'end_ts': str(end_ts),
+        }
+        querystr = format_query_indentation(self.swaps_query.format())
+
+        while True:
+            try:
+                result = self.graph.query(
+                    querystr=querystr,
+                    param_types=param_types,
+                    param_values=param_values,
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                raise
+
+            for entry in result['swaps']:
+                swaps = []
+                for swap in entry['transaction']['swaps']:
+                    timestamp = swap['timestamp']
+                    swap_token0 = swap['pair']['token0']
+                    swap_token1 = swap['pair']['token1']
+
+                    try:
+                        token0_deserialized = deserialize_ethereum_address(swap_token0['id'])
+                        token1_deserialized = deserialize_ethereum_address(swap_token1['id'])
+                        from_address_deserialized = deserialize_ethereum_address(swap['sender'])
+                        to_address_deserialized = deserialize_ethereum_address(swap['to'])
+                    except DeserializationError:
+                        msg = (
+                            f'Failed to deserialize addresses in trade from {self.location} graph'
+                            f' with token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '
+                            f'swap sender: {swap["sender"]}, swap receiver {swap["to"]}'
+                        )
+                        log.error(msg)
+                        continue
+
+                    token0 = get_or_create_ethereum_token(
+                        userdb=self.database,
+                        symbol=swap_token0['symbol'],
+                        ethereum_address=token0_deserialized,
+                        name=swap_token0['name'],
+                        decimals=swap_token0['decimals'],
+                    )
+                    token1 = get_or_create_ethereum_token(
+                        userdb=self.database,
+                        symbol=swap_token1['symbol'],
+                        ethereum_address=token1_deserialized,
+                        name=swap_token1['name'],
+                        decimals=int(swap_token1['decimals']),
+                    )
+
+                    try:
+                        amount0_in = FVal(swap['amount0In'])
+                        amount1_in = FVal(swap['amount1In'])
+                        amount0_out = FVal(swap['amount0Out'])
+                        amount1_out = FVal(swap['amount1Out'])
+                    except ValueError as e:
+                        log.error(
+                            f'Failed to read amounts in {self.location} swap {str(swap)}. '
+                            f'{str(e)}.',
+                        )
+                        continue
+
+                    swaps.append(AMMSwap(
+                        tx_hash=swap['id'].split('-')[0],
+                        log_index=int(swap['logIndex']),
+                        address=address,
+                        from_address=from_address_deserialized,
+                        to_address=to_address_deserialized,
+                        timestamp=Timestamp(int(timestamp)),
+                        location=self.location,
+                        token0=token0,
+                        token1=token1,
+                        amount0_in=AssetAmount(amount0_in),
+                        amount1_in=AssetAmount(amount1_in),
+                        amount0_out=AssetAmount(amount0_out),
+                        amount1_out=AssetAmount(amount1_out),
+                    ))
+
+                # with the new logic the list of swaps can be empty, in that case don't try
+                # to make trades from the swaps
+                if len(swaps) == 0:
+                    continue
+
+                # Now that we got all swaps for a transaction, create the trade object
+                trades.extend(self._tx_swaps_to_trades(swaps))
+
+            # Check whether an extra request is needed
+            if len(result['swaps']) < GRAPH_QUERY_LIMIT:
+                break
+
+            # Update pagination step
+            param_values = {
+                **param_values,
+                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
+            }
+
+        return trades
+
     def _get_trades_graph(
             self,
             addresses: List[ChecksumEthAddress],
@@ -436,6 +599,150 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
         return address_trades
 
+    def _get_trades(
+            self,
+            addresses: List[ChecksumEthAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            only_cache: bool,
+    ) -> AddressTrades:
+        """Request via graph all trades for new addresses and the latest ones
+        for already existing addresses. Then the requested trade are written in
+        DB and finally all DB trades are read and returned.
+        """
+        address_amm_trades: AddressTrades = {}
+        new_addresses: List[ChecksumEthAddress] = []
+        existing_addresses: List[ChecksumEthAddress] = []
+        min_end_ts: Timestamp = to_timestamp
+
+        if only_cache:
+            return self._fetch_trades_from_db(addresses, from_timestamp, to_timestamp)
+
+        # Get addresses' last used query range for Sushiswap trades
+        for address in addresses:
+            entry_name = f'{self.trades_prefix}_{address}'
+            trades_range = self.database.get_used_query_range(name=entry_name)
+
+            if not trades_range:
+                new_addresses.append(address)
+            else:
+                existing_addresses.append(address)
+                min_end_ts = min(min_end_ts, trades_range[1])
+
+        # Request new addresses' trades
+        if new_addresses:
+            start_ts = Timestamp(0)
+            new_address_trades = self._get_trades_graph(
+                addresses=new_addresses,
+                start_ts=start_ts,
+                end_ts=to_timestamp,
+            )
+            address_amm_trades.update(new_address_trades)
+
+            # Insert last used query range for new addresses
+            for address in new_addresses:
+                entry_name = f'{self.trades_prefix}_{address}'
+                self.database.update_used_query_range(
+                    name=entry_name,
+                    start_ts=start_ts,
+                    end_ts=to_timestamp,
+                )
+
+        # Request existing DB addresses' trades
+        if existing_addresses and to_timestamp > min_end_ts:
+            address_new_trades = self._get_trades_graph(
+                addresses=existing_addresses,
+                start_ts=min_end_ts,
+                end_ts=to_timestamp,
+            )
+            address_amm_trades.update(address_new_trades)
+
+            # Update last used query range for existing addresses
+            for address in existing_addresses:
+                entry_name = f'{self.trades_prefix}_{address}'
+                self.database.update_used_query_range(
+                    name=entry_name,
+                    start_ts=min_end_ts,
+                    end_ts=to_timestamp,
+                )
+
+        # Insert all unique swaps to the DB
+        all_swaps = set()
+        for address in filter(lambda address: address in address_amm_trades, addresses):
+            for trade in address_amm_trades[address]:
+                for swap in trade.swaps:
+                    all_swaps.add(swap)
+
+        self.database.add_amm_swaps(list(all_swaps))
+        return self._fetch_trades_from_db(addresses, from_timestamp, to_timestamp)
+
+    def _get_unknown_asset_price_graph(
+            self,
+            unknown_assets: Set[EthereumToken],
+    ) -> AssetToPrice:
+        """Get today's tokens prices via the AMM subgraph
+
+        AMM provides a token price every day at 00:00:00 UTC
+        This function can raise RemoteError
+        """
+        asset_price: AssetToPrice = {}
+
+        unknown_assets_addresses = (
+            [asset.ethereum_address.lower() for asset in unknown_assets]
+        )
+        querystr = format_query_indentation(TOKEN_DAY_DATAS_QUERY.format())
+        today_epoch = int(
+            datetime.combine(datetime.utcnow().date(), time.min).timestamp(),
+        )
+        param_types = {
+            '$limit': 'Int!',
+            '$offset': 'Int!',
+            '$token_ids': '[String!]',
+            '$datetime': 'Int!',
+        }
+        param_values = {
+            'limit': GRAPH_QUERY_LIMIT,
+            'offset': 0,
+            'token_ids': unknown_assets_addresses,
+            'datetime': today_epoch,
+        }
+        while True:
+            try:
+                result = self.graph.query(
+                    querystr=querystr,
+                    param_types=param_types,
+                    param_values=param_values,
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                raise
+
+            result_data = result['tokenDayDatas']
+
+            for tdd in result_data:
+                try:
+                    token_address = deserialize_ethereum_address(tdd['token']['id'])
+                except DeserializationError as e:
+                    msg = (
+                        f'Error deserializing address {tdd["token"]["id"]} '
+                        f'during uniswap prices query from graph.'
+                    )
+                    log.error(msg)
+                    raise RemoteError(msg) from e
+                asset_price[token_address] = Price(FVal(tdd['priceUSD']))
+
+            # Check whether an extra request is needed
+            if len(result_data) < GRAPH_QUERY_LIMIT:
+                break
+
+            # Update pagination step
+            param_values = {
+                **param_values,
+                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
+            }
+
+        return asset_price
+
     def get_events_history(
         self,
         addresses: List[ChecksumEthAddress],
@@ -443,8 +750,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> AddressEventsBalances:
-        """Get the addresses' events history in the Uniswap protocol
-        """
+        """Get the addresses' events history in the AMM"""
         with self.trades_lock:
             if reset_db_data is True:
                 self.database.delete_uniswap_events_data()
@@ -486,18 +792,13 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> AddressTrades:
-        """Fetch all DB Sushiswap trades within the time range"""
-        try:
-            location = self.location  # type: ignore
-        except AttributeError as e:
-            raise ModuleInitializationFailure('Location not properly set') from e
-
+        """Fetch all DB AMM trades within the time range"""
         db_address_trades: AddressTrades = {}
         for address in addresses:
             db_swaps = self.database.get_amm_swaps(
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
-                location=location,
+                location=self.location,
                 address=address,
             )
             db_trades = self.swaps_to_trades(db_swaps)
@@ -513,7 +814,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AMMTrade]:
-        raise NotImplementedError
+        raise NotImplementedError('should only be implemented by subclasses')
 
     @abc.abstractmethod
     def get_trades_history(
@@ -524,21 +825,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         to_timestamp: Timestamp,
     ) -> AddressTrades:
         """Get the addresses' trades history in the AMMswap protocol"""
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def _get_trades(
-            self,
-            addresses: List[ChecksumEthAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            only_cache: bool,
-    ) -> AddressTrades:
-        """Request via graph all trades for new addresses and the latest ones
-        for already existing addresses. Then the requested trade are written in
-        DB and finally all DB trades are read and returned.
-        """
-        raise NotImplementedError
+        raise NotImplementedError('should only be implemented by subclasses')
 
     @abc.abstractmethod
     def _get_events_balances(
@@ -554,8 +841,6 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    # -- Methods following the EthereumModule interface -- #
-
     @abc.abstractmethod
-    def deactivate(self) -> None:
-        raise NotImplementedError
+    def delete_trade_events(self) -> None:
+        raise NotImplementedError('should only be implemented by subclasses')

@@ -38,70 +38,8 @@ LIQUIDITY_POSITIONS_QUERY = (
     """
 )
 
-TOKEN_DAY_DATAS_QUERY = (
-    """
-    tokenDayDatas
-    (
-        first: $limit,
-        skip: $offset,
-        where: {{
-            token_in: $token_ids,
-            date: $datetime,
-        }}
-    ) {{
-        date
-        token {{
-            id
-        }}
-        priceUSD
-    }}}}
-    """
-)
-
 # Get trades queries
 
-SWAPS_QUERY = (
-    """
-    swaps
-    (
-        first: $limit,
-        skip: $offset,
-        where: {{
-            from: $address,
-            timestamp_gte: $start_ts,
-            timestamp_lte: $end_ts,
-        }}
-    ) {{
-        transaction {{
-            swaps {{
-                id
-                logIndex
-                sender
-                to
-                timestamp
-                pair {{
-                    token0 {{
-                        id
-                        decimals
-                        name
-                        symbol
-                    }}
-                    token1 {{
-                        id
-                        decimals
-                        name
-                        symbol
-                    }}
-                }}
-                amount0In
-                amount0Out
-                amount1In
-                amount1Out
-            }}
-        }}
-    }}}}
-    """
-)
 
 V3_SWAPS_QUERY = (
     """

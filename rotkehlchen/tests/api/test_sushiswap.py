@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.modules.sushiswap import (
     SushiswapPoolEventsBalance,
     SUSHISWAP_EVENTS_PREFIX,
 )
-from rotkehlchen.chain.ethereum.modules.ammswap.typing import EventType
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.misc import ZERO
@@ -60,13 +60,13 @@ UNISWAP_TEST_OPTIONS = [
     (False, '', (NodeName.MYCRYPTO, NodeName.BLOCKSCOUT, NodeName.AVADO_POOL)),
     (True, '', ()),
 ]
-# Skipped infura and many open nodes for now in the CI. Fails flakily due to timeouts
-# from time to time. We should run locally to make sure that it still works.
+
+
 SKIPPED_UNISWAP_TEST_OPTIONS = [UNISWAP_TEST_OPTIONS[-1]]
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[SWAP_ADDRESS]])
-@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+@pytest.mark.parametrize('ethereum_modules', [['sushiswap']])
 @pytest.mark.parametrize(
     'start_with_valid_premium,ethrpc_endpoint,ethereum_manager_connect_at_start',
     SKIPPED_UNISWAP_TEST_OPTIONS,
@@ -81,8 +81,6 @@ def test_get_balances(
 
     Checks the functionality both for the graph queries (when premium) and simple
     onchain queries (without premium)
-
-    THIS IS SUPER FREAKING SLOW. BE WARNED.
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -92,11 +90,11 @@ def test_get_balances(
         premium = Premium(rotki_premium_credentials)
 
     # Set module premium attribute
-    uniswap = rotki.chain_manager.get_module('uniswap')
-    uniswap.premium = premium
+    sushiswap = rotki.chain_manager.get_module('sushiswap')
+    sushiswap.premium = premium
 
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'uniswapbalancesresource'),
+        api_url_for(rotkehlchen_api_server, 'sushiswapbalancesresource'),
         json={'async_query': async_query},
     )
     if async_query:
@@ -352,7 +350,7 @@ def get_expected_trades():
     )]
 
 
-def _query_and_assert_simple_uniswap_trades(setup, api_server, async_query):
+def _query_and_assert_simple_sushiswap_trades(setup, api_server, async_query):
     with ExitStack() as stack:
         # patch ethereum/etherscan to not autodetect tokens
         setup.enter_ethereum_patches(stack)
@@ -399,12 +397,12 @@ def test_get_sushiswap_trades_history(
         btc_accounts=None,
         original_queries=['zerion', 'logs', 'blocknobytime'],
     )
-    _query_and_assert_simple_uniswap_trades(setup, rotkehlchen_api_server, async_query)
+    _query_and_assert_simple_sushiswap_trades(setup, rotkehlchen_api_server, async_query)
     # make sure data are written in the DB
     db_trades = rotki.data.db.get_amm_swaps()
     assert len(db_trades) == 11
     # Query a 2nd time to make sure that when retrieving from the database everything works fine
-    _query_and_assert_simple_uniswap_trades(setup, rotkehlchen_api_server, async_query)
+    _query_and_assert_simple_sushiswap_trades(setup, rotkehlchen_api_server, async_query)
 
 
 # Get events history tests

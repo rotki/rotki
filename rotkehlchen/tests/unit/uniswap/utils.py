@@ -2,7 +2,7 @@ import functools
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.modules.ammswap.typing import (
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
     EventType,
     LiquidityPool,
     LiquidityPoolAsset,

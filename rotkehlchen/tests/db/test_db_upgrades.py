@@ -11,7 +11,6 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.constants.assets import A_WETH
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
@@ -28,16 +27,14 @@ from rotkehlchen.db.upgrades.v7_v8 import (
     v7_generate_asset_movement_id,
 )
 from rotkehlchen.db.upgrades.v13_v14 import REMOVED_ASSETS, REMOVED_ETH_TOKENS
-from rotkehlchen.chain.ethereum.modules.ammswap.typing import EventType, LiquidityPoolEvent
 from rotkehlchen.errors import DBUpgradeError
-from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.database import (
     mock_dbhandler_add_globaldb_assetids,
     mock_dbhandler_ensura_data_integrity,
     mock_dbhandler_update_owned_assets,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
 
 creation_patch = patch(
@@ -2194,47 +2191,6 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 28
-
-
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
-    """Test upgrading the DB from version 28 to version 29
-
-    - Updates values in type column for uniswap_events
-    - Changes table name from uniswap_events to amm_events
-    """
-    msg_aggregator = MessagesAggregator()
-    _use_prepared_db(user_data_dir, 'v28_rotkehlchen.db')
-    # migrate v28
-    db_v28 = _init_db_with_target_version(
-        target_version=29,
-        user_data_dir=user_data_dir,
-        msg_aggregator=msg_aggregator,
-    )
-    # Try to add an event
-    cursor = db_v28.conn.cursor()
-    event = LiquidityPoolEvent(
-        tx_hash='0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824',
-        log_index=263,
-        address="0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89",
-        timestamp=Timestamp(1604273256),
-        event_type=EventType.MINT_UNISWAP,
-        pool_address="0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89",
-        token0=A_WETH,
-        token1=A_WETH,
-        amount0=AssetAmount(FVal('605.773209925184996494')),
-        amount1=AssetAmount(FVal('1.106631443395672732')),
-        usd_price=Price(FVal('872.4689300619698095220125311431804')),
-        lp_amount=AssetAmount(FVal('1.220680531244355402')),
-    )
-    db_v28.add_amm_events([event])
-    cursor.execute('SELECT COUNT(*) FROM amm_events;')
-    assert cursor.fetchone() == (1,)
-    cursor.execute(
-        'SELECT count(*) FROM sqlite_master WHERE type="table" '
-        'AND name="uniswap_events";',
-    )
-    assert cursor.fetchone() == (0,)
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

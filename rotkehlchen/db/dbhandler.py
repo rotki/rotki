@@ -22,7 +22,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
     deserialize_derivation_path_for_db,
 )
 from rotkehlchen.chain.ethereum.modules.aave.constants import ATOKENV1_TO_ASSET
-from rotkehlchen.chain.ethereum.modules.ammswap.typing import EventType, LiquidityPoolEvent
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.adex import (
     ADEX_EVENTS_PREFIX,
     AdexEventType,
@@ -37,13 +37,11 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
     BALANCER_TRADES_PREFIX,
     BalancerEvent,
 )
-from rotkehlchen.chain.ethereum.modules.sushiswap import (
-    SUSHISWAP_EVENTS_PREFIX,
-    SUSHISWAP_TRADES_PREFIX,
-)
-from rotkehlchen.chain.ethereum.modules.uniswap import (
-    UNISWAP_EVENTS_PREFIX,
+from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
+from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
+from rotkehlchen.chain.ethereum.interfaces.ammswap import (
     UNISWAP_TRADES_PREFIX,
+    SUSHISWAP_TRADES_PREFIX,
 )
 from rotkehlchen.chain.ethereum.structures import (
     AaveEvent,
