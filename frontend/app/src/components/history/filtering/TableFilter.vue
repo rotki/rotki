@@ -76,7 +76,7 @@ export default defineComponent({
       selection.value.map(entry => splitSearch(entry)[0])
     );
     const searchUpdated = (selected: string[]) => {
-      const strings: string[] = [...selection.value].filter(
+      let strings: string[] = [...selection.value].filter(
         value =>
           selected.includes(value) ||
           selected.find(selection => value.startsWith(selection))
@@ -102,6 +102,11 @@ export default defineComponent({
 
         const matcher = props.matchers.find(value => value.key === searchKey);
         assert(matcher);
+
+        if (!matcher.validate(keyword)) {
+          strings = strings.filter(filter => filter !== entry);
+          continue;
+        }
 
         matched[matcher.matchingProperty] = filter[1].trim();
         const searchTerm = `${searchKey}: ${keyword}`;

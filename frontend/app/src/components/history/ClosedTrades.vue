@@ -359,28 +359,28 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
       matchingProperty: 'baseAsset',
       description: this.$t('closed_trades.filter.base_asset').toString(),
       suggestions: () => this.baseAssets,
-      validator: () => true
+      validate: (asset: string) => this.baseAssets.includes(asset)
     },
     {
       key: 'quote',
       matchingProperty: 'quoteAsset',
       description: this.$t('closed_trades.filter.quote_asset').toString(),
       suggestions: () => this.quoteAssets,
-      validator: () => true
+      validate: (asset: string) => this.quoteAssets.includes(asset)
     },
     {
       key: 'action',
       matchingProperty: 'tradeType',
       description: this.$t('closed_trades.filter.trade_type').toString(),
       suggestions: () => ['buy', 'sell'],
-      validator: () => true
+      validate: type => ['buy', 'sell'].includes(type)
     },
     {
       key: 'date',
       matchingProperty: 'timestamp',
       description: this.$t('closed_trades.filter.date').toString(),
       suggestions: () => [],
-      validator: () => true
+      validate: () => true
     }
   ];
 
