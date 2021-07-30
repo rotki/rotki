@@ -9,3 +9,9 @@ export interface SearchMatcher<T> {
 export type MatchedKeyword<T> = {
   readonly [key in keyof T]: string;
 };
+
+export type Suggestion = {
+  readonly index: number;
+  readonly total: number;
+  readonly suggestion: string;
+};

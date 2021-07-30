@@ -12,9 +12,7 @@
     prepend-inner-icon="mdi-filter-variant"
     :search-input.sync="search"
     @input="searchUpdated($event)"
-    @update:search-input="onSearch($event)"
-    @keydown.enter="selectFirst()"
-    @keydown.tab="selectFirst()"
+    @keydown.enter="applySuggestion"
   >
     <template #no-data>
       <no-filter-available
@@ -22,8 +20,9 @@
         :used="usedKeys"
         :keyword="search"
         :suggestion="suggestion"
+        :selected-suggestion="selectedSuggestion"
         @apply:filter="applyFilter($event)"
-        @suggest="firstSuggestion = $event"
+        @suggest="suggestedFilter = $event"
         @click="appendToSearch($event)"
       />
     </template>
@@ -35,13 +34,16 @@ import {
   computed,
   defineComponent,
   nextTick,
+  onMounted,
   PropType,
-  ref
+  ref,
+  watch
 } from '@vue/composition-api';
 import NoFilterAvailable from '@/components/history/filtering/NoFilterAvailable.vue';
 import {
   MatchedKeyword,
-  SearchMatcher
+  SearchMatcher,
+  Suggestion
 } from '@/components/history/filtering/types';
 import { splitSearch } from '@/components/history/filtering/utils';
 import { assert } from '@/utils/assertions';
@@ -74,8 +76,10 @@ export default defineComponent({
       selection.value.map(entry => splitSearch(entry)[0])
     );
     const searchUpdated = (selected: string[]) => {
-      const strings: string[] = [...selection.value].filter(value =>
-        selected.includes(value)
+      const strings: string[] = [...selection.value].filter(
+        value =>
+          selected.includes(value) ||
+          selected.find(selection => value.startsWith(selection))
       );
       const matched: Partial<MatchedKeyword<any>> = {};
       for (const entry of selected) {
@@ -93,7 +97,6 @@ export default defineComponent({
 
         const fullMatch = validKeys.find(key => searchKey === key);
         if (!fullMatch) {
-          console.log(`didn't match ${entry}`);
           continue;
         }
 
@@ -124,9 +127,6 @@ export default defineComponent({
       }
       input.value.focus();
     };
-    const onSearch = (key: string) => {
-      console.log(key);
-    };
 
     const applyFilter = (filter: string) => {
       const newSelection = [...selection.value];
@@ -142,12 +142,10 @@ export default defineComponent({
       }
 
       selection.value = newSelection;
-      search.value = '';
 
       const matched: Partial<MatchedKeyword<any>> = {};
 
       for (const entry of selection.value) {
-        console.log(entry);
         const entryFilter = splitSearch(entry);
         const searchKey = entryFilter[0];
         const matcher = props.matchers.find(value => value.key === searchKey);
@@ -158,27 +156,50 @@ export default defineComponent({
       emit('update:matches', matched);
     };
 
-    const firstSuggestion = ref('');
-    const selectFirst = () => {
-      console.log(firstSuggestion.value);
-      if (firstSuggestion.value.length > 0) {
+    const selectedSuggestion = ref(0);
+    const suggestedFilter = ref<Suggestion>({
+      index: 0,
+      total: 0,
+      suggestion: ''
+    });
+    const applySuggestion = () => {
+      const filter = suggestedFilter.value;
+      const suggestion = filter.suggestion;
+      if (suggestion.length > 0) {
         nextTick(() => {
-          applyFilter(firstSuggestion.value);
+          applyFilter(suggestion);
         });
       }
+      selectedSuggestion.value = 0;
     };
+
+    onMounted(() => {
+      input.value.onTabDown = function (e: KeyboardEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (selectedSuggestion.value < suggestedFilter.value.total - 1) {
+          selectedSuggestion.value += 1;
+        } else {
+          selectedSuggestion.value = 0;
+        }
+      };
+    });
+
+    watch(search, () => {
+      selectedSuggestion.value = 0;
+    });
 
     return {
       search,
       selection,
       usedKeys,
       suggestion,
-      firstSuggestion,
-      onSearch,
+      suggestedFilter,
+      selectedSuggestion,
       searchUpdated,
       appendToSearch,
       applyFilter,
-      selectFirst,
+      applySuggestion,
       input
     };
   }

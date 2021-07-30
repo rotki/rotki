@@ -5,7 +5,10 @@
         <v-btn
           text
           color="primary"
-          :class="$style.fullwidth"
+          :class="{
+            [$style.fullwidth]: true,
+            [$style.selected]: index === selectedSuggestion
+          }"
           class="text-none text-body-1"
           @click="applyFilter(text)"
         >
@@ -48,10 +51,14 @@ import {
   defineComponent,
   PropType,
   ref,
+  toRefs,
   watch
 } from '@vue/composition-api';
 import FilterEntry from '@/components/history/filtering/FilterEntry.vue';
-import { SearchMatcher } from '@/components/history/filtering/types';
+import {
+  SearchMatcher,
+  Suggestion
+} from '@/components/history/filtering/types';
 import { splitSearch } from '@/components/history/filtering/utils';
 import { compareSymbols } from '@/utils/assets';
 
@@ -76,6 +83,10 @@ export default defineComponent({
       required: false,
       type: String,
       default: null
+    },
+    selectedSuggestion: {
+      required: true,
+      type: Number
     }
   },
   emits: {
@@ -124,15 +135,28 @@ export default defineComponent({
     );
 
     const lastSuggestion = ref('');
+    const { selectedSuggestion } = toRefs(props);
+
+    function updateSuggestion(value: string[], index: Number) {
+      lastSuggestion.value = value[index];
+      emit('suggest', {
+        suggestion: value[index],
+        index: index,
+        total: value.length
+      } as Suggestion);
+    }
+
+    watch(selectedSuggestion, index => {
+      updateSuggestion(suggest.value, index);
+    });
     watch(suggest, value => {
       if (value.length > 0) {
         if (lastSuggestion.value !== value[0]) {
-          lastSuggestion.value = value[0];
-          emit('suggest', value[0]);
+          updateSuggestion(value, 0);
         }
       } else {
         lastSuggestion.value = '';
-        emit('suggest', '');
+        emit('suggest', { suggestion: '', index: 0, total: 0 } as Suggestion);
       }
     });
 
@@ -155,5 +179,9 @@ export default defineComponent({
 <style module>
 .fullwidth {
   width: 100%;
+}
+
+.selected {
+  background-color: var(--v-primary-lighten4);
 }
 </style>
