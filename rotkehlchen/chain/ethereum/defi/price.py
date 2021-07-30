@@ -65,7 +65,6 @@ CURVEFI_SUSDV2SWAP = EthereumConstants().contract('CURVEFI_SUSDV2SWAP')
 CURVEFI_3POOLSWAP = EthereumConstants().contract('CURVEFI_3POOLSWAP')
 CURVEFI_A3CRVSWAP = EthereumConstants().contract('CURVEFI_A3CRVSWAP')
 CURVEFI_GUSDC3CRVSWAP = EthereumConstants().contract('CURVEFI_GUSDC3CRVSWAP')
-YEARN_CONTROLLER = EthereumConstants().contract('YEARN_CONTROLLER')
 
 HARVEST_VAULTS = (
     A_FARM_USDC,
