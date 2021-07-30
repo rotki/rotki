@@ -256,7 +256,7 @@ class AaveBlockchainInquirer(AaveInquirer):
                 usd_price = query_usd_price_zero_if_error(
                     asset=reserve_asset,
                     time=timestamp,
-                    location='aave deposit',
+                    location=f'aave deposit {tx_hash}',
                     msg_aggregator=self.msg_aggregator,
                 )
                 deposit_amount = deposit / (FVal(10) ** FVal(decimals))
@@ -275,10 +275,11 @@ class AaveBlockchainInquirer(AaveInquirer):
                 ))
 
         for data in mint_data:
+            tx_hash = data[3]
             usd_price = query_usd_price_zero_if_error(
                 asset=atoken,
                 time=data[2],
-                location='aave interest profit',
+                location=f'aave interest profit {tx_hash}',
                 msg_aggregator=self.msg_aggregator,
             )
             interest_amount = data[1] / (FVal(10) ** FVal(decimals))
@@ -291,7 +292,7 @@ class AaveBlockchainInquirer(AaveInquirer):
                 ),
                 block_number=data[0],
                 timestamp=data[2],
-                tx_hash=data[3],
+                tx_hash=tx_hash,
                 log_index=mint_data_to_log_index[data],
             ))
 
@@ -305,7 +306,7 @@ class AaveBlockchainInquirer(AaveInquirer):
                 usd_price = query_usd_price_zero_if_error(
                     asset=reserve_asset,
                     time=timestamp,
-                    location='aave withdrawal',
+                    location=f'aave withdrawal {tx_hash}',
                     msg_aggregator=self.msg_aggregator,
                 )
                 withdrawal_amount = withdrawal / (FVal(10) ** FVal(decimals))

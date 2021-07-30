@@ -62,6 +62,20 @@ def action_get_type(action: TaxableAction) -> str:
     raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
 
 
+def action_get_identifier(action: TaxableAction) -> str:
+    """Get a unique identifier from a taxable action if possible"""
+    if isinstance(action, (AMMTrade, Trade, AssetMovement, MarginPosition, LedgerAction)):
+        return str(action.identifier)
+    if isinstance(action, EthereumTransaction):
+        return '0x' + action.tx_hash.hex()
+    if isinstance(action, Loan):
+        return 'loan_' + str(action.close_time)
+    if isinstance(action, DefiEvent):
+        return str(action)
+    # else
+    raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
+
+
 def action_get_assets(action: TaxableAction) -> List[Asset]:
     """Gets the assets involved in the action
 

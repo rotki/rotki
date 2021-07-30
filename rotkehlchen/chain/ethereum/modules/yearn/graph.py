@@ -1,22 +1,20 @@
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
-from typing_extensions import Literal
-
 
 from eth_utils import to_checksum_address
+from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.graph import Graph, format_query_indentation
+from rotkehlchen.chain.ethereum.modules.yearn.vaults import get_usd_price_zero_if_error
 from rotkehlchen.chain.ethereum.structures import YearnVaultEvent
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.chain.ethereum.modules.yearn.vaults import get_usd_price_zero_if_error
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, EthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -239,13 +237,13 @@ class YearnVaultsV2Graph:
                 from_asset_usd_price = get_usd_price_zero_if_error(
                     asset=from_asset,
                     time=Timestamp(int(entry['timestamp']) // 1000),
-                    location='yearn vault v2 deposit',
+                    location=f'yearn vault v2 deposit {tx_hash}',
                     msg_aggregator=self.msg_aggregator,
                 )
                 to_asset_usd_price = get_usd_price_zero_if_error(
                     asset=to_asset,
                     time=Timestamp(int(entry['timestamp']) // 1000),
-                    location='yearn v2 vault deposit',
+                    location=f'yearn v2 vault deposit {tx_hash}',
                     msg_aggregator=self.msg_aggregator,
                 )
                 if event_type == 'deposit':

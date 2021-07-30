@@ -252,6 +252,7 @@ def _parse_common_event_data(
 ) -> Optional[Tuple[Timestamp, str, int]]:
     """Parses and returns the common data of each event.
 
+    Returns a tuple of timestamp, tx_hash and log index for success.
     Returns None if timestamp is out of range or if there is an error
     """
     timestamp = entry['timestamp']
@@ -520,7 +521,7 @@ class AaveGraphInquirer(AaveInquirer):
                         usd_price = query_usd_price_zero_if_error(
                             asset=asset,
                             time=timestamp,
-                            location='aave interest event from graph query',
+                            location=f'aave interest event {entry.tx_hash} from graph query',
                             msg_aggregator=self.msg_aggregator,
                         )
                         earned_balance = Balance(amount=diff, usd_value=diff * usd_price)
@@ -800,7 +801,7 @@ class AaveGraphInquirer(AaveInquirer):
                 timestamp=timestamp,
                 reserve_key='reserve',
                 amount_key='amount',
-                location='aave deposit from graph query',
+                location=f'aave deposit {tx_hash} from graph query',
             )
             if result is None:
                 continue  # problem parsing, error already logged
@@ -840,7 +841,7 @@ class AaveGraphInquirer(AaveInquirer):
                 timestamp=timestamp,
                 reserve_key='reserve',
                 amount_key='amount',
-                location='aave withdrawal from graph query',
+                location=f'aave withdrawal {tx_hash} from graph query',
             )
             if result is None:
                 continue  # problem parsing, error already logged
@@ -880,7 +881,7 @@ class AaveGraphInquirer(AaveInquirer):
                 timestamp=timestamp,
                 reserve_key='reserve',
                 amount_key='amount',
-                location='aave borrow from graph query',
+                location=f'aave borrow {tx_hash} from graph query',
             )
             if result is None:
                 continue  # problem parsing, error already logged
@@ -936,7 +937,7 @@ class AaveGraphInquirer(AaveInquirer):
             usd_price = query_usd_price_zero_if_error(
                 asset=asset,
                 time=timestamp,
-                location='aave repay from graph query',
+                location=f'aave repay event {tx_hash} from graph query',
                 msg_aggregator=self.msg_aggregator,
             )
             events.append(AaveRepayEvent(
@@ -969,7 +970,7 @@ class AaveGraphInquirer(AaveInquirer):
                 timestamp=timestamp,
                 reserve_key='collateralReserve',
                 amount_key='collateralAmount',
-                location='aave liquidation from graph query',
+                location=f'aave liquidation {tx_hash} from graph query',
             )
             if result is None:
                 continue  # problem parsing, error already logged
@@ -980,7 +981,7 @@ class AaveGraphInquirer(AaveInquirer):
                 timestamp=timestamp,
                 reserve_key='principalReserve',
                 amount_key='principalAmount',
-                location='aave liquidation from graph query',
+                location=f'aave liquidation {tx_hash} from graph query',
             )
             if result is None:
                 continue  # problem parsing, error already logged
