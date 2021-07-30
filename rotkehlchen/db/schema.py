@@ -80,6 +80,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('\\', 28);
 INSERT OR IGNORE INTO location(location, seq) VALUES (']', 29);
 /* Gitcoin */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('^', 30);
+/* Sushiswap */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('_', 31);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
@@ -490,7 +492,7 @@ CREATE TABLE IF NOT EXISTS amm_swaps (
 );
 """
 
-DB_CREATE_UNISWAP_EVENTS = """
+DB_CREATE_AMM_EVENTS = """
 CREATE TABLE IF NOT EXISTS uniswap_events (
     tx_hash VARCHAR[42] NOT NULL,
     log_index INTEGER NOT NULL,
@@ -626,7 +628,7 @@ PRAGMA foreign_keys=on;
     DB_CREATE_XPUBS,
     DB_CREATE_XPUB_MAPPINGS,
     DB_CREATE_AMM_SWAPS,
-    DB_CREATE_UNISWAP_EVENTS,
+    DB_CREATE_AMM_EVENTS,
     DB_CREATE_ETH2_DEPOSITS,
     DB_CREATE_ETH2_DAILY_STAKING_DETAILS,
     DB_CREATE_ADEX_EVENTS,
