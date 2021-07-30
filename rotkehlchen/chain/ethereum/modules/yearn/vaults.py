@@ -56,7 +56,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp, YEARN_VAULTS_V2_PROTOCOL
+from rotkehlchen.typing import YEARN_VAULTS_V2_PROTOCOL, ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
@@ -342,13 +342,13 @@ class YearnVaults(EthereumModule):
             deposit_usd_price = get_usd_price_zero_if_error(
                 asset=vault.underlying_token,
                 time=timestamp,
-                location='yearn vault deposit',
+                location=f'yearn vault deposit {tx_hash}',
                 msg_aggregator=self.msg_aggregator,
             )
             mint_usd_price = get_usd_price_zero_if_error(
                 asset=vault.token,
                 time=timestamp,
-                location='yearn vault deposit',
+                location=f'yearn vault mint {tx_hash}',
                 msg_aggregator=self.msg_aggregator,
             )
             events.append(YearnVaultEvent(
@@ -424,13 +424,13 @@ class YearnVaults(EthereumModule):
             withdraw_usd_price = get_usd_price_zero_if_error(
                 asset=vault.underlying_token,
                 time=timestamp,
-                location='yearn vault withdraw',
+                location=f'yearn vault withdraw {tx_hash}',
                 msg_aggregator=self.msg_aggregator,
             )
             burn_usd_price = get_usd_price_zero_if_error(
                 asset=vault.token,
                 time=timestamp,
-                location='yearn vault withdraw',
+                location=f'yearn vault withdraw {tx_hash}',
                 msg_aggregator=self.msg_aggregator,
             )
             events.append(YearnVaultEvent(
@@ -469,7 +469,7 @@ class YearnVaults(EthereumModule):
                     usd_price = get_usd_price_zero_if_error(
                         asset=event.to_asset,
                         time=event.timestamp,
-                        location='yearn vault event processing',
+                        location=f'yearn vault event {event.tx_hash} processing',
                         msg_aggregator=self.msg_aggregator,
                     )
                     profit = Balance(profit_amount, profit_amount * usd_price)

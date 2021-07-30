@@ -1,14 +1,17 @@
-from collections import defaultdict
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.chain.ethereum.modules.yearn.vaults import YearnVaultHistory, YearnVaultBalance
 from rotkehlchen.chain.ethereum.modules.yearn.graph import YearnVaultsV2Graph
-from rotkehlchen.chain.ethereum.modules.yearn.vaults import get_usd_price_zero_if_error
+from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
+    YearnVaultBalance,
+    YearnVaultHistory,
+    get_usd_price_zero_if_error,
+)
 from rotkehlchen.chain.ethereum.structures import YearnVaultEvent
 from rotkehlchen.constants.ethereum import (
     MAX_BLOCKTIME_CACHE,
@@ -20,7 +23,7 @@ from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import ChecksumEthAddress, EthAddress, Timestamp, YEARN_VAULTS_V2_PROTOCOL
+from rotkehlchen.typing import YEARN_VAULTS_V2_PROTOCOL, ChecksumEthAddress, EthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
@@ -156,7 +159,7 @@ class YearnVaultsV2(EthereumModule):
                     usd_price = get_usd_price_zero_if_error(
                         asset=event.to_asset,
                         time=event.timestamp,
-                        location='yearn vault v2 event processing',
+                        location=f'yearn vault v2 event {event.tx_hash} processing',
                         msg_aggregator=self.msg_aggregator,
                     )
                     profit = Balance(profit_amount, profit_amount * usd_price)

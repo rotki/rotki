@@ -105,7 +105,7 @@ class Eth2(EthereumModule):
                     usd_price = query_usd_price_zero_if_error(
                         asset=A_ETH,
                         time=transaction.timestamp,
-                        location='Eth2 staking query',
+                        location=f'Eth2 staking tx_hash: {tx_hash}',
                         msg_aggregator=msg_aggregator,
                     )
                     normalized_amount = from_gwei(FVal(amount))

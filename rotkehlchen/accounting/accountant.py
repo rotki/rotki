@@ -36,6 +36,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import (
     TaxableAction,
     action_get_assets,
+    action_get_identifier,
     action_get_timestamp,
     action_get_type,
 )
@@ -359,7 +360,7 @@ class Accountant():
             except PriceQueryUnsupportedAsset as e:
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
-                    f'Skipping action at '
+                    f'Skipping action with id "{action_get_identifier(action)}" at '
                     f'{self.csvexporter.timestamp_to_date(ts)} '
                     f'during history processing due to an asset unknown to '
                     f'cryptocompare being involved. Check logs for details',
@@ -372,7 +373,7 @@ class Accountant():
             except NoPriceForGivenTimestamp as e:
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
-                    f'Skipping action at '
+                    f'Skipping action with id "{action_get_identifier(action)}" at '
                     f'{self.csvexporter.timestamp_to_date(ts)} '
                     f'during history processing due to inability to find a price '
                     f'at that point in time: {str(e)}. Check the logs for more details',
@@ -385,7 +386,7 @@ class Accountant():
             except RemoteError as e:
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
-                    f'Skipping action at '
+                    f'Skipping action with id "{action_get_identifier(action)}" at '
                     f'{self.csvexporter.timestamp_to_date(ts)} '
                     f'during history processing due to inability to reach an external '
                     f'service at that point in time: {str(e)}. Check the logs for more details',
