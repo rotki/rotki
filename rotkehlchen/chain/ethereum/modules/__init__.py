@@ -11,6 +11,7 @@ __all__ = [
     'Eth2',
     'YearnVaultsV2',
     'Sushiswap',
+    'Liquity',
 ]
 
 from .aave.aave import Aave
@@ -25,3 +26,4 @@ from .yearn.vaults import YearnVaults
 from .eth2 import Eth2
 from .yearn.vaultsv2 import YearnVaultsV2
 from .sushiswap.sushiswap import Sushiswap
+from .liquity.trove import Liquity

@@ -20,6 +20,7 @@ from rotkehlchen.chain.ethereum.modules.aave.aave import (
     AaveLendingBalance,
 )
 from rotkehlchen.chain.ethereum.modules.adex import ADXStakingHistory
+from rotkehlchen.chain.ethereum.modules.liquity.trove import Trove
 from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerBPTEventPoolToken,
     BalancerEvent,
@@ -149,6 +150,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             YearnVaultHistory,
             BlockchainAccountData,
             Eth2Deposit,
+            Trove,
     )):
         return process_result(entry._asdict())
     if isinstance(entry, tuple):

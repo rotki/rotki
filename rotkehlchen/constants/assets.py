@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 02/08/2021 11:14:53.
+# tools/scripts/generate_constant_assets.py at 12/08/2021 19:53:04.
 # Do not edit manually!
 
 from typing import List
@@ -590,6 +590,18 @@ A_MCB = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_MCB)
+A_LUSD = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
+    decimals=18,
+    name="LUSD Stablecoin",
+    symbol='LUSD',
+    started=Timestamp(1617611299),
+    swapped_for=None,
+    coingecko='liquity-usd',
+    cryptocompare='LUSD',
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_LUSD)
 
 # used as underlying assets of aave v1 tokens
 A_ENJ = EthereumToken.initialize(

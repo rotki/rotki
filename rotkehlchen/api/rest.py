@@ -2641,6 +2641,33 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
+    def get_liquity_troves(self, async_query: bool) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='liquity',
+            method='get_positions',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
+        )
+
+    def get_liquity_events(
+        self,
+        async_query: bool,
+        reset_db_data: bool,
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,    
+    ) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='liquity',
+            method='get_events',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
     def _watcher_query(
             self,
             method: Literal['GET', 'PUT', 'PATCH', 'DELETE'],

@@ -82,7 +82,7 @@ class Graph():
         querystr = prefix + querystr
         log.debug(f'Querying The Graph for {querystr}')
 
-        retries_left = QUERY_RETRY_TIMES
+        retries_left = 1
         while retries_left > 0:
             try:
                 result = self.client.execute(gql(querystr), variable_values=param_values)
