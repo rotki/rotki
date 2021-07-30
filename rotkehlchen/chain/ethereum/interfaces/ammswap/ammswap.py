@@ -8,15 +8,31 @@ This interface is used at the moment in:
 - Sushiswap Module
 """
 import abc
+from collections import defaultdict
 from datetime import datetime, time
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from gevent.lock import Semaphore
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.graph import Graph, GRAPH_QUERY_LIMIT, format_query_indentation
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
+    AddressEventsBalances,
+    AddressToLPBalances,
+    AddressTrades,
+    AggregatedAmount,
+    AssetToPrice,
+    DDAddressToLPBalances,
+    EventType,
+    LiquidityPool,
+    LiquidityPoolEvent,
+    LiquidityPoolEventsBalance,
+    LiquidityPoolAsset,
+    ProtocolBalance,
+)
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
@@ -33,22 +49,12 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
-    AddressEventsBalances,
-    AddressToLPBalances,
-    AddressTrades,
-    AggregatedAmount,
-    AssetToPrice,
-    EventType,
-    LiquidityPool,
-    LiquidityPoolEvent,
-    LiquidityPoolEventsBalance,
-)
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 
 from .graph import (
     MINTS_QUERY,
     BURNS_QUERY,
+    LIQUIDITY_POSITIONS_QUERY,
     SWAPS_QUERY,
     SUSHISWAP_SWAPS_QUERY,
     TOKEN_DAY_DATAS_QUERY,
@@ -383,7 +389,9 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e), location=self.location),
+                )
                 raise
             except AttributeError as e:
                 raise ModuleInitializationFailure(f'{self.location} subgraph remote error') from e
@@ -498,72 +506,81 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e), location=self.location),
+                )
                 raise
 
             for entry in result['swaps']:
                 swaps = []
-                for swap in entry['transaction']['swaps']:
-                    timestamp = swap['timestamp']
-                    swap_token0 = swap['pair']['token0']
-                    swap_token1 = swap['pair']['token1']
+                try:
+                    for swap in entry['transaction']['swaps']:
+                        timestamp = swap['timestamp']
+                        swap_token0 = swap['pair']['token0']
+                        swap_token1 = swap['pair']['token1']
 
-                    try:
-                        token0_deserialized = deserialize_ethereum_address(swap_token0['id'])
-                        token1_deserialized = deserialize_ethereum_address(swap_token1['id'])
-                        from_address_deserialized = deserialize_ethereum_address(swap['sender'])
-                        to_address_deserialized = deserialize_ethereum_address(swap['to'])
-                    except DeserializationError:
-                        msg = (
-                            f'Failed to deserialize addresses in trade from {self.location} graph'
-                            f' with token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '
-                            f'swap sender: {swap["sender"]}, swap receiver {swap["to"]}'
+                        try:
+                            token0_deserialized = deserialize_ethereum_address(swap_token0['id'])
+                            token1_deserialized = deserialize_ethereum_address(swap_token1['id'])
+                            from_address_deserialized = deserialize_ethereum_address(swap['sender'])  # noqa
+                            to_address_deserialized = deserialize_ethereum_address(swap['to'])
+                        except DeserializationError:
+                            msg = (
+                                f'Failed to deserialize addresses in trade from {self.location} graph'  # noqa
+                                f' with token 0: {swap_token0["id"]}, token 1: {swap_token1["id"]}, '  # noqa
+                                f'swap sender: {swap["sender"]}, swap receiver {swap["to"]}'
+                            )
+                            log.error(msg)
+                            continue
+
+                        token0 = get_or_create_ethereum_token(
+                            userdb=self.database,
+                            symbol=swap_token0['symbol'],
+                            ethereum_address=token0_deserialized,
+                            name=swap_token0['name'],
+                            decimals=swap_token0['decimals'],
                         )
-                        log.error(msg)
-                        continue
-
-                    token0 = get_or_create_ethereum_token(
-                        userdb=self.database,
-                        symbol=swap_token0['symbol'],
-                        ethereum_address=token0_deserialized,
-                        name=swap_token0['name'],
-                        decimals=swap_token0['decimals'],
-                    )
-                    token1 = get_or_create_ethereum_token(
-                        userdb=self.database,
-                        symbol=swap_token1['symbol'],
-                        ethereum_address=token1_deserialized,
-                        name=swap_token1['name'],
-                        decimals=int(swap_token1['decimals']),
-                    )
-
-                    try:
-                        amount0_in = FVal(swap['amount0In'])
-                        amount1_in = FVal(swap['amount1In'])
-                        amount0_out = FVal(swap['amount0Out'])
-                        amount1_out = FVal(swap['amount1Out'])
-                    except ValueError as e:
-                        log.error(
-                            f'Failed to read amounts in {self.location} swap {str(swap)}. '
-                            f'{str(e)}.',
+                        token1 = get_or_create_ethereum_token(
+                            userdb=self.database,
+                            symbol=swap_token1['symbol'],
+                            ethereum_address=token1_deserialized,
+                            name=swap_token1['name'],
+                            decimals=int(swap_token1['decimals']),
                         )
-                        continue
 
-                    swaps.append(AMMSwap(
-                        tx_hash=swap['id'].split('-')[0],
-                        log_index=int(swap['logIndex']),
-                        address=address,
-                        from_address=from_address_deserialized,
-                        to_address=to_address_deserialized,
-                        timestamp=Timestamp(int(timestamp)),
-                        location=self.location,
-                        token0=token0,
-                        token1=token1,
-                        amount0_in=AssetAmount(amount0_in),
-                        amount1_in=AssetAmount(amount1_in),
-                        amount0_out=AssetAmount(amount0_out),
-                        amount1_out=AssetAmount(amount1_out),
-                    ))
+                        try:
+                            amount0_in = FVal(swap['amount0In'])
+                            amount1_in = FVal(swap['amount1In'])
+                            amount0_out = FVal(swap['amount0Out'])
+                            amount1_out = FVal(swap['amount1Out'])
+                        except ValueError as e:
+                            log.error(
+                                f'Failed to read amounts in {self.location} swap {str(swap)}. '
+                                f'{str(e)}.',
+                            )
+                            continue
+
+                        swaps.append(AMMSwap(
+                            tx_hash=swap['id'].split('-')[0],
+                            log_index=int(swap['logIndex']),
+                            address=address,
+                            from_address=from_address_deserialized,
+                            to_address=to_address_deserialized,
+                            timestamp=Timestamp(int(timestamp)),
+                            location=self.location,
+                            token0=token0,
+                            token1=token1,
+                            amount0_in=AssetAmount(amount0_in),
+                            amount1_in=AssetAmount(amount1_in),
+                            amount0_out=AssetAmount(amount0_out),
+                            amount1_out=AssetAmount(amount1_out),
+                        ))
+                except KeyError as e:
+                    log.error(
+                        f'Failed to read trade in {self.location} swap {str(entry)}. '
+                        f'{str(e)}.',
+                    )
+                    continue
 
                 # with the new logic the list of swaps can be empty, in that case don't try
                 # to make trades from the swaps
@@ -714,7 +731,9 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e), location=self.location),
+                )
                 raise
 
             result_data = result['tokenDayDatas']
@@ -725,7 +744,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                 except DeserializationError as e:
                     msg = (
                         f'Error deserializing address {tdd["token"]["id"]} '
-                        f'during uniswap prices query from graph.'
+                        f'during {self.location} prices query from graph.'
                     )
                     log.error(msg)
                     raise RemoteError(msg) from e
@@ -753,7 +772,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         """Get the addresses' events history in the AMM"""
         with self.trades_lock:
             if reset_db_data is True:
-                self.database.delete_uniswap_events_data()
+                self.delete_events_data()
 
             address_events_balances = self._get_events_balances(
                 addresses=addresses,
@@ -807,6 +826,132 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
         return db_address_trades
 
+    def _get_balances_graph(
+            self,
+            addresses: List[ChecksumEthAddress],
+    ) -> ProtocolBalance:
+        """Get the addresses' pools data querying the Sushiswap subgraph
+
+        Each liquidity position is converted into a <LiquidityPool>.
+        """
+        address_balances: DDAddressToLPBalances = defaultdict(list)
+        known_assets: Set[EthereumToken] = set()
+        unknown_assets: Set[EthereumToken] = set()
+
+        addresses_lower = [address.lower() for address in addresses]
+        querystr = format_query_indentation(LIQUIDITY_POSITIONS_QUERY.format())
+        param_types = {
+            '$limit': 'Int!',
+            '$offset': 'Int!',
+            '$addresses': '[String!]',
+            '$balance': 'BigDecimal!',
+        }
+        param_values = {
+            'limit': GRAPH_QUERY_LIMIT,
+            'offset': 0,
+            'addresses': addresses_lower,
+            'balance': '0',
+        }
+        while True:
+            try:
+                result = self.graph.query(
+                    querystr=querystr,
+                    param_types=param_types,
+                    param_values=param_values,
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(
+                        error_msg=str(e),
+                        location=self.location,
+                    ),
+                )
+                raise
+
+            result_data = result['liquidityPositions']
+            for lp in result_data:
+                lp_pair = lp['pair']
+                lp_total_supply = FVal(lp_pair['totalSupply'])
+                user_lp_balance = FVal(lp['liquidityTokenBalance'])
+                try:
+                    user_address = deserialize_ethereum_address(lp['user']['id'])
+                    lp_address = deserialize_ethereum_address(lp_pair['id'])
+                except DeserializationError as e:
+                    msg = (
+                        f'Failed to Deserialize address. Skipping pool {lp_pair} '
+                        f'with user address {lp["user"]["id"]}'
+                    )
+                    log.error(msg)
+                    raise RemoteError(msg) from e
+
+                # Insert LP tokens reserves within tokens dicts
+                token0 = lp_pair['token0']
+                token0['total_amount'] = lp_pair['reserve0']
+                token1 = lp_pair['token1']
+                token1['total_amount'] = lp_pair['reserve1']
+
+                liquidity_pool_assets = []
+                for token in token0, token1:
+                    try:
+                        deserialized_eth_address = deserialize_ethereum_address(token['id'])
+                    except DeserializationError as e:
+                        msg = (
+                            f'Failed to deserialize token address {token["id"]} '
+                            f'Bad token address in lp pair came from the graph.'
+                        )
+                        log.error(msg)
+                        raise RemoteError(msg) from e
+
+                    asset = get_or_create_ethereum_token(
+                        userdb=self.database,
+                        symbol=token['symbol'],
+                        ethereum_address=deserialized_eth_address,
+                        name=token['name'],
+                        decimals=int(token['decimals']),
+                    )
+                    if asset.has_oracle():
+                        known_assets.add(asset)
+                    else:
+                        unknown_assets.add(asset)
+
+                    # Estimate the underlying asset total_amount
+                    asset_total_amount = FVal(token['total_amount'])
+                    user_asset_balance = (
+                        user_lp_balance / lp_total_supply * asset_total_amount
+                    )
+
+                    liquidity_pool_asset = LiquidityPoolAsset(
+                        asset=asset,
+                        total_amount=asset_total_amount,
+                        user_balance=Balance(amount=user_asset_balance),
+                    )
+                    liquidity_pool_assets.append(liquidity_pool_asset)
+
+                liquidity_pool = LiquidityPool(
+                    address=lp_address,
+                    assets=liquidity_pool_assets,
+                    total_supply=lp_total_supply,
+                    user_balance=Balance(amount=user_lp_balance),
+                )
+                address_balances[user_address].append(liquidity_pool)
+
+            # Check whether an extra request is needed
+            if len(result_data) < GRAPH_QUERY_LIMIT:
+                break
+
+            # Update pagination step
+            param_values = {
+                **param_values,
+                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
+            }
+
+        protocol_balance = ProtocolBalance(
+            address_balances=dict(address_balances),
+            known_assets=known_assets,
+            unknown_assets=unknown_assets,
+        )
+        return protocol_balance
+
     @abc.abstractmethod
     def _get_trades_graph_for_address(
             self,
@@ -839,8 +984,8 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         in DB and finally all DB events are read, and processed for calculating
         total profit/loss per LP (stored within <LiquidityPoolEventsBalance>).
         """
-        raise NotImplementedError
+        raise NotImplementedError('should only be implemented by subclasses')
 
     @abc.abstractmethod
-    def delete_trade_events(self) -> None:
+    def delete_events_data(self) -> None:
         raise NotImplementedError('should only be implemented by subclasses')

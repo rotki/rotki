@@ -1,11 +1,8 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, List, Optional, Set
+from typing import TYPE_CHECKING, List, Optional
 
-from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.assets.utils import get_or_create_ethereum_token
-from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
+from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap import AMMSwapPlatform
 from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
     AddressEvents,
@@ -14,18 +11,12 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
     AddressTrades,
     AssetToPrice,
     DDAddressEvents,
-    DDAddressToLPBalances,
     EventType,
-    LiquidityPool,
-    LiquidityPoolAsset,
-    ProtocolBalance,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.trades import AMMTrade
-from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
-from rotkehlchen.fval import FVal
+from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
     ChecksumEthAddress,
     Location,
@@ -33,8 +24,6 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-
-from .graph import LIQUIDITY_POSITIONS_QUERY
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures import AssetBalance
@@ -64,7 +53,12 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
                 'https://api.thegraph.com/subgraphs/name/sushiswap/exchange',
             )
         except RemoteError as e:
-            self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+            self.msg_aggregator.add_error(
+                SUBGRAPH_REMOTE_ERROR_MSG.format(
+                    error_msg=str(e),
+                    location=self.location,
+                ),
+            )
             raise ModuleInitializationFailure('Sushiswap subgraph remote error') from e
 
         super().__init__(
@@ -75,127 +69,6 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
             msg_aggregator=msg_aggregator,
             graph=self.graph,
         )
-
-    def _get_balances_graph(
-            self,
-            addresses: List[ChecksumEthAddress],
-    ) -> ProtocolBalance:
-        """Get the addresses' pools data querying the Sushiswap subgraph
-
-        Each liquidity position is converted into a <LiquidityPool>.
-        """
-        address_balances: DDAddressToLPBalances = defaultdict(list)
-        known_assets: Set[EthereumToken] = set()
-        unknown_assets: Set[EthereumToken] = set()
-
-        addresses_lower = [address.lower() for address in addresses]
-        querystr = format_query_indentation(LIQUIDITY_POSITIONS_QUERY.format())
-        param_types = {
-            '$limit': 'Int!',
-            '$offset': 'Int!',
-            '$addresses': '[String!]',
-            '$balance': 'BigDecimal!',
-        }
-        param_values = {
-            'limit': GRAPH_QUERY_LIMIT,
-            'offset': 0,
-            'addresses': addresses_lower,
-            'balance': '0',
-        }
-        while True:
-            try:
-                result = self.graph.query(
-                    querystr=querystr,
-                    param_types=param_types,
-                    param_values=param_values,
-                )
-            except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
-                raise
-
-            result_data = result['liquidityPositions']
-            for lp in result_data:
-                lp_pair = lp['pair']
-                lp_total_supply = FVal(lp_pair['totalSupply'])
-                user_lp_balance = FVal(lp['liquidityTokenBalance'])
-                try:
-                    user_address = deserialize_ethereum_address(lp['user']['id'])
-                    lp_address = deserialize_ethereum_address(lp_pair['id'])
-                except DeserializationError as e:
-                    msg = (
-                        f'Failed to Deserialize address. Skipping pool {lp_pair} '
-                        f'with user address {lp["user"]["id"]}'
-                    )
-                    log.error(msg)
-                    raise RemoteError(msg) from e
-
-                # Insert LP tokens reserves within tokens dicts
-                token0 = lp_pair['token0']
-                token0['total_amount'] = lp_pair['reserve0']
-                token1 = lp_pair['token1']
-                token1['total_amount'] = lp_pair['reserve1']
-
-                liquidity_pool_assets = []
-                for token in token0, token1:
-                    try:
-                        deserialized_eth_address = deserialize_ethereum_address(token['id'])
-                    except DeserializationError as e:
-                        msg = (
-                            f'Failed to deserialize token address {token["id"]} '
-                            f'Bad token address in lp pair came from the graph.'
-                        )
-                        log.error(msg)
-                        raise RemoteError(msg) from e
-
-                    asset = get_or_create_ethereum_token(
-                        userdb=self.database,
-                        symbol=token['symbol'],
-                        ethereum_address=deserialized_eth_address,
-                        name=token['name'],
-                        decimals=int(token['decimals']),
-                    )
-                    if asset.has_oracle():
-                        known_assets.add(asset)
-                    else:
-                        unknown_assets.add(asset)
-
-                    # Estimate the underlying asset total_amount
-                    asset_total_amount = FVal(token['total_amount'])
-                    user_asset_balance = (
-                        user_lp_balance / lp_total_supply * asset_total_amount
-                    )
-
-                    liquidity_pool_asset = LiquidityPoolAsset(
-                        asset=asset,
-                        total_amount=asset_total_amount,
-                        user_balance=Balance(amount=user_asset_balance),
-                    )
-                    liquidity_pool_assets.append(liquidity_pool_asset)
-
-                liquidity_pool = LiquidityPool(
-                    address=lp_address,
-                    assets=liquidity_pool_assets,
-                    total_supply=lp_total_supply,
-                    user_balance=Balance(amount=user_lp_balance),
-                )
-                address_balances[user_address].append(liquidity_pool)
-
-            # Check whether an extra request is needed
-            if len(result_data) < GRAPH_QUERY_LIMIT:
-                break
-
-            # Update pagination step
-            param_values = {
-                **param_values,
-                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
-            }
-
-        protocol_balance = ProtocolBalance(
-            address_balances=dict(address_balances),
-            known_assets=known_assets,
-            unknown_assets=unknown_assets,
-        )
-        return protocol_balance
 
     def _get_events_balances(
             self,
@@ -322,12 +195,10 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
         known_assets = protocol_balance.known_assets
         unknown_assets = protocol_balance.unknown_assets
-
         known_asset_price = self._get_known_asset_price(
             known_assets=known_assets,
             unknown_assets=unknown_assets,
         )
-
         unknown_asset_price: AssetToPrice = {}
         if self.premium:
             unknown_asset_price = self._get_unknown_asset_price_graph(unknown_assets=unknown_assets)  # noqa:E501
@@ -347,8 +218,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> AddressTrades:
-        """Get the addresses' trades history in the Sushiswap protocol
-        """
+        """Get the addresses' trades history in the Sushiswap protocol"""
         with self.trades_lock:
             if reset_db_data is True:
                 self.database.delete_sushiswap_trades_data()
@@ -378,8 +248,8 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
         return trades
 
-    def delete_trade_events(self) -> None:
-        self.database.delete_sushiswap_trades_data()
+    def delete_events_data(self) -> None:
+        self.database.delete_sushiswap_events_data()
 
     def deactivate(self) -> None:
         self.database.delete_sushiswap_trades_data()

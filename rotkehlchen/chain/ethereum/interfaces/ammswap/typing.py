@@ -82,9 +82,9 @@ class EventType(Enum):
 
     def __str__(self) -> str:
         if self == EventType.MINT_UNISWAP:
-            return 'mint uniswap'
+            return 'mint'
         if self == EventType.BURN_UNISWAP:
-            return 'burn uniswap'
+            return 'burn'
         if self == EventType.MINT_SUSHISWAP:
             return 'mint sushiswap'
         if self == EventType.BURN_SUSHISWAP:

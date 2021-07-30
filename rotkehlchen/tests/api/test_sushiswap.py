@@ -7,7 +7,6 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.modules.sushiswap import (
     SushiswapPoolEvent,
     SushiswapPoolEventsBalance,
@@ -28,7 +27,6 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
 
@@ -54,22 +52,11 @@ def test_get_balances_module_not_activated(
     )
 
 
-UNISWAP_TEST_OPTIONS = [
-    # Test with infura (as own node), many open nodes, and premium + graph
-    (False, INFURA_TEST, (NodeName.OWN, NodeName.MYCRYPTO)),
-    (False, '', (NodeName.MYCRYPTO, NodeName.BLOCKSCOUT, NodeName.AVADO_POOL)),
-    (True, '', ()),
-]
-
-
-SKIPPED_UNISWAP_TEST_OPTIONS = [UNISWAP_TEST_OPTIONS[-1]]
-
-
 @pytest.mark.parametrize('ethereum_accounts', [[SWAP_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['sushiswap']])
 @pytest.mark.parametrize(
-    'start_with_valid_premium,ethrpc_endpoint,ethereum_manager_connect_at_start',
-    SKIPPED_UNISWAP_TEST_OPTIONS,
+    'start_with_valid_premium',
+    (True,),
 )
 def test_get_balances(
         rotkehlchen_api_server,
@@ -77,7 +64,7 @@ def test_get_balances(
         rotki_premium_credentials,
         start_with_valid_premium,
 ):
-    """Check querying the uniswap balances endpoint works. Uses real data
+    """Check querying the sushiswap balances endpoint works. Uses real data
 
     Checks the functionality both for the graph queries (when premium) and simple
     onchain queries (without premium)
@@ -382,7 +369,7 @@ def test_get_sushiswap_trades_history(
         rotki_premium_credentials,  # pylint: disable=unused-argument
         start_with_valid_premium,  # pylint: disable=unused-argument
 ):
-    """Test that the last 11/23 uniswap trades of the account since 1605437542
+    """Test that the last 11/23 sushiswap trades of the account since 1605437542
     are parsed and returned correctly
 
     Also test that data are written in the DB and properly retrieved afterwards

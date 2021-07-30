@@ -12,10 +12,25 @@ def fixture_graph():
         yield
 
 
+@pytest.fixture(name='mock_amm_graph')
+def fixture_amm_graph():
+    with patch('rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap.Graph'):
+        yield
+
+
 @pytest.fixture(name='mock_graph_query_limit')
 def fixture_graph_query_limit(graph_query_limit):
     with patch(
         'rotkehlchen.chain.ethereum.modules.uniswap.uniswap.GRAPH_QUERY_LIMIT',
+        new=graph_query_limit,
+    ):
+        yield
+
+
+@pytest.fixture(name='mock_amm_graph_query_limit')
+def fixture_amm_graph_query_limit(graph_query_limit):
+    with patch(
+        'rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap.GRAPH_QUERY_LIMIT',
         new=graph_query_limit,
     ):
         yield
@@ -29,6 +44,7 @@ def mock_uniswap(
         rotki_premium_credentials,
         function_scope_messages_aggregator,
         mock_graph,  # pylint: disable=unused-argument
+        mock_amm_graph,  # pylint: disable=unused-argument
 ) -> Uniswap:
     premium = None
 

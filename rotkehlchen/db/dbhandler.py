@@ -1089,7 +1089,7 @@ class DBHandler:
     def add_amm_events(self, events: Sequence[LiquidityPoolEvent]) -> None:
         query = (
             """
-            INSERT INTO amm_events (
+            INSERT INTO uniswap_events (
                 tx_hash,
                 log_index,
                 address,
@@ -1113,7 +1113,7 @@ class DBHandler:
                 cursor.execute(query, event_tuple)
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 self.msg_aggregator.add_warning(
-                    f'Tried to add a AMM event that already exists in the DB. '
+                    f'Tried to add an AMM event that already exists in the DB. '
                     f'Event data: {event_tuple}. Skipping event.',
                 )
                 continue
@@ -1133,7 +1133,7 @@ class DBHandler:
         """
         cursor = self.conn.cursor()
         events_sql_str = ", ".join([f'"{str(event)}"' for event in events])
-        query = f'SELECT * FROM amm_events WHERE amm_events.type IN ({events_sql_str}) '
+        query = f'SELECT * FROM uniswap_events WHERE uniswap_events.type IN ({events_sql_str}) '
 
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
         if address is not None:
@@ -1224,7 +1224,9 @@ class DBHandler:
         """Delete all historical Uniswap events data"""
         cursor = self.conn.cursor()
         uniswap_types = f'"{EventType.MINT_UNISWAP}", "{EventType.BURN_UNISWAP}"'
-        cursor.execute(f'DELETE FROM amm_events WHERE amm_events.type IN ({uniswap_types});')
+        cursor.execute(
+            f'DELETE FROM uniswap_events WHERE uniswap_events.type IN ({uniswap_types});',
+        )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_EVENTS_PREFIX}%";',
         )
@@ -1247,7 +1249,9 @@ class DBHandler:
         """Delete all historical Sushiswap events data"""
         cursor = self.conn.cursor()
         sushiswap_types = f'"{EventType.MINT_SUSHISWAP}", "{EventType.BURN_SUSHISWAP}"'
-        cursor.execute(f'DELETE FROM amm_events WHERE amm_events.type IN ({sushiswap_types});')
+        cursor.execute(
+            f'DELETE FROM uniswap_events WHERE uniswap_events.type IN ({sushiswap_types});',
+        )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{SUSHISWAP_EVENTS_PREFIX}%";',
         )
@@ -2567,7 +2571,7 @@ class DBHandler:
         cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
         cursor.execute('DELETE FROM adex_events WHERE address = ?', (address,))
         cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
-        cursor.execute('DELETE FROM amm_events WHERE address=?;', (address,))
+        cursor.execute('DELETE FROM uniswap_events WHERE address=?;', (address,))
         cursor.execute(
             'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',
             (address,),

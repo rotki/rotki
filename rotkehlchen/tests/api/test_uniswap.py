@@ -1085,10 +1085,10 @@ def test_events_pnl(
     # Assert some event details
     assert events_balances[0]['events'][0]['amount0'] == '42.247740079122297434'
     assert events_balances[0]['events'][0]['amount1'] == '0.453409755976350622'
-    assert events_balances[0]['events'][0]['event_type'] == 'mint uniswap'
+    assert events_balances[0]['events'][0]['event_type'] == 'mint'
     assert events_balances[0]['events'][1]['amount0'] == '64.052160560025177012'
     assert events_balances[0]['events'][1]['amount1'] == '0.455952395125600548'
-    assert events_balances[0]['events'][1]['event_type'] == 'burn uniswap'
+    assert events_balances[0]['events'][1]['event_type'] == 'burn'
     # Most importantly assert the profit loss
     assert FVal(events_balances[0]['profit_loss0']) >= FVal('21.8')
     assert FVal(events_balances[0]['profit_loss1']) >= FVal('0.00254')
