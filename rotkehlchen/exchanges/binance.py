@@ -67,19 +67,6 @@ V3_METHODS = (
     'time',
 )
 PUBLIC_METHODS = ('exchangeInfo', 'time')
-SAPI_METHODS = (
-    'futures/loan/wallet',
-    'lending/daily/token/position',
-    'lending/daily/product/list',
-    'lending/union/account',
-    'bswap/liquidity',
-    'capital/deposit/hisrec',
-    'capital/withdraw/history',
-)
-FAPI_METHODS = (
-    'balance',
-    'account',
-)
 
 RETRY_AFTER_LIMIT = 60
 # Binance api error codes we check for (all below apis seem to have the same)

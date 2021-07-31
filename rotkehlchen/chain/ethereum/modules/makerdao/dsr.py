@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
 
 from gevent.lock import Semaphore
 from typing_extensions import Literal
@@ -26,10 +26,6 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 log = logging.getLogger(__name__)
-
-POT_CREATION_TIMESTAMP = 1573672721
-CHI_BLOCKS_SEARCH_DISTANCE = 250  # Blocks per call query per side (before/after)
-MAX_BLOCKS_TO_QUERY = 346000  # query about a month's worth of blocks in each side before giving up
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -94,37 +90,6 @@ class DSRAccountReport(NamedTuple):
 def _dsrdai_to_dai(value: Union[int, FVal]) -> FVal:
     """Turns a big integer that is the value of DAI in DSR into a proper DAI decimal FVal"""
     return FVal(value / FVal(RAD))
-
-
-class ChiRetrievalError(Exception):
-    pass
-
-
-def _find_closest_event(
-        join_events: List[Dict[str, Any]],
-        exit_events: List[Dict[str, Any]],
-        index: int,
-        comparison: Callable,
-) -> Optional[Dict[str, Any]]:
-    """Given lists of events and index/comparisonop find the closest event
-
-    Index and comparisonon depend on whether we are searching for the events
-    backwards or forwards.
-    """
-    found_event = None
-    if len(join_events) != 0:
-        found_event = join_events[index]
-    if len(exit_events) != 0:
-        if found_event:
-            join_number = found_event['blockNumber']
-            exit_number = exit_events[index]['blockNumber']
-
-            if comparison(exit_number, join_number):
-                found_event = exit_events[index]
-        else:
-            found_event = exit_events[index]
-
-    return found_event
 
 
 class MakerdaoDsr(MakerdaoCommon):
