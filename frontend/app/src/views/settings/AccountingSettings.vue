@@ -154,6 +154,29 @@
       </v-col>
     </v-row>
     <ledger-action-settings class="mt-18" />
+    <v-row class="mt-8" no-gutters>
+      <v-col>
+        <card>
+          <template #title>
+            {{ $t('account_settings.csv_export_settings.title') }}
+          </template>
+
+          <v-switch
+            v-model="exportCSVFormulas"
+            class="csv_export_settings__exportCSVFormulas"
+            :label="
+              $t(
+                'account_settings.csv_export_settings.labels.export_csv_formulas'
+              )
+            "
+            color="primary"
+            :success-messages="settingsMessages['exportCSVFormulas'].success"
+            :error-messages="settingsMessages['exportCSVFormulas'].error"
+            @change="onExportCSVFormulasChange($event)"
+          />
+        </card>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -167,6 +190,7 @@ import AssetMixin from '@/mixins/asset-mixin';
 import SettingsMixin from '@/mixins/settings-mixin';
 import { ActionStatus } from '@/store/types';
 
+const exportCSVFormulas = 'exportCSVFormulas';
 const crypto2crypto = 'crypto2crypto';
 const gasCostChange = 'gasCostChange';
 const taxFreePeriod = 'taxFreePeriod';
@@ -177,6 +201,7 @@ const accountForAssetsMovements = 'accountForAssetsMovements';
 const calculatePastCostBasis = 'calculatePastCostBasis';
 
 const SETTINGS = [
+  exportCSVFormulas,
   crypto2crypto,
   gasCostChange,
   taxFreePeriod,
@@ -208,6 +233,7 @@ export default class Accounting extends Mixins<
   ignoreAsset!: (asset: string) => Promise<ActionStatus>;
   unignoreAsset!: (asset: string) => Promise<ActionStatus>;
 
+  exportCSVFormulas: boolean = false;
   crypto2CryptoTrades: boolean = false;
   gasCosts: boolean = false;
   taxFreeAfterPeriod: number | null = null;
@@ -232,6 +258,7 @@ export default class Accounting extends Mixins<
   }
 
   mounted() {
+    this.exportCSVFormulas = this.accountingSettings.exportCSVFormulas;
     this.crypto2CryptoTrades = this.accountingSettings.includeCrypto2Crypto;
     this.gasCosts = this.accountingSettings.includeGasCosts;
     if (this.accountingSettings.taxFreeAfterPeriod) {
@@ -397,6 +424,29 @@ export default class Accounting extends Mixins<
               message: reason.message
             }
           )
+        );
+      });
+  }
+
+  onExportCSVFormulasChange(enabled: boolean) {
+    const { commit } = this.$store;
+
+    this.$api
+      .setSettings({ pnl_csv_with_formulas: enabled })
+      .then(settings => {
+        commit('session/accountingSettings', {
+          ...this.accountingSettings,
+          exportCSVFormulas: settings.pnl_csv_with_formulas
+        });
+        this.validateSettingChange('exportCSVFormulas', 'success');
+      })
+      .catch(reason => {
+        this.validateSettingChange(
+          'exportCSVFormulas',
+          'error',
+          this.$tc('account_settings.messages.export_csv_formulas', 0, {
+            message: reason.message
+          })
         );
       });
   }
