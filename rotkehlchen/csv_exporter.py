@@ -100,6 +100,7 @@ class CSVExporter():
         db_settings = self.database.get_settings()
         self.dateformat = db_settings.date_display_format
         self.datelocaltime = db_settings.display_date_in_localtime
+        self.should_export_formulas = db_settings.pnl_csv_with_formulas
         if self.create_csv:
             self.trades_csv: List[Dict[str, Any]] = []
             self.loan_profits_csv: List[Dict[str, Any]] = []
@@ -118,6 +119,24 @@ class CSVExporter():
             formatstr=self.dateformat,
             treat_as_local=self.datelocaltime,
         )
+
+    def _add_if_formula(
+            self,
+            condition: str,
+            if_true: str,
+            if_false: str,
+            actual_value: FVal,
+    ) -> str:
+        if self.should_export_formulas is False:
+            return str(actual_value)
+
+        return f'=IF({condition};{if_true};{if_false})'
+
+    def _add_equals_formula(self, expression: str, actual_value: FVal) -> str:
+        if self.should_export_formulas is False:
+            return str(actual_value)
+
+        return f'={expression}'
 
     def add_to_allevents(
             self,
@@ -146,13 +165,25 @@ class CSVExporter():
                 net_profit_or_loss = ZERO
             else:
                 net_profit_or_loss = taxable_received_in_profit_currency - taxable_bought_cost
-            net_profit_or_loss_csv = f'=IF(E{row}=0,0,L{row}-M{row})'
+
+            net_profit_or_loss_csv = self._add_if_formula(
+                condition=f'E{row}=0',
+                if_true='0',
+                if_false=f'L{row}-M{row}',
+                actual_value=net_profit_or_loss,
+            )
         elif event_type in (EV_TX_GAS_COST, EV_ASSET_MOVE, EV_LOAN_SETTLE):
             net_profit_or_loss = paid_in_profit_currency
-            net_profit_or_loss_csv = '=-K{}'.format(row)
+            net_profit_or_loss_csv = self._add_equals_formula(
+                expression=f'-K{row}',
+                actual_value=net_profit_or_loss,
+            )
         elif event_type in (EV_INTEREST_PAYMENT, EV_MARGIN_CLOSE, EV_DEFI, EV_LEDGER_ACTION):
             net_profit_or_loss = taxable_received_in_profit_currency
-            net_profit_or_loss_csv = '=L{}'.format(row)
+            net_profit_or_loss_csv = self._add_equals_formula(
+                expression=f'L{row}',
+                actual_value=net_profit_or_loss,
+            )
         else:
             raise ValueError('Illegal event type "{}" at add_to_allevents'.format(event_type))
 
@@ -284,7 +315,12 @@ class CSVExporter():
             selling_amount=selling_amount,
         )
         row = len(self.trades_csv) + 2
-        taxable_profit_formula = f'=IF(H{row}=0,0,L{row}-K{row})'
+        taxable_profit_csv = self._add_if_formula(
+            condition=f'H{row}=0',
+            if_true='0',
+            if_false=f'L{row}-K{row}',
+            actual_value=taxable_profit_received,
+        )
         self.trades_csv.append({
             'type': 'sell',
             'location': str(location),
@@ -298,7 +334,7 @@ class CSVExporter():
             exchange_rate_key: receiving_asset_rate_in_profit_currency,
             f'taxable_bought_cost_in_{self.profit_currency.symbol}': taxable_bought_cost,
             f'taxable_gain_in_{self.profit_currency.symbol}': taxable_profit_received,
-            f'taxable_profit_loss_in_{self.profit_currency.symbol}': taxable_profit_formula,
+            f'taxable_profit_loss_in_{self.profit_currency.symbol}': taxable_profit_csv,
             'time': self.timestamp_to_date(timestamp),
             'cost_basis': cost_basis_info.to_string(self.timestamp_to_date),
             'is_virtual': is_virtual,
@@ -336,19 +372,22 @@ class CSVExporter():
         if not self.create_csv:
             return
 
+        paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency
         row = len(self.loan_settlements_csv) + 2
-        loss_formula = f'=C{row}*D{row}+E{row}'
+        loss_csv = self._add_equals_formula(
+            expression=f'C{row}*D{row}+E{row}',
+            actual_value=paid_in_profit_currency,
+        )
         self.loan_settlements_csv.append({
             'asset': str(asset),
             'location': str(location),
             'amount': amount,
             f'price_in_{self.profit_currency.symbol}': rate_in_profit_currency,
             f'fee_in_{self.profit_currency.symbol}': total_fee_in_profit_currency,
-            f'loss_in_{self.profit_currency.symbol}': loss_formula,
+            f'loss_in_{self.profit_currency.symbol}': loss_csv,
             'cost_basis': cost_basis_info.to_string(self.timestamp_to_date),
             'time': self.timestamp_to_date(timestamp),
         })
-        paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency
         self.add_to_allevents(
             event_type=EV_LOAN_SETTLE,
             location=location,

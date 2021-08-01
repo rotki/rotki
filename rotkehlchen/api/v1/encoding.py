@@ -1061,6 +1061,7 @@ class ModifiableSettingsSchema(Schema):
         missing=None,
     )
     taxable_ledger_actions = fields.List(LedgerActionTypeField, missing=None)
+    pnl_csv_with_formulas = fields.Bool(missing=None)
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -1104,6 +1105,7 @@ class ModifiableSettingsSchema(Schema):
             historical_price_oracles=data['historical_price_oracles'],
             current_price_oracles=data['current_price_oracles'],
             taxable_ledger_actions=data['taxable_ledger_actions'],
+            pnl_csv_with_formulas=data['pnl_csv_with_formulas'],
         )
 
 
