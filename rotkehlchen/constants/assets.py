@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 31/07/2021 09:17:15.
+# tools/scripts/generate_constant_assets.py at 02/08/2021 11:14:53.
 # Do not edit manually!
 
 from typing import List
@@ -131,6 +131,19 @@ A_AVAX = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_AVAX)
+A_DOGE = Asset.initialize(
+    identifier='DOGE',
+    asset_type=AssetType.OWN_CHAIN,
+    name="Dogecoin",
+    symbol='DOGE',
+    started=Timestamp(1386325540),
+    forked=None,
+    swapped_for=None,
+    coingecko='dogecoin',
+    cryptocompare=None,
+)
+CONSTANT_ASSETS.append(A_DOGE)
+
 
 A_BAL = EthereumToken.initialize(
     address=string_to_ethereum_address('0xba100000625a3754423978a60c9317c58a424e3D'),
@@ -252,6 +265,18 @@ A_TUSD = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_TUSD)
+A_MATIC = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),
+    decimals=18,
+    name="Matic Network",
+    symbol='MATIC',
+    started=Timestamp(1555718400),
+    swapped_for=None,
+    coingecko='matic-network',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_MATIC)
 
 A_AAVE = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'),
