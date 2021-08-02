@@ -326,6 +326,26 @@ Ledger action settings
 
 Here you can choose which types of historical actions should be considered taxable and which not. For example in Germany airdrops are considered windfall profits and are not taxed, so you can specify that here.
 
+
+CSV Export settings
+--------------------
+
+.. image:: images/sc_accountingcsvexport_settings.png
+   :alt: Customizing the CSV export settings
+   :align: center
+
+
+Export formulas
+^^^^^^^^^^^^^^^
+
+Specify whether formulas should be exported as formulas in the CSV export or if the actual value should be simply exported.
+
+
+Have summary
+^^^^^^^^^^^^^^^
+
+Specify whether at the end of the all_events CSV export there should be a summary of all events and the total profit/loss or not. Additionally at this summary there would be the rotki version and the settings used during the PnL report so it's easy to reproduce a report run.
+
 Customizing data & security settings
 ====================================
 
@@ -1033,7 +1053,7 @@ As a premium user you can also keep track of your Gitcoin grants and generate re
 
 You need to first find the id ofthe grant you are interested in. When you visit the grant, the id is what comes after the ``grants/`` part of the url. For example for rotki (https://gitcoin.co/grants/149/rotki) the id is ``149``.
 
- You type the grant id, select a period you are interested in and press the fetch button to retrieve the events for this
+You type the grant id, select a period you are interested in and press the fetch button to retrieve the events for this
 period. After the the retrieval completes you should be able to see the list of the events for this Grant.
 
 .. image:: images/gitcoin_grants_report.png

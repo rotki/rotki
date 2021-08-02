@@ -31,6 +31,8 @@ export interface GeneralSettings {
 
 export interface AccountingSettings {
   readonly calculatePastCostBasis: boolean;
+  readonly haveCSVSummary: boolean;
+  readonly exportCSVFormulas: boolean;
   readonly includeCrypto2Crypto: boolean;
   readonly includeGasCosts: boolean;
   readonly taxFreeAfterPeriod: number | null;
@@ -138,6 +140,8 @@ interface SettingsPayload {
   current_price_oracles: string[];
   historical_price_oracles: string[];
   taxable_ledger_actions: LedgerActionType[];
+  pnl_csv_with_formulas: boolean;
+  pnl_csv_have_summary: boolean;
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare' | 'loopring';

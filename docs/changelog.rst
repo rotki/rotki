@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :feature:`2145` Users will now be able to customize whether CSV export should contain metadata of the PnL run. Consisting of the rotki version that generated it and the chosen accounting settings.
+* :feature:`3279` Users will now be able to customize whether CSV export should contain a summary of PnL per event type.
+* :feature:`3252` Users will now be able to customize whether CSV export should contain formulas or not.
 * :feature:`3125` Native support for Polkadot blockchain.
 * :feature:`3242` Native support for Avalanche Blockchain and Covalent API.
 * :feature:`3097` Users will now have the option to disable the application tray icon.

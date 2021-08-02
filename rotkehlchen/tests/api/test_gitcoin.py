@@ -67,7 +67,7 @@ def test_get_grant_events(rotkehlchen_api_server, start_with_valid_premium):
         'timestamp': 1622710976,
         'tx_id': 'ebc0b230114c13fdd8957e01e0568a34928c87c89b9d0f8a0db058849e9419ef',
         'tx_type': 'zksync',
-        'usd_value': '0.95',
+        'usd_value': '0.9500000000000001000000000002',
     }, {
         'amount': '0.00019',
         'asset': 'ETH',
@@ -76,7 +76,7 @@ def test_get_grant_events(rotkehlchen_api_server, start_with_valid_premium):
         'timestamp': 1622711531,
         'tx_id': 'f9e25d11eb88a644bed9c40902fe76e64fa4b4c3fe3a8a7bfefad10559a08e12',
         'tx_type': 'zksync',
-        'usd_value': '0.5335006159891',
+        'usd_value': '0.5426742',
     }, {
         'amount': '1.9',
         'asset': '_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
@@ -95,7 +95,7 @@ def test_get_grant_events(rotkehlchen_api_server, start_with_valid_premium):
         'timestamp': 1623250357,
         'tx_id': 'e2e2d8f24696a8dacbb5edceae718ef6b29a59123ed6e1d663ef9159c231b361',
         'tx_type': 'zksync',
-        'usd_value': '0.9499999999999998000000000000',
+        'usd_value': '0.95',
     }
 
     # Make sure that only_cache -> false and grant_id missing is caugh

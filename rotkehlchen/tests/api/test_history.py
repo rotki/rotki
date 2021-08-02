@@ -287,7 +287,7 @@ def _assert_column(keys, letter, expected_column_name, location):
     assert keys[ord(letter) - ord('A')] == expected_column_name, msg
 
 
-CSV_SELL_RE = re.compile(r'=IF\(([A-Z]).*=0,0,([A-Z]).*-([A-Z]).*\)')
+CSV_SELL_RE = re.compile(r'=IF\(([A-Z]).*=0;0;([A-Z]).*-([A-Z]).*\)')
 
 
 def assert_csv_formulas_trades(row, profit_currency):

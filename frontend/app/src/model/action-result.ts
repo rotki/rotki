@@ -47,6 +47,8 @@ export interface DBSettings {
   readonly display_date_in_localtime: boolean;
   readonly current_price_oracles: PriceOracles[];
   readonly historical_price_oracles: PriceOracles[];
+  readonly pnl_csv_with_formulas: boolean;
+  readonly pnl_csv_have_summary: boolean;
 }
 
 interface ApiKey {
