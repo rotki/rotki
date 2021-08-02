@@ -1,5 +1,5 @@
 import { SupportedExchange } from '@/services/balances/types';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { KrakenAccountType } from '@/store/balances/types';
 import { LedgerActionType } from '@/store/history/consts';
 
@@ -39,7 +39,7 @@ export interface DBSettings {
   readonly last_balance_save: number;
   readonly date_display_format: string;
   readonly kraken_account_type: string;
-  readonly active_modules: SupportedModules[];
+  readonly active_modules: Module[];
   readonly frontend_settings: string;
   readonly account_for_assets_movements: boolean;
   readonly btc_derivation_gap_limit: number;

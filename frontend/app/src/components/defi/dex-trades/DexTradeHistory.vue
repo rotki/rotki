@@ -26,8 +26,7 @@ import ModuleMixin from '@/mixins/module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { DexTradesTable } from '@/premium/premium';
-import { MODULE_BALANCER, MODULE_UNISWAP } from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 
 @Component({
@@ -53,7 +52,7 @@ export default class DexTradeHistory extends Mixins(
   fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
   fetchBalancerTrades!: (refresh: boolean) => Promise<void>;
 
-  readonly modules: SupportedModules[] = [MODULE_UNISWAP, MODULE_BALANCER];
+  readonly modules: Module[] = [Module.UNISWAP, Module.BALANCER];
 
   get isEnabled(): boolean {
     return this.isAnyModuleEnabled(this.modules);
@@ -61,8 +60,8 @@ export default class DexTradeHistory extends Mixins(
 
   get dexLoading(): boolean {
     return (
-      (this.isModuleEnabled(MODULE_UNISWAP) && this.loading) ||
-      (this.isModuleEnabled(MODULE_BALANCER) && this.secondaryLoading)
+      (this.isModuleEnabled(Module.UNISWAP) && this.loading) ||
+      (this.isModuleEnabled(Module.BALANCER) && this.secondaryLoading)
     );
   }
 

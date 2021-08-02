@@ -26,7 +26,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ModuleMixin from '@/mixins/module-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { Eth2Staking } from '@/premium/premium';
-import { MODULE_ETH2 } from '@/services/session/consts';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 
 @Component({
@@ -36,13 +36,13 @@ import { Section } from '@/store/const';
   }
 })
 export default class Eth2Page extends Mixins(StatusMixin, ModuleMixin) {
-  readonly module = [MODULE_ETH2];
+  readonly module = [Module.ETH2];
   readonly section = Section.STAKING_ETH2;
   readonly secondSection = Section.STAKING_ETH2_DEPOSITS;
   fetchStakingDetails!: (refresh: boolean) => Promise<void>;
 
   get moduleEnabled(): boolean {
-    return this.isModuleEnabled(MODULE_ETH2);
+    return this.isModuleEnabled(Module.ETH2);
   }
 
   async mounted() {

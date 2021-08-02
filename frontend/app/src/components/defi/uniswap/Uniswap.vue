@@ -136,8 +136,7 @@ import ModuleMixin from '@/mixins/module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { UniswapDetails } from '@/premium/premium';
-import { MODULE_UNISWAP } from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 import { UniswapBalance } from '@/store/defi/types';
 import { ETH, GeneralAccount } from '@/typing/types';
@@ -168,7 +167,7 @@ export default class Uniswap extends Mixins(
   AssetMixin
 ) {
   readonly ETH = ETH;
-  readonly modules: SupportedModules[] = [MODULE_UNISWAP];
+  readonly modules: Module[] = [Module.UNISWAP];
   section = Section.DEFI_UNISWAP_BALANCES;
   secondSection = Section.DEFI_UNISWAP_EVENTS;
 
@@ -180,7 +179,7 @@ export default class Uniswap extends Mixins(
   fetchUniswapEvents!: (refresh: boolean) => Promise<void>;
 
   get isEnabled(): boolean {
-    return this.isModuleEnabled(MODULE_UNISWAP);
+    return this.isModuleEnabled(Module.UNISWAP);
   }
 
   get selectedAddresses(): string[] {

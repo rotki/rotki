@@ -116,8 +116,7 @@ import { mapActions, mapGetters } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { ExternalServiceKeys } from '@/model/action-result';
-import { MODULE_LOOPRING } from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Message } from '@/store/types';
 import { ExternalServiceKey, ExternalServiceName } from '@/typing/types';
 
@@ -139,11 +138,11 @@ export default class ExternalServices extends Vue {
   serviceToDelete: ExternalServiceName | '' = '';
 
   loading: boolean = false;
-  activeModules!: SupportedModules[];
+  activeModules!: Module[];
   fetchLoopringBalances!: (refresh: boolean) => Promise<void>;
 
   get isLoopringActive(): boolean {
-    return this.activeModules.includes(MODULE_LOOPRING);
+    return this.activeModules.includes(Module.LOOPRING);
   }
 
   private updateKeys({

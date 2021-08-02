@@ -24,8 +24,7 @@ import ModuleMixin from '@/mixins/module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { BalancerBalances } from '@/premium/premium';
-import { MODULE_BALANCER } from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 
 @Component({
@@ -51,10 +50,10 @@ export default class Balancer extends Mixins(
   readonly secondSection = Section.DEFI_BALANCER_EVENTS;
   fetchBalancerBalances!: (refresh: boolean) => Promise<void>;
   fetchBalancerEvents!: (refresh: boolean) => Promise<void>;
-  readonly modules: SupportedModules[] = [MODULE_BALANCER];
+  readonly modules: Module[] = [Module.BALANCER];
 
   get isEnabled(): boolean {
-    return this.isModuleEnabled(MODULE_BALANCER);
+    return this.isModuleEnabled(Module.BALANCER);
   }
 
   async mounted() {

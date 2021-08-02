@@ -51,12 +51,12 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ModuleMixin from '@/mixins/module-mixin';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 
 @Component({})
 export default class ModuleSelector extends Mixins(ModuleMixin) {
   readonly supportedModules = SUPPORTED_MODULES;
-  selectedModules: SupportedModules[] = [];
+  selectedModules: Module[] = [];
   search: string = '';
   loading: boolean = false;
 
@@ -64,7 +64,7 @@ export default class ModuleSelector extends Mixins(ModuleMixin) {
     this.selectedModules = this.activeModules;
   }
 
-  unselect(identifier: SupportedModules) {
+  unselect(identifier: Module) {
     const selectionIndex = this.selectedModules.indexOf(identifier);
     if (selectionIndex < 0) {
       return;
@@ -73,7 +73,7 @@ export default class ModuleSelector extends Mixins(ModuleMixin) {
     this.update(this.selectedModules);
   }
 
-  async update(activeModules: SupportedModules[]) {
+  async update(activeModules: Module[]) {
     this.loading = true;
     await this.activateModules(activeModules);
     this.selectedModules = activeModules;

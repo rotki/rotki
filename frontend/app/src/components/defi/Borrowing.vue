@@ -95,12 +95,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import StatusMixin from '@/mixins/status-mixin';
 import { DefiProtocol } from '@/services/defi/consts';
-import {
-  MODULE_AAVE,
-  MODULE_COMPOUND,
-  MODULE_MAKERDAO_VAULTS
-} from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 import {
   AaveLoan,
@@ -139,10 +134,10 @@ export default class Borrowing extends Mixins(StatusMixin) {
   section = Section.DEFI_BORROWING;
   secondSection = Section.DEFI_BORROWING_HISTORY;
 
-  readonly modules: SupportedModules[] = [
-    MODULE_AAVE,
-    MODULE_COMPOUND,
-    MODULE_MAKERDAO_VAULTS
+  readonly modules: Module[] = [
+    Module.AAVE,
+    Module.COMPOUND,
+    Module.MAKERDAO_VAULTS
   ];
 
   get selectedProtocols(): DefiProtocol[] {

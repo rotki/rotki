@@ -187,7 +187,7 @@ import { AccountInput } from '@/components/accounts/types';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TaskType } from '@/model/task-type';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import {
   AddAccountsPayload,
   BlockchainAccount,
@@ -284,7 +284,7 @@ export default class AccountForm extends Vue {
   editAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
   advanced: boolean = false;
   inputMode: AccountInput = MANUAL_ADD;
-  selectedModules: SupportedModules[] = [];
+  selectedModules: Module[] = [];
 
   readonly FIELD_XPUB = FIELD_XPUB;
   readonly FIELD_ADDRESS = FIELD_ADDRESS;

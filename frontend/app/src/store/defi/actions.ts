@@ -23,18 +23,7 @@ import {
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  ALL_MODULES,
-  MODULE_AAVE,
-  MODULE_BALANCER,
-  MODULE_COMPOUND,
-  MODULE_MAKERDAO_DSR,
-  MODULE_MAKERDAO_VAULTS,
-  MODULE_UNISWAP,
-  MODULE_YEARN,
-  MODULE_YEARN_V2
-} from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { ALL_MODULES, Module } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
 import {
   ACTION_PURGE_PROTOCOL,
@@ -67,7 +56,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_MAKERDAO_DSR)) {
+    if (!activeModules.includes(Module.MAKERDAO_DSR)) {
       return;
     }
     const section = Section.DEFI_DSR_BALANCES;
@@ -114,7 +103,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_MAKERDAO_DSR) || !session?.premium) {
+    if (!activeModules.includes(Module.MAKERDAO_DSR) || !session?.premium) {
       return;
     }
     const section = Section.DEFI_DSR_HISTORY;
@@ -160,7 +149,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_MAKERDAO_VAULTS)) {
+    if (!activeModules.includes(Module.MAKERDAO_VAULTS)) {
       return;
     }
     const section = Section.DEFI_MAKERDAO_VAULTS;
@@ -211,7 +200,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_MAKERDAO_VAULTS) || !session?.premium) {
+    if (!activeModules.includes(Module.MAKERDAO_VAULTS) || !session?.premium) {
       return;
     }
     const section = Section.DEFI_MAKERDAO_VAULT_DETAILS;
@@ -260,7 +249,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_AAVE)) {
+    if (!activeModules.includes(Module.AAVE)) {
       return;
     }
     const section = Section.DEFI_AAVE_BALANCES;
@@ -310,7 +299,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     payload: { refresh?: boolean; reset?: boolean }
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_AAVE) || !session?.premium) {
+    if (!activeModules.includes(Module.AAVE) || !session?.premium) {
       return;
     }
     const section = Section.DEFI_AAVE_HISTORY;
@@ -606,7 +595,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_COMPOUND)) {
+    if (!activeModules.includes(Module.COMPOUND)) {
       return;
     }
 
@@ -658,7 +647,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
   ) {
     const { activeModules } = session!.generalSettings;
 
-    if (!activeModules.includes(MODULE_COMPOUND) || !session?.premium) {
+    if (!activeModules.includes(Module.COMPOUND) || !session?.premium) {
       return;
     }
 
@@ -714,8 +703,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const { activeModules } = session!.generalSettings;
     const isV1 = version === ProtocolVersion.V1;
     const isV2 = version === ProtocolVersion.V2;
-    const isYearnV1AndActive = activeModules.includes(MODULE_YEARN) && isV1;
-    const isYearnV2AndActive = activeModules.includes(MODULE_YEARN_V2) && isV2;
+    const isYearnV1AndActive = activeModules.includes(Module.YEARN) && isV1;
+    const isYearnV2AndActive = activeModules.includes(Module.YEARN_V2) && isV2;
     const isModuleActive = isYearnV1AndActive || isYearnV2AndActive;
 
     if (!isModuleActive) {
@@ -788,8 +777,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const isV1 = payload.version === ProtocolVersion.V1;
     const isV2 = payload.version === ProtocolVersion.V2;
-    const isYearnV1AndActive = activeModules.includes(MODULE_YEARN) && isV1;
-    const isYearnV2AndActive = activeModules.includes(MODULE_YEARN_V2) && isV2;
+    const isYearnV1AndActive = activeModules.includes(Module.YEARN) && isV1;
+    const isYearnV2AndActive = activeModules.includes(Module.YEARN_V2) && isV2;
     const isModuleActive = isYearnV1AndActive || isYearnV2AndActive;
 
     if (!isModuleActive || !session?.premium) {
@@ -866,7 +855,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_UNISWAP)) {
+    if (!activeModules.includes(Module.UNISWAP)) {
       return;
     }
 
@@ -918,7 +907,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_UNISWAP) || !session!.premium) {
+    if (!activeModules.includes(Module.UNISWAP) || !session!.premium) {
       return;
     }
 
@@ -968,7 +957,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_UNISWAP) || !session!.premium) {
+    if (!activeModules.includes(Module.UNISWAP) || !session!.premium) {
       return;
     }
 
@@ -1075,7 +1064,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       mutation: 'balancerBalances',
       taskType: TaskType.BALANCER_BALANCES,
       section: Section.DEFI_BALANCER_BALANCES,
-      module: MODULE_BALANCER,
+      module: Module.BALANCER,
       meta: meta,
       refresh,
       checkPremium: true,
@@ -1108,7 +1097,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       mutation: 'balancerTrades',
       taskType: TaskType.BALANCER_TRADES,
       section: Section.DEFI_BALANCER_TRADES,
-      module: MODULE_BALANCER,
+      module: Module.BALANCER,
       meta: meta,
       checkPremium: true,
       refresh,
@@ -1146,7 +1135,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       mutation: 'balancerEvents',
       taskType: TaskType.BALANCER_EVENT,
       section: Section.DEFI_BALANCER_EVENTS,
-      module: MODULE_BALANCER,
+      module: Module.BALANCER,
       meta: meta,
       checkPremium: true,
       refresh,
@@ -1166,7 +1155,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
   },
   async [ACTION_PURGE_PROTOCOL](
     { commit, rootGetters: { status } },
-    module: SupportedModules | typeof ALL_MODULES
+    module: Module | typeof ALL_MODULES
   ) {
     function resetStatus(section: Section) {
       setStatus(Status.NONE, section, status, commit);
@@ -1239,21 +1228,21 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       resetStatus(Section.DEFI_BALANCER_EVENTS);
     }
 
-    if (module === MODULE_MAKERDAO_DSR) {
+    if (module === Module.MAKERDAO_DSR) {
       clearDSRState();
-    } else if (module === MODULE_MAKERDAO_VAULTS) {
+    } else if (module === Module.MAKERDAO_VAULTS) {
       clearMakerDAOVaultState();
-    } else if (module === MODULE_AAVE) {
+    } else if (module === Module.AAVE) {
       clearAaveState();
-    } else if (module === MODULE_COMPOUND) {
+    } else if (module === Module.COMPOUND) {
       clearCompoundState();
-    } else if (module === MODULE_YEARN) {
+    } else if (module === Module.YEARN) {
       clearYearnVaultsState();
-    } else if (module === MODULE_YEARN_V2) {
+    } else if (module === Module.YEARN_V2) {
       clearYearnVaultsV2State();
-    } else if (module === MODULE_UNISWAP) {
+    } else if (module === Module.UNISWAP) {
       clearUniswapState();
-    } else if (module === MODULE_BALANCER) {
+    } else if (module === Module.BALANCER) {
       clearBalancerState();
     } else if (module === ALL_MODULES) {
       clearDSRState();

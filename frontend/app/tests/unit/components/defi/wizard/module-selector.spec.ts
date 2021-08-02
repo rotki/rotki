@@ -3,6 +3,7 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { api } from '@/services/rotkehlchen-api';
+import { Module } from '@/services/session/consts';
 import store from '@/store/store';
 import { GeneralSettings } from '@/typing/types';
 import '../../../i18n';
@@ -27,7 +28,7 @@ describe('ModuleSelector.vue', () => {
     document.body.setAttribute('data-app', 'true');
     const settings: GeneralSettings = {
       ...store.state.session!.generalSettings,
-      activeModules: ['aave']
+      activeModules: [Module.AAVE]
     };
     store.commit('session/generalSettings', settings);
 

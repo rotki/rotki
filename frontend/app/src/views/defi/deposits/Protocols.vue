@@ -8,25 +8,18 @@ import { Component, Mixins } from 'vue-property-decorator';
 import Lending from '@/components/defi/Lending.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ModuleMixin from '@/mixins/module-mixin';
-import {
-  MODULE_AAVE,
-  MODULE_COMPOUND,
-  MODULE_MAKERDAO_DSR,
-  MODULE_YEARN,
-  MODULE_YEARN_V2
-} from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 
 @Component({
   components: { ModuleNotActive, Lending }
 })
 export default class Protocols extends Mixins(ModuleMixin) {
-  readonly modules: SupportedModules[] = [
-    MODULE_AAVE,
-    MODULE_COMPOUND,
-    MODULE_MAKERDAO_DSR,
-    MODULE_YEARN,
-    MODULE_YEARN_V2
+  readonly modules: Module[] = [
+    Module.AAVE,
+    Module.COMPOUND,
+    Module.MAKERDAO_DSR,
+    Module.YEARN,
+    Module.YEARN_V2
   ];
 
   get anyModuleEnabled(): boolean {

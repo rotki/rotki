@@ -4,11 +4,7 @@ import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  ALL_MODULES,
-  MODULE_ADEX,
-  MODULE_ETH2
-} from '@/services/session/consts';
+import { ALL_MODULES, Module } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
@@ -195,7 +191,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
   },
   async [ACTION_PURGE_DATA](
     { commit, rootGetters: { status } },
-    module: typeof MODULE_ETH2 | typeof MODULE_ADEX | typeof ALL_MODULES
+    module: typeof Module.ETH2 | typeof Module.ADEX | typeof ALL_MODULES
   ) {
     function clearEth2() {
       commit(ETH2_DETAILS, []);
@@ -211,9 +207,9 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
       setStatus(Status.NONE, Section.STAKING_ADEX_HISTORY, status, commit);
     }
 
-    if (module === MODULE_ETH2) {
+    if (module === Module.ETH2) {
       clearEth2();
-    } else if (module === MODULE_ADEX) {
+    } else if (module === Module.ADEX) {
       clearAdex();
     } else if (module === ALL_MODULES) {
       clearEth2();

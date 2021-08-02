@@ -23,7 +23,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ModuleMixin from '@/mixins/module-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { AdexStaking } from '@/premium/premium';
-import { MODULE_ADEX } from '@/services/session/consts';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 
 @Component({
@@ -33,14 +33,14 @@ import { Section } from '@/store/const';
   }
 })
 export default class AdexPage extends Mixins(StatusMixin, ModuleMixin) {
-  readonly module = [MODULE_ADEX];
+  readonly module = [Module.ADEX];
   section = Section.STAKING_ADEX;
   secondSection = Section.STAKING_ADEX_HISTORY;
 
   fetchAdex!: (refresh: boolean) => Promise<void>;
 
   get moduleEnabled(): boolean {
-    return this.isModuleEnabled(MODULE_ADEX);
+    return this.isModuleEnabled(Module.ADEX);
   }
 
   async mounted() {

@@ -7,7 +7,7 @@ import {
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import {
   Balance,
   BtcAccountData,
@@ -97,7 +97,7 @@ export interface BlockchainAccountPayload extends AccountPayload {
   readonly blockchain: Blockchain;
   readonly xpub?: XpubPayload;
   readonly accounts?: string[];
-  readonly modules?: SupportedModules[];
+  readonly modules?: Module[];
 }
 
 export interface AccountPayload {
@@ -142,7 +142,7 @@ export interface AssetBalance extends Balance {
 export type AddAccountsPayload = {
   readonly blockchain: Blockchain;
   readonly payload: AccountPayload[];
-  readonly modules?: SupportedModules[];
+  readonly modules?: Module[];
 };
 
 interface L2Totals {
