@@ -34,10 +34,12 @@ from rotkehlchen.typing import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
+from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.cost_basis import CostBasisInfo
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.settings import DBSettings
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -51,6 +53,14 @@ FILENAME_LOAN_SETTLEMENTS_CSV = 'loan_settlements.csv'
 FILENAME_DEFI_EVENTS_CSV = 'defi_events.csv'
 FILENAME_LEDGER_ACTIONS_CSV = 'ledger_actions.csv'
 FILENAME_ALL_CSV = 'all_events.csv'
+
+ACCOUNTING_SETTINGS = (
+    'include_crypto2crypto',
+    'taxfree_after_period',
+    'include_gas_costs',
+    'account_for_assets_movements',
+    'calculate_past_cost_basis',
+)
 
 
 class CSVWriteError(Exception):
@@ -151,6 +161,13 @@ class CSVExporter():
 
         return f'={expression}'
 
+    def _add_settings_lines(self, db_settings: 'DBSettings', template: Dict[str, Any]) -> None:
+        for setting in ACCOUNTING_SETTINGS:
+            entry = template.copy()
+            entry['received_in_asset'] = setting
+            entry['net_profit_or_loss'] = str(getattr(db_settings, setting))
+            self.all_events_csv.append(entry)
+
     def maybe_add_summary(
             self,
             ledger_actions_profit_loss: FVal,
@@ -187,8 +204,8 @@ class CSVExporter():
             f'total_bought_cost_in_{self.profit_currency.symbol}': '',
             f'total_received_in_{self.profit_currency.symbol}': '',
         }
-        self.all_events_csv.append(template)  # separate with a new line
-        self.all_events_csv.append(template)  # separate with a new line
+        self.all_events_csv.append(template)  # separate with 2 new lines
+        self.all_events_csv.append(template)
 
         entry = template.copy()
         entry['received_in_asset'] = 'LEDGER ACTIONS PROFIT/LOSS'
@@ -278,6 +295,18 @@ class CSVExporter():
             actual_value=total_taxable_profit_loss,
         )
         self.all_events_csv.append(entry)
+
+        self.all_events_csv.append(template)  # separate with 2 new lines
+        self.all_events_csv.append(template)
+
+        version_result = check_if_version_up_to_date()
+        entry = template.copy()
+        entry['received_in_asset'] = 'rotki version'
+        entry['net_profit_or_loss'] = version_result.our_version
+        self.all_events_csv.append(entry)
+
+        db_settings = self.database.get_settings()
+        self._add_settings_lines(db_settings, template)
 
     def add_to_allevents(
             self,

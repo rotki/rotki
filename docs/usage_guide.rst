@@ -338,13 +338,13 @@ CSV Export settings
 Export formulas
 ^^^^^^^^^^^^^^^
 
-Specify whether formulas should be exported as formulas in the CSV export or if the actual value should be simply exported
+Specify whether formulas should be exported as formulas in the CSV export or if the actual value should be simply exported.
 
 
 Have summary
 ^^^^^^^^^^^^^^^
 
-Specify whether at the end of the all_events CSV export there should be a summary of all events and the total profit/loss or notg.
+Specify whether at the end of the all_events CSV export there should be a summary of all events and the total profit/loss or not. Additionally at this summary there would be the rotki version and the settings used during the PnL report so it's easy to reproduce a report run.
 
 Customizing data & security settings
 ====================================

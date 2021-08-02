@@ -140,6 +140,8 @@ interface SettingsPayload {
   current_price_oracles: string[];
   historical_price_oracles: string[];
   taxable_ledger_actions: LedgerActionType[];
+  pnl_csv_with_formulas: boolean;
+  pnl_csv_have_summary: boolean;
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare' | 'loopring';
