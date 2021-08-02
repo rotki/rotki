@@ -37,6 +37,7 @@ export const convertToAccountingSettings = (
   taxFreeAfterPeriod: settings.taxfree_after_period,
   includeGasCosts: settings.include_gas_costs,
   exportCSVFormulas: settings.pnl_csv_with_formulas,
+  haveCSVSummary: settings.pnl_csv_have_summary,
   includeCrypto2Crypto: settings.include_crypto2crypto,
   accountForAssetsMovements: settings.account_for_assets_movements,
   calculatePastCostBasis: settings.calculate_past_cost_basis,

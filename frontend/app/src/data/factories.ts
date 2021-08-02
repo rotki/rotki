@@ -19,6 +19,7 @@ export const defaultGeneralSettings = (): GeneralSettings => ({
 });
 
 export const defaultAccountingSettings = (): AccountingSettings => ({
+  haveCSVSummary: false,
   exportCSVFormulas: true,
   includeCrypto2Crypto: true,
   includeGasCosts: true,

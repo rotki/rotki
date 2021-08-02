@@ -31,6 +31,7 @@ export interface GeneralSettings {
 
 export interface AccountingSettings {
   readonly calculatePastCostBasis: boolean;
+  readonly haveCSVSummary: boolean;
   readonly exportCSVFormulas: boolean;
   readonly includeCrypto2Crypto: boolean;
   readonly includeGasCosts: boolean;

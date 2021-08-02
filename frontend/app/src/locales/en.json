@@ -2463,6 +2463,7 @@
     "csv_export_settings": {
       "title": "CSV Export Settings",
       "labels": {
+        "have_csv_summary": "Should summary of all events be included in the all events CSV export?",
         "export_csv_formulas": "Should formulas be exported as part of the PnL CSV?"
       }
     },
@@ -2479,6 +2480,7 @@
       "tax_free_period": "Tax free period set to {period} days",
       "tax_free": "Tax free period {enabled}",
       "crypto_to_crypto": "Error setting crypto to crypto: {message}",
+      "have_csv_summary": "Error setting the option to include summary in CSV export: {message}",
       "export_csv_formulas": "Error setting the option to include formulas in CSV export: {message}",
       "gas_costs": "Error setting Ethereum gas costs: {message}",
       "ignored_success": "{asset} added to ignored assets",

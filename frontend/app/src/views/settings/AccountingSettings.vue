@@ -174,6 +174,17 @@
             :error-messages="settingsMessages['exportCSVFormulas'].error"
             @change="onExportCSVFormulasChange($event)"
           />
+          <v-switch
+            v-model="haveCSVSummary"
+            class="csv_export_settings__haveCSVSummary"
+            :label="
+              $t('account_settings.csv_export_settings.labels.have_csv_summary')
+            "
+            color="primary"
+            :success-messages="settingsMessages['haveCSVSummary'].success"
+            :error-messages="settingsMessages['haveCSVSummary'].error"
+            @change="onHaveCSVSummaryChange($event)"
+          />
         </card>
       </v-col>
     </v-row>
@@ -190,6 +201,7 @@ import AssetMixin from '@/mixins/asset-mixin';
 import SettingsMixin from '@/mixins/settings-mixin';
 import { ActionStatus } from '@/store/types';
 
+const haveCSVSummary = 'haveCSVSummary';
 const exportCSVFormulas = 'exportCSVFormulas';
 const crypto2crypto = 'crypto2crypto';
 const gasCostChange = 'gasCostChange';
@@ -201,6 +213,7 @@ const accountForAssetsMovements = 'accountForAssetsMovements';
 const calculatePastCostBasis = 'calculatePastCostBasis';
 
 const SETTINGS = [
+  haveCSVSummary,
   exportCSVFormulas,
   crypto2crypto,
   gasCostChange,
@@ -233,6 +246,7 @@ export default class Accounting extends Mixins<
   ignoreAsset!: (asset: string) => Promise<ActionStatus>;
   unignoreAsset!: (asset: string) => Promise<ActionStatus>;
 
+  haveCSVSummary: boolean = false;
   exportCSVFormulas: boolean = false;
   crypto2CryptoTrades: boolean = false;
   gasCosts: boolean = false;
@@ -258,6 +272,7 @@ export default class Accounting extends Mixins<
   }
 
   mounted() {
+    this.haveCSVSummary = this.accountingSettings.haveCSVSummary;
     this.exportCSVFormulas = this.accountingSettings.exportCSVFormulas;
     this.crypto2CryptoTrades = this.accountingSettings.includeCrypto2Crypto;
     this.gasCosts = this.accountingSettings.includeGasCosts;
@@ -424,6 +439,29 @@ export default class Accounting extends Mixins<
               message: reason.message
             }
           )
+        );
+      });
+  }
+
+  onHaveCSVSummaryChange(enabled: boolean) {
+    const { commit } = this.$store;
+
+    this.$api
+      .setSettings({ pnl_csv_have_summary: enabled })
+      .then(settings => {
+        commit('session/accountingSettings', {
+          ...this.accountingSettings,
+          haveCSVSummary: settings.pnl_csv_have_summary
+        });
+        this.validateSettingChange('haveCSVSummary', 'success');
+      })
+      .catch(reason => {
+        this.validateSettingChange(
+          'haveCSVSummary',
+          'error',
+          this.$tc('account_settings.messages.have_csv_summary', 0, {
+            message: reason.message
+          })
         );
       });
   }
