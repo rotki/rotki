@@ -40,6 +40,8 @@ DEFAULT_TAXABLE_LEDGER_ACTIONS = [
     LedgerActionType.DONATION_RECEIVED,
     LedgerActionType.GRANT,
 ]
+DEFAULT_PNL_CSV_WITH_FORMULAS = True
+DEFAULT_PNL_CSV_HAVE_SUMMARY = False
 
 JSON_KEYS = ('current_price_oracles', 'historical_price_oracles', 'taxable_ledger_actions')
 BOOLEAN_KEYS = (
@@ -51,6 +53,8 @@ BOOLEAN_KEYS = (
     'account_for_assets_movements',
     'calculate_past_cost_basis',
     'display_date_in_localtime',
+    'pnl_csv_with_formulas',
+    'pnl_csv_have_summary',
 )
 INTEGER_KEYS = (
     'version',
@@ -61,6 +65,7 @@ INTEGER_KEYS = (
 STRING_KEYS = (
     'eth_rpc_endpoint',
     'ksm_rpc_endpoint',
+    'dot_rpc_endpoint',
     'date_display_format',
     'frontend_settings',
 )
@@ -80,6 +85,7 @@ class DBSettings(NamedTuple):
     include_gas_costs: bool = DEFAULT_INCLUDE_GAS_COSTS
     eth_rpc_endpoint: str = 'http://localhost:8545'
     ksm_rpc_endpoint: str = 'http://localhost:9933'
+    dot_rpc_endpoint: str = ''  # same as kusama -- must be set by user
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
     last_balance_save: Timestamp = Timestamp(0)
@@ -93,6 +99,8 @@ class DBSettings(NamedTuple):
     current_price_oracles: List[CurrentPriceOracle] = DEFAULT_CURRENT_PRICE_ORACLES
     historical_price_oracles: List[HistoricalPriceOracle] = DEFAULT_HISTORICAL_PRICE_ORACLES
     taxable_ledger_actions: List[LedgerActionType] = DEFAULT_TAXABLE_LEDGER_ACTIONS
+    pnl_csv_with_formulas: bool = DEFAULT_PNL_CSV_WITH_FORMULAS
+    pnl_csv_have_summary: bool = DEFAULT_PNL_CSV_HAVE_SUMMARY
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -104,6 +112,7 @@ class ModifiableDBSettings(NamedTuple):
     include_gas_costs: Optional[bool] = None
     eth_rpc_endpoint: Optional[str] = None
     ksm_rpc_endpoint: Optional[str] = None
+    dot_rpc_endpoint: Optional[str] = None
     main_currency: Optional[Asset] = None
     date_display_format: Optional[str] = None
     submit_usage_analytics: Optional[bool] = None
@@ -116,6 +125,8 @@ class ModifiableDBSettings(NamedTuple):
     current_price_oracles: Optional[List[CurrentPriceOracle]] = None
     historical_price_oracles: Optional[List[HistoricalPriceOracle]] = None
     taxable_ledger_actions: Optional[List[LedgerActionType]] = None
+    pnl_csv_with_formulas: Optional[bool] = None
+    pnl_csv_have_summary: Optional[bool] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}

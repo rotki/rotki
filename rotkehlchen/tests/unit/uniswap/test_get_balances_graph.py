@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.chain.ethereum.modules.uniswap.typing import ProtocolBalance
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import ProtocolBalance
 
 from .utils import (
     EXP_KNOWN_ASSETS_1,
@@ -68,6 +68,7 @@ def test_pagination(
         graph_query_limit,
         no_requests,
         mock_graph_query_limit,  # pylint: disable=unused-argument
+        mock_amm_graph_query_limit,  # pylint: disable=unused-argument
 ):
     """Test an extra graph request is done when the number of items in the
     response equals GRAPH_QUERY_LIMIT.

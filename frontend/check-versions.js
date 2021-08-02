@@ -1,6 +1,6 @@
 const { execSync } = require('child_process');
 const semver = require('semver');
-const { engines } = require('./package');
+const { engines } = require('rotki/package.json');
 const requiredNodeVersion = engines.node;
 if (!semver.satisfies(process.version, requiredNodeVersion)) {
   throw new Error(

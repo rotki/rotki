@@ -1,6 +1,6 @@
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { BigNumber } from 'bignumber.js';
 import { Exchange, PriceOracles } from '@/model/action-result';
-import { SupportedAsset } from '@/services/assets/types';
 import {
   BlockchainAssetBalances,
   BtcBalances,
@@ -47,6 +47,8 @@ export interface BalanceState {
   eth: BlockchainAssetBalances;
   btc: BtcBalances;
   ksm: BlockchainAssetBalances;
+  dot: BlockchainAssetBalances;
+  avax: BlockchainAssetBalances;
   totals: AssetBalances;
   liabilities: AssetBalances;
   usdToFiatExchangeRates: ExchangeRates;
@@ -55,6 +57,8 @@ export interface BalanceState {
   ethAccounts: GeneralAccountData[];
   btcAccounts: BtcAccountData;
   ksmAccounts: GeneralAccountData[];
+  dotAccounts: GeneralAccountData[];
+  avaxAccounts: GeneralAccountData[];
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalanceWithValue[];
   manualBalanceByLocation: BalanceByLocation;

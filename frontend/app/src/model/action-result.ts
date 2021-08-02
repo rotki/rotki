@@ -34,6 +34,7 @@ export interface DBSettings {
   readonly balance_save_frequency: number;
   readonly eth_rpc_endpoint: string;
   readonly ksm_rpc_endpoint: string;
+  readonly dot_rpc_endpoint: string;
   readonly main_currency: string;
   readonly last_balance_save: number;
   readonly date_display_format: string;
@@ -46,6 +47,8 @@ export interface DBSettings {
   readonly display_date_in_localtime: boolean;
   readonly current_price_oracles: PriceOracles[];
   readonly historical_price_oracles: PriceOracles[];
+  readonly pnl_csv_with_formulas: boolean;
+  readonly pnl_csv_have_summary: boolean;
 }
 
 interface ApiKey {

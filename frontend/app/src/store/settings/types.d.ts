@@ -1,9 +1,17 @@
+import {
+  DARK_MODE_ENABLED,
+  DARK_THEME,
+  LIGHT_THEME,
+  ThemeColors
+} from '@rotki/common/lib/settings';
+import {
+  TimeFramePeriod,
+  TimeFrameSetting
+} from '@rotki/common/lib/settings/graphs';
 import { default as BigNumber } from 'bignumber.js';
 import {
   TIMEFRAME_SETTING,
   DEFI_SETUP_DONE,
-  TIMEFRAME_PERIOD,
-  TIMEFRAME_REMEMBER,
   LAST_KNOWN_TIMEFRAME,
   QUERY_PERIOD,
   PROFIT_LOSS_PERIOD,
@@ -16,16 +24,10 @@ import {
   ITEMS_PER_PAGE,
   AMOUNT_ROUNDING_MODE,
   VALUE_ROUNDING_MODE,
-  DARK_MODE_ENABLED,
-  LIGHT_THEME,
-  DARK_THEME,
   GRAPH_ZERO_BASED
 } from '@/store/settings/consts';
 import { CurrencyLocation } from '@/typing/types';
 import RoundingMode = BigNumber.RoundingMode;
-
-export type TimeFramePeriod = typeof TIMEFRAME_PERIOD[number];
-export type TimeFrameSetting = TimeFramePeriod | typeof TIMEFRAME_REMEMBER;
 
 export type Quarter = typeof QUARTERS[number];
 
@@ -46,17 +48,8 @@ export type ExplorersSettings = {
   readonly ETH?: ExplorerEndpoints;
   readonly BTC?: ExplorerEndpoints;
   readonly KSM?: ExplorerEndpoints;
-};
-
-export interface Themes {
-  readonly light: ThemeColors;
-  readonly dark: ThemeColors;
-}
-
-export type ThemeColors = {
-  readonly primary: string;
-  readonly accent: string;
-  readonly graph: string;
+  readonly DOT?: ExplorerEndpoints;
+  readonly AVAX?: ExplorerEndpoints;
 };
 
 export interface SettingsState {

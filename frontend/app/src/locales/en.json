@@ -582,7 +582,7 @@
   },
   "date_time_picker": {
     "default_format": "Date should be in DD/MM/YYYY or DD/MM/YYYY HH:MM format",
-    "seconds_format": "Date should be in DD/MM/YYYY HH:MM:ss format"
+    "seconds_format": "Date should be in DD/MM/YYYY or DD/MM/YYYY HH:MM:ss format"
   },
   "module_address_selector": {
     "back": "Back",
@@ -1153,7 +1153,8 @@
       "date_display_format": "Date display format",
       "display_date_in_localtime": "Display date in localtime and not in UTC in CSV export, backend logs and other locations",
       "rpc_endpoint": "Ethereum Node RPC Endpoint",
-      "ksm_rpc_endpoint": "Kusama Node RPC Endpoint"
+      "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
+      "dot_rpc_endpoint": "Polkadot Node RPC Endpoint"
     },
     "local_nodes": {
       "title": "Local Nodes"
@@ -1199,6 +1200,11 @@
         "success_set": "The Kusama node RPC endpoint was set to {endpoint}",
         "success_unset": "The Kusama node RPC endpoint was successfully unset",
         "error": "There was an error setting the Kusama node RPC endpoint"
+      },
+      "dot_rpc": {
+        "success_set": "The Polkadot node RPC endpoint was set to {endpoint}",
+        "success_unset": "The Polkadot node RPC endpoint was successfully unset",
+        "error": "There was an error setting the Polkadot node RPC endpoint"
       },
       "thousand_separator": {
         "error": "Error setting thousand separator",
@@ -2277,7 +2283,9 @@
     "balances": {
       "eth": "Ethereum balances",
       "btc": "Bitcoin balances",
-      "ksm": "Kusama balances"
+      "ksm": "Kusama balances",
+      "avax": "Avalanche balances",
+      "dot": "Polkadot balances"
     },
     "metamask_import": {
       "error": {
@@ -2452,6 +2460,13 @@
       },
       "ignore_tags_hint": "Click to see all assets and select one to ignore"
     },
+    "csv_export_settings": {
+      "title": "CSV Export Settings",
+      "labels": {
+        "have_csv_summary": "Should summary of all events be included in the all events CSV export?",
+        "export_csv_formulas": "Should formulas be exported as part of the PnL CSV?"
+      }
+    },
     "validation": {
       "tax_free_days": "Please enter the number of days",
       "tax_free_days_gt_zero": "The number of days cannot be negative or zero"
@@ -2465,6 +2480,8 @@
       "tax_free_period": "Tax free period set to {period} days",
       "tax_free": "Tax free period {enabled}",
       "crypto_to_crypto": "Error setting crypto to crypto: {message}",
+      "have_csv_summary": "Error setting the option to include summary in CSV export: {message}",
+      "export_csv_formulas": "Error setting the option to include formulas in CSV export: {message}",
       "gas_costs": "Error setting Ethereum gas costs: {message}",
       "ignored_success": "{asset} added to ignored assets",
       "ignored_failure": "{asset} could not be added to ignored assets: {message}",
@@ -2662,7 +2679,9 @@
   "blockchains": {
     "eth": "Ethereum",
     "btc": "Bitcoin",
-    "ksm": "Kusama"
+    "ksm": "Kusama",
+    "avax": "Avalanche",
+    "dot": "Polkadot"
   },
   "sync_buttons": {
     "upload_tooltip": "Push your local database to the server and replace all data there",

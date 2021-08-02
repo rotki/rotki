@@ -18,6 +18,11 @@
 </template>
 
 <script lang="ts">
+import {
+  TimeFramePeriod,
+  Timeframe,
+  Timeframes
+} from '@rotki/common/lib/settings/graphs';
 import { default as BigNumber } from 'bignumber.js';
 import {
   Chart,
@@ -37,16 +42,8 @@ import {
 import dayjs from 'dayjs';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
-import { Timeframe, Timeframes } from '@/components/dashboard/types';
 import { Currency } from '@/model/currency';
 import { NetValue } from '@/services/types-api';
-import {
-  TIMEFRAME_ALL,
-  TIMEFRAME_MONTH,
-  TIMEFRAME_PERIOD,
-  TIMEFRAME_WEEK
-} from '@/store/settings/consts';
-import { TimeFramePeriod } from '@/store/settings/types';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -65,7 +62,7 @@ export default class NetWorthChart extends Vue {
   @Prop({
     required: true,
     type: String,
-    validator: value => TIMEFRAME_PERIOD.includes(value)
+    validator: value => Object.values(TimeFramePeriod).includes(value)
   })
   timeframe!: TimeFramePeriod;
   @Prop({ required: true, type: Object })
@@ -186,10 +183,10 @@ export default class NetWorthChart extends Vue {
     };
 
     const displayFormats: TimeDisplayFormat = {
-      month: labelFormat(TIMEFRAME_ALL),
-      week: labelFormat(TIMEFRAME_MONTH),
-      day: labelFormat(TIMEFRAME_WEEK),
-      hour: labelFormat(TIMEFRAME_WEEK)
+      month: labelFormat(TimeFramePeriod.ALL),
+      week: labelFormat(TimeFramePeriod.MONTH),
+      day: labelFormat(TimeFramePeriod.WEEK),
+      hour: labelFormat(TimeFramePeriod.WEEK)
     };
 
     const time: TimeScale = {

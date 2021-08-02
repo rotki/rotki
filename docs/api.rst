@@ -607,6 +607,7 @@ Getting or modifying settings
    :resjson bool include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
    :resjson string eth_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum node to use when contacting the ethereum blockchain. If it can not be reached or if it is invalid etherscan is used instead.
    :resjson string ksm_rpc_endpoint: A URL denoting the rpc endpoint for the Kusama node to use when contacting the Kusama blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
+   :resjson string dot_rpc_endpoint: A URL denoting the rpc endpoint for the Polkadot node to use when contacting the Polkadot blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :resjson string main_currency: The asset to use for all profit/loss calculation. USD by default.
    :resjson string date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :resjson int last_balance_save: The timestamp at which the balances were last saved in the database.
@@ -647,6 +648,7 @@ Getting or modifying settings
    :reqjson bool[optional] include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
    :reqjson string[optional] eth_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum node to use when contacting the ethereum blockchain. If it can not be reached or if it is invalid etherscan is used instead.
    :reqjson string[optional] ksm_rpc_endpoint: A URL denoting the rpc endpoint for the Kusama node to use when contacting the Kusama blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
+   :reqjson string[optional] dot_rpc_endpoint: A URL denoting the rpc endpoint for the Polkadot node to use when contacting the Polkadot blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :reqjson string[optional] main_currency: The FIAT currency to use for all profit/loss calculation. USD by default.
    :reqjson string[optional] date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :reqjson bool[optional] submit_usage_analytics: A boolean denoting wether or not to submit anonymous usage analytics to the rotki server.
@@ -2058,7 +2060,7 @@ Querying onchain balances
 
 .. http:get:: /api/(version)/balances/blockchains/(blockchain)/
 
-   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH`` and ``KSM``.
+   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``KSM``, ``DOT`` and ``AVAX``.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
@@ -2894,7 +2896,7 @@ Performing an asset update
    :resjson object result: Either ``true`` if all went fine or a a list of conflicts, containing the identifier of the asset in question and the local and remote versions.
    :statuscode 200: Update was succesfully applied (if any).
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Conflicts were found during update. The conflicts should also be returned.
+   :statuscode 409: Conflicts were found during update. The conflicts should also be returned. No user is currently logged in.
    :statuscode 500: Internal rotki error
    :statuscode 502: Error while trying to reach the remote for asset updates.
 
@@ -4128,7 +4130,7 @@ Getting blockchain account data
 .. http:get:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
 
    Doing a GET on the blokchcains endpoint with a specific blockchain queries account data information for that blockchain.
 
@@ -7085,9 +7087,9 @@ Adding blockchain accounts
 .. http:put:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
 
-      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
@@ -7479,9 +7481,9 @@ Editing blockchain account data
 .. http:patch:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
 
-      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
 
    Doing a PATCH on the the blockchains endpoint with a specific blockchain URL and a list of accounts to edit will edit the label and tags for those accounts.
 
@@ -7550,9 +7552,9 @@ Removing blockchain accounts
 .. http:delete:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
 
-      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 

@@ -62,6 +62,8 @@ import {
   ETH,
   ExchangeRates,
   KSM,
+  DOT,
+  AVAX,
   SupportedBlockchains
 } from '@/typing/types';
 import { assert } from '@/utils/assertions';
@@ -368,7 +370,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     payload: { chain?: Blockchain; balances: BlockchainBalances }
   ): Promise<void> {
     const { perAccount, totals } = payload.balances;
-    const { ETH: ethBalances, BTC: btcBalances, KSM: ksmBalances } = perAccount;
+    const {
+      ETH: ethBalances,
+      BTC: btcBalances,
+      KSM: ksmBalances,
+      DOT: dotBalances,
+      AVAX: avaxBalances
+    } = perAccount;
     const chain = payload.chain;
 
     if (!chain || chain === ETH) {
@@ -379,8 +387,16 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('updateKsm', ksmBalances ?? {});
     }
 
+    if (!chain || chain === DOT) {
+      commit('updateDot', dotBalances ?? {});
+    }
+
     if (!chain || chain === BTC) {
       commit('updateBtc', btcBalances ?? {});
+    }
+
+    if (!chain || chain === AVAX) {
+      commit('updateAvax', avaxBalances ?? {});
     }
 
     commit('updateTotals', totals.assets);
@@ -650,8 +666,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       if (blockchain === ETH) {
         commit('ethAccounts', accountData);
-      } else {
+      } else if (blockchain === KSM) {
         commit('ksmAccounts', accountData);
+      } else if (blockchain === DOT) {
+        commit('dotAccounts', accountData);
+      } else {
+        commit('avaxAccounts', accountData);
       }
     } else {
       const accountData = await api.editBtcAccount(payload);
@@ -661,15 +681,25 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async accounts({ commit }) {
     try {
-      const [ethAccounts, btcAccounts, ksmAccounts] = await Promise.all([
+      const [
+        ethAccounts,
+        btcAccounts,
+        ksmAccounts,
+        dotAccounts,
+        avaxAccounts
+      ] = await Promise.all([
         api.accounts(ETH),
         api.btcAccounts(),
-        api.accounts(KSM)
+        api.accounts(KSM),
+        api.accounts(DOT),
+        api.accounts(AVAX)
       ]);
 
       commit('ethAccounts', ethAccounts);
       commit('btcAccounts', btcAccounts);
       commit('ksmAccounts', ksmAccounts);
+      commit('dotAccounts', dotAccounts);
+      commit('avaxAccounts', avaxAccounts);
     } catch (e) {
       notify(
         `Failed to accounts: ${e}`,
@@ -683,6 +713,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async removeTag({ commit, state }, tagName: string) {
     commit('ethAccounts', removeTags(state.ethAccounts, tagName));
     commit('ksmAccounts', removeTags(state.ksmAccounts, tagName));
+    commit('dotAccounts', removeTags(state.dotAccounts, tagName));
+    commit('avaxAccounts', removeTags(state.avaxAccounts, tagName));
     const btcAccounts = state.btcAccounts;
     const standalone = removeTags(btcAccounts.standalone, tagName);
 
@@ -924,6 +956,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       xpubs: state.btc.xpubs ? [...state.btc.xpubs] : []
     };
     const kusama = { ...state.ksm };
+    const polkadot = { ...state.dot };
+    const avalanche = { ...state.avax };
+
     const exchanges = { ...state.exchangeBalances };
 
     for (const asset in totals) {
@@ -990,6 +1025,26 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
 
     commit('updateKsm', kusama);
+
+    for (const address in avalanche) {
+      const balances = avalanche[address];
+      avalanche[address] = {
+        assets: updateBalancePrice(balances.assets, prices),
+        liabilities: updateBalancePrice(balances.liabilities, prices)
+      };
+    }
+
+    commit('updateAvax', avalanche);
+
+    for (const address in polkadot) {
+      const balances = polkadot[address];
+      polkadot[address] = {
+        assets: updateBalancePrice(balances.assets, prices),
+        liabilities: updateBalancePrice(balances.liabilities, prices)
+      };
+    }
+
+    commit('updateDot', polkadot);
 
     for (const exchange in exchanges) {
       exchanges[exchange] = updateBalancePrice(exchanges[exchange], prices);

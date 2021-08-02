@@ -2,12 +2,31 @@
 Changelog
 =========
 
+* :feature:`2145` Users will now be able to customize whether CSV export should contain metadata of the PnL run. Consisting of the rotki version that generated it and the chosen accounting settings.
+* :feature:`3279` Users will now be able to customize whether CSV export should contain a summary of PnL per event type.
+* :feature:`3252` Users will now be able to customize whether CSV export should contain formulas or not.
+* :feature:`3125` Native support for Polkadot blockchain.
+* :feature:`3242` Native support for Avalanche Blockchain and Covalent API.
+* :feature:`3097` Users will now have the option to disable the application tray icon.
+* :feature:`3061` When inserting ledger actions users will now be able to skip the specific time on date input (00:00:00 will be assumed).
+* :feature:`3061` Users will now get the last used location pre-selected when adding ledger actions.
+* :feature:`3138` Users will now see separate cards on the Defi overview for MakerDAO Vaults and MakerDAO DSR.
+* :feature:`3275` Users can now see if any of their addresses have FOX available to claim from the ShapeShift airdrop.
+* :bug:`3264` Users should now be able to properly download the PnL CSV when using docker.
+
+* :release:`1.19.1 <2021-07-22>`
+* :bug:`3236` Users will now see the proper total networth for the current day in the graph tooltip.
+* :bug:`3224` Users will now be able to properly select an end time in earlier dates.
+* :bug:`3198` Firefox docker users will now see a regularly sized Gitcoin icon under the history menu.
+* :bug:`3199` Users will now properly see the node connection status/last sync information update.
+* :bug:`3214` UNIUP and UNIDOWN will now be correctly detected.
+
 * :release:`1.19.0 <2021-07-15>`
 * :feature:`3116` Support for INR (Indian Rupee) as a profit currency has been added.
 * :feature:`1520` Users can now manually add prices for tokens/assets.
 * :feature:`692` Gitcoin Grant owners will now be able to track and generate reports of their grants.
 * :feature:`1666` Users will now be able to see their yearn v2 vaults in in the defi section.
-* :feature:`2456` Users will now be able to correctly retrive prices for Curve LP tokens.
+* :feature:`2456` Users will now be able to correctly retrieve prices for Curve LP tokens.
 * :feature:`2778` Users will now be able to enable modules and queried addresses when adding an ethereum account
 * :feature:`1857` Premium users will now be able to query Aave V2 events. 
 * :feature:`2722` The sync conflict dialog dates will now be consistent with the user specified date format.

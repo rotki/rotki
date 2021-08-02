@@ -1,6 +1,6 @@
+import { SupportedAsset } from '@rotki/common/lib/data';
 import sortBy from 'lodash/sortBy';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
-import { SupportedAsset } from '@/services/assets/types';
 import { BtcBalances } from '@/services/balances/types';
 import { BtcAccountData } from '@/services/types-api';
 import { BalanceGetters, getters } from '@/store/balances/getters';

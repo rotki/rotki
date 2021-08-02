@@ -28,8 +28,16 @@ export const explorerUrls: AssetExplorerUrls = {
     address: 'https://polkascan.io/kusama/account/',
     transaction: 'https://polkascan.io/kusama/transaction/'
   },
+  AVAX: {
+    address: 'https://cchain.explorer.avax.network/address/',
+    transaction: 'https://cchain.explorer.avax.network/tx/'
+  },
   zksync: {
     address: 'https://zkscan.io/explorer/accounts/',
     transaction: 'https://zkscan.io/explorer/transactions/'
+  },
+  DOT: {
+    address: 'https://polkascan.io/polkadot/account/',
+    transaction: 'https://polkascan.io/polkadot/transaction/'
   }
 };

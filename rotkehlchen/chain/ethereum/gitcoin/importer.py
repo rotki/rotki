@@ -59,7 +59,7 @@ class GitcoinDataImporter():
             price = query_usd_price_zero_if_error(
                 asset=asset,
                 time=timestamp,
-                location='Gitcoin CSV importer',
+                location=f'Gitcoin CSV entry {entry["txid"]}',
                 msg_aggregator=self.db.msg_aggregator,
             )
             if price == ZERO:

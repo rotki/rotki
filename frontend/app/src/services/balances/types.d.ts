@@ -37,6 +37,8 @@ export interface BlockchainBalances {
     ETH: BlockchainAssetBalances;
     BTC: BtcBalances;
     KSM: BlockchainAssetBalances;
+    DOT: BlockchainAssetBalances;
+    AVAX: BlockchainAssetBalances;
   };
   readonly totals: BlockchainTotals;
 }

@@ -318,7 +318,7 @@ If you are on an older version of npm, you can install it by::
 
 Install electron and any other npm dependencies by::
 
-    cd frontend/app
+    cd frontend
     npm ci
 
 Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`__ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
@@ -338,7 +338,10 @@ Since the electron application is located in a different directory you also need
 
     pip install -e .
 
-Now to start the application you need to change to the ``frontend/app`` directory and type ``npm run electron:serve``.
+Before starting the application you need to build the common package. To do this you can go to ``frontend`` and
+run ``npm run build -w @rotki/common``.
+
+After that you can start the application from the ``frontend`` directory and typing ``npm run electron:serve -w rotki``.
 
 OSX
 =====
@@ -429,10 +432,11 @@ If you are on an older version of npm, you can install it by::
 
 Almost there, we can now install all the Node.js dependencies of the frontend app. Using a recent Node.js version such as 14.16.0, it should be smooth. Also since ``npm`` uses ``gyp`` and that requires python 2.7 make sure to set it up appropriately before invoking ``npm``::
 
-    $ cd frontend/app
+    $ cd frontend
     $ npm ci
+    $ npm run build -w @rotki/common
 
-You can now start rotki, still from the ``frontend/app`` directory::
+You can now start rotki, still from the ``frontend`` directory::
 
     $ npm run electron:serve
 
@@ -577,12 +581,16 @@ Installing Electron and Running rotki
 
 1. In your terminal, navigate to your rotki development directory and enter the following commands to install electron and its dependencies::
 
-    cd frontend\app
+    cd frontend
     npm ci
+    
+2. Next you should build the ``@rotki/common`` library::
 
-2. At this point, your terminal's cwd should be ``<rotki development directory>\frontend\app\`` and the rotki virtualenv should be activated. You should now be able to start rotki in development mode by executing::
+    npm run build -w @rotki/common
 
-    npm run electron:serve
+3. At this point, your terminal's cwd should be ``<rotki development directory>\frontend\`` and the rotki virtualenv should be activated. You should now be able to start rotki in development mode by executing::
+
+    npm run electron:serve -w rotki
 
 After the app is built, if everything went well you should see the below text in your terminal and a new electron window that has opened with the rotki app running. ::
 

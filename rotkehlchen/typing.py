@@ -4,9 +4,10 @@ from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tup
 from eth_typing import ChecksumAddress
 from typing_extensions import Literal
 
-from rotkehlchen.chain.substrate.typing import KusamaAddress
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
+
+from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress  # isort:skip # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 
 ModuleName = Literal[
     'makerdao_dsr',
@@ -20,6 +21,7 @@ ModuleName = Literal[
     'loopring',
     'balancer',
     'eth2',
+    'sushiswap',
 ]
 
 # TODO: Turn this into some kind of light data structure and not just a mapping
@@ -36,6 +38,7 @@ AVAILABLE_MODULES_MAP = {
     'loopring': 'Loopring',
     'balancer': 'Balancer',
     'eth2': 'Eth2',
+    'sushiswap': 'Sushiswap',
 }
 
 
@@ -130,12 +133,14 @@ BlockchainAddress = Union[
     BTCAddress,
     ChecksumEthAddress,
     KusamaAddress,
+    PolkadotAddress,
     str,
 ]
 ListOfBlockchainAddresses = Union[
     List[BTCAddress],
     List[ChecksumEthAddress],
     List[KusamaAddress],
+    List[PolkadotAddress],
 ]
 
 
@@ -205,19 +210,69 @@ class EthereumTransaction(NamedTuple):
         return '0x' + self.tx_hash.hex() + self.from_address + str(self.nonce)
 
 
+class CovalentTransaction(NamedTuple):
+    """Represent a transaction in covalent"""
+    tx_hash: str
+    timestamp: Timestamp
+    block_number: int
+    from_address: ChecksumEthAddress
+    to_address: Optional[ChecksumEthAddress]
+    value: int
+    gas: int
+    gas_price: int
+    gas_used: int
+    # Input data and nonce is decoded, default is 0x and 0, encoded in future
+    input_data: str
+    nonce: int
+
+    def serialize(self) -> Dict[str, Any]:
+        result = {
+            'tx_hash': self.tx_hash,
+            'timestamp': self.timestamp,
+            'block_number': self.block_number,
+            'from_address': self.from_address,
+            'to_address': self.to_address,
+            'value': self.value,
+            'gas': self.gas,
+            'gas_price': self.gas_price,
+            'gas_used': self.gas_used,
+            'input_data': self.input_data,
+            'nonce': self.nonce,
+        }
+
+        return result
+
+    def __hash__(self) -> int:
+        return hash(self.identifier)
+
+    def __eq__(self, other: Any) -> bool:
+        if other is None or not isinstance(other, CovalentTransaction):
+            return False
+
+        return hash(self) == hash(other)
+
+    @property
+    def identifier(self) -> str:
+        return self.tx_hash + self.from_address.replace('0x', '') + str(self.nonce)
+
+
 class SupportedBlockchain(Enum):
     """These are the blockchains for which account tracking is supported """
     ETHEREUM = 'ETH'
     BITCOIN = 'BTC'
     KUSAMA = 'KSM'
+    AVALANCHE = 'AVAX'
+    POLKADOT = 'DOT'
 
     def get_address_type(self) -> Callable:
-        if self == SupportedBlockchain.ETHEREUM:
+        if self in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
             return ChecksumEthAddress
         if self == SupportedBlockchain.BITCOIN:
             return BTCAddress
         if self == SupportedBlockchain.KUSAMA:
             return KusamaAddress
+        if self == SupportedBlockchain.POLKADOT:
+            return PolkadotAddress
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
     def ens_coin_type(self) -> int:
@@ -232,6 +287,10 @@ class SupportedBlockchain(Enum):
             return 0
         if self == SupportedBlockchain.KUSAMA:
             return 434
+        if self == SupportedBlockchain.POLKADOT:
+            return 354
+        if self == SupportedBlockchain.AVALANCHE:
+            return 9000
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
 
@@ -298,6 +357,7 @@ class Location(DBEnumMixIn):
     BLOCKFI = 28
     INDEPENDENTRESERVE = 29
     GITCOIN = 30
+    SUSHISWAP = 31
 
 
 class AssetMovementCategory(Enum):

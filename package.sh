@@ -136,7 +136,7 @@ fi
 
 
 # From here and on we go into the frontend/app directory
-cd frontend/app || exit 1
+cd frontend || exit 1
 
 if [[ -n "${CI-}" ]]; then
   echo "::group::npm ci"

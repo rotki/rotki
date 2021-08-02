@@ -22,6 +22,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
     deserialize_derivation_path_for_db,
 )
 from rotkehlchen.chain.ethereum.modules.aave.constants import ATOKENV1_TO_ASSET
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.adex import (
     ADEX_EVENTS_PREFIX,
     AdexEventType,
@@ -36,10 +37,11 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
     BALANCER_TRADES_PREFIX,
     BalancerEvent,
 )
-from rotkehlchen.chain.ethereum.modules.uniswap import (
-    UNISWAP_EVENTS_PREFIX,
+from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
+from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
+from rotkehlchen.chain.ethereum.interfaces.ammswap import (
     UNISWAP_TRADES_PREFIX,
-    UniswapPoolEvent,
+    SUSHISWAP_TRADES_PREFIX,
 )
 from rotkehlchen.chain.ethereum.structures import (
     AaveEvent,
@@ -1084,7 +1086,7 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def add_uniswap_events(self, events: Sequence[UniswapPoolEvent]) -> None:
+    def add_amm_events(self, events: Sequence[LiquidityPoolEvent]) -> None:
         query = (
             """
             INSERT INTO uniswap_events (
@@ -1111,7 +1113,7 @@ class DBHandler:
                 cursor.execute(query, event_tuple)
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 self.msg_aggregator.add_warning(
-                    f'Tried to add a Uniswap event that already exists in the DB. '
+                    f'Tried to add an AMM event that already exists in the DB. '
                     f'Event data: {event_tuple}. Skipping event.',
                 )
                 continue
@@ -1119,53 +1121,53 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def get_uniswap_events(
+    def get_amm_events(
             self,
+            events: List[EventType],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             address: Optional[ChecksumEthAddress] = None,
-    ) -> List[UniswapPoolEvent]:
-        """Returns a list of Uniswap events optionally filtered by time, location
+    ) -> List[LiquidityPoolEvent]:
+        """Returns a list of amm events optionally filtered by time, location
         and address
         """
         cursor = self.conn.cursor()
-        query = 'SELECT * FROM uniswap_events '
-        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
-        filters = []
-        if address is not None:
-            filters.append(f'address="{address}" ')
+        events_sql_str = ", ".join([f'"{str(event)}"' for event in events])
+        query = f'SELECT * FROM uniswap_events WHERE uniswap_events.type IN ({events_sql_str}) '
 
-        if filters:
-            query += 'WHERE '
-            query += 'AND '.join(filters)
+        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
+        if address is not None:
+            query += f'AND address="{address}" '
 
         query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
-        events = []
+        db_events = []
         for event_tuple in results:
             try:
-                event = UniswapPoolEvent.deserialize_from_db(event_tuple)
+                event = LiquidityPoolEvent.deserialize_from_db(event_tuple)
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
-                    f'Error deserializing Uniswap event from the DB. Skipping event. '
+                    f'Error deserializing AMM event from the DB. Skipping event. '
                     f'Error was: {str(e)}',
                 )
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_error(
-                    f'Error deserializing Uniswap event from the DB. Skipping event. '
+                    f'Error deserializing AMM event from the DB. Skipping event. '
                     f'Unknown asset {e.asset_name} found',
                 )
                 continue
-            events.append(event)
+            db_events.append(event)
 
-        return events
+        return db_events
 
     def purge_module_data(self, module_name: Optional[ModuleName]) -> None:
         if module_name is None:
             self.delete_uniswap_trades_data()
             self.delete_uniswap_events_data()
+            self.delete_sushiswap_trades_data()
+            self.delete_sushiswap_events_data()
             self.delete_balancer_trades_data()
             self.delete_balancer_events_data()
             self.delete_aave_data()
@@ -1181,6 +1183,9 @@ class DBHandler:
         if module_name == 'uniswap':
             self.delete_uniswap_trades_data()
             self.delete_uniswap_events_data()
+        elif module_name == 'sushiswap':
+            self.delete_sushiswap_trades_data()
+            self.delete_sushiswap_events_data()
         elif module_name == 'balancer':
             self.delete_balancer_trades_data()
             self.delete_balancer_events_data()
@@ -1218,9 +1223,37 @@ class DBHandler:
     def delete_uniswap_events_data(self) -> None:
         """Delete all historical Uniswap events data"""
         cursor = self.conn.cursor()
-        cursor.execute('DELETE FROM uniswap_events;')
+        uniswap_types = f'"{EventType.MINT_UNISWAP}", "{EventType.BURN_UNISWAP}"'
+        cursor.execute(
+            f'DELETE FROM uniswap_events WHERE uniswap_events.type IN ({uniswap_types});',
+        )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_EVENTS_PREFIX}%";',
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_sushiswap_trades_data(self) -> None:
+        """Delete all historical Sushiswap trades data"""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            f'DELETE FROM amm_swaps WHERE location="{Location.SUSHISWAP.serialize_for_db()}";',  # pylint: disable=no-member  # noqa: E501
+        )
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{SUSHISWAP_TRADES_PREFIX}%";',
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_sushiswap_events_data(self) -> None:
+        """Delete all historical Sushiswap events data"""
+        cursor = self.conn.cursor()
+        sushiswap_types = f'"{EventType.MINT_SUSHISWAP}", "{EventType.BURN_SUSHISWAP}"'
+        cursor.execute(
+            f'DELETE FROM uniswap_events WHERE uniswap_events.type IN ({sushiswap_types});',
+        )
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{SUSHISWAP_EVENTS_PREFIX}%";',
         )
         self.conn.commit()
         self.update_last_write()
@@ -1667,6 +1700,9 @@ class DBHandler:
         eth_list = []
         btc_list = []
         ksm_list = []
+        dot_list = []
+        avax_list = []
+
         supported_blockchains = {blockchain.value for blockchain in SupportedBlockchain}
         for entry in query:
             if entry[0] not in supported_blockchains:
@@ -1688,8 +1724,12 @@ class DBHandler:
                 eth_list.append(entry[1])
             elif entry[0] == SupportedBlockchain.KUSAMA.value:
                 ksm_list.append(entry[1])
+            elif entry[0] == SupportedBlockchain.AVALANCHE.value:
+                avax_list.append(entry[1])
+            elif entry[0] == SupportedBlockchain.POLKADOT.value:
+                dot_list.append(entry[1])
 
-        return BlockchainAccounts(eth=eth_list, btc=btc_list, ksm=ksm_list)
+        return BlockchainAccounts(eth=eth_list, btc=btc_list, ksm=ksm_list, dot=dot_list, avax=avax_list)  # noqa: E501
 
     def get_blockchain_account_data(
             self,

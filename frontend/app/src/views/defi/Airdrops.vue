@@ -112,7 +112,8 @@ import {
   AIRDROP_FURUCOMBO,
   AIRDROP_CURVE,
   AIRDROP_CONVEX,
-  AIRDROP_POAP
+  AIRDROP_POAP,
+  AIRDROP_FOX
 } from '@/store/defi/const';
 import { Airdrop, AirdropType } from '@/store/defi/types';
 import { ETH, GeneralAccount } from '@/typing/types';
@@ -227,6 +228,10 @@ export default class Airdrops extends Mixins(StatusMixin) {
     [AIRDROP_CONVEX]: {
       icon: require('@/assets/images/airdrops/convex.jpeg'),
       name: 'Convex'
+    },
+    [AIRDROP_FOX]: {
+      icon: require('@/assets/images/airdrops/FOX_Icon_dark.svg'),
+      name: 'ShapeShift'
     }
   };
 

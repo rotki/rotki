@@ -81,6 +81,9 @@ from rotkehlchen.api.v1.resources import (
     PingResource,
     QueriedAddressesResource,
     SettingsResource,
+    SushiswapBalancesResource,
+    SushiswapEventsHistoryResource,
+    SushiswapTradesHistoryResource,
     StatisticsAssetBalanceResource,
     StatisticsNetvalueResource,
     StatisticsRendererResource,
@@ -101,6 +104,8 @@ from rotkehlchen.api.v1.resources import (
     YearnVaultsV2BalancesResource,
     YearnVaultsV2HistoryResource,
     create_blueprint,
+    AvalancheTransactionsResource,
+    ERC20TokenInfoAVAX,
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -192,6 +197,9 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/uniswap/balances', UniswapBalancesResource),
     ('/blockchains/ETH/modules/uniswap/history/events', UniswapEventsHistoryResource),
     ('/blockchains/ETH/modules/uniswap/history/trades', UniswapTradesHistoryResource),
+    ('/blockchains/ETH/modules/sushiswap/balances', SushiswapBalancesResource),
+    ('/blockchains/ETH/modules/sushiswap/history/events', SushiswapEventsHistoryResource),
+    ('/blockchains/ETH/modules/sushiswap/history/trades', SushiswapTradesHistoryResource),
     ('/blockchains/ETH/modules/yearn/vaults/balances', YearnVaultsBalancesResource),
     ('/blockchains/ETH/modules/yearn/vaults/history', YearnVaultsHistoryResource),
     ('/blockchains/ETH/modules/yearn/vaultsv2/balances', YearnVaultsV2BalancesResource),
@@ -199,6 +207,13 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/loopring/balances', LoopringBalancesResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
     ('/blockchains/BTC/xpub', BTCXpubResource),
+    ('/blockchains/AVAX/transactions', AvalancheTransactionsResource),
+    (
+        '/blockchains/AVAX/transactions/<string:address>',
+        AvalancheTransactionsResource,
+        'per_address_avalanche_transactions_resource',
+    ),
+    ('/blockchains/AVAX/erc20details/', ERC20TokenInfoAVAX),
     ('/assets', OwnedAssetsResource),
     ('/assets/types', AssetsTypesResource),
     ('/assets/replace', AssetsReplaceResource),

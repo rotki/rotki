@@ -29,6 +29,8 @@ from rotkehlchen.db.settings import (
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
     DEFAULT_INCLUDE_GAS_COSTS,
     DEFAULT_MAIN_CURRENCY,
+    DEFAULT_PNL_CSV_HAVE_SUMMARY,
+    DEFAULT_PNL_CSV_WITH_FORMULAS,
     DEFAULT_TAXABLE_LEDGER_ACTIONS,
     DEFAULT_UI_FLOATING_PRECISION,
     ROTKEHLCHEN_DB_VERSION,
@@ -323,6 +325,7 @@ def test_writing_fetching_data(data_dir, username):
         'have_premium': False,
         'eth_rpc_endpoint': 'http://localhost:8545',
         'ksm_rpc_endpoint': 'http://localhost:9933',
+        'dot_rpc_endpoint': '',
         'ui_floating_precision': DEFAULT_UI_FLOATING_PRECISION,
         'version': ROTKEHLCHEN_DB_VERSION,
         'include_crypto2crypto': DEFAULT_INCLUDE_CRYPTO2CRYPTO,
@@ -345,6 +348,8 @@ def test_writing_fetching_data(data_dir, username):
         'current_price_oracles': DEFAULT_CURRENT_PRICE_ORACLES,
         'historical_price_oracles': DEFAULT_HISTORICAL_PRICE_ORACLES,
         'taxable_ledger_actions': DEFAULT_TAXABLE_LEDGER_ACTIONS,
+        'pnl_csv_with_formulas': DEFAULT_PNL_CSV_WITH_FORMULAS,
+        'pnl_csv_have_summary': DEFAULT_PNL_CSV_HAVE_SUMMARY,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

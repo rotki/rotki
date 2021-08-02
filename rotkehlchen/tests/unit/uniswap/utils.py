@@ -2,7 +2,7 @@ import functools
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.modules.uniswap.typing import (
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
     EventType,
     LiquidityPool,
     LiquidityPoolAsset,
@@ -280,7 +280,7 @@ LP_1_EVENTS = [
         log_index=263,
         address=TEST_ADDRESS_1,
         timestamp=Timestamp(1604273256),
-        event_type=EventType.MINT,
+        event_type=EventType.MINT_UNISWAP,
         pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
         token0=A_DOLLAR_BASED,
         token1=A_WETH,
@@ -294,7 +294,7 @@ LP_1_EVENTS = [
         log_index=66,
         address=TEST_ADDRESS_1,
         timestamp=Timestamp(1604283808),
-        event_type=EventType.BURN,
+        event_type=EventType.BURN_UNISWAP,
         pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
         token0=A_DOLLAR_BASED,
         token1=A_WETH,
@@ -310,7 +310,7 @@ LP_2_EVENTS = [
         log_index=99,
         address=TEST_ADDRESS_1,
         timestamp=Timestamp(1598270334),
-        event_type=EventType.MINT,
+        event_type=EventType.MINT_UNISWAP,
         pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
         token0=A_WETH,
         token1=A_BTR,
@@ -324,7 +324,7 @@ LP_2_EVENTS = [
         log_index=208,
         address=TEST_ADDRESS_1,
         timestamp=Timestamp(1599000975),
-        event_type=EventType.BURN,
+        event_type=EventType.BURN_UNISWAP,
         pool_address=string_to_ethereum_address("0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55"),  # noqa: E501
         token0=A_WETH,
         token1=A_BTR,
@@ -364,7 +364,7 @@ LP_3_EVENTS = [
         log_index=263,
         address=TEST_ADDRESS_1,
         timestamp=Timestamp(1604273256),
-        event_type=EventType.MINT,
+        event_type=EventType.MINT_UNISWAP,
         pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
         token0=A_DOLLAR_BASED,
         token1=A_WETH,
@@ -378,7 +378,7 @@ LP_3_EVENTS = [
         log_index=66,
         address=TEST_ADDRESS_1,
         timestamp=Timestamp(1604283808),
-        event_type=EventType.BURN,
+        event_type=EventType.BURN_UNISWAP,
         pool_address=string_to_ethereum_address("0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89"),  # noqa: E501
         token0=A_DOLLAR_BASED,
         token1=A_WETH,

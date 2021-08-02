@@ -1,5 +1,7 @@
+import { TimeUnit } from '@rotki/common/lib/settings';
+import { TimeFramePeriod, timeframes } from '@rotki/common/lib/settings/graphs';
 import { default as BigNumber } from 'bignumber.js';
-import { timeframes } from '@/components/dashboard/const';
+import dayjs from 'dayjs';
 import { aggregateTotal } from '@/filters';
 import { NetValue } from '@/services/types-api';
 import { AssetBalance } from '@/store/balances/types';
@@ -58,7 +60,7 @@ export const getters: Getters<
     }
 
     const now = Math.floor(new Date().getTime() / 1000);
-    const netWorth = Math.floor(getters.totalNetWorth.toNumber());
+    const netWorth = getters.totalNetWorth.toNumber();
     return {
       times: netWorth > 0 ? [...netValue.times, now] : [...netValue.times],
       data: netWorth > 0 ? [...netValue.data, netWorth] : [...netValue.data]
@@ -129,8 +131,11 @@ export const getters: Getters<
       'session/floatingPrecision': floatingPrecision
     }
   ) => {
-    const timeframe = rootState.session!!.timeframe;
-    const startingDate = timeframes[timeframe].startingDate();
+    const timeframe = rootState.session!!.timeframe as TimeFramePeriod;
+    const allTimeframes = timeframes((unit, amount) =>
+      dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()
+    );
+    const startingDate = allTimeframes[timeframe].startingDate();
     const startingValue: () => BigNumber = () => {
       const data = netValue(startingDate).data;
       let start = data[0];

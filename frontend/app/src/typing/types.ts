@@ -1,7 +1,7 @@
 import { default as BigNumber } from 'bignumber.js';
 import { PriceOracles } from '@/model/action-result';
 import { Currency } from '@/model/currency';
-import { SupportedDefiProtocols } from '@/services/defi/types';
+import { DefiProtocol } from '@/services/defi/consts';
 import { SupportedModules } from '@/services/session/types';
 import { AssetBalances } from '@/store/balances/types';
 import { LedgerActionType } from '@/store/history/consts';
@@ -18,6 +18,7 @@ export interface GeneralSettings {
   readonly anonymousUsageAnalytics: boolean;
   readonly ethRpcEndpoint: string;
   readonly ksmRpcEndpoint: string;
+  readonly dotRpcEndpoint: string;
   readonly balanceSaveFrequency: number;
   readonly dateDisplayFormat: string;
   readonly selectedCurrency: Currency;
@@ -30,6 +31,8 @@ export interface GeneralSettings {
 
 export interface AccountingSettings {
   readonly calculatePastCostBasis: boolean;
+  readonly haveCSVSummary: boolean;
+  readonly exportCSVFormulas: boolean;
   readonly includeCrypto2Crypto: boolean;
   readonly includeGasCosts: boolean;
   readonly taxFreeAfterPeriod: number | null;
@@ -77,8 +80,10 @@ export interface TaskResult<T> {
 export const ETH = 'ETH';
 export const BTC = 'BTC';
 export const KSM = 'KSM';
+export const DOT = 'DOT';
+export const AVAX = 'AVAX';
 
-export const SupportedBlockchains = [ETH, BTC, KSM] as const;
+export const SupportedBlockchains = [ETH, BTC, KSM, DOT, AVAX] as const;
 
 export type Blockchain = typeof SupportedBlockchains[number];
 
@@ -118,6 +123,7 @@ interface SettingsPayload {
   submit_usage_analytics: boolean;
   eth_rpc_endpoint: string;
   ksm_rpc_endpoint: string;
+  dot_rpc_endpoint: string;
   ui_floating_precision: number;
   date_display_format: string;
   include_gas_costs: boolean;
@@ -134,6 +140,8 @@ interface SettingsPayload {
   current_price_oracles: string[];
   historical_price_oracles: string[];
   taxable_ledger_actions: LedgerActionType[];
+  pnl_csv_with_formulas: boolean;
+  pnl_csv_have_summary: boolean;
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare' | 'loopring';
@@ -166,7 +174,7 @@ export interface Account {
 }
 
 export interface DefiAccount extends Account {
-  readonly protocols: SupportedDefiProtocols[];
+  readonly protocols: DefiProtocol[];
 }
 
 export interface GeneralAccount extends AccountData, Account {}

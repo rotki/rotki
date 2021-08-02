@@ -1,7 +1,6 @@
 import { AxiosInstance, AxiosTransformer } from 'axios';
 import { setupTransformer } from '@/services/axios-tranformers';
-import { V1 } from '@/services/defi/consts';
-import { ProtocolVersion } from '@/services/defi/types';
+import { ProtocolVersion } from '@/services/defi/consts';
 import { ApiImplementation, PendingTask } from '@/services/types-api';
 import { fetchExternalAsync } from '@/services/utils';
 
@@ -67,19 +66,19 @@ export class DefiApi {
   }
 
   async fetchYearnVaultsHistory(
-    protocolVersion: ProtocolVersion = V1,
+    protocolVersion: ProtocolVersion = ProtocolVersion.V1,
     reset?: boolean
   ): Promise<PendingTask> {
-    const path = protocolVersion === V1 ? 'vaults' : 'vaultsv2';
+    const path = protocolVersion === ProtocolVersion.V1 ? 'vaults' : 'vaultsv2';
     const url = `/blockchains/ETH/modules/yearn/${path}/history`;
     const params = reset ? { resetDbData: true } : undefined;
     return fetchExternalAsync(this.api, url, params);
   }
 
   async fetchYearnVaultsBalances(
-    protocolVersion: ProtocolVersion = V1
+    protocolVersion: ProtocolVersion = ProtocolVersion.V1
   ): Promise<PendingTask> {
-    const path = protocolVersion === V1 ? 'vaults' : 'vaultsv2';
+    const path = protocolVersion === ProtocolVersion.V1 ? 'vaults' : 'vaultsv2';
     const url = `/blockchains/ETH/modules/yearn/${path}/balances`;
     return fetchExternalAsync(this.api, url);
   }

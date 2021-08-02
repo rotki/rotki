@@ -1,6 +1,6 @@
 {
   "name": "rotki",
-  "version": "1.19.0",
+  "version": "1.19.1",
   "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets that protects your privacy",
   "author": "Rotki Solutions GmbH <info@rotki.com>",
   "scripts": {
@@ -13,7 +13,7 @@
     "electron:serve": "vue-cli-service electron:serve",
     "i18n:report": "vue-cli-service i18n:report --src './src/**/*.?(ts|js|vue)' --locales './src/locales/**/*.json'",
     "lint:check": "vue-cli-service lint --no-fix --max-warnings 0  --ext .js,.ts,.vue,.json",
-    "preinstall": "node check-versions.js",
+    "preinstall": "node ../check-versions.js",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
     "serve:backend": "node start-backend.js",
@@ -26,6 +26,7 @@
   },
   "main": "background.js",
   "dependencies": {
+    "@rotki/common": "1.0.0",
     "@vue/composition-api": "1.0.0-rc.13",
     "axios": "0.21.1",
     "bignumber.js": "9.0.1",
@@ -102,7 +103,7 @@
     "nyc": "15.1.0",
     "prettier": "2.2.1",
     "promise-retry": "2.0.1",
-    "sass": "1.35.1",
+    "sass": "1.32.13",
     "sass-loader": "10.2.0",
     "semver": "7.3.5",
     "source-map-support": "0.5.19",
@@ -130,7 +131,7 @@
   },
   "engines": {
     "node": ">=14 <15",
-    "npm": ">=7 <8"
+    "npm": ">=7.19 <8"
   },
   "homepage": "https://rotki.com",
   "license": "AGPL-3.0",

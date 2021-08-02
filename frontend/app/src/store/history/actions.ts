@@ -1,3 +1,8 @@
+import { ActionResult } from '@rotki/common/lib/data';
+import {
+  GitcoinGrantEventsPayload,
+  GitcoinGrants
+} from '@rotki/common/lib/gitcoin';
 import { ActionTree } from 'vuex';
 import { exchangeName } from '@/components/history/consts';
 import { TRADE_LOCATION_EXTERNAL, EXTERNAL_EXCHANGES } from '@/data/defaults';
@@ -14,8 +19,6 @@ import {
 import {
   AssetMovement,
   EthTransaction,
-  GitcoinGrants,
-  GitcoinGrantEventsPayload,
   NewTrade,
   Trade,
   TradeLocation,
@@ -23,11 +26,7 @@ import {
 } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
-import {
-  ActionResult,
-  EntryWithMeta,
-  LimitedResponse
-} from '@/services/types-api';
+import { EntryWithMeta, LimitedResponse } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
   FETCH_FROM_CACHE,

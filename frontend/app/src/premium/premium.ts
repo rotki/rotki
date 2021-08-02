@@ -1,7 +1,7 @@
+import { RotkiPremiumInterface } from '@rotki/common/lib/premium';
 import Chart from 'chart.js';
 import Vue, { VueConstructor } from 'vue';
 import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
-import { RotkiPremiumInterface } from '@/premium/types';
 import { api } from '@/services/rotkehlchen-api';
 
 function findComponents(): string[] {

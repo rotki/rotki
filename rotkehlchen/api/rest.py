@@ -677,6 +677,13 @@ class RestAPI():
                 if val:
                     totals['assets'] = {'KSM': val}
                 result = {'per_account': per_account, 'totals': totals}
+            elif blockchain == SupportedBlockchain.POLKADOT:
+                val = result['per_account'].get('DOT', None)
+                per_account = {'DOT': val} if val else {}
+                val = result['totals']['assets'].get('DOT', None)
+                if val:
+                    totals['assets'] = {'DOT': val}
+                result = {'per_account': per_account, 'totals': totals}
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
@@ -2499,6 +2506,54 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
+    @require_premium_user(active_check=False)
+    def get_sushiswap_balances(self, async_query: bool) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='sushiswap',
+            method='get_balances',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('sushiswap'),
+        )
+
+    @require_premium_user(active_check=False)
+    def get_sushiswap_events_history(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='sushiswap',
+            method='get_events_history',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('sushiswap'),
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+    @require_premium_user(active_check=False)
+    def get_sushiswap_trades_history(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='sushiswap',
+            method='get_trades_history',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('sushiswap'),
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
     @require_loggedin_user()
     def get_adex_balances(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
@@ -3059,6 +3114,7 @@ class RestAPI():
             'status_code': HTTPStatus.CONFLICT,
         }
 
+    @require_loggedin_user()
     def perform_assets_updates(
             self,
             async_query: bool,
@@ -3260,3 +3316,98 @@ class RestAPI():
             result={'result': False, 'message': 'Failed to delete manual price'},
             status_code=HTTPStatus.CONFLICT,
         )
+
+    def _get_avalanche_transactions(
+        self,
+        address: ChecksumEthAddress,
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Dict[str, Any]:
+        avalanche = self.rotkehlchen.chain_manager.avalanche
+        response = avalanche.covalent.get_transactions(address, from_timestamp, to_timestamp)
+        if response is None:
+            return {
+                'result': [],
+                'message': 'Not found.',
+                'status_code': HTTPStatus.NOT_FOUND,
+            }
+
+        entries_result = []
+        for transaction in response:
+            entries_result.append(transaction.serialize())
+
+        result = {
+            'entries': entries_result,
+            'entries_found': len(entries_result),
+        }
+        msg = ''
+        return {'result': result, 'message': msg, 'status_code': HTTPStatus.OK}
+
+    @require_loggedin_user()
+    def get_avalanche_transactions(
+        self,
+        async_query: bool,
+        address: ChecksumEthAddress,
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_avalanche_transactions',
+                address=address,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        response = self._get_avalanche_transactions(
+            address=address,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+        result = response['result']
+        if len(result) == 0:
+            return api_response(
+                wrap_in_fail_result('Not found.'),
+                status_code=HTTPStatus.NOT_FOUND,
+            )
+
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(process_result(result_dict), status_code=status_code)
+
+    def _get_avax_token_info(self, address: ChecksumEthAddress) -> Dict[str, Any]:
+        avax_manager = self.rotkehlchen.chain_manager.avalanche
+        try:
+            info = avax_manager.get_basic_contract_info(address=address)
+        except BadFunctionCallOutput:
+            return wrap_in_fail_result(
+                f'Address {address} seems to not be a deployed contract',
+                status_code=HTTPStatus.CONFLICT,
+            )
+        return _wrap_in_ok_result(info)
+
+    @require_loggedin_user()
+    def get_avax_token_information(
+        self,
+        token_address: ChecksumEthAddress,
+        async_query: bool,
+    ) -> Response:
+
+        if async_query:
+            return self._query_async(command='_get_avax_token_info', address=token_address)
+
+        response = self._get_avax_token_info(token_address)
+
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+
+        # Success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(result_dict, status_code=status_code)

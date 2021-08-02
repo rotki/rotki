@@ -1,3 +1,4 @@
+import { ActionResult } from '@rotki/common/lib/data';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { SupportedCurrency } from '@/data/currencies';
 import {
@@ -18,7 +19,6 @@ import { DefiApi } from '@/services/defi/defi-api';
 import { HistoryApi } from '@/services/history/history-api';
 import { SessionApi } from '@/services/session/session-api';
 import {
-  ActionResult,
   AsyncQuery,
   BtcAccountData,
   DBAssetBalance,
@@ -918,7 +918,7 @@ export class RotkehlchenApi {
 
   downloadCSV(): Promise<ActionStatus> {
     return this.axios
-      .get('/history/download', {
+      .get('/history/download/', {
         responseType: 'blob',
         validateStatus: validTaskStatus
       })

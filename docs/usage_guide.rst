@@ -326,6 +326,26 @@ Ledger action settings
 
 Here you can choose which types of historical actions should be considered taxable and which not. For example in Germany airdrops are considered windfall profits and are not taxed, so you can specify that here.
 
+
+CSV Export settings
+--------------------
+
+.. image:: images/sc_accountingcsvexport_settings.png
+   :alt: Customizing the CSV export settings
+   :align: center
+
+
+Export formulas
+^^^^^^^^^^^^^^^
+
+Specify whether formulas should be exported as formulas in the CSV export or if the actual value should be simply exported.
+
+
+Have summary
+^^^^^^^^^^^^^^^
+
+Specify whether at the end of the all_events CSV export there should be a summary of all events and the total profit/loss or not. Additionally at this summary there would be the rotki version and the settings used during the PnL report so it's easy to reproduce a report run.
+
 Customizing data & security settings
 ====================================
 
@@ -427,6 +447,11 @@ In the advanced section of the backend settings you can also modify the followin
 - **Main Loop sleep**: This is the amount of seconds that the main loop of rotki sleeps for. It is set to 20 seconds by default.
 - **Max log size**: This is the maximum size in megabytes all logs of a single run can have
 - **Max num of log files**: This is the maximum number of backup (rotated) logs a single run can have.
+
+Disabling the tray icon
+====================================
+Users can disable the application tray icon by clicking the ``View`` menu entry in the application menu bar.
+There you can select ``Display Tray Icon`` to enable or disable the application tray icon.
 
 Importing data
 *******************
@@ -579,7 +604,7 @@ Adding and Removing Blockchain Accounts
 
 rotki allows to track balances of blockchain accounts.
 
-To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Ethereum and Kusama chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button.
+To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Ethereum, Kusama, Polkadot and Avalanche chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button.
 
 .. image:: images/add_blockchain_account.png
    :alt: Add a blockchain account
@@ -917,6 +942,22 @@ Below you can see a small demonstration of the usage of makerdao vaults by a pre
    :alt: Makerdao vaults premium demo
    :align: center
 
+DEX trades
+================
+
+.. image:: images/sc_dex_trades.png
+  :alt: DEX trades
+  :align: center
+
+In the DEX Trades section you can monitor all trades made in the supported decentralized exchanges. Each trade is also broken down to the separate swaps that it is comprised of.
+
+The currently supported DEXes are:
+
+- Uniswap v2
+- Uniswap v3
+- Balancer
+- Sushiswap
+
 Creating a profit/loss report
 *****************************
 
@@ -1012,7 +1053,7 @@ As a premium user you can also keep track of your Gitcoin grants and generate re
 
 You need to first find the id ofthe grant you are interested in. When you visit the grant, the id is what comes after the ``grants/`` part of the url. For example for rotki (https://gitcoin.co/grants/149/rotki) the id is ``149``.
 
- You type the grant id, select a period you are interested in and press the fetch button to retrieve the events for this
+You type the grant id, select a period you are interested in and press the fetch button to retrieve the events for this
 period. After the the retrieval completes you should be able to see the list of the events for this Grant.
 
 .. image:: images/gitcoin_grants_report.png

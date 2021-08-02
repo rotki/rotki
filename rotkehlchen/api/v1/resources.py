@@ -90,6 +90,7 @@ from rotkehlchen.api.v1.encoding import (
     WatchersEditSchema,
     XpubAddSchema,
     XpubPatchSchema,
+    AvalancheTransactionQuerySchema,
 )
 from rotkehlchen.api.v1.parser import resource_parser
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -1432,6 +1433,55 @@ class UniswapTradesHistoryResource(BaseResource):
         )
 
 
+class SushiswapBalancesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_sushiswap_balances(async_query=async_query)
+
+
+class SushiswapEventsHistoryResource(BaseResource):
+
+    get_schema = AsyncHistoricalQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_sushiswap_events_history(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
+class SushiswapTradesHistoryResource(BaseResource):
+
+    get_schema = AsyncHistoricalQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_sushiswap_trades_history(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
 class LoopringBalancesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
@@ -1741,3 +1791,30 @@ class GitcoinReportResource(BaseResource):
             async_query=async_query,
             grant_id=grant_id,
         )
+
+
+class AvalancheTransactionsResource(BaseResource):
+    get_schema = AvalancheTransactionQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(
+        self,
+        async_query: bool,
+        address: Optional[ChecksumEthAddress],
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_avalanche_transactions(
+            async_query=async_query,
+            address=address,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
+class ERC20TokenInfoAVAX(BaseResource):
+    get_schema = ERC20InfoSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, address: ChecksumEthAddress, async_query: bool) -> Response:
+        return self.rest_api.get_avax_token_information(address, async_query)

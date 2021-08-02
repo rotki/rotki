@@ -1,3 +1,4 @@
+import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { ActionTree } from 'vuex';
 import {
   convertToAccountingSettings,
@@ -47,7 +48,6 @@ import {
 } from '@/store/session/types';
 import {
   LAST_KNOWN_TIMEFRAME,
-  TIMEFRAME_REMEMBER,
   TIMEFRAME_SETTING
 } from '@/store/settings/consts';
 import { loadFrontendSettings } from '@/store/settings/utils';
@@ -101,7 +101,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       if (settings.frontend_settings) {
         loadFrontendSettings(commit, settings.frontend_settings);
         const timeframeSetting = rootState.settings![TIMEFRAME_SETTING];
-        if (timeframeSetting !== TIMEFRAME_REMEMBER) {
+        if (timeframeSetting !== TimeFramePersist.REMEMBER) {
           commit('setTimeframe', timeframeSetting);
         } else {
           commit('setTimeframe', rootState.settings![LAST_KNOWN_TIMEFRAME]);

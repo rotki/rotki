@@ -44,11 +44,11 @@
 </template>
 
 <script lang="ts">
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { SupportedAsset } from '@/services/assets/types';
 import { compareAssets } from '@/utils/assets';
 
 @Component({

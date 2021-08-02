@@ -1,8 +1,11 @@
+import {
+  TimeFramePeriod,
+  TimeFrameSetting
+} from '@rotki/common/lib/settings/graphs';
 import { Commit } from 'vuex';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
-import { TIMEFRAME_TWO_WEEKS, TIMEFRAME_WEEK } from '@/store/settings/consts';
 import { defaultState } from '@/store/settings/state';
-import { SettingsState, TimeFrameSetting } from '@/store/settings/types';
+import { SettingsState } from '@/store/settings/types';
 import { Writeable } from '@/types';
 
 export function loadFrontendSettings(commit: Commit, value: string) {
@@ -28,5 +31,7 @@ export function loadFrontendSettings(commit: Commit, value: string) {
 }
 
 export function isPeriodAllowed(period: TimeFrameSetting): boolean {
-  return [TIMEFRAME_WEEK, TIMEFRAME_TWO_WEEKS].includes(period);
+  return (
+    period === TimeFramePeriod.WEEK || period === TimeFramePeriod.TWO_WEEKS
+  );
 }
