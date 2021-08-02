@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`3279` Users will now be able to customize whether CSV export should contain a summary
 * :feature:`3252` Users will now be able to customize whether CSV export should contain formulas or not.
 * :feature:`3125` Native support for Polkadot blockchain.
 * :feature:`3242` Native support for Avalanche Blockchain and Covalent API.
