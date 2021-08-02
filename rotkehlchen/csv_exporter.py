@@ -101,6 +101,7 @@ class CSVExporter():
         self.dateformat = db_settings.date_display_format
         self.datelocaltime = db_settings.display_date_in_localtime
         self.should_export_formulas = db_settings.pnl_csv_with_formulas
+        self.should_have_summary = db_settings.pnl_csv_have_summary
         if self.create_csv:
             self.trades_csv: List[Dict[str, Any]] = []
             self.loan_profits_csv: List[Dict[str, Any]] = []
@@ -132,11 +133,151 @@ class CSVExporter():
 
         return f'=IF({condition};{if_true};{if_false})'
 
+    def _add_sumif_formula(
+            self,
+            check_range: str,
+            condition: str,
+            sum_range: str,
+            actual_value: FVal,
+    ) -> str:
+        if self.should_export_formulas is False:
+            return str(actual_value)
+
+        return f'=SUMIF({check_range};{condition};{sum_range})'
+
     def _add_equals_formula(self, expression: str, actual_value: FVal) -> str:
         if self.should_export_formulas is False:
             return str(actual_value)
 
         return f'={expression}'
+
+    def maybe_add_summary(
+            self,
+            ledger_actions_profit_loss: FVal,
+            defi_profit_loss: FVal,
+            loan_profit: FVal,
+            margin_position_profit_loss: FVal,
+            settlement_losses: FVal,
+            ethereum_transaction_gas_costs: FVal,
+            asset_movement_fees: FVal,
+            taxable_trade_profit_loss: FVal,
+            total_taxable_profit_loss: FVal,
+    ) -> None:
+        """Depending on given settings, adds a few summary lines at the end of
+        the all events PnL report"""
+        if self.should_have_summary is False:
+            return
+
+        length = len(self.all_events_csv) + 1
+        template: Dict[str, Any] = {
+            'type': '',
+            'location': '',
+            'paid_asset': '',
+            'paid_in_asset': '',
+            'taxable_amount': '',
+            'received_asset': '',
+            'received_in_asset': '',
+            'net_profit_or_loss': '',
+            'time': '',
+            'is_virtual': '',
+            f'paid_in_{self.profit_currency.symbol}': '',
+            f'taxable_received_in_{self.profit_currency.symbol}': '',
+            f'taxable_bought_cost_in_{self.profit_currency.symbol}': '',
+            'cost_basis': '',
+            f'total_bought_cost_in_{self.profit_currency.symbol}': '',
+            f'total_received_in_{self.profit_currency.symbol}': '',
+        }
+        self.all_events_csv.append(template)  # separate with a new line
+        self.all_events_csv.append(template)  # separate with a new line
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'LEDGER ACTIONS PROFIT/LOSS'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_LEDGER_ACTION}"',
+            sum_range=f'H2:H{length}',
+            actual_value=ledger_actions_profit_loss,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'DEFI PROFIT/LOSS'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_DEFI}"',
+            sum_range=f'H2:H{length}',
+            actual_value=defi_profit_loss,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'LOAN PROFIT/LOSS'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_INTEREST_PAYMENT}"',
+            sum_range=f'H2:H{length}',
+            actual_value=loan_profit,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'MARGIN POSITIONS PROFIT/LOSS'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_MARGIN_CLOSE}"',
+            sum_range=f'H2:H{length}',
+            actual_value=margin_position_profit_loss,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'SETTLEMENT LOSS'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_LOAN_SETTLE}"',
+            sum_range=f'H2:H{length}',
+            actual_value=settlement_losses,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'ETHEREUM TX GAS COST'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_TX_GAS_COST}"',
+            sum_range=f'H2:H{length}',
+            actual_value=ethereum_transaction_gas_costs,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'ASSET MOVEMENT FEES'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_ASSET_MOVE}"',
+            sum_range=f'H2:H{length}',
+            actual_value=asset_movement_fees,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'TAXABLE TRADE PROFIT/LOSS'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_SELL}"',
+            sum_range=f'H2:H{length}',
+            actual_value=taxable_trade_profit_loss,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'TOTAL TAXABLE PROFIT/LOSS'
+        start = length + 3
+        entry['net_profit_or_loss'] = self._add_equals_formula(
+            expression=f'H{start}+H{start + 1}+H{start + 2}+H{start + 3}+H{start + 4}+H{start + 5}+H{start + 6}+H{start + 7}',  # noqa: E501
+            actual_value=total_taxable_profit_loss,
+        )
+        self.all_events_csv.append(entry)
 
     def add_to_allevents(
             self,

@@ -41,6 +41,7 @@ DEFAULT_TAXABLE_LEDGER_ACTIONS = [
     LedgerActionType.GRANT,
 ]
 DEFAULT_PNL_CSV_WITH_FORMULAS = True
+DEFAULT_PNL_CSV_HAVE_SUMMARY = False
 
 JSON_KEYS = ('current_price_oracles', 'historical_price_oracles', 'taxable_ledger_actions')
 BOOLEAN_KEYS = (
@@ -53,6 +54,7 @@ BOOLEAN_KEYS = (
     'calculate_past_cost_basis',
     'display_date_in_localtime',
     'pnl_csv_with_formulas',
+    'pnl_csv_have_summary',
 )
 INTEGER_KEYS = (
     'version',
@@ -98,6 +100,7 @@ class DBSettings(NamedTuple):
     historical_price_oracles: List[HistoricalPriceOracle] = DEFAULT_HISTORICAL_PRICE_ORACLES
     taxable_ledger_actions: List[LedgerActionType] = DEFAULT_TAXABLE_LEDGER_ACTIONS
     pnl_csv_with_formulas: bool = DEFAULT_PNL_CSV_WITH_FORMULAS
+    pnl_csv_have_summary: bool = DEFAULT_PNL_CSV_HAVE_SUMMARY
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -123,6 +126,7 @@ class ModifiableDBSettings(NamedTuple):
     historical_price_oracles: Optional[List[HistoricalPriceOracle]] = None
     taxable_ledger_actions: Optional[List[LedgerActionType]] = None
     pnl_csv_with_formulas: Optional[bool] = None
+    pnl_csv_have_summary: Optional[bool] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}

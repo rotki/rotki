@@ -424,6 +424,17 @@ class Accountant():
             self.eth_transactions_gas_costs
         )
         total_taxable_pl = self.events.taxable_trade_profit_loss + sum_other_actions
+        self.events.csv_exporter.maybe_add_summary(
+            ledger_actions_profit_loss=self.events.ledger_actions_profit_loss,
+            defi_profit_loss=self.events.defi_profit_loss,
+            loan_profit=self.events.loan_profit,
+            margin_position_profit_loss=self.events.margin_positions_profit_loss,
+            settlement_losses=self.events.settlement_losses,
+            ethereum_transaction_gas_costs=self.eth_transactions_gas_costs,
+            asset_movement_fees=self.asset_movement_fees,
+            taxable_trade_profit_loss=self.events.taxable_trade_profit_loss,
+            total_taxable_profit_loss=total_taxable_pl,
+        )
         return {
             'overview': {
                 'ledger_actions_profit_loss': str(self.events.ledger_actions_profit_loss),
