@@ -11,7 +11,8 @@ export enum Module {
   BALANCER = 'balancer',
   ADEX = 'adex',
   LOOPRING = 'loopring',
-  ETH2 = 'eth2'
+  ETH2 = 'eth2',
+  SUSHISWAP = 'sushiswap'
 }
 
 export const ALL_CENTRALIZED_EXCHANGES = 'all_exchanges';

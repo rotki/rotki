@@ -1,6 +1,5 @@
 import { Module } from 'vuex';
-import { sushiswap } from '@/store/defi/sushiswap';
-import { DefiState } from '@/store/defi/types';
+import { SushiswapState } from '@/store/defi/sushiswap/types';
 import { RotkehlchenState } from '@/store/types';
 import { actions } from './actions';
 import { getters } from './getters';
@@ -9,13 +8,10 @@ import { state } from './state';
 
 const namespaced: boolean = true;
 
-export const defi: Module<DefiState, RotkehlchenState> = {
+export const sushiswap: Module<SushiswapState, RotkehlchenState> = {
   namespaced,
   mutations,
   actions,
   state,
-  getters,
-  modules: {
-    sushiswap
-  }
+  getters
 };

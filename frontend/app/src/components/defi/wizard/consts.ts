@@ -56,6 +56,11 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
     identifier: Module.ETH2,
     name: 'Eth2',
     icon: require('@/assets/images/modules/eth.svg')
+  },
+  {
+    identifier: Module.SUSHISWAP,
+    name: 'SushiSwap',
+    icon: require('@/assets/images/modules/sushiswap.svg')
   }
 ];
 
