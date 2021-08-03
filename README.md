@@ -36,6 +36,7 @@ For a detailed guide on how to use rotki see [here](https://rotki.readthedocs.io
 
 Click [here](https://rotki.readthedocs.io/en/latest/changelog.html) for the latest changelog.
 
+
 ## Contribute
 
 rotki is an opensource project and as such any and all help is really appreciated.
@@ -43,6 +44,10 @@ rotki is an opensource project and as such any and all help is really appreciate
 ### Issues or code
 
 If you would like to contribute by testing the software please open any issues you find in the github issue tracker. If you would like to contribute by code check out our open issues [here](https://github.com/rotki/rotki/issues) and if you would like to solve any of them please contribute by opening a PR all the while following the [contributing guide](https://rotki.readthedocs.io/en/latest/contribute.html).
+
+### Work with us
+
+If you are interested to work in the project full-time or part-time we are always looking for skilled people to join our core team. Check out our open positions [here](https://rotki.com/jobs/).
 
 ### Financially
 
