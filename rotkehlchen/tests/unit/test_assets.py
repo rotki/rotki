@@ -124,6 +124,8 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0xcbb20D755ABAD34cb4a9b5fF6Dd081C76769f62e'),  # noqa: E501 # Cash Global Coin (CGC) but another CGC in CC
         ethaddress_to_identifier('0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'),  # noqa: E501 # Binance Wrapped BTC (BBTC) but another BBTC in CC
         'NRV',     # Nerve Finance (NRV) but another NRV in CC
+        'EDR-2',   # Endor Protocol Token but we have E-Dinar Coin
+        ethaddress_to_identifier('0xDa007777D86AC6d989cC9f79A73261b3fC5e0DA0'),  # noqa: E501 # Dappnode (NODE) but another NODE in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -292,6 +294,18 @@ def test_coingecko_identifiers_are_reachable():
         'SWARM',
         # Coingecko has aircoin and we have a different airtoken
         'AIR-2',
+        # Coingecko has Attlas Token and we have Authorship
+        ethaddress_to_identifier('0x2dAEE1AA61D60A252DC80564499A69802853583A'),
+        # Coingecko has Lever Network and we have Leverj
+        ethaddress_to_identifier('0x0F4CA92660Efad97a9a70CB0fe969c755439772C'),
+        # Coingecko has Twirl Governance Token and we have Target Coin
+        ethaddress_to_identifier('0xAc3Da587eac229C9896D919aBC235CA4Fd7f72c1'),
+        # Coingecko has MyWish and we have another WISH (ethereum addresses don't match)
+        ethaddress_to_identifier('0x1b22C32cD936cB97C28C5690a0695a82Abf688e6'),
+        # Coingecko has DroneFly and we have KlondikeCoin for symbol KDC
+        'KDC',
+        # Coingecko has CoinStarter and we have Student Coin for symbol STC
+        ethaddress_to_identifier('0x15B543e986b8c34074DFc9901136d9355a537e7E'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

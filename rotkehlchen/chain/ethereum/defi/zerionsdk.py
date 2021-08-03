@@ -128,6 +128,9 @@ KNOWN_ZERION_PROTOCOL_NAMES = (
     'Cozy',
     'Cozy • Yearn',
     'Cozy • Compound',
+    'Unagii',
+    'Origin Protocol • OGN Staking',
+    'TimeWarp • Staking',
 )
 
 

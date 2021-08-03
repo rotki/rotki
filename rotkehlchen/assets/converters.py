@@ -432,6 +432,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'UPCO2',  # neither in coingecko nor cryptocompare
     'VIL',  # neither in coingecko nor cryptocompare (VICDeal)
     'WXBTC',  # neither in coingecko nor cryptocompare
+    'XBN',  # neither in coingecko nor cryptocompare
     'ZILD',  # neither in coingecko nor cryptocompare
     # bittrex tokenized stocks -- not sure how to handle yet
     'AAPL',
@@ -495,7 +496,6 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'XLMDOWN',  # no cryptocompare/coingecko data
     'XLMUP',  # no cryptocompare/coingecko data
     'UAH',  # no cryptocompare/coingecko data
-    'AGIX',  # binance forked AGI to AGIX but is not in crytocompare/coingecko yet TODO: review
 )
 
 UNSUPPORTED_BITFINEX_ASSETS = (
@@ -575,7 +575,6 @@ UNSUPPORTED_FTX_ASSETS = (
 # https://api.kucoin.com/api/v1/currencies
 UNSUPPORTED_KUCOIN_ASSETS = (
     'AI',  # no cryptocompare/coingecko data
-    'AGIX',  # no cryptocompare/coingecko data
     'AXE',  # delisted
     'BCH3L',  # no cryptocompare/coingecko data
     'BCH3S',  # no cryptocompare/coingecko data
@@ -597,6 +596,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'GZIL',  # delisted
     'HOTCROSS',  # no cryptocompare/coingecko data
     'KTS',  # delisted
+    'LITH',  # no cryptocompare/coingecko data
     'LOL',  # delisted
     'LSS',  # no cryptocompare/coingecko data
     'LTC3L',  # no cryptocompare/coingecko data
