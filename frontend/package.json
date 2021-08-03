@@ -20,9 +20,11 @@
     "build": "npm run build --workspace=@rotki/common && npm run build --workspace rotki",
     "docker:build": "npm run build -w @rotki/common && npm run build -w rotki -- --mode docker",
     "lint": "npm run lint -w @rotki/common && npm run lint:check -w rotki",
-    "check": "npm run lint && npm run build && npm run test:unit --workspace=rotki && npm run test:integration-ci --workspace=rotki"
+    "check": "npm run lint && npm run build && npm run test:unit --workspace=rotki && npm run test:integration-ci --workspace=rotki",
+    "dev": "node start-dev.js"
   },
   "devDependencies": {
+    "dotenv": "10.0.0",
     "semver": "7.3.5"
   }
 }
