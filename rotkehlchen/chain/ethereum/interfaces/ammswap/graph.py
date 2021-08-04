@@ -8,8 +8,10 @@ MINTS_QUERY = (
             to: $address,
             timestamp_gte: $start_ts,
             timestamp_lte: $end_ts,
+            id_gt: $id,
         }}
     ) {{
+        id
         transaction {{
             id
         }}
@@ -49,8 +51,10 @@ BURNS_QUERY = (
             sender: $address,
             timestamp_gte: $start_ts,
             timestamp_lte: $end_ts,
+            id_gt: $id,
         }}
     ) {{
+        id
         transaction {{
             id
         }}
@@ -90,8 +94,10 @@ SWAPS_QUERY = (
             from: $address,
             timestamp_gte: $start_ts,
             timestamp_lte: $end_ts,
+            id_gt: $id,
         }}
     ) {{
+        id
         transaction {{
             swaps {{
                 id
@@ -133,8 +139,10 @@ SUSHISWAP_SWAPS_QUERY = (
             to: $address,
             timestamp_gte: $start_ts,
             timestamp_lte: $end_ts,
+            id_gt: $id,
         }}
     ) {{
+        id
         transaction {{
             swaps {{
                 id
@@ -195,6 +203,7 @@ LIQUIDITY_POSITIONS_QUERY = (
         where: {{
             user_in: $addresses,
             liquidityTokenBalance_gt: $balance,
+            id_gt: $id,
         }}
     ) {{
         id
