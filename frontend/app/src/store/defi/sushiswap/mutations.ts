@@ -1,15 +1,15 @@
+import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { MutationTree } from 'vuex';
-import { UniswapBalances } from '@/services/defi/types/uniswap';
 import { defaultState } from '@/store/defi/state';
 import { SushiswapMutations } from '@/store/defi/sushiswap/mutation-types';
 import { SushiswapState } from '@/store/defi/sushiswap/types';
-import { DexTrades, UniswapEvents } from '@/store/defi/types';
+import { DexTrades } from '@/store/defi/types';
 import { Writeable } from '@/types';
 
 export const mutations: MutationTree<SushiswapState> = {
   [SushiswapMutations.SET_BALANCES](
     state: Writeable<SushiswapState>,
-    balances: UniswapBalances
+    balances: XswapBalances
   ) {
     state.balances = balances;
   },
@@ -21,7 +21,7 @@ export const mutations: MutationTree<SushiswapState> = {
   },
   [SushiswapMutations.SET_EVENTS](
     state: Writeable<SushiswapState>,
-    events: UniswapEvents
+    events: XswapEvents
   ) {
     state.events = events;
   },

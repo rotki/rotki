@@ -1,3 +1,4 @@
+import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { ActionContext, ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
@@ -17,7 +18,6 @@ import {
   CompoundBalances,
   CompoundHistory
 } from '@/services/defi/types/compound';
-import { UniswapBalances } from '@/services/defi/types/uniswap';
 import {
   YearnVaultsBalances,
   YearnVaultsHistory
@@ -41,8 +41,7 @@ import {
   DexTrades,
   DSRBalances,
   DSRHistory,
-  MakerDAOVaultDetails,
-  UniswapEvents
+  MakerDAOVaultDetails
 } from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
@@ -883,7 +882,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<UniswapBalances, TaskMeta>(
+      const { result } = await taskCompletion<XswapBalances, TaskMeta>(
         taskType
       );
 
@@ -985,9 +984,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<UniswapEvents, TaskMeta>(
-        taskType
-      );
+      const { result } = await taskCompletion<XswapEvents, TaskMeta>(taskType);
 
       commit('uniswapEvents', result);
     } catch (e) {

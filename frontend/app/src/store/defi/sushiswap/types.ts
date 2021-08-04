@@ -1,8 +1,8 @@
-import { UniswapBalances } from '@/services/defi/types/uniswap';
-import { DexTrades, UniswapEvents } from '@/store/defi/types';
+import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
+import { DexTrades } from '@/store/defi/types';
 
 export interface SushiswapState {
-  readonly balances: UniswapBalances;
-  readonly events: UniswapEvents;
+  readonly balances: XswapBalances;
+  readonly events: XswapEvents;
   readonly trades: DexTrades;
 }

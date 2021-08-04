@@ -1,5 +1,5 @@
+import { Balance } from '@rotki/common';
 import { default as BigNumber } from 'bignumber.js';
-import { Balance } from '@/services/types-api';
 
 export interface StakingState {
   readonly eth2Details: Eth2Detail[];

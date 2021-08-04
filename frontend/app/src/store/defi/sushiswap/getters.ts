@@ -1,10 +1,10 @@
-import { SushiswapState } from '@/store/defi/sushiswap/types';
 import {
-  UniswapBalance,
-  UniswapEventDetails,
-  UniswapPool,
-  UniswapPoolProfit
-} from '@/store/defi/types';
+  XswapBalance,
+  XswapEventDetails,
+  XswapPool,
+  XswapPoolProfit
+} from '@rotki/common/lib/defi/xswap';
+import { SushiswapState } from '@/store/defi/sushiswap/types';
 import {
   getBalances,
   getEventDetails,
@@ -16,11 +16,11 @@ import { Getters } from '@/store/typing';
 import { uniqueStrings } from '@/utils/data';
 
 interface SushiswapGetters {
-  balances: (addresses: string[]) => UniswapBalance[];
-  poolProfit: (addresses: string[]) => UniswapPoolProfit[];
-  events: (addresses: string[]) => UniswapEventDetails[];
+  balances: (addresses: string[]) => XswapBalance[];
+  poolProfit: (addresses: string[]) => XswapPoolProfit[];
+  events: (addresses: string[]) => XswapEventDetails[];
   addresses: string[];
-  pools: UniswapPool[];
+  pools: XswapPool[];
 }
 
 export const getters: Getters<

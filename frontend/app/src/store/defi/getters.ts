@@ -1,3 +1,10 @@
+import { Balance } from '@rotki/common';
+import {
+  XswapBalance,
+  XswapEventDetails,
+  XswapPool,
+  XswapPoolProfit
+} from '@rotki/common/lib/defi/xswap';
 import { default as BigNumber } from 'bignumber.js';
 import sortBy from 'lodash/sortBy';
 import { truncateAddress } from '@/filters';
@@ -24,7 +31,6 @@ import {
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
 import { Trade } from '@/services/history/types';
-import { Balance } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
   AAVE,
@@ -61,11 +67,7 @@ import {
   PoapDelivery,
   Pool,
   ProfitLossModel,
-  TokenInfo,
-  UniswapBalance,
-  UniswapEventDetails,
-  UniswapPool,
-  UniswapPoolProfit
+  TokenInfo
 } from '@/store/defi/types';
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
 import {
@@ -136,15 +138,15 @@ interface DefiGetters {
   yearnVaultsProfit: DefiGetterTypes.YearnVaultProfitType;
   yearnVaultsAssets: DefiGetterTypes.YearnVaultAssetType;
   aaveTotalEarned: (addresses: string[]) => ProfitLossModel[];
-  uniswapBalances: (addresses: string[]) => UniswapBalance[];
+  uniswapBalances: (addresses: string[]) => XswapBalance[];
   basicDexTrades: (addresses: string[]) => Trade[];
-  uniswapPoolProfit: (addresses: string[]) => UniswapPoolProfit[];
-  uniswapEvents: (addresses: string[]) => UniswapEventDetails[];
+  uniswapPoolProfit: (addresses: string[]) => XswapPoolProfit[];
+  uniswapEvents: (addresses: string[]) => XswapEventDetails[];
   uniswapAddresses: string[];
   dexTrades: (addresses: string[]) => DexTrade[];
   airdrops: (addresses: string[]) => Airdrop[];
   airdropAddresses: string[];
-  [GETTER_UNISWAP_ASSETS]: UniswapPool[];
+  [GETTER_UNISWAP_ASSETS]: XswapPool[];
   [GETTER_BALANCER_BALANCES]: BalancerBalanceWithOwner[];
   balancerAddresses: string[];
   balancerEvents: (addresses: string[]) => BalancerEvent[];
@@ -1383,7 +1385,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
   uniswapBalances: ({ uniswapBalances }) => (
     addresses: string[]
-  ): UniswapBalance[] => {
+  ): XswapBalance[] => {
     return getBalances(uniswapBalances, addresses);
   },
   basicDexTrades: ({ uniswapTrades, balancerTrades }) => (
@@ -1426,10 +1428,10 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   },
   uniswapPoolProfit: ({ uniswapEvents }) => (
     addresses: string[]
-  ): UniswapPoolProfit[] => {
+  ): XswapPoolProfit[] => {
     return getPoolProfit(uniswapEvents, addresses);
   },
-  uniswapEvents: ({ uniswapEvents }) => (addresses): UniswapEventDetails[] => {
+  uniswapEvents: ({ uniswapEvents }) => (addresses): XswapEventDetails[] => {
     return getEventDetails(uniswapEvents, addresses);
   },
   uniswapAddresses: ({ uniswapEvents, uniswapBalances }) => {

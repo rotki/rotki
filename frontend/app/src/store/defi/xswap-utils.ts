@@ -1,18 +1,18 @@
-import { UniswapBalances } from '@/services/defi/types/uniswap';
 import {
-  UniswapBalance,
-  UniswapEventDetails,
-  UniswapEvents,
-  UniswapPool,
-  UniswapPoolProfit
-} from '@/store/defi/types';
+  XswapBalance,
+  XswapBalances,
+  XswapEventDetails,
+  XswapEvents,
+  XswapPool,
+  XswapPoolProfit
+} from '@rotki/common/lib/defi/xswap';
 import { Writeable } from '@/types';
 
 export function getPools(
-  balances: UniswapBalances,
-  events: UniswapEvents
-): UniswapPool[] {
-  const pools: UniswapPool[] = [];
+  balances: XswapBalances,
+  events: XswapEvents
+): XswapPool[] {
+  const pools: XswapPool[] = [];
   const known: { [address: string]: boolean } = {};
   for (const account in balances) {
     const accountBalances = balances[account];
@@ -48,10 +48,10 @@ export function getPools(
 }
 
 export function getEventDetails(
-  events: UniswapEvents,
+  events: XswapEvents,
   addresses: string[]
-): UniswapEventDetails[] {
-  const eventDetails: UniswapEventDetails[] = [];
+): XswapEventDetails[] {
+  const eventDetails: XswapEventDetails[] = [];
   for (const address in events) {
     if (addresses.length > 0 && !addresses.includes(address)) {
       continue;
@@ -73,11 +73,11 @@ export function getEventDetails(
 }
 
 export function getPoolProfit(
-  events: UniswapEvents,
+  events: XswapEvents,
   addresses: string[]
-): UniswapPoolProfit[] {
+): XswapPoolProfit[] {
   const perPoolProfit: {
-    [poolAddress: string]: Writeable<UniswapPoolProfit>;
+    [poolAddress: string]: Writeable<XswapPoolProfit>;
   } = {};
   for (const address in events) {
     if (addresses.length > 0 && !addresses.includes(address)) {
@@ -105,10 +105,10 @@ export function getPoolProfit(
 }
 
 export function getBalances(
-  xswapBalance: UniswapBalances,
+  xswapBalance: XswapBalances,
   addresses: string[]
-): UniswapBalance[] {
-  const balances: { [poolAddress: string]: Writeable<UniswapBalance> } = {};
+): XswapBalance[] {
+  const balances: { [poolAddress: string]: Writeable<XswapBalance> } = {};
   for (const account in xswapBalance) {
     if (addresses.length > 0 && !addresses.includes(account)) {
       continue;
@@ -140,7 +140,7 @@ export function getBalances(
           userBalance,
           totalSupply,
           assets,
-          poolAddress: address
+          address
         };
       }
     }

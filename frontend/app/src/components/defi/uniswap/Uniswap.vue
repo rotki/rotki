@@ -121,6 +121,7 @@
 </template>
 
 <script lang="ts">
+import { XswapBalance } from '@rotki/common/lib/defi/xswap';
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
@@ -138,7 +139,6 @@ import StatusMixin from '@/mixins/status-mixin';
 import { UniswapDetails } from '@/premium/premium';
 import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
-import { UniswapBalance } from '@/store/defi/types';
 import { ETH, GeneralAccount } from '@/typing/types';
 
 @Component({
@@ -171,7 +171,7 @@ export default class Uniswap extends Mixins(
   section = Section.DEFI_UNISWAP_BALANCES;
   secondSection = Section.DEFI_UNISWAP_EVENTS;
 
-  uniswapBalances!: (addresses: string[]) => UniswapBalance[];
+  uniswapBalances!: (addresses: string[]) => XswapBalance[];
   uniswapAddresses!: string[];
   selectedAccount: GeneralAccount | null = null;
   selectedPools: string[] = [];
@@ -186,13 +186,13 @@ export default class Uniswap extends Mixins(
     return this.selectedAccount ? [this.selectedAccount.address] : [];
   }
 
-  get balances(): UniswapBalance[] {
+  get balances(): XswapBalance[] {
     const balances = this.uniswapBalances(this.selectedAddresses);
     if (this.selectedPools.length === 0) {
       return balances;
     }
-    return balances.filter(({ poolAddress }) =>
-      this.selectedPools.includes(poolAddress)
+    return balances.filter(({ address }) =>
+      this.selectedPools.includes(address)
     );
   }
 

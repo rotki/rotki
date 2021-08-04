@@ -1,10 +1,10 @@
+import { Balance } from '@rotki/common';
 import { default as BigNumber } from 'bignumber.js';
 import {
   AAVE_BORROWING_EVENTS,
   AAVE_LENDING_EVENTS
 } from '@/services/defi/consts';
 import { CompoundEventType } from '@/services/defi/types/compound';
-import { Balance } from '@/services/types-api';
 
 export type DSRMovementType = 'withdrawal' | 'deposit';
 export type MakerDAOVaultEventType =

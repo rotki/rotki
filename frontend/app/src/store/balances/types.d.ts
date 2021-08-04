@@ -1,3 +1,4 @@
+import { Balance } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { BigNumber } from 'bignumber.js';
 import { Exchange, PriceOracles } from '@/model/action-result';
@@ -9,7 +10,6 @@ import {
 } from '@/services/balances/types';
 import { Module } from '@/services/session/consts';
 import {
-  Balance,
   BtcAccountData,
   GeneralAccountData,
   HasBalance
