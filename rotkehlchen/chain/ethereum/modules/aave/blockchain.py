@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveInterestEvent,
 )
 from rotkehlchen.constants.ethereum import (
-    AAVE_LENDING_POOL,
+    AAVE_V1_LENDING_POOL,
     ATOKEN_ABI,
     MAX_BLOCKTIME_CACHE,
     ZERO_ADDRESS,
@@ -91,7 +91,7 @@ class AaveBlockchainInquirer(AaveInquirer):
         semaphore
         """
         # Get all deposit events for the address
-        from_block = AAVE_LENDING_POOL.deployed_block if given_from_block is None else given_from_block  # noqa: E501
+        from_block = AAVE_V1_LENDING_POOL.deployed_block if given_from_block is None else given_from_block  # noqa: E501
         argument_filters = {
             '_user': user_address,
         }
@@ -103,16 +103,16 @@ class AaveBlockchainInquirer(AaveInquirer):
         withdraw_events = []
         if query_events:
             deposit_events.extend(self.ethereum.get_logs(
-                contract_address=AAVE_LENDING_POOL.address,
-                abi=AAVE_LENDING_POOL.abi,
+                contract_address=AAVE_V1_LENDING_POOL.address,
+                abi=AAVE_V1_LENDING_POOL.abi,
                 event_name='Deposit',
                 argument_filters=argument_filters,
                 from_block=from_block,
                 to_block=to_block,
             ))
             withdraw_events.extend(self.ethereum.get_logs(
-                contract_address=AAVE_LENDING_POOL.address,
-                abi=AAVE_LENDING_POOL.abi,
+                contract_address=AAVE_V1_LENDING_POOL.address,
+                abi=AAVE_V1_LENDING_POOL.abi,
                 event_name='RedeemUnderlying',
                 argument_filters=argument_filters,
                 from_block=from_block,
@@ -186,7 +186,7 @@ class AaveBlockchainInquirer(AaveInquirer):
         # Even if no events are found for an address we need to remember the range
         self.database.update_used_block_query_range(
             name=f'aave_events_{user_address}',
-            from_block=AAVE_LENDING_POOL.deployed_block,
+            from_block=AAVE_V1_LENDING_POOL.deployed_block,
             to_block=to_block,
         )
 

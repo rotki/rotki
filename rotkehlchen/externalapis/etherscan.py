@@ -14,6 +14,7 @@ from rotkehlchen.constants.timing import (
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
@@ -24,7 +25,6 @@ from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, External
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_int
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.externalapis.utils import read_hash, read_integer
 
 ETHERSCAN_TX_QUERY_LIMIT = 10000
 
