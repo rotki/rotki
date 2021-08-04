@@ -1151,7 +1151,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     });
   },
   async [ACTION_PURGE_PROTOCOL](
-    { commit, rootGetters: { status } },
+    { commit, rootGetters: { status }, dispatch },
     module: Module | typeof ALL_MODULES
   ) {
     function resetStatus(section: Section) {
@@ -1241,6 +1241,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       clearUniswapState();
     } else if (module === Module.BALANCER) {
       clearBalancerState();
+    } else if (Module.SUSHISWAP) {
+      dispatch('sushiswap/purge');
     } else if (module === ALL_MODULES) {
       clearDSRState();
       clearMakerDAOVaultState();

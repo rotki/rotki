@@ -118,7 +118,7 @@ export const actions: ActionTree<SushiswapState, RotkehlchenState> = {
 
     commit(SushiswapMutations.SET_BALANCES, {});
     commit(SushiswapMutations.SET_EVENTS, {});
-    resetStatus(Section.DEFI_DSR_BALANCES);
-    resetStatus(Section.DEFI_DSR_HISTORY);
+    resetStatus(Section.DEFI_SUSHISWAP_BALANCES);
+    resetStatus(Section.DEFI_SUSHISWAP_EVENTS);
   }
 };
