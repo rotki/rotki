@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, cast
 
 from gevent.lock import Semaphore
 
@@ -15,7 +15,7 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveLiquidationEvent,
     AaveRepayEvent,
 )
-from rotkehlchen.constants.ethereum import AAVE_LENDING_POOL
+from rotkehlchen.constants.ethereum import AAVE_V1_LENDING_POOL, AAVE_V2_LENDING_POOL
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
@@ -39,6 +39,16 @@ log = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
+
+
+class ReserveData(NamedTuple):
+    """Aave v1 and v2 reserve data
+
+    v1: https://docs.aave.com/developers/v/1.0/developing-on-aave/the-protocol/lendingpool#getreservedata
+    v2: https://docs.aave.com/developers/the-core-protocol/lendingpool#getreservedata"""  # noqa: E501
+    liquidity_rate: FVal
+    variable_borrow_rate: FVal
+    stable_borrow_rate: FVal
 
 
 class Aave(EthereumModule):
@@ -102,7 +112,7 @@ class Aave(EthereumModule):
         balances mapping when executed.
         """
         aave_balances = {}
-        reserve_cache: Dict[str, Tuple[Any, ...]] = {}
+        reserve_cache: Dict[str, ReserveData] = {}
 
         if isinstance(given_defi_balances, dict):
             defi_balances = given_defi_balances
@@ -115,7 +125,8 @@ class Aave(EthereumModule):
             for balance_entry in balance_entries:
                 # Aave also has "Aave • Staking" and "Aave • Uniswap Market" but
                 # here we are only querying the balances in the lending protocol
-                if balance_entry.protocol.name != 'Aave':
+                # if balance_entry.protocol.name not in ('Aave', 'Aave V2'):
+                if balance_entry.protocol.name not in ('Aave', 'Aave V2'):
                     continue
 
                 # Depending on whether it's asset or debt we find what the reserve asset is
@@ -135,23 +146,42 @@ class Aave(EthereumModule):
 
                 reserve_data = reserve_cache.get(reserve_address, None)
                 if reserve_data is None:
-                    reserve_data = AAVE_LENDING_POOL.call(
-                        ethereum=self.ethereum,
-                        method_name='getReserveData',
-                        arguments=[reserve_address],
-                    )
+
+                    if balance_entry.protocol.name == 'Aave':
+                        reserve_result = AAVE_V1_LENDING_POOL.call(
+                            ethereum=self.ethereum,
+                            method_name='getReserveData',
+                            arguments=[reserve_address],
+                        )
+                        reserve_data = ReserveData(
+                            liquidity_rate=FVal(reserve_result[4] / RAY),
+                            variable_borrow_rate=FVal(reserve_result[5] / RAY),
+                            stable_borrow_rate=FVal(reserve_result[6] / RAY),
+                        )
+                    else:  # Aave V2
+                        reserve_result = AAVE_V2_LENDING_POOL.call(
+                            ethereum=self.ethereum,
+                            method_name='getReserveData',
+                            arguments=[reserve_address],
+                        )
+                        reserve_data = ReserveData(
+                            liquidity_rate=FVal(reserve_result[3] / RAY),
+                            variable_borrow_rate=FVal(reserve_result[4] / RAY),
+                            stable_borrow_rate=FVal(reserve_result[5] / RAY),
+                        )
+
                     reserve_cache[balance_entry.base_balance.token_symbol] = reserve_data
 
                 if balance_entry.balance_type == 'Asset':
                     lending_map[token] = AaveLendingBalance(
                         balance=balance,
-                        apy=FVal(reserve_data[4] / RAY),
+                        apy=reserve_data.liquidity_rate,
                     )
                 else:  # 'Debt'
                     borrowing_map[token] = AaveBorrowingBalance(
                         balance=balance,
-                        variable_apr=FVal(reserve_data[5] / RAY),
-                        stable_apr=FVal(reserve_data[6] / RAY),
+                        variable_apr=reserve_data.variable_borrow_rate,
+                        stable_apr=reserve_data.stable_borrow_rate,
                     )
 
             if lending_map == {} and borrowing_map == {}:
