@@ -29,6 +29,7 @@ import {
 import { TradeType } from '@/services/history/types';
 import { HasBalance } from '@/services/types-api';
 import { AIRDROP_POAP, AIRDROPS, OVERVIEW_PROTOCOLS } from '@/store/defi/const';
+import { SushiswapState } from '@/store/defi/sushiswap/types';
 
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 
@@ -53,6 +54,7 @@ export interface DefiState {
   uniswapTrades: DexTrades;
   uniswapEvents: XswapEvents;
   airdrops: Airdrops;
+  sushiswap?: SushiswapState;
 }
 
 export interface PoapDeliveryDetails {

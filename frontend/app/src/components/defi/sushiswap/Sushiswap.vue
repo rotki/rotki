@@ -8,7 +8,11 @@
   </progress-screen>
   <v-container v-else>
     <active-modules :modules="modules" :class="$style.modules" />
-    <sushi class="mt-4" :refreshing="anyRefreshing" />
+    <sushi
+      class="mt-4"
+      :refreshing="anyRefreshing"
+      :secondary-loading="secondaryRefreshing"
+    />
   </v-container>
 </template>
 

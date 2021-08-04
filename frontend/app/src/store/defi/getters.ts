@@ -1388,12 +1388,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   ): XswapBalance[] => {
     return getBalances(uniswapBalances, addresses);
   },
-  basicDexTrades: ({ uniswapTrades, balancerTrades }) => (
+  basicDexTrades: ({ uniswapTrades, balancerTrades, sushiswap }) => (
     addresses
   ): Trade[] => {
     function transform(
       trades: DexTrades,
-      location: 'uniswap' | 'balancer'
+      location: 'uniswap' | 'balancer' | 'sushiswap'
     ): Trade[] {
       const simpleTrades: Trade[] = [];
       for (const address in trades) {
@@ -1424,6 +1424,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     const trades: Trade[] = [];
     trades.push(...transform(uniswapTrades, 'uniswap'));
     trades.push(...transform(balancerTrades, 'balancer'));
+    if (sushiswap) {
+      trades.push(...transform(sushiswap.trades, 'sushiswap'));
+    }
     return sortBy(trades, 'timestamp').reverse();
   },
   uniswapPoolProfit: ({ uniswapEvents }) => (
@@ -1439,21 +1442,28 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       .concat(Object.keys(uniswapEvents))
       .filter(uniqueStrings);
   },
-  dexTrades: ({ uniswapTrades, balancerTrades }) => (addresses): DexTrade[] => {
+  dexTrades: ({ uniswapTrades, balancerTrades, sushiswap }) => (
+    addresses
+  ): DexTrade[] => {
     const trades: DexTrade[] = [];
-    for (const address in uniswapTrades) {
-      if (addresses.length > 0 && !addresses.includes(address)) {
-        continue;
+    const addTrades = (
+      dexTrades: DexTrades,
+      addresses: string[],
+      trades: DexTrade[]
+    ) => {
+      for (const address in dexTrades) {
+        if (addresses.length > 0 && !addresses.includes(address)) {
+          continue;
+        }
+        trades.push(...dexTrades[address]);
       }
-      trades.push(...uniswapTrades[address]);
+    };
+    addTrades(uniswapTrades, addresses, trades);
+    addTrades(balancerTrades, addresses, trades);
+    if (sushiswap) {
+      addTrades(sushiswap.trades, addresses, trades);
     }
 
-    for (const address in balancerTrades) {
-      if (addresses.length > 0 && !addresses.includes(address)) {
-        continue;
-      }
-      trades.push(...balancerTrades[address]);
-    }
     return sortBy(trades, 'timestamp').reverse();
   },
   airdrops: ({ airdrops }) => (addresses): Airdrop[] => {
