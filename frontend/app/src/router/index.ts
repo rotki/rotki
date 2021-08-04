@@ -188,6 +188,11 @@ export default new Router({
                   path: Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
                   component: () =>
                     import('../components/defi/balancer/Balancer.vue')
+                },
+                {
+                  path: Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP,
+                  component: () =>
+                    import('../components/defi/sushiswap/Sushiswap.vue')
                 }
               ]
             }
