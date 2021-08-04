@@ -115,7 +115,7 @@ class Aave(EthereumModule):
             for balance_entry in balance_entries:
                 # Aave also has "Aave • Staking" and "Aave • Uniswap Market" but
                 # here we are only querying the balances in the lending protocol
-                if balance_entry.protocol.name != 'Aave':
+                if balance_entry.protocol.name not in ('Aave', 'Aave V2'):
                     continue
 
                 # Depending on whether it's asset or debt we find what the reserve asset is

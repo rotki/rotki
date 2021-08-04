@@ -2,12 +2,13 @@ import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
+from typing import Any, Dict
 
 import pytest
 import requests
 
 from rotkehlchen.api.server import APIServer
-from rotkehlchen.constants.assets import A_ADAI_V1, A_AWBTC_V1, A_WBTC, A_BUSD
+from rotkehlchen.constants.assets import A_ADAI_V1, A_AWBTC_V1, A_BUSD, A_WBTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
@@ -32,12 +33,12 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
 
-
-AAVE_BALANCES_TEST_ACC = '0xC2cB1040220768554cf699b0d863A3cd4324ce32'
+AAVE_BALANCESV1_TEST_ACC = '0xC2cB1040220768554cf699b0d863A3cd4324ce32'
+AAVE_BALANCESV2_TEST_ACC = '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d'
 AAVE_V2_TEST_ACC = '0x008C00c45D461d7E08acBC4755a4A0a3a94115ee'
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCES_TEST_ACC]])
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCESV1_TEST_ACC, AAVE_BALANCESV2_TEST_ACC]])  # noqa: E501
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
 def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
     """Check querying the aave balances endpoint works. Uses real data.
@@ -68,25 +69,38 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
         else:
             result = assert_proper_response_with_result(response)
 
-    if len(result) != 1:
-        test_warnings.warn(UserWarning(f'Test account {AAVE_BALANCES_TEST_ACC} has no aave balances'))  # noqa: E501
+    if len(result) == 0:
+        test_warnings.warn(UserWarning(f'Test account {AAVE_BALANCESV1_TEST_ACC} and {AAVE_BALANCESV2_TEST_ACC} have no aave balances'))  # noqa: E501
         return
 
-    lending = result[AAVE_BALANCES_TEST_ACC]['lending']
-    for _, entry in lending.items():
-        assert len(entry) == 2
-        assert len(entry['balance']) == 2
-        assert 'amount' in entry['balance']
-        assert 'usd_value' in entry['balance']
-        assert '%' in entry['apy']
-    borrowing = result[AAVE_BALANCES_TEST_ACC]['borrowing']
-    for _, entry in borrowing.items():
-        assert len(entry) == 3
-        assert len(entry['balance']) == 2
-        assert 'amount' in entry['balance']
-        assert 'usd_value' in entry['balance']
-        assert '%' in entry['variable_apr']
-        assert '%' in entry['stable_apr']
+    def _assert_valid_entries(balances: Dict[str, Any]) -> None:
+        lending = v1_balances['lending']
+        for _, entry in lending.items():
+            assert len(entry) == 2
+            assert len(entry['balance']) == 2
+            assert 'amount' in entry['balance']
+            assert 'usd_value' in entry['balance']
+            assert '%' in entry['apy']
+        borrowing = balances['borrowing']
+        for _, entry in borrowing.items():
+            assert len(entry) == 3
+            assert len(entry['balance']) == 2
+            assert 'amount' in entry['balance']
+            assert 'usd_value' in entry['balance']
+            assert '%' in entry['variable_apr']
+            assert '%' in entry['stable_apr']
+
+    v1_balances = result.get(AAVE_BALANCESV1_TEST_ACC)
+    if v1_balances:
+        _assert_valid_entries(v1_balances)
+    else:
+        test_warnings.warn(UserWarning(f'Test account {AAVE_BALANCESV1_TEST_ACC} has no aave v1 balances'))  # noqa: E501
+
+    v2_balances = result.get(AAVE_BALANCESV2_TEST_ACC)
+    if v2_balances:
+        _assert_valid_entries(v2_balances)
+    else:
+        test_warnings.warn(UserWarning(f'Test account {AAVE_BALANCESV2_TEST_ACC} has no aave v2 balances'))  # noqa: E501
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_V2_TEST_ACC]])
@@ -108,7 +122,7 @@ def test_query_aave_history_with_borrowing_v2(rotkehlchen_api_server, ethereum_a
     _query_simple_aave_history_test_v2(setup, rotkehlchen_api_server, False)
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCES_TEST_ACC]])
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCESV1_TEST_ACC]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 def test_query_aave_balances_module_not_activated(
         rotkehlchen_api_server,
