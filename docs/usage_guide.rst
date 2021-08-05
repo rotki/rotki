@@ -894,11 +894,15 @@ Liquidity Pools
 ================
 
 .. image:: images/sc_decentralized_lp.png
-  :alt: Defi Deposits history
+  :alt: Defi Liquidity Pools
   :align: center
 
-Rotki provides support for Uniswap v2 and Balancer liquidity pools. With the exception of Uniswap v2 lp balances
-this feature is only available to premium users.
+Rotki allows it's users to keep track of their Uniswap v2 and Balancer and Sushiswap liquidity pools
+With the exception of Uniswap v2 lp balances this feature is only available to premium users.
+
+.. image:: images/sc_decentralized_lp_sushi.png
+  :alt: Defi Sushiswap
+  :align: center
 
 The liquidity pool support allows premium users to see their balances, the per pool profit/loss and any events
 (such as mint/burn) performed.
