@@ -211,6 +211,7 @@
 <script lang="ts">
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
+import * as logger from 'loglevel';
 import { Component, Emit, Mixins, Prop, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters, mapMutations } from 'vuex';
@@ -341,9 +342,13 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
         selection.pop();
       }
     } else {
-      for (const { tradeId } of this.data) {
+      for (const trade of this.data) {
+        const { tradeId } = trade;
         if (!tradeId || selection.includes(tradeId)) {
-          continue;
+          logger.warn(
+            'A problematic trade has been detected, possible duplicate id',
+            trade
+          );
         }
         selection.push(tradeId);
       }
