@@ -288,12 +288,21 @@ def deserialize_swap(userdb: 'DBHandler', raw_swap: Dict[str, Any]) -> AMMSwap:
     if len(raw_tokens) != 0:
         try:
             raw_address_tokens = {raw_token['address']: raw_token for raw_token in raw_tokens}
-            raw_token0 = raw_address_tokens[raw_token_in_address]
-            raw_token1 = raw_address_tokens[raw_token_out_address]
-            token0_name = raw_token0['name']
-            token0_decimals = raw_token0['decimals']
-            token1_name = raw_token1['name']
-            token1_decimals = raw_token1['decimals']
+            raw_token0 = raw_address_tokens.get(raw_token_in_address)
+            raw_token1 = raw_address_tokens.get(raw_token_out_address)
+            if raw_token0 is not None:
+                token0_name = raw_token0['name']
+                token0_decimals = raw_token0['decimals']
+            else:
+                token0_name = None
+                token0_decimals = None
+            if raw_token1 is not None:
+                token1_name = raw_token1['name']
+                token1_decimals = raw_token1['decimals']
+            else:
+                token1_name = None
+                token1_decimals = None
+
         except KeyError as e:
             raise DeserializationError(f'Missing key: {str(e)}.') from e
     else:
