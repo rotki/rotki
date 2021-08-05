@@ -56,7 +56,7 @@
             <amount-display
               fiat-currency="USD"
               show-currency="symbol"
-              :value="balances.map(val => val.usdValue) | balanceSum"
+              :value="balanceSum(balances.map(val => val.usdValue))"
             />
           </td>
         </tr>
@@ -70,7 +70,7 @@
                 <amount-display
                   fiat-currency="USD"
                   show-currency="symbol"
-                  :value="balances.map(val => val.usdValue) | balanceSum"
+                  :value="balanceSum(balances.map(val => val.usdValue))"
                 />
               </v-col>
             </v-row>
@@ -88,6 +88,7 @@ import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import { CURRENCY_USD } from '@/data/currencies';
+import { balanceSum } from '@/filters';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import {
@@ -118,6 +119,7 @@ export default class AssetBalances extends Vue {
   prices!: AssetPrices;
   exchangeRate!: ExchangeRateGetter;
   isTaskRunning!: (type: TaskType) => boolean;
+  readonly balanceSum = balanceSum;
 
   get symbol(): string {
     return this.currency.ticker_symbol;

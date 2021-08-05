@@ -1,4 +1,4 @@
-import { MODULE_AAVE, MODULES } from '@/services/session/consts';
+import { Module } from '@/services/session/consts';
 
 export class DefiPage {
   visit() {
@@ -12,9 +12,10 @@ export class DefiPage {
   }
 
   selectModules() {
-    for (let i = 0; i < MODULES.length; i++) {
-      const module = MODULES[i];
-      if (module === MODULE_AAVE) {
+    const values = Object.values(Module);
+    for (let i = 0; i < values.length; i++) {
+      const module = values[i];
+      if (module === Module.AAVE) {
         continue;
       }
 
@@ -22,7 +23,7 @@ export class DefiPage {
       cy.get(`#defi-module-${module}`).find('button').click();
       cy.get(`#defi-module-${module}`).should('not.be.visible');
     }
-    cy.get(`#defi-module-${MODULE_AAVE}`).should('be.visible');
+    cy.get(`#defi-module-${Module.AAVE}`).should('be.visible');
     cy.get('.defi-wizard__select-accounts').click();
   }
 

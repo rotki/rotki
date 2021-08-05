@@ -509,6 +509,10 @@
     "value_rounding_hint": "Specify how the value (e.g the FIAT value of an owned asset) is rounded.",
     "amount_rounding_hint": "Specify how the amount (e.g. the amount of an owned asset) is rounded."
   },
+  "sushiswap": {
+    "loading": "Please wait while your liquidity pools are getting loaded...",
+    "premium": "Sushiswap feature "
+  },
   "theme_manager_lock": {
     "description": "Theme customization is only available with a premium subscription",
     "subtitle": "Manage colors for the app theme",
@@ -860,6 +864,7 @@
   },
   "liquidity": {
     "balancer": "Balancer",
+    "sushiswap": "Sushiswap",
     "uniswap": "Uniswap"
   },
   "loan_liquidation": {
@@ -1731,6 +1736,33 @@
         "error": {
           "title": "Aave history",
           "description": "Failed to retrieve Aave history: {error}"
+        }
+      },
+      "sushiswap_balances": {
+        "error": {
+          "description": "Failed to query Sushiswap balances: {message}",
+          "title": "Sushiswap balances"
+        },
+        "task": {
+          "title": "Querying Sushiswap balances"
+        }
+      },
+      "sushiswap_events": {
+        "error": {
+          "description": "Failed to query Sushiswap events: {message}",
+          "title": "Sushiswap events"
+        },
+        "task": {
+          "title": "Querying Sushiswap events"
+        }
+      },
+      "sushiswap_trades": {
+        "error": {
+          "description": "Failed to query Sushiswap trades: {message}",
+          "title": "Sushiswap trades"
+        },
+        "task": {
+          "title": "Querying Sushiswap trades"
         }
       },
       "uniswap_events": {

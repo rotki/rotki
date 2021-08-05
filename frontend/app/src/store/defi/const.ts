@@ -322,14 +322,6 @@ export function getProtcolIcon(name: OverviewDefiProtocol): string {
   return ICON_LIST[name] ?? '';
 }
 
-export const UNISWAP_EVENT_MINT = 'mint';
-export const UNISWAP_EVENT_BURN = 'burn';
-
-export const UNISWAP_EVENT_TYPE = [
-  UNISWAP_EVENT_MINT,
-  UNISWAP_EVENT_BURN
-] as const;
-
 export const uniswapNumericKeys = [
   ...balanceKeys,
   'usd_price',

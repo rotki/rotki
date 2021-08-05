@@ -1,4 +1,4 @@
-import { Balance } from '@/services/types-api';
+import { Balance } from '@rotki/common';
 
 export interface AssetMovement {
   readonly asset: string;

@@ -1,6 +1,6 @@
 import { TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { PendingTask } from '@/services/types-api';
 import { Section } from '@/store/const';
 
@@ -21,7 +21,7 @@ type OnError = {
 };
 
 export interface FetchPayload<T extends TaskMeta> {
-  readonly module: SupportedModules;
+  readonly module: Module;
   readonly section: Section;
   readonly refresh: boolean;
   readonly query: () => Promise<PendingTask>;

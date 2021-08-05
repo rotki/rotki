@@ -19,5 +19,6 @@ export const Routes = {
   ASSET_MANAGER: '/asset-manager',
   PRICE_MANAGER: '/price-manager',
   DASHBOARD: '/dashboard',
-  ROOT: '/'
+  ROOT: '/',
+  DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP: '/defi/deposits/liquidity/sushiswap'
 };

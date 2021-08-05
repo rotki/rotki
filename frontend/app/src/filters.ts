@@ -1,15 +1,5 @@
 import { default as BigNumber } from 'bignumber.js';
-import Vue from 'vue';
-import { displayDateFormatter } from '@/data/date_formatter';
 import { Zero } from '@/utils/bignumbers';
-
-export function precision(value: number, precision: number): string {
-  return value.toFixed(precision);
-}
-
-export function formatDate(value: number, format: string): string {
-  return displayDateFormatter.format(new Date(value * 1000), format);
-}
 
 export function capitalize(string: string): string {
   return string[0].toUpperCase() + string.slice(1);
@@ -75,15 +65,3 @@ export function aggregateTotal(
       .dp(precision, BigNumber.ROUND_DOWN);
   }, Zero);
 }
-
-export function optional(value?: string): string {
-  return value ?? '-';
-}
-
-Vue.filter('precision', precision);
-Vue.filter('formatDate', formatDate);
-Vue.filter('capitalize', capitalize);
-Vue.filter('balanceSum', balanceSum);
-Vue.filter('truncateAddress', truncateAddress);
-Vue.filter('aggregateTotal', aggregateTotal);
-Vue.filter('optional', optional);

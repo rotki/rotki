@@ -100,7 +100,7 @@ export const setupPremium = () => {
   window.Vue.use(Vuex);
   window.rotki = {
     useHostComponents: true,
-    version: 12,
+    version: 13,
     utils: {
       date,
       data,

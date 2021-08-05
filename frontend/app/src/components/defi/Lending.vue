@@ -205,14 +205,7 @@ import {
 } from '@/premium/premium';
 import { DefiProtocol, ProtocolVersion } from '@/services/defi/consts';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
-import {
-  MODULE_AAVE,
-  MODULE_COMPOUND,
-  MODULE_MAKERDAO_DSR,
-  MODULE_YEARN,
-  MODULE_YEARN_V2
-} from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 import { DefiGetterTypes } from '@/store/defi/getters';
 import { BaseDefiBalance, ProfitLossModel } from '@/store/defi/types';
@@ -294,12 +287,12 @@ export default class Lending extends Mixins(StatusMixin) {
   readonly AAVE = DefiProtocol.AAVE;
   readonly YEARN_VAULTS = DefiProtocol.YEARN_VAULTS;
   readonly YEARN_VAULTS_V2 = DefiProtocol.YEARN_VAULTS_V2;
-  readonly modules: SupportedModules[] = [
-    MODULE_AAVE,
-    MODULE_COMPOUND,
-    MODULE_YEARN,
-    MODULE_YEARN_V2,
-    MODULE_MAKERDAO_DSR
+  readonly modules: Module[] = [
+    Module.AAVE,
+    Module.COMPOUND,
+    Module.YEARN,
+    Module.YEARN_V2,
+    Module.MAKERDAO_DSR
   ];
 
   yearnProfit(): YearnVaultProfitLoss[] {

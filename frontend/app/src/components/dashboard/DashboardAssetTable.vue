@@ -91,12 +91,12 @@
                 <amount-display
                   :fiat-currency="currencySymbol"
                   :value="
-                    balances
-                      | aggregateTotal(
-                        currencySymbol,
-                        exchangeRate(currencySymbol),
-                        floatingPrecision
-                      )
+                    aggregateTotal(
+                      balances,
+                      currencySymbol,
+                      exchangeRate(currencySymbol),
+                      floatingPrecision
+                    )
                   "
                   show-currency="symbol"
                 />
@@ -113,12 +113,12 @@
                     <amount-display
                       :fiat-currency="currencySymbol"
                       :value="
-                        balances
-                          | aggregateTotal(
-                            currencySymbol,
-                            exchangeRate(currencySymbol),
-                            floatingPrecision
-                          )
+                        aggregateTotal(
+                          balances,
+                          currencySymbol,
+                          exchangeRate(currencySymbol),
+                          floatingPrecision
+                        )
                       "
                       show-currency="symbol"
                     />
@@ -140,6 +140,7 @@ import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
 import DataTable from '@/components/helper/DataTable.vue';
 import { CURRENCY_USD } from '@/data/currencies';
+import { aggregateTotal } from '@/filters';
 import AssetMixin from '@/mixins/asset-mixin';
 import {
   AssetBalance,
@@ -172,6 +173,8 @@ export default class DashboardAssetTable extends Mixins(AssetMixin) {
   exchangeRate!: ExchangeRateGetter;
 
   search: string = '';
+
+  readonly aggregateTotal = aggregateTotal;
 
   assetFilter(
     _value: Nullable<string>,

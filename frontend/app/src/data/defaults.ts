@@ -38,6 +38,7 @@ export const EXCHANGE_NEXO = 'nexo';
 
 export const EXCHANGE_UNISWAP = 'uniswap';
 export const EXCHANGE_BALANCER = 'balancer';
+export const EXCHANGE_SUSHISWAP = 'sushiswap';
 
 export const TRADE_LOCATION_EXTERNAL = 'external';
 export const TRADE_LOCATION_BANKS = 'banks';
@@ -71,6 +72,7 @@ export const SUPPORTED_EXCHANGES = [
 export const SUPPORTED_TRADE_LOCATIONS = [
   EXCHANGE_UNISWAP,
   EXCHANGE_BALANCER,
+  EXCHANGE_SUSHISWAP,
   EXCHANGE_CRYPTOCOM,
   EXCHANGE_BLOCKFI,
   EXCHANGE_NEXO,

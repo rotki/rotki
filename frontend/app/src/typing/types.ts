@@ -2,7 +2,7 @@ import { default as BigNumber } from 'bignumber.js';
 import { PriceOracles } from '@/model/action-result';
 import { Currency } from '@/model/currency';
 import { DefiProtocol } from '@/services/defi/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { AssetBalances } from '@/store/balances/types';
 import { LedgerActionType } from '@/store/history/consts';
 import { SyncConflictPayload } from '@/store/session/types';
@@ -22,7 +22,7 @@ export interface GeneralSettings {
   readonly balanceSaveFrequency: number;
   readonly dateDisplayFormat: string;
   readonly selectedCurrency: Currency;
-  readonly activeModules: SupportedModules[];
+  readonly activeModules: Module[];
   readonly btcDerivationGapLimit: number;
   readonly displayDateInLocaltime: boolean;
   readonly currentPriceOracles: PriceOracles[];
@@ -131,7 +131,7 @@ interface SettingsPayload {
   taxfree_after_period: number;
   kraken_account_type: string;
   premium_should_sync: boolean;
-  active_modules: SupportedModules[];
+  active_modules: Module[];
   frontend_settings: string;
   account_for_assets_movements: boolean;
   btc_derivation_gap_limit: number;

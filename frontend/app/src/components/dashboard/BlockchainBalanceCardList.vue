@@ -11,7 +11,7 @@
       <v-list-item-content>
         <div class="d-flex flex-row">
           <span class="grow">
-            {{ name | capitalize }}
+            {{ capitalize(name) }}
           </span>
           <span class="text-end shrink">
             <amount-display
@@ -67,6 +67,7 @@ import { Component, Mixins, Prop } from 'vue-property-decorator';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import Fragment from '@/components/helper/Fragment';
+import { capitalize } from '@/filters';
 import AssetMixin from '@/mixins/asset-mixin';
 import { BlockchainTotal } from '@/store/balances/types';
 import {
@@ -87,6 +88,8 @@ import { Zero } from '@/utils/bignumbers';
 export default class BlockchainBalanceCardList extends Mixins(AssetMixin) {
   @Prop({ required: true, type: Object })
   total!: BlockchainTotal;
+
+  readonly capitalize = capitalize;
 
   get name(): string {
     const chain = this.total.chain;

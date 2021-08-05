@@ -1,3 +1,4 @@
+import { Nullable } from '@rotki/common';
 import { ActionResult } from '@rotki/common/lib/data';
 import { AxiosInstance } from 'axios';
 import { PriceOracles } from '@/model/action-result';
@@ -12,7 +13,7 @@ import {
   balanceAxiosTransformer,
   basicAxiosTransformer
 } from '@/services/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { PendingTask } from '@/services/types-api';
 import {
   handleResponse,
@@ -45,7 +46,7 @@ export class BalancesApi {
       .then(handleResponse);
   }
 
-  deleteModuleData(module: SupportedModules | null = null): Promise<boolean> {
+  deleteModuleData(module: Nullable<Module> = null): Promise<boolean> {
     const url = module
       ? `/blockchains/ETH/modules/${module}/data`
       : `/blockchains/ETH/modules/data`;
