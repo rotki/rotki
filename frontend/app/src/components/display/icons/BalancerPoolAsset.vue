@@ -42,11 +42,8 @@ export default defineComponent({
     },
 
     getTokenSymbol(token: BalancerUnderlyingToken | string): string {
-      if (typeof token === 'string') {
-        return token;
-      }
-
-      return ((this as unknown) as AssetMixin).getSymbol(token.token);
+      const identifier = typeof token === 'string' ? token : token.token;
+      return ((this as unknown) as AssetMixin).getSymbol(identifier);
     }
   }
 });
