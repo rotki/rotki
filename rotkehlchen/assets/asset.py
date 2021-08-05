@@ -712,7 +712,7 @@ class EthereumToken(HasEthereumToken):
     def from_asset(
             cls: Type[T],
             asset: Asset,
-            form_with_incomplete_data: bool = False,
+            form_with_incomplete_data: bool = True,
     ) -> Optional[T]:
         """Attempts to turn an asset into an EthereumToken. If it fails returns None"""
         return cls.from_identifier(
@@ -724,7 +724,7 @@ class EthereumToken(HasEthereumToken):
     def from_identifier(
             cls: Type[T],
             identifier: str,
-            form_with_incomplete_data: bool = False,
+            form_with_incomplete_data: bool = True,
     ) -> Optional[T]:
         """Attempts to turn an asset into an EthereumToken. If it fails returns None"""
         if not identifier.startswith(ETHEREUM_DIRECTIVE):
