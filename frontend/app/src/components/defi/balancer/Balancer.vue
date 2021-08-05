@@ -7,7 +7,7 @@
     </template>
   </progress-screen>
   <v-container v-else>
-    <active-modules :modules="modules" class="balancer__modules" />
+    <active-modules :modules="modules" :class="$style.modules" />
     <balancer-balances class="mt-4" :refreshing="anyRefreshing" />
   </v-container>
 </template>
@@ -65,13 +65,11 @@ export default class Balancer extends Mixins(
 }
 </script>
 
-<style scoped lang="scss">
-.balancer {
-  &__modules {
-    display: inline-flex;
-    position: absolute;
-    right: 84px;
-    top: 58px;
-  }
+<style module lang="scss">
+.modules {
+  display: inline-flex;
+  position: absolute;
+  right: 88px;
+  top: 125px;
 }
 </style>
