@@ -69,7 +69,7 @@ export default defineComponent({
 .modules {
   display: inline-flex;
   position: absolute;
-  right: 84px;
-  top: 58px;
+  right: 88px;
+  top: 125px;
 }
 </style>

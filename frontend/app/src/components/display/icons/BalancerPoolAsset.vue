@@ -1,48 +1,59 @@
 <template>
-  <div class="balancer-pool-asset d-flex flex-column pa-1">
+  <div class="pa-1" :class="$style.asset">
     <asset-icon
+      :class="$style.icon"
       :identifier="getTokenIdentifier(assets[0])"
       :symbol="getTokenSymbol(assets[0])"
       size="22px"
     />
     <asset-icon
+      :class="[$style.icon, $style.bottom]"
       :identifier="getTokenIdentifier(assets[1])"
       :symbol="getTokenSymbol(assets[1])"
       size="22px"
-      class="align-self-end"
+      :styled="{
+        'padding-left': '20px'
+      }"
     />
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Mixins, Prop } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 import AssetMixin from '@/mixins/asset-mixin';
 import { BalancerUnderlyingToken } from '@/store/defi/types';
 
-@Component({})
-export default class BalancerPoolAsset extends Mixins(AssetMixin) {
-  @Prop({ required: true, type: Array, validator: value => value.length >= 2 })
-  assets!: BalancerUnderlyingToken[] | string[];
-
-  getTokenIdentifier(token: BalancerUnderlyingToken | string): string {
-    if (typeof token === 'string') {
-      return token;
+export default defineComponent({
+  name: 'BalancerPoolAsset',
+  mixins: [AssetMixin],
+  props: {
+    assets: {
+      required: true,
+      type: Array as PropType<BalancerUnderlyingToken[] | string[]>,
+      validator: value => Array.isArray(value) && value.length >= 2
     }
-    return token.token;
-  }
+  },
+  methods: {
+    getTokenIdentifier(token: BalancerUnderlyingToken | string): string {
+      if (typeof token === 'string') {
+        return token;
+      }
+      return token.token;
+    },
 
-  getTokenSymbol(token: BalancerUnderlyingToken | string): string {
-    if (typeof token === 'string') {
-      return token;
+    getTokenSymbol(token: BalancerUnderlyingToken | string): string {
+      if (typeof token === 'string') {
+        return token;
+      }
+
+      return ((this as unknown) as AssetMixin).getSymbol(token.token);
     }
-
-    return this.getSymbol(token.token);
   }
-}
+});
 </script>
 
-<style scoped lang="scss">
-.balancer-pool-asset {
+<style module lang="scss">
+.asset {
   height: 48px;
   width: 48px;
   border-radius: 50%;
@@ -58,5 +69,16 @@ export default class BalancerPoolAsset extends Mixins(AssetMixin) {
       margin-left: -4px;
     }
   }
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+}
+
+.bottom {
+  margin-top: -4px;
+  margin-left: -4px;
+  padding-right: 20px;
 }
 </style>

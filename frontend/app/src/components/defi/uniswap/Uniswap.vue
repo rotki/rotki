@@ -16,6 +16,7 @@
   <v-container v-else class="uniswap">
     <refresh-header
       :title="$t('uniswap.title')"
+      class="mt-4"
       :loading="anyRefreshing"
       @refresh="refresh()"
     >
@@ -39,7 +40,7 @@
     <v-row class="mt-4">
       <v-col
         v-for="entry in balances"
-        :key="entry.poolAddress"
+        :key="entry.address"
         cols="12"
         sm="6"
         lg="6"
@@ -58,7 +59,7 @@
             <uniswap-pool-details :balance="entry" />
           </template>
           <template #subtitle>
-            <hash-link :text="entry.poolAddress" />
+            <hash-link :text="entry.address" />
           </template>
           <template #icon>
             <uniswap-pool-asset
@@ -85,7 +86,7 @@
 
           <v-row
             v-for="asset in entry.assets"
-            :key="`${asset.asset}-${entry.poolAddress}-balances`"
+            :key="`${asset.asset}-${entry.address}-balances`"
             class="uniswap__tokens"
             align="center"
             justify="end"
