@@ -101,7 +101,9 @@ def deserialize_bpt_event(
         ethereum_address=pool_address,
         symbol='BPT',
         protocol='balancer',
+        decimals=18,  # all BPT tokens have 18 decimals
         underlying_tokens=underlying_tokens,
+        form_with_incomplete_data=True,  # since some may not have decimals input correctly
     )
     bpt_event = BalancerBPTEvent(
         tx_hash=tx_hash,
@@ -228,7 +230,9 @@ def deserialize_pool_share(
         symbol='BPT',
         ethereum_address=pool_address,
         protocol='balancer',
+        decimals=18,  # All BPT tokens have 18 decimals
         underlying_tokens=pool_tokens,
+        form_with_incomplete_data=True,  # since some may not have had decimals input correctly
     )
     pool = BalancerPoolBalance(
         pool_token=balancer_pool_token,

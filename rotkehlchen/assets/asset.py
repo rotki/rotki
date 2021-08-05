@@ -709,17 +709,31 @@ class EthereumToken(HasEthereumToken):
         return f'{self.symbol}({self.ethereum_address})'
 
     @classmethod
-    def from_asset(cls: Type[T], asset: Asset) -> Optional[T]:
+    def from_asset(
+            cls: Type[T],
+            asset: Asset,
+            form_with_incomplete_data: bool = False,
+    ) -> Optional[T]:
         """Attempts to turn an asset into an EthereumToken. If it fails returns None"""
-        return cls.from_identifier(asset.identifier)
+        return cls.from_identifier(
+            identifier=asset.identifier,
+            form_with_incomplete_data=form_with_incomplete_data,
+        )
 
     @classmethod
-    def from_identifier(cls: Type[T], identifier: str) -> Optional[T]:
+    def from_identifier(
+            cls: Type[T],
+            identifier: str,
+            form_with_incomplete_data: bool = False,
+    ) -> Optional[T]:
         """Attempts to turn an asset into an EthereumToken. If it fails returns None"""
         if not identifier.startswith(ETHEREUM_DIRECTIVE):
             return None
 
         try:
-            return cls(identifier[ETHEREUM_DIRECTIVE_LENGTH:])
+            return cls(
+                identifier[ETHEREUM_DIRECTIVE_LENGTH:],
+                form_with_incomplete_data=form_with_incomplete_data,
+            )
         except DeserializationError:
             return None
