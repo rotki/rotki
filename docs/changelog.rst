@@ -15,6 +15,7 @@ Changelog
 * :feature:`3275` Users can now see if any of their addresses have FOX available to claim from the ShapeShift airdrop.
 * :bug:`3264` Users should now be able to properly download the PnL CSV when using docker.
 * :bug:`3289` Aave v2 balances should now be taken into account in the DeFi deposits section.
+* :bug:`3287` Users with AMM trades from different AMMs in a single transaction will now be able to select all and deselect all trades properly in the frontend.
 
 * :release:`1.19.1 <2021-07-22>`
 * :bug:`3236` Users will now see the proper total networth for the current day in the graph tooltip.
