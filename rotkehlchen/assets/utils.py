@@ -39,6 +39,7 @@ def get_or_create_ethereum_token(
         decimals: Optional[int] = None,
         protocol: Optional[str] = None,
         underlying_tokens: Optional[List[UnderlyingToken]] = None,
+        form_with_incomplete_data: bool = False
 ) -> EthereumToken:
     """Given a token symbol and address return the <EthereumToken>
 
@@ -47,7 +48,7 @@ def get_or_create_ethereum_token(
     existing token will still be silently returned
     """
     try:
-        ethereum_token = EthereumToken(ethereum_address)
+        ethereum_token = EthereumToken(ethereum_address, form_with_incomplete_data)
     except (UnknownAsset, DeserializationError):
         log.info(
             f'Encountered unknown asset {symbol} with address '

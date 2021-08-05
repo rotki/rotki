@@ -864,10 +864,11 @@ class Balancer(EthereumModule):
                             self.msg_aggregator.add_error(
                                 f"Failed to request the USD price of {token.identifier} at "
                                 f"timestamp {invest_event.timestamp}. The USD price of the "
-                                f"Balancer {event_type} for the pool {bpt_event.pool_address} "
+                                f"Balancer {event_type} for the pool {bpt_event.pool_address_token.ethereum_address} "  # noqa: E501
                                 f"at transaction {bpt_event.tx_hash} can't be calculated and "
                                 f"it will be set to zero.",
                             )
+
                 if is_missing_token_price is True:
                     lp_balance.usd_value = ZERO
 

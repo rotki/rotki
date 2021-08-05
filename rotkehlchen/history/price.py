@@ -39,7 +39,7 @@ def query_usd_price_or_use_default(
         )
     except (RemoteError, NoPriceForGivenTimestamp):
         log.error(
-            f'Could not query usd price for {asset.identifier} and time {time}'
+            f'Could not query usd price for {asset.identifier} and time {time} '
             f'when processing {location}. Assuming price of ${str(default_value)}',
         )
         usd_price = Price(default_value)
