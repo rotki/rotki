@@ -533,7 +533,7 @@ class GlobalDBHandler():
 
             if except_protocols is not None:
                 questionmarks = '?' * len(except_protocols)
-                querystr_additions.append(f'B.protocol NOT IN ({",".join(questionmarks)}) ')
+                querystr_additions.append(f'(B.protocol NOT IN ({",".join(questionmarks)}) OR B.protocol IS NULL) ')  # noqa: E501
                 bindings_list.extend(except_protocols)
 
             querystr += 'WHERE ' + 'AND '.join(querystr_additions) + ';'
@@ -542,7 +542,6 @@ class GlobalDBHandler():
             querystr += ';'
             bindings = ()
 
-        log.debug(f'querystr: {querystr}, bindings: {bindings}')
         query = cursor.execute(querystr, bindings)
         tokens = []
         for entry in query:
