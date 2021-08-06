@@ -422,7 +422,6 @@ EXPECTED_EVENTS_BALANCES_1 = [
 ]
 
 
-@pytest.mark.skip('Fails with no event found anymore in the given time range')
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_EVENTS_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['sushiswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
