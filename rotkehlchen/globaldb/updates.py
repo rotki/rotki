@@ -340,6 +340,14 @@ class AssetsUpdater():
                 local_data = AssetResolver().get_asset_data(local_asset.identifier, False)
                 self.conflicts.append((local_data, remote_asset_data))
 
+        # special case upgrade that should be temporary, until we make non-asset specific
+        # update lines possible in our update mechanism:
+        # https://github.com/rotki/assets/pull/49
+        if version == 7:
+            cursor.execute(
+                'UPDATE ethereum_tokens SET decimals=18 WHERE protocol=="balancer";',
+            )
+
         # at the very end update the current version in the DB
         cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',

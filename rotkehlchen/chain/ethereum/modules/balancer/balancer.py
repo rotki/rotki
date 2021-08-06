@@ -613,15 +613,19 @@ class Balancer(EthereumModule):
                 try:
                     amm_swap = deserialize_swap(self.database, raw_swap)
                 except DeserializationError as e:
+                    error = str(e)
+                    self.msg_aggregator.add_error(
+                        f'Failed to deserialize a balancer swap due to {error}. Check logs for more details',  # noqa: E501
+                    )
                     log.error(
                         'Failed to deserialize a balancer swap',
-                        error=str(e),
+                        error=error,
                         raw_swap=raw_swap,
                         start_ts=start_ts,
                         end_ts=end_ts,
                         param_values=param_values,
                     )
-                    raise RemoteError('Failed to deserialize balancer trades') from e
+                    continue
 
                 address_to_unique_swaps[amm_swap.address].add(amm_swap)
 
