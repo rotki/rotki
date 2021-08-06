@@ -67,7 +67,7 @@ export default class AssetDetailsBase extends Vue {
   }
 
   get fullName(): string {
-    return this.asset.name;
+    return this.asset.name ?? '';
   }
 
   get name(): string {

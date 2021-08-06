@@ -40,7 +40,7 @@ function levenshtein(a: string, b: string) {
 
 function score(keyword: string, { name, symbol }: ManagedAsset): number {
   const symbolScore = levenshtein(keyword, symbol.toLocaleLowerCase());
-  const nameScore = levenshtein(keyword, name.toLocaleLowerCase());
+  const nameScore = name ? levenshtein(keyword, name.toLocaleLowerCase()) : 0;
   return Math.min(symbolScore, nameScore);
 }
 
