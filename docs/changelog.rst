@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.20.0 <2021-08-06>`
 * :feature:`2426` Sushiswap is now supported. Premium users can see their LP balances, swaps history and LP pool join/exits. Finally the balancer trades are now taken into account in the profit/loss report.
 * :feature:`2145` Users will now be able to customize whether CSV export should contain metadata of the PnL run. Consisting of the rotki version that generated it and the chosen accounting settings.
 * :feature:`3279` Users will now be able to customize whether CSV export should contain a summary of PnL per event type.
