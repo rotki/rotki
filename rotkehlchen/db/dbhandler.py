@@ -1132,7 +1132,7 @@ class DBHandler:
         and address
         """
         cursor = self.conn.cursor()
-        events_sql_str = ", ".join([f'"{str(event)}"' for event in events])
+        events_sql_str = ", ".join([f'"{EventType.serialize_for_db(event)}"' for event in events])
         query = f'SELECT * FROM uniswap_events WHERE uniswap_events.type IN ({events_sql_str}) '
 
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
@@ -1223,7 +1223,9 @@ class DBHandler:
     def delete_uniswap_events_data(self) -> None:
         """Delete all historical Uniswap events data"""
         cursor = self.conn.cursor()
-        uniswap_types = f'"{EventType.MINT_UNISWAP}", "{EventType.BURN_UNISWAP}"'
+        mint_uniswap = EventType.serialize_for_db(EventType.MINT_UNISWAP)
+        burn_uniswap = EventType.serialize_for_db(EventType.BURN_UNISWAP)
+        uniswap_types = f'"{mint_uniswap}", "{burn_uniswap}"'
         cursor.execute(
             f'DELETE FROM uniswap_events WHERE uniswap_events.type IN ({uniswap_types});',
         )
@@ -1248,7 +1250,9 @@ class DBHandler:
     def delete_sushiswap_events_data(self) -> None:
         """Delete all historical Sushiswap events data"""
         cursor = self.conn.cursor()
-        sushiswap_types = f'"{EventType.MINT_SUSHISWAP}", "{EventType.BURN_SUSHISWAP}"'
+        mint_sushiswap = EventType.serialize_for_db(EventType.MINT_SUSHISWAP)
+        burn_sushiswap = EventType.serialize_for_db(EventType.BURN_SUSHISWAP)
+        sushiswap_types = f'"{mint_sushiswap}", "{burn_sushiswap}"'
         cursor.execute(
             f'DELETE FROM uniswap_events WHERE uniswap_events.type IN ({sushiswap_types});',
         )
