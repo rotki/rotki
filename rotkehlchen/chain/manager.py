@@ -49,6 +49,7 @@ from rotkehlchen.chain.ethereum.modules import (
     YearnVaults,
     YearnVaultsV2,
 )
+from rotkehlchen.chain.ethereum.nft import NFTManager
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
@@ -335,6 +336,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             ethereum_manager=self.ethereum,
             msg_aggregator=self.msg_aggregator,
         )
+        self.nft_manager = NFTManager(database=self.database, msg_aggregator=self.msg_aggregator)
 
     def __del__(self) -> None:
         del self.ethereum
@@ -498,6 +500,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             raise InputError(
                 f'Blockchain account/s {",".join(existing_accounts)} already exist',
             )
+
+    def get_all_nfts(self) -> Dict[str, Any]:
+        result = self.nft_manager.get_all_nfts(
+            addresses=self.accounts.eth,
+            has_premium=self.premium is not None,
+        )
+        return result.serialize()
 
     @protect_with_lock(arguments_matter=True)
     @cache_response_timewise()

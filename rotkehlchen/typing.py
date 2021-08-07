@@ -90,6 +90,7 @@ class ExternalService(Enum):
     CRYPTOCOMPARE = 1
     BEACONCHAIN = 2
     LOOPRING = 3
+    OPENSEA = 4
 
     @staticmethod
     def serialize(name: str) -> Optional['ExternalService']:
@@ -101,6 +102,8 @@ class ExternalService(Enum):
             return ExternalService.BEACONCHAIN
         if name == 'loopring':
             return ExternalService.LOOPRING
+        if name == 'opensea':
+            return ExternalService.OPENSEA
         # else
         return None
 

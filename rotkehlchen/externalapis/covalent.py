@@ -4,15 +4,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
-from rotkehlchen.constants.timing import (
-    DEFAULT_TIMEOUT_TUPLE,
-)
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError
+from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, CovalentTransaction, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now, create_timestamp
-from rotkehlchen.externalapis.utils import read_integer
+from rotkehlchen.utils.misc import create_timestamp, ts_now
 
 COVALENT_QUERY_LIMIT = 1000
 CONST_RETRY = 1
@@ -69,9 +67,11 @@ def convert_transaction_from_covalent(
 
 
 class Covalent():
-    def __init__(self,
-                 msg_aggregator: MessagesAggregator,
-                 chain_id: int) -> None:
+    def __init__(
+            self,
+            msg_aggregator: MessagesAggregator,
+            chain_id: int,
+    ) -> None:
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.msg_aggregator = msg_aggregator
