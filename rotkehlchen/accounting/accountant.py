@@ -485,7 +485,7 @@ class Accountant():
             tx = cast(EthereumTransaction, action)
             identifier = tx.identifier
             should_ignore = tx.identifier in ignored_actionids_mapping.get(
-                ActionType.ETHEREUM_TX, [],
+                ActionType.ETHEREUM_TRANSACTION, [],
             )
 
         elif action_type == 'ledger_action':

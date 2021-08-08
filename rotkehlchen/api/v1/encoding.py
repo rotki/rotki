@@ -62,7 +62,6 @@ from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.serialization.deserialize import (
-    deserialize_action_type,
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_hex_color_code,
@@ -532,7 +531,7 @@ class ActionTypeField(fields.Field):
             **_kwargs: Any,
     ) -> ActionType:
         try:
-            action_type = deserialize_action_type(value)
+            action_type = ActionType.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
@@ -586,7 +585,7 @@ class ExternalServiceNameField(fields.Field):
     ) -> ExternalService:
         if not isinstance(value, str):
             raise ValidationError('External service name should be a string')
-        service = ExternalService.serialize(value)
+        service = ExternalService.deserialize(value)
         if not service:
             raise ValidationError(f'External service {value} is not known')
 

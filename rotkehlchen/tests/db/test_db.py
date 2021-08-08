@@ -43,10 +43,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition,
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
-    deserialize_action_type,
-    deserialize_action_type_from_db,
     deserialize_asset_movement_category,
-    deserialize_asset_movement_category_from_db,
     deserialize_trade_type,
     deserialize_trade_type_from_db,
 )
@@ -1317,11 +1314,11 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
     (TradeType, 'SELECT type, seq from trade_type',
         deserialize_trade_type_from_db, deserialize_trade_type),
     (ActionType, 'SELECT type, seq from action_type',
-        deserialize_action_type_from_db, deserialize_action_type),
+        ActionType.deserialize_from_db, ActionType.deserialize),
     (LedgerActionType, 'SELECT type, seq from ledger_action_type',
         LedgerActionType.deserialize_from_db, LedgerActionType.deserialize),
     (AssetMovementCategory, 'SELECT category, seq from asset_movement_category',
-        deserialize_asset_movement_category_from_db, deserialize_asset_movement_category),
+        AssetMovementCategory.deserialize_from_db, deserialize_asset_movement_category),
 ])
 def test_enum_in_db(database, enum_class, query, deserialize_from_db, deserialize):
     """

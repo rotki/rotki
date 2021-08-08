@@ -2,7 +2,6 @@ from typing import Callable, Tuple, TypeVar, Union
 
 from eth_utils import to_checksum_address
 
-from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.constants.misc import ZERO
@@ -300,55 +299,6 @@ def deserialize_trade_type_from_db(symbol: str) -> TradeType:
     # else
     raise DeserializationError(
         f'Failed to deserialize trade type symbol. Unknown DB symbol {symbol} for trade type',
-    )
-
-
-ACTION_TYPE_MAPPING = {str(x): x for x in ActionType}
-
-
-def deserialize_action_type(symbol: str) -> ActionType:
-    """Takes a string and attempts to turn it into an ActionType
-
-    Can throw DeserializationError if the symbol is not as expected
-    """
-    if not isinstance(symbol, str):
-        raise DeserializationError(
-            f'Failed to deserialize action type symbol from {type(symbol)} entry',
-        )
-
-    value = ACTION_TYPE_MAPPING.get(symbol, None)
-    if value is None:
-        raise DeserializationError(
-            f'Failed to deserialize action symbol. Unknown symbol '
-            f'{symbol} for an action',
-        )
-
-    return value
-
-
-def deserialize_action_type_from_db(symbol: str) -> ActionType:
-    """Takes a string from the DB and attempts to turn it into an ActionType
-
-    Can throw DeserializationError if the symbol is not as expected
-    """
-    if not isinstance(symbol, str):
-        raise DeserializationError(
-            f'Failed to deserialize action type symbol from {type(symbol)} entry',
-        )
-
-    if symbol == 'A':
-        return ActionType.TRADE
-    if symbol == 'B':
-        return ActionType.ASSET_MOVEMENT
-    if symbol == 'C':
-        return ActionType.ETHEREUM_TX
-    if symbol == 'D':
-        return ActionType.LEDGER_ACTION
-
-    # else
-    raise DeserializationError(
-        f'Failed to deserialize action type symbol. Unknown DB '
-        f'symbol {symbol} for trade type',
     )
 
 
