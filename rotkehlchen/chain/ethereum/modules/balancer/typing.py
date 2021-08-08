@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tuple, Union, cast
 
 from eth_typing.evm import ChecksumAddress
@@ -15,6 +14,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_timestamp
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 # TODO: improve the prefixes annotation and amend their usage in balancer.py
 BALANCER_EVENTS_PREFIX = 'balancer_events'
@@ -73,28 +73,14 @@ DDAddressToUniqueSwaps = DefaultDict[ChecksumEthAddress, Set[AMMSwap]]
 AddressToTrades = Dict[ChecksumEthAddress, List[AMMTrade]]
 
 
-class BalancerInvestEventType(Enum):
+class BalancerInvestEventType(SerializableEnumMixin):
     ADD_LIQUIDITY = 1
     REMOVE_LIQUIDITY = 2
 
-    def __str__(self) -> str:
-        if self == BalancerInvestEventType.ADD_LIQUIDITY:
-            return 'add liquidity'
-        if self == BalancerInvestEventType.REMOVE_LIQUIDITY:
-            return 'remove liquidity'
-        raise AssertionError(f'Unexpected BalancerEventType type: {self}.')
 
-
-class BalancerBPTEventType(Enum):
+class BalancerBPTEventType(SerializableEnumMixin):
     MINT = 1
     BURN = 2
-
-    def __str__(self) -> str:
-        if self == BalancerBPTEventType.MINT:
-            return 'mint'
-        if self == BalancerBPTEventType.BURN:
-            return 'burn'
-        raise AssertionError(f'Unexpected BalancerBPTEventType type: {self}.')
 
 
 class BalancerInvestEvent(NamedTuple):

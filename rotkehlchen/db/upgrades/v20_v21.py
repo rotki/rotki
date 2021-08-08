@@ -18,7 +18,7 @@ def upgrade_v20_to_v21(db: 'DBHandler') -> None:
     balances = []
     for entry in query:
         balances.append((
-            BalanceType.ASSET.serialize_for_db(),  # append the default balance_category
+            BalanceType.ASSET.serialize_for_db(),  # pylint: disable=no-member
             entry[0],  # time
             entry[1],  # currency
             entry[2],  # amount

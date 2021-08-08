@@ -1,10 +1,9 @@
 from __future__ import unicode_literals  # isort:skip
 
 import logging
-from enum import Enum
-from pathlib import Path
 import operator
-from typing import Any, TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
@@ -39,6 +38,7 @@ from rotkehlchen.constants.assets import (
     A_USD,
     A_USDC,
     A_USDT,
+    A_WETH,
     A_YFI,
     A_YV1_3CRV,
     A_YV1_ALINK,
@@ -52,12 +52,10 @@ from rotkehlchen.constants.assets import (
     A_YV1_USDT,
     A_YV1_WETH,
     A_YV1_YFI,
-    A_WETH,
 )
 from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, UNISWAP_V2_LP_ABI, YEARN_VAULT_V2_ABI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors import (
-    DeserializationError,
     PriceQueryUnsupportedAsset,
     RemoteError,
     UnableToDecryptRemoteData,
@@ -73,13 +71,14 @@ from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
     CURVE_POOL_PROTOCOL,
+    UNISWAP_PROTOCOL,
+    YEARN_VAULTS_V2_PROTOCOL,
     KnownProtocolsAssets,
     Price,
     Timestamp,
-    UNISWAP_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
 )
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
@@ -121,29 +120,10 @@ def _check_curve_contract_call(decoded: Tuple[Any, ...]) -> bool:
     )
 
 
-class CurrentPriceOracle(Enum):
-    """Supported oracles for querying current prices
-    """
+class CurrentPriceOracle(SerializableEnumMixin):
+    """Supported oracles for querying current prices"""
     COINGECKO = 1
     CRYPTOCOMPARE = 2
-
-    def __str__(self) -> str:
-        if self == CurrentPriceOracle.COINGECKO:
-            return 'coingecko'
-        if self == CurrentPriceOracle.CRYPTOCOMPARE:
-            return 'cryptocompare'
-        raise AssertionError(f'Unexpected CurrentPriceOracle: {self}')
-
-    def serialize(self) -> str:
-        return str(self)
-
-    @classmethod
-    def deserialize(cls, name: str) -> 'CurrentPriceOracle':
-        if name == 'coingecko':
-            return cls.COINGECKO
-        if name == 'cryptocompare':
-            return cls.CRYPTOCOMPARE
-        raise DeserializationError(f'Failed to deserialize current price oracle: {name}')
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [

@@ -21,8 +21,12 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
-from rotkehlchen.chain.ethereum.modules.aave.constants import ATOKENV1_TO_ASSET
+from rotkehlchen.chain.ethereum.interfaces.ammswap import (
+    SUSHISWAP_TRADES_PREFIX,
+    UNISWAP_TRADES_PREFIX,
+)
 from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType, LiquidityPoolEvent
+from rotkehlchen.chain.ethereum.modules.aave.constants import ATOKENV1_TO_ASSET
 from rotkehlchen.chain.ethereum.modules.adex import (
     ADEX_EVENTS_PREFIX,
     AdexEventType,
@@ -39,10 +43,6 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
 )
 from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.interfaces.ammswap import (
-    UNISWAP_TRADES_PREFIX,
-    SUSHISWAP_TRADES_PREFIX,
-)
 from rotkehlchen.chain.ethereum.structures import (
     AaveEvent,
     YearnVault,
@@ -96,8 +96,6 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
-    deserialize_action_type_from_db,
-    deserialize_asset_movement_category_from_db,
     deserialize_hex_color_code,
     deserialize_timestamp,
     deserialize_trade_type_from_db,
@@ -105,6 +103,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
+    AssetMovementCategory,
     BlockchainAccountData,
     BTCAddress,
     ChecksumEthAddress,
@@ -180,7 +179,7 @@ def db_tuple_to_str(
         )
     if tuple_type == 'asset_movement':
         return (
-            f'{deserialize_asset_movement_category_from_db(data[2])} of '
+            f'{AssetMovementCategory.deserialize_from_db(data[2])} of '
             f'{data[4]} with id {data[0]} '
             f'in {Location.deserialize_from_db(data[1])} at timestamp {data[3]}'
         )
@@ -619,8 +618,9 @@ class DBHandler:
 
         result = []
         for q in query:
-            service = ExternalService.serialize(q[0])
-            if not service:
+            try:
+                service = ExternalService.deserialize(q[0])
+            except DeserializationError:
                 log.error(f'Unknown external service name "{q[0]}" found in the DB')
                 continue
 
@@ -733,7 +733,7 @@ class DBHandler:
         result = cursor.execute(query, tuples)
         mapping = defaultdict(list)
         for entry in result:
-            mapping[deserialize_action_type_from_db(entry[0])].append(entry[1])
+            mapping[ActionType.deserialize_from_db(entry[0])].append(entry[1])
 
         return mapping
 
@@ -800,22 +800,7 @@ class DBHandler:
     ) -> List[AaveEvent]:
         """Get aave for a single address and a single aToken"""
         cursor = self.conn.cursor()
-        querystr = (
-            'SELECT address, '
-            'event_type, '
-            'block_number, '
-            'timestamp, '
-            'tx_hash, '
-            'log_index, '
-            'asset1, '
-            'asset1_amount, '
-            'asset1_usd_value, '
-            'asset2, '
-            'asset2amount_borrowrate_feeamount, '
-            'asset2usd_value_accruedinterest_feeusdvalue, '
-            'borrow_rate_mode '
-            'FROM aave_events '
-        )
+        querystr = 'SELECT * FROM aave_events '
         values: Tuple
         if atoken is not None:  # when called by blockchain
             underlying_token = ATOKENV1_TO_ASSET.get(atoken, None)
@@ -903,25 +888,7 @@ class DBHandler:
         """Returns a list of AdEx events optionally filtered by time and address.
         """
         cursor = self.conn.cursor()
-        query = (
-            'SELECT '
-            'tx_hash, '
-            'address, '
-            'identity_address, '
-            'timestamp, '
-            'type, '
-            'pool_id, '
-            'amount, '
-            'usd_value, '
-            'bond_id, '
-            'nonce, '
-            'slashed_at, '
-            'unlock_at, '
-            'channel_id, '
-            'token, '
-            'log_index '
-            'FROM adex_events '
-        )
+        query = 'SELECT * FROM adex_events '
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
         filters = []
         if address is not None:
@@ -2499,19 +2466,7 @@ class DBHandler:
         The returned list is ordered from oldest to newest
         """
         cursor = self.conn.cursor()
-        query = """
-            SELECT tx_hash,
-              timestamp,
-              block_number,
-              from_address,
-              to_address,
-              value,
-              gas,
-              gas_price,
-              gas_used,
-              input_data,
-              nonce FROM ethereum_transactions
-        """
+        query = 'SELECT * FROM ethereum_transactions '
         if address is not None:
             query += f'WHERE (from_address="{address}" OR to_address="{address}") '
         query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
@@ -3095,7 +3050,7 @@ class DBHandler:
         """
         cursor = self.conn.cursor()
         results = cursor.execute(
-            f'SELECT time, currency, amount, usd_value, category FROM timed_balances WHERE '
+            f'SELECT time, currency, amount, usd_value, category FROM timed_balances WHERE '  # pylint: disable=no-member  # noqa: E501
             f'time=(SELECT MAX(time) from timed_balances) AND '
             f'category="{BalanceType.ASSET.serialize_for_db()}" ORDER BY '
             f'CAST(usd_value AS REAL) DESC;',

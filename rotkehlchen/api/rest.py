@@ -2715,8 +2715,8 @@ class RestAPI():
             message = str(e)
 
         if transactions is not None:
-            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.ETHEREUM_TX)
-            ignored_ids = mapping.get(ActionType.ETHEREUM_TX, [])
+            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.ETHEREUM_TRANSACTION)  # noqa: E501
+            ignored_ids = mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
             entries_result = []
             for entry in transactions:
                 entries_result.append({

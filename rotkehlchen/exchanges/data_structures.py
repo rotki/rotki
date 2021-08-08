@@ -8,7 +8,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_asset_movement_category_from_db,
     deserialize_fee,
     deserialize_optional,
     deserialize_timestamp,
@@ -102,7 +101,7 @@ class AssetMovement(NamedTuple):
         """
         return AssetMovement(
             location=Location.deserialize_from_db(entry[1]),
-            category=deserialize_asset_movement_category_from_db(entry[2]),
+            category=AssetMovementCategory.deserialize_from_db(entry[2]),
             address=entry[3],
             transaction_id=entry[4],
             timestamp=Timestamp(entry[5]),

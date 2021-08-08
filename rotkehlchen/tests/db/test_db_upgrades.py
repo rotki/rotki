@@ -1140,7 +1140,7 @@ def test_upgrade_db_20_to_21(user_data_dir):
         # Check the last 3 entries to make sure no data is lost during upgrade
         if length == 1297:
             assert entry == (
-                BalanceType.ASSET.serialize_for_db(),
+                BalanceType.ASSET.serialize_for_db(),  # pylint: disable=no-member
                 1605194428,
                 'yaLINK',
                 '444.562307846438094287',
@@ -1148,7 +1148,7 @@ def test_upgrade_db_20_to_21(user_data_dir):
             )
         elif length == 1298:
             assert entry == (
-                BalanceType.ASSET.serialize_for_db(),
+                BalanceType.ASSET.serialize_for_db(),  # pylint: disable=no-member
                 1605194428,
                 'ypaxCrv',
                 '211.750728445895069118',
@@ -1156,7 +1156,7 @@ def test_upgrade_db_20_to_21(user_data_dir):
             )
         elif length == 1299:
             assert entry == (
-                BalanceType.ASSET.serialize_for_db(),
+                BalanceType.ASSET.serialize_for_db(),  # pylint: disable=no-member
                 1605194428,
                 'yyDAI+yUSDC+yUSDT+yBUSD',
                 '167.18639752015697023',
@@ -1165,7 +1165,7 @@ def test_upgrade_db_20_to_21(user_data_dir):
         length += 1
     assert length == 1300
     assert entry == (
-        BalanceType.ASSET.serialize_for_db(),
+        BalanceType.ASSET.serialize_for_db(),  # pylint: disable=no-member
         1605194428,
         'yyDAI+yUSDC+yUSDT+yBUSD',
         '167.18639752015697023',
