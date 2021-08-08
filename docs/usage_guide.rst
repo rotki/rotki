@@ -438,7 +438,7 @@ screen. You can click the cog wheel at the bottom right corner to view the backe
 
 After selecting a new data directory, log directory etc you can press the save button to save your settings.
 
-Keep in mind that any accounts that where created in the previous directory will not be accessible anymore and you will
+Keep in mind that any accounts that were created in the previous directory will not be accessible anymore and you will
 have to manually move them to the new location.
 
 In the advanced section of the backend settings you can also modify the following settings:
