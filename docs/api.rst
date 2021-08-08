@@ -8753,3 +8753,70 @@ Gitcoin report
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal rotki error
+
+
+Querying  NFTs
+============================
+
+.. http:get:: /api/(version)/nfts
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a GET on the NFTs endpoint will query all NFTs for all user tracked addresses.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/nfts HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": false}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result":
+            "addresses": {
+	        "0xeE3766e4F996DC0e0F8c929954EAAFef3441de87": [{
+	            "token_identifier": "8636",
+	            "name": "BASTARD GAN PUNK V2 #8636",
+	            "background_color": null,
+	            "image_url": "https://lh3.googleusercontent.com/kwF-39qZlluEalQnNv-yMxbntzNdc3g00pK2xALkpoir9ooWttVUO2hVFWOgPtOkJOHufYRajfn-nNFdjruRQ4YaMgOYHEB8E4CdjBk",
+	            "external_link": "https://www.bastardganpunks.club/v2/8636",
+	            "price_eth": "0.025",
+	            "price_usd": "250"
+		}]
+	    },
+            "entries_found": 95,
+            "entries_limit": 500,
+        "message": ""
+      }
+
+
+   :resjson object addresses: A mapping of ethereum addresses to list of owned NFTs.
+   :resjson int entries_found: The number of NFT entries found. If non-premium and the free limit has been hit this will be equal to the limit, since we stop searching after the limit.
+   :resjson int entries_limit: The free limit for NFTs.
+   :resjson string token_identifier: The identifier of the specific NFT token for the given contract type. This is not a unique id across all NFTs.
+   :resjson string background_color: [Optional]. A color for the background of the image of the NFT. Can be Null.
+   :resjson string image_url: [Optional]. Link to the image of the NFT. Can be Null.
+   :resjson string name: [ Optional] The name of the NFT. Can be Null.
+   :resjson string external_link: [Optional]. A link to the page of the creator of the NFT. Can be Null.
+   :resjson string permalink: [Optional]. A link to the NFT in opensea.
+   :resjson string price_eth: The last known price of the NFT in ETH. Can be zero.
+   :resjson string price_usd: The last known price of the NFT in USD. Can be zero.
+   :statuscode 200: NFTs succesfully queried
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: An external service used in the query such as opensea could not be reached or returned unexpected response.

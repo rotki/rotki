@@ -25,6 +25,7 @@ from rotkehlchen.api.v1.encoding import (
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
+    AvalancheTransactionQuerySchema,
     BaseXpubSchema,
     BinanceMarketsUserSchema,
     BlockchainAccountsDeleteSchema,
@@ -90,7 +91,6 @@ from rotkehlchen.api.v1.encoding import (
     WatchersEditSchema,
     XpubAddSchema,
     XpubPatchSchema,
-    AvalancheTransactionQuerySchema,
 )
 from rotkehlchen.api.v1.parser import resource_parser
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -1818,3 +1818,11 @@ class ERC20TokenInfoAVAX(BaseResource):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, address: ChecksumEthAddress, async_query: bool) -> Response:
         return self.rest_api.get_avax_token_information(address, async_query)
+
+
+class NFTSResource(BaseResource):
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_nfts(async_query)

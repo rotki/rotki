@@ -29,6 +29,7 @@ from rotkehlchen.api.v1.resources import (
     AssetsTypesResource,
     AssetUpdatesResource,
     AsyncTasksResource,
+    AvalancheTransactionsResource,
     BalancerBalancesResource,
     BalancerEventsHistoryResource,
     BalancerTradesHistoryResource,
@@ -43,6 +44,7 @@ from rotkehlchen.api.v1.resources import (
     DataImportResource,
     DefiBalancesResource,
     ERC20TokenInfo,
+    ERC20TokenInfoAVAX,
     Eth2StakeDepositsResource,
     Eth2StakeDetailsResource,
     EthereumAirdropsResource,
@@ -75,19 +77,20 @@ from rotkehlchen.api.v1.resources import (
     MessagesResource,
     NamedEthereumModuleDataResource,
     NamedOracleCacheResource,
+    NFTSResource,
     OraclesResource,
     OwnedAssetsResource,
     PeriodicDataResource,
     PingResource,
     QueriedAddressesResource,
     SettingsResource,
-    SushiswapBalancesResource,
-    SushiswapEventsHistoryResource,
-    SushiswapTradesHistoryResource,
     StatisticsAssetBalanceResource,
     StatisticsNetvalueResource,
     StatisticsRendererResource,
     StatisticsValueDistributionResource,
+    SushiswapBalancesResource,
+    SushiswapEventsHistoryResource,
+    SushiswapTradesHistoryResource,
     TagsResource,
     TradesResource,
     UniswapBalancesResource,
@@ -104,8 +107,6 @@ from rotkehlchen.api.v1.resources import (
     YearnVaultsV2BalancesResource,
     YearnVaultsV2HistoryResource,
     create_blueprint,
-    AvalancheTransactionsResource,
-    ERC20TokenInfoAVAX,
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -229,6 +230,7 @@ URLS_V1: URLS = [
     ('/import', DataImportResource),
     ('/gitcoin/events', GitcoinEventsResource),
     ('/gitcoin/report', GitcoinReportResource),
+    ('/nfts', NFTSResource),
 ]
 
 logger = logging.getLogger(__name__)
