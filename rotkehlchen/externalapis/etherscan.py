@@ -146,7 +146,7 @@ class Etherscan(ExternalServiceWithApiKey):
                     'etherscan queries will still work but will be very slow. '
                     'If you are not using your own ethereum node, it is recommended '
                     'to go to https://etherscan.io/register, create an API '
-                    'key and then input it in the external service credentials setting of trotki',
+                    'key and then input it in the external service credentials setting of rotki',
                 )
                 self.warning_given = True
         else:
