@@ -800,22 +800,7 @@ class DBHandler:
     ) -> List[AaveEvent]:
         """Get aave for a single address and a single aToken"""
         cursor = self.conn.cursor()
-        querystr = (
-            'SELECT address, '
-            'event_type, '
-            'block_number, '
-            'timestamp, '
-            'tx_hash, '
-            'log_index, '
-            'asset1, '
-            'asset1_amount, '
-            'asset1_usd_value, '
-            'asset2, '
-            'asset2amount_borrowrate_feeamount, '
-            'asset2usd_value_accruedinterest_feeusdvalue, '
-            'borrow_rate_mode '
-            'FROM aave_events '
-        )
+        querystr = 'SELECT * FROM aave_events '
         values: Tuple
         if atoken is not None:  # when called by blockchain
             underlying_token = ATOKENV1_TO_ASSET.get(atoken, None)
@@ -903,25 +888,7 @@ class DBHandler:
         """Returns a list of AdEx events optionally filtered by time and address.
         """
         cursor = self.conn.cursor()
-        query = (
-            'SELECT '
-            'tx_hash, '
-            'address, '
-            'identity_address, '
-            'timestamp, '
-            'type, '
-            'pool_id, '
-            'amount, '
-            'usd_value, '
-            'bond_id, '
-            'nonce, '
-            'slashed_at, '
-            'unlock_at, '
-            'channel_id, '
-            'token, '
-            'log_index '
-            'FROM adex_events '
-        )
+        query = 'SELECT * FROM adex_events '
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
         filters = []
         if address is not None:
@@ -2499,19 +2466,7 @@ class DBHandler:
         The returned list is ordered from oldest to newest
         """
         cursor = self.conn.cursor()
-        query = """
-            SELECT tx_hash,
-              timestamp,
-              block_number,
-              from_address,
-              to_address,
-              value,
-              gas,
-              gas_price,
-              gas_used,
-              input_data,
-              nonce FROM ethereum_transactions
-        """
+        query = 'SELECT * FROM ethereum_transactions '
         if address is not None:
             query += f'WHERE (from_address="{address}" OR to_address="{address}") '
         query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
