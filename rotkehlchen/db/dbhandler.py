@@ -103,6 +103,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
+    AssetMovementCategory,
     BlockchainAccountData,
     BTCAddress,
     ChecksumEthAddress,
@@ -178,7 +179,7 @@ def db_tuple_to_str(
         )
     if tuple_type == 'asset_movement':
         return (
-            f'{AssetMovement.deserialize_from_db(data[2])} of '
+            f'{AssetMovementCategory.deserialize_from_db(data[2])} of '
             f'{data[4]} with id {data[0]} '
             f'in {Location.deserialize_from_db(data[1])} at timestamp {data[3]}'
         )
@@ -617,8 +618,9 @@ class DBHandler:
 
         result = []
         for q in query:
-            service = ExternalService.deserialize(q[0])
-            if not service:
+            try:
+                service = ExternalService.deserialize(q[0])
+            except DeserializationError:
                 log.error(f'Unknown external service name "{q[0]}" found in the DB')
                 continue
 

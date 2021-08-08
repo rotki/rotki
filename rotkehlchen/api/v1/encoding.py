@@ -585,9 +585,10 @@ class ExternalServiceNameField(fields.Field):
     ) -> ExternalService:
         if not isinstance(value, str):
             raise ValidationError('External service name should be a string')
-        service = ExternalService.deserialize(value)
-        if not service:
-            raise ValidationError(f'External service {value} is not known')
+        try:
+            service = ExternalService.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(f'External service {value} is not known') from e
 
         return service
 
