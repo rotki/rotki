@@ -343,15 +343,27 @@ class CSVExporter():
                 actual_value=net_profit_or_loss,
             )
         elif event_type in (EV_TX_GAS_COST, EV_ASSET_MOVE, EV_LOAN_SETTLE):
-            net_profit_or_loss = paid_in_profit_currency
+            net_profit_or_loss = -paid_in_profit_currency
             net_profit_or_loss_csv = self._add_equals_formula(
                 expression=f'-K{row}',
                 actual_value=net_profit_or_loss,
             )
-        elif event_type in (EV_INTEREST_PAYMENT, EV_MARGIN_CLOSE, EV_DEFI, EV_LEDGER_ACTION):
+        elif event_type == EV_INTEREST_PAYMENT:
             net_profit_or_loss = taxable_received_in_profit_currency
             net_profit_or_loss_csv = self._add_equals_formula(
                 expression=f'L{row}',
+                actual_value=net_profit_or_loss,
+            )
+        elif event_type in (EV_MARGIN_CLOSE, EV_DEFI, EV_LEDGER_ACTION):
+            if total_received_in_profit_currency > ZERO:
+                net_profit_or_loss = total_received_in_profit_currency
+            else:
+                net_profit_or_loss = -paid_in_profit_currency
+
+            net_profit_or_loss_csv = self._add_if_formula(
+                condition=f'P{row}=0',  # total_received_in_profit_currency is 0
+                if_true=f'-K{row}',  # then -paid_in_profit_currency
+                if_false=f'P{row}',  # else use total_received_in_profit_currency
                 actual_value=net_profit_or_loss,
             )
         else:
@@ -630,16 +642,28 @@ class CSVExporter():
             'gain_loss_amount': gain_loss_amount,
             f'profit_loss_in_{self.profit_currency.symbol}': gain_loss_in_profit_currency,
         })
+
+        paid_in_profit_currency = ZERO
+        received_in_profit_currency = ZERO
+        paid_in_asset = ZERO
+        received_in_asset = ZERO
+        if gain_loss_amount >= ZERO:
+            received_in_profit_currency = gain_loss_in_profit_currency
+            received_in_asset = gain_loss_amount
+        else:
+            paid_in_profit_currency = -gain_loss_in_profit_currency
+            paid_in_asset = -gain_loss_amount
+
         self.add_to_allevents(
             event_type=EV_MARGIN_CLOSE,
             location=location,
-            paid_in_profit_currency=ZERO,
+            paid_in_profit_currency=paid_in_profit_currency,
             paid_asset=S_EMPTYSTR,
-            paid_in_asset=ZERO,
+            paid_in_asset=paid_in_asset,
             received_asset=gain_loss_asset,
-            received_in_asset=gain_loss_amount,
-            taxable_received_in_profit_currency=gain_loss_in_profit_currency,
-            total_received_in_profit_currency=gain_loss_in_profit_currency,
+            received_in_asset=received_in_asset,
+            taxable_received_in_profit_currency=received_in_profit_currency,
+            total_received_in_profit_currency=received_in_profit_currency,
             timestamp=timestamp,
         )
 
