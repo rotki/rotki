@@ -424,7 +424,7 @@ and click on the module you are interested in (3). The module address selection 
 Search for each address you are interested and then select each one from the dropdown menu. The selected addresses should
 be visible in the same way as the modules above. To remove an address you need to press the (x) button at the end of the entry.
 
-If no addresses are selected for a module this means that rotki will check all the eligible addresses which can add to the total query duration.
+If no addresses are selected for a module this means that rotki will check all the eligible addresses which can add to the total query duration and considerably slow down retrieving data from the app.
 
 Changing the backend settings
 ====================================
@@ -438,14 +438,14 @@ screen. You can click the cog wheel at the bottom right corner to view the backe
 
 After selecting a new data directory, log directory etc you can press the save button to save your settings.
 
-Keep in mind that any accounts that where created in the previous directory will not be accessible anymore and you will
+Keep in mind that any accounts that were created in the previous directory will not be accessible anymore and you will
 have to manually move them to the new location.
 
 In the advanced section of the backend settings you can also modify the following settings:
 
 - **Logging from other modules**: If enabled then logging will also include log entries from other dependent libraries and not only rotki. It is disabled by default.
 - **Main Loop sleep**: This is the amount of seconds that the main loop of rotki sleeps for. It is set to 20 seconds by default.
-- **Max log size**: This is the maximum size in megabytes all logs of a single run can have
+- **Max log size**: This is the maximum size in megabytes all logs of a single run can have.
 - **Max num of log files**: This is the maximum number of backup (rotated) logs a single run can have.
 
 Disabling the tray icon
@@ -456,7 +456,7 @@ There you can select ``Display Tray Icon`` to enable or disable the application 
 Importing data
 *******************
 
-In this section we will explain how you can import data by integrating with external services such as crypto exchanges
+In this section we will explain how you can import data by integrating with external services such as crypto exchanges.
 
 
 Adding an exchange
