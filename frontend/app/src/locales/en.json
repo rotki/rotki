@@ -419,6 +419,7 @@
       "description": "* type the filter and then press enter e.g.",
       "example": "quote: ETH"
     },
+    "hint_filter": "The combined filters will be applied at the same time",
     "title": "Available filters",
     "unsupported_filter": "Unsupported filter:"
   },
