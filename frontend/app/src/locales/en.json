@@ -1310,8 +1310,10 @@
     },
     "filter": {
       "base_asset": "filter by the base asset of the trade",
-      "date": "filter by the date of the trade",
+      "end_date": "filter by the end date of the trade period",
+      "location": "filter by the trade location",
       "quote_asset": "filter by the quote asset of the trade",
+      "start_date": "filter by the start date of the trade period",
       "trade_type": "filter by the trade action (buy or sell)"
     },
     "title": "Closed Orders",

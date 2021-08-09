@@ -6,10 +6,6 @@
     {{ $t('trade_history.loading_subtitle') }}
   </progress-screen>
   <v-container v-else>
-    <trade-location-selector
-      v-model="selectedLocation"
-      :available-locations="availableLocations"
-    />
     <open-trades v-if="preview" :data="openTrades" />
     <closed-trades class="mt-8" :data="closedTrades" @refresh="refresh" />
   </v-container>
@@ -21,7 +17,6 @@ import { mapActions, mapGetters, mapState } from 'vuex';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import OpenTrades from '@/components/history/OpenTrades.vue';
-import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import StatusMixin from '@/mixins/status-mixin';
 import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
@@ -38,7 +33,6 @@ import { RefreshPeriod } from '@/store/settings/types';
 @Component({
   components: {
     ProgressScreen,
-    TradeLocationSelector,
     ClosedTrades,
     OpenTrades
   },
@@ -64,12 +58,6 @@ export default class TradeHistory extends Mixins(StatusMixin) {
 
   get preview(): boolean {
     return !!process.env.VUE_APP_TRADES_PREVIEW;
-  }
-
-  get availableLocations(): TradeLocation[] {
-    return this.trades
-      .map(trade => trade.location)
-      .filter((value, index, array) => array.indexOf(value) === index);
   }
 
   get closedTrades(): TradeEntry[] {

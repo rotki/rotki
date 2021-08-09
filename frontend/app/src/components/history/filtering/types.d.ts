@@ -1,13 +1,13 @@
-export interface SearchMatcher<T> {
-  readonly key: string;
-  readonly matchingProperty: keyof T;
+export interface SearchMatcher<K> {
+  readonly key: K;
   readonly description: string;
+  readonly hint?: string;
   readonly validate: (value: string) => boolean;
   readonly suggestions: () => string[];
 }
 
-export type MatchedKeyword<T> = {
-  readonly [key in keyof T]: string;
+export type MatchedKeyword<T extends string> = {
+  readonly [key in T]?: string;
 };
 
 export type Suggestion = {

@@ -105,7 +105,7 @@ export default defineComponent({
         const [key, keyword] = splitSearch(entry);
         const matcher = matcherForKey(key);
         assert(matcher);
-        matched[matcher.matchingProperty as string] = keyword;
+        matched[matcher.key as string] = keyword;
       }
 
       emit('update:matches', matched);

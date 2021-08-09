@@ -1,5 +1,5 @@
 <template>
-  <v-row no-gutters class="mb-4">
+  <v-row no-gutters>
     <v-tooltip top open-delay="400">
       <template #activator="{ on, attrs }">
         <v-btn
