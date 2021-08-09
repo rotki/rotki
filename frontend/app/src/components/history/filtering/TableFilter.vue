@@ -13,6 +13,10 @@
     :search-input.sync="search"
     @input="onSelectionUpdate($event)"
     @keydown.enter="applySuggestion"
+    @keydown.up.prevent
+    @keydown.up="moveSuggestion(true)"
+    @keydown.down.prevent
+    @keydown.down="moveSuggestion(false)"
   >
     <template #no-data>
       <no-filter-available
@@ -179,6 +183,21 @@ export default defineComponent({
       selectedSuggestion.value = 0;
     });
 
+    const moveSuggestion = (up: boolean) => {
+      let position = selectedSuggestion.value;
+      const move = up ? -1 : 1;
+
+      position += move;
+
+      if (position >= suggestedFilter.value.total) {
+        selectedSuggestion.value = 0;
+      } else if (position < 0) {
+        selectedSuggestion.value = suggestedFilter.value.total - 1;
+      } else {
+        selectedSuggestion.value = position;
+      }
+    };
+
     return {
       search,
       selection,
@@ -190,6 +209,7 @@ export default defineComponent({
       appendToSearch,
       applyFilter,
       applySuggestion,
+      moveSuggestion,
       input
     };
   }
