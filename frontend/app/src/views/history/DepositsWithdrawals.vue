@@ -10,110 +10,92 @@
       v-model="location"
       :available-locations="availableLocations"
     />
-    <v-card class="mt-8">
-      <v-card-title>
+    <card class="mt-8" outlined-body>
+      <template #title>
         <refresh-button
           :loading="refreshing"
           :tooltip="$t('deposits_withdrawals.refresh_tooltip')"
           @refresh="refresh"
         />
-        <card-title class="ms-2">
-          {{ $t('deposits_withdrawals.title') }}
-        </card-title>
-      </v-card-title>
-      <v-card-text>
+        {{ $t('deposits_withdrawals.title') }}
+      </template>
+      <template #actions>
         <ignore-buttons
           :disabled="selected.length === 0 || loading || refreshing"
           @ignore="ignoreMovements"
         />
-        <v-sheet outlined rounded>
-          <data-table
-            :headers="headers"
-            :items="movements"
-            show-expand
-            single-expand
-            :expanded="expanded"
-            item-key="identifier"
-            sort-by="timestamp"
-            :page.sync="page"
-            :loading="refreshing"
-          >
-            <template #header.selection>
-              <v-simple-checkbox
-                :ripple="false"
-                :value="allSelected"
-                color="primary"
-                @input="setSelected($event)"
-              />
-            </template>
-            <template #item.selection="{ item }">
-              <v-simple-checkbox
-                :ripple="false"
-                color="primary"
-                :value="selected.includes(item.identifier)"
-                @input="selectionChanged(item.identifier, $event)"
-              />
-            </template>
-            <template #item.ignoredInAccounting="{ item }">
-              <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
-            </template>
-            <template #item.location="{ item }">
-              <location-display :identifier="item.location" />
-            </template>
-            <template #item.asset="{ item }">
-              <asset-details opens-details :asset="item.asset" />
-            </template>
-            <template #item.amount="{ item }">
-              <amount-display
-                class="deposits-withdrawals__movement__amount"
-                :value="item.amount"
-              />
-            </template>
-            <template #item.fee="{ item }">
-              <amount-display
-                class="closed-trades__trade__fee"
-                :asset="item.feeAsset"
-                :value="item.fee"
-              />
-            </template>
-            <template #item.timestamp="{ item }">
-              <date-display :timestamp="item.timestamp" />
-            </template>
-            <template
-              v-if="
-                assetMovementsLimit <= assetMovementsTotal &&
-                assetMovementsLimit > 0
-              "
-              #body.append="{ headers }"
-            >
-              <upgrade-row
-                :total="assetMovementsTotal"
-                :limit="assetMovementsLimit"
-                :colspan="headers.length"
-                :label="$t('deposits_withdrawals.label')"
-              />
-            </template>
-            <template #expanded-item="{ headers, item }">
-              <table-expand-container visible :colspan="headers.length">
-                <template #title>
-                  {{ $t('deposits_withdrawals.details.title') }}
-                </template>
-                <movement-links
-                  v-if="item.address || item.transactionId"
-                  :item="item"
-                />
-                <div
-                  v-else
-                  class="font-weight-medium pa-4 deposits-withdrawals__movement__details--empty"
-                >
-                  {{ $t('deposits_withdrawals.details.no_details') }}
-                </div>
-              </table-expand-container>
-            </template>
-          </data-table>
-        </v-sheet>
-      </v-card-text>
-    </v-card>
+      </template>
+      <data-table
+        :headers="headers"
+        :items="movements"
+        show-expand
+        single-expand
+        :expanded="expanded"
+        item-key="identifier"
+        sort-by="timestamp"
+        :page.sync="page"
+        :loading="refreshing"
+      >
+        <template #header.selection>
+          <v-simple-checkbox
+            :ripple="false"
+            :value="allSelected"
+            color="primary"
+            @input="setSelected($event)"
+          />
+        </template>
+        <template #item.selection="{ item }">
+          <v-simple-checkbox
+            :ripple="false"
+            color="primary"
+            :value="selected.includes(item.identifier)"
+            @input="selectionChanged(item.identifier, $event)"
+          />
+        </template>
+        <template #item.ignoredInAccounting="{ item }">
+          <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
+        </template>
+        <template #item.location="{ item }">
+          <location-display :identifier="item.location" />
+        </template>
+        <template #item.asset="{ item }">
+          <asset-details opens-details :asset="item.asset" />
+        </template>
+        <template #item.amount="{ item }">
+          <amount-display
+            class="deposits-withdrawals__movement__amount"
+            :value="item.amount"
+          />
+        </template>
+        <template #item.fee="{ item }">
+          <amount-display
+            class="closed-trades__trade__fee"
+            :asset="item.feeAsset"
+            :value="item.fee"
+          />
+        </template>
+        <template #item.timestamp="{ item }">
+          <date-display :timestamp="item.timestamp" />
+        </template>
+        <template
+          v-if="
+            assetMovementsLimit <= assetMovementsTotal &&
+            assetMovementsLimit > 0
+          "
+          #body.append="{ headers }"
+        >
+          <upgrade-row
+            :total="assetMovementsTotal"
+            :limit="assetMovementsLimit"
+            :colspan="headers.length"
+            :label="$t('deposits_withdrawals.label')"
+          />
+        </template>
+        <template #expanded-item="{ headers, item }">
+          <deposit-withdrawal-details :span="headers.length" :item="item" />
+        </template>
+      </data-table>
+    </card>
   </v-container>
 </template>
 
@@ -152,9 +134,11 @@ import {
   IgnoreActionPayload
 } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
+import DepositWithdrawalDetails from '@/views/history/DepositWithdrawalDetails.vue';
 
 @Component({
   components: {
+    DepositWithdrawalDetails,
     TableExpandContainer,
     DataTable,
     CardTitle,
@@ -348,16 +332,6 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
 </script>
 
 <style scoped lang="scss">
-.deposits-withdrawals {
-  &__movement {
-    &__details {
-      &--empty {
-        height: 100px;
-      }
-    }
-  }
-}
-
 ::v-deep {
   th {
     &:nth-child(2) {
