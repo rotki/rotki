@@ -151,6 +151,9 @@ export default defineComponent({
             nextTick(() => applyFilter(`${key}: ${keyword}`));
           }
         }
+        if (!key) {
+          input.value.blur();
+        }
       }
       selectedSuggestion.value = 0;
       search.value = '';
