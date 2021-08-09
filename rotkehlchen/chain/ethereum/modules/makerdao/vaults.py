@@ -147,7 +147,15 @@ def _shift_num_right_by(num: int, digits: int) -> int:
     6150000000000000000000000000000000000000000000000 // 1e27
     6.149999999999999e+21   <--- wrong
     """
-    return int(str(num)[:-digits])
+    try:
+        return int(str(num)[:-digits])
+    except ValueError:
+        # this can happen if num is 0, in which case the shifting code above will raise
+        # https://github.com/rotki/rotki/issues/3310
+        # Also log if it happens for any other reason
+        if num != 0:
+            log.error(f'At makerdao _shift_num_right_by() got unecpected value {num} for num')
+        return 0
 
 
 class VaultEventType(Enum):
