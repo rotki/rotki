@@ -1310,6 +1310,7 @@
     },
     "filter": {
       "base_asset": "filter by the base asset of the trade",
+      "date_hint": "format DD/MM/YYYY HH:mm:ss (time/seconds are optional)",
       "end_date": "filter by the end date of the trade period",
       "location": "filter by the trade location",
       "quote_asset": "filter by the quote asset of the trade",

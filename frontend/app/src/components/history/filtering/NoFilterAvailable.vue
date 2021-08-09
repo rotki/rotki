@@ -19,6 +19,12 @@
           </span>
         </v-btn>
       </div>
+      <div
+        v-if="suggestion.hint"
+        class="caption-text text--secondary text-wrap"
+      >
+        {{ suggestion.hint }}
+      </div>
     </div>
     <div v-else-if="keyword" class="py-2">
       <span>{{ $t('no_filter_available.unsupported_filter') }}</span>

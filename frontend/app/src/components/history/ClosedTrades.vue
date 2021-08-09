@@ -330,16 +330,18 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
       key: TradeFilterKeys.START,
       description: this.$t('closed_trades.filter.start_date').toString(),
       suggestions: () => [],
+      hint: this.$t('closed_trades.filter.date_hint').toString(),
       validate: value => {
-        return !isNaN(convertToTimestamp(value));
+        return value.length > 0 && !isNaN(convertToTimestamp(value));
       }
     },
     {
       key: TradeFilterKeys.END,
       description: this.$t('closed_trades.filter.end_date').toString(),
       suggestions: () => [],
+      hint: this.$t('closed_trades.filter.date_hint').toString(),
       validate: value => {
-        return !isNaN(convertToTimestamp(value));
+        return value.length > 0 && !isNaN(convertToTimestamp(value));
       }
     },
     {
