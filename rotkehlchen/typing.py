@@ -92,6 +92,7 @@ class ExternalService(SerializableEnumMixin):
     BEACONCHAIN = 2
     LOOPRING = 3
     OPENSEA = 4
+    COVALENT = 5
 
 
 class ExternalServiceApiCredentials(NamedTuple):
