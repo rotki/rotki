@@ -6,10 +6,6 @@
     {{ $t('deposits_withdrawals.loading_subtitle') }}
   </progress-screen>
   <v-container v-else>
-    <trade-location-selector
-      v-model="location"
-      :available-locations="availableLocations"
-    />
     <card class="mt-8" outlined-body>
       <template #title>
         <refresh-button
@@ -20,10 +16,20 @@
         {{ $t('deposits_withdrawals.title') }}
       </template>
       <template #actions>
-        <ignore-buttons
-          :disabled="selected.length === 0 || loading || refreshing"
-          @ignore="ignoreMovements"
-        />
+        <v-row no-gutters>
+          <v-col>
+            <ignore-buttons
+              :disabled="selected.length === 0 || loading || refreshing"
+              @ignore="ignoreMovements"
+            />
+          </v-col>
+          <v-col>
+            <table-filter
+              :matchers="matchers"
+              @update:matches="updateFilter($event)"
+            />
+          </v-col>
+        </v-row>
       </template>
       <data-table
         :headers="headers"
@@ -111,12 +117,17 @@ import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
+import TableFilter from '@/components/history/filtering/TableFilter.vue';
+import {
+  MatchedKeyword,
+  SearchMatcher
+} from '@/components/history/filtering/types';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import MovementLinks from '@/components/history/MovementLinks.vue';
-import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import AssetMixin from '@/mixins/asset-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { SupportedExchange } from '@/services/balances/types';
 import { TradeLocation } from '@/services/history/types';
@@ -134,16 +145,26 @@ import {
   IgnoreActionPayload
 } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
+import { uniqueStrings } from '@/utils/data';
+import { convertToTimestamp } from '@/utils/date';
 import DepositWithdrawalDetails from '@/views/history/DepositWithdrawalDetails.vue';
+
+enum DepositWithdrawalFilters {
+  LOCATION = 'location',
+  ACTION = 'action',
+  ASSET = 'asset',
+  START = 'start',
+  END = 'end'
+}
 
 @Component({
   components: {
+    TableFilter,
     DepositWithdrawalDetails,
     TableExpandContainer,
     DataTable,
     CardTitle,
     IgnoreButtons,
-    TradeLocationSelector,
     MovementLinks,
     RefreshButton,
     ProgressScreen,
@@ -168,7 +189,10 @@ import DepositWithdrawalDetails from '@/views/history/DepositWithdrawalDetails.v
     ...mapMutations(['setMessage'])
   }
 })
-export default class DepositsWithdrawals extends Mixins(StatusMixin) {
+export default class DepositsWithdrawals extends Mixins(
+  StatusMixin,
+  AssetMixin
+) {
   readonly headers: DataTableHeader[] = [
     { text: '', value: 'selection', width: '34px', sortable: false },
     {
@@ -217,6 +241,54 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
 
   location: SupportedExchange | null = null;
   selected: string[] = [];
+  filter: MatchedKeyword<DepositWithdrawalFilters> = {};
+
+  readonly matchers: SearchMatcher<DepositWithdrawalFilters>[] = [
+    {
+      key: DepositWithdrawalFilters.ASSET,
+      description: this.$t('deposit_withdrawals.filter.asset').toString(),
+      suggestions: () => this.assets,
+      validate: (asset: string) => this.assets.includes(asset)
+    },
+    {
+      key: DepositWithdrawalFilters.ACTION,
+      description: this.$t('deposit_withdrawals.filter.action').toString(),
+      suggestions: () => ['deposit', 'withdrawal'],
+      validate: type => ['deposit', 'withdrawal'].includes(type)
+    },
+    {
+      key: DepositWithdrawalFilters.START,
+      description: this.$t('deposit_withdrawals.filter.start_date').toString(),
+      suggestions: () => [],
+      hint: this.$t('deposit_withdrawals.filter.date_hint').toString(),
+      validate: value => {
+        return value.length > 0 && !isNaN(convertToTimestamp(value));
+      }
+    },
+    {
+      key: DepositWithdrawalFilters.END,
+      description: this.$t('deposit_withdrawals.filter.end_date').toString(),
+      suggestions: () => [],
+      hint: this.$t('deposit_withdrawals.filter.date_hint').toString(),
+      validate: value => {
+        return value.length > 0 && !isNaN(convertToTimestamp(value));
+      }
+    },
+    {
+      key: DepositWithdrawalFilters.LOCATION,
+      description: this.$t('deposit_withdrawals.filter.location').toString(),
+      suggestions: () => this.availableLocations,
+      validate: location => this.availableLocations.includes(location as any)
+    }
+  ];
+
+  applyFilter() {}
+
+  updateFilter(filter: MatchedKeyword<DepositWithdrawalFilters>) {
+    this.filter = filter;
+
+    this.applyFilter();
+  }
 
   setSelected(selected: boolean) {
     const selection = this.selected;
@@ -297,12 +369,15 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
     }
   }
 
-  @Watch('location')
-  onLocationChange() {
-    if (!location) {
-      return;
+  @Watch('assetMovements')
+  onLocationChange(
+    oldData: AssetMovementEntry[],
+    newData?: AssetMovementEntry[]
+  ) {
+    if (newData && newData.length < oldData.length) {
+      this.page = 1;
     }
-    this.page = 1;
+    this.applyFilter();
   }
 
   get availableLocations(): TradeLocation[] {
@@ -317,12 +392,20 @@ export default class DepositsWithdrawals extends Mixins(StatusMixin) {
       : this.assetMovements;
   }
 
+  get assets(): string[] {
+    return this.assetMovements
+      .map(value => value.asset)
+      .filter(uniqueStrings)
+      .map(value => this.getSymbol(value));
+  }
+
   section = Section.ASSET_MOVEMENT;
   expanded = [];
 
   async mounted() {
     await this.fetchMovements(FETCH_FROM_CACHE);
     await this.fetchMovements(FETCH_FROM_SOURCE);
+    this.applyFilter();
   }
 
   async refresh() {

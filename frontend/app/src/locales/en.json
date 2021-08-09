@@ -327,6 +327,16 @@
     "subtitle": "These are the supported date formatting options",
     "title": "Date Format"
   },
+  "deposit_withdrawals": {
+    "filter": {
+      "action": "filter by the action",
+      "asset": "filter by the asset",
+      "date_hint": "format DD/MM/YYYY HH:mm:ss (time/seconds are optional)",
+      "location": "filter by the location",
+      "start_date": "filter by the starting date of the period",
+      "end_date": "filter by the ending date of the period"
+    }
+  },
   "exchange_keys_form": {
     "api_key": {
       "non_empty": "The api key field cannot be empty."
