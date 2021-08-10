@@ -5,10 +5,12 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError
+from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, CovalentTransaction, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, CovalentTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import create_timestamp, ts_now
 
@@ -66,12 +68,14 @@ def convert_transaction_from_covalent(
         ) from e
 
 
-class Covalent():
+class Covalent(ExternalServiceWithApiKey):
     def __init__(
             self,
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
             chain_id: int,
     ) -> None:
+        super().__init__(database=database, service_name=ExternalService.COVALENT)
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.msg_aggregator = msg_aggregator
@@ -96,7 +100,8 @@ class Covalent():
             query_str += f'/{address}'
         query_str += f'/{module}/'
 
-        query_str += f'?key={KEY}'
+        own_key = self._get_api_key()
+        query_str += f'?key={own_key if own_key else KEY}'
 
         if options:
             for name, value in options.items():

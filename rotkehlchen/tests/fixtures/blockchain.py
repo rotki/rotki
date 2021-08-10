@@ -100,8 +100,8 @@ def fixture_etherscan(database, messages_aggregator):
 
 
 @pytest.fixture(name='covalent_avalanche')
-def fixture_covalent_avalanche(messages_aggregator):
-    return Covalent(msg_aggregator=messages_aggregator, chain_id='43114')
+def fixture_covalent_avalanche(messages_aggregator, database):
+    return Covalent(database=database, msg_aggregator=messages_aggregator, chain_id='43114')
 
 
 @pytest.fixture(name='ethereum_manager')

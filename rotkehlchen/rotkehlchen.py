@@ -293,6 +293,7 @@ class Rotkehlchen():
             own_rpc_endpoint=settings.dot_rpc_endpoint,
         )
         self.covalent_avalanche = Covalent(
+            database=self.data.db,
             msg_aggregator=self.msg_aggregator,
             chain_id=chains_id['avalanche'],
         )
