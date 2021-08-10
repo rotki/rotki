@@ -181,6 +181,11 @@ import {
   MatchedKeyword,
   SearchMatcher
 } from '@/components/history/filtering/types';
+import {
+  checkIfMatch,
+  endMatch,
+  startMatch
+} from '@/components/history/filtering/utils';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeDetails from '@/components/history/TradeDetails.vue';
@@ -472,40 +477,26 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
 
   applyFilter() {
     const filter = this.filter;
-    const startMatch = (time: number, filter?: string) => {
-      if (!filter) {
-        return true;
-      }
-      const timestamp = convertToTimestamp(filter);
-      return isNaN(timestamp) ? true : timestamp <= time;
-    };
-
-    const endMatch = (time: number, filter?: string) => {
-      if (!filter) {
-        return true;
-      }
-      const timestamp = convertToTimestamp(filter);
-      return isNaN(timestamp) ? true : timestamp >= time;
-    };
+    const quoteFilter = filter[TradeFilterKeys.QUOTE];
+    const baseFilter = filter[TradeFilterKeys.BASE];
+    const actionFilter = filter[TradeFilterKeys.ACTION];
+    const locationFilter = filter[TradeFilterKeys.LOCATION];
+    const endFilter = filter[TradeFilterKeys.END];
+    const startFilter = filter[TradeFilterKeys.START];
 
     this.visibleTrades = this.data.filter(trade => {
-      const quoteMatch = filter[TradeFilterKeys.QUOTE]
-        ? filter[TradeFilterKeys.QUOTE] === this.getSymbol(trade.quoteAsset)
-        : true;
-      const baseMatch = filter[TradeFilterKeys.BASE]
-        ? filter[TradeFilterKeys.BASE] === this.getSymbol(trade.baseAsset)
-        : true;
-      const actionMatch = filter[TradeFilterKeys.ACTION]
-        ? filter[TradeFilterKeys.ACTION] === trade.tradeType
-        : true;
-      const locationMatch = filter[TradeFilterKeys.LOCATION]
-        ? filter[TradeFilterKeys.LOCATION] === trade.location
-        : true;
+      const quoteSymbol = this.getSymbol(trade.quoteAsset);
+      const baseSymbol = this.getSymbol(trade.baseAsset);
+      const quoteMatch = checkIfMatch(quoteSymbol, quoteFilter);
+      const baseMatch = checkIfMatch(baseSymbol, baseFilter);
+      const actionMatch = checkIfMatch(trade.tradeType, actionFilter);
+      const locationMatch = checkIfMatch(trade.location, locationFilter);
+
       return (
         quoteMatch &&
         actionMatch &&
-        endMatch(trade.timestamp, filter[TradeFilterKeys.END]) &&
-        startMatch(trade.timestamp, filter[TradeFilterKeys.START]) &&
+        endMatch(trade.timestamp, endFilter) &&
+        startMatch(trade.timestamp, startFilter) &&
         baseMatch &&
         locationMatch
       );
