@@ -706,6 +706,13 @@
       "label": "API key",
       "title": "Etherscan"
     },
+    "covalent": {
+      "delete_tooltip": "Deletes the Covalent API key",
+      "description": "rotki can use Covalent to get historical data for various chains",
+      "hint": "Enter your Covalent API key",
+      "label": "API key",
+      "title": "Covalent"
+    },
     "loopring": {
       "settings": "Settings",
       "delete_tooltip": "Delete your Loopring API key",
