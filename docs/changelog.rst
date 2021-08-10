@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2847` Users will now be able to use a combination of filters in the search for trades and deposits/withdrawals.
 * :feature:`3254` Users can now add a custom Covalent API key in rotki.
 
 * :release:`1.20.0 <2021-08-06>`
