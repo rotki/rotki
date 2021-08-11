@@ -44,6 +44,14 @@ function score(keyword: string, { name, symbol }: ManagedAsset): number {
   return Math.min(symbolScore, nameScore);
 }
 
+export function compareSymbols(a: string, b: string, keyword: string) {
+  const search = keyword.toLocaleLowerCase().trim();
+  return (
+    levenshtein(search, a.toLocaleLowerCase()) -
+    levenshtein(search, b.toLocaleLowerCase())
+  );
+}
+
 export function compareAssets(
   a: ManagedAsset,
   b: ManagedAsset,

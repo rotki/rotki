@@ -7,102 +7,95 @@
   </progress-screen>
   <v-container v-else>
     <blockchain-account-selector v-model="account" hint :chains="['ETH']" />
-    <v-card class="mt-8">
-      <v-card-title>
+    <card class="mt-8" outlined-body>
+      <template #title>
         <refresh-button
           :loading="refreshing"
           :tooltip="$t('transactions.refresh_tooltip')"
           @refresh="refresh"
         />
-        <card-title class="ms-2">{{ $t('transactions.title') }}</card-title>
-      </v-card-title>
-      <v-card-text>
+        {{ $t('transactions.title') }}
+      </template>
+      <template #actions>
         <ignore-buttons
           :disabled="selected.length === 0 || loading || refreshing"
           @ignore="ignoreTransactions"
         />
-        <v-sheet outlined rounded>
-          <data-table
-            :headers="headers"
-            :items="visibleTransactions"
-            show-expand
-            single-expand
-            :expanded="expanded"
-            item-key="key"
-            sort-by="timestamp"
-            :page.sync="page"
-            :loading="refreshing"
+      </template>
+      <data-table
+        :headers="headers"
+        :items="visibleTransactions"
+        show-expand
+        single-expand
+        :expanded="expanded"
+        item-key="key"
+        sort-by="timestamp"
+        :page.sync="page"
+        :loading="refreshing"
+      >
+        <template #header.selection>
+          <v-simple-checkbox
+            :ripple="false"
+            :value="allSelected"
+            color="primary"
+            @input="setSelected($event)"
+          />
+        </template>
+        <template #item.selection="{ item }">
+          <v-simple-checkbox
+            :ripple="false"
+            color="primary"
+            :value="selected.includes(getKey(item))"
+            @input="selectionChanged(getKey(item), $event)"
+          />
+        </template>
+        <template #item.ignoredInAccounting="{ item }">
+          <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
+        </template>
+        <template #item.txHash="{ item }">
+          <hash-link :text="item.txHash" tx />
+          <v-chip
+            v-if="item.gasPrice.lt(0)"
+            small
+            text-color="white"
+            color="accent"
+            class="mb-1 mt-1"
           >
-            <template #header.selection>
-              <v-simple-checkbox
-                :ripple="false"
-                :value="allSelected"
-                color="primary"
-                @input="setSelected($event)"
-              />
-            </template>
-            <template #item.selection="{ item }">
-              <v-simple-checkbox
-                :ripple="false"
-                color="primary"
-                :value="selected.includes(getKey(item))"
-                @input="selectionChanged(getKey(item), $event)"
-              />
-            </template>
-            <template #item.ignoredInAccounting="{ item }">
-              <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
-            </template>
-            <template #item.txHash="{ item }">
-              <hash-link :text="item.txHash" tx />
-              <v-chip
-                v-if="item.gasPrice.lt(0)"
-                small
-                text-color="white"
-                color="accent"
-                class="mb-1 mt-1"
-              >
-                {{ $t('transaction_details.internal_transaction') }}
-              </v-chip>
-            </template>
-            <template #item.fromAddress="{ item }">
-              <hash-link :text="item.fromAddress" />
-            </template>
-            <template #item.toAddress="{ item }">
-              <hash-link v-if="item.toAddress" :text="item.toAddress" />
-              <span v-else>-</span>
-            </template>
-            <template #item.timestamp="{ item }">
-              <date-display :timestamp="item.timestamp" />
-            </template>
-            <template #item.value="{ item }">
-              <amount-display :value="toEth(item.value)" asset="ETH" />
-            </template>
-            <template #item.gasFee="{ item }">
-              <amount-display :value="item.gasFee" asset="ETH" />
-            </template>
-            <template
-              v-if="
-                transactionsLimit <= transactionsTotal && transactionsLimit > 0
-              "
-              #body.append="{ headers }"
-            >
-              <upgrade-row
-                :total="transactionsTotal"
-                :limit="transactionsLimit"
-                :colspan="headers.length"
-                :label="$t('transactions.label')"
-              />
-            </template>
-            <template #expanded-item="{ headers, item }">
-              <transaction-details
-                :transaction="item"
-                :colspan="headers.length"
-              />
-            </template>
-          </data-table>
-        </v-sheet>
-      </v-card-text>
-    </v-card>
+            {{ $t('transaction_details.internal_transaction') }}
+          </v-chip>
+        </template>
+        <template #item.fromAddress="{ item }">
+          <hash-link :text="item.fromAddress" />
+        </template>
+        <template #item.toAddress="{ item }">
+          <hash-link v-if="item.toAddress" :text="item.toAddress" />
+          <span v-else>-</span>
+        </template>
+        <template #item.timestamp="{ item }">
+          <date-display :timestamp="item.timestamp" />
+        </template>
+        <template #item.value="{ item }">
+          <amount-display :value="toEth(item.value)" asset="ETH" />
+        </template>
+        <template #item.gasFee="{ item }">
+          <amount-display :value="item.gasFee" asset="ETH" />
+        </template>
+        <template
+          v-if="transactionsLimit <= transactionsTotal && transactionsLimit > 0"
+          #body.append="{ headers }"
+        >
+          <upgrade-row
+            :total="transactionsTotal"
+            :limit="transactionsLimit"
+            :colspan="headers.length"
+            :label="$t('transactions.label')"
+          />
+        </template>
+        <template #expanded-item="{ headers, item }">
+          <transaction-details :transaction="item" :colspan="headers.length" />
+        </template>
+      </data-table>
+    </card>
   </v-container>
 </template>
 

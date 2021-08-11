@@ -327,6 +327,16 @@
     "subtitle": "These are the supported date formatting options",
     "title": "Date Format"
   },
+  "deposit_withdrawals": {
+    "filter": {
+      "action": "filter by the action",
+      "asset": "filter by the asset",
+      "date_hint": "format DD/MM/YYYY HH:mm:ss (time/seconds are optional)",
+      "location": "filter by the location",
+      "start_date": "filter by the starting date of the period",
+      "end_date": "filter by the ending date of the period"
+    }
+  },
   "exchange_keys_form": {
     "api_key": {
       "non_empty": "The api key field cannot be empty."
@@ -413,6 +423,15 @@
     "hint": "* Modules that are activated for all addresses will not appear here",
     "subtitle": "Select which modules should be queried for this account",
     "title": "Enabled modules"
+  },
+  "no_filter_available": {
+    "hint": {
+      "description": "* type the filter and then press enter e.g.",
+      "example": "quote: ETH"
+    },
+    "hint_filter": "The combined filters will be applied at the same time",
+    "title": "Available filters",
+    "unsupported_filter": "Unsupported filter:"
   },
   "notes_display": {
     "empty_notes": "No notes found for this entry",
@@ -1299,6 +1318,15 @@
     "description": {
       "with": "With",
       "for": "For"
+    },
+    "filter": {
+      "base_asset": "filter by the base asset of the trade",
+      "date_hint": "format DD/MM/YYYY HH:mm:ss (time/seconds are optional)",
+      "end_date": "filter by the end date of the trade period",
+      "location": "filter by the trade location",
+      "quote_asset": "filter by the quote asset of the trade",
+      "start_date": "filter by the start date of the trade period",
+      "trade_type": "filter by the trade action (buy or sell)"
     },
     "title": "Closed Orders",
     "headers": {

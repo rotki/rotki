@@ -701,7 +701,7 @@ The list of currently supported airdrops is:
 - Lido
 - Curve
 
-Adding historical events
+Historical events
 ************************
 
 Adding manual trades
@@ -745,6 +745,65 @@ You can provide a location, for example an exchange, a bank, a blockchain or oth
 For ledger actions you can optionally specify a rate and a asset for the rate. This is the rate linked to the asset for this action. If no rate is provided, the historical price at the date of the action is used.
 
 When generating a profit and loss report some ledger actions might be taxable in your jurisdiction and some not. To customize the list of taxable actions refer to the :ref:`ledger actions settings <ledger_action_settings>` section.
+
+Filtering trades
+================
+
+Rotki supports filter your trades with a combination of filters. All of the filters are applied at the same time
+limiting the trades to the ones that satisfy all the applied filters.
+
+.. image:: images/sc_history_trades_filter.png
+   :alt: Filtering trades
+   :align: center
+
+You can filter using the following keys:
+
+* **base:** the base asset of the trades [1]_.
+* **quote:** the quote asset of the trades [1]_.
+* **action:** it can be buy or sell [2]_.
+* **start:** will only filter any trades from that date an onwards [2]_.
+* **end:** will only filter any trades that happened before the selected date [2]_.
+* **location:** the location of tha trade, e.g. kraken, uniswap etc [1]_.
+
+.. image:: images/sc_history_trades_filter_suggestions.png
+   :alt: Trade filter suggestions
+   :align: center
+
+When selecting a filter, by clicking or typing the filter you will get some suggestions based on the available data.
+
+.. note::
+
+    At the moment it is not possible to navigate select the available filters using the keyboard arrows or tab.
+    This is a feature that will become available in the future.
+
+When a suggestion appears you can navigate to the next available suggestion using the tab button or you can also change
+the select suggestion using the up/down arrows in your keyboard. You can submit the selected filter by pressing enter.
+
+.. image:: images/sc_history_trades_filter_multi.png
+   :alt: Multiple trade filters applied
+   :align: center
+
+After adding your filters you can press enter to close the menu.
+
+Filtering deposits & withdrawals
+================================
+
+You can filter your deposits and withdrawals int he same say you can filter your trades.
+
+.. image:: images/sc_history_deposits_filter.png
+   :alt: Deposit filters
+   :align: center
+
+For deposits you can use the following filters:
+
+* **asset:** the asset that was deposited or withdrawn [1]_.
+* **action:** the actions (withdrawal or deposit) [1]_.
+* **start:** will only filter any trades from that date an onwards [2]_.
+* **end:** will only filter any trades that happened before the selected date [2]_.
+* **location:** the location of tha trade, e.g. kraken, uniswap etc [1]_.
+
+.. [1] Suggestions will appear for this field based on the available data.
+.. [2] The date filter has to be in the DD/MM/YYYY HH:mm:ss format. You can completely skip the time part or just the seconds part, thus making DD/MM/YYYY or DD/MM/YYYY HH:mm acceptable.
 
 Customization of the list of supported assets
 *********************************************

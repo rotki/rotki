@@ -6,7 +6,7 @@
     {{ $t('ledger_actions.loading_subtitle') }}
   </progress-screen>
   <v-container v-else>
-    <v-card>
+    <card outlined-body>
       <v-btn
         absolute
         fab
@@ -19,125 +19,92 @@
       >
         <v-icon> mdi-plus </v-icon>
       </v-btn>
-      <v-card-title>
+      <template #title>
         <refresh-button
           :loading="refreshing"
           :tooltip="$t('ledger_actions.refresh_tooltip')"
           @refresh="refresh"
         />
-        <card-title class="ms-2">{{ $t('ledger_actions.title') }}</card-title>
-        <v-spacer />
-      </v-card-title>
-      <v-card-text>
+        {{ $t('ledger_actions.title') }}
+      </template>
+      <template #actions>
         <ignore-buttons
           :disabled="selected.length === 0 || loading || refreshing"
           @ignore="ignoreLedgerActions"
         />
-        <v-sheet outlined rounded>
-          <data-table
-            show-expand
-            single-expand
-            sort-by="timestamp"
-            item-key="identifier"
-            :items="ledgerActions.data"
-            :headers="headers"
+      </template>
+      <v-sheet outlined rounded>
+        <data-table
+          show-expand
+          single-expand
+          sort-by="timestamp"
+          item-key="identifier"
+          :items="ledgerActions.data"
+          :headers="headers"
+        >
+          <template #header.selection>
+            <v-simple-checkbox
+              :ripple="false"
+              :value="allSelected"
+              color="primary"
+              @input="setSelected($event)"
+            />
+          </template>
+          <template #item.selection="{ item }">
+            <v-simple-checkbox
+              :ripple="false"
+              color="primary"
+              :value="selected.includes(item.identifier)"
+              @input="selectionChanged(item.identifier, $event)"
+            />
+          </template>
+          <template #item.actionType="{ item }">
+            <event-type-display :event-type="item.actionType" />
+          </template>
+          <template #item.timestamp="{ item }">
+            <date-display :timestamp="item.timestamp" />
+          </template>
+          <template #item.location="{ item }">
+            <location-display :identifier="item.location" />
+          </template>
+          <template #item.asset="{ item }">
+            <asset-details opens-details :asset="item.asset" />
+          </template>
+          <template #item.amount="{ item }">
+            <amount-display :value="item.amount" />
+          </template>
+          <template #item.ignoredInAccounting="{ item }">
+            <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
+          </template>
+          <template #item.actions="{ item }">
+            <row-actions
+              :disabled="refreshing"
+              :edit-tooltip="$t('ledger_actions.edit_tooltip')"
+              :delete-tooltip="$t('ledger_actions.delete_tooltip')"
+              @edit-click="showForm(item)"
+              @delete-click="deleteIdentifier = item.identifier"
+            />
+          </template>
+          <template
+            v-if="
+              ledgerActions.limit <= ledgerActions.found &&
+              ledgerActions.limit > 0
+            "
+            #body.append="{ headers }"
           >
-            <template #header.selection>
-              <v-simple-checkbox
-                :ripple="false"
-                :value="allSelected"
-                color="primary"
-                @input="setSelected($event)"
-              />
-            </template>
-            <template #item.selection="{ item }">
-              <v-simple-checkbox
-                :ripple="false"
-                color="primary"
-                :value="selected.includes(item.identifier)"
-                @input="selectionChanged(item.identifier, $event)"
-              />
-            </template>
-            <template #item.actionType="{ item }">
-              <event-type-display :event-type="item.actionType" />
-            </template>
-            <template #item.timestamp="{ item }">
-              <date-display :timestamp="item.timestamp" />
-            </template>
-            <template #item.location="{ item }">
-              <location-display :identifier="item.location" />
-            </template>
-            <template #item.asset="{ item }">
-              <asset-details opens-details :asset="item.asset" />
-            </template>
-            <template #item.amount="{ item }">
-              <amount-display :value="item.amount" />
-            </template>
-            <template #item.ignoredInAccounting="{ item }">
-              <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
-            </template>
-            <template #item.actions="{ item }">
-              <row-actions
-                :disabled="refreshing"
-                :edit-tooltip="$t('ledger_actions.edit_tooltip')"
-                :delete-tooltip="$t('ledger_actions.delete_tooltip')"
-                @edit-click="showForm(item)"
-                @delete-click="deleteIdentifier = item.identifier"
-              />
-            </template>
-            <template
-              v-if="
-                ledgerActions.limit <= ledgerActions.found &&
-                ledgerActions.limit > 0
-              "
-              #body.append="{ headers }"
-            >
-              <upgrade-row
-                :limit="ledgerActions.limit"
-                :total="ledgerActions.found"
-                :colspan="headers.length"
-                :label="$t('ledger_actions.label')"
-              />
-            </template>
-            <template #expanded-item="{ headers, item }">
-              <table-expand-container visible :colspan="headers.length">
-                <template #title>
-                  {{ $t('ledger_actions.details.title') }}
-                </template>
-                <v-row>
-                  <v-col cols="auto" class="font-weight-medium">
-                    {{ $t('ledger_actions.details.rate_asset') }}
-                  </v-col>
-                  <v-col>
-                    <amount-display
-                      v-if="!!item.rate"
-                      :value="item.rate"
-                      :asset="item.rateAsset"
-                    />
-                    <span v-else>
-                      {{ $t('ledger_actions.details.rate_data') }}
-                    </span>
-                  </v-col>
-                </v-row>
-                <v-row class="mt-2">
-                  <v-col cols="auto" class="font-weight-medium">
-                    {{ $t('ledger_actions.details.link') }}
-                  </v-col>
-                  <v-col>
-                    {{
-                      item.link
-                        ? item.link
-                        : $t('ledger_actions.details.link_data')
-                    }}
-                  </v-col>
-                </v-row>
-                <notes-display :notes="item.notes" />
-              </table-expand-container>
-            </template>
-          </data-table>
-        </v-sheet>
-      </v-card-text>
-    </v-card>
+            <upgrade-row
+              :limit="ledgerActions.limit"
+              :total="ledgerActions.found"
+              :colspan="headers.length"
+              :label="$t('ledger_actions.label')"
+            />
+          </template>
+          <template #expanded-item="{ headers, item }">
+            <ledger-action-details :span="headers.length" :item="item" />
+          </template>
+        </data-table>
+      </v-sheet>
+    </card>
     <big-dialog
       :display="openDialog"
       :title="dialogTitle"
@@ -203,6 +170,7 @@ import {
 import { ActionStatus, Message } from '@/store/types';
 import { Writeable } from '@/types';
 import { Zero } from '@/utils/bignumbers';
+import LedgerActionDetails from '@/views/history/LedgerActionDetails.vue';
 
 const emptyAction: () => UnsavedAction = () => ({
   timestamp: 0,
@@ -228,6 +196,7 @@ function lastSelectedLocation(): TradeLocation {
 
 @Component({
   components: {
+    LedgerActionDetails,
     NotesDisplay,
     TableExpandContainer,
     DataTable,
