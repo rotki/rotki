@@ -5,7 +5,7 @@
     </template>
     {{ $t('ledger_actions.loading_subtitle') }}
   </progress-screen>
-  <v-container v-else>
+  <div v-else>
     <card outlined-body>
       <v-btn
         absolute
@@ -129,7 +129,7 @@
       @cancel="deleteIdentifier = 0"
       @confirm="deleteAction()"
     />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

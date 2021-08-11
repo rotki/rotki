@@ -5,10 +5,10 @@
     </template>
     {{ $t('trade_history.loading_subtitle') }}
   </progress-screen>
-  <v-container v-else>
+  <div v-else>
     <open-trades v-if="preview" :data="openTrades" />
     <closed-trades class="mt-8" :data="closedTrades" @refresh="refresh" />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

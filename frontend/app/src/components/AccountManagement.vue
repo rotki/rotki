@@ -1,8 +1,12 @@
 <template>
   <v-overlay opacity="1" color="grey lighten-4">
-    <div class="account-management__loading" />
+    <div
+      :class="{
+        'account-management__loading': !xsOnly
+      }"
+    />
     <div v-if="!premiumVisible">
-      <v-card class="account-management__card pb-6" width="500px" light>
+      <v-card class="account-management__card pb-6" :width="width" light>
         <div
           class="pt-6 pb-3 text-h2 font-weight-black white--text account-management__card__title"
         >
@@ -129,6 +133,14 @@ export default class AccountManagement extends Mixins(BackendMixin) {
   @Prop({ required: true, type: Boolean })
   logged!: boolean;
   connectionFailure!: boolean;
+
+  get xsOnly(): boolean {
+    return this.$vuetify.breakpoint.xsOnly;
+  }
+
+  get width(): string {
+    return this.xsOnly ? '100%' : '500px';
+  }
 
   get displayPremium(): boolean {
     return !this.premium && !this.message.title && this.premiumVisible;

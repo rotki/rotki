@@ -210,6 +210,10 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
         &__value {
           font-size: 3.5em;
           line-height: 4rem;
+          @media (max-width: 450px) {
+            font-size: 2.4em;
+            line-height: 2.4rem;
+          }
         }
 
         .amount-currency {

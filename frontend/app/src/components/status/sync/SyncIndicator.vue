@@ -16,7 +16,7 @@
           <v-icon> mdi-content-save </v-icon>
         </menu-tooltip-button>
       </template>
-      <v-container :style="backgroundStyle">
+      <div :style="backgroundStyle">
         <div class="balance-saved-indicator__content">
           <v-row v-if="premium">
             <v-col>
@@ -86,7 +86,7 @@
             </v-col>
           </v-row>
         </div>
-      </v-container>
+      </div>
     </v-menu>
     <confirm-dialog
       confirm-type="warning"

@@ -1,5 +1,5 @@
 <template>
-  <v-container
+  <div
     :style="`height: calc(100vh - ${top + 64}px);`"
     class="d-flex flex-column align-center justify-center"
   >
@@ -44,7 +44,7 @@
         </v-col>
       </v-row>
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

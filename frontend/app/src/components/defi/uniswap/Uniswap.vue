@@ -13,7 +13,7 @@
       </i18n>
     </template>
   </progress-screen>
-  <v-container v-else class="uniswap">
+  <div v-else class="uniswap">
     <refresh-header
       :title="$t('uniswap.title')"
       class="mt-4"
@@ -118,7 +118,7 @@
       :selected-addresses="selectedAddresses"
       :selected-pool-address="selectedPools"
     />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

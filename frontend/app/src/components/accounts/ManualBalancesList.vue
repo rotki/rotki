@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <div>
     <v-row no-gutters justify="end">
       <v-col cols="6" class="d-flex flex-row align-center">
         <tag-filter v-model="onlyTags" />
@@ -114,7 +114,7 @@
       @cancel="labelToDelete = null"
       @confirm="deleteLabel()"
     />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

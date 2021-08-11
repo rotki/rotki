@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <div>
     <module-not-active v-if="!isEnabled" :modules="modules" />
     <no-premium-placeholder
       v-else-if="!premium"
@@ -12,7 +12,7 @@
       <active-modules :modules="modules" class="dex-trade-history__modules" />
       <dex-trades-table :refreshing="anyRefreshing" />
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

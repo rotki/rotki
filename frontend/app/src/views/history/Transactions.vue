@@ -5,7 +5,7 @@
     </template>
     {{ $t('transactions.loading_subtitle') }}
   </progress-screen>
-  <v-container v-else>
+  <div v-else>
     <blockchain-account-selector v-model="account" hint :chains="['ETH']" />
     <card class="mt-8" outlined-body>
       <template #title>
@@ -96,7 +96,7 @@
         </template>
       </data-table>
     </card>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

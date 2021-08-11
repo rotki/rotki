@@ -1,5 +1,5 @@
 <template>
-  <v-container class="accounting-settings">
+  <div class="accounting-settings">
     <v-row no-gutters>
       <v-col>
         <card>
@@ -188,7 +188,7 @@
         </card>
       </v-col>
     </v-row>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

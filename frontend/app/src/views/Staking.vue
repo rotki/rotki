@@ -1,12 +1,12 @@
 <template>
   <v-container class="staking">
     <base-page-header :text="$t('staking.title')" />
-    <v-container class="staking__content">
+    <div class="staking__content">
       <no-premium-placeholder v-if="!premium" :text="$t('staking.title')" />
       <div v-else>
         <tab-navigation :tab-contents="stakingTabs" />
       </div>
-    </v-container>
+    </div>
   </v-container>
 </template>
 

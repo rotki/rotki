@@ -33,6 +33,7 @@
           v-if="
             $route.path.indexOf(tab.routeTo) >= 0 && tab.routeTo === selectedTab
           "
+          class="padded"
         />
       </keep-alive>
     </v-tab-item>
@@ -40,7 +41,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator';
+import { Component, Prop, Vue } from 'vue-property-decorator';
 
 export interface TabContent {
   readonly name: string;
@@ -167,5 +168,9 @@ export default class TabNavigation extends Vue {
       }
     }
   }
+}
+
+.padded {
+  padding: 8px;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <div>
     <v-row class="mt-8">
       <v-col>
         <refresh-header
@@ -12,7 +12,7 @@
     <progress-screen v-if="loading">
       <template #message>{{ $t('airdrops.loading') }}</template>
     </progress-screen>
-    <v-container v-else>
+    <div v-else>
       <blockchain-account-selector
         v-model="selectedAccounts"
         multiple
@@ -89,8 +89,8 @@
           </v-sheet>
         </v-card-text>
       </v-card>
-    </v-container>
-  </v-container>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
@@ -104,16 +104,16 @@ import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
 import {
   AIRDROP_1INCH,
-  AIRDROP_TORNADO,
-  AIRDROP_UNISWAP,
+  AIRDROP_CONVEX,
   AIRDROP_CORNICHON,
+  AIRDROP_CURVE,
+  AIRDROP_FOX,
+  AIRDROP_FURUCOMBO,
   AIRDROP_GRAIN,
   AIRDROP_LIDO,
-  AIRDROP_FURUCOMBO,
-  AIRDROP_CURVE,
-  AIRDROP_CONVEX,
   AIRDROP_POAP,
-  AIRDROP_FOX
+  AIRDROP_TORNADO,
+  AIRDROP_UNISWAP
 } from '@/store/defi/const';
 import { Airdrop, AirdropType } from '@/store/defi/types';
 import { ETH, GeneralAccount } from '@/typing/types';

@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <div>
     <v-row class="premium-settings">
       <v-col>
         <v-card>
@@ -95,7 +95,7 @@
         @cancel="confirmDeletePremium = false"
       />
     </v-row>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

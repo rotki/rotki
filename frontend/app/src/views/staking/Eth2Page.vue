@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <div>
     <module-not-active v-if="!moduleEnabled" :modules="module" />
     <progress-screen v-else-if="loading">
       <template #message>
@@ -13,7 +13,7 @@
         :secondary-refreshing="secondaryRefreshing"
       />
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

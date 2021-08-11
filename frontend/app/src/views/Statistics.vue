@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <div>
     <base-page-header :text="$t('statistics.title')" />
     <div id="statistics">
       <div v-if="!premium">
@@ -15,7 +15,7 @@
         />
       </div>
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

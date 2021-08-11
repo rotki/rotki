@@ -1,5 +1,5 @@
 ﻿<template>
-  <v-container class="general-settings">
+  <div class="general-settings">
     <v-row no-gutters>
       <v-col>
         <card>
@@ -252,7 +252,7 @@
         <frontend-settings />
       </v-col>
     </v-row>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

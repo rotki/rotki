@@ -2,7 +2,7 @@
   <progress-screen v-if="loading">
     <template #message>{{ $t('borrowing.loading') }}</template>
   </progress-screen>
-  <v-container v-else>
+  <div v-else>
     <v-row class="mt-8">
       <v-col>
         <refresh-header
@@ -78,7 +78,7 @@
       </v-col>
     </v-row>
     <loan-info :loan="loan(selection)" />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

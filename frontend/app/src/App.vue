@@ -1,5 +1,5 @@
 <template>
-  <v-app v-if="!isPlayground" id="rotki">
+  <v-app v-if="!isPlayground" id="rotki" class="app">
     <update-popup />
     <div v-if="logged" class="app__content rotki-light-grey">
       <asset-update auto />
@@ -44,7 +44,7 @@
           class="secondary--text text--lighten-2"
           @click="toggleDrawer()"
         />
-        <node-status-indicator />
+        <node-status-indicator v />
         <balance-saved-indicator />
         <back-button :can-navigate-back="canNavigateBack" />
         <v-spacer />
@@ -70,7 +70,7 @@
         @visible:update="help = $event"
         @about="showAbout = true"
       />
-      <v-main v-if="logged" class="fill-height">
+      <v-main v-if="logged" class="fill-height main">
         <router-view />
       </v-main>
     </div>
@@ -187,6 +187,10 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
   help: boolean = false;
   showAbout: boolean = false;
 
+  get xsOnly(): boolean {
+    return this.$vuetify.breakpoint.xsOnly;
+  }
+
   get canNavigateBack(): boolean {
     const canNavigateBack = this.$route.meta?.canNavigateBack ?? false;
     return canNavigateBack && window.history.length > 1;
@@ -285,6 +289,8 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
 }
 
 .app {
+  overflow: hidden;
+
   &__app-bar {
     &__button {
       i {
@@ -347,10 +353,6 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
     margin-top: 64px;
     padding-top: 0 !important;
     height: calc(100vh - 64px);
-
-    &__wrap {
-      padding-left: 25px;
-    }
   }
 
   .v-app-bar {

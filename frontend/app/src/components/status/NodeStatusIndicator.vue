@@ -20,7 +20,7 @@
         />
       </menu-tooltip-button>
     </template>
-    <v-container>
+    <div>
       <v-row class="node-status-indicator__content" :style="backgroundStyle">
         <v-col cols="2">
           <v-icon
@@ -51,7 +51,7 @@
           />
         </v-col>
       </v-row>
-    </v-container>
+    </div>
   </v-menu>
 </template>
 
