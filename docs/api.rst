@@ -816,7 +816,7 @@ Query the result of an ongoing backend task
 Query the current price of assets
 ===================================
 
-.. http:get:: /api/(version)/assets/prices/current
+.. http:post:: /api/(version)/assets/prices/current
 
    Querying this endpoint with a list of assets and a target asset will return an object with the the price of the assets in the target asset currency. Providing an empty list or no target asset is an error.
 
@@ -827,7 +827,7 @@ Query the current price of assets
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/assets/prices/current HTTP/1.1
+      POST /api/1/assets/prices/current HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 

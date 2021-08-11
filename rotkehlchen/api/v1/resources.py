@@ -1595,10 +1595,10 @@ class AssetIconsResource(BaseResource):
 
 class CurrentAssetsPriceResource(BaseResource):
 
-    get_schema = CurrentAssetsPriceSchema()
+    post_schema = CurrentAssetsPriceSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(
+    @use_kwargs(post_schema, location='json')
+    def post(
             self,
             assets: List[Asset],
             target_asset: Asset,
