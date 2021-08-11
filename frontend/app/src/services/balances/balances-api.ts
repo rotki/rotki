@@ -133,16 +133,19 @@ export class BalancesApi {
     ignoreCache: boolean
   ): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<PendingTask>>('/assets/prices/current', {
-        params: axiosSnakeCaseTransformer({
+      .post<ActionResult<PendingTask>>(
+        '/assets/prices/current',
+        axiosSnakeCaseTransformer({
           asyncQuery: true,
           assets: assets.join(','),
           targetAsset,
           ignoreCache: ignoreCache ? ignoreCache : undefined
         }),
-        validateStatus: validWithSessionAndExternalService,
-        transformResponse: basicAxiosTransformer
-      })
+        {
+          validateStatus: validWithSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
+        }
+      )
       .then(handleResponse);
   }
 
