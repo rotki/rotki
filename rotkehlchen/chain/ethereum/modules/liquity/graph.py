@@ -1,23 +1,23 @@
 QUERY_TROVE = (
     """
     troves(
-        where: {{
+        where: {
             owner_in: $addresses,
-        }}
-    ){{
+        }
+    ){
         id
         debt
-        owner {{
+        owner {
             id
-        }}
-        changes {{
+        }
+        changes {
             id
-            systemStateBefore {{
+            systemStateBefore {
                 id
-            }}
-            systemStateAfter {{
+            }
+            systemStateAfter {
                 id
-            }}
+            }
             troveOperation
             debtAfter
             debtBefore
@@ -26,13 +26,38 @@ QUERY_TROVE = (
             collateralBefore
             collateralChange
             borrowingFee
-            transaction{{
+            transaction{
                 id
                 blockNumber
                 timestamp
-            }}
-        }}
-    }}
-    }}
+            }
+        }
+    }
+    }
+    """
+)
+
+QUERY_STAKE = (
+    """
+        lqtyStakes(
+            where: {
+                id_in: $addresses,
+            }
+        ){
+            id
+            amount
+            changes{
+                transaction {
+                    id
+                    timestamp
+                }
+                stakeOperation
+                stakedAmountAfter
+                stakedAmountChange
+                issuanceGain
+                redemptionGain
+            }
+        }
+    }
     """
 )

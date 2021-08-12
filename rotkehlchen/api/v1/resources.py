@@ -1494,6 +1494,7 @@ class LoopringBalancesResource(BaseResource):
 class LiquityTroves(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
+
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_liquity_troves(async_query=async_query)

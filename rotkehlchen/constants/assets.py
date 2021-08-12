@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 12/08/2021 19:53:04.
+# tools/scripts/generate_constant_assets.py at 12/08/2021 19:54:12.
 # Do not edit manually!
 
 from typing import List
@@ -277,6 +277,18 @@ A_MATIC = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_MATIC)
+A_LQTY = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'),
+    decimals=18,
+    name="LQTY",
+    symbol='LQTY',
+    started=Timestamp(1617611590),
+    swapped_for=None,
+    coingecko='liquity',
+    cryptocompare='LQTY',
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_LQTY)
 
 A_AAVE = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'),

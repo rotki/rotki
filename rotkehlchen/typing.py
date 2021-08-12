@@ -41,7 +41,7 @@ AVAILABLE_MODULES_MAP = {
     'balancer': 'Balancer',
     'eth2': 'Eth2',
     'sushiswap': 'Sushiswap',
-    'liquity': 'Liquity'
+    'liquity': 'Liquity',
 }
 
 

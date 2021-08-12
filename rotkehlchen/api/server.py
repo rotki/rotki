@@ -207,7 +207,7 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/yearn/vaults/history', YearnVaultsHistoryResource),
     ('/blockchains/ETH/modules/yearn/vaultsv2/balances', YearnVaultsV2BalancesResource),
     ('/blockchains/ETH/modules/yearn/vaultsv2/history', YearnVaultsV2HistoryResource),
-    ('/blockchains/ETH/modules/liquity/troves', LiquityTroves),
+    ('/blockchains/ETH/modules/liquity/balances', LiquityTroves),
     ('/blockchains/ETH/modules/liquity/events', LiquityTrovesHistory),
     ('/blockchains/ETH/modules/loopring/balances', LoopringBalancesResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),

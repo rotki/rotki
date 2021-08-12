@@ -37,8 +37,9 @@ log = RotkehlchenLogsAdapter(logger)
 # adex staking
 # aave lending
 # eth2
+# liquity
 # Please, update this number each time a history query step is either added or removed
-NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 11
+NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 12
 FREE_LEDGER_ACTIONS_LIMIT = 50
 
 HistoryResult = Tuple[
@@ -320,6 +321,17 @@ class EventsHistorian():
             defi_events.extend(self.chain_manager.get_eth2_history_events(
                 from_timestamp=start_ts,
                 to_timestamp=end_ts,
+            ))
+        self._increase_progress(step, total_steps)
+
+        # include liquity events
+        liquity = self.chain_manager.get_module('liquity')
+        if liquity is not None and has_premium:
+            self.processing_state_name = 'Querying Liquity staking history'
+            defi_events.extend(liquity.get_history_events(
+                from_timestamp=start_ts,
+                to_timestamp=end_ts,
+                addresses=self.chain_manager.queried_addresses_for_module('liquity'),
             ))
         self._increase_progress(step, total_steps)
 
