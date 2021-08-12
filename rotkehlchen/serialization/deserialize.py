@@ -374,29 +374,6 @@ def deserialize_asset_movement_category(symbol: str) -> AssetMovementCategory:
     )
 
 
-def deserialize_asset_movement_category_from_db(symbol: str) -> AssetMovementCategory:
-    """Takes a DB enum string and turns it into an asset movement category
-
-    Can throw DeserializationError if symbol is not as expected
-    """
-    if not isinstance(symbol, str):
-        raise DeserializationError(
-            f'Failed to deserialize asset movement category symbol from '
-            f'{type(symbol)} DB enum entry',
-        )
-
-    if symbol == 'A':
-        return AssetMovementCategory.DEPOSIT
-    if symbol == 'B':
-        return AssetMovementCategory.WITHDRAWAL
-
-    # else
-    raise DeserializationError(
-        f'Failed to deserialize asset movement category symbol from DB enum entry.'
-        f'Unknown symbol {symbol}',
-    )
-
-
 def deserialize_hex_color_code(symbol: str) -> HexColorCode:
     """Takes a string either from the API or the DB and deserializes it into
     a hexadecimal color code.
