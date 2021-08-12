@@ -40,10 +40,14 @@ describe('Accounts', () => {
       cy.fixture('manual-balances').then(balances => {
         manualBalances = balances;
       });
-      cy.get('.accounts-balances__manual-balances').click();
+      cy.get('[data-cy=accounts-balances__manual-balances]').should(
+        'be.visible'
+      );
+      cy.get('[data-cy=accounts-balances__manual-balances]').click();
     });
 
     it('add first entry', () => {
+      cy.get('.manual-balances__add-balance').should('be.visible');
       cy.get('.manual-balances__add-balance').click();
       tagManager.addTag(
         '.manual-balances-form',

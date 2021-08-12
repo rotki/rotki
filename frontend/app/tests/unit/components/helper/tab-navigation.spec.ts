@@ -1,3 +1,4 @@
+import VueCompositionAPI from '@vue/composition-api';
 import { mount, ThisTypedMountOptions, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
@@ -7,13 +8,14 @@ import store from '@/store/store';
 
 Vue.use(Vuetify);
 Vue.use(Vuex);
+Vue.use(VueCompositionAPI);
 
 describe('TabNavigation.vue', () => {
-  let wrapper: Wrapper<TabNavigation>;
+  let wrapper: Wrapper<any>;
   let nav: any;
   const data = [{ name: 'tab', routeTo: '/route/to/tab', hidden: true }];
 
-  function createWrapper(options: ThisTypedMountOptions<TabNavigation> = {}) {
+  function createWrapper(options: ThisTypedMountOptions<any> = {}) {
     const vuetify = new Vuetify();
     return mount(TabNavigation, {
       store,

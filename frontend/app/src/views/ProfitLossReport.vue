@@ -1,22 +1,5 @@
 <template>
   <v-container>
-    <base-page-header :text="$t('profit_loss_report.title')">
-      <v-tooltip top>
-        <template #activator="{ on, attrs }">
-          <v-btn
-            text
-            fab
-            depressed
-            v-bind="attrs"
-            to="/settings/accounting"
-            v-on="on"
-          >
-            <v-icon color="primary">mdi-cog</v-icon>
-          </v-btn>
-        </template>
-        <span>{{ $t('profit_loss_report.settings_tooltip') }}</span>
-      </v-tooltip>
-    </base-page-header>
     <generate v-show="!isRunning" @generate="generate($event)" />
     <error-screen
       v-if="!isRunning && reportError.message"
@@ -110,7 +93,6 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
@@ -130,7 +112,6 @@ import { AccountingSettings, ProfitLossPeriod } from '@/typing/types';
     ProfitLossOverview,
     ProfitLossEvents,
     AccountingSettingsDisplay,
-    BasePageHeader,
     ProgressScreen,
     Generate
   },

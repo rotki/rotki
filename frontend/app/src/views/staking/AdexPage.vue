@@ -6,7 +6,7 @@
     </template>
   </progress-screen>
   <div v-else>
-    <active-modules :modules="module" class="adex__modules" />
+    <active-modules :modules="module" :class="$style.modules" />
     <adex-staking
       :history-refreshing="secondaryLoading || secondaryRefreshing"
       :refreshing="refreshing"
@@ -52,13 +52,11 @@ export default class AdexPage extends Mixins(StatusMixin, ModuleMixin) {
 }
 </script>
 
-<style scoped lang="scss">
-.adex {
-  &__modules {
-    display: inline-flex;
-    position: absolute;
-    right: 65px;
-    top: 48px;
-  }
+<style module lang="scss">
+.modules {
+  display: inline-flex;
+  position: absolute;
+  right: 65px;
+  top: 58px;
 }
 </style>

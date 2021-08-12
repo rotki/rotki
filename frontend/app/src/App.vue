@@ -70,7 +70,7 @@
         @visible:update="help = $event"
         @about="showAbout = true"
       />
-      <v-main v-if="logged" class="fill-height main">
+      <v-main v-if="logged">
         <router-view />
       </v-main>
     </div>
@@ -291,6 +291,10 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
 .app {
   overflow: hidden;
 
+  &__content {
+    height: 100vh;
+  }
+
   &__app-bar {
     &__button {
       i {
@@ -350,9 +354,7 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
 
   .v-main {
     overflow-y: scroll;
-    margin-top: 64px;
-    padding-top: 0 !important;
-    height: calc(100vh - 64px);
+    overflow-x: hidden;
   }
 
   .v-app-bar {

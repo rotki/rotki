@@ -1,101 +1,106 @@
 <template>
-  <div>
-    <v-row class="premium-settings">
-      <v-col>
-        <v-card>
-          <v-card-title>
-            <card-title>{{ $t('premium_settings.title') }}</card-title>
-          </v-card-title>
-          <v-card-subtitle>
-            <i18n tag="div" path="premium_settings.subtitle">
-              <base-external-link
-                :text="$t('premium_settings.rotki_premium')"
-                :href="$interop.premiumURL"
+  <v-row class="premium-settings">
+    <v-col>
+      <card>
+        <template #title>
+          {{ $t('premium_settings.title') }}
+        </template>
+        <template #subtitle>
+          <i18n tag="div" path="premium_settings.subtitle">
+            <base-external-link
+              :text="$t('premium_settings.rotki_premium')"
+              :href="$interop.premiumURL"
+            />
+          </i18n>
+        </template>
+
+        <revealable-input
+          v-model="apiKey"
+          class="premium-settings__fields__api-key"
+          :disabled="premium && !edit"
+          :error-messages="errorMessages"
+          :label="$t('premium_settings.fields.api_key')"
+          @paste="onApiKeyPaste"
+        />
+        <revealable-input
+          v-model="apiSecret"
+          class="premium-settings__fields__api-secret"
+          prepend-icon="mdi-lock"
+          :disabled="premium && !edit"
+          :label="$t('premium_settings.fields.api_secret')"
+          @paste="onApiSecretPaste"
+        />
+        <div v-if="premium" class="premium-settings__premium-active">
+          <v-icon color="success">mdi-check-circle</v-icon>
+          <div>{{ $t('premium_settings.premium_active') }}</div>
+        </div>
+
+        <template #buttons>
+          <v-row align="center">
+            <v-col cols="auto">
+              <v-btn
+                class="premium-settings__button__setup"
+                depressed
+                color="primary"
+                type="submit"
+                @click="setup()"
+              >
+                {{
+                  premium && !edit
+                    ? $t('premium_settings.actions.replace')
+                    : $t('premium_settings.actions.setup')
+                }}
+              </v-btn>
+            </v-col>
+            <v-col v-if="premium && !edit" cols="auto">
+              <v-btn
+                class="premium-settings__button__delete"
+                depressed
+                outlined
+                color="primary"
+                type="submit"
+                @click="confirmDeletePremium = true"
+              >
+                {{ $t('premium_settings.actions.delete') }}
+              </v-btn>
+            </v-col>
+            <v-col v-if="edit && premium" cols="auto">
+              <v-btn
+                id="premium-edit-cancel-button"
+                depressed
+                color="primary"
+                @click="cancelEdit()"
+              >
+                {{ $t('premium_settings.actions.cancel') }}
+              </v-btn>
+            </v-col>
+            <v-col v-if="premium && !edit" cols="auto">
+              <v-switch
+                v-model="sync"
+                class="premium-settings__sync"
+                :label="$t('premium_settings.actions.sync')"
+                @change="onSyncChange()"
               />
-            </i18n>
-          </v-card-subtitle>
-          <v-card-text>
-            <revealable-input
-              v-model="apiKey"
-              class="premium-settings__fields__api-key"
-              :disabled="premium && !edit"
-              :error-messages="errorMessages"
-              :label="$t('premium_settings.fields.api_key')"
-              @paste="onApiKeyPaste"
-            />
-            <revealable-input
-              v-model="apiSecret"
-              class="premium-settings__fields__api-secret"
-              prepend-icon="mdi-lock"
-              :disabled="premium && !edit"
-              :label="$t('premium_settings.fields.api_secret')"
-              @paste="onApiSecretPaste"
-            />
-            <div v-if="premium" class="premium-settings__premium-active">
-              <v-icon color="success">mdi-check-circle</v-icon>
-              <div>{{ $t('premium_settings.premium_active') }}</div>
-            </div>
-          </v-card-text>
-          <v-card-actions>
-            <v-btn
-              class="premium-settings__button__setup"
-              depressed
-              color="primary"
-              type="submit"
-              @click="setup()"
-            >
-              {{
-                premium && !edit
-                  ? $t('premium_settings.actions.replace')
-                  : $t('premium_settings.actions.setup')
-              }}
-            </v-btn>
-            <v-btn
-              v-if="premium && !edit"
-              class="premium-settings__button__delete"
-              depressed
-              outlined
-              color="primary"
-              type="submit"
-              @click="confirmDeletePremium = true"
-            >
-              {{ $t('premium_settings.actions.delete') }}
-            </v-btn>
-            <v-btn
-              v-if="edit && premium"
-              id="premium-edit-cancel-button"
-              depressed
-              color="primary"
-              @click="cancelEdit()"
-            >
-              {{ $t('premium_settings.actions.cancel') }}
-            </v-btn>
-            <v-switch
-              v-if="premium && !edit"
-              v-model="sync"
-              class="premium-settings__sync"
-              :label="$t('premium_settings.actions.sync')"
-              @change="onSyncChange()"
-            />
-          </v-card-actions>
-        </v-card>
-      </v-col>
-      <confirm-dialog
-        :display="confirmDeletePremium"
-        confirm-type="warning"
-        :primary-action="
-          $t('premium_settings.delete_confirmation.actions.delete')
-        "
-        :secondary-action="
-          $t('premium_settings.delete_confirmation.actions.cancel')
-        "
-        :title="$t('premium_settings.delete_confirmation.title')"
-        :message="$t('premium_settings.delete_confirmation.message')"
-        @confirm="remove"
-        @cancel="confirmDeletePremium = false"
-      />
-    </v-row>
-  </div>
+            </v-col>
+          </v-row>
+        </template>
+      </card>
+    </v-col>
+    <confirm-dialog
+      :display="confirmDeletePremium"
+      confirm-type="warning"
+      :primary-action="
+        $t('premium_settings.delete_confirmation.actions.delete')
+      "
+      :secondary-action="
+        $t('premium_settings.delete_confirmation.actions.cancel')
+      "
+      :title="$t('premium_settings.delete_confirmation.title')"
+      :message="$t('premium_settings.delete_confirmation.message')"
+      @confirm="remove"
+      @cancel="confirmDeletePremium = false"
+    />
+  </v-row>
 </template>
 
 <script lang="ts">

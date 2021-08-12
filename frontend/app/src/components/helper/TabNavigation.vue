@@ -5,7 +5,7 @@
     height="36px"
     hide-slider
     active-class="tab-navigation__tabs__tab--active"
-    class="tab-navigation__tabs py-6"
+    class="tab-navigation__tabs py-3"
   >
     <v-tab
       v-for="tab in visibleTabs"
@@ -13,9 +13,9 @@
       :key="tab.name"
       :to="tab.routeTo"
       class="tab-navigation__tabs__tab"
-      :class="getClass(tab.routeTo)"
+      :data-cy="getClass(tab.routeTo)"
     >
-      {{ tab.name }}
+      <div>{{ tab.name }}</div>
     </v-tab>
     <v-tab-item
       v-for="tab of tabContents"
@@ -29,19 +29,22 @@
       class="tab-navigation__tabs__tab-item"
     >
       <keep-alive>
-        <router-view
-          v-if="
-            $route.path.indexOf(tab.routeTo) >= 0 && tab.routeTo === selectedTab
-          "
-          class="padded"
-        />
+        <v-container>
+          <router-view v-if="isRouterVisible($route.path, tab)" />
+        </v-container>
       </keep-alive>
     </v-tab-item>
   </v-tabs>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  toRefs
+} from '@vue/composition-api';
 
 export interface TabContent {
   readonly name: string;
@@ -50,23 +53,34 @@ export interface TabContent {
   readonly hideHeader?: boolean;
 }
 
-@Component({})
-export default class TabNavigation extends Vue {
-  @Prop({ required: true, type: Array })
-  tabContents!: TabContent[];
-  @Prop({ required: false, type: Boolean, default: false })
-  noContentMargin!: boolean;
-
-  selectedTab: string = '';
-
-  get visibleTabs(): TabContent[] {
-    return this.tabContents.filter(t => !t.hidden);
+export default defineComponent({
+  name: 'TabNavigation',
+  props: {
+    tabContents: { required: true, type: Array as PropType<TabContent[]> },
+    noContentMargin: { required: false, type: Boolean, default: false }
+  },
+  setup(props) {
+    const { tabContents } = toRefs(props);
+    const visibleTabs = computed(() => {
+      return tabContents.value.filter(({ hidden }) => !hidden);
+    });
+    const getClass = (route: string) => {
+      return route.toLowerCase().replace('/', '').replace(/\//g, '__');
+    };
+    const selectedTab = ref('');
+    const isRouterVisible = (route: string, tab: TabContent) => {
+      return (
+        route.indexOf(tab.routeTo) >= 0 && tab.routeTo === selectedTab.value
+      );
+    };
+    return {
+      visibleTabs,
+      selectedTab,
+      getClass,
+      isRouterVisible
+    };
   }
-
-  getClass(route: string): string {
-    return route.toLowerCase().replace('/', '').replace(/\//g, '__');
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">
@@ -85,6 +99,11 @@ export default class TabNavigation extends Vue {
     ::v-deep {
       .v-tabs-bar {
         background-color: var(--v-rotki-light-grey-base) !important;
+
+        &__content {
+          padding-left: 12px;
+          padding-right: 12px;
+        }
       }
 
       /* stylelint-disable scss/selector-nest-combinators,selector-class-pattern,selector-nested-pattern, rule-empty-line-before */
@@ -117,7 +136,7 @@ export default class TabNavigation extends Vue {
 
     &__tab-item {
       &--content-margin {
-        margin-top: 50px;
+        margin-top: 36px;
       }
     }
 
@@ -168,9 +187,5 @@ export default class TabNavigation extends Vue {
       }
     }
   }
-}
-
-.padded {
-  padding: 8px;
 }
 </style>

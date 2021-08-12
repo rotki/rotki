@@ -20,5 +20,8 @@ export const Routes = {
   PRICE_MANAGER: '/price-manager',
   DASHBOARD: '/dashboard',
   ROOT: '/',
-  DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP: '/defi/deposits/liquidity/sushiswap'
+  DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP: '/defi/deposits/liquidity/sushiswap',
+  HISTORY_TRANSACTIONS: '/history/transactions',
+  HISTORY_TRADES: '/history/trades',
+  HISTORY_DEPOSITS_WITHDRAWALS: '/history/deposits-withdrawals'
 };

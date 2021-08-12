@@ -1,7 +1,6 @@
 <template>
   <v-container>
     <refresh-header
-      class="mt-8"
       :title="$t('asset_management.title')"
       :loading="loading"
       @refresh="refresh"

@@ -9,14 +9,14 @@
       {{ $t('deposits_withdrawals.title') }}
     </template>
     <template #actions>
-      <v-row no-gutters>
-        <v-col>
+      <v-row>
+        <v-col cols="12" sm="6">
           <ignore-buttons
             :disabled="selected.length === 0 || loading || refreshing"
             @ignore="ignore"
           />
         </v-col>
-        <v-col>
+        <v-col cols="12" sm="6">
           <table-filter
             :matchers="matchers"
             @update:matches="updateFilter($event)"

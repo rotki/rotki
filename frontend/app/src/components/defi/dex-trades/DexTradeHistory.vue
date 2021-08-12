@@ -90,7 +90,7 @@ export default class DexTradeHistory extends Mixins(
   &__modules {
     display: inline-flex;
     position: absolute;
-    right: 65px;
+    right: 102px;
     top: 43px;
   }
 }

@@ -7,7 +7,7 @@
       </template>
     </progress-screen>
     <div v-else>
-      <active-modules :modules="module" class="eth2-page__modules" />
+      <active-modules :modules="module" :class="$style.modules" />
       <eth2-staking
         :refreshing="refreshing"
         :secondary-refreshing="secondaryRefreshing"
@@ -54,13 +54,11 @@ export default class Eth2Page extends Mixins(StatusMixin, ModuleMixin) {
 }
 </script>
 
-<style scoped lang="scss">
-.eth2-page {
-  &__modules {
-    display: inline-flex;
-    position: absolute;
-    right: 65px;
-    top: 35px;
-  }
+<style module lang="scss">
+.modules {
+  display: inline-flex;
+  position: absolute;
+  right: 65px;
+  top: 58px;
 }
 </style>

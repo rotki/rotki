@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <v-row justify="space-between" align="center" no-gutters class="mt-8">
+    <v-row justify="space-between" align="center" no-gutters>
       <v-col>
         <card-title>{{ $t('price_management.title') }}</card-title>
       </v-col>

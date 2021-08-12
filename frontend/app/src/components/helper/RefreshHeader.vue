@@ -26,24 +26,33 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 
-@Component({
-  components: { RefreshButton }
-})
-export default class RefreshHeader extends Vue {
-  @Prop({ required: true, type: String })
-  title!: string;
-
-  @Prop({ required: true, type: Boolean })
-  loading!: boolean;
-
-  get lowercaseTitle(): string {
-    return this.title.toLocaleLowerCase();
+export default defineComponent({
+  name: 'RefreshHeader',
+  components: { RefreshButton },
+  props: {
+    title: { required: true, type: String },
+    loading: { required: true, type: Boolean }
+  },
+  setup(props, { emit }) {
+    const { title } = toRefs(props);
+    const refresh = () => {
+      emit('refresh');
+    };
+    const lowercaseTitle = computed(() => {
+      return title.value.toLocaleLowerCase();
+    });
+    return {
+      refresh,
+      lowercaseTitle
+    };
+  },
+  computed: {
+    xsOnly(): boolean {
+      return this.$vuetify.breakpoint.xsOnly;
+    }
   }
-
-  @Emit()
-  refresh() {}
-}
+});
 </script>

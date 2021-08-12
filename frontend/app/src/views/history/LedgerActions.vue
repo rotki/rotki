@@ -33,77 +33,75 @@
           @ignore="ignoreLedgerActions"
         />
       </template>
-      <v-sheet outlined rounded>
-        <data-table
-          show-expand
-          single-expand
-          sort-by="timestamp"
-          item-key="identifier"
-          :items="ledgerActions.data"
-          :headers="headers"
+      <data-table
+        show-expand
+        single-expand
+        sort-by="timestamp"
+        item-key="identifier"
+        :items="ledgerActions.data"
+        :headers="headers"
+      >
+        <template #header.selection>
+          <v-simple-checkbox
+            :ripple="false"
+            :value="allSelected"
+            color="primary"
+            @input="setSelected($event)"
+          />
+        </template>
+        <template #item.selection="{ item }">
+          <v-simple-checkbox
+            :ripple="false"
+            color="primary"
+            :value="selected.includes(item.identifier)"
+            @input="selectionChanged(item.identifier, $event)"
+          />
+        </template>
+        <template #item.actionType="{ item }">
+          <event-type-display :event-type="item.actionType" />
+        </template>
+        <template #item.timestamp="{ item }">
+          <date-display :timestamp="item.timestamp" />
+        </template>
+        <template #item.location="{ item }">
+          <location-display :identifier="item.location" />
+        </template>
+        <template #item.asset="{ item }">
+          <asset-details opens-details :asset="item.asset" />
+        </template>
+        <template #item.amount="{ item }">
+          <amount-display :value="item.amount" />
+        </template>
+        <template #item.ignoredInAccounting="{ item }">
+          <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
+        </template>
+        <template #item.actions="{ item }">
+          <row-actions
+            :disabled="refreshing"
+            :edit-tooltip="$t('ledger_actions.edit_tooltip')"
+            :delete-tooltip="$t('ledger_actions.delete_tooltip')"
+            @edit-click="showForm(item)"
+            @delete-click="deleteIdentifier = item.identifier"
+          />
+        </template>
+        <template
+          v-if="
+            ledgerActions.limit <= ledgerActions.found &&
+            ledgerActions.limit > 0
+          "
+          #body.append="{ headers }"
         >
-          <template #header.selection>
-            <v-simple-checkbox
-              :ripple="false"
-              :value="allSelected"
-              color="primary"
-              @input="setSelected($event)"
-            />
-          </template>
-          <template #item.selection="{ item }">
-            <v-simple-checkbox
-              :ripple="false"
-              color="primary"
-              :value="selected.includes(item.identifier)"
-              @input="selectionChanged(item.identifier, $event)"
-            />
-          </template>
-          <template #item.actionType="{ item }">
-            <event-type-display :event-type="item.actionType" />
-          </template>
-          <template #item.timestamp="{ item }">
-            <date-display :timestamp="item.timestamp" />
-          </template>
-          <template #item.location="{ item }">
-            <location-display :identifier="item.location" />
-          </template>
-          <template #item.asset="{ item }">
-            <asset-details opens-details :asset="item.asset" />
-          </template>
-          <template #item.amount="{ item }">
-            <amount-display :value="item.amount" />
-          </template>
-          <template #item.ignoredInAccounting="{ item }">
-            <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
-          </template>
-          <template #item.actions="{ item }">
-            <row-actions
-              :disabled="refreshing"
-              :edit-tooltip="$t('ledger_actions.edit_tooltip')"
-              :delete-tooltip="$t('ledger_actions.delete_tooltip')"
-              @edit-click="showForm(item)"
-              @delete-click="deleteIdentifier = item.identifier"
-            />
-          </template>
-          <template
-            v-if="
-              ledgerActions.limit <= ledgerActions.found &&
-              ledgerActions.limit > 0
-            "
-            #body.append="{ headers }"
-          >
-            <upgrade-row
-              :limit="ledgerActions.limit"
-              :total="ledgerActions.found"
-              :colspan="headers.length"
-              :label="$t('ledger_actions.label')"
-            />
-          </template>
-          <template #expanded-item="{ headers, item }">
-            <ledger-action-details :span="headers.length" :item="item" />
-          </template>
-        </data-table>
-      </v-sheet>
+          <upgrade-row
+            :limit="ledgerActions.limit"
+            :total="ledgerActions.found"
+            :colspan="headers.length"
+            :label="$t('ledger_actions.label')"
+          />
+        </template>
+        <template #expanded-item="{ headers, item }">
+          <ledger-action-details :span="headers.length" :item="item" />
+        </template>
+      </data-table>
     </card>
     <big-dialog
       :display="openDialog"

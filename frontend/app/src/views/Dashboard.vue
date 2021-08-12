@@ -1,12 +1,11 @@
 <template>
   <v-container>
-    <base-page-header :text="$t('dashboard.title')" />
     <v-row>
       <v-col cols="12">
         <overall-balances />
       </v-col>
     </v-row>
-    <v-row class="mr-1" justify="center">
+    <v-row justify="center">
       <v-col cols="12" md="4" lg="4">
         <summary-card
           :name="$t('dashboard.exchange_balances.title')"
@@ -125,7 +124,6 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
-import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import BlockchainBalanceCardList from '@/components/dashboard/BlockchainBalanceCardList.vue';
 import DashboardAssetTable from '@/components/dashboard/DashboardAssetTable.vue';
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
@@ -147,7 +145,6 @@ import { ExchangeInfo } from '@/typing/types';
   components: {
     PriceRefresh,
     DashboardAssetTable,
-    BasePageHeader,
     OverallBalances,
     SummaryCard,
     ExchangeBox,
