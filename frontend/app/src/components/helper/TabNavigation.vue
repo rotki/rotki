@@ -13,7 +13,7 @@
       :key="tab.name"
       :to="tab.routeTo"
       class="tab-navigation__tabs__tab"
-      :data-cy="getClass(tab.routeTo)"
+      :class="getClass(tab.routeTo)"
     >
       <div>{{ tab.name }}</div>
     </v-tab>

@@ -4,7 +4,7 @@ export class UserSecuritySettingsPage {
     cy.get('[data-cy=user-dropdown]').should('be.visible');
     cy.get('.user-dropdown__settings').click();
     cy.get('[data-cy=user-dropdown]').should('not.be.visible');
-    cy.get('a.settings__data-security').click();
+    cy.get('a.settings__data-security').click({ force: true });
   }
 
   changePassword(currentPassword: string, newPassword: string) {

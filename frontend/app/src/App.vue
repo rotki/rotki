@@ -353,8 +353,16 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
   }
 
   .v-main {
-    overflow-y: scroll;
-    overflow-x: hidden;
+    height: 100vh;
+
+    &__wrap {
+      overflow-y: scroll;
+      overflow-x: hidden;
+
+      @extend .themed-scrollbar;
+    }
+
+    @extend .themed-scrollbar;
   }
 
   .v-app-bar {

@@ -34,16 +34,20 @@ describe('Accounts', () => {
     app.logout();
   });
 
+  function goToManualBalances() {
+    cy.get('.accounts-balances__manual-balances').click({
+      force: true
+    });
+  }
+
   describe('manual balances', () => {
     let manualBalances: FixtureManualBalance[];
     before(() => {
       cy.fixture('manual-balances').then(balances => {
         manualBalances = balances;
       });
-      cy.get('[data-cy=accounts-balances__manual-balances]').should(
-        'be.visible'
-      );
-      cy.get('[data-cy=accounts-balances__manual-balances]').click();
+      cy.get('.accounts-balances__manual-balances').should('be.visible');
+      goToManualBalances();
     });
 
     it('add first entry', () => {
@@ -100,35 +104,35 @@ describe('Accounts', () => {
     });
 
     it('test privacy mode is off', () => {
-      cy.get('.accounts-balances__manual-balances').click();
+      goToManualBalances();
       page.amountDisplayIsNotBlurred();
     });
 
     it('test privacy mode is on', () => {
-      cy.get('.accounts-balances__manual-balances').click();
+      goToManualBalances();
       app.togglePrivacyMode();
       page.amountDisplayIsBlurred();
       app.togglePrivacyMode();
     });
 
     it('test scramble mode', () => {
-      cy.get('.accounts-balances__manual-balances').click();
+      goToManualBalances();
       page.balanceShouldMatch(manualBalances);
 
       settings.visit();
       settings.toggleScrambleData();
       page.visit();
-      cy.get('.accounts-balances__manual-balances').click();
+      goToManualBalances();
       page.balanceShouldNotMatch(manualBalances);
 
       settings.visit();
       settings.toggleScrambleData();
       page.visit();
-      cy.get('.accounts-balances__manual-balances').click();
+      goToManualBalances();
     });
 
     it('edit', () => {
-      cy.get('.accounts-balances__manual-balances').click();
+      goToManualBalances();
       page.editBalance(1, '200');
       page.visibleEntries(3);
       page.isVisible(1, {
@@ -138,7 +142,7 @@ describe('Accounts', () => {
     });
 
     it('edit and add new', function () {
-      cy.get('.accounts-balances__manual-balances').click();
+      goToManualBalances();
       page.editBalance(1, '300');
       page.visibleEntries(3);
       page.isVisible(1, {
@@ -155,7 +159,7 @@ describe('Accounts', () => {
     });
 
     it('delete', () => {
-      cy.get('.accounts-balances__manual-balances').click();
+      goToManualBalances();
       page.deleteBalance(1);
       page.confirmDelete();
       page.visibleEntries(3);
