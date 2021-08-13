@@ -4,6 +4,7 @@
     fixed-tabs
     height="36px"
     hide-slider
+    :show-arrows="xsOnly"
     active-class="tab-navigation__tabs__tab--active"
     class="tab-navigation__tabs py-3"
   >
@@ -79,6 +80,11 @@ export default defineComponent({
       getClass,
       isRouterVisible
     };
+  },
+  computed: {
+    xsOnly(): boolean {
+      return this.$vuetify.breakpoint.xsOnly;
+    }
   }
 });
 </script>
@@ -121,16 +127,6 @@ export default defineComponent({
 
       .v-tabs-items {
         background-color: transparent !important;
-      }
-
-      .v-slide-group {
-        &__prev {
-          display: none !important;
-        }
-
-        &__next {
-          display: none !important;
-        }
       }
     }
 
