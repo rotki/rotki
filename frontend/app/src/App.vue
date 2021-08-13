@@ -44,7 +44,7 @@
           class="secondary--text text--lighten-2"
           @click="toggleDrawer()"
         />
-        <node-status-indicator v />
+        <node-status-indicator v-if="!xsOnly" />
         <balance-saved-indicator />
         <back-button :can-navigate-back="canNavigateBack" />
         <v-spacer />
@@ -56,10 +56,14 @@
           class="app__app-bar__button"
           @click="notifications = !notifications"
         />
-        <progress-indicator class="app__app-bar__button" />
+        <progress-indicator v-if="!xsOnly" class="app__app-bar__button" />
         <currency-drop-down class="red--text app__app-bar__button" />
         <user-dropdown class="app__app-bar__button" />
-        <help-indicator :visible="help" @visible:update="help = $event" />
+        <help-indicator
+          v-if="!xsOnly"
+          :visible="help"
+          @visible:update="help = $event"
+        />
       </v-app-bar>
       <notification-sidebar
         :visible="notifications"

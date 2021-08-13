@@ -5,6 +5,7 @@
       transition="slide-y-transition"
       offset-y
       bottom
+      :max-width="xsOnly ? '97%' : null"
       z-index="215"
     >
       <template #activator="{ on }">
@@ -13,7 +14,16 @@
           class-name="secondary--text text--lighten-2"
           :on-menu="on"
         >
-          <v-icon> mdi-content-save </v-icon>
+          <v-badge v-if="xsOnly" color="transparent" bottom overlap>
+            <template #badge>
+              <v-icon v-if="nodeConnection" color="primary" x-small>
+                mdi-link
+              </v-icon>
+              <v-icon v-else color="primary" x-small>mdi-link-off</v-icon>
+            </template>
+            <v-icon> mdi-content-save </v-icon>
+          </v-badge>
+          <v-icon v-else> mdi-content-save </v-icon>
         </menu-tooltip-button>
       </template>
       <div :style="backgroundStyle">
@@ -86,6 +96,7 @@
             </v-col>
           </v-row>
         </div>
+        <node-status :connected="nodeConnection" />
       </div>
     </v-menu>
     <confirm-dialog
@@ -122,6 +133,7 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import Fragment from '@/components/helper/Fragment';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import NodeStatus from '@/components/status/NodeStatus.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 import ThemeMixin from '@/mixins/theme-mixin';
@@ -130,6 +142,7 @@ import { AllBalancePayload } from '@/store/balances/types';
 
 @Component({
   components: {
+    NodeStatus,
     Fragment,
     ConfirmDialog,
     SyncButtons,
@@ -137,7 +150,11 @@ import { AllBalancePayload } from '@/store/balances/types';
     MenuTooltipButton
   },
   computed: {
-    ...mapState('session', ['lastBalanceSave', 'lastDataUpload'])
+    ...mapState('session', [
+      'lastBalanceSave',
+      'lastDataUpload',
+      'nodeConnection'
+    ])
   },
   methods: {
     ...mapActions('balances', ['fetchBalances']),
@@ -153,6 +170,10 @@ export default class SyncIndicator extends Mixins(PremiumMixin, ThemeMixin) {
   forceSync!: (action: SyncAction) => Promise<void>;
   fetchBalances!: (payload: AllBalancePayload) => Promise<void>;
   displayConfirmation: boolean = false;
+
+  get xsOnly(): boolean {
+    return this.$vuetify.breakpoint.xsOnly;
+  }
 
   get isDownload(): boolean {
     return this.syncAction === SYNC_DOWNLOAD;
