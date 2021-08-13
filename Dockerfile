@@ -3,6 +3,7 @@ FROM node:lts-alpine as frontend-build-stage
 
 WORKDIR /app
 COPY frontend/ .
+RUN apk add python3 make g++
 RUN npm install -g npm@7 && if ! npm ci --exit-code; then npm ci; fi
 RUN npm run docker:build
 
@@ -23,8 +24,16 @@ RUN git clone https://github.com/sqlcipher/sqlcipher && \
     make install && \
     ldconfig
 
+RUN python3 -m pip install --upgrade pip
 COPY ./requirements.txt /app/requirements.txt
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN rustup default nightly-2021-03-24 
+
 WORKDIR /app
+
+RUN pip install maturin==0.11.2 py-sr25519-bindings==0.1.2 wheel
 RUN pip install -r requirements.txt
 
 COPY . /app
