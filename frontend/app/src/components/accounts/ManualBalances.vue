@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <div>
     <v-card class="manual-balances mt-8">
       <v-card-title>
         <refresh-button
@@ -41,7 +41,7 @@
         <manual-balances-list :loading="loading" @editBalance="edit($event)" />
       </v-card-text>
     </v-card>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

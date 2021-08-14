@@ -2,7 +2,7 @@
   <progress-screen v-if="loading">
     <template #message>{{ $t('lending.loading') }}</template>
   </progress-screen>
-  <v-container v-else>
+  <div v-else>
     <v-row no-gutters align="center">
       <v-col>
         <refresh-header
@@ -173,7 +173,7 @@
         />
       </v-col>
     </v-row>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

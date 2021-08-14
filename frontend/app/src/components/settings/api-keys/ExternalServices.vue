@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <div>
     <v-card>
       <v-card-title>
         <card-title>{{ $t('external_services.title') }}</card-title>
@@ -125,7 +125,7 @@
       @confirm="confirmDelete"
       @cancel="serviceToDelete = ''"
     />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

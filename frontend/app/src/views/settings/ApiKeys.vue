@@ -1,49 +1,36 @@
 <template>
-  <v-container class="api-keys">
-    <base-page-header :text="$t('api_keys.title')" />
-    <v-row>
-      <v-col>
-        <tab-navigation :tab-contents="apiKeysTabs" />
-      </v-col>
-    </v-row>
-  </v-container>
+  <tab-navigation class="api-keys" :tab-contents="tabs" />
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import BasePageHeader from '@/components/base/BasePageHeader.vue';
+import { defineComponent } from '@vue/composition-api';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
+import i18n from '@/i18n';
 
-@Component({
+const tabs: TabContent[] = [
+  {
+    name: i18n.t('api_keys.tabs.premium').toString(),
+    routeTo: '/settings/api-keys/rotki-premium'
+  },
+  {
+    name: i18n.t('api_keys.tabs.exchanges').toString(),
+    routeTo: '/settings/api-keys/exchanges'
+  },
+  {
+    name: i18n.t('api_keys.tabs.external_services').toString(),
+    routeTo: '/settings/api-keys/external-services'
+  }
+];
+
+export default defineComponent({
+  name: 'ApiKeys',
   components: {
-    BasePageHeader,
     TabNavigation
+  },
+  setup() {
+    return { tabs };
   }
-})
-export default class ApiKeys extends Vue {
-  readonly apiKeysTabs: TabContent[] = [
-    {
-      name: this.$tc('api_keys.tabs.premium'),
-      routeTo: '/settings/api-keys/rotki-premium'
-    },
-    {
-      name: this.$tc('api_keys.tabs.exchanges'),
-      routeTo: '/settings/api-keys/exchanges'
-    },
-    {
-      name: this.$tc('api_keys.tabs.external_services'),
-      routeTo: '/settings/api-keys/external-services'
-    }
-  ];
-}
+});
 </script>
-
-<style scoped lang="scss">
-.api-keys {
-  * {
-    margin-bottom: 16px;
-  }
-}
-</style>

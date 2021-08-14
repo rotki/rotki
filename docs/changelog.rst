@@ -4,6 +4,9 @@ Changelog
 
 * :feature:`2847` Users will now be able to use a combination of filters in the search for trades and deposits/withdrawals.
 * :feature:`3254` Users can now add a custom Covalent API key in rotki.
+* :bug:`3266` Users will now be able to properly access most of the top bar content using a mobile device.
+* :bug:`3268` Users will now be able to properly scroll to the hidden tabs when using a mobile device.
+* :bug:`3267` Frontend will now occupy all the available screen when accessed from a mobile device.
 
 * :release:`1.20.0 <2021-08-06>`
 * :feature:`2426` Sushiswap is now supported. Premium users can see their LP balances, swaps history and LP pool join/exits. Finally the balancer trades are now taken into account in the profit/loss report.

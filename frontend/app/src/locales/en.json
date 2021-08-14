@@ -1411,7 +1411,6 @@
     }
   },
   "history": {
-    "header": "History",
     "tabs": {
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
@@ -2365,8 +2364,6 @@
     "symbol": "%"
   },
   "decentralized_finance": {
-    "title": "Decentralized Finance",
-    "settings_tooltip": "Opens the Module settings",
     "tabs": {
       "overview": "Overview",
       "deposits": "Deposits",
@@ -2565,11 +2562,9 @@
       "data_security": "Data & Security",
       "modules": "Modules",
       "general": "General"
-    },
-    "title": "Settings"
+    }
   },
   "statistics": {
-    "title": "Statistics",
     "no_premium": "@:common.no_premium Statistics are @:common.available_to_premium",
     "get_premium": "@:common.visit_website"
   },
@@ -2581,7 +2576,6 @@
       "title": "Profit and Loss Report Generation"
     },
     "settings_tooltip": "Open the accounting settings",
-    "title": "Profit and Loss Report",
     "export_csv": "Export CSV",
     "loading_message": "Please wait while your report is generated...",
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
@@ -2638,7 +2632,6 @@
     "notice_link": "open an issue with rotki"
   },
   "dashboard": {
-    "title": "Dashboard",
     "exchange_balances": {
       "tooltip": "Aggregate value of all balances in each configured exchange.",
       "add": "Add an exchange",
@@ -2674,11 +2667,7 @@
       "price": "Price in {symbol}"
     }
   },
-  "accounts_balances": {
-    "title": "Accounts & Balances"
-  },
   "api_keys": {
-    "title": "API Keys",
     "tabs": {
       "premium": "rotki Premium",
       "exchanges": "Exchanges",

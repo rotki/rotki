@@ -6,14 +6,14 @@
       {{ $t('sushiswap.loading') }}
     </template>
   </progress-screen>
-  <v-container v-else>
+  <div v-else>
     <active-modules :modules="modules" :class="$style.modules" />
     <sushi
       class="mt-4"
       :refreshing="anyRefreshing"
       :secondary-loading="secondaryRefreshing"
     />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

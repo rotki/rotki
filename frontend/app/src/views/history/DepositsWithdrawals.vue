@@ -5,7 +5,7 @@
     </template>
     {{ $t('deposits_withdrawals.loading_subtitle') }}
   </progress-screen>
-  <v-container v-else>
+  <div v-else>
     <deposits-withdrawals-content
       :items="assetMovements"
       :total="assetMovementsTotal"
@@ -14,7 +14,7 @@
       :loading="loading"
       @refresh="refresh"
     />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

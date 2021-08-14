@@ -6,10 +6,10 @@
       {{ $t('balancer.loading') }}
     </template>
   </progress-screen>
-  <v-container v-else>
+  <div v-else>
     <active-modules :modules="modules" :class="$style.modules" />
     <balancer-balances class="mt-4" :refreshing="anyRefreshing" />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

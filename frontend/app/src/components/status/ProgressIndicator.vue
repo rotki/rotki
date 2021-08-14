@@ -19,7 +19,7 @@
           <v-icon v-else> mdi-check-circle </v-icon>
         </menu-tooltip-button>
       </template>
-      <v-container class="progress-indicator__container">
+      <div class="progress-indicator__container">
         <v-row class="progress-indicator__details" :style="backgroundStyle">
           <v-col v-if="tasks.length > 0">
             <v-list two-line>
@@ -57,7 +57,7 @@
             />
           </v-col>
         </v-row>
-      </v-container>
+      </div>
     </v-menu>
   </div>
 </template>

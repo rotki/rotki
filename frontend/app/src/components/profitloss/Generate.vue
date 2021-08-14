@@ -1,13 +1,28 @@
 <template>
   <v-form v-model="valid">
-    <v-card>
-      <v-card-title>
-        <card-title>{{ $t('generate.title') }}</card-title>
-      </v-card-title>
-      <v-card-text>
-        <range-selector v-model="range" />
-      </v-card-text>
-      <v-card-actions>
+    <card>
+      <template #title>
+        {{ $t('generate.title') }}
+      </template>
+      <template #details>
+        <v-tooltip top>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              text
+              fab
+              depressed
+              v-bind="attrs"
+              to="/settings/accounting"
+              v-on="on"
+            >
+              <v-icon color="primary">mdi-cog</v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('profit_loss_report.settings_tooltip') }}</span>
+        </v-tooltip>
+      </template>
+      <range-selector v-model="range" />
+      <template #buttons>
         <v-btn
           color="primary"
           depressed
@@ -15,8 +30,8 @@
           @click="generate()"
           v-text="$t('generate.generate')"
         />
-      </v-card-actions>
-    </v-card>
+      </template>
+    </card>
   </v-form>
 </template>
 
@@ -51,5 +66,3 @@ export default class Generate extends Vue {
   }
 }
 </script>
-
-<style scoped></style>

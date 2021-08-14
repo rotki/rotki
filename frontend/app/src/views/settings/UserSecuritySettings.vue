@@ -1,10 +1,10 @@
 <template>
-  <v-container class="user-security-settings">
+  <div class="user-security-settings">
     <change-password />
     <asset-update />
     <data-management class="mt-8" />
     <oracle-cache-management class="mt-8" />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

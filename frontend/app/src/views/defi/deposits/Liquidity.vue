@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <div>
     <div
       class="d-flex flex-row align-center justify-center liquidity__navigation"
     >
@@ -23,12 +23,12 @@
         </v-btn>
       </v-btn-toggle>
     </div>
-    <v-container>
+    <div>
       <keep-alive>
         <router-view />
       </keep-alive>
-    </v-container>
-  </v-container>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
