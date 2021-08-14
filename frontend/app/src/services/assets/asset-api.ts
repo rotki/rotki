@@ -12,12 +12,7 @@ import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import {
-  ActionResult,
-  PendingTask,
-  SupportedAssets
-} from '@/services/types-api';
-import { SupportedAsset } from '@/services/types-model';
+import { PendingTask, SupportedAssets } from '@/services/types-api';
 import {
   handleResponse,
   validStatus,
@@ -246,7 +241,6 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-<<<<<<< HEAD
   historicalPrices(
     payload?: Partial<HistoricalPricePayload>
   ): Promise<HistoricalPrice[]> {
@@ -290,13 +284,15 @@ export class AssetApi {
       .delete<ActionResult<boolean>>('/assets/prices/historical', {
         data: axiosSnakeCaseTransformer(payload),
         validateStatus: validWithoutSessionStatus
-=======
+      })
+      .then(handleResponse);
+  }
+
   restoreAssetsDatabase(): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>('/assets/updates', {
         validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
->>>>>>> 2b16dba6 (Add frontend code)
+        transformResponse: this.baseTransformer
       })
       .then(handleResponse);
   }

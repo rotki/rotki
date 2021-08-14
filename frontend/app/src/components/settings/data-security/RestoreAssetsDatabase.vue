@@ -32,13 +32,13 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Fragment from '@/components/helper/Fragment';
+import BackendMixin from '@/mixins/backend-mixin';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { currentLogLevel } from '@/utils/log-level';
 
 @Component({
   components: {
@@ -49,7 +49,7 @@ import { currentLogLevel } from '@/utils/log-level';
     ...mapActions('session', ['logout'])
   }
 })
-export default class RestoreAssetsDatabase extends Vue {
+export default class RestoreAssetsDatabase extends Mixins(BackendMixin) {
   confirmRestore: boolean = false;
   done: boolean = false;
   logout!: () => Promise<void>;
@@ -67,16 +67,18 @@ export default class RestoreAssetsDatabase extends Vue {
       }
     } catch (e) {
       const title = this.$t('asset_update.restore.title').toString();
-      const message = this.$t('asset_update.restore.restore_error').toString();
+      const message = e.toString();
       notify(message, title, Severity.ERROR, true);
     }
   }
 
   async updateComplete() {
     await this.logout();
+    this.$store.commit('setConnected', false);
     if (this.$interop.isPackaged) {
-      await this.$interop.restartBackend(currentLogLevel());
+      await this.restartBackend();
     }
+    await this.$store.dispatch('connect');
   }
 }
 </script>

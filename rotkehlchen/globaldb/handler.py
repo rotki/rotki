@@ -21,6 +21,28 @@ from .schema import DB_SCRIPT_CREATE_TABLES
 log = logging.getLogger(__name__)
 
 GLOBAL_DB_VERSION = 2
+TABLES_WITH_ASSETS = (
+    ('aave_events', 'asset1'),
+    ('aave_events', 'asset2'),
+    ('yearn_vaults_events', 'from_asset'),
+    ('yearn_vaults_events', 'to_asset'),
+    ('manually_tracked_balances', 'asset'),
+    ('trades', 'base_asset'),
+    ('trades', 'quote_asset'),
+    ('trades', 'fee_currency'),
+    ('margin_positions', 'pl_currency'),
+    ('margin_positions', 'fee_currency'),
+    ('asset_movements', 'asset'),
+    ('asset_movements', 'fee_asset'),
+    ('ledger_actions', 'asset'),
+    ('ledger_actions', 'rate_asset'),
+    ('amm_swaps', 'token0_identifier'),
+    ('amm_swaps', 'token1_identifier'),
+    ('uniswap_events', 'token0_identifier'),
+    ('uniswap_events', 'token1_identifier'),
+    ('adex_events', 'token'),
+    ('balancer_events', 'pool_address_token'),
+)
 
 
 def _get_setting_value(cursor: sqlite3.Cursor, name: str, default_value: int) -> int:
@@ -1203,6 +1225,86 @@ class GlobalDBHandler():
              'to_timestamp': entry[3],
              } for entry in query]
 
+    @staticmethod
+    def rebuild_assets_list(user_db_conn: sqlite3.Connection) -> Tuple[bool, str]:
+        """
+        Delete all custom asset entries and repopulate from the last
+        builtin version
+        """
+        root_dir = Path(__file__).resolve().parent.parent
+        builtin_database = root_dir / 'data' / 'global.db'
+        detach_database = 'DETACH DATABASE "clean_db";'
+
+        connection = GlobalDBHandler()._conn
+        cursor = connection.cursor()
+        user_db_cursor = user_db_conn.cursor()
+
+        try:
+            # First chech that the operation can be made. For this create a set with the
+            # identifiers on the user db and the db packaged and make a difference. If the
+            # difference is not the empty set the operation is dangerous and the user should
+            # be notified.
+            query = cursor.execute('SELECT identifier from assets;')
+            user_ids = set(query.fetchall())
+            # Atach the clean db packaged with rotki
+            cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
+            # Get built in identifiers
+            query = cursor.execute('SELECT identifier from clean_db.assets;')
+            shipped_ids = set(query.fetchall())
+            diff_ids = user_ids - shipped_ids
+            if len(diff_ids) != 0:
+                # If we have non common elements we have to see if this assets are used anywhere
+                # in the database tables
+                diffs = ', '.join([f'"{id[0]}"' for id in diff_ids])
+                for table, column in TABLES_WITH_ASSETS:
+                    diffs_query = f'SELECT COUNT(*) FROM {table} where {column} in ({diffs})'
+                    user_db_cursor.execute(diffs_query)
+                    amount = user_db_cursor.fetchone()
+                    if amount[0] != 0:
+                        cursor.execute(detach_database)
+                        log.error(
+                            f'Assets inserted by the user are used in the database '
+                            f'tables {diff_ids}',
+                        )
+                        return False, 'There are assets that can not be deleted'
+            # Check that versions match
+            query = cursor.execute('SELECT value from clean_db.settings WHERE name=="version";')
+            version = query.fetchone()
+            if int(version[0]) != _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION):
+                cursor.execute(detach_database)
+                msg = 'Failed to restore assets. Database is not updated to the latest version'
+                return False, msg
+            # If versions match drop tables
+            cursor.execute('PRAGMA foreign_keys = OFF;')
+            cursor.execute('DELETE FROM assets;')
+            cursor.execute('DELETE FROM ethereum_tokens;')
+            cursor.execute('DELETE FROM underlying_tokens_list;')
+            cursor.execute('DELETE FROM common_asset_details;')
+            cursor.execute('PRAGMA foreign_keys = ON;')
+            user_db_cursor.execute('PRAGMA foreign_keys = OFF;')
+            user_db_cursor.execute('DELETE FROM assets;')
+            user_db_cursor.execute('PRAGMA foreign_keys = ON;')
+            # Copy assets
+            cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
+            cursor.execute('INSERT INTO ethereum_tokens SELECT * FROM clean_db.ethereum_tokens;')
+            cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
+            cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
+            # Get ids for assets to insert them in the user db
+            cursor.execute('SELECT identifier from assets')
+            ids = cursor.fetchall()
+            ids_proccesed = ", ".join([f'("{id[0]}")' for id in ids])
+            user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')
+        except sqlite3.Error as e:
+            connection.rollback()
+            cursor.execute(detach_database)
+            log.error(f'Failed to restore assets in globaldb due to {str(e)}')
+            return False, 'Failed to restore assets. Read logs to get more information.'
+
+        connection.commit()
+        cursor.execute(detach_database)
+
+        return True, ''
+
 
 def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
     """Reloads the details of the constant declared assets after reading from the DB"""
@@ -1257,49 +1359,3 @@ def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
             object.__setattr__(entry, 'swapped_for', swapped_for)
             object.__setattr__(entry, 'cryptocompare', db_entry.cryptocompare)
             object.__setattr__(entry, 'coingecko', db_entry.coingecko)
-
-    @staticmethod
-    def rebuild_assets_list() -> Tuple[bool, str]:
-        """
-        Delete all custom asset entries and repopulate from the last
-        builtin version
-        """
-        root_dir = Path(__file__).resolve().parent.parent
-        builtin_database = root_dir / 'data' / 'global.db'
-        detach_database = 'DETACH DATABASE "clean_db";'
-
-        connection = GlobalDBHandler()._conn
-        cursor = connection.cursor()
-
-        try:
-            # Atach the clean db packaged with rotki
-            cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
-            # Check that versions match
-            query = cursor.execute('SELECT value from clean_db.settings WHERE name=="version";')
-            version = query.fetchone()
-            if int(version[0]) != _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION):
-                cursor.execute(detach_database)
-                msg = 'Failed to restore assets. Database is not updated to the latest version'
-                return False, msg
-            # If versions match drop tables
-            cursor.execute('PRAGMA foreign_keys = OFF;')
-            cursor.execute('DELETE FROM assets;')
-            cursor.execute('DELETE FROM ethereum_tokens;')
-            cursor.execute('DELETE FROM underlying_tokens_list;')
-            cursor.execute('DELETE FROM common_asset_details;')
-            cursor.execute('PRAGMA foreign_keys = ON;')
-            # Copy assets
-            cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
-            cursor.execute('INSERT INTO ethereum_tokens SELECT * FROM clean_db.ethereum_tokens;')
-            cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
-            cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
-        except sqlite3.Error as e:
-            connection.rollback()
-            cursor.execute(detach_database)
-            log.error(f'Failed to restore assets in globaldb due to {str(e)}')
-            return False, 'Failed to restore assets. Read logs to get more information.'
-
-        connection.commit()
-        cursor.execute(detach_database)
-
-        return True, ''

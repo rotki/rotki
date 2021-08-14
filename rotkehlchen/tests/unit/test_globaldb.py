@@ -5,23 +5,22 @@ from shutil import copyfile
 import pytest
 import sqlite3
 
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetData, AssetType
-from rotkehlchen.chain.ethereum.typing import (
-    CustomEthereumToken,
-    string_to_ethereum_address,
-    UnderlyingToken,
-)
+from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_BAT
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError
-from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
+from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import INITIAL_TOKENS
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import Location, Price, Timestamp, TradeType
 
 selfkey_address = string_to_ethereum_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7')
 selfkey_id = ethaddress_to_identifier(selfkey_address)
@@ -437,7 +436,8 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     # Now the pragma should be off
     assert cursor.fetchone()[0] == 0
 
-def test_global_db_restore(globaldb):
+
+def test_global_db_restore(globaldb, database):
     """
     Check that the user can recreate assets information from the packaged
     database with rotki. The test adds a new asset, restores the database
@@ -446,7 +446,7 @@ def test_global_db_restore(globaldb):
     """
     # Add a custom eth token
     address_to_delete = make_ethereum_address()
-    token_to_delete = CustomEthereumToken(
+    token_to_delete = EthereumToken.initialize(
         address=address_to_delete,
         decimals=18,
         name='willdell',
@@ -459,7 +459,7 @@ def test_global_db_restore(globaldb):
     )
     # Add a token with underlaying token
     with_underlying_address = make_ethereum_address()
-    with_underlying = CustomEthereumToken(
+    with_underlying = EthereumToken.initialize(
         address=with_underlying_address,
         decimals=18,
         name="Not a scam",
@@ -486,7 +486,46 @@ def test_global_db_restore(globaldb):
         },
     )
 
-    status, _ = globaldb.rebuild_assets_list()
+    # Add asset that is not a token
+    globaldb.add_asset(
+        asset_id='2',
+        asset_type=AssetType.OWN_CHAIN,
+        data={
+            'name': 'Lolcoin2',
+            'symbol': 'LOLZ2',
+            'started': 0,
+        },
+    )
+
+    database.add_asset_identifiers('1')
+    database.add_asset_identifiers('2')
+
+    # Try to do it if we have trades
+    buy_asset = symbol_to_asset_or_token('LOLZ2')
+    buy_amount = deserialize_asset_amount(1)
+    sold_asset = symbol_to_asset_or_token('LOLZ')
+    sold_amount = deserialize_asset_amount(2)
+    rate = Price(buy_amount / sold_amount)
+    trade = Trade(
+        timestamp=Timestamp(12312312),
+        location=Location.BLOCKFI,
+        base_asset=buy_asset,
+        quote_asset=sold_asset,
+        trade_type=TradeType.BUY,
+        amount=buy_amount,
+        rate=rate,
+        fee=None,
+        fee_currency=None,
+        link='',
+        notes="",
+    )
+
+    database.add_trades([trade])
+    status, _ = GlobalDBHandler().rebuild_assets_list(database.conn)
+    assert status is False
+    # Now do it without the trade
+    database.delete_trade(trade.identifier)
+    status, _ = GlobalDBHandler().rebuild_assets_list(database.conn)
     assert status
     cursor = globaldb._conn.cursor()
     # Check that the ethereum token was deleted
@@ -510,6 +549,12 @@ def test_global_db_restore(globaldb):
     query = 'SELECT COUNT(*) FROM assets where identifier == "1";'
     r = cursor.execute(query)
     assert r.fetchone() == (0,)
+    # Check that the user database is correctly updated
+    query = 'SELECT identifier from assets'
+    r = cursor.execute(query)
+    user_db_cursor = database.conn.cursor()
+    user_db_cursor.execute(query)
+    assert r.fetchall() == user_db_cursor.fetchall()
 
     # Check that the number of assets is the expected
     root_dir = Path(__file__).resolve().parent.parent.parent
