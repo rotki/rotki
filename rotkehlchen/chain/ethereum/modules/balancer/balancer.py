@@ -11,6 +11,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
 from rotkehlchen.assets.utils import add_ethereum_token_to_db
 from rotkehlchen.chain.ethereum.graph import (
+    SUBGRAPH_REMOTE_ERROR_MSG,
     GRAPH_QUERY_LIMIT,
     GRAPH_QUERY_SKIP_LIMIT,
     Graph,
@@ -69,7 +70,6 @@ from .typing import (
     TokenToPrices,
 )
 from .utils import (
-    SUBGRAPH_REMOTE_ERROR_MSG,
     UNISWAP_REMOTE_ERROR_MSG,
     deserialize_bpt_event,
     deserialize_invest_event,
@@ -113,7 +113,9 @@ class Balancer(EthereumModule):
                 'https://api.thegraph.com/subgraphs/name/yurycooliq/balancer',
             )
         except RemoteError as e:
-            self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+            self.msg_aggregator.add_error(
+                SUBGRAPH_REMOTE_ERROR_MSG.format(protcol="Balancer", error_msg=str(e)),
+            )
             raise ModuleInitializationFailure('subgraph remote error') from e
 
         try:
@@ -244,7 +246,9 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protcol="Balancer", error_msg=str(e)),
+                )
                 raise
 
             try:
@@ -410,7 +414,9 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protcol="Balancer", error_msg=str(e)),
+                )
                 raise
 
             try:
@@ -595,7 +601,9 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protcol="Balancer", error_msg=str(e)),
+                )
                 raise
 
             try:
@@ -937,7 +945,9 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protcol="Balancer", error_msg=str(e)),
+                )
                 raise
 
             try:
@@ -1068,7 +1078,9 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protcol="Balancer", error_msg=str(e)),
+                )
                 raise
 
             try:
