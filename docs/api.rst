@@ -5947,10 +5947,12 @@ Getting Liquity balances
             "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
                 "trove": {
                     "collateral": {
+                        "asset": "ETH"
                         "amount": "5.3100000000000005",
                         "usd_value": "16161.675300000001521815"
                     },
                     "debt": {
+                        "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
                         "amount": "6029.001719188487",
                         "usd_value": "6089.29173638037187"
                     },
@@ -5960,6 +5962,7 @@ Getting Liquity balances
                     "trove_id": 148
                 },
                 "stake": {
+                    "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
                     "amount": "177.02",
                     "usd_value": "1201.9658"
                 }
@@ -6000,7 +6003,7 @@ Getting Liquity historical data
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson bool reset_db_data: Boolean denoting whether all aave event data saved in the DB are going to be deleted and rewritten after this query. False by default.
+   :reqjson bool reset_db_data: Boolean denoting whether all liquity event data saved in the DB are going to be deleted and rewritten after this query. False by default.
 
    **Example Response**:
 
@@ -6011,44 +6014,93 @@ Getting Liquity historical data
 
       {
           "result": {
-              "0x063c26ff1592688b73d8e2a18ba4c23654e2792e": {
-                "trove": [
-                    {
-                        "kind": "trove",
-                        "tx": "0xc8ad6f6ec244a93e1d66e60d1eab2ff2cb9de1f3a1f45c7bb4e9d2f720254137",
-                        "address": "0x063c26ff1592688b73d8e2a18ba4c23654e2792e",
-                        "timestamp": 1627818194,
-                        "debt_after": "6029.001719188487125",
-                        "collateral_after": "3.5",
-                        "debt_delta": "6029.001719188487125",
-                        "collateral_delta": "3.5",
-                        "trove_operation": "Open Trove"
-                    },
-                    {
-                        "kind": "trove",
-                        "tx": "0x8c875e36737918807af1616cc89a084971a569f33006acba308897a80554983a",
-                        "address": "0x063c26ff1592688b73d8e2a18ba4c23654e2792e",
-                        "timestamp":  ,
-                        "debt_after": "6029.001719188487125",
-                        "collateral_after": "5.31",
-                        "debt_delta": "0",
-                        "collateral_delta": "1.81",
-                        "trove_operation": "Adjust Trove"
-                    }
-                ],
-                "stake": [
-                    {
-                        "kind": "stake",
-                        "tx": "0xe527749c76a3af56d86c97a8f8f8ce07e191721e9e16a0f62a228f8a8ef6d295",
-                        "address": "0x063c26ff1592688b73d8e2a18ba4c23654e2792e",
-                        "timestamp": 1627827057,
-                        "stake_after": "177.02",
-                        "stake_change": "177.02",
-                        "issuance_gain": "0",
-                        "redemption_gain": "0",
-                        "stake_operation": "Stake Created"
-                    }
-                ]
+                "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
+                    "trove": [
+                        {
+                            "kind": "trove",
+                            "tx": "0xc8ad6f6ec244a93e1d66e60d1eab2ff2cb9de1f3a1f45c7bb4e9d2f720254137",
+                            "address": "0x063c26fF1592688B73d8e2A18BA4C23654e2792E",
+                            "timestamp": 1627818194,
+                            "debt_after": {
+                                "amount": "6029.001719188487125",
+                                "usd_value": "6149.58175357225686750",
+                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                            },
+                            "debt_delta": {
+                                "amount": "6029.001719188487125",
+                                "usd_value": "6149.58175357225686750",
+                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                            },
+                            "collateral_after": {
+                                "amount": "3.5",
+                                "usd_value": "10500.0",
+                                "asset": "ETH"
+                            },
+                            "collateral_delta": {
+                                "amount": "3.5",
+                                "usd_value": "10500.0",
+                                "asset": "ETH"
+                            },
+                            "trove_operation": "Open Trove"
+                        },
+                        {
+                            "kind": "trove",
+                            "tx": "0x8c875e36737918807af1616cc89a084971a569f33006acba308897a80554983a",
+                            "address": "0x063c26fF1592688B73d8e2A18BA4C23654e2792E",
+                            "timestamp": 1627818617,
+                            "debt_after": {
+                                "amount": "6029.001719188487125",
+                                "usd_value": "6143.552751853068380375",
+                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                            },
+                            "debt_delta": {
+                                "amount": "0",
+                                "usd_value": "0.000",
+                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                            },
+                            "collateral_after": {
+                                "amount": "5.31",
+                                "usd_value": "15930.00",
+                                "asset": "ETH"
+                            },
+                            "collateral_delta": {
+                                "amount": "1.81",
+                                "usd_value": "5430.00",
+                                "asset": "ETH"
+                            },
+                            "trove_operation": "Adjust Trove"
+                        }
+                    ],
+                    "stake": [
+                        {
+                            "kind": "stake",
+                            "tx": "0xe527749c76a3af56d86c97a8f8f8ce07e191721e9e16a0f62a228f8a8ef6d295",
+                            "address": "0x063c26fF1592688B73d8e2A18BA4C23654e2792E",
+                            "timestamp": 1627827057,
+                            "stake_after": {
+                                "amount": "177.02",
+                                "usd_value": "654.974",
+                                "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                            },
+                            "stake_change": {
+                                "amount": "177.02",
+                                "usd_value": "654.974",
+                                "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                            },
+                            "issuance_gain": {
+                                "amount": "0",
+                                "usd_value": "0.00",
+                                "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                            },
+                            "redemption_gain": {
+                                "amount": "0",
+                                "usd_value": "0.00",
+                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                            },
+                            "stake_operation": "Stake Created"
+                        }
+                    ]
+                }
             }
           },
           "message": ""
@@ -6060,13 +6112,13 @@ Getting Liquity historical data
    :resjson string kind: "trove" if it's an action in troves and "stake" if it's a change in the staking position
    :resjson int timestamp: The unix timestamp at which the event occured.
    :resjson string tx: The transaction hash of the event.
-   :resjson string debt_after: Debt in the Trove after the operation. The debt is represented in LUSD
-   :resjson string collateral_after: Amount in ETH of collateral at the Trove 
-   :resjson string debt_delta: The amount of debt that the operation changed. Can by any real number.
-   :resjson string collateral_delta: The amount of collateral that the operation changed. Can by any real number
-   :resjson string trove_operation: The operation that happened in the change. Can be ``Open Trove``, ``Close Trove``, ``Adjust Trove``, ``Accrue Rewards``, ``Liquidation In Normal Mode``, ``Liquidation In Recovery Mod``, ``Redeem Collateral``
-   :resjson string stake_after: Amount changed in the operation over the staked position. Amount is represented for LQTY
-   :resjson string stake_change: Amount that the operation changed
+   :resjson object debt_after: Debt in the Trove after the operation
+   :resjson object collateral_after: Amount, asset and usd value of collateral at the Trove 
+   :resjson object debt_delta: Amount, asset and usd value of debt that the operation changed.
+   :resjson object collateral_delta: Amount, asset and usd value of collateral that the operation changed.
+   :resjson string trove_operation: The operation that happened in the change. Can be ``Open Trove``, ``Close Trove``, ``Adjust Trove``, ``Accrue Rewards``, ``Liquidation In Normal Mode``, ``Liquidation In Recovery Mode``, ``Redeem Collateral``
+   :resjson string stake_after: Amount, asset and usd value changed in the operation over the staked position. Amount is represented for LQTY
+   :resjson string stake_change: Amount, asset and usd value that the operation changed
    :resjson string stake_operation: Can be ``Stake Created``, ``Stake Increased``, ``Stake Decreased``, ``Stake Removed``, ``Gains Withdrawn``
 
    :statuscode 200: Liquity history succesfully queried.
