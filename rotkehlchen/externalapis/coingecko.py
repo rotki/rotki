@@ -357,13 +357,14 @@ class Coingecko():
             options=options,
         )
 
+        # https://github.com/PyCQA/pylint/issues/4739
         try:
             parsed_data = CoingeckoAssetData(
                 identifier=gecko_id,
-                symbol=data['symbol'],
-                name=data['name'],
-                description=data['description']['en'],
-                image_url=data['image']['small'],
+                symbol=data['symbol'],  # pylint: disable=unsubscriptable-object
+                name=data['name'],  # pylint: disable=unsubscriptable-object
+                description=data['description']['en'],  # pylint: disable=unsubscriptable-object
+                image_url=data['image']['small'],  # pylint: disable=unsubscriptable-object
             )
         except KeyError as e:
             raise RemoteError(
@@ -435,8 +436,9 @@ class Coingecko():
                 'vs_currencies': vs_currency,
             })
 
+        # https://github.com/PyCQA/pylint/issues/4739
         try:
-            return Price(FVal(result[from_coingecko_id][vs_currency]))
+            return Price(FVal(result[from_coingecko_id][vs_currency]))  # pylint: disable=unsubscriptable-object  # noqa: E501
         except KeyError as e:
             log.warning(
                 f'Queried coingecko simple price from {from_asset.identifier} '
@@ -505,8 +507,9 @@ class Coingecko():
             },
         )
 
+        # https://github.com/PyCQA/pylint/issues/4739
         try:
-            price = Price(FVal(result['market_data']['current_price'][vs_currency]))
+            price = Price(FVal(result['market_data']['current_price'][vs_currency]))  # pylint: disable=unsubscriptable-object  # noqa: E501
         except KeyError as e:
             log.warning(
                 f'Queried coingecko historical price from {from_asset.identifier} '

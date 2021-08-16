@@ -282,7 +282,7 @@ class Etherscan(ExternalServiceWithApiKey):
             # block we got. There may be duplicate entries if there are more than one
             # transactions for that last block but they should be filtered
             # out when we input all of these in the DB
-            last_block = result[-1]['blockNumber']
+            last_block = result[-1]['blockNumber']  # pylint: disable=unsubscriptable-object
             options['startBlock'] = last_block
 
         return transactions
@@ -309,8 +309,9 @@ class Etherscan(ExternalServiceWithApiKey):
         options = {'tag': hex(block_number), 'boolean': 'true'}
         block_data = self._query(module='proxy', action='eth_getBlockByNumber', options=options)
         # We need to convert some data from hex here
-        block_data['timestamp'] = hex_or_bytes_to_int(block_data['timestamp'])
-        block_data['number'] = hex_or_bytes_to_int(block_data['number'])
+        # https://github.com/PyCQA/pylint/issues/4739
+        block_data['timestamp'] = hex_or_bytes_to_int(block_data['timestamp'])  # pylint: disable=unsubscriptable-object  # noqa: E501
+        block_data['number'] = hex_or_bytes_to_int(block_data['number'])  # pylint: disable=unsubscriptable-object  # noqa: E501
 
         return block_data
 
