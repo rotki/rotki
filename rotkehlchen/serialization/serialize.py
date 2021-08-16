@@ -26,6 +26,7 @@ from rotkehlchen.chain.ethereum.modules.liquity.trove import (
     LiquityStakeEvent,
     TroveOperation,
     LiquityStakeEventType,
+    StakePosition,
 )
 from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerBPTEventPoolToken,
@@ -138,6 +139,10 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             BalancerPoolEventsBalance,
             BalancerPoolBalance,
             BalancerPoolTokenBalance,
+            LiquityTroveEvent,
+            LiquityStakeEvent,
+            Trove,
+            StakePosition,
     )):
         return process_result(entry.serialize())
     if isinstance(entry, (
@@ -156,9 +161,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             YearnVaultHistory,
             BlockchainAccountData,
             Eth2Deposit,
-            Trove,
-            LiquityTroveEvent,
-            LiquityStakeEvent,
     )):
         return process_result(entry._asdict())
     if isinstance(entry, tuple):

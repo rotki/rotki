@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import Enum
 from functools import reduce
+import logging
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
 from operator import add
 
@@ -13,23 +13,28 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.accounting.structures import (
     AssetBalance,
     Balance,
-    BalanceSheet,
     DefiEvent,
     DefiEventType,
 )
 from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ETH, A_LUSD, A_LQTY
+from rotkehlchen.constants.assets import A_ETH, A_LUSD, A_LQTY, A_USD
 from rotkehlchen.constants.ethereum import LIQUITY_TROVE_MANAGER
-from rotkehlchen.chain.ethereum.graph import Graph, format_query_indentation
+from rotkehlchen.chain.ethereum.graph import (
+    SUBGRAPH_REMOTE_ERROR_MSG,
+    Graph,
+    format_query_indentation,
+)
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.price import query_usd_price_or_use_default
+from rotkehlchen.history.price import query_usd_price_or_use_default, PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Timestamp
 from rotkehlchen.utils.interfaces import EthereumModule
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
@@ -45,34 +50,17 @@ if TYPE_CHECKING:
 CONTRACT_ADDRESS = '0xA39739EF8b0231DbFA0DcdA07d7e29faAbCf4bb2'
 MIN_COLL_RATE = '1.1'
 
+log = logging.getLogger(__name__)
 
-class TroveOperation(Enum):
+
+class TroveOperation(SerializableEnumMixin):
     OPENTROVE = 1
     CLOSETROVE = 2
     ADJUSTTROVE = 3
     ACCRUEREWARDS = 4
-    LIQUIDATENORMALMODE = 5
-    LIQUIDATERECOVERYMODE = 6
+    LIQUIDATEINNORMALMODE = 5
+    LIQUIDATEINRECOVERYMODE = 6
     REEDEM = 7
-
-    @staticmethod
-    def deserialize(value: str) -> 'TroveOperation':
-        if value == 'openTrove':
-            return TroveOperation.OPENTROVE
-        if value == 'closeTrove':
-            return TroveOperation.CLOSETROVE
-        if value == 'adjustTrove':
-            return TroveOperation.ADJUSTTROVE
-        if value == 'accrueRewards':
-            return TroveOperation.ACCRUEREWARDS
-        if value == 'liquidateInNormalMode':
-            return TroveOperation.LIQUIDATENORMALMODE
-        if value == 'liquidateInRecoveryMode':
-            return TroveOperation.LIQUIDATERECOVERYMODE
-        if value == 'redeemCollateral':
-            return TroveOperation.REEDEM
-        # else
-        raise DeserializationError(f'Encountered unknown TroveOperation value {value}')
 
     def __str__(self) -> str:
         if self == TroveOperation.OPENTROVE:
@@ -83,9 +71,9 @@ class TroveOperation(Enum):
             return 'Adjust Trove'
         if self == TroveOperation.ACCRUEREWARDS:
             return 'Accrue Rewards'
-        if self == TroveOperation.LIQUIDATENORMALMODE:
+        if self == TroveOperation.LIQUIDATEINNORMALMODE:
             return 'Liquidation In Normal Mode'
-        if self == TroveOperation.LIQUIDATERECOVERYMODE:
+        if self == TroveOperation.LIQUIDATEINRECOVERYMODE:
             return 'Liquidation In Recovery Mode'
         if self == TroveOperation.REEDEM:
             return 'Redeem Collateral'
@@ -93,12 +81,26 @@ class TroveOperation(Enum):
         raise AssertionError(f'Invalid value {self} for TroveOperation')
 
 
-class LiquityStakeEventType(Enum):
+class LiquityStakeEventType(SerializableEnumMixin):
     CREATE = 1
     INCREASE = 2
     DECREASE = 3
     REMOVE = 4
     WITHDRAW = 5
+
+    def __str__(self) -> str:
+        if self == LiquityStakeEventType.CREATE:
+            return 'Stake Created'
+        if self == LiquityStakeEventType.INCREASE:
+            return 'Stake Increased'
+        if self == LiquityStakeEventType.DECREASE:
+            return 'Stake Decreased'
+        if self == LiquityStakeEventType.REMOVE:
+            return 'Stake Removed'
+        if self == LiquityStakeEventType.WITHDRAW:
+            return 'Gains Withdrawn'
+        # else
+        raise AssertionError(f'Invalid value {self} for LiquityStakeEventType')
 
     @staticmethod
     def deserialize(value: str) -> 'LiquityStakeEventType':
@@ -115,20 +117,6 @@ class LiquityStakeEventType(Enum):
         # else
         raise DeserializationError(f'Encountered unknown LiquityStakeEventType value {value}')
 
-    def __str__(self) -> str:
-        if self == LiquityStakeEventType.CREATE:
-            return 'Stake Created'
-        if self == LiquityStakeEventType.INCREASE:
-            return 'Stake Increased'
-        if self == LiquityStakeEventType.DECREASE:
-            return 'Stake Decreased'
-        if self == LiquityStakeEventType.REMOVE:
-            return 'Stake Removed'
-        if self == LiquityStakeEventType.WITHDRAW:
-            return 'Gains Withdrawn'
-        # else
-        raise AssertionError(f'Invalid value {self} for LiquityStakeEventType')
-
 
 @dataclass(frozen=True)
 class LiquityEvent:
@@ -137,48 +125,75 @@ class LiquityEvent:
     address: str
     timestamp: Timestamp
 
-    def _asdict(self) -> Dict[str, Any]:
-        return self.__dict__
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            'kind': self.kind,
+            'tx': self.tx,
+            'address': self.address,
+            'timestamp': self.timestamp,
+        }
 
 
 @dataclass(frozen=True)
 class LiquityTroveEvent(LiquityEvent):
-    debt_after: FVal
-    collateral_after: FVal
-    debt_delta: FVal
-    collateral_delta: FVal
+    debt_after: AssetBalance
+    collateral_after: AssetBalance
+    debt_delta: AssetBalance
+    collateral_delta: AssetBalance
     trove_operation: TroveOperation
+
+    def serialize(self) -> Dict[str, Any]:
+        result = super().serialize()
+        result['debt_after'] = self.debt_after.serialize()
+        result['debt_delta'] = self.debt_delta.serialize()
+        result['collateral_after'] = self.collateral_after.serialize()
+        result['collateral_delta'] = self.collateral_delta.serialize()
+        result['trove_operation'] = str(self.trove_operation)
+        return result
 
 
 @dataclass(frozen=True)
 class LiquityStakeEvent(LiquityEvent):
-    stake_after: FVal
-    stake_change: FVal
-    issuance_gain: FVal
-    redemption_gain: FVal
+    stake_after: AssetBalance
+    stake_change: AssetBalance
+    issuance_gain: AssetBalance
+    redemption_gain: AssetBalance
     stake_operation: LiquityStakeEventType
+
+    def serialize(self) -> Dict[str, Any]:
+        result = super().serialize()
+        result['stake_after'] = self.stake_after.serialize()
+        result['stake_change'] = self.stake_change.serialize()
+        result['issuance_gain'] = self.issuance_gain.serialize()
+        result['redemption_gain'] = self.redemption_gain.serialize()
+        result['stake_operation'] = str(self.stake_operation)
+        return result
 
 
 class Trove(NamedTuple):
-    collateral: Balance
-    debt: Balance
+    collateral: AssetBalance
+    debt: AssetBalance
     collateralization_ratio: FVal
     liquidation_price: Optional[FVal]
     active: bool
     trove_id: int
 
-    def get_balance(self) -> BalanceSheet:
-        return BalanceSheet(
-            assets=defaultdict(Balance, {A_ETH: self.collateral}),
-            liabilities=defaultdict(Balance, {A_LUSD: self.debt}),
-        )
+    def serialize(self) -> Dict[str, Any]:
+        result: Dict[str, Any] = {}
+        result['collateral'] = self.collateral.serialize()
+        result['debt'] = self.debt.serialize()
+        result['collateralization_ratio'] = self.collateralization_ratio
+        result['liquidation_price'] = self.liquidation_price
+        result['active'] = self.active
+        result['trove_id'] = self.trove_id
+        return result
 
 
-SUBGRAPH_REMOTE_ERROR_MSG = (
-    "Failed to request the Liquity subgraph due to {error_msg}. "
-    "All the deposits and withdrawals history queries are not functioning until this is fixed. "  # noqa: E501
-    "Probably will get fixed with time. If not report it to rotki's support channel"  # noqa: E501
-)
+class StakePosition(NamedTuple):
+    staked: AssetBalance
+
+    def serialize(self) -> Dict[str, Any]:
+        return self.staked.serialize()
 
 
 class Liquity(EthereumModule):
@@ -200,16 +215,16 @@ class Liquity(EthereumModule):
                 'https://api.thegraph.com/subgraphs/name/liquity/liquity',
             )
         except RemoteError as e:
-            self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+            self.msg_aggregator.add_error(
+                SUBGRAPH_REMOTE_ERROR_MSG.format(protocol='Liquity', error_msg=str(e)),
+            )
             raise ModuleInitializationFailure('Liquity Subgraph remote error') from e
 
     def get_positions(
         self,
         addresses: List[ChecksumEthAddress],
         is_premium: bool,
-    ) -> Dict[ChecksumEthAddress, Dict[str, Union[Trove, Balance]]]:
-        decimals = 10**-18
-
+    ) -> Dict[ChecksumEthAddress, Dict[str, Union[Trove, StakePosition]]]:
         contract = EthereumContract(
             address=LIQUITY_TROVE_MANAGER.address,
             abi=LIQUITY_TROVE_MANAGER.abi,
@@ -225,43 +240,73 @@ class Liquity(EthereumModule):
             calls=calls,
         )
 
-        data: Dict[ChecksumEthAddress, Dict[str, Union[Trove, Balance]]] = {}
+        data: Dict[ChecksumEthAddress, Dict[str, Union[Trove, StakePosition]]] = {}
+        eth_price = Inquirer().find_usd_price(A_ETH)
+        lusd_price = Inquirer().find_usd_price(A_LUSD)
+        lqty_price = Inquirer().find_usd_price(A_LQTY)
         for i, output in enumerate(outputs):
             status, result = output
             if status is True:
-                trove_info = contract.decode(result, 'Troves', arguments=[addresses[i]])
-                collateral = deserialize_asset_amount(trove_info[1] * decimals)
-                debt = deserialize_asset_amount(trove_info[0] * decimals)
-                eth_price = Inquirer().find_usd_price(A_ETH)
-                lusd_price = Inquirer().find_usd_price(A_LUSD)
-                collateral_balance = Balance(
-                    amount=collateral,
-                    usd_value=eth_price * collateral,
-                )
-                debt_balance = Balance(
-                    amount=debt,
-                    usd_value=lusd_price * debt,
-                )
-                data[addresses[i]] = {}
-                data[addresses[i]]['trove'] = Trove(
-                    collateral=collateral_balance,
-                    debt=debt_balance,
-                    collateralization_ratio=eth_price * collateral / debt * 100,
-                    liquidation_price=debt * lusd_price * FVal(MIN_COLL_RATE) / collateral,
-                    active=bool(trove_info[3]),
-                    trove_id=trove_info[4],
-                )
+                try:
+                    trove_info = contract.decode(result, 'Troves', arguments=[addresses[i]])
+                    collateral = deserialize_asset_amount(
+                        token_normalized_value_decimals(trove_info[1], 18),
+                    )
+                    debt = deserialize_asset_amount(
+                        token_normalized_value_decimals(trove_info[0], 18),
+                    )
+                    collateral_balance = AssetBalance(
+                        asset=A_ETH,
+                        balance=Balance(
+                            amount=collateral,
+                            usd_value=eth_price * collateral,
+                        ),
+                    )
+                    debt_balance = AssetBalance(
+                        asset=A_LUSD,
+                        balance=Balance(
+                            amount=debt,
+                            usd_value=lusd_price * debt,
+                        ),
+                    )
+                    data[addresses[i]] = {}
+                    data[addresses[i]]['trove'] = Trove(
+                        collateral=collateral_balance,
+                        debt=debt_balance,
+                        collateralization_ratio=eth_price * collateral / debt * 100,
+                        liquidation_price=debt * lusd_price * FVal(MIN_COLL_RATE) / collateral,
+                        active=bool(trove_info[3]),
+                        trove_id=trove_info[4],
+                    )
+                except DeserializationError as e:
+                    self.msg_aggregator.add_warning(
+                        f'Ignoring Liquity trove information. '
+                        f'Failed to decode contract information. {str(e)}.',
+                    )
 
         if is_premium:
             staked = self._get_raw_history(addresses, 'stake')
             for stake in staked['lqtyStakes']:
-                owner = to_checksum_address(stake['id'])
-                lqty_price = Inquirer().find_usd_price(A_LQTY)
-                amount = deserialize_optional_fval(stake['amount'], 'amount', 'liquity')
-                data[owner]['stake'] = Balance(
-                    amount=amount,
-                    usd_value=lqty_price * amount,
-                )
+                try:
+                    owner = to_checksum_address(stake['id'])
+                    amount = deserialize_optional_fval(stake['amount'], 'amount', 'liquity')
+                    position = AssetBalance(
+                        asset=A_LQTY,
+                        balance=Balance(
+                            amount=amount,
+                            usd_value=lqty_price * amount,
+                        ),
+                    )
+                    data[owner]['stake'] = StakePosition(position)
+                except (DeserializationError, KeyError) as e:
+                    msg = str(e)
+                    if isinstance(e, KeyError):
+                        msg = f'Missing key entry for {msg}.'
+                    self.msg_aggregator.add_warning(
+                        f'Ignoring Liquity staking information. '
+                        f'Failed to decode remote response. {msg}.',
+                    )
+                    continue
         return data
 
     def _process_trove_events(
@@ -304,8 +349,7 @@ class Liquity(EthereumModule):
                             ),
                         )
                         total_lusd_trove_balance += got_balance
-                    else:
-                        # payback debt
+                    else:  # payback debt
                         count_spent_got_cost_basis = True
                         spent_asset = A_LUSD
                         spent_balance = Balance(
@@ -336,8 +380,7 @@ class Liquity(EthereumModule):
                                 'Liquity',
                             ),
                         )
-                    else:
-                        # Deposit collateral
+                    else:  # Deposit collateral
                         spent_asset = A_ETH
                         spent_balance = Balance(
                             amount=collateral_change,
@@ -349,8 +392,8 @@ class Liquity(EthereumModule):
                             ),
                         )
                 if operation in (
-                    TroveOperation.LIQUIDATENORMALMODE,
-                    TroveOperation.LIQUIDATERECOVERYMODE,
+                    TroveOperation.LIQUIDATEINNORMALMODE,
+                    TroveOperation.LIQUIDATEINRECOVERYMODE,
                 ):
                     count_spent_got_cost_basis = True
                     spent_asset = A_ETH
@@ -377,10 +420,14 @@ class Liquity(EthereumModule):
                     tx_hash=change['transaction']['id'],
                 )
                 events.append(event)
-            except KeyError as e:
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                log.debug(f'Failed to extract defievent in Liquity from {change}')
                 self.msg_aggregator.add_warning(
                     f'Ignoring Liquity Trove event in Liquity. '
-                    f'Failed to decode remote information. {str(e)}.',
+                    f'Failed to decode remote information. {msg}.',
                 )
                 continue
         return events
@@ -390,7 +437,6 @@ class Liquity(EthereumModule):
         addresses: List[ChecksumEthAddress],
         query_for: Literal['stake', 'trove'],
     ) -> Dict[str, Any]:
-
         param_types = {
             '$addresses': '[Bytes!]',
         }
@@ -428,23 +474,62 @@ class Liquity(EthereumModule):
                     operation = TroveOperation.deserialize(change['troveOperation'])
                     collateral_change = deserialize_optional_fval(change['collateralChange'], 'collateralChange', 'liquity')  # noqa: E501
                     debt_change = deserialize_optional_fval(change['debtChange'], 'debtChange', 'liquity')  # noqa: E501
-
+                    lusd_price = PriceHistorian().query_historical_price(
+                        from_asset=A_LUSD,
+                        to_asset=A_USD,
+                        timestamp=timestamp,
+                    )
+                    eth_price = PriceHistorian().query_historical_price(
+                        from_asset=A_ETH,
+                        to_asset=A_USD,
+                        timestamp=timestamp,
+                    )
+                    debt_after_amount = deserialize_optional_fval(change['debtAfter'], 'debtAfter', 'liquity')  # noqa: E501
+                    collateral_after_amount = deserialize_optional_fval(change['collateralAfter'], 'collateralAfter', 'liquity')  # noqa: E501
                     event = LiquityTroveEvent(
                         kind='trove',
                         tx=change['transaction']['id'],
                         address=owner,
                         timestamp=timestamp,
-                        debt_after=deserialize_optional_fval(change['debtAfter'], 'debtAfter', 'liquity'),  # noqa: E501
-                        collateral_after=deserialize_optional_fval(change['collateralAfter'], 'collateralAfter', 'liquity'),  # noqa: E501
-                        debt_delta=debt_change,
-                        collateral_delta=collateral_change,
+                        debt_after=AssetBalance(
+                            asset=A_LUSD,
+                            balance=Balance(
+                                amount=debt_after_amount,
+                                usd_value=lusd_price * debt_after_amount,
+                            ),
+                        ),
+                        collateral_after=AssetBalance(
+                            asset=A_ETH,
+                            balance=Balance(
+                                amount=collateral_after_amount,
+                                usd_value=eth_price * collateral_after_amount,
+                            ),
+                        ),
+                        debt_delta=AssetBalance(
+                            asset=A_LUSD,
+                            balance=Balance(
+                                amount=debt_change,
+                                usd_value=lusd_price * debt_change,
+                            ),
+                        ),
+                        collateral_delta=AssetBalance(
+                            asset=A_ETH,
+                            balance=Balance(
+                                amount=collateral_change,
+                                usd_value=eth_price * collateral_change,
+                            ),
+                        ),
                         trove_operation=operation,
                     )
                     result[owner]['trove'].append(event)
-                except KeyError as e:
+                except (DeserializationError, KeyError) as e:
+                    log.debug(f'Failed to deserialize Liquity trove event: {change}')
+                    msg = str(e)
+                    if isinstance(e, KeyError):
+                        msg = f'Missing key entry for {msg}.'
                     self.msg_aggregator.add_warning(
                         f'Ignoring Liquity Trove event in Liquity. '
-                        f'Failed to decode remote information. {str(e)}.',
+                        f'Failed to decode remote information. {msg}.',
                     )
                     continue
 
@@ -458,22 +543,69 @@ class Liquity(EthereumModule):
                     if timestamp > to_timestamp:
                         break
                     operation_stake = LiquityStakeEventType.deserialize(change['stakeOperation'])
+                    lqty_price = PriceHistorian().query_historical_price(
+                        from_asset=A_LQTY,
+                        to_asset=A_USD,
+                        timestamp=timestamp,
+                    )
+                    lusd_price = PriceHistorian().query_historical_price(
+                        from_asset=A_LUSD,
+                        to_asset=A_USD,
+                        timestamp=timestamp,
+                    )
+                    eth_price = PriceHistorian().query_historical_price(
+                        from_asset=A_ETH,
+                        to_asset=A_USD,
+                        timestamp=timestamp,
+                    )
+                    stake_after = deserialize_optional_fval(change['stakedAmountAfter'], 'stakedAmountAfter', 'liquity')  # noqa: E501
+                    stake_change = deserialize_optional_fval(change['stakedAmountChange'], 'stakedAmountChange', 'liquity')  # noqa: E501
+                    issuance_gain = deserialize_optional_fval(change['issuanceGain'], 'issuanceGain', 'liquity')  # noqa: E501
+                    redemption_gain = deserialize_optional_fval(change['redemptionGain'], 'redemptionGain', 'liquity')  # noqa: E501
                     stake_event = LiquityStakeEvent(
                         kind='stake',
                         tx=change['transaction']['id'],
                         address=owner,
                         timestamp=timestamp,
-                        stake_after=deserialize_optional_fval(change['stakedAmountAfter'], 'stakedAmountAfter', 'liquity'),  # noqa: E501
-                        stake_change=deserialize_optional_fval(change['stakedAmountChange'], 'stakedAmountChange', 'liquity'),  # noqa: E501
-                        issuance_gain=deserialize_optional_fval(change['issuanceGain'], 'issuanceGain', 'liquity'),  # noqa: E501
-                        redemption_gain=deserialize_optional_fval(change['redemptionGain'], 'redemptionGain', 'liquity'),  # noqa: E501
+                        stake_after=AssetBalance(
+                            asset=A_LQTY,
+                            balance=Balance(
+                                amount=stake_after,
+                                usd_value=lqty_price * stake_after,
+                            ),
+                        ),
+                        stake_change=AssetBalance(
+                            asset=A_LQTY,
+                            balance=Balance(
+                                amount=stake_change,
+                                usd_value=lqty_price * stake_change,
+                            ),
+                        ),
+                        issuance_gain=AssetBalance(
+                            asset=A_LUSD,
+                            balance=Balance(
+                                amount=issuance_gain,
+                                usd_value=lusd_price * issuance_gain,
+                            ),
+                        ),
+                        redemption_gain=AssetBalance(
+                            asset=A_LUSD,
+                            balance=Balance(
+                                amount=redemption_gain,
+                                usd_value=lusd_price * redemption_gain,
+                            ),
+                        ),
                         stake_operation=operation_stake,
                     )
                     result[owner]['stake'].append(stake_event)
-                except KeyError as e:
+                except (DeserializationError, KeyError) as e:
+                    msg = str(e)
+                    log.debug(f'Failed to deserialize Liquity entry: {change}')
+                    if isinstance(e, KeyError):
+                        msg = f'Missing key entry for {msg}.'
                     self.msg_aggregator.add_warning(
-                        f'Ignoring Liquity Trove event in Liquity. '
-                        f'Failed to decode remote information. {str(e)}.',
+                        f'Ignoring Liquity Stake event in Liquity. '
+                        f'Failed to decode remote information. {msg}.',
                     )
                     continue
         return result

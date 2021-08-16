@@ -3,7 +3,9 @@ import random
 
 import requests
 
+from rotkehlchen.constants.assets import A_LUSD, A_ETH, A_LQTY
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_ok_async_response,
@@ -12,6 +14,27 @@ from rotkehlchen.tests.utils.api import (
 )
 
 LQTY_ADDR = string_to_ethereum_address('0x063c26fF1592688B73d8e2A18BA4C23654e2792E')
+liquity_mocked_historical_prices = {
+    A_ETH: {
+        'USD': {
+            1627818194: FVal('3000'),
+            1627818617: FVal('3000'),
+            1627827057: FVal('3500'),
+        },
+    },
+    A_LQTY: {
+        'USD': {
+            1627827057.: FVal('3.7'),
+        },
+    },
+    A_LUSD: {
+        'USD': {
+            1627818194: FVal('1.02'),
+            1627818617: FVal('1.019'),
+            1627827057: FVal('1.02'),
+        },
+    },
+}
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR]])
@@ -26,7 +49,7 @@ def test_trove_position(
     async_query = random.choice([False, True])
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        "liquitytroves",
+        'liquitytroves',
     ), json={'async_query': async_query})
     if async_query:
         task_id = assert_ok_async_response(response)
@@ -49,6 +72,7 @@ def test_trove_position(
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('mocked_price_queries', [liquity_mocked_historical_prices])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_trove_events(rotkehlchen_api_server):
     """Test that Trove events and Stake events are correctly queried"""
@@ -56,7 +80,7 @@ def test_trove_events(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "liquitytroveshistory",
+            'liquitytroveshistory',
         ), json={
             'async_query': async_query,
             'from_timestamp': 0,
@@ -79,16 +103,18 @@ def test_trove_events(rotkehlchen_api_server):
     assert trove_action['tx'] == tx_id
     assert trove_action['timestamp'] == 1627818194
     assert trove_action['kind'] == 'trove'
-    assert trove_action['debt_delta'] == trove_action['debt_after']
-    assert trove_action['debt_delta'] == "6029.001719188487125"
+    assert trove_action['debt_delta']['amount'] == trove_action['debt_after']['amount']
+    assert trove_action['debt_delta']['amount'] == '6029.001719188487125'
     assert trove_action['trove_operation'] == 'Open Trove'
-    assert trove_action['collateral_after'] == trove_action['collateral_delta']
-    assert trove_action['collateral_delta'] == "3.5"
+    assert trove_action['collateral_after']['amount'] == trove_action['collateral_delta']['amount']
+    assert trove_action['collateral_delta']['amount'] == '3.5'
     trove_stake = result[LQTY_ADDR]['stake'][0]
     tx_id = '0xe527749c76a3af56d86c97a8f8f8ce07e191721e9e16a0f62a228f8a8ef6d295'
     assert trove_stake['tx'] == tx_id
     assert trove_stake['timestamp'] == 1627827057
     assert trove_stake['kind'] == 'stake'
-    assert trove_stake['stake_after'] == trove_stake['stake_change']
-    assert trove_stake['stake_after'] == "177.02"
+    assert trove_stake['stake_after']['amount'] == trove_stake['stake_change']['amount']
+    asset = trove_stake['stake_after']['asset']
+    assert asset == '_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'
+    assert trove_stake['stake_after']['amount'] == '177.02'
     assert trove_stake['stake_operation'] == 'Stake Created'
