@@ -6,11 +6,13 @@ from typing import Any, Callable, Dict, List, Union
 import gevent
 import requests
 
-logger = logging.getLogger(__name__)
-
 from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def request_get(
@@ -24,7 +26,7 @@ def request_get(
     - UnableToDecryptRemoteData from request_get
     - Remote error if the get request fails
     """
-    logger.debug(f'Querying {url}')
+    log.debug(f'Querying {url}')
     # TODO make this a bit more smart. Perhaps conditional on the type of request.
     # Not all requests would need repeated attempts
     response = retry_calls(
@@ -93,7 +95,7 @@ def retry_calls(
                         f"{location} query for {method_name} failed after {times} tries",
                     )
 
-                logger.debug(
+                log.debug(
                     f'In retry_call for {location}-{method_name}. Got 429. Backing off for '
                     f'{backoff_in_seconds} seconds',
                 )
@@ -105,7 +107,7 @@ def retry_calls(
 
         except requests.exceptions.RequestException as e:
             tries -= 1
-            logger.debug(
+            log.debug(
                 f'In retry_call for {location}-{method_name}. Got error {str(e)} '
                 f'Trying again ... with {tries} tries left',
             )

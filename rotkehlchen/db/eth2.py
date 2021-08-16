@@ -5,6 +5,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDailyStats
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 if TYPE_CHECKING:
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
 ETH2_DEPOSITS_PREFIX = 'eth2_deposits'
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class DBEth2():
@@ -114,7 +116,7 @@ class DBEth2():
                     entry.to_db_tuple(),
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                logger.debug(
+                log.debug(
                     f'Eth2 staking detail entry {str(entry)} already existed in the DB. Skipping.',
                 )
 

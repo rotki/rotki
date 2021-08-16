@@ -280,7 +280,7 @@ class Coingecko():
         if subpath:
             url += subpath
 
-        logger.debug(f'Querying coingecko: {url}?{urlencode(options)}')
+        log.debug(f'Querying coingecko: {url}?{urlencode(options)}')
         tries = COINGECKO_QUERY_RETRY_TIMES
         while tries >= 0:
             try:

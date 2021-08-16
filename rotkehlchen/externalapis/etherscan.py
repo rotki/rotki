@@ -155,7 +155,7 @@ class Etherscan(ExternalServiceWithApiKey):
         backoff = 1
         backoff_limit = 33
         while backoff < backoff_limit:
-            logger.debug(f'Querying etherscan: {query_str}')
+            log.debug(f'Querying etherscan: {query_str}')
             try:
                 response = self.session.get(query_str, timeout=timeout if timeout else DEFAULT_TIMEOUT_TUPLE)  # noqa: E501
             except requests.exceptions.RequestException as e:

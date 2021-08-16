@@ -8,9 +8,9 @@ This interface is used at the moment in:
 - Sushiswap Module
 """
 import abc
+import logging
 from collections import defaultdict
 from datetime import datetime, time
-import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from gevent.lock import Semaphore
@@ -19,10 +19,10 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.graph import (
-    Graph,
     GRAPH_QUERY_LIMIT,
-    format_query_indentation,
     GRAPH_QUERY_SKIP_LIMIT,
+    Graph,
+    format_query_indentation,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
     AddressEventsBalances,
@@ -33,16 +33,18 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
     DDAddressToLPBalances,
     EventType,
     LiquidityPool,
+    LiquidityPoolAsset,
     LiquidityPoolEvent,
     LiquidityPoolEventsBalance,
-    LiquidityPoolAsset,
     ProtocolBalance,
 )
+from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
@@ -54,14 +56,13 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 
 from .graph import (
-    MINTS_QUERY,
     BURNS_QUERY,
     LIQUIDITY_POSITIONS_QUERY,
-    SWAPS_QUERY,
+    MINTS_QUERY,
     SUSHISWAP_SWAPS_QUERY,
+    SWAPS_QUERY,
     TOKEN_DAY_DATAS_QUERY,
 )
 
@@ -70,7 +71,8 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def add_trades_from_swaps(

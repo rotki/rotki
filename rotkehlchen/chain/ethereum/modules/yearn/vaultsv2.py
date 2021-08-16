@@ -22,6 +22,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import YEARN_VAULTS_V2_PROTOCOL, ChecksumEthAddress, EthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -34,7 +35,8 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 BLOCKS_PER_YEAR = 2425846
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 SUBGRAPH_REMOTE_ERROR_MSG = (
     "Failed to request the Yearn Finance vaults v2 subgraph due to {error_msg}. "
     "All the deposits and withdrawals history queries are not functioning until this is fixed. "  # noqa: E501

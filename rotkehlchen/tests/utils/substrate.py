@@ -17,10 +17,12 @@ from rotkehlchen.chain.substrate.typing import (
 )
 from rotkehlchen.constants.assets import A_KSM
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 NODE_CONNECTION_TIMEOUT = 15
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 # Accounts

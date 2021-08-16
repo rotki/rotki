@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, MutableMapping, Tuple
 
+from gevent import getcurrent
+
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 PYWSGI_RE = re.compile(r'\[(.*)\] ')
@@ -19,9 +21,16 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
         """
         This is the main post-processing function for rotki logs
 
-        This function also appends all kwargs to the final message.
+        This function:
+        - appends all kwargs to the final message
+        - appends the greenlet id in the log message
         """
-        msg = msg + ','.join(' {}={}'.format(a[0], a[1]) for a in kwargs.items())
+        greenlet = getcurrent()
+        if greenlet.parent is None:
+            greenlet_name = 'Main Greenlet'
+        else:
+            greenlet_name = greenlet.name
+        msg = greenlet_name + ': ' + msg + ','.join(' {}={}'.format(a[0], a[1]) for a in kwargs.items())  # noqa: E501
         return msg, {}
 
 
@@ -48,7 +57,7 @@ def configure_logging(args: argparse.Namespace) -> None:
     loglevel = args.loglevel.upper()
     formatters = {
         'default': {
-            'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s',
+            'format': '[%(asctime)s] %(levelname)s %(name)s %(message)s',
             'datefmt': '%d/%m/%Y %H:%M:%S %Z',
         },
     }

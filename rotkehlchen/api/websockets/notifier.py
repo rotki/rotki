@@ -7,11 +7,13 @@ from geventwebsocket.exceptions import WebSocketError
 from geventwebsocket.websocket import WebSocket
 
 from rotkehlchen.greenlets import GreenletManager
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.api.websockets.typedefs import WSMessageType
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def _ws_send_impl(
@@ -25,7 +27,7 @@ def _ws_send_impl(
     try:
         websocket.send(to_send_msg)
     except WebSocketError as e:
-        logger.error(f'Websocket send with message {to_send_msg} failed due to {str(e)}')
+        log.error(f'Websocket send with message {to_send_msg} failed due to {str(e)}')
 
         if failure_callback:
             failure_callback_args = {} if failure_callback_args is None else failure_callback_args  # noqa: E501
@@ -47,13 +49,13 @@ class RotkiNotifier():
         self.subscribers: List[WebSocket] = []
 
     def subscribe(self, websocket: WebSocket) -> None:
-        logger.info(f'Websocket with hash id {hash(websocket)} subscribed to rotki notifier')
+        log.info(f'Websocket with hash id {hash(websocket)} subscribed to rotki notifier')
         self.subscribers.append(websocket)
 
     def unsubscribe(self, websocket: WebSocket) -> None:
         try:
             self.subscribers.remove(websocket)
-            logger.info(f'Websocket with hash id {hash(websocket)} unsubscribed from rotki notifier')  # noqa: E501
+            log.info(f'Websocket with hash id {hash(websocket)} unsubscribed from rotki notifier')  # noqa: E501
         except ValueError:
             pass
 
@@ -110,7 +112,7 @@ class RotkiWSApp(WebSocketApplication):
         try:
             self.ws.send(message, **kwargs)
         except WebSocketError as e:
-            logger.warning(
+            log.warning(
                 f'Got WebSocketError {str(e)} for sending message {message} to a websocket',
             )
 

@@ -3,8 +3,10 @@ import sqlite3
 from collections import defaultdict
 
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def upgrade_ethereum_asset_ids(connection: sqlite3.Connection) -> None:

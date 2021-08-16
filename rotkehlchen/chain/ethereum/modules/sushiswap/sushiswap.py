@@ -16,12 +16,9 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import (
-    ChecksumEthAddress,
-    Location,
-    Timestamp,
-)
+from rotkehlchen.typing import ChecksumEthAddress, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
@@ -30,7 +27,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 SUSHISWAP_EVENTS_PREFIX = 'sushiswap_events'
 

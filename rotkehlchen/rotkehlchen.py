@@ -761,7 +761,7 @@ class Rotkehlchen():
             # should only be an exchange
             exchanges_list = self.exchange_manager.connected_exchanges.get(location)
             if exchanges_list is None:
-                logger.warning(
+                log.warning(
                     f'Tried to query trades from {str(location)} which is either not an '
                     f'exchange or not an exchange the user has connected to',
                 )
@@ -994,7 +994,7 @@ class Rotkehlchen():
             else:
                 exchanges_list = self.exchange_manager.connected_exchanges.get(location)
                 if exchanges_list is None:
-                    logger.warning(
+                    log.warning(
                         f'Tried to query deposits/withdrawals from {str(location)} which is '
                         f'either not an exchange or not an exchange the user has connected to',
                     )

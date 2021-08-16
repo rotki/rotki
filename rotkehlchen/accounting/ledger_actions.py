@@ -6,6 +6,7 @@ from typing import Any, Dict, NamedTuple, Optional
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_optional,
@@ -14,7 +15,8 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, Tuple
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class LedgerActionType(Enum):

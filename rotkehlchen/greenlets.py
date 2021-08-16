@@ -4,9 +4,11 @@ from typing import Any, Callable, List, Optional
 
 import gevent
 
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class GreenletManager():

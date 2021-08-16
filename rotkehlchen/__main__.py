@@ -5,12 +5,14 @@ import sys
 import traceback
 
 from rotkehlchen.errors import SystemPermissionError
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.server import RotkehlchenServer
 
 # monkey patch web3's non-thread safe lru cache with our own version
 from rotkehlchen.chain.ethereum import patch_web3  # isort:skip # pylint: disable=unused-import # lgtm[py/unused-import] # noqa
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def main() -> None:
