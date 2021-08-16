@@ -114,7 +114,7 @@ class Balancer(EthereumModule):
             )
         except RemoteError as e:
             self.msg_aggregator.add_error(
-                SUBGRAPH_REMOTE_ERROR_MSG.format(protcol="Balancer", error_msg=str(e)),
+                SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
             )
             raise ModuleInitializationFailure('subgraph remote error') from e
 
@@ -247,7 +247,7 @@ class Balancer(EthereumModule):
                 )
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    SUBGRAPH_REMOTE_ERROR_MSG.format(protcol="Balancer", error_msg=str(e)),
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
                 )
                 raise
 
@@ -415,7 +415,7 @@ class Balancer(EthereumModule):
                 )
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    SUBGRAPH_REMOTE_ERROR_MSG.format(protcol="Balancer", error_msg=str(e)),
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
                 )
                 raise
 
@@ -602,7 +602,7 @@ class Balancer(EthereumModule):
                 )
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    SUBGRAPH_REMOTE_ERROR_MSG.format(protcol="Balancer", error_msg=str(e)),
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
                 )
                 raise
 
@@ -946,7 +946,7 @@ class Balancer(EthereumModule):
                 )
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    SUBGRAPH_REMOTE_ERROR_MSG.format(protcol="Balancer", error_msg=str(e)),
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
                 )
                 raise
 
@@ -1079,7 +1079,7 @@ class Balancer(EthereumModule):
                 )
             except RemoteError as e:
                 self.msg_aggregator.add_error(
-                    SUBGRAPH_REMOTE_ERROR_MSG.format(protcol="Balancer", error_msg=str(e)),
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
                 )
                 raise
 

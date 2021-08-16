@@ -628,8 +628,9 @@ class Liquity(EthereumModule):
     def on_startup(self) -> None:
         pass
 
-    def on_account_addition(self, address: ChecksumEthAddress) -> None:
-        pass
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
+        info = self.get_positions([address], True)
+        return [info[address]['trove'].collateral, info[address]['stake'].staked]  # type: ignore
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         pass
