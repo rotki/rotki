@@ -478,7 +478,8 @@ class Inquirer():
             if method_output[0] and len(method_output[1]) != 0:
                 decoded_method = contract.decode(method_output[1], method_name)
                 if len(decoded_method) == 1:
-                    decoded.append(decoded_method[0])
+                    # https://github.com/PyCQA/pylint/issues/4739
+                    decoded.append(decoded_method[0])  # pylint: disable=unsubscriptable-object
                 else:
                     decoded.append(decoded_method)
             else:
@@ -588,17 +589,19 @@ class Inquirer():
             return None
         # Deserialize information obtained in the multicall execution
         data = []
-        virtual_price_decoded = contract.decode(output[0][1], 'get_virtual_price')
+        # https://github.com/PyCQA/pylint/issues/4739
+        virtual_price_decoded = contract.decode(output[0][1], 'get_virtual_price')  # pylint: disable=unsubscriptable-object  # noqa: E501
         if not _check_curve_contract_call(virtual_price_decoded):
             log.debug(f'Failed to decode get_virtual_price while finding curve price. {output}')
             return None
-        data.append(FVal(virtual_price_decoded[0]))
+        data.append(FVal(virtual_price_decoded[0]))  # pylint: disable=unsubscriptable-object
         for i in range(len(pool.assets)):
             amount_decoded = contract.decode(output[i + 1][1], 'balances', arguments=[i])
             if not _check_curve_contract_call(amount_decoded):
                 log.debug(f'Failed to decode balances {i} while finding curve price. {output}')
                 return None
-            amount = amount_decoded[0]
+            # https://github.com/PyCQA/pylint/issues/4739
+            amount = amount_decoded[0]  # pylint: disable=unsubscriptable-object
             normalized_amount = token_normalized_value_decimals(amount, tokens[i].decimals)
             data.append(normalized_amount)
 
@@ -651,9 +654,10 @@ class Inquirer():
             calls=[(token.ethereum_address, contract.encode(method_name='pricePerShare'))],
         )
         if isinstance(output, list) and len(output) != 0 and output[0][0] is True:
-            price_per_share = contract.decode(output[0][1], 'pricePerShare')
+            # https://github.com/PyCQA/pylint/issues/4739
+            price_per_share = contract.decode(output[0][1], 'pricePerShare')  # pylint: disable=unsubscriptable-object  # noqa: E501
             if len(price_per_share) != 0:
-                return price_per_share[0] * underlying_token_price
+                return price_per_share[0] * underlying_token_price  # pylint: disable=unsubscriptable-object  # noqa: E501
             log.error(f'Failed to decode pricePerShare for yearn vault v2 token {token}')
             # will return None right below
         log.error(
