@@ -1488,7 +1488,7 @@ class RestAPI():
     @require_loggedin_user()
     def rebuild_assets_information(self) -> Response:
         # pylint: disable=no-self-use
-        success, msg = GlobalDBHandler().rebuild_assets_list(self.rotkehlchen.data.db.conn)
+        success, msg = GlobalDBHandler().reset_assets_list()
         if not success:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
         return api_response(_wrap_in_ok_result(OK_RESULT), status_code=HTTPStatus.OK)

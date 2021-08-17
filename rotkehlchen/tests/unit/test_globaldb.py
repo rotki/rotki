@@ -440,9 +440,9 @@ def test_globaldb_pragma_foreign_keys(globaldb):
 def test_global_db_restore(globaldb, database):
     """
     Check that the user can recreate assets information from the packaged
-    database with rotki. The test adds a new asset, restores the database
-    and checks that the added token is not in there and that the amount of
-    assets is the expected
+    database with rotki (hard reset). The test adds a new asset, restores
+    the database and checks that the added token is not in there and that
+    the amount of assets is the expected
     """
     # Add a custom eth token
     address_to_delete = make_ethereum_address()
@@ -457,7 +457,7 @@ def test_global_db_restore(globaldb, database):
         asset_type=AssetType.ETHEREUM_TOKEN,
         data=token_to_delete,
     )
-    # Add a token with underlaying token
+    # Add a token with underlying token
     with_underlying_address = make_ethereum_address()
     with_underlying = EthereumToken.initialize(
         address=with_underlying_address,
@@ -500,7 +500,7 @@ def test_global_db_restore(globaldb, database):
     database.add_asset_identifiers('1')
     database.add_asset_identifiers('2')
 
-    # Try to do it if we have trades
+    # Try to reset DB it if we have a trade that uses a custom asset
     buy_asset = symbol_to_asset_or_token('LOLZ2')
     buy_amount = deserialize_asset_amount(1)
     sold_asset = symbol_to_asset_or_token('LOLZ')
@@ -521,34 +521,31 @@ def test_global_db_restore(globaldb, database):
     )
 
     database.add_trades([trade])
-    status, _ = GlobalDBHandler().rebuild_assets_list(database.conn)
+    status, _ = GlobalDBHandler().completly_rebuild_assets_list(database.conn)
     assert status is False
     # Now do it without the trade
     database.delete_trade(trade.identifier)
-    status, _ = GlobalDBHandler().rebuild_assets_list(database.conn)
+    status, _ = GlobalDBHandler().completly_rebuild_assets_list(database.conn)
     assert status
     cursor = globaldb._conn.cursor()
-    # Check that the ethereum token was deleted
     query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{address_to_delete}";'
     r = cursor.execute(query)
-    assert r.fetchone() == (0,)
+    assert r.fetchone() == (0,), 'Ethereum token should have been deleted'
     query = f'SELECT COUNT(*) FROM assets where details_reference == "{address_to_delete}";'
     r = cursor.execute(query)
-    assert r.fetchone() == (0,)
-    # Check that the ethereum token with underlaying token was deleted
+    assert r.fetchone() == (0,), 'Ethereum token should have been deleted from assets'
     query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{with_underlying_address}";'
     r = cursor.execute(query)
-    assert r.fetchone() == (0,)
+    assert r.fetchone() == (0,), 'Token with underlying token should have been deleted from assets'
     query = f'SELECT COUNT(*) FROM assets where details_reference == "{with_underlying_address}";'
     r = cursor.execute(query)
     assert r.fetchone() == (0,)
     query = f'SELECT COUNT(*) FROM underlying_tokens_list where address == "{address_to_delete}";'
     r = cursor.execute(query)
     assert r.fetchone() == (0,)
-    # Check that the non ethereum asset was deleted
     query = 'SELECT COUNT(*) FROM assets where identifier == "1";'
     r = cursor.execute(query)
-    assert r.fetchone() == (0,)
+    assert r.fetchone() == (0,), 'Non ethereum token should be deleted'
     # Check that the user database is correctly updated
     query = 'SELECT identifier from assets'
     r = cursor.execute(query)
@@ -564,4 +561,94 @@ def test_global_db_restore(globaldb, database):
     tokens_expected = cursor_clean_db.execute('SELECT COUNT(*) FROM assets;')
     tokens_local = cursor.execute('SELECT COUNT(*) FROM assets;')
     assert tokens_expected.fetchone() == tokens_local.fetchone()
+    conn.close()
+
+
+def test_global_db_reset(globaldb):
+    """
+    Check that the user can recreate assets information from the packaged
+    database with rotki (soft reset). The test adds a new asset, restores
+    the database and checks that the added tokens are still in the database.
+    In addition a token is edited and we check that was correctly restored.
+    """
+    # Add a custom eth token
+    address_to_delete = make_ethereum_address()
+    token_to_delete = EthereumToken.initialize(
+        address=address_to_delete,
+        decimals=18,
+        name='willdell',
+        symbol='DELME',
+    )
+    globaldb.add_asset(
+        asset_id='DELMEID1',
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        data=token_to_delete,
+    )
+    # Add a token with underlying token
+    with_underlying_address = make_ethereum_address()
+    with_underlying = EthereumToken.initialize(
+        address=with_underlying_address,
+        decimals=18,
+        name="Not a scam",
+        symbol="NSCM",
+        started=0,
+        underlying_tokens=[UnderlyingToken(
+            address=address_to_delete,
+            weight=1,
+        )],
+    )
+    globaldb.add_asset(
+        asset_id='xDELMEID1',
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        data=with_underlying,
+    )
+    # Add asset that is not a token
+    globaldb.add_asset(
+        asset_id='1',
+        asset_type=AssetType.OWN_CHAIN,
+        data={
+            'name': 'Lolcoin',
+            'symbol': 'LOLZ',
+            'started': 0,
+        },
+    )
+    # Edit one token
+    one_inch_update = EthereumToken.initialize(
+        address='0x111111111117dC0aa78b770fA6A738034120C302',
+        name='1inch boi',
+    )
+    GlobalDBHandler().edit_ethereum_token(one_inch_update)
+
+    status, _ = GlobalDBHandler().reset_assets_list()
+    assert status
+    cursor = globaldb._conn.cursor()
+    query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{address_to_delete}";'
+    r = cursor.execute(query)
+    assert r.fetchone() == (1,), 'Custom ethereum tokens should not been deleted'
+    query = f'SELECT COUNT(*) FROM assets where details_reference == "{address_to_delete}";'
+    r = cursor.execute(query)
+    assert r.fetchone() == (1,)
+    query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{with_underlying_address}";'
+    r = cursor.execute(query)
+    assert r.fetchone() == (1,), 'Ethereum token with underlying token should not be deleted'
+    query = f'SELECT COUNT(*) FROM assets where details_reference == "{with_underlying_address}";'
+    r = cursor.execute(query)
+    assert r.fetchone() == (1,)
+    query = f'SELECT COUNT(*) FROM underlying_tokens_list where address == "{address_to_delete}";'
+    r = cursor.execute(query)
+    assert r.fetchone() == (1,)
+    query = 'SELECT COUNT(*) FROM assets where identifier == "1";'
+    r = cursor.execute(query)
+    assert r.fetchone() == (1,), 'Non ethereum token added should be in the db'
+    # Check that the 1inch token was correctly fixed
+    assert EthereumToken('0x111111111117dC0aa78b770fA6A738034120C302').name != '1inch boi'
+
+    # Check that the number of assets is the expected
+    root_dir = Path(__file__).resolve().parent.parent.parent
+    builtin_database = root_dir / 'data' / 'global.db'
+    conn = sqlite3.connect(builtin_database)
+    cursor_clean_db = conn.cursor()
+    tokens_expected = cursor_clean_db.execute('SELECT COUNT(*) FROM assets;')
+    tokens_local = cursor.execute('SELECT COUNT(*) FROM assets;')
+    assert tokens_expected.fetchone()[0] + 3 == tokens_local.fetchone()[0]
     conn.close()

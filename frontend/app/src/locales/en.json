@@ -104,15 +104,14 @@
     "total_changes": "This update contains {changes} asset changes.",
     "up_to_version": "Only update up to version",
     "restore": {
-      "title": "Restore assets database",
-      "subtitle": "Discard all the custom asset changes and use the default database provided by rotki",
+      "title": "Restore defaults assets database",
       "action": "Restore",
       "delete_confirmation": {
         "title": "Restore defaults assets database",
-        "message": "Do you really want to restore your local copy of assets? You will lose any custom assets that you may have added manually."
+        "message": "Do you really want to restore your local copy of assets? This will keep the assets that you manually added."
       },
       "success": {
-        "description": "The asset database has been successfully restored. You will now need to re-login to apply the changes",
+        "description": "The asset database has been successfully restored. You will now need to re-login to apply the changes.",
         "title": "Asset database restore"
       }
     }
