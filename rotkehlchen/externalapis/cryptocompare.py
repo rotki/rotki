@@ -242,7 +242,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         got_cached_data = data_range is not None and data_range[0] <= timestamp <= data_range[1]
         rate_limited = self.rate_limited_in_last(seconds)
         can_query = got_cached_data or not rate_limited
-        logger.debug(
+        log.debug(
             f'{"Will" if can_query else "Will not"} query '
             f'Cryptocompare history for {from_asset.identifier} -> '
             f'{to_asset.identifier} @ {timestamp}. Cached data: {got_cached_data}'

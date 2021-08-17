@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, List, Optional
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress
 
 from .asset import Asset, EthereumToken, UnderlyingToken
@@ -12,7 +13,8 @@ from .typing import AssetType
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def add_ethereum_token_to_db(token_data: EthereumToken) -> EthereumToken:

@@ -14,13 +14,15 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 from .handler import GlobalDBHandler, initialize_globaldb
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 ASSETS_VERSION_KEY = 'assets_version'
 

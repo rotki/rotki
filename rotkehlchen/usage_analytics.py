@@ -7,6 +7,7 @@ from typing import Any, Dict, NamedTuple, Optional
 
 import requests
 
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import get_system_spec
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -15,7 +16,8 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 LOCATION_DATA_QUERY_TIMEOUT = 5
 
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class GeolocationData(NamedTuple):

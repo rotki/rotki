@@ -11,6 +11,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ethereum_token_from_db,
@@ -18,7 +19,8 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Price, Timestamp
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 # Get balances

@@ -8,10 +8,12 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.chain.ethereum.gitcoin.constants import GITCOIN_GRANTS_PREFIX
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

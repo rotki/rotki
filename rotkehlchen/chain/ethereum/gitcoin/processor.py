@@ -12,9 +12,11 @@ from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Timestamp
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=False)
@@ -58,7 +60,7 @@ class GitcoinProcessor():
         for entry in actions:
             balance = Balance(amount=entry.amount)
             if entry.rate_asset is None or entry.rate is None:
-                logger.error(
+                log.error(
                     f'Found gitcoin ledger action for {entry.amount} {entry.asset} '
                     f'without a rate asset. Should not happen. Entry was '
                     f'possibly edited by hand. Skipping.',

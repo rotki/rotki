@@ -8,20 +8,21 @@ import requests
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import LiquidityPool
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import _decode_result
 from rotkehlchen.chain.ethereum.typing import NodeName
 from rotkehlchen.constants.ethereum import ZERION_ABI
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.utils.misc import get_chunks
-
-from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import LiquidityPool
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def uniswap_lp_token_balances(

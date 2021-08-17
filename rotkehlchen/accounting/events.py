@@ -274,7 +274,7 @@ class TaxableEvents():
 
         sold_amount = trade_rate * bought_amount
         if sold_amount == ZERO:
-            logger.error(
+            log.error(
                 f'Not adding a virtual sell event. Could not calculate it from '
                 f'trade_rate * bought_amount = {trade_rate} * {bought_amount}',
             )
@@ -341,7 +341,7 @@ class TaxableEvents():
         if skip_trade:
             return
 
-        logger.debug(
+        log.debug(
             f'Processing buy trade of {bought_asset.identifier} with '
             f'{paid_with_asset.identifier} at {timestamp}',
         )
@@ -504,7 +504,7 @@ class TaxableEvents():
             return
 
         if selling_amount == ZERO:
-            logger.error(
+            log.error(
                 f'Skipping sell trade of {selling_asset.identifier} for '
                 f'{receiving_asset.identifier if receiving_asset else "nothing"} at {timestamp}'
                 f' since the selling amount is 0',
@@ -513,14 +513,14 @@ class TaxableEvents():
 
         if selling_asset.is_fiat():
             # Should be handled by a virtual buy
-            logger.debug(
+            log.debug(
                 f'Skipping sell trade of {selling_asset.identifier} for '
                 f'{receiving_asset.identifier if receiving_asset else "nothing"} at {timestamp} '
                 f'since selling of FIAT of something will just be treated as a buy.',
             )
             return
 
-        logger.debug(
+        log.debug(
             f'Processing sell trade of {selling_asset.identifier} for '
             f'{receiving_asset.identifier if receiving_asset else "nothing"} at {timestamp}',
         )

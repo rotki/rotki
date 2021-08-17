@@ -11,11 +11,13 @@ from rotkehlchen.constants.resolver import (
 )
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 from .typing import AssetType
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 UnderlyingTokenDBTuple = Tuple[str, str]
 

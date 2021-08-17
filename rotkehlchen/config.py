@@ -4,7 +4,10 @@ import platform
 import shutil
 from pathlib import Path
 
-log = logging.getLogger(__name__)
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def get_xdg_data_home() -> Path:

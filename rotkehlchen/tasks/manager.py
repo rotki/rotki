@@ -14,11 +14,13 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.typing import ChecksumEthAddress, Location
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 CRYPTOCOMPARE_QUERY_AFTER_SECS = 86400  # a day
@@ -34,7 +36,7 @@ def noop_exchange_succes_cb(trades, margin, asset_movements, exchange_specific_d
 
 
 def exchange_fail_cb(error: str) -> None:
-    logger.error(error)
+    log.error(error)
 
 
 class CCHistoQuery(NamedTuple):
@@ -148,7 +150,7 @@ class TaskManager():
 
         query = self.cryptocompare_queries.pop()
         task_name = f'Cryptocompare historical prices {query.from_asset} / {query.to_asset} query'
-        logger.debug(f'Scheduling task for {task_name}')
+        log.debug(f'Scheduling task for {task_name}')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
@@ -170,7 +172,7 @@ class TaskManager():
         if len(xpubs) == 0:
             return
 
-        logger.debug('Scheduling task for Xpub derivation')
+        log.debug('Scheduling task for Xpub derivation')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='Derive new xpub addresses',
@@ -197,7 +199,7 @@ class TaskManager():
 
         address = random.choice(queriable_accounts)
         task_name = f'Query ethereum transactions for {address}'
-        logger.debug(f'Scheduling task to {task_name}')
+        log.debug(f'Scheduling task to {task_name}')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
@@ -231,7 +233,7 @@ class TaskManager():
 
         exchange = random.choice(queriable_exchanges)
         task_name = f'Query history of {exchange.name} exchange'
-        logger.debug(f'Scheduling task to {task_name}')
+        log.debug(f'Scheduling task to {task_name}')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
@@ -249,7 +251,7 @@ class TaskManager():
         self.greenlet_manager.clear_finished()
         current_greenlets = len(self.greenlet_manager.greenlets) + len(self.api_task_greenlets)
         not_proceed = current_greenlets >= self.max_tasks_num
-        logger.debug(
+        log.debug(
             f'At task scheduling. Current greenlets: {current_greenlets} '
             f'Max greenlets: {self.max_tasks_num}. '
             f'{"Will not schedule" if not_proceed else "Will schedule"}.',
