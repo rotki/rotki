@@ -223,7 +223,6 @@ class Liquity(EthereumModule):
     def get_positions(
         self,
         addresses: List[ChecksumEthAddress],
-        is_premium: bool,
     ) -> Dict[ChecksumEthAddress, Dict[str, Union[Trove, StakePosition]]]:
         contract = EthereumContract(
             address=LIQUITY_TROVE_MANAGER.address,
@@ -250,10 +249,10 @@ class Liquity(EthereumModule):
                 try:
                     trove_info = contract.decode(result, 'Troves', arguments=[addresses[i]])
                     collateral = deserialize_asset_amount(
-                        token_normalized_value_decimals(trove_info[1], 18),
+                        token_normalized_value_decimals(trove_info[1], 18),  # noqa: E501 pylint: disable=unsubscriptable-object
                     )
                     debt = deserialize_asset_amount(
-                        token_normalized_value_decimals(trove_info[0], 18),
+                        token_normalized_value_decimals(trove_info[0], 18),  # noqa: E501 pylint: disable=unsubscriptable-object
                     )
                     collateral_balance = AssetBalance(
                         asset=A_ETH,
@@ -275,8 +274,8 @@ class Liquity(EthereumModule):
                         debt=debt_balance,
                         collateralization_ratio=eth_price * collateral / debt * 100,
                         liquidation_price=debt * lusd_price * FVal(MIN_COLL_RATE) / collateral,
-                        active=bool(trove_info[3]),
-                        trove_id=trove_info[4],
+                        active=bool(trove_info[3]),  # pylint: disable=unsubscriptable-object
+                        trove_id=trove_info[4],  # pylint: disable=unsubscriptable-object
                     )
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(
@@ -284,7 +283,7 @@ class Liquity(EthereumModule):
                         f'Failed to decode contract information. {str(e)}.',
                     )
 
-        if is_premium:
+        if self.premium:
             staked = self._get_raw_history(addresses, 'stake')
             for stake in staked['lqtyStakes']:
                 try:
@@ -553,11 +552,6 @@ class Liquity(EthereumModule):
                         to_asset=A_USD,
                         timestamp=timestamp,
                     )
-                    eth_price = PriceHistorian().query_historical_price(
-                        from_asset=A_ETH,
-                        to_asset=A_USD,
-                        timestamp=timestamp,
-                    )
                     stake_after = deserialize_optional_fval(change['stakedAmountAfter'], 'stakedAmountAfter', 'liquity')  # noqa: E501
                     stake_change = deserialize_optional_fval(change['stakedAmountChange'], 'stakedAmountChange', 'liquity')  # noqa: E501
                     issuance_gain = deserialize_optional_fval(change['issuanceGain'], 'issuanceGain', 'liquity')  # noqa: E501
@@ -629,7 +623,7 @@ class Liquity(EthereumModule):
         pass
 
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
-        info = self.get_positions([address], True)
+        info = self.get_positions([address])
         return [info[address]['trove'].collateral, info[address]['stake'].staked]  # type: ignore
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:

@@ -6,6 +6,7 @@ import requests
 from rotkehlchen.constants.assets import A_LUSD, A_ETH, A_LQTY
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.fval import FVal
+from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_ok_async_response,
@@ -39,13 +40,23 @@ liquity_mocked_historical_prices = {
 
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
-@pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_trove_position(
         rotkehlchen_api_server,
+        start_with_valid_premium,
+        rotki_premium_credentials,
         inquirer,  # pylint: disable=unused-argument
 ):
     """Test that we can get the status of the trove and the staked lqty"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    # Set module premium is required
+    premium = None
+    if start_with_valid_premium:
+        premium = Premium(rotki_premium_credentials)
+    liquity = rotki.chain_manager.get_module('liquity')
+    liquity.premium = premium
+
     async_query = random.choice([False, True])
     response = requests.get(api_url_for(
         rotkehlchen_api_server,

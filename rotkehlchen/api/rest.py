@@ -2648,7 +2648,6 @@ class RestAPI():
             method='get_positions',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
-            is_premium=self.rotkehlchen.premium is not None,
         )
 
     @require_premium_user(active_check=False)
