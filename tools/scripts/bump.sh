@@ -31,7 +31,9 @@ fi
 cd frontend || exit 1
 
 npm version --no-git-tag-version "$1" -w rotki
+node bump.js
 git add app/package.json
+git add package-lock.json
 
 cd "$ROOT_DIR" || exit 1
 
