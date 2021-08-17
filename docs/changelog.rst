@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3329` Users will now properly see their sushiswap trades in the history page if they have the sushiswap module activated.
 * :bug:`3310` For the edge case of a MakerDAO vault event containing a zero amount the MakerDAO DeFi section and PnL report should no longer get an error.
 * :bug:`3311` The PnL CSV export in Windows should now now longer contain the double number of lines and as such the formulas at the summary should be correct. 
 * :bug:`3313` Discrepancies on the sign of net_profit_loss in PnL CSV export between exports with and without formulas should now be fixed.
