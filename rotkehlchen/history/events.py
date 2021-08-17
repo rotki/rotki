@@ -39,7 +39,7 @@ log = RotkehlchenLogsAdapter(logger)
 # eth2
 # liquity
 # Please, update this number each time a history query step is either added or removed
-NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 12
+NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 11
 FREE_LEDGER_ACTIONS_LIMIT = 50
 
 HistoryResult = Tuple[
