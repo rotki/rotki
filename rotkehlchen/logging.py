@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, MutableMapping, Tuple
 
-from gevent import getcurrent
+import gevent
 
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
@@ -25,11 +25,15 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
         - appends all kwargs to the final message
         - appends the greenlet id in the log message
         """
-        greenlet = getcurrent()
+        greenlet = gevent.getcurrent()
         if greenlet.parent is None:
             greenlet_name = 'Main Greenlet'
         else:
-            greenlet_name = greenlet.name
+            try:
+                greenlet_name = greenlet.name
+            except AttributeError:  # means it's a raw greenlet
+                greenlet_name = f'Greenlet with id {id(greenlet)}'
+
         msg = greenlet_name + ': ' + msg + ','.join(' {}={}'.format(a[0], a[1]) for a in kwargs.items())  # noqa: E501
         return msg, {}
 
