@@ -17,7 +17,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
     def __init__(self, logger: logging.Logger):
         super().__init__(logger, extra={})
 
-    def process(self, msg: str, kwargs: MutableMapping[str, Any]) -> Tuple[str, Dict]:
+    def process(self, given_msg: Any, kwargs: MutableMapping[str, Any]) -> Tuple[str, Dict]:
         """
         This is the main post-processing function for rotki logs
 
@@ -25,6 +25,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
         - appends all kwargs to the final message
         - appends the greenlet id in the log message
         """
+        msg = str(given_msg)
         greenlet = gevent.getcurrent()
         if greenlet.parent is None:
             greenlet_name = 'Main Greenlet'
