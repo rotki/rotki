@@ -14,11 +14,13 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 from .schema import DB_SCRIPT_CREATE_TABLES
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 GLOBAL_DB_VERSION = 2
 TABLES_WITH_ASSETS = (
@@ -1246,7 +1248,7 @@ class GlobalDBHandler():
             # be notified.
             query = cursor.execute('SELECT identifier from assets;')
             user_ids = set(query.fetchall())
-            # Atach to the clean db packaged with rotki
+            # Attach to the clean db packaged with rotki
             cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
             # Get built in identifiers
             query = cursor.execute('SELECT identifier from clean_db.assets;')
@@ -1266,7 +1268,7 @@ class GlobalDBHandler():
                             f'Assets inserted by the user are used in the database '
                             f'tables {diff_ids}',
                         )
-                        return False, 'There are assets that can not be deleted'
+                        return False, f'There are assets that can not be deleted: {str(diff_ids)}'
             # Check that versions match
             query = cursor.execute('SELECT value from clean_db.settings WHERE name=="version";')
             version = query.fetchone()
