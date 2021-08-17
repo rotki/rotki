@@ -10,7 +10,7 @@ if [ "$1" != 'minor' ] && [ "$1" != 'major' ] && [ "$1" != 'patch' ]; then
   exit 1
 fi
 
-if [ -n "$(git status --porcelain)" ]; then
+if [ "$(git diff --shortstat 2> /dev/null | tail -n1)" != "" ]; then
   echo 'Git working directory is not clean:'
   git status
   exit 1
@@ -28,10 +28,11 @@ else
   cd "$ROOT_DIR" || exit 1
 fi
 
-cd frontend/app || exit 1
+cd frontend || exit 1
 
-npm version --no-git-tag-version "$1"
-git add package.json
+npm version --no-git-tag-version "$1" -w rotki
+node bump.js
+git add app/package.json
 git add package-lock.json
 
 cd "$ROOT_DIR" || exit 1
