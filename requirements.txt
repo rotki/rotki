@@ -23,7 +23,7 @@ beautifulsoup4==4.9.3
 flask-cors==3.0.10
 flask-restful==0.3.9
 flask==2.0.1
-marshmallow==3.12.2
+marshmallow==3.13.0
 webargs==8.0.0
 
 #constraints
