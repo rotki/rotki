@@ -5,6 +5,7 @@ wsaccel==0.6.3  # recommended for acceleration of gevent-websocket. But abandone
 web3==5.23.0
 pysqlcipher3==1.0.4
 requests==2.26.0
+urllib3==1.26.6
 pycryptodome==3.6.6
 pycryptodomex==3.6.6
 coincurve==13.0.0
