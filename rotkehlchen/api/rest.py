@@ -1608,11 +1608,17 @@ class RestAPI():
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
         try:
-            return send_file(  # type: ignore
-                self.rotkehlchen.accountant.csvexporter.create_zip(),
+            zipfile = self.rotkehlchen.accountant.csvexporter.create_zip()
+            if zipfile is None:
+                return api_response(
+                    wrap_in_fail_result('Could not create a zip archive'),
+                    status_code=HTTPStatus.NOT_FOUND,
+                )
+            return send_file(
+                path_or_file=zipfile,
                 mimetype='application/zip',
                 as_attachment=True,
-                attachment_filename="report.zip",
+                attachment_filename='report.zip',
             )
         except FileNotFoundError:
             return api_response(

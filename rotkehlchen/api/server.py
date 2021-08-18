@@ -319,7 +319,7 @@ class APIServer():
         self.flask_app.register_blueprint(self.blueprint)
         self.ws_server: Optional[WebSocketServer] = None
 
-        self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)
+        self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)  # type: ignore
         self.flask_app.register_error_handler(Exception, self.unhandled_exception)
 
     @staticmethod
