@@ -267,9 +267,10 @@ CREATE TABLE IF NOT EXISTS tags (
 
 DB_CREATE_BLOCKCHAIN_ACCOUNTS = """
 CREATE TABLE IF NOT EXISTS blockchain_accounts (
-    blockchain VARCHAR[24],
-    account TEXT NOT NULL PRIMARY KEY,
-    label TEXT
+    blockchain VARCHAR[24] NOT NULL,
+    account TEXT NOT NULL,
+    label TEXT,
+    PRIMARY KEY (blockchain, account)
 );
 """
 
