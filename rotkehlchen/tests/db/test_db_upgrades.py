@@ -2213,9 +2213,15 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
         ('AVAX', '0x84D34f4f83a87596Cd3FB6887cFf8F17Bf5A7B83', ''),
         ('BTC', '39bAC3Mr6RfT2V3Z8qShD7mA9JT1Phmvap', ''),
     ]
+    expected_xpubs = [('foo', '/m/0/0', 'label1')]
+    expected_xpub_mappings = [
+        ('39bAC3Mr6RfT2V3Z8qShD7mA9JT1Phmvap', 'foo', '/m/0/0', 0, 1),
+    ]
     # Checks before migration
     # Migrate to v29
     assert cursor.execute('SELECT * FROM blockchain_accounts;').fetchall() == expected_accounts
+    assert cursor.execute('SELECT * FROM xpubs;').fetchall() == expected_xpubs
+    assert cursor.execute('SELECT * FROM xpub_mappings;').fetchall() == expected_xpub_mappings
     db = _init_db_with_target_version(
         target_version=29,
         user_data_dir=user_data_dir,
@@ -2223,8 +2229,12 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
     )
     cursor = db.conn.cursor()
 
-    # check same accounts are there
+    # check same data is there
     assert cursor.execute('SELECT * FROM blockchain_accounts;').fetchall() == expected_accounts
+    assert cursor.execute('SELECT * FROM xpubs;').fetchall() == expected_xpubs
+    assert cursor.execute(
+        'SELECT address, xpub, derivation_path, account_index, derived_index FROM xpub_mappings;',
+    ).fetchall() == expected_xpub_mappings
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 29
