@@ -6117,7 +6117,7 @@ Getting Liquity historical data
    :resjson object debt_delta: Amount, asset and usd value of debt that the operation changed.
    :resjson object collateral_delta: Amount, asset and usd value of collateral that the operation changed.
    :resjson string trove_operation: The operation that happened in the change. Can be ``Open Trove``, ``Close Trove``, ``Adjust Trove``, ``Accrue Rewards``, ``Liquidation In Normal Mode``, ``Liquidation In Recovery Mode``, ``Redeem Collateral``
-   :resjson string stake_after: Amount, asset and usd value changed in the operation over the staked position. Amount is represented for LQTY
+   :resjson string stake_after: Amount, asset and usd value changed in the operation over the staked position. Amount is represented in LQTY
    :resjson string stake_change: Amount, asset and usd value that the operation changed
    :resjson string stake_operation: Can be ``Stake Created``, ``Stake Increased``, ``Stake Decreased``, ``Stake Removed``, ``Gains Withdrawn``
 

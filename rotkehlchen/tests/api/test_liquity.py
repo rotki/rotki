@@ -128,4 +128,4 @@ def test_trove_events(rotkehlchen_api_server):
     asset = trove_stake['stake_after']['asset']
     assert asset == '_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'
     assert trove_stake['stake_after']['amount'] == '177.02'
-    assert trove_stake['stake_operation'] == 'Stake Created'
+    assert trove_stake['stake_operation'] == 'stake created'

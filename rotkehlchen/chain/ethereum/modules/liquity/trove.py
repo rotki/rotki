@@ -31,6 +31,7 @@ from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default, PriceHistorian
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Timestamp
 from rotkehlchen.utils.interfaces import EthereumModule
@@ -50,7 +51,8 @@ if TYPE_CHECKING:
 CONTRACT_ADDRESS = '0xA39739EF8b0231DbFA0DcdA07d7e29faAbCf4bb2'
 MIN_COLL_RATE = '1.1'
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class TroveOperation(SerializableEnumMixin):
@@ -82,38 +84,24 @@ class TroveOperation(SerializableEnumMixin):
 
 
 class LiquityStakeEventType(SerializableEnumMixin):
-    CREATE = 1
-    INCREASE = 2
-    DECREASE = 3
-    REMOVE = 4
-    WITHDRAW = 5
-
-    def __str__(self) -> str:
-        if self == LiquityStakeEventType.CREATE:
-            return 'Stake Created'
-        if self == LiquityStakeEventType.INCREASE:
-            return 'Stake Increased'
-        if self == LiquityStakeEventType.DECREASE:
-            return 'Stake Decreased'
-        if self == LiquityStakeEventType.REMOVE:
-            return 'Stake Removed'
-        if self == LiquityStakeEventType.WITHDRAW:
-            return 'Gains Withdrawn'
-        # else
-        raise AssertionError(f'Invalid value {self} for LiquityStakeEventType')
+    STAKE_CREATED = 1
+    STAKE_INCREASED = 2
+    STAKE_DECREASED = 3
+    STAKE_REMOVED = 4
+    STAKE_WITHDRAWN = 5
 
     @staticmethod
     def deserialize(value: str) -> 'LiquityStakeEventType':
         if value == 'stakeCreated':
-            return LiquityStakeEventType.CREATE
+            return LiquityStakeEventType.STAKE_CREATED
         if value == 'stakeIncreased':
-            return LiquityStakeEventType.INCREASE
+            return LiquityStakeEventType.STAKE_INCREASED
         if value == 'stakeDecreased':
-            return LiquityStakeEventType.DECREASE
+            return LiquityStakeEventType.STAKE_DECREASED
         if value == 'stakeRemoved':
-            return LiquityStakeEventType.REMOVE
+            return LiquityStakeEventType.STAKE_REMOVED
         if value == 'gainsWithdrawn':
-            return LiquityStakeEventType.WITHDRAW
+            return LiquityStakeEventType.STAKE_WITHDRAWN
         # else
         raise DeserializationError(f'Encountered unknown LiquityStakeEventType value {value}')
 
@@ -230,8 +218,8 @@ class Liquity(EthereumModule):
             deployed_block=LIQUITY_TROVE_MANAGER.deployed_block,
         )
         calls = [
-            (LIQUITY_TROVE_MANAGER.address, contract.encode(method_name='Troves', arguments=[i]))
-            for i in addresses
+            (LIQUITY_TROVE_MANAGER.address, contract.encode(method_name='Troves', arguments=[x]))
+            for x in addresses
         ]
         outputs = multicall_2(
             ethereum=self.ethereum,
@@ -243,11 +231,11 @@ class Liquity(EthereumModule):
         eth_price = Inquirer().find_usd_price(A_ETH)
         lusd_price = Inquirer().find_usd_price(A_LUSD)
         lqty_price = Inquirer().find_usd_price(A_LQTY)
-        for i, output in enumerate(outputs):
+        for idx, output in enumerate(outputs):
             status, result = output
             if status is True:
                 try:
-                    trove_info = contract.decode(result, 'Troves', arguments=[addresses[i]])
+                    trove_info = contract.decode(result, 'Troves', arguments=[addresses[idx]])
                     collateral = deserialize_asset_amount(
                         token_normalized_value_decimals(trove_info[1], 18),  # noqa: E501 pylint: disable=unsubscriptable-object
                     )
@@ -268,8 +256,8 @@ class Liquity(EthereumModule):
                             usd_value=lusd_price * debt,
                         ),
                     )
-                    data[addresses[i]] = {}
-                    data[addresses[i]]['trove'] = Trove(
+                    data[addresses[idx]] = {}
+                    data[addresses[idx]]['trove'] = Trove(
                         collateral=collateral_balance,
                         debt=debt_balance,
                         collateralization_ratio=eth_price * collateral / debt * 100,
@@ -332,7 +320,7 @@ class Liquity(EthereumModule):
                 spent_asset: Optional[Asset]
                 pnl = got_asset = got_balance = spent_asset = spent_balance = None
                 count_spent_got_cost_basis = False
-                # In one transaction is possible to generate debt and change the colateral
+                # In one transaction it is possible to generate debt and change the collateral
                 if debt_change != AssetAmount(ZERO):
                     if debt_change > ZERO:
                         # Generate debt
@@ -341,10 +329,10 @@ class Liquity(EthereumModule):
                         got_balance = Balance(
                             amount=debt_change,
                             usd_value=query_usd_price_or_use_default(
-                                A_LUSD,
-                                timestamp,
-                                ZERO,
-                                'Liquity',
+                                asset=A_LUSD,
+                                time=timestamp,
+                                default_value=ZERO,
+                                location='Liquity',
                             ),
                         )
                         total_lusd_trove_balance += got_balance
@@ -354,10 +342,10 @@ class Liquity(EthereumModule):
                         spent_balance = Balance(
                             amount=abs(debt_change),
                             usd_value=query_usd_price_or_use_default(
-                                A_LUSD,
-                                timestamp,
-                                ZERO,
-                                'Liquity',
+                                asset=A_LUSD,
+                                time=timestamp,
+                                default_value=ZERO,
+                                location='Liquity',
                             ),
                         )
                         total_lusd_trove_balance -= spent_balance
@@ -366,6 +354,7 @@ class Liquity(EthereumModule):
                             pnl_balance = total_lusd_trove_balance + realized_trove_lusd_loss
                             realized_trove_lusd_loss += -pnl_balance
                             pnl = [AssetBalance(asset=A_LUSD, balance=pnl_balance)]
+
                 if collateral_change != AssetAmount(ZERO):
                     if collateral_change < ZERO:
                         # Withdraw collateral
@@ -373,10 +362,10 @@ class Liquity(EthereumModule):
                         got_balance = Balance(
                             amount=abs(collateral_change),
                             usd_value=query_usd_price_or_use_default(
-                                A_ETH,
-                                timestamp,
-                                ZERO,
-                                'Liquity',
+                                asset=A_ETH,
+                                time=timestamp,
+                                default_value=ZERO,
+                                location='Liquity',
                             ),
                         )
                     else:  # Deposit collateral
@@ -384,12 +373,13 @@ class Liquity(EthereumModule):
                         spent_balance = Balance(
                             amount=collateral_change,
                             usd_value=query_usd_price_or_use_default(
-                                A_ETH,
-                                timestamp,
-                                ZERO,
-                                'Liquity',
+                                asset=A_ETH,
+                                time=timestamp,
+                                default_value=ZERO,
+                                location='Liquity',
                             ),
                         )
+
                 if operation in (
                     TroveOperation.LIQUIDATEINNORMALMODE,
                     TroveOperation.LIQUIDATEINRECOVERYMODE,
@@ -399,10 +389,10 @@ class Liquity(EthereumModule):
                     spent_balance = Balance(
                         amount=abs(collateral_change),
                         usd_value=query_usd_price_or_use_default(
-                            A_ETH,
-                            timestamp,
-                            ZERO,
-                            'Liquity',
+                            asset=A_ETH,
+                            time=timestamp,
+                            default_value=ZERO,
+                            location='Liquity',
                         ),
                     )
                     pnl = [AssetBalance(asset=A_ETH, balance=-spent_balance)]
@@ -458,10 +448,19 @@ class Liquity(EthereumModule):
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> Dict[ChecksumEthAddress, Dict[str, List[LiquityEvent]]]:
-        query = self._get_raw_history(addresses, 'trove')
-        staked = self._get_raw_history(addresses, 'stake')
+        try:
+            query = self._get_raw_history(addresses, 'trove')
+        except RemoteError as e:
+            log.error(f'Failed to query trove graph events for liquity. {str(e)}')
+            query = {}
+        try:
+            staked = self._get_raw_history(addresses, 'stake')
+        except RemoteError as e:
+            log.error(f'Failed to query stake graph events for liquity. {str(e)}')
+            staked = {}
+
         result: Dict[ChecksumEthAddress, Dict[str, List[LiquityEvent]]] = defaultdict(lambda: defaultdict(list))  # noqa: E501
-        for trove in query['troves']:
+        for trove in query.get('troves', []):
             owner = to_checksum_address(trove['owner']['id'])
             for change in trove['changes']:
                 try:
@@ -532,7 +531,7 @@ class Liquity(EthereumModule):
                     )
                     continue
 
-        for stake in staked['lqtyStakes']:
+        for stake in staked.get('lqtyStakes', []):
             owner = to_checksum_address(stake['id'])
             for change in stake['changes']:
                 try:
