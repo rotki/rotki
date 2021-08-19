@@ -2193,6 +2193,43 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
     assert db.get_version() == 28
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 28 to version 29.
+
+    - Updates the primary key of blockchain accounts to take into account chain type
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v28_rotkehlchen.db')
+    db_v28 = _init_db_with_target_version(
+        target_version=28,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db_v28.conn.cursor()
+
+    expected_accounts = [
+        ('ETH', '0x57eEb11218e89C75631e9dF3ef9a34874136729B', 'test ethereum account'),
+        ('AVAX', '0x84D34f4f83a87596Cd3FB6887cFf8F17Bf5A7B83', ''),
+        ('BTC', '39bAC3Mr6RfT2V3Z8qShD7mA9JT1Phmvap', ''),
+    ]
+    # Checks before migration
+    # Migrate to v29
+    assert cursor.execute('SELECT * FROM blockchain_accounts;').fetchall() == expected_accounts
+    db = _init_db_with_target_version(
+        target_version=29,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    # check same accounts are there
+    assert cursor.execute('SELECT * FROM blockchain_accounts;').fetchall() == expected_accounts
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 29
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the
