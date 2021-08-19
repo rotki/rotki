@@ -2007,6 +2007,11 @@ class AssetUpdatesRequestSchema(Schema):
     conflicts = AssetConflictsField(load_default=None)
 
 
+class AssetResetRequestSchema(Schema):
+    reset = fields.String(required=True)
+    ignore_warnings = fields.Boolean(missing=False)
+
+
 class NamedEthereumModuleDataSchema(Schema):
     module_name = fields.String(
         validate=webargs.validate.OneOf(choices=list(AVAILABLE_MODULES_MAP.keys())),

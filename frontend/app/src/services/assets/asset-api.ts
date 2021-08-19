@@ -288,9 +288,13 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  restoreAssetsDatabase(): Promise<boolean> {
+  restoreAssetsDatabase(
+    reset: String,
+    ignore_warnings: boolean
+  ): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>('/assets/updates', {
+        data: { reset, ignore_warnings },
         validateStatus: validStatus,
         transformResponse: this.baseTransformer
       })

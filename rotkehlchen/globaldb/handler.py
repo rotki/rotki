@@ -2,7 +2,7 @@ import logging
 import shutil
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union, cast, overload
+from typing import Any, Dict, List, Optional, Tuple, Union, cast, overload, TYPE_CHECKING
 
 from typing_extensions import Literal
 
@@ -19,32 +19,13 @@ from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 from .schema import DB_SCRIPT_CREATE_TABLES
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 GLOBAL_DB_VERSION = 2
-TABLES_WITH_ASSETS = (
-    ('aave_events', 'asset1'),
-    ('aave_events', 'asset2'),
-    ('yearn_vaults_events', 'from_asset'),
-    ('yearn_vaults_events', 'to_asset'),
-    ('manually_tracked_balances', 'asset'),
-    ('trades', 'base_asset'),
-    ('trades', 'quote_asset'),
-    ('trades', 'fee_currency'),
-    ('margin_positions', 'pl_currency'),
-    ('margin_positions', 'fee_currency'),
-    ('asset_movements', 'asset'),
-    ('asset_movements', 'fee_asset'),
-    ('ledger_actions', 'asset'),
-    ('ledger_actions', 'rate_asset'),
-    ('amm_swaps', 'token0_identifier'),
-    ('amm_swaps', 'token1_identifier'),
-    ('uniswap_events', 'token0_identifier'),
-    ('uniswap_events', 'token1_identifier'),
-    ('adex_events', 'token'),
-    ('balancer_events', 'pool_address_token'),
-)
 
 
 def _get_setting_value(cursor: sqlite3.Cursor, name: str, default_value: int) -> int:
@@ -1228,7 +1209,10 @@ class GlobalDBHandler():
              } for entry in query]
 
     @staticmethod
-    def completly_rebuild_assets_list(user_db_conn: sqlite3.Connection) -> Tuple[bool, str]:
+    def hard_reset_assets_list(
+        user_db: 'DBHandler',
+        force: bool = False,
+    ) -> Tuple[bool, str]:
         """
         Delete all custom asset entries and repopulate from the last
         builtin version
@@ -1239,36 +1223,27 @@ class GlobalDBHandler():
 
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
-        user_db_cursor = user_db_conn.cursor()
+        user_db_cursor = user_db.conn.cursor()
+
+        # Update owned assets
+        user_db.update_owned_assets_in_globaldb()
 
         try:
             # First check that the operation can be made. For this create a set with the
-            # identifiers on the user db and the packaged db and take the difference. If the
-            # difference is not the empty set the operation is dangerous and the user should
-            # be notified.
-            query = cursor.execute('SELECT identifier from assets;')
-            user_ids = set(query.fetchall())
+            # difference of the identifiers owned by any user and registered at the globaldb and
+            # the assets identifiers at the packaged db and take the difference. If the difference
+            # is not the empty set the operation is dangerous and the user should be notified.
+            query = cursor.execute('SELECT asset_id from user_owned_assets;')
+            user_ids = {tup[0] for tup in query.fetchall()}
             # Attach to the clean db packaged with rotki
             cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
             # Get built in identifiers
             query = cursor.execute('SELECT identifier from clean_db.assets;')
-            shipped_ids = set(query.fetchall())
+            shipped_ids = {tup[0] for tup in query.fetchall()}
             diff_ids = user_ids - shipped_ids
-            if len(diff_ids) != 0:
-                # If we have non common elements we have to see if these assets are used anywhere
-                # in the database tables
-                diffs = ', '.join([f'"{id[0]}"' for id in diff_ids])
-                for table, column in TABLES_WITH_ASSETS:
-                    diffs_query = f'SELECT COUNT(*) FROM {table} WHERE {column} IN ({diffs})'
-                    user_db_cursor.execute(diffs_query)
-                    amount = user_db_cursor.fetchone()
-                    if amount[0] != 0:
-                        cursor.execute(detach_database)
-                        log.error(
-                            f'Assets inserted by the user are used in the database '
-                            f'tables {diff_ids}',
-                        )
-                        return False, f'There are assets that can not be deleted: {str(diff_ids)}'
+            if len(diff_ids) != 0 and not force:
+                cursor.execute(detach_database)
+                return False, f'There are assets that can not be deleted: {str(diff_ids)}.'
             # Check that versions match
             query = cursor.execute('SELECT value from clean_db.settings WHERE name=="version";')
             version = query.fetchone()
@@ -1285,6 +1260,7 @@ class GlobalDBHandler():
             cursor.execute('DELETE FROM ethereum_tokens;')
             cursor.execute('DELETE FROM underlying_tokens_list;')
             cursor.execute('DELETE FROM common_asset_details;')
+            cursor.execute('DELETE FROM user_owned_assets;')
             # Copy assets
             cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
             cursor.execute('INSERT INTO ethereum_tokens SELECT * FROM clean_db.ethereum_tokens;')
@@ -1300,6 +1276,8 @@ class GlobalDBHandler():
             ids = cursor.fetchall()
             ids_proccesed = ", ".join([f'("{id[0]}")' for id in ids])
             user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')
+            # Update the owned assets table
+            user_db.update_owned_assets_in_globaldb()
         except sqlite3.Error as e:
             connection.rollback()
             cursor.execute(detach_database)
@@ -1312,8 +1290,11 @@ class GlobalDBHandler():
         return True, ''
 
     @staticmethod
-    def reset_assets_list() -> Tuple[bool, str]:
-        """Resets all assets to the state in the packaged global db"""
+    def soft_reset_assets_list() -> Tuple[bool, str]:
+        """
+        Resets assets to the state in the packaged global db. Custom assets added by the user
+        won't be affected by this reset.
+        """
         root_dir = Path(__file__).resolve().parent.parent
         builtin_database = root_dir / 'data' / 'global.db'
         detach_database = 'DETACH DATABASE "clean_db";'

@@ -521,12 +521,13 @@ def test_global_db_restore(globaldb, database):
     )
 
     database.add_trades([trade])
-    status, _ = GlobalDBHandler().completly_rebuild_assets_list(database.conn)
+    status, msg = GlobalDBHandler().hard_reset_assets_list(database)
     assert status is False
+    assert "'2'" in msg
     # Now do it without the trade
     database.delete_trade(trade.identifier)
-    status, _ = GlobalDBHandler().completly_rebuild_assets_list(database.conn)
-    assert status
+    status, msg = GlobalDBHandler().hard_reset_assets_list(database, True)
+    assert status, msg
     cursor = globaldb._conn.cursor()
     query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{address_to_delete}";'
     r = cursor.execute(query)
@@ -561,6 +562,9 @@ def test_global_db_restore(globaldb, database):
     tokens_expected = cursor_clean_db.execute('SELECT COUNT(*) FROM assets;')
     tokens_local = cursor.execute('SELECT COUNT(*) FROM assets;')
     assert tokens_expected.fetchone() == tokens_local.fetchone()
+    cursor.execute('SELECT asset_id FROM user_owned_assets')
+    msg = 'asset id in trade should not be in the owned table'
+    assert "'2'" not in [entry[0] for entry in cursor.fetchall()], msg
     conn.close()
 
 
@@ -619,7 +623,7 @@ def test_global_db_reset(globaldb):
     )
     GlobalDBHandler().edit_ethereum_token(one_inch_update)
 
-    status, _ = GlobalDBHandler().reset_assets_list()
+    status, _ = GlobalDBHandler().soft_reset_assets_list()
     assert status
     cursor = globaldb._conn.cursor()
     query = f'SELECT COUNT(*) FROM ethereum_tokens where address == "{address_to_delete}";'

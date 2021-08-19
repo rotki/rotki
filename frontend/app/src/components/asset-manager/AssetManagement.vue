@@ -98,10 +98,8 @@ import AssetTable from '@/components/asset-manager/AssetTable.vue';
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import BackendMixin from '@/mixins/backend-mixin';
+import RestoreAssetsDatabase from '@/components/settings/data-security/RestoreAssetsDatabase.vue';
 import { EthereumToken, ManagedAsset } from '@/services/assets/types';
-import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
 import { showError } from '@/store/utils';
 import { Nullable } from '@/types';
 import { assert } from '@/utils/assertions';
@@ -115,7 +113,7 @@ import { assert } from '@/utils/assertions';
     ...mapActions('session', ['logout'])
   }
 })
-export default class AssetManagement extends Mixins(BackendMixin) {
+export default class AssetManagement extends Mixins(RestoreAssetsDatabase) {
   loading: boolean = false;
   tokens: ManagedAsset[] = [];
   validForm: boolean = false;
@@ -125,9 +123,8 @@ export default class AssetManagement extends Mixins(BackendMixin) {
   supportedAssets!: SupportedAsset[];
   toDeleteAsset: Nullable<ManagedAsset> = null;
   mergeTool: boolean = false;
-  confirmRestore: boolean = false;
-  done: boolean = false;
   logout!: () => Promise<void>;
+  restoreMode: string = 'soft';
 
   get deleteAssetSymbol(): string {
     return this.toDeleteAsset?.symbol ?? '';
@@ -223,33 +220,6 @@ export default class AssetManagement extends Mixins(BackendMixin) {
 
   async closeDialog() {
     this.showForm = false;
-  }
-
-  activateRestoreAssets() {
-    this.confirmRestore = true;
-  }
-
-  async restoreAssets() {
-    try {
-      this.confirmRestore = false;
-      let updated = await this.$api.assets.restoreAssetsDatabase();
-      if (updated) {
-        this.done = true;
-      }
-    } catch (e) {
-      const title = this.$t('asset_update.restore.title').toString();
-      const message = e.toString();
-      notify(message, title, Severity.ERROR, true);
-    }
-  }
-
-  async updateComplete() {
-    await this.logout();
-    this.$store.commit('setConnected', false);
-    if (this.$interop.isPackaged) {
-      await this.restartBackend();
-    }
-    await this.$store.dispatch('connect');
   }
 }
 </script>
