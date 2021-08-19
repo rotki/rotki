@@ -334,7 +334,7 @@ def test_upgrade_db_1_to_2(data_dir, username):
     data.db.conn.commit()
 
     # now relogin and check that the account has been re-saved as checksummed
-    with mock_dbhandler_update_owned_assets():
+    with creation_patch, target_patch(1), mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         del data
         data = DataHandler(data_dir, msg_aggregator)
         with target_patch(target_version=2):
