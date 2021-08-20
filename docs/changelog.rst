@@ -7,6 +7,7 @@ Changelog
 * :bug:`3266` Users will now be able to properly access most of the top bar content using a mobile device.
 * :bug:`3268` Users will now be able to properly scroll to the hidden tabs when using a mobile device.
 * :bug:`3267` Frontend will now occupy all the available screen when accessed from a mobile device.
+* :bug:`3208` Rotki is now able to accept and track the same account for different blockchain types.
 
 * :release:`1.20.0 <2021-08-06>`
 * :feature:`2426` Sushiswap is now supported. Premium users can see their LP balances, swaps history and LP pool join/exits. Finally the balancer trades are now taken into account in the profit/loss report.
