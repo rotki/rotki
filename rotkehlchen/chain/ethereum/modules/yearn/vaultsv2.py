@@ -18,6 +18,7 @@ from rotkehlchen.constants.ethereum import (
     YEARN_VAULT_V2_ABI,
     YEARN_VAULTS_V2_PREFIX,
 )
+from rotkehlchen.chain.ethereum.graph import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
@@ -35,11 +36,6 @@ if TYPE_CHECKING:
 
 BLOCKS_PER_YEAR = 2425846
 log = logging.getLogger(__name__)
-SUBGRAPH_REMOTE_ERROR_MSG = (
-    "Failed to request the Yearn Finance vaults v2 subgraph due to {error_msg}. "
-    "All the deposits and withdrawals history queries are not functioning until this is fixed. "  # noqa: E501
-    "Probably will get fixed with time. If not report it to rotki's support channel"  # noqa: E501
-)
 
 
 class YearnVaultsV2(EthereumModule):
@@ -65,7 +61,9 @@ class YearnVaultsV2(EthereumModule):
                 msg_aggregator=msg_aggregator,
             )
         except RemoteError as e:
-            self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+            self.msg_aggregator.add_error(
+                SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Yearn V2", error_msg=str(e)),
+            )
             raise ModuleInitializationFailure('Yearn Vaults v2 Subgraph remote error') from e
 
     def _calculate_vault_roi(self, vault: EthereumToken) -> Tuple[FVal, int]:

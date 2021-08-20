@@ -30,11 +30,6 @@ from .typing import (
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
-SUBGRAPH_REMOTE_ERROR_MSG = (
-    "Failed to request the Balancer subgraph due to {error_msg}. "
-    "All Balancer balances and historical queries are not functioning until this is fixed. "  # noqa: E501
-    "Probably will get fixed with time. If not report it to rotki's support channel"  # noqa: E501
-)
 UNISWAP_REMOTE_ERROR_MSG = (
     "Could not initialize the Uniswap subgraph due to {error_msg}. "
     "All Balancer balances and historical queries won't be able to use a "

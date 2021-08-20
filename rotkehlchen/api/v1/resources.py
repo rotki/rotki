@@ -1491,6 +1491,35 @@ class LoopringBalancesResource(BaseResource):
         return self.rest_api.get_loopring_balances(async_query=async_query)
 
 
+class LiquityTroves(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_liquity_troves(async_query=async_query)
+
+
+class LiquityTrovesHistory(BaseResource):
+
+    get_schema = AsyncHistoricalQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+        self,
+        async_query: bool,
+        reset_db_data: bool,
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_liquity_events(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
 class BalancerBalancesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()

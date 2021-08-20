@@ -8,7 +8,12 @@ from typing_extensions import Literal
 from web3 import Web3
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
-from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
+from rotkehlchen.chain.ethereum.graph import (
+    GRAPH_QUERY_LIMIT,
+    SUBGRAPH_REMOTE_ERROR_MSG,
+    Graph,
+    format_query_indentation,
+)
 from rotkehlchen.chain.ethereum.utils import (
     generate_address_via_create2,
     multicall_specific,
@@ -54,7 +59,6 @@ from .utils import (
     IDENTITY_FACTORY_ADDR,
     IDENTITY_PROXY_INIT_CODE,
     STAKING_ADDR,
-    SUBGRAPH_REMOTE_ERROR_MSG,
 )
 
 if TYPE_CHECKING:
@@ -91,7 +95,9 @@ class Adex(EthereumModule):
                 'https://api.thegraph.com/subgraphs/name/adexnetwork/adex-protocol-v2',
             )
         except RemoteError as e:
-            self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+            self.msg_aggregator.add_error(
+                SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="AdEx", error_msg=str(e)),
+            )
             raise ModuleInitializationFailure('subgraph remote error') from e
 
     @staticmethod
@@ -637,7 +643,9 @@ class Adex(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="AdEx", error_msg=str(e)),
+                )
                 raise
 
             result_data = result[schema]
