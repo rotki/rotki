@@ -126,6 +126,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'NRV',     # Nerve Finance (NRV) but another NRV in CC
         'EDR-2',   # Endor Protocol Token but we have E-Dinar Coin
         ethaddress_to_identifier('0xDa007777D86AC6d989cC9f79A73261b3fC5e0DA0'),  # noqa: E501 # Dappnode (NODE) but another NODE in CC
+        'QI',  # noqa: E501 # BENQI (QI) but another QI in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -306,6 +307,12 @@ def test_coingecko_identifiers_are_reachable():
         'KDC',
         # Coingecko has CoinStarter and we have Student Coin for symbol STC
         ethaddress_to_identifier('0x15B543e986b8c34074DFc9901136d9355a537e7E'),
+        # Coingecko has Nano Dogecoin symbol:ndc and we have NEVERDIE
+        ethaddress_to_identifier('0xA54ddC7B3CcE7FC8b1E3Fa0256D0DB80D2c10970'),
+        # Coingecko has olecoin and we have Olive
+        ethaddress_to_identifier('0x9d9223436dDD466FC247e9dbbD20207e640fEf58'),
+        # Coingecko has orica and we have origami
+        ethaddress_to_identifier('0xd2Fa8f92Ea72AbB35dBD6DECa57173d22db2BA49'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
