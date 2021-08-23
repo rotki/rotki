@@ -98,7 +98,7 @@ import AssetTable from '@/components/asset-manager/AssetTable.vue';
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import RestoreAssetsDatabase from '@/components/settings/data-security/RestoreAssetsDatabase.vue';
+import RestoreAssetsDatabase from '@/mixins/restoreAssets-mixin';
 import { EthereumToken, ManagedAsset } from '@/services/assets/types';
 import { showError } from '@/store/utils';
 import { Nullable } from '@/types';

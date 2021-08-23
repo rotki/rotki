@@ -521,9 +521,8 @@ def test_global_db_restore(globaldb, database):
     )
 
     database.add_trades([trade])
-    status, msg = GlobalDBHandler().hard_reset_assets_list(database)
+    status, _ = GlobalDBHandler().hard_reset_assets_list(database)
     assert status is False
-    assert "'2'" in msg
     # Now do it without the trade
     database.delete_trade(trade.identifier)
     status, msg = GlobalDBHandler().hard_reset_assets_list(database, True)

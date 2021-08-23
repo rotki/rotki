@@ -1243,7 +1243,8 @@ class GlobalDBHandler():
             diff_ids = user_ids - shipped_ids
             if len(diff_ids) != 0 and not force:
                 cursor.execute(detach_database)
-                return False, f'There are assets that can not be deleted: {str(diff_ids)}.'
+                msg = 'There are assets that can not be deleted. Check logs for more details.'
+                return False, msg
             # Check that versions match
             query = cursor.execute('SELECT value from clean_db.settings WHERE name=="version";')
             version = query.fetchone()
@@ -1270,12 +1271,12 @@ class GlobalDBHandler():
 
             user_db_cursor.execute('PRAGMA foreign_keys = OFF;')
             user_db_cursor.execute('DELETE FROM assets;')
-            user_db_cursor.execute('PRAGMA foreign_keys = ON;')
             # Get ids for assets to insert them in the user db
             cursor.execute('SELECT identifier from assets')
             ids = cursor.fetchall()
             ids_proccesed = ", ".join([f'("{id[0]}")' for id in ids])
             user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')
+            user_db_cursor.execute('PRAGMA foreign_keys = ON;')
             # Update the owned assets table
             user_db.update_owned_assets_in_globaldb()
         except sqlite3.Error as e:
@@ -1302,7 +1303,6 @@ class GlobalDBHandler():
         cursor = connection.cursor()
 
         try:
-
             cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
             # Check that versions match
             query = cursor.execute('SELECT value from clean_db.settings WHERE name=="version";')

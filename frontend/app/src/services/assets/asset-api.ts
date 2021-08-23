@@ -290,11 +290,11 @@ export class AssetApi {
 
   restoreAssetsDatabase(
     reset: String,
-    ignore_warnings: boolean
+    ignoreWarnings: boolean
   ): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>('/assets/updates', {
-        data: { reset, ignore_warnings },
+        data: axiosSnakeCaseTransformer({ reset, ignoreWarnings }),
         validateStatus: validStatus,
         transformResponse: this.baseTransformer
       })

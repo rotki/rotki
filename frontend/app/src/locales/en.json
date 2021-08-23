@@ -104,12 +104,16 @@
     "total_changes": "This update contains {changes} asset changes.",
     "up_to_version": "Only update up to version",
     "restore": {
-      "title": "Restore default assets database",
-      "subtitle": "Delete custom assets and restore default assets to their initial state. Caution: This operation might affect other users using the same database for assets.",
+      "title": "Reset assets database",
+      "subtitle": "Delete custom assets and reset assets database to its initial state. Caution: This operation might affect other users in the same system using the database for assets.",
       "action": "Restore",
       "delete_confirmation": {
-        "title": "Restore default assets database",
+        "title": "Reset assets database",
         "message": "Do you really want to restore your local assets database? This will keep the assets that you manually added and were not known to rotki before and reset all others to their original state."
+      },
+      "hard_restore_message": {
+        "title": "Reset assets database",
+        "message": "Do you really want to restore your local copy of assets? You will lose any custom assets that you may have added manually."
       },
       "hard_restore_confirmation": {
         "title": "Dangerous operation",

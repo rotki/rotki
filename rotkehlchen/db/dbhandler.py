@@ -2905,7 +2905,7 @@ class DBHandler:
             for result in query:
                 for _, asset_id in enumerate(result):
                     try:
-                        if asset_id != None:
+                        if asset_id is not None:
                             results.add(Asset(asset_id))
                     except UnknownAsset:
                         self.msg_aggregator.add_warning(
