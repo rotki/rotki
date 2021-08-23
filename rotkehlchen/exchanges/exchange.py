@@ -144,7 +144,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
         The name must be the canonical name used by rotkehlchen
         """
-        raise NotImplementedError("query_balances should only be implemented by subclasses")
+        raise NotImplementedError('query_balances should only be implemented by subclasses')
 
     def query_exchange_specific_history(  # pylint: disable=no-self-use
             self,
