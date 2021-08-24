@@ -12,7 +12,7 @@
   "account_settings_display": {
     "account_asset_movement": "Account asset movement fees were taken into account:",
     "crypto2crypto": "Crypto to crypto trades were taken into account:",
-    "gas_costs": "Gas costs where taken into account:",
+    "gas_costs": "Gas costs were taken into account:",
     "past_cost_basis": "Past cost basis was calculated during the report creation:",
     "tax_free_period": "There was a tax free period:",
     "title": "Accounting Settings",
