@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union, cast
 
 from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -200,13 +201,19 @@ class EventsHistorian():
 
         try:
             self.processing_state_name = 'Querying ethereum transactions history'
-            eth_transactions = self.chain_manager.ethereum.transactions.query(
-                addresses=None,  # all addresses
+            filter_query = ETHTransactionsFilterQuery.make(
+                order_ascending=True,  # for history processing we need oldest first
+                limit=None,
+                offset=None,
+                addresses=None,
                 # We need to have history of transactions since before the range
                 from_ts=Timestamp(0),
                 to_ts=end_ts,
-                with_limit=False,  # at the moment ignore the limit for historical processing,
-                recent_first=False,  # for history processing we need oldest first
+            )
+            eth_transactions = self.chain_manager.ethereum.transactions.query(
+                filter_query=filter_query,
+                with_limit=False,  # at the moment ignore the limit for historical processing
+                only_cache=False,
             )
         except RemoteError as e:
             eth_transactions = []

@@ -52,6 +52,7 @@ from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -2725,20 +2726,15 @@ class RestAPI():
 
     def _get_ethereum_transactions(
             self,
-            address: Optional[ChecksumEthAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
             only_cache: bool,
+            filter_query: ETHTransactionsFilterQuery,
     ) -> Dict[str, Any]:
         transactions: Optional[List[EthereumTransaction]]
         try:
             transactions = self.rotkehlchen.chain_manager.ethereum.transactions.query(
-                addresses=[address] if address is not None else None,
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-                with_limit=self.rotkehlchen.premium is None,
-                recent_first=True,
                 only_cache=only_cache,
+                filter_query=filter_query,
+                with_limit=self.rotkehlchen.premium is None,
             )
             status_code = HTTPStatus.OK
             message = ''
@@ -2771,25 +2767,19 @@ class RestAPI():
     def get_ethereum_transactions(
             self,
             async_query: bool,
-            address: Optional[ChecksumEthAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
             only_cache: bool,
+            filter_query: ETHTransactionsFilterQuery,
     ) -> Response:
         if async_query:
             return self._query_async(
                 command='_get_ethereum_transactions',
-                address=address,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
                 only_cache=only_cache,
+                filter_query=filter_query,
             )
 
         response = self._get_ethereum_transactions(
-            address=address,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
             only_cache=only_cache,
+            filter_query=filter_query,
         )
         result = response['result']
         msg = response['message']

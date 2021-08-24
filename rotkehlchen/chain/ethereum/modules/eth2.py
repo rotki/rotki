@@ -18,6 +18,7 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.ethereum import EthereumConstants
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
@@ -82,12 +83,19 @@ class Eth2(EthereumModule):
             from_block=from_block,
             to_block=to_block,
         )
-        transactions = self.ethereum.transactions.query(
+
+        filter_query = ETHTransactionsFilterQuery.make(
+            order_ascending=True,  # oldest first
+            limit=None,
+            offset=None,
             addresses=addresses,
             from_ts=from_ts,
             to_ts=to_ts,
+        )
+        transactions = self.ethereum.transactions.query(
+            filter_query=filter_query,
             with_limit=False,
-            recent_first=False,
+            only_cache=False,
         )
         deposits: List[Eth2Deposit] = []
         for transaction in transactions:

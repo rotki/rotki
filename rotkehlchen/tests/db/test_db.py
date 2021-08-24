@@ -15,6 +15,7 @@ from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
@@ -1018,7 +1019,8 @@ def test_add_ethereum_transactions(data_dir, username):
     warnings = msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 0
-    returned_transactions = data.db.get_ethereum_transactions()
+    filter_query = ETHTransactionsFilterQuery.make()
+    returned_transactions = data.db.get_ethereum_transactions(filter_query)
     assert returned_transactions == [tx1, tx2]
 
     # Add the last 2 transactions. Since tx2 already exists in the DB it should be
@@ -1028,7 +1030,7 @@ def test_add_ethereum_transactions(data_dir, username):
     warnings = msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 0
-    returned_transactions = data.db.get_ethereum_transactions()
+    returned_transactions = data.db.get_ethereum_transactions(filter_query)
     assert returned_transactions == [tx1, tx2, tx3]
 
 
