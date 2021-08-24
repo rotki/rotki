@@ -148,6 +148,58 @@ CREATE TABLE IF NOT EXISTS price_history (
 );
 """
 
+DB_V3_CREATE_COMMON_ASSETS_DETAILS = """
+CREATE TABLE IF NOT EXISTS common_asset_details(
+    identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+    name TEXT,
+    symbol TEXT,
+    coingecko TEXT,
+    cryptocompare TEXT,
+    forked TEXT,
+    FOREIGN KEY(forked) REFERENCES assets(identifier) ON UPDATE CASCADE
+);
+"""
+
+DB_V3_CREATE_ASSETS = """
+CREATE TABLE IF NOT EXISTS assets (
+    identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+    type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type),
+    started INTEGER,
+    swapped_for TEXT,
+    common_details_id TEXT,
+    FOREIGN KEY(common_details_id) REFERENCES common_asset_details(identifier) ON UPDATE CASCADE
+);
+"""
+
+DB_V3_CREATE_EVM_TOKENS = """
+CREATE TABLE IF NOT EXISTS evm_tokens (
+    identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+    token_type TEXT NOT NULL,		       
+    address VARCHAR[42] NOT NULL,
+    decimals INTEGER,
+    protocol TEXT
+);
+"""
+
+DB_V3_CREATE_ASSETS_EVM_TOKENS = """
+CREATE TABLE IF NOT EXISTS assets_evm_tokens(
+    asset_id TEXT,
+    evm_token_id TEXT,
+    FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY(evm_token_id) REFERENCES evm_tokens(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+    PRIMARY KEY(asset_id, evm_token_id)
+);
+"""
+
+DB_V3_CREATE_MULTIASSETS = """
+CREATE TABLE IF NOT EXISTS multiasset_collector(
+    identifier TEXT NOT NULL		   
+    child_asset_id TEXT,
+    FOREIGN KEY(child_asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE
+    PRIMARY KEY(identifier, child_asset_id)
+);
+"""
+
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
