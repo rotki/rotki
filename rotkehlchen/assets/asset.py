@@ -87,7 +87,7 @@ WORLD_TO_BITTREX = {
     'COIN-2': 'COIN',
     strethaddress_to_identifier('0x15B543e986b8c34074DFc9901136d9355a537e7E'): 'STCCOIN',
     strethaddress_to_identifier('0x8f136Cc8bEf1fEA4A7b71aa2301ff1A52F084384'): 'STC',
-    'BCH': 'BCHN',
+    'MER': 'MER',
 }
 
 WORLD_TO_FTX = {
@@ -303,7 +303,7 @@ WORLD_TO_BINANCE = {
 }
 
 WORLD_TO_BITFINEX = {
-    'BCH': 'BCHABC',
+    'BCH': 'BCHN',
     'CNY': 'CNH',
     'DOGE': 'DOG',
     'LUNA-2': 'LUNA',
