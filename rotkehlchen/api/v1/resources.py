@@ -92,7 +92,7 @@ from rotkehlchen.api.v1.encoding import (
     XpubAddSchema,
     XpubPatchSchema,
 )
-from rotkehlchen.api.v1.parser import resource_parser
+from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -316,13 +316,12 @@ class ExchangesDataResource(BaseResource):
 class EthereumTransactionsResource(BaseResource):
     get_schema = EthereumTransactionQuerySchema()
 
-    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    @ignore_kwarg_parser.use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
             self,
             async_query: bool,
             only_cache: bool,
             filter_query: ETHTransactionsFilterQuery,
-
     ) -> Response:
         return self.rest_api.get_ethereum_transactions(
             async_query=async_query,
@@ -445,7 +444,6 @@ class AssetsReplaceResource(BaseResource):
 class EthereumAssetsResource(BaseResource):
 
     get_schema = OptionalEthereumAddressSchema()
-    # edit_schema = ModifyEthereumTokenSchema()
     delete_schema = RequiredEthereumAddressSchema()
 
     def make_edit_schema(self) -> ModifyEthereumTokenSchema:

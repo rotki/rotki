@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import DefaultDict, Dict, List
+from typing import DefaultDict, Dict, List, Optional
 
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
@@ -33,8 +33,12 @@ class EthTransactions(LockableQueryMixIn):
         self.msg_aggregator = msg_aggregator
         self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
 
+    def reset_count(self) -> None:
+        self.tx_per_address = defaultdict(int)
+
     def _return_transactions_maybe_limit(
             self,
+            requested_addresses: Optional[List[ChecksumEthAddress]],
             transactions: List[EthereumTransaction],
             with_limit: bool,
     ) -> List[EthereumTransaction]:
@@ -48,9 +52,14 @@ class EthTransactions(LockableQueryMixIn):
         for address, count in count_map.items():
             self.tx_per_address[address] = count
 
-        transactions_queried_so_far = sum(x for _, x in self.tx_per_address.items())
-        remaining_num_tx = FREE_ETH_TX_LIMIT - transactions_queried_so_far
-        returning_tx_length = min(remaining_num_tx, len(transactions))
+        if requested_addresses is not None:
+            transactions_for_other_addies = sum(x for addy, x in self.tx_per_address.items() if addy not in requested_addresses)  # noqa: E501
+            remaining_num_tx = FREE_ETH_TX_LIMIT - transactions_for_other_addies
+            remaining_num_tx = FREE_ETH_TX_LIMIT - transactions_for_other_addies
+            returning_tx_length = min(remaining_num_tx, len(transactions))
+        else:
+            returning_tx_length = min(FREE_ETH_TX_LIMIT, len(transactions))
+
         return transactions[:returning_tx_length]
 
     def single_address_query_transactions(
@@ -117,6 +126,9 @@ class EthTransactions(LockableQueryMixIn):
         - RemoteError if etherscan is used and there is a problem with reaching it or
         with parsing the response.
         """
+        # Reset the counter for each query. Makes it easier to cheat when querying each
+        # address sep
+        # self.tx_per_address = defaultdict(int)
         query_addresses = filter_query.addresses
 
         if query_addresses is not None:
@@ -137,4 +149,8 @@ class EthTransactions(LockableQueryMixIn):
                 )
 
         transactions = self.database.get_ethereum_transactions(filter_=filter_query)
-        return self._return_transactions_maybe_limit(transactions, with_limit=with_limit)
+        return self._return_transactions_maybe_limit(
+            requested_addresses=query_addresses,
+            transactions=transactions,
+            with_limit=with_limit,
+        )

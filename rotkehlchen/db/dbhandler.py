@@ -2465,7 +2465,6 @@ class DBHandler:
         The returned list is ordered from oldest to newest
         """
         cursor = self.conn.cursor()
-        query = 'SELECT * FROM ethereum_transactions '
         query, bindings = filter_.prepare()
         query = 'SELECT * FROM ethereum_transactions ' + query
         results = cursor.execute(query, bindings)

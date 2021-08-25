@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Callable, Dict, Mapping, Optional
+from typing import Any, Callable, Dict, Mapping, Optional, Tuple
 
 from flask_restful import Resource
 from marshmallow import Schema, exceptions as ma_exceptions
@@ -86,11 +86,10 @@ class ResourceReadingParser(FlaskParser):
         Different from core parser is that we also get the resource object and
         pass it to the schema
         """
-        # __import__("pdb").set_trace()
         req = req if req is not None else self.get_default_request()  # type: ignore
         location = location or self.location
         if req is None:
-            raise ValueError("Must pass req object")
+            raise ValueError('Must pass req object')
         data = None
         validators = _ensure_list_of_callables(validate)
         schema = self._get_schema(argmap, resource_object)
@@ -119,11 +118,24 @@ class ResourceReadingParser(FlaskParser):
         """Override the behaviour of the standard parser.
 
         Initialize Schema with a callable that gets the resource object as argument"""
-        # __import__("pdb").set_trace()
-        assert callable(argmap), "Snould only use this parser with a callable"
+        assert callable(argmap), 'Should only use this parser with a callable'
         schema = argmap(resource_object)
 
         return schema
 
 
+class IgnoreKwargAfterPostLoadParser(FlaskParser):
+    """A version of FlaskParser that does not augment with kwarg arguments after post_load"""
+
+    @staticmethod
+    def _update_args_kwargs(  # type: ignore
+        args: Tuple,
+        kwargs: Dict[str, Any],
+        parsed_args: Mapping,
+        as_kwargs: bool,
+    ) -> Tuple[Tuple, Mapping]:
+        return args, parsed_args
+
+
 resource_parser = ResourceReadingParser()
+ignore_kwarg_parser = IgnoreKwargAfterPostLoadParser()
