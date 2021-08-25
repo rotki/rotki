@@ -60,7 +60,6 @@ class EthTransactions(LockableQueryMixIn):
         if requested_addresses is not None:
             transactions_for_other_addies = sum(x for addy, x in self.tx_per_address.items() if addy not in requested_addresses)  # noqa: E501
             remaining_num_tx = FREE_ETH_TX_LIMIT - transactions_for_other_addies
-            remaining_num_tx = FREE_ETH_TX_LIMIT - transactions_for_other_addies
             returning_tx_length = min(remaining_num_tx, len(transactions))
         else:
             returning_tx_length = min(FREE_ETH_TX_LIMIT, len(transactions))
