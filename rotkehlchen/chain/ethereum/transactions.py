@@ -34,6 +34,11 @@ class EthTransactions(LockableQueryMixIn):
         self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
 
     def reset_count(self) -> None:
+        """Reset the limit counter for ethereum transactions
+
+        This should be done by the frontend for non-premium users at the start
+        of any batch of transaction queries.
+        """
         self.tx_per_address = defaultdict(int)
 
     def _return_transactions_maybe_limit(

@@ -2061,3 +2061,10 @@ class AvalancheTransactionQuerySchema(Schema):
     address = EthereumAddressField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
+
+
+class LimitsCounterResetSchema(Schema):
+    location = fields.String(
+        required=True,
+        validate=webargs.validate.OneOf(choices=('ethereum_transactions',)),
+    )

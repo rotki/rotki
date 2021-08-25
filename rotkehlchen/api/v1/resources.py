@@ -58,6 +58,7 @@ from rotkehlchen.api.v1.encoding import (
     IntegerIdentifierSchema,
     LedgerActionEditSchema,
     LedgerActionSchema,
+    LimitsCounterResetSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
     ManualPriceDeleteSchema,
@@ -1851,3 +1852,11 @@ class NFTSResource(BaseResource):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_nfts(async_query)
+
+
+class LimitsCounterResetResource(BaseResource):
+    post_schema = LimitsCounterResetSchema()
+
+    @use_kwargs(post_schema, location='view_args')
+    def post(self, location: str) -> Response:
+        return self.rest_api.reset_limits_counter(location)

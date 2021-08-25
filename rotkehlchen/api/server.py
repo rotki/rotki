@@ -68,6 +68,7 @@ from rotkehlchen.api.v1.resources import (
     IgnoredAssetsResource,
     InfoResource,
     LedgerActionsResource,
+    LimitsCounterResetResource,
     LiquityTroves,
     LiquityTrovesHistory,
     LoopringBalancesResource,
@@ -235,6 +236,7 @@ URLS_V1: URLS = [
     ('/gitcoin/events', GitcoinEventsResource),
     ('/gitcoin/report', GitcoinReportResource),
     ('/nfts', NFTSResource),
+    ('/limits/reset/<string:location>', LimitsCounterResetResource),
 ]
 
 logger = logging.getLogger(__name__)

@@ -14,6 +14,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
@@ -346,7 +347,15 @@ def test_query_transactions_over_limit(
 
     # Check that we get all transactions correctly even if we query two times
     for _ in range(2):
-        rotki.chain_manager.ethereum.transactions.reset_count()
+        # rotki.chain_manager.ethereum.transactions.reset_count()
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'limitscounterresetresource',
+                location='ethereum_transactions',
+            ),
+        )
+        assert_simple_ok_response(response)
         for idx, address in enumerate(ethereum_accounts):
             response = requests.get(
                 api_url_for(

@@ -3458,3 +3458,9 @@ class RestAPI():
             result={'result': response['result'], 'message': response['message']},
             status_code=response['status_code'],
         )
+
+    @require_loggedin_user()
+    def reset_limits_counter(self, location: str) -> Response:  # pylint: disable=unused-argument
+        # at the moment only location is ethereum_transactions and is checked by marshmallow
+        self.rotkehlchen.chain_manager.ethereum.transactions.reset_count()
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
