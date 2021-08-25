@@ -53,6 +53,7 @@ from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import (
@@ -2457,19 +2458,15 @@ class DBHandler:
 
     def get_ethereum_transactions(
             self,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            address: Optional[ChecksumEthAddress] = None,
+            filter_: ETHTransactionsFilterQuery,
     ) -> List[EthereumTransaction]:
         """Returns a list of ethereum transactions optionally filtered by time and/or from address
 
         The returned list is ordered from oldest to newest
         """
         cursor = self.conn.cursor()
-        query = 'SELECT * FROM ethereum_transactions '
-        if address is not None:
-            query += f'WHERE (from_address="{address}" OR to_address="{address}") '
-        query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
+        query, bindings = filter_.prepare()
+        query = 'SELECT * FROM ethereum_transactions ' + query
         results = cursor.execute(query, bindings)
 
         ethereum_transactions = []

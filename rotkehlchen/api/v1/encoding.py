@@ -45,6 +45,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_polkadot_address,
 )
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import (
     DeserializationError,
@@ -823,12 +824,52 @@ class AsyncTasksQuerySchema(Schema):
     task_id = fields.Integer(strict=True, load_default=None)
 
 
-class EthereumTransactionQuerySchema(Schema):
-    async_query = fields.Boolean(load_default=False)
+class OnlyCacheQuerySchema(Schema):
+    only_cache = fields.Boolean(load_default=False)
+
+
+class DBPaginationSchema(Schema):
+    limit = fields.Integer(load_default=None)
+    offset = fields.Integer(load_default=None)
+
+
+class DBOrderBySchema(Schema):
+    order_by_attribute = fields.String(load_default=None)
+    ascending = fields.Boolean(load_default=True)
+
+
+class EthereumTransactionQuerySchema(
+        AsyncQueryArgumentSchema,
+        OnlyCacheQuerySchema,
+        DBPaginationSchema,
+        DBOrderBySchema,
+):
     address = EthereumAddressField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-    only_cache = fields.Boolean(load_default=False)
+
+    @post_load
+    def make_ethereum_transaction_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        address = data.get('address')
+        filter_query = ETHTransactionsFilterQuery.make(
+            order_by_attribute='timestamp',  # hard coding order by timestamp for API for now
+            order_ascending=False,  # most recent first
+            limit=data['limit'],
+            offset=data['offset'],
+            addresses=[address] if address is not None else None,
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+        )
+
+        return {
+            'async_query': data['async_query'],
+            'only_cache': data['only_cache'],
+            'filter_query': filter_query,
+        }
 
 
 class TimerangeQuerySchema(Schema):
@@ -2020,3 +2061,10 @@ class AvalancheTransactionQuerySchema(Schema):
     address = EthereumAddressField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
+
+
+class LimitsCounterResetSchema(Schema):
+    location = fields.String(
+        required=True,
+        validate=webargs.validate.OneOf(choices=('ethereum_transactions',)),
+    )

@@ -15,7 +15,7 @@ from webargs.flaskparser import parser
 from werkzeug.exceptions import NotFound
 
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
-from rotkehlchen.api.v1.parser import resource_parser
+from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.resources import (
     AaveBalancesResource,
     AaveHistoryResource,
@@ -68,6 +68,7 @@ from rotkehlchen.api.v1.resources import (
     IgnoredAssetsResource,
     InfoResource,
     LedgerActionsResource,
+    LimitsCounterResetResource,
     LiquityTroves,
     LiquityTrovesHistory,
     LoopringBalancesResource,
@@ -235,6 +236,7 @@ URLS_V1: URLS = [
     ('/gitcoin/events', GitcoinEventsResource),
     ('/gitcoin/report', GitcoinReportResource),
     ('/nfts', NFTSResource),
+    ('/limits/reset/<string:location>', LimitsCounterResetResource),
 ]
 
 logger = logging.getLogger(__name__)
@@ -273,6 +275,7 @@ def endpoint_not_found(e: NotFound) -> Response:
 
 @parser.error_handler  # type: ignore
 @resource_parser.error_handler
+@ignore_kwarg_parser.error_handler
 def handle_request_parsing_error(
         err: ValidationError,
         _request: werkzeug.local.LocalProxy,
@@ -330,8 +333,9 @@ class APIServer():
     def unhandled_exception(exception: Exception) -> Response:
         """ Flask.errorhandler when an exception wasn't correctly handled """
         log.critical(
-            "Unhandled exception when processing endpoint request",
+            'Unhandled exception when processing endpoint request',
             exc_info=True,
+            exception=str(exception),
         )
         return api_response(wrap_in_fail_result(str(exception)), HTTPStatus.INTERNAL_SERVER_ERROR)
 

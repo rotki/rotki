@@ -1,14 +1,16 @@
 import logging
 from collections import defaultdict
-from typing import Dict, List, Optional, Set
+from typing import DefaultDict, Dict, List, Optional
 
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 logger = logging.getLogger(__name__)
@@ -31,20 +33,37 @@ class EthTransactions(LockableQueryMixIn):
         self.msg_aggregator = msg_aggregator
         self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
 
+    def reset_count(self) -> None:
+        """Reset the limit counter for ethereum transactions
+
+        This should be done by the frontend for non-premium users at the start
+        of any batch of transaction queries.
+        """
+        self.tx_per_address = defaultdict(int)
+
     def _return_transactions_maybe_limit(
             self,
-            address: ChecksumEthAddress,
+            requested_addresses: Optional[List[ChecksumEthAddress]],
             transactions: List[EthereumTransaction],
             with_limit: bool,
     ) -> List[EthereumTransaction]:
         if with_limit is False:
             return transactions
 
-        transactions_queried_so_far = sum(x for _, x in self.tx_per_address.items())
-        remaining_num_tx = FREE_ETH_TX_LIMIT - transactions_queried_so_far
-        returning_tx_length = min(remaining_num_tx, len(transactions))
-        # Note down how many we got for this address
-        self.tx_per_address[address] = returning_tx_length
+        count_map: DefaultDict[ChecksumEthAddress, int] = defaultdict(int)
+        for tx in transactions:
+            count_map[tx.from_address] += 1
+
+        for address, count in count_map.items():
+            self.tx_per_address[address] = count
+
+        if requested_addresses is not None:
+            transactions_for_other_addies = sum(x for addy, x in self.tx_per_address.items() if addy not in requested_addresses)  # noqa: E501
+            remaining_num_tx = FREE_ETH_TX_LIMIT - transactions_for_other_addies
+            returning_tx_length = min(remaining_num_tx, len(transactions))
+        else:
+            returning_tx_length = min(FREE_ETH_TX_LIMIT, len(transactions))
+
         return transactions[:returning_tx_length]
 
     def single_address_query_transactions(
@@ -52,22 +71,8 @@ class EthTransactions(LockableQueryMixIn):
             address: ChecksumEthAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            with_limit: bool,
-            only_cache: bool,
-    ) -> List[EthereumTransaction]:
-        self.tx_per_address[address] = 0
-        transactions = self.database.get_ethereum_transactions(
-            from_ts=start_ts,
-            to_ts=end_ts,
-            address=address,
-        )
-        if only_cache:
-            return self._return_transactions_maybe_limit(
-                address=address,
-                transactions=transactions,
-                with_limit=with_limit,
-            )
-
+    ) -> None:
+        """Only queries new transactions and adds them to the DB"""
         ranges = DBQueryRanges(self.database)
         ranges_to_query = ranges.get_location_query_ranges(
             location_string=f'ethtxs_{address}',
@@ -96,14 +101,6 @@ class EthTransactions(LockableQueryMixIn):
         # add new transactions to the DB
         if new_transactions != []:
             self.database.add_ethereum_transactions(new_transactions, from_etherscan=True)
-            # And since at least for now the increasingly negative nonce for the internal
-            # transactions happens only in the DB writing, requery the entire batch from
-            # the DB to get the updated transactions
-            transactions = self.database.get_ethereum_transactions(
-                from_ts=start_ts,
-                to_ts=end_ts,
-                address=address,
-            )
 
         # and also set the last queried timestamps for the address
         ranges.update_used_query_range(
@@ -113,24 +110,16 @@ class EthTransactions(LockableQueryMixIn):
             ranges_to_query=ranges_to_query,
         )
 
-        return self._return_transactions_maybe_limit(
-            address=address,
-            transactions=transactions,
-            with_limit=with_limit,
-        )
-
     @protect_with_lock()
     def query(
             self,
-            addresses: Optional[List[ChecksumEthAddress]],
-            from_ts: Timestamp,
-            to_ts: Timestamp,
+            filter_query: ETHTransactionsFilterQuery,
             with_limit: bool = False,
-            recent_first: bool = False,
             only_cache: bool = False,
     ) -> List[EthereumTransaction]:
-        """Queries for all transactions (normal AND internal) of all ethereum accounts.
-        Returns a list of all transactions of all accounts sorted by time.
+        """Queries for all transactions (normal AND internal) of an ethereum
+        address or of all addresses.
+        Returns a list of all transactions filtered and sorted according to the parameters.
 
         If `with_limit` is true then the api limit is applied
 
@@ -141,23 +130,31 @@ class EthTransactions(LockableQueryMixIn):
         - RemoteError if etherscan is used and there is a problem with reaching it or
         with parsing the response.
         """
-        transactions_set: Set[EthereumTransaction] = set()
+        # Reset the counter for each query. Makes it easier to cheat when querying each
+        # address sep
+        # self.tx_per_address = defaultdict(int)
+        query_addresses = filter_query.addresses
 
-        if addresses is not None:
-            accounts = addresses
+        if query_addresses is not None:
+            accounts = query_addresses
         else:
             accounts = self.database.get_blockchain_accounts().eth
 
-        for address in accounts:
-            new_transactions = self.single_address_query_transactions(
-                address=address,
-                start_ts=from_ts,
-                end_ts=to_ts,
-                with_limit=with_limit,
-                only_cache=only_cache,
-            )
-            transactions_set.update(set(new_transactions))
+        if only_cache is False:
+            f_from_ts = filter_query.from_ts
+            f_to_ts = filter_query.to_ts
+            from_ts = Timestamp(0) if f_from_ts is None else f_from_ts
+            to_ts = ts_now() if f_to_ts is None else f_to_ts
+            for address in accounts:
+                self.single_address_query_transactions(
+                    address=address,
+                    start_ts=from_ts,
+                    end_ts=to_ts,
+                )
 
-        transactions = list(transactions_set)
-        transactions.sort(key=lambda tx: tx.timestamp, reverse=recent_first)
-        return transactions
+        transactions = self.database.get_ethereum_transactions(filter_=filter_query)
+        return self._return_transactions_maybe_limit(
+            requested_addresses=query_addresses,
+            transactions=transactions,
+            with_limit=with_limit,
+        )

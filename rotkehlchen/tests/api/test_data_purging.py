@@ -3,6 +3,7 @@ import requests
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_simple_ok_response
@@ -113,7 +114,9 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
         )],
         from_etherscan=True,
     )
-    assert len(db.get_ethereum_transactions()) == 1
+    filter_ = ETHTransactionsFilterQuery.make()
+
+    assert len(db.get_ethereum_transactions(filter_)) == 1
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -121,4 +124,4 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
         ),
     )
     assert_simple_ok_response(response)
-    assert len(db.get_ethereum_transactions()) == 0
+    assert len(db.get_ethereum_transactions(filter_)) == 0

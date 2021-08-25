@@ -58,6 +58,7 @@ from rotkehlchen.api.v1.encoding import (
     IntegerIdentifierSchema,
     LedgerActionEditSchema,
     LedgerActionSchema,
+    LimitsCounterResetSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
     ManualPriceDeleteSchema,
@@ -92,11 +93,12 @@ from rotkehlchen.api.v1.encoding import (
     XpubAddSchema,
     XpubPatchSchema,
 )
-from rotkehlchen.api.v1.parser import resource_parser
+from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.typing import (
@@ -315,21 +317,17 @@ class ExchangesDataResource(BaseResource):
 class EthereumTransactionsResource(BaseResource):
     get_schema = EthereumTransactionQuerySchema()
 
-    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    @ignore_kwarg_parser.use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
             self,
             async_query: bool,
-            address: Optional[ChecksumEthAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
             only_cache: bool,
+            filter_query: ETHTransactionsFilterQuery,
     ) -> Response:
         return self.rest_api.get_ethereum_transactions(
             async_query=async_query,
-            address=address,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
             only_cache=only_cache,
+            filter_query=filter_query,
         )
 
     def delete(self) -> Response:
@@ -447,7 +445,6 @@ class AssetsReplaceResource(BaseResource):
 class EthereumAssetsResource(BaseResource):
 
     get_schema = OptionalEthereumAddressSchema()
-    # edit_schema = ModifyEthereumTokenSchema()
     delete_schema = RequiredEthereumAddressSchema()
 
     def make_edit_schema(self) -> ModifyEthereumTokenSchema:
@@ -1855,3 +1852,11 @@ class NFTSResource(BaseResource):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_nfts(async_query)
+
+
+class LimitsCounterResetResource(BaseResource):
+    post_schema = LimitsCounterResetSchema()
+
+    @use_kwargs(post_schema, location='view_args')
+    def post(self, location: str) -> Response:
+        return self.rest_api.reset_limits_counter(location)
