@@ -174,6 +174,7 @@ DELISTED_ASSETS = [
     strethaddress_to_identifier('0x06147110022B768BA8F99A8f385df11a151A9cc8'),
     strethaddress_to_identifier('0x27695E09149AdC738A978e9A678F99E4c39e9eb9'),
     'FCN',
+    'BITB',
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [
