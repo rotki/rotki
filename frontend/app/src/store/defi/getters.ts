@@ -1409,6 +1409,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           continue;
         }
         const dexTrade = trades[address];
+        const linkUrl = txUrl.endsWith('/')
+          ? `${txUrl}${dexTrade[0].txHash}`
+          : `${txUrl}/${dexTrade[0].txHash}`;
         const convertedTrades: Trade[] = dexTrade.map(trade => ({
           tradeId: trade.tradeId,
           location: location,
@@ -1420,7 +1423,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           quoteAsset: trade.quoteAsset,
           rate: trade.rate,
           tradeType: 'buy',
-          link: `${txUrl}${trade.txHash}`,
+          link: linkUrl,
           notes: '',
           ignoredInAccounting: false
         }));
