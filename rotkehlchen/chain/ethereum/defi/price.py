@@ -141,8 +141,6 @@ def handle_underlying_price_yearn_vault(
         div_decimals: int,
         asset_price: Price,
 ) -> FVal:
-    # TODO This needs to change. Either make it constant for all vaults of this type
-    # or understand why yUSDC and yUSDT which have 6 decimals don't work correctly
     div_decimals = 18
     price_per_full_share = contract.call(ethereum, 'getPricePerFullShare')
     usd_value = FVal(asset_price * price_per_full_share) / 10 ** div_decimals
