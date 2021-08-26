@@ -106,14 +106,14 @@
     "restore": {
       "title": "Reset assets database",
       "subtitle": "Delete custom assets and reset assets database to its initial state. Caution: This operation might affect other users in the same system using the database for assets.",
-      "action": "Restore",
+      "action": "Reset",
       "delete_confirmation": {
         "title": "Reset assets database",
         "message": "Do you really want to restore your local assets database? This will keep the assets that you manually added and were not known to rotki before and reset all others to their original state."
       },
       "hard_restore_message": {
         "title": "Reset assets database",
-        "message": "Do you really want to restore your local copy of assets? You will lose any custom assets that you may have added manually."
+        "message": "Do you really want to reset your local copy of assets? You will lose any custom assets that you may have added manually."
       },
       "hard_restore_confirmation": {
         "title": "Dangerous operation",
