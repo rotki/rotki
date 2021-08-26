@@ -166,6 +166,29 @@
                         : $t('closed_trades.details.link_data')
                     }}
                   </v-col>
+                  <v-col>
+                    <v-tooltip v-if="hasLink(item)" top open-delay="600">
+                      <template #activator="{ on, attrs }">
+                        <v-btn
+                          v-if="hasLink(item)"
+                          :small="true"
+                          icon
+                          v-bind="attrs"
+                          :width="'20px'"
+                          color="primary"
+                          class="ml-1"
+                          :class="dark ? null : 'grey lighten-4'"
+                          :href="href(item.link)"
+                          :target="target"
+                          v-on="on"
+                          @click="openLink(item.link)"
+                        >
+                          <v-icon :small="true"> mdi-launch </v-icon>
+                        </v-btn>
+                      </template>
+                      <span>{{ item.link }}</span>
+                    </v-tooltip>
+                  </v-col>
                 </v-row>
                 <notes-display :notes="item.notes" />
               </table-expand-container>
@@ -231,6 +254,7 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import AssetMixin from '@/mixins/asset-mixin';
 import StatusMixin from '@/mixins/status-mixin';
+import ThemeMixin from '@/mixins/theme-mixin';
 import { Section } from '@/store/const';
 import { HistoryActions, IGNORE_TRADES } from '@/store/history/consts';
 import { IgnoreActionPayload, TradeEntry } from '@/store/history/types';
@@ -265,7 +289,11 @@ import { ActionStatus, Message } from '@/store/types';
     ...mapMutations(['setMessage'])
   }
 })
-export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
+export default class ClosedTrades extends Mixins(
+  StatusMixin,
+  AssetMixin,
+  ThemeMixin
+) {
   readonly headersClosed: DataTableHeader[] = [
     { text: '', value: 'selection', width: '34px', sortable: false },
     {
@@ -456,6 +484,29 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
       amount: trade.amount
     }).toString();
     this.tradeToDelete = trade;
+  }
+
+  hasLink(trade: TradeEntry) {
+    return trade.link && trade.link.startsWith('http');
+  }
+
+  openLink(url: string) {
+    this.$interop.openUrl(url);
+  }
+
+  href(url: string): string | undefined {
+    if (this.$interop.isPackaged) {
+      return undefined;
+    }
+
+    return url;
+  }
+
+  get target(): string | undefined {
+    if (this.$interop.isPackaged) {
+      return undefined;
+    }
+    return '_blank';
   }
 
   async deleteTrade() {
