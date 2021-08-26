@@ -13,6 +13,7 @@ from rotkehlchen.constants.assets import CONSTANT_ASSETS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
+from rotkehlchen.globaldb.upgrades.v2_v3 import upgrade_ethereum_asset_ids_v3
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
@@ -37,6 +38,7 @@ def _get_setting_value(cursor: sqlite3.Cursor, name: str, default_value: int) ->
 
 def initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
     connection = sqlite3.connect(dbpath)
+    print(dbpath)
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
     cursor = connection.cursor()
     db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
@@ -48,6 +50,8 @@ def initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
 
     if db_version == 1:
         upgrade_ethereum_asset_ids(connection)
+    if db_version == 2:
+        upgrade_ethereum_asset_ids_v3(connection)
     cursor.execute(
         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
         ('version', str(GLOBAL_DB_VERSION)),

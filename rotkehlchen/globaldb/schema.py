@@ -174,7 +174,8 @@ CREATE TABLE IF NOT EXISTS assets (
 DB_V3_CREATE_EVM_TOKENS = """
 CREATE TABLE IF NOT EXISTS evm_tokens (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
-    token_type TEXT NOT NULL,		       
+    token_type TEXT NOT NULL,
+    chain TEXT NOT NULL,	       
     address VARCHAR[42] NOT NULL,
     decimals INTEGER,
     protocol TEXT
@@ -193,7 +194,7 @@ CREATE TABLE IF NOT EXISTS assets_evm_tokens(
 
 DB_V3_CREATE_MULTIASSETS = """
 CREATE TABLE IF NOT EXISTS multiasset_collector(
-    identifier TEXT NOT NULL		   
+    identifier TEXT NOT NULL,	   
     child_asset_id TEXT,
     FOREIGN KEY(child_asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE
     PRIMARY KEY(identifier, child_asset_id)
