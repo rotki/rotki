@@ -21,6 +21,7 @@ from rotkehlchen.api.v1.encoding import (
     AssetSchema,
     AssetSchemaWithIdentifier,
     AssetsReplaceSchema,
+    AssetResetRequestSchema,
     AssetUpdatesRequestSchema,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
@@ -474,6 +475,7 @@ class AssetUpdatesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
     post_schema = AssetUpdatesRequestSchema()
+    delete_schema = AssetResetRequestSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
@@ -487,6 +489,10 @@ class AssetUpdatesResource(BaseResource):
             conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
     ) -> Response:
         return self.rest_api.perform_assets_updates(async_query, up_to_version, conflicts)
+
+    @use_kwargs(delete_schema, location='json_and_query')
+    def delete(self, reset: Literal['soft', 'hard'], ignore_warnings: bool) -> Response:
+        return self.rest_api.rebuild_assets_information(reset, ignore_warnings)
 
 
 class BlockchainBalancesResource(BaseResource):

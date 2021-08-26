@@ -28,7 +28,7 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
-UNDERLAYING_ASSET_PRICES = {
+UNDERLYING_ASSET_PRICES = {
     A_AAVE: FVal('100'),
     A_LINK: FVal('25'),
     A_CRV: FVal('10'),
@@ -291,7 +291,7 @@ def test_find_usd_price_via_second_oracle(inquirer):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-@pytest.mark.parametrize('mocked_current_prices', [UNDERLAYING_ASSET_PRICES])
+@pytest.mark.parametrize('mocked_current_prices', [UNDERLYING_ASSET_PRICES])
 @pytest.mark.parametrize('ignore_mocked_prices_for', [['YAB', 'USD']])
 def test_price_underlying_tokens(inquirer, globaldb):
     aave_weight, link_weight, crv_weight = FVal('0.6'), FVal('0.2'), FVal('0.2')

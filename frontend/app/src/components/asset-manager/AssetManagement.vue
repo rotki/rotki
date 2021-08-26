@@ -6,8 +6,8 @@
       @refresh="refresh"
     />
 
-    <v-row class="mt-2">
-      <v-col>
+    <v-row class="mt-2" justify="space-between">
+      <v-col md="3">
         <v-tooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
             <v-btn
@@ -23,6 +23,27 @@
           </template>
           <span>{{ $t('asset_management.merge_assets_tooltip') }}</span>
         </v-tooltip>
+      </v-col>
+      <v-col md="2">
+        <v-btn depressed color="primary" @click="activateRestoreAssets()">
+          {{ $t('asset_update.restore.action') }}
+        </v-btn>
+        <confirm-dialog
+          :display="confirmRestore"
+          :title="$t('asset_update.restore.delete_confirmation.title')"
+          :message="$t('asset_update.restore.delete_confirmation.message')"
+          @confirm="restoreAssets"
+          @cancel="confirmRestore = false"
+        />
+        <confirm-dialog
+          v-if="done"
+          single-action
+          display
+          :title="$t('asset_update.restore.success.title')"
+          :primary-action="$t('asset_update.success.ok')"
+          :message="$t('asset_update.restore.success.description')"
+          @confirm="updateComplete()"
+        />
       </v-col>
     </v-row>
 
@@ -70,13 +91,14 @@
 
 <script lang="ts">
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { Component, Vue } from 'vue-property-decorator';
-import { mapState } from 'vuex';
+import { Component, Mixins } from 'vue-property-decorator';
+import { mapState, mapActions } from 'vuex';
 import AssetForm from '@/components/asset-manager/AssetForm.vue';
 import AssetTable from '@/components/asset-manager/AssetTable.vue';
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import RestoreAssetsDatabase from '@/mixins/restoreAssets-mixin';
 import { EthereumToken, ManagedAsset } from '@/services/assets/types';
 import { showError } from '@/store/utils';
 import { Nullable } from '@/types';
@@ -86,9 +108,12 @@ import { assert } from '@/utils/assertions';
   components: { MergeDialog, ConfirmDialog, AssetForm, BigDialog, AssetTable },
   computed: {
     ...mapState('balances', ['supportedAssets'])
+  },
+  methods: {
+    ...mapActions('session', ['logout'])
   }
 })
-export default class AssetManagement extends Vue {
+export default class AssetManagement extends Mixins(RestoreAssetsDatabase) {
   loading: boolean = false;
   tokens: ManagedAsset[] = [];
   validForm: boolean = false;
@@ -98,6 +123,8 @@ export default class AssetManagement extends Vue {
   supportedAssets!: SupportedAsset[];
   toDeleteAsset: Nullable<ManagedAsset> = null;
   mergeTool: boolean = false;
+  logout!: () => Promise<void>;
+  restoreMode: string = 'soft';
 
   get deleteAssetSymbol(): string {
     return this.toDeleteAsset?.symbol ?? '';

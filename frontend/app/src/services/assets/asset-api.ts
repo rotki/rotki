@@ -287,4 +287,17 @@ export class AssetApi {
       })
       .then(handleResponse);
   }
+
+  restoreAssetsDatabase(
+    reset: String,
+    ignoreWarnings: boolean
+  ): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>('/assets/updates', {
+        data: axiosSnakeCaseTransformer({ reset, ignoreWarnings }),
+        validateStatus: validStatus,
+        transformResponse: this.baseTransformer
+      })
+      .then(handleResponse);
+  }
 }

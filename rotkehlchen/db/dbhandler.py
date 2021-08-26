@@ -138,6 +138,23 @@ DBTupleType = Literal[
     'amm_swap',
 ]
 
+# Tuples that contain first the name of a table and then the columns that
+# reference assets ids. This is used to query all assets that a user owns.
+TABLES_WITH_ASSETS = (
+    ('aave_events', 'asset1', 'asset2'),
+    ('yearn_vaults_events', 'from_asset', 'to_asset'),
+    ('manually_tracked_balances', 'asset'),
+    ('trades', 'base_asset', 'quote_asset', 'fee_currency'),
+    ('margin_positions', 'pl_currency', 'fee_currency'),
+    ('asset_movements', 'asset', 'fee_asset'),
+    ('ledger_actions', 'asset', 'rate_asset'),
+    ('amm_swaps', 'token0_identifier', 'token1_identifier'),
+    ('uniswap_events', 'token0_identifier', 'token1_identifier'),
+    ('adex_events', 'token'),
+    ('balancer_events', 'pool_address_token'),
+    ('timed_balances', 'currency'),
+)
+
 
 def _protect_password_sqlcipher(password: str) -> str:
     """A double quote in the password would close the string. To escape it double it
@@ -2872,60 +2889,36 @@ class DBHandler:
         # but think on the performance. This is a synchronous api call so if
         # it starts taking too much time the calling logic needs to change
         cursor = self.conn.cursor()
-        query = cursor.execute(
-            'SELECT DISTINCT currency FROM timed_balances ORDER BY time ASC;',
-        )
 
         results = set()
-        for result in query:
+        for table_entry in TABLES_WITH_ASSETS:
+            table_name = table_entry[0]
+            columns = table_entry[1:]
+            columns_str = ", ".join(columns)
             try:
-                results.add(Asset(result[0]))
-            except UnknownAsset:
-                self.msg_aggregator.add_warning(
-                    f'Unknown/unsupported asset {result[0]} found in the database. '
-                    f'If you believe this should be supported open an issue in github',
+                query = cursor.execute(
+                    f'SELECT DISTINCT {columns_str} FROM {table_name};',
                 )
-                continue
-            except DeserializationError:
-                self.msg_aggregator.add_error(
-                    f'Asset with non-string type {type(result[0])} found in the '
-                    f'database. Skipping it.',
-                )
-                continue
+            except sqlcipher.OperationalError as e:
+                log.error(f'Could not fetch assets from table {table_name}. {str(e)}')
 
-        query = cursor.execute(
-            'SELECT DISTINCT asset FROM manually_tracked_balances;',
-        )
-        for result in query:
-            try:
-                results.add(Asset(result[0]))
-            except UnknownAsset:
-                self.msg_aggregator.add_warning(
-                    f'Unknown/unsupported asset {result[0]} found in the database. '
-                    f'If you believe this should be supported open an issue in github',
-                )
-                continue
-            except DeserializationError:
-                self.msg_aggregator.add_error(
-                    f'Asset with non-string type {type(result[0])} found in the '
-                    f'database. Skipping it.',
-                )
-                continue
-
-        query = cursor.execute(
-            'SELECT DISTINCT base_asset, quote_asset FROM trades ORDER BY time ASC;',
-        )
-        for entry in query:
-            try:
-                asset1, asset2 = [Asset(x) for x in entry]
-            except UnknownAsset as e:
-                logger.warning(
-                    f'At processing owned assets from base/quote could not deserialize '
-                    f'asset due to {str(e)}',
-                )
-                continue
-            results.add(asset1)
-            results.add(asset2)
+            for result in query:
+                for _, asset_id in enumerate(result):
+                    try:
+                        if asset_id is not None:
+                            results.add(Asset(asset_id))
+                    except UnknownAsset:
+                        self.msg_aggregator.add_warning(
+                            f'Unknown/unsupported asset {asset_id} found in the database. '
+                            f'If you believe this should be supported open an issue in github',
+                        )
+                        continue
+                    except DeserializationError:
+                        self.msg_aggregator.add_error(
+                            f'Asset with non-string type {type(asset_id)} found in the '
+                            f'database. Skipping it.',
+                        )
+                        continue
 
         return list(results)
 

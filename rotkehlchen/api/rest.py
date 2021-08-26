@@ -1485,6 +1485,25 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
+    @require_loggedin_user()
+    def rebuild_assets_information(
+        self,
+        reset: Literal['soft', 'hard'],
+        ignore_warnings: bool,
+    ) -> Response:
+        msg = 'Invalid value for reset'
+        if reset == 'soft':
+            success, msg = GlobalDBHandler().soft_reset_assets_list()
+        elif reset == 'hard':
+            success, msg = GlobalDBHandler().hard_reset_assets_list(
+                user_db=self.rotkehlchen.data.db,
+                force=ignore_warnings,
+            )
+
+        if success:
+            return api_response(_wrap_in_ok_result(OK_RESULT), status_code=HTTPStatus.OK)
+        return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+
     def query_netvalue_data(self) -> Response:
         from_ts = Timestamp(0)
         premium = self.rotkehlchen.premium
