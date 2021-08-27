@@ -238,6 +238,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # (PAND)a coin. No data found except here:
     # https://coinmarketcap.com/currencies/pandacoin-panda/
     # Note: This is not the PND Panda coin
+    'OSK',  # Missing coingecko/cc information
     'PAND',
     # Pawncoin. No data found except from here:
     # https://coinmarketcap.com/currencies/pawncoin/
@@ -626,6 +627,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'CFG',  # not released yet. TODO: Review this one later
     'MUSH',  # Couldn't find a listing post saying what asset is this one
     'MOVR',  # Moonriver not in CC and shown as preview on coingecko. TODO yabir: review this one
+    'MAKI',  # Couldn't find information about this asset at kucoin. Seems like is not public yet
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
