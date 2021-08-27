@@ -1,5 +1,4 @@
 import json
-import logging
 from typing import Any, Dict, List, Optional, Union
 from unittest.mock import patch
 
@@ -21,8 +20,6 @@ from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
-
-logger = logging.getLogger(__name__)
 
 
 def assert_btc_balances_result(

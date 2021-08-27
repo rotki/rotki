@@ -7,6 +7,7 @@ import {
 } from '@rotki/common/lib/defi/xswap';
 import { default as BigNumber } from 'bignumber.js';
 import sortBy from 'lodash/sortBy';
+import { explorerUrls } from '@/components/helper/asset-urls';
 import { truncateAddress } from '@/filters';
 import i18n from '@/i18n';
 import {
@@ -76,6 +77,7 @@ import {
   getPoolProfit,
   getPools
 } from '@/store/defi/xswap-utils';
+import { SettingsState } from '@/store/settings/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';
@@ -1388,9 +1390,15 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   ): XswapBalance[] => {
     return getBalances(uniswapBalances, addresses);
   },
-  basicDexTrades: ({ uniswapTrades, balancerTrades, sushiswap }) => (
-    addresses
-  ): Trade[] => {
+  basicDexTrades: (
+    { uniswapTrades, balancerTrades, sushiswap },
+    _r,
+    { settings }
+  ) => (addresses): Trade[] => {
+    const {
+      explorers: { ETH }
+    }: SettingsState = settings!;
+    const txUrl = ETH?.transaction ?? explorerUrls.ETH.transaction;
     function transform(
       trades: DexTrades,
       location: 'uniswap' | 'balancer' | 'sushiswap'
@@ -1401,6 +1409,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           continue;
         }
         const dexTrade = trades[address];
+        const linkUrl = txUrl.endsWith('/')
+          ? `${txUrl}${dexTrade[0].txHash}`
+          : `${txUrl}/${dexTrade[0].txHash}`;
         const convertedTrades: Trade[] = dexTrade.map(trade => ({
           tradeId: trade.tradeId,
           location: location,
@@ -1412,7 +1423,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           quoteAsset: trade.quoteAsset,
           rate: trade.rate,
           tradeType: 'buy',
-          link: '',
+          link: linkUrl,
           notes: '',
           ignoredInAccounting: false
         }));

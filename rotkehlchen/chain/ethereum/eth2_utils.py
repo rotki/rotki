@@ -13,11 +13,13 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import create_timestamp
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class ValidatorBalance(NamedTuple):

@@ -98,6 +98,9 @@ def kraken_to_world_pair(pair: str) -> Tuple[Asset, Asset]:
     elif pair[0:5] in KRAKEN_TO_WORLD:
         base_asset_str = pair[0:5]
         quote_asset_str = pair[5:]
+    elif pair[0:6] in KRAKEN_TO_WORLD:
+        base_asset_str = pair[0:6]
+        quote_asset_str = pair[6:]
     else:
         raise UnprocessableTradePair(pair)
 

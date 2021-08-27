@@ -56,6 +56,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, UNISWAP_V2_LP_ABI, YEARN_VAULT_V2_ABI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors import (
+    BlockchainQueryError,
     PriceQueryUnsupportedAsset,
     RemoteError,
     UnableToDecryptRemoteData,
@@ -167,6 +168,12 @@ def get_underlying_asset_price(token: EthereumToken) -> Optional[Price]:
         price = Inquirer().find_usd_price(A_TUSD)
     elif token in ASSETS_UNDERLYING_BTC:
         price = Inquirer().find_usd_price(A_BTC)
+
+    # At this point we have to return the price if it's not None. If we don't do this and got
+    # a price for a token that has underlying assets, the code will enter the if statement after
+    # this block and the value for price will change becoming incorrect.
+    if price is not None:
+        return price
 
     custom_token = GlobalDBHandler().get_ethereum_token(token.ethereum_address)
     if custom_token and custom_token.underlying_tokens is not None:
@@ -648,22 +655,12 @@ class Inquirer():
             abi=YEARN_VAULT_V2_ABI,
             deployed_block=0,
         )
-        output = multicall_2(
-            ethereum=self._ethereum,
-            require_success=True,
-            calls=[(token.ethereum_address, contract.encode(method_name='pricePerShare'))],
-        )
-        if isinstance(output, list) and len(output) != 0 and output[0][0] is True:
-            # https://github.com/PyCQA/pylint/issues/4739
-            price_per_share = contract.decode(output[0][1], 'pricePerShare')  # pylint: disable=unsubscriptable-object  # noqa: E501
-            if len(price_per_share) != 0:
-                return price_per_share[0] * underlying_token_price  # pylint: disable=unsubscriptable-object  # noqa: E501
-            log.error(f'Failed to decode pricePerShare for yearn vault v2 token {token}')
-            # will return None right below
-        log.error(
-            f'Error to call multicall for price on Yearn vault v2 token {token} '
-            f'with output {output}.',
-        )
+        try:
+            price_per_share = contract.call(self._ethereum, 'pricePerShare')
+            return Price(price_per_share * underlying_token_price / 10 ** token.decimals)
+        except (RemoteError, BlockchainQueryError) as e:
+            log.error(f'Failed to query pricePerShare method in Yearn v2 Vault. {str(e)}')
+
         return None
 
     @staticmethod

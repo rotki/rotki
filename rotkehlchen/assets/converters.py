@@ -20,6 +20,7 @@ from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 UNSUPPORTED_POLONIEX_ASSETS = (
+    'ACH1',  # neither in coingecko nor cryptocompare
     # This was a super shortlived coin.
     # Only info is here: https://bitcointalk.org/index.php?topic=632818.0
     # No price info in cryptocompare or paprika. So we don't support it.
@@ -237,6 +238,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # (PAND)a coin. No data found except here:
     # https://coinmarketcap.com/currencies/pandacoin-panda/
     # Note: This is not the PND Panda coin
+    'OSK',  # Missing coingecko/cc information
     'PAND',
     # Pawncoin. No data found except from here:
     # https://coinmarketcap.com/currencies/pawncoin/
@@ -386,6 +388,8 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # BRZ. As of 16/06/2019 no data found outside of Bittrex for this token
     # https://twitter.com/BittrexIntl/status/1150870819758907393
     'BRZ',
+    'DRCM',  # neither in coingecko nor cryptocompare
+    'ETM',  # neither in coingecko nor cryptocompare
     # HINT. As of 28/07/2019 no data found outside of Bittrex for this token
     # https://twitter.com/BittrexIntl/status/1154445165257474051
     'HINT',
@@ -427,6 +431,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'PAR',  # Couldn't find what asset is this
     'UPXAU',  # neither in coingecko nor cryptocompare
     'TEA',  # neither in coingecko nor cryptocompare
+    'TYB',  # neither in coingecko nor cryptocompare
     'PANDO',  # neither in coingecko nor cryptocompare (own blockchain, released on 2020)
     'SMBSWAP',  # neither in coingecko nor cryptocompare
     'UPCO2',  # neither in coingecko nor cryptocompare
@@ -621,6 +626,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'SPHRI',  # no cryptocompare/coingecko data SpheriumFinance
     'CFG',  # not released yet. TODO: Review this one later
     'MUSH',  # Couldn't find a listing post saying what asset is this one
+    'MOVR',  # Moonriver not in CC and shown as preview on coingecko. TODO yabir: review this one
+    'MAKI',  # Couldn't find information about this asset at kucoin. Seems like is not public yet
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets

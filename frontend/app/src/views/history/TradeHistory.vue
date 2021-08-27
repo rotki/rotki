@@ -42,7 +42,8 @@ import { RefreshPeriod } from '@/store/settings/types';
   },
   methods: {
     ...mapActions('history', [HistoryActions.FETCH_TRADES]),
-    ...mapActions('defi', ['fetchUniswapTrades', 'fetchBalancerTrades'])
+    ...mapActions('defi', ['fetchUniswapTrades', 'fetchBalancerTrades']),
+    ...mapActions('defi/sushiswap', { fetchSushiswapTrades: 'fetchTrades' })
   }
 })
 export default class TradeHistory extends Mixins(StatusMixin) {
@@ -50,6 +51,7 @@ export default class TradeHistory extends Mixins(StatusMixin) {
   [HistoryActions.FETCH_TRADES]!: (payload: FetchSource) => Promise<void>;
   fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
   fetchBalancerTrades!: (refresh: boolean) => Promise<void>;
+  fetchSushiswapTrades!: (refresh: boolean) => Promise<void>;
   [REFRESH_PERIOD]!: RefreshPeriod;
   trades!: TradeEntry[];
   openTrades: TradeEntry[] = [];
@@ -91,7 +93,8 @@ export default class TradeHistory extends Mixins(StatusMixin) {
     await Promise.all([
       this.fetchTrades(FETCH_FROM_CACHE),
       this.fetchUniswapTrades(false),
-      this.fetchBalancerTrades(false)
+      this.fetchBalancerTrades(false),
+      this.fetchSushiswapTrades(false)
     ]);
     await this.fetchTrades(FETCH_FROM_SOURCE);
   }
@@ -100,7 +103,8 @@ export default class TradeHistory extends Mixins(StatusMixin) {
     await Promise.all([
       this.fetchTrades(FETCH_REFRESH),
       this.fetchUniswapTrades(true),
-      this.fetchBalancerTrades(true)
+      this.fetchBalancerTrades(true),
+      this.fetchSushiswapTrades(true)
     ]);
   }
 }

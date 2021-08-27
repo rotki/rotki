@@ -109,7 +109,7 @@ class Covalent(ExternalServiceWithApiKey):
 
         retry = 0
         while retry <= CONST_RETRY:
-            logger.debug(f'Querying covalent: {query_str}')  # noqa: E501 lgtm [py/clear-text-logging-sensitive-data]
+            log.debug(f'Querying covalent: {query_str}')  # noqa: E501 lgtm [py/clear-text-logging-sensitive-data]
             try:
                 response = self.session.get(query_str, timeout=timeout if timeout else DEFAULT_TIMEOUT_TUPLE)  # noqa: E501
             except requests.exceptions.RequestException as e:

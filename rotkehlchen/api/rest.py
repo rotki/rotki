@@ -116,6 +116,9 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
 OK_RESULT = {'result': True, 'message': ''}
 
 
@@ -211,10 +214,6 @@ def require_premium_user(active_check: bool) -> Callable:
     return _require_premium_user
 
 
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
-
-
 class RestAPI():
     """ The Object holding the logic that runs inside all the API calls"""
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
@@ -272,12 +271,12 @@ class RestAPI():
             self._write_task_result(task_id, result)
 
     def _do_query_async(self, command: str, task_id: int, **kwargs: Any) -> None:
+        log.debug(f'Async task with task id {task_id} started')
         result = getattr(self, command)(**kwargs)
         self._write_task_result(task_id, result)
 
     def _query_async(self, command: str, **kwargs: Any) -> Response:
         task_id = self._new_task_id()
-
         greenlet = gevent.spawn(
             self._do_query_async,
             command,
@@ -2926,7 +2925,7 @@ class RestAPI():
                     timestamp=timestamp,
                 )
             except (RemoteError, NoPriceForGivenTimestamp) as e:
-                logger.error(
+                log.error(
                     f'Could not query the historical {target_asset.identifier} price for '
                     f'{asset.identifier} at time {timestamp} due to: {str(e)}. Using zero price',
                 )

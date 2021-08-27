@@ -2,7 +2,7 @@ import logging
 import shutil
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union, cast, overload, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
 
 from typing_extensions import Literal
 
@@ -18,9 +18,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 from .schema import DB_SCRIPT_CREATE_TABLES
-
-if TYPE_CHECKING:
-    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

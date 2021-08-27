@@ -386,7 +386,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if module:
             return module  # already activated
 
-        logger.debug(f'Activating {module_name} module')
+        log.debug(f'Activating {module_name} module')
         kwargs = {}
         if module_name == 'eth2':
             kwargs['beaconchain'] = self.beaconchain
@@ -401,7 +401,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 **kwargs,
             )
         except ModuleInitializationFailure as e:
-            logger.error(f'Failed to activate {module_name} due to: {str(e)}')
+            log.error(f'Failed to activate {module_name} due to: {str(e)}')
             return None
 
         self.eth_modules[module_name] = instance
@@ -420,7 +420,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if instance is None:
             return  # nothing to do
 
-        logger.debug(f'Deactivating {module_name} module')
+        log.debug(f'Deactivating {module_name} module')
         instance.deactivate()
         del instance
         return

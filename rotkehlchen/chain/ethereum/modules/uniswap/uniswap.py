@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, List, Optional, Set
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
+from rotkehlchen.chain.ethereum.interfaces.ammswap import UNISWAP_TRADES_PREFIX
 from rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap import AMMSwapPlatform
 from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
     AddressEvents,
@@ -17,22 +18,17 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
     ProtocolBalance,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
-from rotkehlchen.chain.ethereum.interfaces.ammswap import UNISWAP_TRADES_PREFIX
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
     deserialize_ethereum_address,
 )
-from rotkehlchen.typing import (
-    AssetAmount,
-    ChecksumEthAddress,
-    Location,
-    Timestamp,
-)
+from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
@@ -44,7 +40,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 UNISWAP_EVENTS_PREFIX = 'uniswap_events'
 

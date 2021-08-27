@@ -10,6 +10,15 @@ Changelog
 * :bug:`3267` Frontend will now occupy all the available screen when accessed from a mobile device.
 * :bug:`3208` Rotki is now able to accept and track the same account for different blockchain types.
 
+* :release:`1.20.1 <2021-08-27>`
+* :feature:`3349` AMM swaps now have a transaction hash link in the trade history section.
+* :bug:`3329` Users will now properly see their sushiswap trades in the history page if they have the sushiswap module activated.
+* :bug:`3310` For the edge case of a MakerDAO vault event containing a zero amount the MakerDAO DeFi section and PnL report should no longer get an error.
+* :bug:`3311` The PnL CSV export in Windows should now now longer contain the double number of lines and as such the formulas at the summary should be correct. 
+* :bug:`3313` Discrepancies on the sign of net_profit_loss in PnL CSV export between exports with and without formulas should now be fixed.
+* :bug:`3355` Yearn V2 vaults should now display a correct price.
+* :bug:`3373` The form to add a FTX account will now work correctly when the subaccount field is modified and then cleared. 
+
 * :release:`1.20.0 <2021-08-06>`
 * :feature:`2426` Sushiswap is now supported. Premium users can see their LP balances, swaps history and LP pool join/exits. Finally the balancer trades are now taken into account in the profit/loss report.
 * :feature:`2145` Users will now be able to customize whether CSV export should contain metadata of the PnL run. Consisting of the rotki version that generated it and the chosen accounting settings.

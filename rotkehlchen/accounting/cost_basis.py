@@ -263,7 +263,7 @@ class CostBasisCalculator():
         )
         asset_events = self.get_events(asset)
         asset_events.acquisitions.append(event)
-        logger.debug(event)
+        log.debug(event)
 
     def spend_asset(
             self,
@@ -286,7 +286,7 @@ class CostBasisCalculator():
         )
         asset_events = self.get_events(asset)
         asset_events.spends.append(event)
-        logger.debug(event)
+        log.debug(event)
 
     def calculate_spend_cost_basis(
             self,

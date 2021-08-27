@@ -1162,7 +1162,7 @@ class DBHandler:
             self.delete_loopring_data()
             self.delete_eth2_deposits()
             self.delete_eth2_daily_stats()
-            logger.debug('Purged all module data from the DB')
+            log.debug('Purged all module data from the DB')
             return
 
         if module_name == 'uniswap':
@@ -1188,10 +1188,10 @@ class DBHandler:
             self.delete_eth2_deposits()
             self.delete_eth2_daily_stats()
         else:
-            logger.debug(f'Requested to purge {module_name} data from the DB but nothing to do')
+            log.debug(f'Requested to purge {module_name} data from the DB but nothing to do')
             return
 
-        logger.debug(f'Purged {module_name} data from the DB')
+        log.debug(f'Purged {module_name} data from the DB')
 
     def delete_uniswap_trades_data(self) -> None:
         """Delete all historical Uniswap trades data"""
@@ -2232,14 +2232,14 @@ class DBHandler:
                         # Also if we have transactions of one account sending to the
                         # other and both accounts are being tracked.
                         string_repr = db_tuple_to_str(entry, tuple_type)
-                        logger.debug(
+                        log.debug(
                             f'Did not add "{string_repr}" to the DB due to "{str(e)}".'
                             f'Either it already exists or some constraint was hit.',
                         )
                         continue
 
                     string_repr = db_tuple_to_str(entry, tuple_type)
-                    logger.warning(
+                    log.warning(
                         f'Did not add "{string_repr}" to the DB due to "{str(e)}".'
                         f'It either already exists or some other constraint was hit.',
                     )
@@ -3455,7 +3455,7 @@ class DBHandler:
                 updates.append((actual_id, db_id))
 
         if len(updates) != 0:
-            logger.debug(
+            log.debug(
                 f'Found {len(updates)} identifier discrepancies in the DB '
                 f'for {table_name}. Correcting...',
             )
@@ -3469,9 +3469,9 @@ class DBHandler:
         changing and no longer corresponding to the calculated id.
         """
         start_time = ts_now()
-        logger.debug('Starting DB data integrity check')
+        log.debug('Starting DB data integrity check')
         self._ensure_data_integrity('trades', Trade)
         self._ensure_data_integrity('asset_movements', AssetMovement)
         self._ensure_data_integrity('margin_positions', MarginPosition)
         self.conn.commit()
-        logger.debug(f'DB data integrity check finished after {ts_now() - start_time} seconds')
+        log.debug(f'DB data integrity check finished after {ts_now() - start_time} seconds')
