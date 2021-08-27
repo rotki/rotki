@@ -90,6 +90,8 @@ Bear in mind that in case of using multiple accounts/devices with the data sync 
    :alt: Replace local database with remote backup
    :align: center
 
+You can manually move the global DB that contains the assets from one system to the other too. Find the :ref:`rotki_data_directory` in the source system. Assuming it's linux it will be ``~/.local/share/rotki/data``. The global db is then ``~/.local/share/rotki/data/global_data/global.db``. Manually move it to the equivalent location in the new system.
+
 
 Customizing
 **************
@@ -573,6 +575,11 @@ The loopring account balances are also visible in the blockchain accounts view.
 .. image:: images/loopring_balances_account.gif
    :alt: Loopring balances for an account
    :align: center
+
+Moving data to another system
+=====================================
+
+If you want to move your data to another system then you will need to do some manual steps. First identify the :ref:`rotki_data_directory` in both the source and the destination system. Then move the entire data directory from the source system to the destination system and make sure that the same rotki version is used in both syste
 
 .. _track_balances: 
 
