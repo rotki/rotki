@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.20.1 <2021-08-27>`
 * :bug:`3349` Defi swaps trade now shows in trade history.
 * :bug:`3329` Users will now properly see their sushiswap trades in the history page if they have the sushiswap module activated.
 * :bug:`3310` For the edge case of a MakerDAO vault event containing a zero amount the MakerDAO DeFi section and PnL report should no longer get an error.
