@@ -56,9 +56,6 @@ fi
 
 echo "Preparing $1 release"
 
-echo "STOP"
-exit 1
-
 ROOT_DIR=$PWD
 cd ../ || exit 1
 
