@@ -8,6 +8,7 @@ Changelog
 * :bug:`3311` The PnL CSV export in Windows should now now longer contain the double number of lines and as such the formulas at the summary should be correct. 
 * :bug:`3313` Discrepancies on the sign of net_profit_loss in PnL CSV export between exports with and without formulas should now be fixed.
 * :bug:`3355` Yearn V2 vaults should now display a correct price.
+* :bug:`3373` The form to add a FTX account will now work correctly when the subaccount field is modified and then cleared. 
 
 * :release:`1.20.0 <2021-08-06>`
 * :feature:`2426` Sushiswap is now supported. Premium users can see their LP balances, swaps history and LP pool join/exits. Finally the balancer trades are now taken into account in the profit/loss report.

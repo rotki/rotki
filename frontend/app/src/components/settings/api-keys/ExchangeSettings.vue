@@ -200,6 +200,13 @@ export default class ExchangeSettings extends Vue {
       exchange.newName = null;
     }
 
+    if (
+      exchange.ftxSubaccount !== null &&
+      exchange.ftxSubaccount.trim().length === 0
+    ) {
+      exchange.ftxSubaccount = null;
+    }
+
     const success = await this.setupExchange({
       exchange: exchange,
       edit: this.edit
