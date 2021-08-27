@@ -625,6 +625,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'SPHRI',  # no cryptocompare/coingecko data SpheriumFinance
     'CFG',  # not released yet. TODO: Review this one later
     'MUSH',  # Couldn't find a listing post saying what asset is this one
+    'MOVR',  # Moonriver not in CC and shown as preview on coingecko. TODO yabir: review this one
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets

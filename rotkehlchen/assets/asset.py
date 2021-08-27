@@ -331,6 +331,7 @@ WORLD_TO_BITFINEX = {
     # TerraUSD is TERRAUST in bitfinex
     'UST': 'TERRAUST',
     strethaddress_to_identifier('0x8f693ca8D21b157107184d29D398A8D082b38b76'): 'DATA',
+    'XEC': 'BCHABC',
 }
 
 WORLD_TO_KUCOIN = {
