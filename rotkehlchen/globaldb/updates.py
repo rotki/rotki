@@ -423,13 +423,20 @@ class AssetsUpdater():
             try:
                 min_schema_version = infojson['updates'][str(version)]['min_schema_version']
                 max_schema_version = infojson['updates'][str(version)]['max_schema_version']
-                if local_schema_version < min_schema_version or local_schema_version > max_schema_version:  # noqa: E501
+                if local_schema_version < min_schema_version:
+                    self.msg_aggregator.add_warning(
+                        f'Skipping assets update {version} since it requires a min schema of '
+                        f'{min_schema_version}. Please upgrade rotki to get this assets update',
+                    )
+                    break  # get out of the loop
+
+                if local_schema_version > max_schema_version:
                     self.msg_aggregator.add_warning(
                         f'Skipping assets update {version} since it requires a min '
                         f'schema of {min_schema_version} and max schema of {max_schema_version} '
                         f'while the local DB schema version is {local_schema_version}. '
                         f'You will have to follow an alternative method to '
-                        f'obtain the assets of this update.',
+                        f'obtain the assets of this update. Easiest would be to reset global DB.',
                     )
                     cursor.execute(
                         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
