@@ -59,7 +59,7 @@ def test_simple_update(rotkehlchen_api_server, globaldb):
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    update_3 = """INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES("0xC2FEC534c461c45533e142f724d0e3930650929c", 18, NULL);INSERT INTO assets(identifier,type, name, symbol,started, swapped_for, coingecko, cryptocompare, details_reference) VALUES("_ceth_0xC2FEC534c461c45533e142f724d0e3930650929c", "C", "AKB token", "AKB",123, NULL,   NULL, "AIDU", "0xC2FEC534c461c45533e142f724d0e3930650929c");
+    update_4 = """INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES("0xC2FEC534c461c45533e142f724d0e3930650929c", 18, NULL);INSERT INTO assets(identifier,type, name, symbol,started, swapped_for, coingecko, cryptocompare, details_reference) VALUES("_ceth_0xC2FEC534c461c45533e142f724d0e3930650929c", "C", "AKB token", "AKB",123, NULL,   NULL, "AIDU", "0xC2FEC534c461c45533e142f724d0e3930650929c");
 *
 INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, cryptocompare, details_reference) VALUES("121-ada-FADS-as", "F","A name","SYMBOL",NULL, NULL,"", "", "121-ada-FADS-as");INSERT INTO common_asset_details(asset_id, forked) VALUES("121-ada-FADS-as", "BTC");
 *
@@ -81,27 +81,32 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
                 "max_schema_version": GLOBAL_DB_VERSION,
             },
             "999999993": {
+                "changes": 5,
+                "min_schema_version": GLOBAL_DB_VERSION - 2,
+                "max_schema_version": GLOBAL_DB_VERSION - 1,
+            },
+            "999999994": {
                 "changes": 3,
                 "min_schema_version": GLOBAL_DB_VERSION,
                 "max_schema_version": GLOBAL_DB_VERSION,
             },
-            "999999994": {
-                "changes": 5,
-                "min_schema_version": GLOBAL_DB_VERSION + 1,
-                "max_schema_version": GLOBAL_DB_VERSION - 1,
-            },
             "999999995": {
-                "changes": 5,
+                "changes": 2,
                 "min_schema_version": GLOBAL_DB_VERSION,
                 "max_schema_version": GLOBAL_DB_VERSION,
             },
             "999999996": {
                 "changes": 5,
-                "min_schema_version": GLOBAL_DB_VERSION,
-                "max_schema_version": GLOBAL_DB_VERSION,
+                "min_schema_version": GLOBAL_DB_VERSION + 1,
+                "max_schema_version": GLOBAL_DB_VERSION + 2,
+            },
+            "999999997": {
+                "changes": 5,
+                "min_schema_version": GLOBAL_DB_VERSION + 1,
+                "max_schema_version": GLOBAL_DB_VERSION + 2,
             },
         },
-        sql_actions={"999999991": "", "999999992": "", "999999993": update_3, "999999994": "", "999999995": ""},  # noqa: E501
+        sql_actions={"999999991": "", "999999992": "", "999999993": "", "999999994": update_4, "999999995": "", "999999996": ""},  # noqa: E501
     )
     globaldb.add_setting_value(ASSETS_VERSION_KEY, 999999992)
     with update_patch:
@@ -124,14 +129,14 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
             result = assert_proper_response_with_result(response)
         assert result['local'] == 999999992
         assert result['remote'] == 999999996
-        assert result['new_changes'] == 13  # changes from 99[3 + 4 + 6], skipping 5
+        assert result['new_changes'] == 5  # 994 (3) + 995(2)
 
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
                 'assetupdatesresource',
             ),
-            json={'async_query': async_query, 'up_to_version': 999999995},
+            json={'async_query': async_query, 'up_to_version': 999999997},
         )
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -147,8 +152,9 @@ INSERT INTO assets(identifier,type,name,symbol,started, swapped_for, coingecko, 
         errors = rotki.msg_aggregator.consume_errors()
         warnings = rotki.msg_aggregator.consume_warnings()
         assert len(errors) == 0, f'Found errors: {errors}'
-        assert len(warnings) == 1
-        assert 'Skipping assets update 999999994 since it requires a min schema of' in warnings[0]
+        assert len(warnings) == 2
+        assert 'Skipping assets update 999999993 since it requires a min schema of 0 and max schema of 1 while the local DB schema version is 2. You will have to follow an alternative method to obtain the assets of this update. Easiest would be to reset global DB' in warnings[0]  # noqa: E501
+        assert 'Skipping assets update 999999996 since it requires a min schema of 3. Please upgrade rotki to get this assets update' in warnings[1]  # noqa: E501
 
         assert result is True
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999995
