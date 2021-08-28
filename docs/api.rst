@@ -7127,6 +7127,62 @@ Getting Eth2 Staking deposits
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
+Getting Pickle's DILL balances
+==============================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/pickle/dill
+
+   Doing a GET on the pickle's DILL balances resource will return the balances that the user has locked with the rewards that can be claimed.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/pickle/dill HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+        {
+            "result": {
+                "0x5c4D8CEE7dE74E31cE69E76276d862180545c307": {
+                    "locked_amount": {
+                        "amount": "4431.204412216798860222",
+                        "usd_value": "43735.98754857980475039114",
+                        "asset": "_ceth_0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+                    },
+                    "pending_rewards": {
+                        "amount": "82.217560698031032969",
+                        "usd_value": "811.48732408956629540403",
+                        "asset": "_ceth_0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5"
+                    },
+                    "locked_until": 1755129600
+                }
+            },
+            "message": ""
+        }
+
+   :resjson object result: A mapping of all accounts that currently have Pickle locked to keys ``locked_amount``,  ``pending_rewards`` and ``locked_until``
+
+   :statuscode 200: Pickle balances succesfully queried.
+   :statuscode 409: User is not logged in or Pickle module is not activated.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+
 Querying ethereum airdrops
 ==============================
 

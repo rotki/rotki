@@ -49,6 +49,7 @@ from rotkehlchen.chain.ethereum.modules import (
     YearnVaults,
     YearnVaultsV2,
     Liquity,
+    PickleFinance,
 )
 from rotkehlchen.chain.ethereum.nft import NFTManager
 from rotkehlchen.chain.ethereum.tokens import EthTokens
@@ -475,6 +476,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_module(self, module_name: Literal['liquity']) -> Optional[Liquity]:
+        ...
+
+    @overload
+    def get_module(self, module_name: Literal['pickle_finance']) -> Optional[PickleFinance]:
         ...
 
     def get_module(self, module_name: ModuleName) -> Optional[Any]:

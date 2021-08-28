@@ -43,6 +43,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     VaultEvent,
     VaultEventType,
 )
+from rotkehlchen.chain.ethereum.modules.pickle.pickle import DillBalance
 from rotkehlchen.chain.ethereum.modules.uniswap import (
     UniswapPool,
     UniswapPoolAsset,
@@ -143,6 +144,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             LiquityStakeEvent,
             Trove,
             StakePosition,
+            DillBalance,
     )):
         return process_result(entry.serialize())
     if isinstance(entry, (

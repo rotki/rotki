@@ -2666,6 +2666,16 @@ class RestAPI():
             to_timestamp=to_timestamp,
         )
 
+    def get_dill_balance(self, async_query: bool) -> Response:
+        addresses = self.rotkehlchen.chain_manager.queried_addresses_for_module('pickle_finance')
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='pickle_finance',
+            method='get_dill',
+            query_specific_balances_before=None,
+            addresses=addresses,
+        )
+
     def get_liquity_troves(self, async_query: bool) -> Response:
         return self._api_query_for_eth_module(
             async_query=async_query,

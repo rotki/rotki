@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 12/08/2021 19:54:12.
+# tools/scripts/generate_constant_assets.py at 28/08/2021 16:52:35.
 # Do not edit manually!
 
 from typing import List
@@ -289,6 +289,18 @@ A_LQTY = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_LQTY)
+A_PICKLE = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5'),
+    decimals=18,
+    name="PickleToken",
+    symbol='PICKLE',
+    started=Timestamp(1599694316),
+    swapped_for=None,
+    coingecko='pickle-finance',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_PICKLE)
 
 A_AAVE = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'),
@@ -927,7 +939,7 @@ A_AYFI_V1 = EthereumToken.initialize(
     symbol='aYFI',
     started=Timestamp(1598605878),
     swapped_for=None,
-    coingecko='ayfi',
+    coingecko='ayfi-v1',
     cryptocompare='YFI',
     protocol='aave',
 )
@@ -2120,7 +2132,7 @@ A_WOO = EthereumToken.initialize(
     symbol='WOO',
     started=Timestamp(1602855151),
     swapped_for=None,
-    coingecko='wootrade-network',
+    coingecko='woo-network',
     cryptocompare=None,
     protocol=None,
 )
@@ -2360,7 +2372,7 @@ A_SX = EthereumToken.initialize(
     symbol='SX',
     started=Timestamp(1610747210),
     swapped_for=None,
-    coingecko='sportx',
+    coingecko='sx-network',
     cryptocompare=None,
     protocol=None,
 )
@@ -2384,7 +2396,7 @@ A_FOX = EthereumToken.initialize(
     symbol='FOX',
     started=Timestamp(1553639047),
     swapped_for=None,
-    coingecko='fox-token',
+    coingecko='shapeshift-fox-token',
     cryptocompare=None,
     protocol=None,
 )
