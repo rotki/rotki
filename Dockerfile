@@ -6,7 +6,7 @@ COPY frontend/ .
 RUN npm install -g npm@7 && if ! npm ci --exit-code; then npm ci; fi
 RUN npm run docker:build
 
-FROM python:3.7 as backend-build-stage
+FROM python:3.7-buster as backend-build-stage
 
 ARG PYINSTALLER_VERSION=3.5
 RUN python3 -m venv /opt/venv
@@ -34,7 +34,7 @@ RUN pip install -e . && \
     python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 
-FROM nginx:stable as runtime
+FROM nginx:1.21 as runtime
 
 LABEL maintainer="Rotki Solutions GmbH <info@rotki.com>"
 
