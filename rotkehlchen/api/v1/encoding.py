@@ -2011,7 +2011,7 @@ class AssetUpdatesRequestSchema(Schema):
 
 class AssetResetRequestSchema(Schema):
     reset = fields.String(required=True)
-    ignore_warnings = fields.Boolean(missing=False)
+    ignore_warnings = fields.Boolean(load_default=False)
 
 
 class NamedEthereumModuleDataSchema(Schema):
