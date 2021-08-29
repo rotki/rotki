@@ -2899,7 +2899,7 @@ class DBHandler:
                 query = cursor.execute(
                     f'SELECT DISTINCT {columns_str} FROM {table_name};',
                 )
-            except sqlcipher.OperationalError as e:
+            except sqlcipher.OperationalError as e:    # pylint: disable=no-member
                 log.error(f'Could not fetch assets from table {table_name}. {str(e)}')
 
             for result in query:
