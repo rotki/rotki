@@ -9,7 +9,7 @@ urllib3==1.26.6
 pycryptodome==3.6.6
 pycryptodomex==3.6.6
 coincurve==13.0.0
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.1
 base58check==1.0.2
 bech32==1.2.0
 gql==2.0.0
