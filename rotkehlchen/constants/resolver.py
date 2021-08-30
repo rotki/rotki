@@ -14,6 +14,19 @@ class CHAIN_ID(Enum):
     POLYGON_CHAIN_IDENTIFIER = '137'
     XDAI_CHAIN_IDENTIFIER = '100'
 
+    @classmethod
+    def deserialize_from_coingecko(cls, chain: str) -> 'CHAIN_ID':
+        if chain == 'ethereum':
+            return CHAIN_ID.ETHEREUM_CHAIN_IDENTIFIER
+        if chain == 'binance-smart-chain':
+            return CHAIN_ID.BINANCE_CHAIN_IDENTIFIER
+        if chain == 'avalanche':
+            return CHAIN_ID.AVALANCHE_CHAIN_IDENTIFIER
+        if chain == 'polygon-pos':
+            return CHAIN_ID.POLYGON_CHAIN_IDENTIFIER
+        
+        return KeyError
+
 class EVM_TOKEN_KIND(Enum):
     ERC20 = 'erc20'
     ERC721 = 'erc721'

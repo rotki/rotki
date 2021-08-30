@@ -13,7 +13,7 @@ from rotkehlchen.constants.assets import CONSTANT_ASSETS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
-from rotkehlchen.globaldb.upgrades.v2_v3 import upgrade_ethereum_asset_ids_v3
+from rotkehlchen.globaldb.upgrades.v2_v3 import migrate_to_v3
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
@@ -21,7 +21,7 @@ from .schema import DB_SCRIPT_CREATE_TABLES
 
 log = logging.getLogger(__name__)
 
-GLOBAL_DB_VERSION = 2
+GLOBAL_DB_VERSION = 3
 
 
 def _get_setting_value(cursor: sqlite3.Cursor, name: str, default_value: int) -> int:
@@ -51,7 +51,7 @@ def initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
     if db_version == 1:
         upgrade_ethereum_asset_ids(connection)
     if db_version == 2:
-        upgrade_ethereum_asset_ids_v3(connection)
+        migrate_to_v3(connection)
     cursor.execute(
         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
         ('version', str(GLOBAL_DB_VERSION)),
@@ -230,8 +230,8 @@ class GlobalDBHandler():
         if specific_ids is not None:
             specific_ids_query = f'AND A.identifier in ({",".join("?" * len(specific_ids))})'
         querystr = f"""
-        SELECT A.identifier, A.type, B.address, B.decimals, A.name, A.symbol, A.started, null, A.swapped_for, A.coingecko, A.cryptocompare, B.protocol from assets as A LEFT OUTER JOIN ethereum_tokens as B
-        ON B.address = A.details_reference WHERE A.type=? {specific_ids_query}
+        SELECT A.identifier, A.type, B.address, B.decimals, C.name, C.symbol, A.started, null, A.swapped_for, A.coingecko, A.cryptocompare, B.protocol from assets as A LEFT OUTER JOIN evm_tokens as B
+        ON B.address = A.details_reference LEFT OUTER JOIN common_asset_details AS C ON common_asset_details.identifier = B.identifier WHERE A.type=? {specific_ids_query}
         UNION ALL
         SELECT A.identifier, A.type, null, null, A.name, A.symbol, A.started, B.forked, A.swapped_for, A.coingecko, A.cryptocompare, null from assets as A LEFT OUTER JOIN common_asset_details as B
         ON B.asset_id = A.identifier WHERE A.type!=? {specific_ids_query};
