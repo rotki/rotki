@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <div>
     <v-row class="mt-6">
       <v-col>
         <refresh-header
@@ -22,7 +22,7 @@
         <overview :summary="summary" />
       </v-col>
     </v-row>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">

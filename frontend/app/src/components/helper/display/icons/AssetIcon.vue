@@ -1,7 +1,7 @@
 <template>
   <v-tooltip top open-delay="400">
     <template #activator="{ on, attrs }">
-      <div v-bind="attrs" v-on="on">
+      <div v-bind="attrs" :style="styled" v-on="on">
         <generated-icon
           v-if="!!currency || error"
           :asset="displayAsset"
@@ -48,6 +48,8 @@ export default class AssetIcon extends Mixins(AssetMixin) {
   size!: string;
   @Prop({ required: false, type: Boolean, default: false })
   changeable!: boolean;
+  @Prop({ required: false, type: Object, default: () => null })
+  styled!: any;
 
   error: boolean = false;
 

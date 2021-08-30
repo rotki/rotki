@@ -15,10 +15,8 @@
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import {
-  QueriedAddressPayload,
-  SupportedModules
-} from '@/services/session/types';
+import { Module } from '@/services/session/consts';
+import { QueriedAddressPayload } from '@/services/session/types';
 import { Account, GeneralAccount } from '@/typing/types';
 
 @Component({
@@ -32,7 +30,7 @@ import { Account, GeneralAccount } from '@/typing/types';
 })
 export default class ModuleQueriedAddress extends Vue {
   @Prop({ required: true })
-  module!: SupportedModules;
+  module!: Module;
   @Prop({ required: true })
   selectedAddresses!: string[];
 

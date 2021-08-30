@@ -15,7 +15,7 @@ from webargs.flaskparser import parser
 from werkzeug.exceptions import NotFound
 
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
-from rotkehlchen.api.v1.parser import resource_parser
+from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.resources import (
     AaveBalancesResource,
     AaveHistoryResource,
@@ -29,6 +29,7 @@ from rotkehlchen.api.v1.resources import (
     AssetsTypesResource,
     AssetUpdatesResource,
     AsyncTasksResource,
+    AvalancheTransactionsResource,
     BalancerBalancesResource,
     BalancerEventsHistoryResource,
     BalancerTradesHistoryResource,
@@ -43,6 +44,7 @@ from rotkehlchen.api.v1.resources import (
     DataImportResource,
     DefiBalancesResource,
     ERC20TokenInfo,
+    ERC20TokenInfoAVAX,
     Eth2StakeDepositsResource,
     Eth2StakeDetailsResource,
     EthereumAirdropsResource,
@@ -66,6 +68,9 @@ from rotkehlchen.api.v1.resources import (
     IgnoredAssetsResource,
     InfoResource,
     LedgerActionsResource,
+    LimitsCounterResetResource,
+    LiquityTroves,
+    LiquityTrovesHistory,
     LoopringBalancesResource,
     MakerdaoDSRBalanceResource,
     MakerdaoDSRHistoryResource,
@@ -75,19 +80,20 @@ from rotkehlchen.api.v1.resources import (
     MessagesResource,
     NamedEthereumModuleDataResource,
     NamedOracleCacheResource,
+    NFTSResource,
     OraclesResource,
     OwnedAssetsResource,
     PeriodicDataResource,
     PingResource,
     QueriedAddressesResource,
     SettingsResource,
-    SushiswapBalancesResource,
-    SushiswapEventsHistoryResource,
-    SushiswapTradesHistoryResource,
     StatisticsAssetBalanceResource,
     StatisticsNetvalueResource,
     StatisticsRendererResource,
     StatisticsValueDistributionResource,
+    SushiswapBalancesResource,
+    SushiswapEventsHistoryResource,
+    SushiswapTradesHistoryResource,
     TagsResource,
     TradesResource,
     UniswapBalancesResource,
@@ -104,8 +110,6 @@ from rotkehlchen.api.v1.resources import (
     YearnVaultsV2BalancesResource,
     YearnVaultsV2HistoryResource,
     create_blueprint,
-    AvalancheTransactionsResource,
-    ERC20TokenInfoAVAX,
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -204,6 +208,8 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/yearn/vaults/history', YearnVaultsHistoryResource),
     ('/blockchains/ETH/modules/yearn/vaultsv2/balances', YearnVaultsV2BalancesResource),
     ('/blockchains/ETH/modules/yearn/vaultsv2/history', YearnVaultsV2HistoryResource),
+    ('/blockchains/ETH/modules/liquity/balances', LiquityTroves),
+    ('/blockchains/ETH/modules/liquity/events', LiquityTrovesHistory),
     ('/blockchains/ETH/modules/loopring/balances', LoopringBalancesResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
     ('/blockchains/BTC/xpub', BTCXpubResource),
@@ -229,6 +235,8 @@ URLS_V1: URLS = [
     ('/import', DataImportResource),
     ('/gitcoin/events', GitcoinEventsResource),
     ('/gitcoin/report', GitcoinReportResource),
+    ('/nfts', NFTSResource),
+    ('/limits/reset/<string:location>', LimitsCounterResetResource),
 ]
 
 logger = logging.getLogger(__name__)
@@ -267,6 +275,7 @@ def endpoint_not_found(e: NotFound) -> Response:
 
 @parser.error_handler  # type: ignore
 @resource_parser.error_handler
+@ignore_kwarg_parser.error_handler
 def handle_request_parsing_error(
         err: ValidationError,
         _request: werkzeug.local.LocalProxy,
@@ -317,15 +326,16 @@ class APIServer():
         self.flask_app.register_blueprint(self.blueprint)
         self.ws_server: Optional[WebSocketServer] = None
 
-        self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)
+        self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)  # type: ignore
         self.flask_app.register_error_handler(Exception, self.unhandled_exception)
 
     @staticmethod
     def unhandled_exception(exception: Exception) -> Response:
         """ Flask.errorhandler when an exception wasn't correctly handled """
         log.critical(
-            "Unhandled exception when processing endpoint request",
+            'Unhandled exception when processing endpoint request',
             exc_info=True,
+            exception=str(exception),
         )
         return api_response(wrap_in_fail_result(str(exception)), HTTPStatus.INTERNAL_SERVER_ERROR)
 

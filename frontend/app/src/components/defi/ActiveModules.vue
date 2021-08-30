@@ -69,13 +69,13 @@ import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Nullable } from '@/types';
 import { SettingsUpdate } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 
 type ModuleWithStatus = {
-  readonly identifier: SupportedModules;
+  readonly identifier: Module;
   readonly enabled: boolean;
 };
 
@@ -91,13 +91,13 @@ type ModuleWithStatus = {
 })
 export default class ActiveModules extends Vue {
   @Prop({ required: true, type: Array })
-  modules!: SupportedModules[];
+  modules!: Module[];
 
   fetchQueriedAddresses!: () => Promise<void>;
   updateSettings!: (update: SettingsUpdate) => Promise<void>;
-  activeModules!: SupportedModules[];
-  manageModule: Nullable<SupportedModules> = null;
-  confirmEnable: Nullable<SupportedModules> = null;
+  activeModules!: Module[];
+  manageModule: Nullable<Module> = null;
+  confirmEnable: Nullable<Module> = null;
 
   get style() {
     return {
@@ -119,7 +119,7 @@ export default class ActiveModules extends Vue {
     return data?.name ?? '';
   }
 
-  icon(module: SupportedModules): string {
+  icon(module: Module): string {
     const data = SUPPORTED_MODULES.find(value => value.identifier === module);
     return data?.icon ?? '';
   }

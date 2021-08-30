@@ -2,6 +2,7 @@ import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
+import Card from '@/components/helper/Card.vue';
 import PremiumSettings from '@/components/settings/PremiumSettings.vue';
 import { interop } from '@/electron-interop';
 import { Api } from '@/plugins/api';
@@ -25,6 +26,9 @@ describe('PremiumSettings.vue', () => {
     return mount(PremiumSettings, {
       store,
       vuetify,
+      components: {
+        Card
+      },
       stubs: ['v-tooltip', 'v-dialog', 'i18n', 'card-title']
     });
   }

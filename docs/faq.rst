@@ -15,7 +15,7 @@ rotki is an opensource portfolio tracking, analytics, and tax reporting applicat
 Why should I use it?
 =====================
 
-Unlike virtually every other service out there which offers you the ability to track crypto assets, get analytics and tax reports rotki is a local application. And its basic version is also free.
+Unlike virtually every other service out there which offers you the ability to track crypto assets, get analytics, and generate tax reports, rotki is a local application. And its basic version is also free.
 
 A local application allows you to **own your data**. You don't need to give your API keys, or any of your financial history to a centralized third party. We strongly advice against using any such centralized services. Your data is not safe with them.
 

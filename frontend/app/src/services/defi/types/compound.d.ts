@@ -1,5 +1,6 @@
+import { Balance } from '@rotki/common';
 import { COMPOUND_EVENT_TYPES } from '@/services/defi/consts';
-import { Balance, HasBalance } from '@/services/types-api';
+import { HasBalance } from '@/services/types-api';
 import { Collateral, CollateralizedLoan } from '@/store/defi/types';
 
 interface CompoundReward extends HasBalance {}

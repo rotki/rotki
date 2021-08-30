@@ -11,6 +11,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_ethereum_token_from_db,
@@ -18,7 +19,8 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Price, Timestamp
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 # Get balances
@@ -80,7 +82,7 @@ class EventType(Enum):
     MINT_SUSHISWAP = 3
     BURN_SUSHISWAP = 4
 
-    def __str__(self) -> str:
+    def serialize_for_db(self) -> str:
         if self == EventType.MINT_UNISWAP:
             return 'mint'
         if self == EventType.BURN_UNISWAP:
@@ -89,6 +91,32 @@ class EventType(Enum):
             return 'mint sushiswap'
         if self == EventType.BURN_SUSHISWAP:
             return 'burn sushiswap'
+        # else
+        raise RuntimeError(f'Corrupt value {self} for EventType -- Should never happen')
+
+    @classmethod
+    def deserialize_from_db(
+            cls,
+            value: str,
+    ) -> 'EventType':
+        """May raise DeserializationError if anything is wrong"""
+        if value == 'mint':
+            return EventType.MINT_UNISWAP
+        if value == 'burn':
+            return EventType.BURN_UNISWAP
+        if value == 'mint sushiswap':
+            return EventType.MINT_SUSHISWAP
+        if value == 'burn sushiswap':
+            return EventType.BURN_SUSHISWAP
+
+        raise DeserializationError(f'Unexpected value {value} at AMM EventType deserialization')
+
+    def __str__(self) -> str:
+        if self in (EventType.MINT_UNISWAP, EventType.MINT_SUSHISWAP):
+            return 'mint'
+        if self in (EventType.BURN_UNISWAP, EventType.BURN_SUSHISWAP):
+            return 'burn'
+
         # else
         raise RuntimeError(f'Corrupt value {self} for EventType -- Should never happen')
 
@@ -147,23 +175,7 @@ class LiquidityPoolEvent(NamedTuple):
         10 - usd_price
         11 - lp_amount
         """
-        db_event_type = event_tuple[4]
-        if db_event_type not in {str(event_type) for event_type in EventType}:
-            raise DeserializationError(
-                f'Failed to deserialize event type. Unknown event: {db_event_type}.',
-            )
-
-        if db_event_type == str(EventType.MINT_UNISWAP):
-            event_type = EventType.MINT_UNISWAP
-        elif db_event_type == str(EventType.BURN_UNISWAP):
-            event_type = EventType.BURN_UNISWAP
-        elif db_event_type == str(EventType.MINT_SUSHISWAP):
-            event_type = EventType.MINT_SUSHISWAP
-        elif db_event_type == str(EventType.BURN_SUSHISWAP):
-            event_type = EventType.BURN_SUSHISWAP
-        else:
-            raise ValueError(f'Unexpected event type case: {db_event_type}.')
-
+        event_type = EventType.deserialize_from_db(event_tuple[4])
         token0 = deserialize_ethereum_token_from_db(identifier=event_tuple[6])
         token1 = deserialize_ethereum_token_from_db(identifier=event_tuple[7])
 
@@ -188,7 +200,7 @@ class LiquidityPoolEvent(NamedTuple):
             self.log_index,
             str(self.address),
             int(self.timestamp),
-            str(self.event_type),
+            self.event_type.serialize_for_db(),
             str(self.pool_address),
             self.token0.identifier,
             self.token1.identifier,

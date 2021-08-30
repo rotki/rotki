@@ -74,8 +74,9 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ModuleQueriedAddress from '@/components/defi/wizard/ModuleQueriedAddress.vue';
-import { Module } from '@/components/defi/wizard/types';
-import { QueriedAddresses, SupportedModules } from '@/services/session/types';
+import { SupportedModule } from '@/components/defi/wizard/types';
+import { Module } from '@/services/session/consts';
+import { QueriedAddresses } from '@/services/session/types';
 
 @Component({
   components: { ModuleQueriedAddress },
@@ -89,7 +90,7 @@ import { QueriedAddresses, SupportedModules } from '@/services/session/types';
 })
 export default class ModuleAddressSelector extends Vue {
   step: number = 1;
-  activeModules!: SupportedModules[];
+  activeModules!: Module[];
   queriedAddresses!: QueriedAddresses;
   fetchQueriedAddresses!: () => Promise<void>;
 
@@ -97,7 +98,7 @@ export default class ModuleAddressSelector extends Vue {
     await this.fetchQueriedAddresses();
   }
 
-  get modules(): Module[] {
+  get modules(): SupportedModule[] {
     if (this.activeModules.length === 0) {
       return SUPPORTED_MODULES;
     }

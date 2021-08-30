@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <div>
     <module-not-active v-if="!isEnabled" :modules="modules" />
     <no-premium-placeholder
       v-else-if="!premium"
@@ -12,7 +12,7 @@
       <active-modules :modules="modules" class="dex-trade-history__modules" />
       <dex-trades-table :refreshing="anyRefreshing" />
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">
@@ -26,8 +26,7 @@ import ModuleMixin from '@/mixins/module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { DexTradesTable } from '@/premium/premium';
-import { MODULE_BALANCER, MODULE_UNISWAP } from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 
 @Component({
@@ -39,7 +38,10 @@ import { Section } from '@/store/const';
     DexTradesTable
   },
   methods: {
-    ...mapActions('defi', ['fetchUniswapTrades', 'fetchBalancerTrades'])
+    ...mapActions('defi', ['fetchUniswapTrades', 'fetchBalancerTrades']),
+    ...mapActions('defi/sushiswap', {
+      fetchSushiswapTrades: 'fetchTrades'
+    })
   }
 })
 export default class DexTradeHistory extends Mixins(
@@ -52,8 +54,13 @@ export default class DexTradeHistory extends Mixins(
 
   fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
   fetchBalancerTrades!: (refresh: boolean) => Promise<void>;
+  fetchSushiswapTrades!: (refresh: boolean) => Promise<void>;
 
-  readonly modules: SupportedModules[] = [MODULE_UNISWAP, MODULE_BALANCER];
+  readonly modules: Module[] = [
+    Module.UNISWAP,
+    Module.BALANCER,
+    Module.SUSHISWAP
+  ];
 
   get isEnabled(): boolean {
     return this.isAnyModuleEnabled(this.modules);
@@ -61,15 +68,18 @@ export default class DexTradeHistory extends Mixins(
 
   get dexLoading(): boolean {
     return (
-      (this.isModuleEnabled(MODULE_UNISWAP) && this.loading) ||
-      (this.isModuleEnabled(MODULE_BALANCER) && this.secondaryLoading)
+      (this.isModuleEnabled(Module.UNISWAP) && this.loading) ||
+      (this.isModuleEnabled(Module.BALANCER) && this.secondaryLoading) ||
+      (this.isModuleEnabled(Module.SUSHISWAP) &&
+        this.isLoading(Section.DEFI_SUSHISWAP_TRADES))
     );
   }
 
   async mounted() {
     await Promise.all([
       this.fetchUniswapTrades(false),
-      this.fetchBalancerTrades(false)
+      this.fetchBalancerTrades(false),
+      this.fetchSushiswapTrades(false)
     ]);
   }
 }
@@ -80,7 +90,7 @@ export default class DexTradeHistory extends Mixins(
   &__modules {
     display: inline-flex;
     position: absolute;
-    right: 65px;
+    right: 102px;
     top: 43px;
   }
 }

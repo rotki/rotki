@@ -8,10 +8,12 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def _scrape_xratescom_exchange_rates(url: str) -> Dict[Asset, Price]:

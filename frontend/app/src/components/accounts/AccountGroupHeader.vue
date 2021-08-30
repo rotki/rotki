@@ -99,6 +99,7 @@
   </fragment>
 </template>
 <script lang="ts">
+import { Balance } from '@rotki/common';
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
@@ -107,7 +108,6 @@ import Fragment from '@/components/helper/Fragment';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { balanceSum, truncateAddress, truncationPoints } from '@/filters';
 import PrivacyMixin from '@/mixins/privacy-mixin';
-import { Balance } from '@/services/types-api';
 import { XpubAccountWithBalance } from '@/store/balances/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';
 import { Tags } from '@/typing/types';

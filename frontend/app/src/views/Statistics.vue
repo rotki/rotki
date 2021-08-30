@@ -1,6 +1,5 @@
 <template>
   <v-container>
-    <base-page-header :text="$t('statistics.title')" />
     <div id="statistics">
       <div v-if="!premium">
         <p>{{ $t('statistics.no_premium') }}</p>
@@ -22,11 +21,10 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import BasePageHeader from '@/components/base/BasePageHeader.vue';
 import { PremiumStatistics } from '@/premium/premium';
 
 @Component({
-  components: { BasePageHeader, PremiumStatistics, BaseExternalLink },
+  components: { PremiumStatistics, BaseExternalLink },
   computed: {
     ...mapState('session', ['premium']),
     ...mapGetters('session', ['floatingPrecision'])

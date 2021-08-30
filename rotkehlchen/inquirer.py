@@ -1,10 +1,9 @@
 from __future__ import unicode_literals  # isort:skip
 
 import logging
-from enum import Enum
-from pathlib import Path
 import operator
-from typing import Any, TYPE_CHECKING, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
@@ -39,6 +38,7 @@ from rotkehlchen.constants.assets import (
     A_USD,
     A_USDC,
     A_USDT,
+    A_WETH,
     A_YFI,
     A_YV1_3CRV,
     A_YV1_ALINK,
@@ -52,12 +52,11 @@ from rotkehlchen.constants.assets import (
     A_YV1_USDT,
     A_YV1_WETH,
     A_YV1_YFI,
-    A_WETH,
 )
 from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, UNISWAP_V2_LP_ABI, YEARN_VAULT_V2_ABI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors import (
-    DeserializationError,
+    BlockchainQueryError,
     PriceQueryUnsupportedAsset,
     RemoteError,
     UnableToDecryptRemoteData,
@@ -73,13 +72,14 @@ from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
     CURVE_POOL_PROTOCOL,
+    UNISWAP_PROTOCOL,
+    YEARN_VAULTS_V2_PROTOCOL,
     KnownProtocolsAssets,
     Price,
     Timestamp,
-    UNISWAP_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
 )
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
@@ -121,29 +121,10 @@ def _check_curve_contract_call(decoded: Tuple[Any, ...]) -> bool:
     )
 
 
-class CurrentPriceOracle(Enum):
-    """Supported oracles for querying current prices
-    """
+class CurrentPriceOracle(SerializableEnumMixin):
+    """Supported oracles for querying current prices"""
     COINGECKO = 1
     CRYPTOCOMPARE = 2
-
-    def __str__(self) -> str:
-        if self == CurrentPriceOracle.COINGECKO:
-            return 'coingecko'
-        if self == CurrentPriceOracle.CRYPTOCOMPARE:
-            return 'cryptocompare'
-        raise AssertionError(f'Unexpected CurrentPriceOracle: {self}')
-
-    def serialize(self) -> str:
-        return str(self)
-
-    @classmethod
-    def deserialize(cls, name: str) -> 'CurrentPriceOracle':
-        if name == 'coingecko':
-            return cls.COINGECKO
-        if name == 'cryptocompare':
-            return cls.CRYPTOCOMPARE
-        raise DeserializationError(f'Failed to deserialize current price oracle: {name}')
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
@@ -187,6 +168,12 @@ def get_underlying_asset_price(token: EthereumToken) -> Optional[Price]:
         price = Inquirer().find_usd_price(A_TUSD)
     elif token in ASSETS_UNDERLYING_BTC:
         price = Inquirer().find_usd_price(A_BTC)
+
+    # At this point we have to return the price if it's not None. If we don't do this and got
+    # a price for a token that has underlying assets, the code will enter the if statement after
+    # this block and the value for price will change becoming incorrect.
+    if price is not None:
+        return price
 
     custom_token = GlobalDBHandler().get_ethereum_token(token.ethereum_address)
     if custom_token and custom_token.underlying_tokens is not None:
@@ -498,7 +485,8 @@ class Inquirer():
             if method_output[0] and len(method_output[1]) != 0:
                 decoded_method = contract.decode(method_output[1], method_name)
                 if len(decoded_method) == 1:
-                    decoded.append(decoded_method[0])
+                    # https://github.com/PyCQA/pylint/issues/4739
+                    decoded.append(decoded_method[0])  # pylint: disable=unsubscriptable-object
                 else:
                     decoded.append(decoded_method)
             else:
@@ -608,17 +596,19 @@ class Inquirer():
             return None
         # Deserialize information obtained in the multicall execution
         data = []
-        virtual_price_decoded = contract.decode(output[0][1], 'get_virtual_price')
+        # https://github.com/PyCQA/pylint/issues/4739
+        virtual_price_decoded = contract.decode(output[0][1], 'get_virtual_price')  # pylint: disable=unsubscriptable-object  # noqa: E501
         if not _check_curve_contract_call(virtual_price_decoded):
             log.debug(f'Failed to decode get_virtual_price while finding curve price. {output}')
             return None
-        data.append(FVal(virtual_price_decoded[0]))
+        data.append(FVal(virtual_price_decoded[0]))  # pylint: disable=unsubscriptable-object
         for i in range(len(pool.assets)):
             amount_decoded = contract.decode(output[i + 1][1], 'balances', arguments=[i])
             if not _check_curve_contract_call(amount_decoded):
                 log.debug(f'Failed to decode balances {i} while finding curve price. {output}')
                 return None
-            amount = amount_decoded[0]
+            # https://github.com/PyCQA/pylint/issues/4739
+            amount = amount_decoded[0]  # pylint: disable=unsubscriptable-object
             normalized_amount = token_normalized_value_decimals(amount, tokens[i].decimals)
             data.append(normalized_amount)
 
@@ -665,21 +655,12 @@ class Inquirer():
             abi=YEARN_VAULT_V2_ABI,
             deployed_block=0,
         )
-        output = multicall_2(
-            ethereum=self._ethereum,
-            require_success=True,
-            calls=[(token.ethereum_address, contract.encode(method_name='pricePerShare'))],
-        )
-        if isinstance(output, list) and len(output) != 0 and output[0][0] is True:
-            price_per_share = contract.decode(output[0][1], 'pricePerShare')
-            if len(price_per_share) != 0:
-                return price_per_share[0] * underlying_token_price
-            log.error(f'Failed to decode pricePerShare for yearn vault v2 token {token}')
-            # will return None right below
-        log.error(
-            f'Error to call multicall for price on Yearn vault v2 token {token} '
-            f'with output {output}.',
-        )
+        try:
+            price_per_share = contract.call(self._ethereum, 'pricePerShare')
+            return Price(price_per_share * underlying_token_price / 10 ** token.decimals)
+        except (RemoteError, BlockchainQueryError) as e:
+            log.error(f'Failed to query pricePerShare method in Yearn v2 Vault. {str(e)}')
+
         return None
 
     @staticmethod

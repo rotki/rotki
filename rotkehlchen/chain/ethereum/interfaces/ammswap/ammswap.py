@@ -8,9 +8,9 @@ This interface is used at the moment in:
 - Sushiswap Module
 """
 import abc
+import logging
 from collections import defaultdict
 from datetime import datetime, time
-import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from gevent.lock import Semaphore
@@ -18,7 +18,12 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
-from rotkehlchen.chain.ethereum.graph import Graph, GRAPH_QUERY_LIMIT, format_query_indentation
+from rotkehlchen.chain.ethereum.graph import (
+    GRAPH_QUERY_LIMIT,
+    GRAPH_QUERY_SKIP_LIMIT,
+    Graph,
+    format_query_indentation,
+)
 from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
     AddressEventsBalances,
     AddressToLPBalances,
@@ -28,16 +33,18 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
     DDAddressToLPBalances,
     EventType,
     LiquidityPool,
+    LiquidityPoolAsset,
     LiquidityPoolEvent,
     LiquidityPoolEventsBalance,
-    LiquidityPoolAsset,
     ProtocolBalance,
 )
+from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
@@ -49,14 +56,13 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 
 from .graph import (
-    MINTS_QUERY,
     BURNS_QUERY,
     LIQUIDITY_POSITIONS_QUERY,
-    SWAPS_QUERY,
+    MINTS_QUERY,
     SUSHISWAP_SWAPS_QUERY,
+    SWAPS_QUERY,
     TOKEN_DAY_DATAS_QUERY,
 )
 
@@ -65,7 +71,8 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def add_trades_from_swaps(
@@ -365,19 +372,23 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             )
             return address_events
 
+        query_id = '0'
+        query_offset = 0
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
             '$address': 'Bytes!',
             '$start_ts': 'BigInt!',
             '$end_ts': 'BigInt!',
+            '$id': 'ID!',
         }
         param_values = {
             'limit': GRAPH_QUERY_LIMIT,
-            'offset': 0,
+            'offset': query_offset,
             'address': address.lower(),
             'start_ts': str(start_ts),
             'end_ts': str(end_ts),
+            'id': query_id,
         }
         querystr = format_query_indentation(query.format())
 
@@ -444,15 +455,23 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     lp_amount=AssetAmount(FVal(event['liquidity'])),
                 )
                 address_events.append(lp_event)
+                query_id = event['id']
 
             # Check whether an extra request is needed
             if len(result_data) < GRAPH_QUERY_LIMIT:
                 break
 
             # Update pagination step
+            if query_offset == GRAPH_QUERY_SKIP_LIMIT:
+                query_offset = 0
+                new_query_id = query_id
+            else:
+                query_offset += GRAPH_QUERY_LIMIT
+                new_query_id = '0'
             param_values = {
                 **param_values,
-                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
+                'id': new_query_id,
+                'offset': query_offset,
             }
 
         return address_events
@@ -482,12 +501,15 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
         - RemoteError
         """
         trades: List[AMMTrade] = []
+        query_id = '0'
+        query_offset = 0
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
             '$address': 'Bytes!',
             '$start_ts': 'BigInt!',
             '$end_ts': 'BigInt!',
+            '$id': 'ID!',
         }
         param_values = {
             'limit': GRAPH_QUERY_LIMIT,
@@ -495,6 +517,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
             'address': address.lower(),
             'start_ts': str(start_ts),
             'end_ts': str(end_ts),
+            'id': query_id,
         }
         querystr = format_query_indentation(self.swaps_query.format())
 
@@ -575,6 +598,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                             amount0_out=AssetAmount(amount0_out),
                             amount1_out=AssetAmount(amount1_out),
                         ))
+                    query_id = entry['id']
                 except KeyError as e:
                     log.error(
                         f'Failed to read trade in {self.location} swap {str(entry)}. '
@@ -595,9 +619,16 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                 break
 
             # Update pagination step
+            if query_offset == GRAPH_QUERY_SKIP_LIMIT:
+                query_offset = 0
+                new_query_id = query_id
+            else:
+                query_offset += GRAPH_QUERY_LIMIT
+                new_query_id = '0'
             param_values = {
                 **param_values,
-                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
+                'id': new_query_id,
+                'offset': query_offset,
             }
 
         return trades
@@ -840,17 +871,21 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
         addresses_lower = [address.lower() for address in addresses]
         querystr = format_query_indentation(LIQUIDITY_POSITIONS_QUERY.format())
+        query_id = '0'
+        query_offset = 0
         param_types = {
             '$limit': 'Int!',
             '$offset': 'Int!',
             '$addresses': '[String!]',
             '$balance': 'BigDecimal!',
+            '$id': 'ID!',
         }
         param_values = {
             'limit': GRAPH_QUERY_LIMIT,
             'offset': 0,
             'addresses': addresses_lower,
             'balance': '0',
+            'id': query_id,
         }
         while True:
             try:
@@ -934,15 +969,23 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
                     user_balance=Balance(amount=user_lp_balance),
                 )
                 address_balances[user_address].append(liquidity_pool)
+                query_id = lp['id']
 
             # Check whether an extra request is needed
             if len(result_data) < GRAPH_QUERY_LIMIT:
                 break
 
             # Update pagination step
+            if query_offset == GRAPH_QUERY_SKIP_LIMIT:
+                query_offset = 0
+                new_query_id = query_id
+            else:
+                query_offset += GRAPH_QUERY_LIMIT
+                new_query_id = '0'
             param_values = {
                 **param_values,
-                'offset': param_values['offset'] + GRAPH_QUERY_LIMIT,  # type: ignore
+                'id': new_query_id,
+                'offset': query_offset,
             }
 
         protocol_balance = ProtocolBalance(

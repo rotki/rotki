@@ -37,9 +37,9 @@
 </template>
 
 <script lang="ts">
+import { Balance } from '@rotki/common';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import AssetMixin from '@/mixins/asset-mixin';
-import { Balance } from '@/services/types-api';
 
 @Component({})
 export default class BalanceDisplay extends Mixins(AssetMixin) {

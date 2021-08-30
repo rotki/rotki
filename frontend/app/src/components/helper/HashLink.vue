@@ -11,7 +11,7 @@
             v-bind="attrs"
             v-on="on"
           >
-            {{ displayText | truncateAddress }}
+            {{ truncateAddress(displayText) }}
           </span>
         </template>
         <span> {{ displayText }} </span>
@@ -65,6 +65,7 @@
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import { explorerUrls } from '@/components/helper/asset-urls';
+import { truncateAddress } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 import ThemeMixin from '@/mixins/theme-mixin';
 import { ExplorersSettings } from '@/store/settings/types';
@@ -96,6 +97,8 @@ export default class HashLink extends Mixins(ScrambleMixin, ThemeMixin) {
   buttons!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   small!: boolean;
+
+  readonly truncateAddress = truncateAddress;
 
   get displayText(): string {
     if (!this.scrambleData) {

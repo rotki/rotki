@@ -46,7 +46,10 @@ ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS = [
 ]
 
 
-def token_normalized_value_decimals(token_amount: int, token_decimals: int) -> FVal:
+def token_normalized_value_decimals(token_amount: int, token_decimals: Optional[int]) -> FVal:
+    if token_decimals is None:  # if somehow no info on decimals ends up here assume 18
+        token_decimals = 18
+
     return token_amount / (FVal(10) ** FVal(token_decimals))
 
 

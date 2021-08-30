@@ -8,6 +8,7 @@
           icon
           :disabled="disabled"
           class="mx-1"
+          data-cy="row-edit"
           v-on="on"
           @click="editClick"
         >
@@ -24,6 +25,7 @@
           icon
           :disabled="disabled"
           class="mx-1"
+          data-cy="row-delete"
           v-on="on"
           @click="deleteClick"
         >
@@ -37,23 +39,21 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class RowActions extends Vue {
-  @Prop({ required: false, type: Boolean })
-  disabled!: boolean;
-  @Prop({ required: true, type: String })
-  editTooltip!: string;
-  @Prop({ required: false, type: String, default: '' })
-  deleteTooltip!: string;
-  @Prop({ required: false, type: Boolean, default: false })
-  noDelete!: boolean;
-
-  @Emit()
-  editClick() {}
-
-  @Emit()
-  deleteClick() {}
-}
+export default defineComponent({
+  name: 'RowAction',
+  props: {
+    disabled: { required: false, type: Boolean },
+    editTooltip: { required: true, type: String },
+    deleteTooltip: { required: false, type: String, default: '' },
+    noDelete: { required: false, type: Boolean, default: false }
+  },
+  setup(_, { emit }) {
+    return {
+      editClick: () => emit('edit-click'),
+      deleteClick: () => emit('delete-click')
+    };
+  }
+});
 </script>

@@ -10,7 +10,7 @@ export interface BaseAsset {
   readonly coingecko?: Nullable<string>;
   readonly cryptocompare?: string;
   readonly started?: Nullable<number>;
-  readonly name: string;
+  readonly name: Nullable<string>;
   readonly symbol: string;
   readonly swappedFor?: Nullable<string>;
 }

@@ -112,4 +112,19 @@ export class DefiApi {
     const url = '/blockchains/ETH/modules/balancer/history/events';
     return fetchExternalAsync(this.api, url);
   }
+
+  async fetchSushiswapBalances() {
+    const url = 'blockchains/ETH/modules/sushiswap/balances';
+    return fetchExternalAsync(this.api, url);
+  }
+
+  async fetchSushiswapTrades(): Promise<PendingTask> {
+    const url = 'blockchains/ETH/modules/sushiswap/history/trades';
+    return fetchExternalAsync(this.api, url);
+  }
+
+  async fetchSushiswapEvents(): Promise<PendingTask> {
+    const url = 'blockchains/ETH/modules/sushiswap/history/events';
+    return fetchExternalAsync(this.api, url);
+  }
 }

@@ -18,10 +18,10 @@ from rotkehlchen.tests.utils.api import (
 }])
 def test_get_current_assets_price_in_usd(rotkehlchen_api_server):
     async_query = random.choice([False, True])
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            "currentassetspriceresource",
+            'currentassetspriceresource',
         ),
         json={
             'assets': ['BTC', 'USD', 'GBP'],
@@ -49,10 +49,10 @@ def test_get_current_assets_price_in_usd(rotkehlchen_api_server):
 def test_get_current_assets_price_in_btc(rotkehlchen_api_server):
 
     async_query = random.choice([False, True])
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            "currentassetspriceresource",
+            'currentassetspriceresource',
         ),
         json={
             'assets': ['BTC', 'USD', 'GBP'],

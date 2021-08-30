@@ -90,6 +90,8 @@ Bear in mind that in case of using multiple accounts/devices with the data sync 
    :alt: Replace local database with remote backup
    :align: center
 
+You can manually move the global DB that contains the assets from one system to the other too. Find the :ref:`rotki_data_directory` in the source system. Assuming it's linux it will be ``~/.local/share/rotki/data``. The global db is then ``~/.local/share/rotki/data/global_data/global.db``. Manually move it to the equivalent location in the new system.
+
 
 Customizing
 **************
@@ -424,7 +426,7 @@ and click on the module you are interested in (3). The module address selection 
 Search for each address you are interested and then select each one from the dropdown menu. The selected addresses should
 be visible in the same way as the modules above. To remove an address you need to press the (x) button at the end of the entry.
 
-If no addresses are selected for a module this means that rotki will check all the eligible addresses which can add to the total query duration.
+If no addresses are selected for a module this means that rotki will check all the eligible addresses which can add to the total query duration and considerably slow down retrieving data from the app.
 
 Changing the backend settings
 ====================================
@@ -438,14 +440,14 @@ screen. You can click the cog wheel at the bottom right corner to view the backe
 
 After selecting a new data directory, log directory etc you can press the save button to save your settings.
 
-Keep in mind that any accounts that where created in the previous directory will not be accessible anymore and you will
+Keep in mind that any accounts that were created in the previous directory will not be accessible anymore and you will
 have to manually move them to the new location.
 
 In the advanced section of the backend settings you can also modify the following settings:
 
 - **Logging from other modules**: If enabled then logging will also include log entries from other dependent libraries and not only rotki. It is disabled by default.
 - **Main Loop sleep**: This is the amount of seconds that the main loop of rotki sleeps for. It is set to 20 seconds by default.
-- **Max log size**: This is the maximum size in megabytes all logs of a single run can have
+- **Max log size**: This is the maximum size in megabytes all logs of a single run can have.
 - **Max num of log files**: This is the maximum number of backup (rotated) logs a single run can have.
 
 Disabling the tray icon
@@ -456,7 +458,7 @@ There you can select ``Display Tray Icon`` to enable or disable the application 
 Importing data
 *******************
 
-In this section we will explain how you can import data by integrating with external services such as crypto exchanges
+In this section we will explain how you can import data by integrating with external services such as crypto exchanges.
 
 
 Adding an exchange
@@ -573,6 +575,11 @@ The loopring account balances are also visible in the blockchain accounts view.
 .. image:: images/loopring_balances_account.gif
    :alt: Loopring balances for an account
    :align: center
+
+Moving data to another system
+=====================================
+
+If you want to move your data to another system then you will need to do some manual steps. First identify the :ref:`rotki_data_directory` in both the source and the destination system. Then move the entire data directory from the source system to the destination system and make sure that the same rotki version is used in both syste
 
 .. _track_balances: 
 
@@ -701,7 +708,7 @@ The list of currently supported airdrops is:
 - Lido
 - Curve
 
-Adding historical events
+Historical events
 ************************
 
 Adding manual trades
@@ -745,6 +752,65 @@ You can provide a location, for example an exchange, a bank, a blockchain or oth
 For ledger actions you can optionally specify a rate and a asset for the rate. This is the rate linked to the asset for this action. If no rate is provided, the historical price at the date of the action is used.
 
 When generating a profit and loss report some ledger actions might be taxable in your jurisdiction and some not. To customize the list of taxable actions refer to the :ref:`ledger actions settings <ledger_action_settings>` section.
+
+Filtering trades
+================
+
+Rotki supports filter your trades with a combination of filters. All of the filters are applied at the same time
+limiting the trades to the ones that satisfy all the applied filters.
+
+.. image:: images/sc_history_trades_filter.png
+   :alt: Filtering trades
+   :align: center
+
+You can filter using the following keys:
+
+* **base:** the base asset of the trades [1]_.
+* **quote:** the quote asset of the trades [1]_.
+* **action:** it can be buy or sell [2]_.
+* **start:** will only filter any trades from that date an onwards [2]_.
+* **end:** will only filter any trades that happened before the selected date [2]_.
+* **location:** the location of tha trade, e.g. kraken, uniswap etc [1]_.
+
+.. image:: images/sc_history_trades_filter_suggestions.png
+   :alt: Trade filter suggestions
+   :align: center
+
+When selecting a filter, by clicking or typing the filter you will get some suggestions based on the available data.
+
+.. note::
+
+    At the moment it is not possible to navigate select the available filters using the keyboard arrows or tab.
+    This is a feature that will become available in the future.
+
+When a suggestion appears you can navigate to the next available suggestion using the tab button or you can also change
+the select suggestion using the up/down arrows in your keyboard. You can submit the selected filter by pressing enter.
+
+.. image:: images/sc_history_trades_filter_multi.png
+   :alt: Multiple trade filters applied
+   :align: center
+
+After adding your filters you can press enter to close the menu.
+
+Filtering deposits & withdrawals
+================================
+
+You can filter your deposits and withdrawals int he same say you can filter your trades.
+
+.. image:: images/sc_history_deposits_filter.png
+   :alt: Deposit filters
+   :align: center
+
+For deposits you can use the following filters:
+
+* **asset:** the asset that was deposited or withdrawn [1]_.
+* **action:** the actions (withdrawal or deposit) [1]_.
+* **start:** will only filter any trades from that date an onwards [2]_.
+* **end:** will only filter any trades that happened before the selected date [2]_.
+* **location:** the location of tha trade, e.g. kraken, uniswap etc [1]_.
+
+.. [1] Suggestions will appear for this field based on the available data.
+.. [2] The date filter has to be in the DD/MM/YYYY HH:mm:ss format. You can completely skip the time part or just the seconds part, thus making DD/MM/YYYY or DD/MM/YYYY HH:mm acceptable.
 
 Customization of the list of supported assets
 *********************************************
@@ -894,11 +960,15 @@ Liquidity Pools
 ================
 
 .. image:: images/sc_decentralized_lp.png
-  :alt: Defi Deposits history
+  :alt: Defi Liquidity Pools
   :align: center
 
-Rotki provides support for Uniswap v2 and Balancer liquidity pools. With the exception of Uniswap v2 lp balances
-this feature is only available to premium users.
+Rotki allows it's users to keep track of their Uniswap v2 and Balancer and Sushiswap liquidity pools
+With the exception of Uniswap v2 lp balances this feature is only available to premium users.
+
+.. image:: images/sc_decentralized_lp_sushi.png
+  :alt: Defi Sushiswap
+  :align: center
 
 The liquidity pool support allows premium users to see their balances, the per pool profit/loss and any events
 (such as mint/burn) performed.

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, List, Optional
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress
 
 from .asset import Asset, EthereumToken, UnderlyingToken
@@ -12,7 +13,8 @@ from .typing import AssetType
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def add_ethereum_token_to_db(token_data: EthereumToken) -> EthereumToken:
@@ -39,6 +41,7 @@ def get_or_create_ethereum_token(
         decimals: Optional[int] = None,
         protocol: Optional[str] = None,
         underlying_tokens: Optional[List[UnderlyingToken]] = None,
+        form_with_incomplete_data: bool = False,
 ) -> EthereumToken:
     """Given a token symbol and address return the <EthereumToken>
 
@@ -47,7 +50,7 @@ def get_or_create_ethereum_token(
     existing token will still be silently returned
     """
     try:
-        ethereum_token = EthereumToken(ethereum_address)
+        ethereum_token = EthereumToken(ethereum_address, form_with_incomplete_data)
     except (UnknownAsset, DeserializationError):
         log.info(
             f'Encountered unknown asset {symbol} with address '

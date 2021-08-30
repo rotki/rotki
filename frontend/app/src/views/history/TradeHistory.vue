@@ -5,14 +5,10 @@
     </template>
     {{ $t('trade_history.loading_subtitle') }}
   </progress-screen>
-  <v-container v-else>
-    <trade-location-selector
-      v-model="selectedLocation"
-      :available-locations="availableLocations"
-    />
+  <div v-else>
     <open-trades v-if="preview" :data="openTrades" />
     <closed-trades class="mt-8" :data="closedTrades" @refresh="refresh" />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">
@@ -21,7 +17,6 @@ import { mapActions, mapGetters, mapState } from 'vuex';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import OpenTrades from '@/components/history/OpenTrades.vue';
-import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import StatusMixin from '@/mixins/status-mixin';
 import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
@@ -38,7 +33,6 @@ import { RefreshPeriod } from '@/store/settings/types';
 @Component({
   components: {
     ProgressScreen,
-    TradeLocationSelector,
     ClosedTrades,
     OpenTrades
   },
@@ -48,7 +42,8 @@ import { RefreshPeriod } from '@/store/settings/types';
   },
   methods: {
     ...mapActions('history', [HistoryActions.FETCH_TRADES]),
-    ...mapActions('defi', ['fetchUniswapTrades', 'fetchBalancerTrades'])
+    ...mapActions('defi', ['fetchUniswapTrades', 'fetchBalancerTrades']),
+    ...mapActions('defi/sushiswap', { fetchSushiswapTrades: 'fetchTrades' })
   }
 })
 export default class TradeHistory extends Mixins(StatusMixin) {
@@ -56,6 +51,7 @@ export default class TradeHistory extends Mixins(StatusMixin) {
   [HistoryActions.FETCH_TRADES]!: (payload: FetchSource) => Promise<void>;
   fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
   fetchBalancerTrades!: (refresh: boolean) => Promise<void>;
+  fetchSushiswapTrades!: (refresh: boolean) => Promise<void>;
   [REFRESH_PERIOD]!: RefreshPeriod;
   trades!: TradeEntry[];
   openTrades: TradeEntry[] = [];
@@ -64,12 +60,6 @@ export default class TradeHistory extends Mixins(StatusMixin) {
 
   get preview(): boolean {
     return !!process.env.VUE_APP_TRADES_PREVIEW;
-  }
-
-  get availableLocations(): TradeLocation[] {
-    return this.trades
-      .map(trade => trade.location)
-      .filter((value, index, array) => array.indexOf(value) === index);
   }
 
   get closedTrades(): TradeEntry[] {
@@ -103,7 +93,8 @@ export default class TradeHistory extends Mixins(StatusMixin) {
     await Promise.all([
       this.fetchTrades(FETCH_FROM_CACHE),
       this.fetchUniswapTrades(false),
-      this.fetchBalancerTrades(false)
+      this.fetchBalancerTrades(false),
+      this.fetchSushiswapTrades(false)
     ]);
     await this.fetchTrades(FETCH_FROM_SOURCE);
   }
@@ -112,7 +103,8 @@ export default class TradeHistory extends Mixins(StatusMixin) {
     await Promise.all([
       this.fetchTrades(FETCH_REFRESH),
       this.fetchUniswapTrades(true),
-      this.fetchBalancerTrades(true)
+      this.fetchBalancerTrades(true),
+      this.fetchSushiswapTrades(true)
     ]);
   }
 }

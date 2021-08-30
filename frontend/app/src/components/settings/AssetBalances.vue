@@ -1,84 +1,82 @@
 <template>
-  <v-sheet class="asset-balances" :rounded="!flat" :outlined="!flat">
-    <data-table
-      :headers="headers"
-      :items="balances"
-      :loading="isLoading"
-      :loading-text="$t('asset_balances.loading')"
-      sort-by="usdValue"
-    >
-      <template #header.usdValue>
-        <div class="text-no-wrap">
-          {{
-            $t('asset_balances.headers.value', {
-              symbol
-            })
-          }}
-        </div>
-      </template>
-      <template #header.price>
-        <div class="text-no-wrap">
-          {{
-            $t('asset_balances.headers.price', {
-              symbol
-            })
-          }}
-        </div>
-      </template>
-      <template #item.asset="{ item }">
-        <asset-details opens-details :asset="item.asset" />
-      </template>
-      <template #item.price="{ item }">
-        <amount-display
-          tooltip
-          show-currency="symbol"
-          fiat-currency="USD"
-          :price-asset="item.asset"
-          :value="prices[item.asset] ? prices[item.asset] : '-'"
-        />
-      </template>
-      <template #item.amount="{ item }">
-        <amount-display :value="item.amount" />
-      </template>
-      <template #item.usdValue="{ item }">
-        <amount-display
-          show-currency="symbol"
-          :fiat-currency="item.asset"
-          :amount="item.amount"
-          :value="item.usdValue"
-        />
-      </template>
-      <template v-if="balances.length > 0" #body.append>
-        <tr v-if="$vuetify.breakpoint.smAndUp" class="asset-balances__total">
-          <td v-text="$t('asset_balances.total')" />
-          <td />
-          <td class="text-end">
-            <amount-display
-              fiat-currency="USD"
-              show-currency="symbol"
-              :value="balances.map(val => val.usdValue) | balanceSum"
-            />
-          </td>
-        </tr>
-        <tr v-else>
-          <td>
-            <v-row justify="space-between">
-              <v-col cols="auto" class="font-weight-medium">
-                {{ $t('asset_balances.total') }}
-              </v-col>
-              <v-col cols="auto">
-                <amount-display
-                  fiat-currency="USD"
-                  show-currency="symbol"
-                  :value="balances.map(val => val.usdValue) | balanceSum"
-                />
-              </v-col>
-            </v-row>
-          </td>
-        </tr>
-      </template>
-    </data-table>
-  </v-sheet>
+  <data-table
+    :headers="headers"
+    :items="balances"
+    :loading="isLoading"
+    :loading-text="$t('asset_balances.loading')"
+    sort-by="usdValue"
+  >
+    <template #header.usdValue>
+      <div class="text-no-wrap">
+        {{
+          $t('asset_balances.headers.value', {
+            symbol
+          })
+        }}
+      </div>
+    </template>
+    <template #header.price>
+      <div class="text-no-wrap">
+        {{
+          $t('asset_balances.headers.price', {
+            symbol
+          })
+        }}
+      </div>
+    </template>
+    <template #item.asset="{ item }">
+      <asset-details opens-details :asset="item.asset" />
+    </template>
+    <template #item.price="{ item }">
+      <amount-display
+        tooltip
+        show-currency="symbol"
+        fiat-currency="USD"
+        :price-asset="item.asset"
+        :value="prices[item.asset] ? prices[item.asset] : '-'"
+      />
+    </template>
+    <template #item.amount="{ item }">
+      <amount-display :value="item.amount" />
+    </template>
+    <template #item.usdValue="{ item }">
+      <amount-display
+        show-currency="symbol"
+        :fiat-currency="item.asset"
+        :amount="item.amount"
+        :value="item.usdValue"
+      />
+    </template>
+    <template v-if="balances.length > 0" #body.append>
+      <tr v-if="$vuetify.breakpoint.smAndUp" class="asset-balances__total">
+        <td v-text="$t('asset_balances.total')" />
+        <td />
+        <td class="text-end">
+          <amount-display
+            fiat-currency="USD"
+            show-currency="symbol"
+            :value="balanceSum(balances.map(val => val.usdValue))"
+          />
+        </td>
+      </tr>
+      <tr v-else>
+        <td>
+          <v-row justify="space-between">
+            <v-col cols="auto" class="font-weight-medium">
+              {{ $t('asset_balances.total') }}
+            </v-col>
+            <v-col cols="auto">
+              <amount-display
+                fiat-currency="USD"
+                show-currency="symbol"
+                :value="balanceSum(balances.map(val => val.usdValue))"
+              />
+            </v-col>
+          </v-row>
+        </td>
+      </tr>
+    </template>
+  </data-table>
 </template>
 
 <script lang="ts">
@@ -88,6 +86,7 @@ import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import { CURRENCY_USD } from '@/data/currencies';
+import { balanceSum } from '@/filters';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import {
@@ -110,14 +109,13 @@ export default class AssetBalances extends Vue {
   balances!: AssetBalance[];
   @Prop({})
   title!: string;
-  @Prop({ required: false, default: false, type: Boolean })
-  flat!: boolean;
 
   currency!: Currency;
   floatingPrecision!: number;
   prices!: AssetPrices;
   exchangeRate!: ExchangeRateGetter;
   isTaskRunning!: (type: TaskType) => boolean;
+  readonly balanceSum = balanceSum;
 
   get symbol(): string {
     return this.currency.ticker_symbol;

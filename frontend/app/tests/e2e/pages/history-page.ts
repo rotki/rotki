@@ -73,7 +73,7 @@ export class HistoryPage {
   editTrade(position: number, amount: string) {
     cy.get('.closed-trades tbody > tr')
       .eq(position)
-      .find('button.closed-trades__trade__actions__edit')
+      .find('[data-cy=row-edit]')
       .click();
 
     cy.get('[data-cy=trade-form]').should('be.visible');
@@ -87,7 +87,7 @@ export class HistoryPage {
   deleteTrade(position: number) {
     cy.get('.closed-trades tbody > tr')
       .eq(position)
-      .find('.closed-trades__trade__actions__delete')
+      .find('[data-cy=row-delete]')
       .click();
   }
 }

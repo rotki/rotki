@@ -7,7 +7,6 @@ import json
 import logging
 import time
 from collections import defaultdict
-from enum import Enum
 from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
@@ -46,6 +45,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -98,6 +98,9 @@ def kraken_to_world_pair(pair: str) -> Tuple[Asset, Asset]:
     elif pair[0:5] in KRAKEN_TO_WORLD:
         base_asset_str = pair[0:5]
         quote_asset_str = pair[5:]
+    elif pair[0:6] in KRAKEN_TO_WORLD:
+        base_asset_str = pair[0:6]
+        quote_asset_str = pair[6:]
     else:
         raise UnprocessableTradePair(pair)
 
@@ -218,34 +221,10 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]
     return result
 
 
-class KrakenAccountType(Enum):
+class KrakenAccountType(SerializableEnumMixin):
     STARTER = 0
     INTERMEDIATE = 1
     PRO = 2
-
-    def __str__(self) -> str:
-        if self == KrakenAccountType.STARTER:
-            return 'starter'
-        if self == KrakenAccountType.INTERMEDIATE:
-            return 'intermediate'
-        if self == KrakenAccountType.PRO:
-            return 'pro'
-
-        raise RuntimeError(f'Corrupt value {self} for KrakenAcountType -- Should never happen')
-
-    def serialize(self) -> str:
-        return str(self)
-
-    @staticmethod
-    def deserialize(symbol: str) -> 'KrakenAccountType':
-        if symbol == 'starter':
-            return KrakenAccountType.STARTER
-        if symbol == 'intermediate':
-            return KrakenAccountType.INTERMEDIATE
-        if symbol == 'pro':
-            return KrakenAccountType.PRO
-        # else
-        raise DeserializationError(f'Tried to deserialized invalid kraken account type: {symbol}')
 
 
 DEFAULT_KRAKEN_ACCOUNT_TYPE = KrakenAccountType.STARTER

@@ -1,6 +1,6 @@
 <template>
   <fragment>
-    <v-card class="mt-8">
+    <card class="mt-8" outlined-body>
       <v-btn
         absolute
         fab
@@ -11,180 +11,129 @@
         class="closed-trades__add-trade"
         @click="newExternalTrade()"
       >
-        <v-icon> mdi-plus </v-icon>
+        <v-icon> mdi-plus</v-icon>
       </v-btn>
-      <v-card-title>
+      <template #title>
         <refresh-button
           :loading="refreshing"
           :tooltip="$t('closed_trades.refresh_tooltip')"
           @refresh="refresh"
         />
+        {{ $t('closed_trades.title') }}
+      </template>
+      <template #actions>
+        <v-row>
+          <v-col cols="12" sm="6">
+            <ignore-buttons
+              :disabled="selected.length === 0 || loading || refreshing"
+              @ignore="ignoreTrades"
+            />
+          </v-col>
+          <v-col cols="12" sm="6">
+            <table-filter
+              :matchers="matchers"
+              @update:matches="updateFilter($event)"
+            />
+          </v-col>
+        </v-row>
+      </template>
+      <data-table
+        :items="visibleTrades"
+        :headers="headersClosed"
+        :expanded.sync="expanded"
+        single-expand
+        show-expand
+        sort-by="timestamp"
+        class="closed-trades"
+        item-key="tradeId"
+        :page.sync="page"
+        :loading="refreshing"
+      >
+        <template #header.selection>
+          <v-simple-checkbox
+            :ripple="false"
+            :value="allSelected"
+            color="primary"
+            @input="setSelected($event)"
+          />
+        </template>
+        <template #item.baseAsset="{ item }">
+          <asset-details
+            data-cy="trade_base"
+            hide-name
+            :asset="item.baseAsset"
+          />
+        </template>
+        <template #item.quoteAsset="{ item }">
+          <asset-details
+            hide-name
+            :asset="item.quoteAsset"
+            data-cy="trade_quote"
+          />
+        </template>
+        <template #item.description="{ item }">
+          {{
+            item.tradeType === 'buy'
+              ? $t('closed_trades.description.with')
+              : $t('closed_trades.description.for')
+          }}
+        </template>
+        <template #item.selection="{ item }">
+          <v-simple-checkbox
+            :ripple="false"
+            color="primary"
+            :value="selected.includes(item.tradeId)"
+            @input="selectionChanged(item.tradeId, $event)"
+          />
+        </template>
+        <template #item.location="{ item }">
+          <location-display :identifier="item.location" />
+        </template>
+        <template #item.rate="{ item }">
+          <amount-display
+            class="closed-trades__trade__rate"
+            :value="item.rate"
+          />
+        </template>
+        <template #item.amount="{ item }">
+          <amount-display
+            class="closed-trades__trade__amount"
+            :value="item.amount"
+          />
+        </template>
+        <template #item.ignoredInAccounting="{ item }">
+          <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
+        </template>
+        <template #item.timestamp="{ item }">
+          <div class="d-flex flex-row align-center">
+            <date-display :timestamp="item.timestamp" />
+            <v-spacer v-if="item.location === 'external'" />
+            <row-actions
+              v-if="item.location === 'external'"
+              edit-tooltip=""
+              delete-tooltip=""
+              @edit-click="editTrade(item)"
+              @delete-click="promptForDelete(item)"
+            />
+          </div>
+        </template>
 
-        <card-title class="ms-2">{{ $t('closed_trades.title') }}</card-title>
-      </v-card-title>
-      <v-card-text>
-        <ignore-buttons
-          :disabled="selected.length === 0 || loading || refreshing"
-          @ignore="ignoreTrades"
-        />
-        <v-sheet outlined rounded>
-          <data-table
-            :items="data"
-            :headers="headersClosed"
-            :expanded.sync="expanded"
-            single-expand
-            show-expand
-            sort-by="timestamp"
-            class="closed-trades"
-            item-key="tradeId"
-            :page.sync="page"
-            :loading="refreshing"
-          >
-            <template #header.selection>
-              <v-simple-checkbox
-                :ripple="false"
-                :value="allSelected"
-                color="primary"
-                @input="setSelected($event)"
-              />
-            </template>
-            <template #item.baseAsset="{ item }">
-              <asset-details
-                v-if="typeof item.baseAsset === 'string'"
-                data-cy="trade_base"
-                hide-name
-                :asset="item.baseAsset"
-              />
-              <asset-details-base
-                v-else
-                data-cy="trade_base"
-                hide-name
-                :asset="item.baseAsset"
-              />
-            </template>
-            <template #item.quoteAsset="{ item }">
-              <asset-details
-                v-if="typeof item.quoteAsset === 'string'"
-                data-cy="trade_quote"
-                hide-name
-                :asset="item.quoteAsset"
-              />
-              <asset-details-base
-                v-else
-                hide-name
-                :asset="item.quoteAsset"
-                data-cy="trade_quote"
-              />
-            </template>
-            <template #item.description="{ item }">
-              {{
-                item.tradeType === 'buy'
-                  ? $t('closed_trades.description.with')
-                  : $t('closed_trades.description.for')
-              }}
-            </template>
-            <template #item.selection="{ item }">
-              <v-simple-checkbox
-                :ripple="false"
-                color="primary"
-                :value="selected.includes(item.tradeId)"
-                @input="selectionChanged(item.tradeId, $event)"
-              />
-            </template>
-            <template #item.location="{ item }">
-              <location-display :identifier="item.location" />
-            </template>
-            <template #item.rate="{ item }">
-              <amount-display
-                class="closed-trades__trade__rate"
-                :value="item.rate"
-              />
-            </template>
-            <template #item.amount="{ item }">
-              <amount-display
-                class="closed-trades__trade__amount"
-                :value="item.amount"
-              />
-            </template>
-            <template #item.ignoredInAccounting="{ item }">
-              <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
-            </template>
-            <template #item.timestamp="{ item }">
-              <div class="d-flex flex-row align-center">
-                <date-display :timestamp="item.timestamp" />
-                <v-spacer v-if="item.location === 'external'" />
-                <div v-if="item.location === 'external'">
-                  <v-btn icon>
-                    <v-icon
-                      small
-                      class="closed-trades__trade__actions__edit"
-                      @click="editTrade(item)"
-                    >
-                      mdi-pencil
-                    </v-icon>
-                  </v-btn>
-                  <v-btn icon>
-                    <v-icon
-                      class="closed-trades__trade__actions__delete"
-                      small
-                      @click="promptForDelete(item)"
-                    >
-                      mdi-delete
-                    </v-icon>
-                  </v-btn>
-                </div>
-              </div>
-            </template>
-
-            <template #expanded-item="{ headers, item }">
-              <table-expand-container visible :colspan="headers.length">
-                <template #title>
-                  {{ $t('closed_trades.details.title') }}
-                </template>
-                <v-row>
-                  <v-col cols="auto" class="font-weight-medium">
-                    {{ $t('closed_trades.details.fee') }}
-                  </v-col>
-                  <v-col>
-                    <amount-display
-                      v-if="!!item.fee"
-                      class="closed-trades__trade__fee"
-                      :asset="item.feeCurrency"
-                      :value="item.fee"
-                    />
-                    <span v-else>-</span>
-                  </v-col>
-                </v-row>
-                <v-row>
-                  <v-col cols="auto" class="font-weight-medium">
-                    {{ $t('closed_trades.details.link') }}
-                  </v-col>
-                  <v-col>
-                    {{
-                      item.link
-                        ? item.link
-                        : $t('closed_trades.details.link_data')
-                    }}
-                  </v-col>
-                </v-row>
-                <notes-display :notes="item.notes" />
-              </table-expand-container>
-            </template>
-            <template
-              v-if="tradesLimit <= tradesTotal && tradesLimit > 0"
-              #body.append="{ headers }"
-            >
-              <upgrade-row
-                :limit="tradesLimit"
-                :total="tradesTotal"
-                :colspan="headers.length"
-                :label="$t('closed_trades.label')"
-              />
-            </template>
-          </data-table>
-        </v-sheet>
-      </v-card-text>
-    </v-card>
+        <template #expanded-item="{ headers, item }">
+          <trade-details :span="headers.length" :item="item" />
+        </template>
+        <template
+          v-if="tradesLimit <= tradesTotal && tradesLimit > 0"
+          #body.append="{ headers }"
+        >
+          <upgrade-row
+            :limit="tradesLimit"
+            :total="tradesTotal"
+            :colspan="headers.length"
+            :label="$t('closed_trades.label')"
+          />
+        </template>
+      </data-table>
+    </card>
     <big-dialog
       :display="openDialog"
       :title="dialogTitle"
@@ -209,8 +158,10 @@
 </template>
 
 <script lang="ts">
+import { Nullable } from '@rotki/common';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
+import * as logger from 'loglevel';
 import { Component, Emit, Mixins, Prop, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters, mapMutations } from 'vuex';
@@ -222,21 +173,48 @@ import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import RowActions from '@/components/helper/RowActions.vue';
 import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
+import TableFilter from '@/components/history/filtering/TableFilter.vue';
+import {
+  MatchedKeyword,
+  SearchMatcher
+} from '@/components/history/filtering/types';
+import {
+  checkIfMatch,
+  endMatch,
+  startMatch
+} from '@/components/history/filtering/utils';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import TradeDetails from '@/components/history/TradeDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import AssetMixin from '@/mixins/asset-mixin';
 import StatusMixin from '@/mixins/status-mixin';
+import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
 import { HistoryActions, IGNORE_TRADES } from '@/store/history/consts';
 import { IgnoreActionPayload, TradeEntry } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
+import { uniqueStrings } from '@/utils/data';
+import { convertToTimestamp } from '@/utils/date';
+
+enum TradeFilterKeys {
+  BASE = 'base',
+  QUOTE = 'quote',
+  ACTION = 'action',
+  START = 'start',
+  END = 'end',
+  LOCATION = 'location'
+}
 
 @Component({
   components: {
+    RowActions,
+    TradeDetails,
+    TableFilter,
     NotesDisplay,
     AssetDetailsBase,
     DataTable,
@@ -316,8 +294,8 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
   dialogTitle: string = '';
   dialogSubtitle: string = '';
   openDialog: boolean = false;
-  editableItem: TradeEntry | null = null;
-  tradeToDelete: TradeEntry | null = null;
+  editableItem: Nullable<TradeEntry> = null;
+  tradeToDelete: Nullable<TradeEntry> = null;
   confirmationMessage: string = '';
   tradesLimit!: number;
   tradesTotal!: number;
@@ -332,6 +310,70 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
   section = Section.TRADES;
 
   selected: string[] = [];
+  filter: MatchedKeyword<TradeFilterKeys> = {};
+
+  readonly matchers: SearchMatcher<TradeFilterKeys>[] = [
+    {
+      key: TradeFilterKeys.BASE,
+      description: this.$t('closed_trades.filter.base_asset').toString(),
+      suggestions: () => this.baseAssets,
+      validate: (asset: string) => this.baseAssets.includes(asset)
+    },
+    {
+      key: TradeFilterKeys.QUOTE,
+      description: this.$t('closed_trades.filter.quote_asset').toString(),
+      suggestions: () => this.quoteAssets,
+      validate: (asset: string) => this.quoteAssets.includes(asset)
+    },
+    {
+      key: TradeFilterKeys.ACTION,
+      description: this.$t('closed_trades.filter.trade_type').toString(),
+      suggestions: () => ['buy', 'sell'],
+      validate: type => ['buy', 'sell'].includes(type)
+    },
+    {
+      key: TradeFilterKeys.START,
+      description: this.$t('closed_trades.filter.start_date').toString(),
+      suggestions: () => [],
+      hint: this.$t('closed_trades.filter.date_hint').toString(),
+      validate: value => {
+        return value.length > 0 && !isNaN(convertToTimestamp(value));
+      }
+    },
+    {
+      key: TradeFilterKeys.END,
+      description: this.$t('closed_trades.filter.end_date').toString(),
+      suggestions: () => [],
+      hint: this.$t('closed_trades.filter.date_hint').toString(),
+      validate: value => {
+        return value.length > 0 && !isNaN(convertToTimestamp(value));
+      }
+    },
+    {
+      key: TradeFilterKeys.LOCATION,
+      description: this.$t('closed_trades.filter.location').toString(),
+      suggestions: () => this.availableLocations,
+      validate: location => this.availableLocations.includes(location as any)
+    }
+  ];
+
+  get quoteAssets(): string[] {
+    return this.data
+      .map(value => value.quoteAsset)
+      .filter(uniqueStrings)
+      .map(value => this.getSymbol(value));
+  }
+
+  get baseAssets(): string[] {
+    return this.data
+      .map(value => value.baseAsset)
+      .filter(uniqueStrings)
+      .map(value => this.getSymbol(value));
+  }
+
+  get availableLocations(): TradeLocation[] {
+    return this.data.map(trade => trade.location).filter(uniqueStrings);
+  }
 
   setSelected(selected: boolean) {
     const selection = this.selected;
@@ -341,9 +383,13 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
         selection.pop();
       }
     } else {
-      for (const { tradeId } of this.data) {
+      for (const trade of this.data) {
+        const { tradeId } = trade;
         if (!tradeId || selection.includes(tradeId)) {
-          continue;
+          logger.warn(
+            'A problematic trade has been detected, possible duplicate id',
+            trade
+          );
         }
         selection.push(tradeId);
       }
@@ -418,11 +464,51 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
   @Prop({ required: true })
   data!: TradeEntry[];
 
+  visibleTrades: TradeEntry[] = [];
+
+  mounted() {
+    this.applyFilter();
+  }
+
+  updateFilter(filter: MatchedKeyword<TradeFilterKeys>) {
+    this.filter = filter;
+    this.applyFilter();
+  }
+
+  applyFilter() {
+    const filter = this.filter;
+    const quoteFilter = filter[TradeFilterKeys.QUOTE];
+    const baseFilter = filter[TradeFilterKeys.BASE];
+    const actionFilter = filter[TradeFilterKeys.ACTION];
+    const locationFilter = filter[TradeFilterKeys.LOCATION];
+    const endFilter = filter[TradeFilterKeys.END];
+    const startFilter = filter[TradeFilterKeys.START];
+
+    this.visibleTrades = this.data.filter(trade => {
+      const quoteSymbol = this.getSymbol(trade.quoteAsset);
+      const baseSymbol = this.getSymbol(trade.baseAsset);
+      const quoteMatch = checkIfMatch(quoteSymbol, quoteFilter);
+      const baseMatch = checkIfMatch(baseSymbol, baseFilter);
+      const actionMatch = checkIfMatch(trade.tradeType, actionFilter);
+      const locationMatch = checkIfMatch(trade.location, locationFilter);
+
+      return (
+        quoteMatch &&
+        actionMatch &&
+        endMatch(trade.timestamp, endFilter) &&
+        startMatch(trade.timestamp, startFilter) &&
+        baseMatch &&
+        locationMatch
+      );
+    });
+  }
+
   @Watch('data')
   onDataUpdate(newData: TradeEntry[], oldData?: TradeEntry[]) {
     if (oldData && newData.length < oldData.length) {
       this.page = 1;
     }
+    this.applyFilter();
   }
 
   newExternalTrade() {

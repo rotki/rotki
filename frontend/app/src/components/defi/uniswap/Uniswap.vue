@@ -13,9 +13,10 @@
       </i18n>
     </template>
   </progress-screen>
-  <v-container v-else class="uniswap">
+  <div v-else class="uniswap">
     <refresh-header
       :title="$t('uniswap.title')"
+      class="mt-4"
       :loading="anyRefreshing"
       @refresh="refresh()"
     >
@@ -39,7 +40,7 @@
     <v-row class="mt-4">
       <v-col
         v-for="entry in balances"
-        :key="entry.poolAddress"
+        :key="entry.address"
         cols="12"
         sm="6"
         lg="6"
@@ -58,7 +59,7 @@
             <uniswap-pool-details :balance="entry" />
           </template>
           <template #subtitle>
-            <hash-link :text="entry.poolAddress" />
+            <hash-link :text="entry.address" />
           </template>
           <template #icon>
             <uniswap-pool-asset
@@ -85,7 +86,7 @@
 
           <v-row
             v-for="asset in entry.assets"
-            :key="`${asset.asset}-${entry.poolAddress}-balances`"
+            :key="`${asset.asset}-${entry.address}-balances`"
             class="uniswap__tokens"
             align="center"
             justify="end"
@@ -117,10 +118,11 @@
       :selected-addresses="selectedAddresses"
       :selected-pool-address="selectedPools"
     />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">
+import { XswapBalance } from '@rotki/common/lib/defi/xswap';
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
@@ -136,10 +138,8 @@ import ModuleMixin from '@/mixins/module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { UniswapDetails } from '@/premium/premium';
-import { MODULE_UNISWAP } from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
-import { UniswapBalance } from '@/store/defi/types';
 import { ETH, GeneralAccount } from '@/typing/types';
 
 @Component({
@@ -168,11 +168,11 @@ export default class Uniswap extends Mixins(
   AssetMixin
 ) {
   readonly ETH = ETH;
-  readonly modules: SupportedModules[] = [MODULE_UNISWAP];
+  readonly modules: Module[] = [Module.UNISWAP];
   section = Section.DEFI_UNISWAP_BALANCES;
   secondSection = Section.DEFI_UNISWAP_EVENTS;
 
-  uniswapBalances!: (addresses: string[]) => UniswapBalance[];
+  uniswapBalances!: (addresses: string[]) => XswapBalance[];
   uniswapAddresses!: string[];
   selectedAccount: GeneralAccount | null = null;
   selectedPools: string[] = [];
@@ -180,20 +180,20 @@ export default class Uniswap extends Mixins(
   fetchUniswapEvents!: (refresh: boolean) => Promise<void>;
 
   get isEnabled(): boolean {
-    return this.isModuleEnabled(MODULE_UNISWAP);
+    return this.isModuleEnabled(Module.UNISWAP);
   }
 
   get selectedAddresses(): string[] {
     return this.selectedAccount ? [this.selectedAccount.address] : [];
   }
 
-  get balances(): UniswapBalance[] {
+  get balances(): XswapBalance[] {
     const balances = this.uniswapBalances(this.selectedAddresses);
     if (this.selectedPools.length === 0) {
       return balances;
     }
-    return balances.filter(({ poolAddress }) =>
-      this.selectedPools.includes(poolAddress)
+    return balances.filter(({ address }) =>
+      this.selectedPools.includes(address)
     );
   }
 

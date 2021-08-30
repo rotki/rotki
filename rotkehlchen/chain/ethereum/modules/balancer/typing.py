@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tuple, Union, cast
 
 from eth_typing.evm import ChecksumAddress
@@ -15,6 +14,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_timestamp
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 # TODO: improve the prefixes annotation and amend their usage in balancer.py
 BALANCER_EVENTS_PREFIX = 'balancer_events'
@@ -73,28 +73,14 @@ DDAddressToUniqueSwaps = DefaultDict[ChecksumEthAddress, Set[AMMSwap]]
 AddressToTrades = Dict[ChecksumEthAddress, List[AMMTrade]]
 
 
-class BalancerInvestEventType(Enum):
+class BalancerInvestEventType(SerializableEnumMixin):
     ADD_LIQUIDITY = 1
     REMOVE_LIQUIDITY = 2
 
-    def __str__(self) -> str:
-        if self == BalancerInvestEventType.ADD_LIQUIDITY:
-            return 'add liquidity'
-        if self == BalancerInvestEventType.REMOVE_LIQUIDITY:
-            return 'remove liquidity'
-        raise AssertionError(f'Unexpected BalancerEventType type: {self}.')
 
-
-class BalancerBPTEventType(Enum):
+class BalancerBPTEventType(SerializableEnumMixin):
     MINT = 1
     BURN = 2
-
-    def __str__(self) -> str:
-        if self == BalancerBPTEventType.MINT:
-            return 'mint'
-        if self == BalancerBPTEventType.BURN:
-            return 'burn'
-        raise AssertionError(f'Unexpected BalancerBPTEventType type: {self}.')
 
 
 class BalancerInvestEvent(NamedTuple):
@@ -224,7 +210,10 @@ class BalancerEvent(NamedTuple):
         except AttributeError as e:
             raise DeserializationError(f'Unexpected event type: {event_tuple_type}.') from e
 
-        pool_address_token = EthereumToken.from_identifier(event_tuple[5])
+        pool_address_token = EthereumToken.from_identifier(
+            event_tuple[5],
+            form_with_incomplete_data=True,  # since some may not have decimals input correctly
+        )
         if pool_address_token is None:
             raise DeserializationError(
                 f'Balancer event pool token: {event_tuple[5]} not found in the DB.',
@@ -300,14 +289,18 @@ class BalancerPoolEventsBalance(NamedTuple):
 
     def serialize(self) -> Dict[str, Any]:
         profit_loss_amounts: Dict[str, Any] = {}  # Includes all assets, even with zero amount
+        tokens_and_weights = []
         for pool_token, profit_loss_amount in zip(self.pool_address_token.underlying_tokens, self.profit_loss_amounts):  # noqa: E501
             token_identifier = ethaddress_to_identifier(pool_token.address)
             profit_loss_amounts[token_identifier] = str(profit_loss_amount)
+            tokens_and_weights.append({
+                'token': token_identifier,
+                'weight': str(pool_token.weight * 100),
+            })
 
         return {
             'pool_address': self.pool_address_token.ethereum_address,
-            'pool_tokens': [
-                ethaddress_to_identifier(x.address) for x in self.pool_address_token.underlying_tokens],  # noqa: E501
+            'pool_tokens': tokens_and_weights,
             'events': [event.serialize(pool_tokens=self.pool_address_token.underlying_tokens) for event in self.events],  # noqa: E501
             'profit_loss_amounts': profit_loss_amounts,
             'usd_profit_loss': str(self.usd_profit_loss),

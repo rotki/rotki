@@ -12,7 +12,7 @@
   "account_settings_display": {
     "account_asset_movement": "Account asset movement fees were taken into account:",
     "crypto2crypto": "Crypto to crypto trades were taken into account:",
-    "gas_costs": "Gas costs where taken into account:",
+    "gas_costs": "Gas costs were taken into account:",
     "past_cost_basis": "Past cost basis was calculated during the report creation:",
     "tax_free_period": "There was a tax free period:",
     "title": "Accounting Settings",
@@ -102,7 +102,28 @@
     },
     "title": "A supported asset update is available",
     "total_changes": "This update contains {changes} asset changes.",
-    "up_to_version": "Only update up to version"
+    "up_to_version": "Only update up to version",
+    "restore": {
+      "title": "Reset assets database",
+      "subtitle": "Delete custom assets and reset assets database to its initial state. Caution: This operation might affect other users in the same system using the database for assets.",
+      "action": "Reset",
+      "delete_confirmation": {
+        "title": "Reset assets database",
+        "message": "Do you really want to restore your local assets database? This will keep the assets that you manually added and were not known to rotki before and reset all others to their original state."
+      },
+      "hard_restore_message": {
+        "title": "Reset assets database",
+        "message": "Do you really want to reset your local copy of assets? You will lose any custom assets that you may have added manually."
+      },
+      "hard_restore_confirmation": {
+        "title": "Dangerous operation",
+        "message": "There are assets that will be deleted and might cause an inconsistent state in this account or other accounts in the system. Confirm this action only if you know what you are doing."
+      },
+      "success": {
+        "description": "The asset database has been successfully restored. You will now need to re-login to apply the changes.",
+        "title": "Asset database restore"
+      }
+    }
   },
   "assets": {
     "amount": "Total Owned",
@@ -327,6 +348,16 @@
     "subtitle": "These are the supported date formatting options",
     "title": "Date Format"
   },
+  "deposit_withdrawals": {
+    "filter": {
+      "action": "filter by the action",
+      "asset": "filter by the asset",
+      "date_hint": "format DD/MM/YYYY HH:mm:ss (time/seconds are optional)",
+      "location": "filter by the location",
+      "start_date": "filter by the starting date of the period",
+      "end_date": "filter by the ending date of the period"
+    }
+  },
   "exchange_keys_form": {
     "api_key": {
       "non_empty": "The api key field cannot be empty."
@@ -413,6 +444,15 @@
     "hint": "* Modules that are activated for all addresses will not appear here",
     "subtitle": "Select which modules should be queried for this account",
     "title": "Enabled modules"
+  },
+  "no_filter_available": {
+    "hint": {
+      "description": "* type the filter and then press enter e.g.",
+      "example": "quote: ETH"
+    },
+    "hint_filter": "The combined filters will be applied at the same time",
+    "title": "Available filters",
+    "unsupported_filter": "Unsupported filter:"
   },
   "notes_display": {
     "empty_notes": "No notes found for this entry",
@@ -508,6 +548,10 @@
     "title": "Amount rounding",
     "value_rounding_hint": "Specify how the value (e.g the FIAT value of an owned asset) is rounded.",
     "amount_rounding_hint": "Specify how the amount (e.g. the amount of an owned asset) is rounded."
+  },
+  "sushiswap": {
+    "loading": "Please wait while your liquidity pools are getting loaded...",
+    "premium": "Sushiswap feature "
   },
   "theme_manager_lock": {
     "description": "Theme customization is only available with a premium subscription",
@@ -702,6 +746,13 @@
       "label": "API key",
       "title": "Etherscan"
     },
+    "covalent": {
+      "delete_tooltip": "Deletes the Covalent API key",
+      "description": "rotki can use Covalent to get historical data for various chains",
+      "hint": "Enter your Covalent API key",
+      "label": "API key",
+      "title": "Covalent"
+    },
     "loopring": {
       "settings": "Settings",
       "delete_tooltip": "Delete your Loopring API key",
@@ -860,6 +911,7 @@
   },
   "liquidity": {
     "balancer": "Balancer",
+    "sushiswap": "Sushiswap",
     "uniswap": "Uniswap"
   },
   "loan_liquidation": {
@@ -1288,6 +1340,15 @@
       "with": "With",
       "for": "For"
     },
+    "filter": {
+      "base_asset": "filter by the base asset of the trade",
+      "date_hint": "format DD/MM/YYYY HH:mm:ss (time/seconds are optional)",
+      "end_date": "filter by the end date of the trade period",
+      "location": "filter by the trade location",
+      "quote_asset": "filter by the quote asset of the trade",
+      "start_date": "filter by the start date of the trade period",
+      "trade_type": "filter by the trade action (buy or sell)"
+    },
     "title": "Closed Orders",
     "headers": {
       "location": "Location",
@@ -1371,7 +1432,6 @@
     }
   },
   "history": {
-    "header": "History",
     "tabs": {
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
@@ -1731,6 +1791,33 @@
         "error": {
           "title": "Aave history",
           "description": "Failed to retrieve Aave history: {error}"
+        }
+      },
+      "sushiswap_balances": {
+        "error": {
+          "description": "Failed to query Sushiswap balances: {message}",
+          "title": "Sushiswap balances"
+        },
+        "task": {
+          "title": "Querying Sushiswap balances"
+        }
+      },
+      "sushiswap_events": {
+        "error": {
+          "description": "Failed to query Sushiswap events: {message}",
+          "title": "Sushiswap events"
+        },
+        "task": {
+          "title": "Querying Sushiswap events"
+        }
+      },
+      "sushiswap_trades": {
+        "error": {
+          "description": "Failed to query Sushiswap trades: {message}",
+          "title": "Sushiswap trades"
+        },
+        "task": {
+          "title": "Querying Sushiswap trades"
         }
       },
       "uniswap_events": {
@@ -2298,8 +2385,6 @@
     "symbol": "%"
   },
   "decentralized_finance": {
-    "title": "Decentralized Finance",
-    "settings_tooltip": "Opens the Module settings",
     "tabs": {
       "overview": "Overview",
       "deposits": "Deposits",
@@ -2498,11 +2583,9 @@
       "data_security": "Data & Security",
       "modules": "Modules",
       "general": "General"
-    },
-    "title": "Settings"
+    }
   },
   "statistics": {
-    "title": "Statistics",
     "no_premium": "@:common.no_premium Statistics are @:common.available_to_premium",
     "get_premium": "@:common.visit_website"
   },
@@ -2514,7 +2597,6 @@
       "title": "Profit and Loss Report Generation"
     },
     "settings_tooltip": "Open the accounting settings",
-    "title": "Profit and Loss Report",
     "export_csv": "Export CSV",
     "loading_message": "Please wait while your report is generated...",
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
@@ -2571,7 +2653,6 @@
     "notice_link": "open an issue with rotki"
   },
   "dashboard": {
-    "title": "Dashboard",
     "exchange_balances": {
       "tooltip": "Aggregate value of all balances in each configured exchange.",
       "add": "Add an exchange",
@@ -2607,11 +2688,7 @@
       "price": "Price in {symbol}"
     }
   },
-  "accounts_balances": {
-    "title": "Accounts & Balances"
-  },
   "api_keys": {
-    "title": "API Keys",
     "tabs": {
       "premium": "rotki Premium",
       "exchanges": "Exchanges",

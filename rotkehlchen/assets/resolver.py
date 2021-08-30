@@ -1,12 +1,9 @@
-import logging
 from typing import Dict, Optional
 
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.globaldb import GlobalDBHandler
 
 from .typing import AssetData
-
-log = logging.getLogger(__name__)
 
 
 class AssetResolver():

@@ -2,7 +2,7 @@
   <progress-screen v-if="loading">
     <template #message>{{ $t('borrowing.loading') }}</template>
   </progress-screen>
-  <v-container v-else>
+  <div v-else>
     <v-row class="mt-8">
       <v-col>
         <refresh-header
@@ -78,7 +78,7 @@
       </v-col>
     </v-row>
     <loan-info :loan="loan(selection)" />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">
@@ -95,12 +95,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import StatusMixin from '@/mixins/status-mixin';
 import { DefiProtocol } from '@/services/defi/consts';
-import {
-  MODULE_AAVE,
-  MODULE_COMPOUND,
-  MODULE_MAKERDAO_VAULTS
-} from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 import {
   AaveLoan,
@@ -139,10 +134,10 @@ export default class Borrowing extends Mixins(StatusMixin) {
   section = Section.DEFI_BORROWING;
   secondSection = Section.DEFI_BORROWING_HISTORY;
 
-  readonly modules: SupportedModules[] = [
-    MODULE_AAVE,
-    MODULE_COMPOUND,
-    MODULE_MAKERDAO_VAULTS
+  readonly modules: Module[] = [
+    Module.AAVE,
+    Module.COMPOUND,
+    Module.MAKERDAO_VAULTS
   ];
 
   get selectedProtocols(): DefiProtocol[] {

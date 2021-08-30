@@ -11,7 +11,7 @@
     <v-list-item-content>
       <v-list-item-title class="d-flex justify-space-between">
         <span>
-          {{ name | capitalize }}
+          {{ capitalize(name) }}
         </span>
         <span class="text-end">
           <amount-display
@@ -30,6 +30,7 @@ import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import { capitalize } from '@/filters';
 import { Currency } from '@/model/currency';
 
 const { mapGetters } = createNamespacedHelpers('session');
@@ -45,6 +46,7 @@ export default class ManualBalanceCardList extends Vue {
   name!: string;
   @Prop({ required: true })
   amount!: BigNumber;
+  readonly capitalize = capitalize;
 
   currency!: Currency;
 }

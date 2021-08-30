@@ -389,7 +389,7 @@ export default class AssetForm extends Vue {
       return;
     }
 
-    this.name = token.name;
+    this.name = token.name ?? '';
     this.symbol = token.symbol;
     this.identifier = token.identifier ?? '';
     this.swappedFor = token.swappedFor ?? '';

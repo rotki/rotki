@@ -11,15 +11,22 @@ from typing_extensions import Literal
 
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import RemoteError
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 GRAPH_QUERY_LIMIT = 1000
 GRAPH_QUERY_SKIP_LIMIT = 5000
 RE_MULTIPLE_WHITESPACE = re.compile(r'\s+')
 RETRY_BACKOFF_FACTOR = 0.2
+SUBGRAPH_REMOTE_ERROR_MSG = (
+    "Failed to request the {protocol} subgraph due to {error_msg}. "
+    "All the deposits and withdrawals history queries are not functioning until this is fixed. "  # noqa: E501
+    "Probably will get fixed with time. If not report it to rotki's support channel"  # noqa: E501
+)
 
 
 def format_query_indentation(querystr: str) -> str:

@@ -5,43 +5,19 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Dict, List, Optional
 
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import DeserializationError, InputError
+from rotkehlchen.errors import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.misc import combine_dicts
+from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
 
 
-class BalanceType(Enum):
+class BalanceType(DBEnumMixIn):
     ASSET = 1
     LIABILITY = 2
-
-    def __str__(self) -> str:
-        if self == BalanceType.ASSET:
-            return 'asset'
-        if self == BalanceType.LIABILITY:
-            return 'liability'
-        # else
-        raise AssertionError(f'Invalid value {self} for BalanceType')
-
-    @staticmethod
-    def deserialize_from_db(value: str) -> 'BalanceType':
-        if value == 'A':
-            return BalanceType.ASSET
-        if value == 'B':
-            return BalanceType.LIABILITY
-        # else
-        raise DeserializationError(f'Encountered unknown BalanceType value {value} in the DB')
-
-    def serialize_for_db(self) -> str:
-        if self == BalanceType.ASSET:
-            return 'A'
-        if self == BalanceType.LIABILITY:
-            return 'B'
-        # else
-        raise AssertionError(f'Invalid value {self} for BalanceType')
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -146,6 +122,7 @@ class DefiEventType(Enum):
     ADEX_EVENT = auto()
     COMPOUND_EVENT = auto()
     ETH2_EVENT = auto()
+    LIQUITY = auto()
 
     def __str__(self) -> str:
         if self == DefiEventType.DSR_EVENT:
@@ -162,6 +139,8 @@ class DefiEventType(Enum):
             return 'Compound event'
         if self == DefiEventType.ETH2_EVENT:
             return 'ETH2 event'
+        if self == DefiEventType.LIQUITY:
+            return 'Liquity event'
         # else
         raise RuntimeError(f'Corrupt value {self} for DefiEventType -- Should never happen')
 
@@ -286,34 +265,8 @@ def _evaluate_balance_sheet_input(other: Any, operation: str) -> BalanceSheet:
     return transformed_input
 
 
-class ActionType(Enum):
+class ActionType(DBEnumMixIn):
     TRADE = 1
     ASSET_MOVEMENT = 2
-    ETHEREUM_TX = 3
+    ETHEREUM_TRANSACTION = 3
     LEDGER_ACTION = 4
-
-    def __str__(self) -> str:
-        if self == ActionType.TRADE:
-            return 'trade'
-        if self == ActionType.ASSET_MOVEMENT:
-            return 'asset movement'
-        if self == ActionType.ETHEREUM_TX:
-            return 'ethereum transaction'
-        if self == ActionType.LEDGER_ACTION:
-            return 'ledger action'
-
-        # else
-        raise RuntimeError(f'Corrupt value {self} for ActionType -- Should never happen')
-
-    def serialize_for_db(self) -> str:
-        if self == ActionType.TRADE:
-            return 'A'
-        if self == ActionType.ASSET_MOVEMENT:
-            return 'B'
-        if self == ActionType.ETHEREUM_TX:
-            return 'C'
-        if self == ActionType.LEDGER_ACTION:
-            return 'D'
-
-        # else
-        raise RuntimeError(f'Corrupt value {self} for ActionType -- Should never happen')

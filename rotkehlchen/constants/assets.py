@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 31/07/2021 09:17:15.
+# tools/scripts/generate_constant_assets.py at 12/08/2021 19:54:12.
 # Do not edit manually!
 
 from typing import List
@@ -131,6 +131,19 @@ A_AVAX = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_AVAX)
+A_DOGE = Asset.initialize(
+    identifier='DOGE',
+    asset_type=AssetType.OWN_CHAIN,
+    name="Dogecoin",
+    symbol='DOGE',
+    started=Timestamp(1386325540),
+    forked=None,
+    swapped_for=None,
+    coingecko='dogecoin',
+    cryptocompare=None,
+)
+CONSTANT_ASSETS.append(A_DOGE)
+
 
 A_BAL = EthereumToken.initialize(
     address=string_to_ethereum_address('0xba100000625a3754423978a60c9317c58a424e3D'),
@@ -252,6 +265,30 @@ A_TUSD = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_TUSD)
+A_MATIC = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),
+    decimals=18,
+    name="Matic Network",
+    symbol='MATIC',
+    started=Timestamp(1555718400),
+    swapped_for=None,
+    coingecko='matic-network',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_MATIC)
+A_LQTY = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'),
+    decimals=18,
+    name="LQTY",
+    symbol='LQTY',
+    started=Timestamp(1617611590),
+    swapped_for=None,
+    coingecko='liquity',
+    cryptocompare='LQTY',
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_LQTY)
 
 A_AAVE = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'),
@@ -565,6 +602,18 @@ A_MCB = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_MCB)
+A_LUSD = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
+    decimals=18,
+    name="LUSD Stablecoin",
+    symbol='LUSD',
+    started=Timestamp(1617611299),
+    swapped_for=None,
+    coingecko='liquity-usd',
+    cryptocompare='LUSD',
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_LUSD)
 
 # used as underlying assets of aave v1 tokens
 A_ENJ = EthereumToken.initialize(

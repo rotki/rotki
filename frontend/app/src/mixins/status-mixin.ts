@@ -38,7 +38,7 @@ export default class StatusMixin extends Vue {
     return this.refreshing || this.secondaryRefreshing;
   }
 
-  private isLoading(section: Section): boolean {
+  isLoading(section: Section): boolean {
     assert(section !== Section.NONE);
     const status = this.status(section);
     return !(
@@ -48,7 +48,7 @@ export default class StatusMixin extends Vue {
     );
   }
 
-  private isRefreshing(section: Section): boolean {
+  isRefreshing(section: Section): boolean {
     assert(section !== Section.NONE);
     const status = this.status(section);
     return (

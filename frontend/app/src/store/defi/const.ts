@@ -104,6 +104,9 @@ const LIVEPEER = 'Livepeer';
 const COZY = 'Cozy';
 const COZY_YEARN = 'Cozy • Yearn';
 const COZY_COMPOUND = 'Cozy • Compound';
+const UNAGII = 'Unagii';
+const ORIGIN_PROTOCOL = 'Origin Protocol • OGN Staking';
+const TIMEWARP = 'TimeWarp • Staking';
 
 export const OVERVIEW_PROTOCOLS = [
   YGOVFINANCEV1,
@@ -204,7 +207,10 @@ export const OVERVIEW_PROTOCOLS = [
   LIVEPEER,
   COZY,
   COZY_COMPOUND,
-  COZY_YEARN
+  COZY_YEARN,
+  UNAGII,
+  ORIGIN_PROTOCOL,
+  TIMEWARP
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
@@ -306,20 +312,15 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [LIVEPEER]: 'livepeer.svg',
   [COZY]: 'cozy.svg',
   [COZY_COMPOUND]: 'cozy.svg',
-  [COZY_YEARN]: 'cozy.svg'
+  [COZY_YEARN]: 'cozy.svg',
+  [UNAGII]: 'unagii.svg',
+  [ORIGIN_PROTOCOL]: 'origin.png',
+  [TIMEWARP]: 'timewarp.png'
 };
 
 export function getProtcolIcon(name: OverviewDefiProtocol): string {
   return ICON_LIST[name] ?? '';
 }
-
-export const UNISWAP_EVENT_MINT = 'mint';
-export const UNISWAP_EVENT_BURN = 'burn';
-
-export const UNISWAP_EVENT_TYPE = [
-  UNISWAP_EVENT_MINT,
-  UNISWAP_EVENT_BURN
-] as const;
 
 export const uniswapNumericKeys = [
   ...balanceKeys,

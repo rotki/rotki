@@ -4,8 +4,8 @@
     "sourceMap": true,
     "baseUrl": "../../node_modules",
     "module": "commonjs",
-    "target": "es5",
-    "lib": ["dom", "es6"],
+    "target": "es2018",
+    "lib": ["dom", "es2018"],
     "types": ["cypress"],
     "paths": {
       "@/*": ["../src/*"]

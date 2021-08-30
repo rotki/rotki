@@ -8,23 +8,17 @@ import { Component, Mixins } from 'vue-property-decorator';
 import Borrowing from '@/components/defi/Borrowing.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ModuleMixin from '@/mixins/module-mixin';
-import {
-  MODULE_AAVE,
-  MODULE_COMPOUND,
-  MODULE_MAKERDAO_VAULTS,
-  MODULE_YEARN
-} from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 
 @Component({
   components: { ModuleNotActive, Borrowing }
 })
 export default class DecentralizedBorrowing extends Mixins(ModuleMixin) {
-  readonly modules: SupportedModules[] = [
-    MODULE_AAVE,
-    MODULE_COMPOUND,
-    MODULE_MAKERDAO_VAULTS,
-    MODULE_YEARN
+  readonly modules: Module[] = [
+    Module.AAVE,
+    Module.COMPOUND,
+    Module.MAKERDAO_VAULTS,
+    Module.YEARN
   ];
 
   get anyModuleEnabled(): boolean {

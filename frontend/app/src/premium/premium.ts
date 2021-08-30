@@ -132,6 +132,10 @@ export const Grants = (): Promise<VueConstructor> => {
   return load('Grants');
 };
 
+export const Sushi = (): Promise<VueConstructor> => {
+  return load('Sushi');
+};
+
 declare global {
   interface Window {
     Vue: any;

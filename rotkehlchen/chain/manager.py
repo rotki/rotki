@@ -48,7 +48,9 @@ from rotkehlchen.chain.ethereum.modules import (
     Uniswap,
     YearnVaults,
     YearnVaultsV2,
+    Liquity,
 )
+from rotkehlchen.chain.ethereum.nft import NFTManager
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
@@ -335,6 +337,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             ethereum_manager=self.ethereum,
             msg_aggregator=self.msg_aggregator,
         )
+        self.nft_manager = NFTManager(database=self.database, msg_aggregator=self.msg_aggregator)
 
     def __del__(self) -> None:
         del self.ethereum
@@ -383,7 +386,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if module:
             return module  # already activated
 
-        logger.debug(f'Activating {module_name} module')
+        log.debug(f'Activating {module_name} module')
         kwargs = {}
         if module_name == 'eth2':
             kwargs['beaconchain'] = self.beaconchain
@@ -398,7 +401,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 **kwargs,
             )
         except ModuleInitializationFailure as e:
-            logger.error(f'Failed to activate {module_name} due to: {str(e)}')
+            log.error(f'Failed to activate {module_name} due to: {str(e)}')
             return None
 
         self.eth_modules[module_name] = instance
@@ -417,7 +420,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if instance is None:
             return  # nothing to do
 
-        logger.debug(f'Deactivating {module_name} module')
+        log.debug(f'Deactivating {module_name} module')
         instance.deactivate()
         del instance
         return
@@ -470,6 +473,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     def get_module(self, module_name: Literal['yearn_vaults_v2']) -> Optional[YearnVaultsV2]:
         ...
 
+    @overload
+    def get_module(self, module_name: Literal['liquity']) -> Optional[Liquity]:
+        ...
+
     def get_module(self, module_name: ModuleName) -> Optional[Any]:
         instance = self.eth_modules.get(module_name, None)
         if instance is None:  # not activated
@@ -498,6 +505,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             raise InputError(
                 f'Blockchain account/s {",".join(existing_accounts)} already exist',
             )
+
+    def get_all_nfts(self) -> Dict[str, Any]:
+        result = self.nft_manager.get_all_nfts(
+            addresses=self.accounts.eth,
+            has_premium=self.premium is not None,
+        )
+        return result.serialize()
 
     @protect_with_lock(arguments_matter=True)
     @cache_response_timewise()

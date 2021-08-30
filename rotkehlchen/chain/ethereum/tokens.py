@@ -128,7 +128,10 @@ class EthTokens():
         for asset in ignored_assets:  # don't query for the ignored tokens
             if asset.is_eth_token():  # type ignore since we know asset is a token
                 exceptions.append(EthereumToken.from_asset(asset).ethereum_address)  # type: ignore
-        all_tokens = GlobalDBHandler().get_ethereum_tokens(exceptions=exceptions)
+        all_tokens = GlobalDBHandler().get_ethereum_tokens(
+            exceptions=exceptions,
+            except_protocols=['balancer'],
+        )
         # With etherscan with chunks > 120, we get request uri too large
         # so the limitation is not in the gas, but in the request uri length
         etherscan_chunks = list(get_chunks(all_tokens, n=ETHERSCAN_MAX_TOKEN_CHUNK_LENGTH))

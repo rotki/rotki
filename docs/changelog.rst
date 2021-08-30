@@ -2,6 +2,25 @@
 Changelog
 =========
 
+* :feature:`2764` Users will now be able to restore the local assets database to its initial state.
+* :feature:`2847` Users will now be able to use a combination of filters in the search for trades and deposits/withdrawals.
+* :feature:`3254` Users can now add a custom Covalent API key in rotki.
+* :bug:`3266` Users will now be able to properly access most of the top bar content using a mobile device.
+* :bug:`3268` Users will now be able to properly scroll to the hidden tabs when using a mobile device.
+* :bug:`3267` Frontend will now occupy all the available screen when accessed from a mobile device.
+* :bug:`3208` Rotki is now able to accept and track the same account for different blockchain types.
+
+* :release:`1.20.1 <2021-08-27>`
+* :feature:`3349` AMM swaps now have a transaction hash link in the trade history section.
+* :bug:`3329` Users will now properly see their sushiswap trades in the history page if they have the sushiswap module activated.
+* :bug:`3310` For the edge case of a MakerDAO vault event containing a zero amount the MakerDAO DeFi section and PnL report should no longer get an error.
+* :bug:`3311` The PnL CSV export in Windows should now now longer contain the double number of lines and as such the formulas at the summary should be correct. 
+* :bug:`3313` Discrepancies on the sign of net_profit_loss in PnL CSV export between exports with and without formulas should now be fixed.
+* :bug:`3355` Yearn V2 vaults should now display a correct price.
+* :bug:`3373` The form to add a FTX account will now work correctly when the subaccount field is modified and then cleared. 
+
+* :release:`1.20.0 <2021-08-06>`
+* :feature:`2426` Sushiswap is now supported. Premium users can see their LP balances, swaps history and LP pool join/exits. Finally the balancer trades are now taken into account in the profit/loss report.
 * :feature:`2145` Users will now be able to customize whether CSV export should contain metadata of the PnL run. Consisting of the rotki version that generated it and the chosen accounting settings.
 * :feature:`3279` Users will now be able to customize whether CSV export should contain a summary of PnL per event type.
 * :feature:`3252` Users will now be able to customize whether CSV export should contain formulas or not.
@@ -13,6 +32,8 @@ Changelog
 * :feature:`3138` Users will now see separate cards on the Defi overview for MakerDAO Vaults and MakerDAO DSR.
 * :feature:`3275` Users can now see if any of their addresses have FOX available to claim from the ShapeShift airdrop.
 * :bug:`3264` Users should now be able to properly download the PnL CSV when using docker.
+* :bug:`3289` Aave v2 balances should now be taken into account in the DeFi deposits section.
+* :bug:`3287` Users with AMM trades from different AMMs in a single transaction will now be able to select all and deselect all trades properly in the frontend.
 
 * :release:`1.19.1 <2021-07-22>`
 * :bug:`3236` Users will now see the proper total networth for the current day in the graph tooltip.

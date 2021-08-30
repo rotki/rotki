@@ -11,11 +11,13 @@ from rotkehlchen.constants.resolver import (
 )
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 from .typing import AssetType
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 UnderlyingTokenDBTuple = Tuple[str, str]
 
@@ -83,6 +85,9 @@ WORLD_TO_BITTREX = {
     strethaddress_to_identifier('0xfAE4Ee59CDd86e3Be9e8b90b53AA866327D7c090'): 'CPC',
     # Tokenized coinbase in bittrex
     'COIN-2': 'COIN',
+    strethaddress_to_identifier('0x15B543e986b8c34074DFc9901136d9355a537e7E'): 'STCCOIN',
+    strethaddress_to_identifier('0x8f136Cc8bEf1fEA4A7b71aa2301ff1A52F084384'): 'STC',
+    'MER': 'MER',
 }
 
 WORLD_TO_FTX = {
@@ -92,6 +97,8 @@ WORLD_TO_FTX = {
     'COIN': 'COIN',
     # SLP is smooth love potion
     strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+    'MER-2': 'MER',
 }
 
 WORLD_TO_POLONIEX = {
@@ -139,6 +146,8 @@ WORLD_TO_POLONIEX = {
     'WIN-3': 'WIN',
     # GTC is gitcoin in poloniex
     strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+    strethaddress_to_identifier('0xfB7B4564402E5500dB5bB6d63Ae671302777C75a'): 'DEXT',
 }
 
 WORLD_TO_KRAKEN = {
@@ -236,6 +245,15 @@ WORLD_TO_KRAKEN = {
     strethaddress_to_identifier('0xbC396689893D065F41bc2C6EcbeE5e0085233447'): 'PERP',
     strethaddress_to_identifier('0xD417144312DbF50465b1C641d016962017Ef6240'): 'CQT',
     strethaddress_to_identifier('0xF5D669627376EBd411E34b98F19C868c8ABA5ADA'): 'AXS',
+    'WBTC': 'WBTC',
+    strethaddress_to_identifier('0x491604c0FDF08347Dd1fa4Ee062a822A5DD06B5D'): 'CTSI',
+    strethaddress_to_identifier('0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD'): 'LRC',
+    'KAR': 'KAR',
+    strethaddress_to_identifier('0x3472A5A71965499acd81997a54BBA8D852C6E53d'): 'BADGER',
+    strethaddress_to_identifier('0x111111111117dC0aa78b770fA6A738034120C302'): '1INCH',
+    strethaddress_to_identifier('0x09a3EcAFa817268f77BE1283176B946C4ff2E608'): 'MIR',
+    strethaddress_to_identifier('0xBA11D00c5f74255f56a5E366F4F77f5A186d7f55'): 'BAND',
+    strethaddress_to_identifier('0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30'): 'INJ',
 }
 
 WORLD_TO_BINANCE = {
@@ -280,10 +298,12 @@ WORLD_TO_BINANCE = {
     strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
     strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
     strethaddress_to_identifier('0xEA1ea0972fa092dd463f2968F9bB51Cc4c981D71'): 'MOD',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+    strethaddress_to_identifier('0x8f693ca8D21b157107184d29D398A8D082b38b76'): 'DATA',
 }
 
 WORLD_TO_BITFINEX = {
-    'BCH': 'BCHABC',
+    'BCH': 'BCHN',
     'CNY': 'CNH',
     'DOGE': 'DOG',
     'LUNA-2': 'LUNA',
@@ -310,6 +330,8 @@ WORLD_TO_BITFINEX = {
     strethaddress_to_identifier('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'): 'FET',
     # TerraUSD is TERRAUST in bitfinex
     'UST': 'TERRAUST',
+    strethaddress_to_identifier('0x8f693ca8D21b157107184d29D398A8D082b38b76'): 'DATA',
+    'XEC': 'BCHABC',
 }
 
 WORLD_TO_KUCOIN = {
@@ -336,6 +358,12 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0xcca0c9c383076649604eE31b20248BC04FdF61cA'): 'ASD',
     strethaddress_to_identifier('0xEA1ea0972fa092dd463f2968F9bB51Cc4c981D71'): 'MODEFI',
     strethaddress_to_identifier('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC'): 'KICK',
+    strethaddress_to_identifier('0x15B543e986b8c34074DFc9901136d9355a537e7E'): 'STC',
+    'SOL-2': 'SOL',
+    strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
+    strethaddress_to_identifier('0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA'): 'GALAX',
+    strethaddress_to_identifier('0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD'): 'PNT',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
 }
 
 WORLD_TO_ICONOMI = {
@@ -361,12 +389,17 @@ WORLD_TO_ICONOMI = {
     strethaddress_to_identifier('0x08711D3B02C8758F2FB3ab4e80228418a7F8e39c'): 'EDG',
     'SOL-2': 'SOL',
     strethaddress_to_identifier('0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6'): 'RCN',
+    'ONE-2': 'ONE',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
 }
 
 WORLD_TO_COINBASE_PRO = {
     strethaddress_to_identifier('0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0'): 'TRB',
     strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
     'SOL-2': 'SOL',
+    strethaddress_to_identifier('0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85'): 'FET',
+    strethaddress_to_identifier('0xd2877702675e6cEb975b4A1dFf9fb7BAF4C91ea9'): 'WLUNA',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
 }
 
 # Create a generic variable that can be 'Asset', or any subclass.
@@ -700,17 +733,31 @@ class EthereumToken(HasEthereumToken):
         return f'{self.symbol}({self.ethereum_address})'
 
     @classmethod
-    def from_asset(cls: Type[T], asset: Asset) -> Optional[T]:
+    def from_asset(
+            cls: Type[T],
+            asset: Asset,
+            form_with_incomplete_data: bool = True,
+    ) -> Optional[T]:
         """Attempts to turn an asset into an EthereumToken. If it fails returns None"""
-        return cls.from_identifier(asset.identifier)
+        return cls.from_identifier(
+            identifier=asset.identifier,
+            form_with_incomplete_data=form_with_incomplete_data,
+        )
 
     @classmethod
-    def from_identifier(cls: Type[T], identifier: str) -> Optional[T]:
+    def from_identifier(
+            cls: Type[T],
+            identifier: str,
+            form_with_incomplete_data: bool = True,
+    ) -> Optional[T]:
         """Attempts to turn an asset into an EthereumToken. If it fails returns None"""
         if not identifier.startswith(ETHEREUM_DIRECTIVE):
             return None
 
         try:
-            return cls(identifier[ETHEREUM_DIRECTIVE_LENGTH:])
+            return cls(
+                identifier[ETHEREUM_DIRECTIVE_LENGTH:],
+                form_with_incomplete_data=form_with_incomplete_data,
+            )
         except DeserializationError:
             return None

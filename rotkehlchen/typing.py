@@ -6,6 +6,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress  # isort:skip # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 
@@ -22,6 +23,7 @@ ModuleName = Literal[
     'balancer',
     'eth2',
     'sushiswap',
+    'liquity',
 ]
 
 # TODO: Turn this into some kind of light data structure and not just a mapping
@@ -39,6 +41,7 @@ AVAILABLE_MODULES_MAP = {
     'balancer': 'Balancer',
     'eth2': 'Eth2',
     'sushiswap': 'Sushiswap',
+    'liquity': 'Liquity',
 }
 
 
@@ -85,24 +88,13 @@ T_HexColorCode = str
 HexColorCode = NewType('HexColorCode', T_HexColorCode)
 
 
-class ExternalService(Enum):
+class ExternalService(SerializableEnumMixin):
     ETHERSCAN = 0
     CRYPTOCOMPARE = 1
     BEACONCHAIN = 2
     LOOPRING = 3
-
-    @staticmethod
-    def serialize(name: str) -> Optional['ExternalService']:
-        if name == 'etherscan':
-            return ExternalService.ETHERSCAN
-        if name == 'cryptocompare':
-            return ExternalService.CRYPTOCOMPARE
-        if name == 'beaconchain':
-            return ExternalService.BEACONCHAIN
-        if name == 'loopring':
-            return ExternalService.LOOPRING
-        # else
-        return None
+    OPENSEA = 4
+    COVALENT = 5
 
 
 class ExternalServiceApiCredentials(NamedTuple):
@@ -360,30 +352,10 @@ class Location(DBEnumMixIn):
     SUSHISWAP = 31
 
 
-class AssetMovementCategory(Enum):
+class AssetMovementCategory(DBEnumMixIn):
     """Supported Asset Movement Types so far only deposit and withdrawals"""
     DEPOSIT = 1
     WITHDRAWAL = 2
-
-    def __str__(self) -> str:
-        if self == AssetMovementCategory.DEPOSIT:
-            return 'deposit'
-        if self == AssetMovementCategory.WITHDRAWAL:
-            return 'withdrawal'
-        # else
-        raise RuntimeError(
-            f'Corrupt value {self} for AssetMovementCategory -- Should never happen',
-        )
-
-    def serialize_for_db(self) -> str:
-        if self == AssetMovementCategory.DEPOSIT:
-            return 'A'
-        if self == AssetMovementCategory.WITHDRAWAL:
-            return 'B'
-        # else
-        raise RuntimeError(
-            f'Corrupt value {self} for AssetMovementCategory -- Should never happen',
-        )
 
 
 class BlockchainAccountData(NamedTuple):

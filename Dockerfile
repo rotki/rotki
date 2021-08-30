@@ -3,10 +3,11 @@ FROM node:lts-alpine as frontend-build-stage
 
 WORKDIR /app
 COPY frontend/ .
+RUN apk add python3 make g++
 RUN npm install -g npm@7 && if ! npm ci --exit-code; then npm ci; fi
 RUN npm run docker:build
 
-FROM python:3.7 as backend-build-stage
+FROM python:3.7-buster as backend-build-stage
 
 ARG PYINSTALLER_VERSION=3.5
 RUN python3 -m venv /opt/venv
@@ -23,8 +24,16 @@ RUN git clone https://github.com/sqlcipher/sqlcipher && \
     make install && \
     ldconfig
 
+RUN python3 -m pip install --upgrade pip
 COPY ./requirements.txt /app/requirements.txt
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN rustup default nightly-2021-03-24 
+
 WORKDIR /app
+
+RUN pip install maturin==0.11.2 py-sr25519-bindings==0.1.2 wheel
 RUN pip install -r requirements.txt
 
 COPY . /app
@@ -34,7 +43,7 @@ RUN pip install -e . && \
     python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 
-FROM nginx:stable as runtime
+FROM nginx:1.21 as runtime
 
 LABEL maintainer="Rotki Solutions GmbH <info@rotki.com>"
 

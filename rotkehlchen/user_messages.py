@@ -3,12 +3,14 @@ from collections import deque
 from typing import TYPE_CHECKING, Deque, List, Optional
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.api.websockets.notifier import RotkiNotifier
 
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class MessagesAggregator():
@@ -25,7 +27,7 @@ class MessagesAggregator():
         self.warnings.appendleft(msg)
 
     def add_warning(self, msg: str) -> None:
-        logger.warning(msg)
+        log.warning(msg)
         if self.rotki_notifier is not None:
             data = {'verbosity': 'warning', 'value': msg}
             self.rotki_notifier.broadcast(
@@ -48,7 +50,7 @@ class MessagesAggregator():
         self.errors.appendleft(msg)
 
     def add_error(self, msg: str) -> None:
-        logger.error(msg)
+        log.error(msg)
         if self.rotki_notifier is not None:
             data = {'verbosity': 'error', 'value': msg}
             self.rotki_notifier.broadcast(

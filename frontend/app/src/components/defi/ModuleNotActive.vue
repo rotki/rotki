@@ -1,5 +1,5 @@
 <template>
-  <v-container
+  <div
     :style="`height: calc(100vh - ${top + 64}px);`"
     class="d-flex flex-column align-center justify-center"
   >
@@ -44,31 +44,30 @@
         </v-col>
       </v-row>
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
-import { MODULES } from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 
 @Component({})
 export default class ModuleNotActive extends Vue {
   @Prop({
     required: true,
     type: Array,
-    validator: (value: SupportedModules[]) =>
-      value.every(module => MODULES.includes(module))
+    validator: (value: Module[]) =>
+      value.every(module => Object.values(Module).includes(module))
   })
-  modules!: SupportedModules;
+  modules!: Module;
 
   name(module: string): string {
     const data = SUPPORTED_MODULES.find(value => value.identifier === module);
     return data?.name ?? '';
   }
 
-  icon(module: SupportedModules): string {
+  icon(module: Module): string {
     const data = SUPPORTED_MODULES.find(value => value.identifier === module);
     return data?.icon ?? '';
   }

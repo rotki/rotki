@@ -23,6 +23,7 @@ from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -66,7 +67,8 @@ BORROW_EVENTS_QUERY_PREFIX = """{graph_event_name}
 }}}}"""
 
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class CompoundBalance(NamedTuple):

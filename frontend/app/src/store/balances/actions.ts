@@ -23,8 +23,7 @@ import {
 import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
-import { MODULE_LOOPRING } from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { XpubAccountData } from '@/services/types-api';
 import { chainSection } from '@/store/balances/const';
 import {
@@ -526,7 +525,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const addAccount = async (
       blockchain: Blockchain,
       { address, label, tags }: AccountPayload,
-      modules?: SupportedModules[]
+      modules?: Module[]
     ) => {
       const { taskId } = await api.addBlockchainAccount({
         blockchain,
@@ -1231,7 +1230,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     refresh: boolean
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_LOOPRING)) {
+    if (!activeModules.includes(Module.LOOPRING)) {
       return;
     }
 

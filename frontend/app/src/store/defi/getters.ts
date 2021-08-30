@@ -1,5 +1,13 @@
+import { Balance } from '@rotki/common';
+import {
+  XswapBalance,
+  XswapEventDetails,
+  XswapPool,
+  XswapPoolProfit
+} from '@rotki/common/lib/defi/xswap';
 import { default as BigNumber } from 'bignumber.js';
 import sortBy from 'lodash/sortBy';
+import { explorerUrls } from '@/components/helper/asset-urls';
 import { truncateAddress } from '@/filters';
 import i18n from '@/i18n';
 import {
@@ -24,7 +32,6 @@ import {
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
 import { Trade } from '@/services/history/types';
-import { Balance } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
   AAVE,
@@ -61,13 +68,16 @@ import {
   PoapDelivery,
   Pool,
   ProfitLossModel,
-  TokenInfo,
-  UniswapBalance,
-  UniswapEventDetails,
-  UniswapPool,
-  UniswapPoolProfit
+  TokenInfo
 } from '@/store/defi/types';
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
+import {
+  getBalances,
+  getEventDetails,
+  getPoolProfit,
+  getPools
+} from '@/store/defi/xswap-utils';
+import { SettingsState } from '@/store/settings/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';
@@ -130,15 +140,15 @@ interface DefiGetters {
   yearnVaultsProfit: DefiGetterTypes.YearnVaultProfitType;
   yearnVaultsAssets: DefiGetterTypes.YearnVaultAssetType;
   aaveTotalEarned: (addresses: string[]) => ProfitLossModel[];
-  uniswapBalances: (addresses: string[]) => UniswapBalance[];
+  uniswapBalances: (addresses: string[]) => XswapBalance[];
   basicDexTrades: (addresses: string[]) => Trade[];
-  uniswapPoolProfit: (addresses: string[]) => UniswapPoolProfit[];
-  uniswapEvents: (addresses: string[]) => UniswapEventDetails[];
+  uniswapPoolProfit: (addresses: string[]) => XswapPoolProfit[];
+  uniswapEvents: (addresses: string[]) => XswapEventDetails[];
   uniswapAddresses: string[];
   dexTrades: (addresses: string[]) => DexTrade[];
   airdrops: (addresses: string[]) => Airdrop[];
   airdropAddresses: string[];
-  [GETTER_UNISWAP_ASSETS]: UniswapPool[];
+  [GETTER_UNISWAP_ASSETS]: XswapPool[];
   [GETTER_BALANCER_BALANCES]: BalancerBalanceWithOwner[];
   balancerAddresses: string[];
   balancerEvents: (addresses: string[]) => BalancerEvent[];
@@ -1377,52 +1387,21 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
   uniswapBalances: ({ uniswapBalances }) => (
     addresses: string[]
-  ): UniswapBalance[] => {
-    const balances: { [poolAddress: string]: Writeable<UniswapBalance> } = {};
-    for (const account in uniswapBalances) {
-      if (addresses.length > 0 && !addresses.includes(account)) {
-        continue;
-      }
-      const accountBalances = uniswapBalances[account];
-      if (!accountBalances || accountBalances.length === 0) {
-        continue;
-      }
-      for (const {
-        userBalance,
-        totalSupply,
-        assets,
-        address
-      } of accountBalances) {
-        const balance = balances[address];
-        if (balance) {
-          const oldBalance = balance.userBalance;
-          balance.userBalance = {
-            amount: oldBalance.amount.plus(userBalance.amount),
-            usdValue: oldBalance.usdValue.plus(userBalance.usdValue)
-          };
-
-          if (balance.totalSupply !== null && totalSupply !== null) {
-            balance.totalSupply = balance.totalSupply.plus(totalSupply);
-          }
-        } else {
-          balances[address] = {
-            account,
-            userBalance,
-            totalSupply,
-            assets,
-            poolAddress: address
-          };
-        }
-      }
-    }
-    return Object.values(balances);
+  ): XswapBalance[] => {
+    return getBalances(uniswapBalances, addresses);
   },
-  basicDexTrades: ({ uniswapTrades, balancerTrades }) => (
-    addresses
-  ): Trade[] => {
+  basicDexTrades: (
+    { uniswapTrades, balancerTrades, sushiswap },
+    _r,
+    { settings }
+  ) => (addresses): Trade[] => {
+    const {
+      explorers: { ETH }
+    }: SettingsState = settings!;
+    const txUrl = ETH?.transaction ?? explorerUrls.ETH.transaction;
     function transform(
       trades: DexTrades,
-      location: 'uniswap' | 'balancer'
+      location: 'uniswap' | 'balancer' | 'sushiswap'
     ): Trade[] {
       const simpleTrades: Trade[] = [];
       for (const address in trades) {
@@ -1430,6 +1409,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           continue;
         }
         const dexTrade = trades[address];
+        const linkUrl = txUrl.endsWith('/')
+          ? `${txUrl}${dexTrade[0].txHash}`
+          : `${txUrl}/${dexTrade[0].txHash}`;
         const convertedTrades: Trade[] = dexTrade.map(trade => ({
           tradeId: trade.tradeId,
           location: location,
@@ -1441,7 +1423,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           quoteAsset: trade.quoteAsset,
           rate: trade.rate,
           tradeType: 'buy',
-          link: '',
+          link: linkUrl,
           notes: '',
           ignoredInAccounting: false
         }));
@@ -1453,79 +1435,46 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     const trades: Trade[] = [];
     trades.push(...transform(uniswapTrades, 'uniswap'));
     trades.push(...transform(balancerTrades, 'balancer'));
+    if (sushiswap) {
+      trades.push(...transform(sushiswap.trades, 'sushiswap'));
+    }
     return sortBy(trades, 'timestamp').reverse();
   },
   uniswapPoolProfit: ({ uniswapEvents }) => (
     addresses: string[]
-  ): UniswapPoolProfit[] => {
-    const perPoolProfit: {
-      [poolAddress: string]: Writeable<UniswapPoolProfit>;
-    } = {};
-    for (const address in uniswapEvents) {
-      if (addresses.length > 0 && !addresses.includes(address)) {
-        continue;
-      }
-
-      const details = uniswapEvents[address];
-      for (const detail of details) {
-        const { poolAddress } = detail;
-        const profit = perPoolProfit[poolAddress];
-        if (profit) {
-          perPoolProfit[poolAddress] = {
-            ...profit,
-            profitLoss0: profit.profitLoss0.plus(detail.profitLoss0),
-            profitLoss1: profit.profitLoss1.plus(detail.profitLoss1),
-            usdProfitLoss: profit.usdProfitLoss.plus(detail.usdProfitLoss)
-          };
-        } else {
-          const { events: _, address, ...poolProfit } = detail;
-          perPoolProfit[poolAddress] = poolProfit;
-        }
-      }
-    }
-    return Object.values(perPoolProfit);
+  ): XswapPoolProfit[] => {
+    return getPoolProfit(uniswapEvents, addresses);
   },
-  uniswapEvents: ({ uniswapEvents }) => (addresses): UniswapEventDetails[] => {
-    const eventDetails: UniswapEventDetails[] = [];
-    for (const address in uniswapEvents) {
-      if (addresses.length > 0 && !addresses.includes(address)) {
-        continue;
-      }
-      const details = uniswapEvents[address];
-      for (const { events, poolAddress, token0, token1 } of details) {
-        for (const event of events) {
-          eventDetails.push({
-            ...event,
-            address,
-            poolAddress: poolAddress,
-            token0: token0,
-            token1: token1
-          });
-        }
-      }
-    }
-    return eventDetails;
+  uniswapEvents: ({ uniswapEvents }) => (addresses): XswapEventDetails[] => {
+    return getEventDetails(uniswapEvents, addresses);
   },
   uniswapAddresses: ({ uniswapEvents, uniswapBalances }) => {
     return Object.keys(uniswapBalances)
       .concat(Object.keys(uniswapEvents))
       .filter(uniqueStrings);
   },
-  dexTrades: ({ uniswapTrades, balancerTrades }) => (addresses): DexTrade[] => {
+  dexTrades: ({ uniswapTrades, balancerTrades, sushiswap }) => (
+    addresses
+  ): DexTrade[] => {
     const trades: DexTrade[] = [];
-    for (const address in uniswapTrades) {
-      if (addresses.length > 0 && !addresses.includes(address)) {
-        continue;
+    const addTrades = (
+      dexTrades: DexTrades,
+      addresses: string[],
+      trades: DexTrade[]
+    ) => {
+      for (const address in dexTrades) {
+        if (addresses.length > 0 && !addresses.includes(address)) {
+          continue;
+        }
+        trades.push(...dexTrades[address]);
       }
-      trades.push(...uniswapTrades[address]);
+    };
+    addTrades(uniswapTrades, addresses, trades);
+    addTrades(balancerTrades, addresses, trades);
+    if (sushiswap) {
+      addTrades(sushiswap.trades, addresses, trades);
     }
 
-    for (const address in balancerTrades) {
-      if (addresses.length > 0 && !addresses.includes(address)) {
-        continue;
-      }
-      trades.push(...balancerTrades[address]);
-    }
     return sortBy(trades, 'timestamp').reverse();
   },
   airdrops: ({ airdrops }) => (addresses): Airdrop[] => {
@@ -1565,41 +1514,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
   },
   airdropAddresses: ({ airdrops }) => Object.keys(airdrops),
   [GETTER_UNISWAP_ASSETS]: ({ uniswapEvents, uniswapBalances }) => {
-    const pools: UniswapPool[] = [];
-    const known: { [address: string]: boolean } = {};
-    for (const account in uniswapBalances) {
-      const accountBalances = uniswapBalances[account];
-      if (!accountBalances || accountBalances.length === 0) {
-        continue;
-      }
-      for (const { assets, address } of accountBalances) {
-        if (known[address]) {
-          continue;
-        }
-        known[address] = true;
-        pools.push({
-          address,
-          assets: assets.map(({ asset }) => asset)
-        });
-      }
-    }
-
-    for (const address in uniswapEvents) {
-      const details = uniswapEvents[address];
-      for (const { poolAddress, token0, token1 } of details) {
-        if (known[poolAddress]) {
-          continue;
-        }
-        known[poolAddress] = true;
-        pools.push({
-          address: poolAddress,
-          assets: [token0, token1]
-        });
-      }
-    }
-    return pools;
+    return getPools(uniswapBalances, uniswapEvents);
   },
-
   [GETTER_BALANCER_BALANCES]: ({ balancerBalances }) => {
     const balances: BalancerBalanceWithOwner[] = [];
     for (const address in balancerBalances) {

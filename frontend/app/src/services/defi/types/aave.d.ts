@@ -1,3 +1,4 @@
+import { Balance } from '@rotki/common';
 import { default as BigNumber } from 'bignumber.js';
 import {
   DEFI_EVENT_BORROW,
@@ -6,7 +7,7 @@ import {
 } from '@/services/defi/consts';
 import { AaveEventType } from '@/services/defi/types';
 import { AAVE_BORROW_RATE } from '@/services/defi/types/consts';
-import { Balance, HasBalance } from '@/services/types-api';
+import { HasBalance } from '@/services/types-api';
 import { Diff } from '@/types';
 
 type AaveBorrowRate = typeof AAVE_BORROW_RATE[number];

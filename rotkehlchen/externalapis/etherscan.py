@@ -14,6 +14,7 @@ from rotkehlchen.constants.timing import (
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
@@ -24,7 +25,6 @@ from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, External
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_int
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.externalapis.utils import read_hash, read_integer
 
 ETHERSCAN_TX_QUERY_LIMIT = 10000
 
@@ -146,7 +146,7 @@ class Etherscan(ExternalServiceWithApiKey):
                     'etherscan queries will still work but will be very slow. '
                     'If you are not using your own ethereum node, it is recommended '
                     'to go to https://etherscan.io/register, create an API '
-                    'key and then input it in the external service credentials setting of trotki',
+                    'key and then input it in the external service credentials setting of rotki',
                 )
                 self.warning_given = True
         else:
@@ -155,7 +155,7 @@ class Etherscan(ExternalServiceWithApiKey):
         backoff = 1
         backoff_limit = 33
         while backoff < backoff_limit:
-            logger.debug(f'Querying etherscan: {query_str}')
+            log.debug(f'Querying etherscan: {query_str}')
             try:
                 response = self.session.get(query_str, timeout=timeout if timeout else DEFAULT_TIMEOUT_TUPLE)  # noqa: E501
             except requests.exceptions.RequestException as e:
@@ -282,7 +282,7 @@ class Etherscan(ExternalServiceWithApiKey):
             # block we got. There may be duplicate entries if there are more than one
             # transactions for that last block but they should be filtered
             # out when we input all of these in the DB
-            last_block = result[-1]['blockNumber']
+            last_block = result[-1]['blockNumber']  # pylint: disable=unsubscriptable-object
             options['startBlock'] = last_block
 
         return transactions
@@ -309,8 +309,9 @@ class Etherscan(ExternalServiceWithApiKey):
         options = {'tag': hex(block_number), 'boolean': 'true'}
         block_data = self._query(module='proxy', action='eth_getBlockByNumber', options=options)
         # We need to convert some data from hex here
-        block_data['timestamp'] = hex_or_bytes_to_int(block_data['timestamp'])
-        block_data['number'] = hex_or_bytes_to_int(block_data['number'])
+        # https://github.com/PyCQA/pylint/issues/4739
+        block_data['timestamp'] = hex_or_bytes_to_int(block_data['timestamp'])  # pylint: disable=unsubscriptable-object  # noqa: E501
+        block_data['number'] = hex_or_bytes_to_int(block_data['number'])  # pylint: disable=unsubscriptable-object  # noqa: E501
 
         return block_data
 

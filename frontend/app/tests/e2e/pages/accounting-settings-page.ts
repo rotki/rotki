@@ -3,7 +3,7 @@ export class AccountingSettingsPage {
     cy.get('.user-dropdown').click();
     cy.get('[data-cy=user-dropdown]').should('be.visible');
     cy.get('.user-dropdown__settings').click();
-    cy.get('a.settings__accounting').click();
+    cy.get('a.settings__accounting').click({ force: true });
     cy.get('[data-cy=user-dropdown]').should('not.be.visible');
   }
 

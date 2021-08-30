@@ -8,14 +8,14 @@ from typing_extensions import Literal
 
 from rotkehlchen.chain.ethereum.eth2_utils import ValidatorBalance
 from rotkehlchen.chain.ethereum.typing import ValidatorID, ValidatorPerformance
-from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
+from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT, QUERY_RETRY_TIMES
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -26,6 +26,7 @@ BEACONCHAIN_READ_TIMEOUT = 75
 BEACONCHAIN_TIMEOUT_TUPLE = (DEFAULT_CONNECT_TIMEOUT, BEACONCHAIN_READ_TIMEOUT)
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class BeaconChain(ExternalServiceWithApiKey):
@@ -64,7 +65,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         times = QUERY_RETRY_TIMES
         backoff_in_seconds = 10
 
-        logger.debug(f'Querying beaconcha.in API for {query_str}')
+        log.debug(f'Querying beaconcha.in API for {query_str}')
         while True:
             try:
                 response = self.session.get(query_str, timeout=BEACONCHAIN_TIMEOUT_TUPLE)
@@ -84,7 +85,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                         f'with HTTP status code {response.status_code} and text '
                         f'{response.text} after 5 retries'
                     )
-                    logger.debug(
+                    log.debug(
                         f'{msg} minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
                         f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
                         f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
@@ -100,7 +101,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                             f'need to wait for {retry_after} seconds which is more than the '
                             f'wait limit of {MAX_WAIT_SECS} seconds. Bailing out.'
                         )
-                        logger.debug(
+                        log.debug(
                             f'{msg} minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
                             f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
                             f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
@@ -112,7 +113,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                     # Rate limited. Try incremental backoff since retry-after header is missing
                     sleep_seconds = backoff_in_seconds * (QUERY_RETRY_TIMES - times + 1)
                 times -= 1
-                logger.debug(
+                log.debug(
                     f'Beaconchain API request {response.url} got rate limited. Sleeping '
                     f'for {sleep_seconds}. We have {times} tries left.'
                     f'minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '

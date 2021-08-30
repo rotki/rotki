@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
+import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -64,4 +65,6 @@ export function registerComponents() {
   // version 12 - 1.19
   Vue.component('RangeSelector', RangeSelector);
   Vue.component('ConfirmDialog', ConfirmDialog);
+  // Version 13 - 1.20
+  Vue.component('UniswapPoolDetails', UniswapPoolDetails);
 }
