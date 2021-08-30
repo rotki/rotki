@@ -129,3 +129,36 @@ def test_trove_events(rotkehlchen_api_server):
     assert asset == '_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'
     assert trove_stake['stake_after']['amount'] == '177.02'
     assert trove_stake['stake_operation'] == 'stake created'
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xA0446D8804611944F1B527eCD37d7dcbE442caba']])
+@pytest.mark.parametrize('ethereum_modules', [['liquity']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+def test_account_without_info(
+        rotkehlchen_api_server,
+        start_with_valid_premium,
+        rotki_premium_credentials,
+        inquirer,  # pylint: disable=unused-argument
+):
+    """Test that we can get the status of the trove and the staked lqty"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    # Set module premium is required
+    premium = None
+    if start_with_valid_premium:
+        premium = Premium(rotki_premium_credentials)
+    liquity = rotki.chain_manager.get_module('liquity')
+    liquity.premium = premium
+
+    async_query = random.choice([False, True])
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'liquitytroves',
+    ), json={'async_query': async_query})
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+    else:
+        result = assert_proper_response_with_result(response)
+
+    assert LQTY_ADDR not in result

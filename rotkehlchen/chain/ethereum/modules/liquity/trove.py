@@ -161,7 +161,7 @@ class LiquityStakeEvent(LiquityEvent):
 class Trove(NamedTuple):
     collateral: AssetBalance
     debt: AssetBalance
-    collateralization_ratio: FVal
+    collateralization_ratio: Optional[FVal]
     liquidation_price: Optional[FVal]
     active: bool
     trove_id: int
@@ -256,12 +256,24 @@ class Liquity(EthereumModule):
                             usd_value=lusd_price * debt,
                         ),
                     )
+                    # Avoid division errors
+                    collateralization_ratio: Optional[FVal]
+                    liquidation_price: Optional[FVal]
+                    if debt > 0:
+                        collateralization_ratio = eth_price * collateral / debt * 100
+                    else:
+                        collateralization_ratio = None
+                    if collateral > 0:
+                        liquidation_price = debt * lusd_price * FVal(MIN_COLL_RATE) / collateral
+                    else:
+                        liquidation_price = None
+
                     data[addresses[idx]] = {}
                     data[addresses[idx]]['trove'] = Trove(
                         collateral=collateral_balance,
                         debt=debt_balance,
-                        collateralization_ratio=eth_price * collateral / debt * 100,
-                        liquidation_price=debt * lusd_price * FVal(MIN_COLL_RATE) / collateral,
+                        collateralization_ratio=collateralization_ratio,
+                        liquidation_price=liquidation_price,
                         active=bool(trove_info[3]),  # pylint: disable=unsubscriptable-object
                         trove_id=trove_info[4],  # pylint: disable=unsubscriptable-object
                     )
@@ -623,7 +635,13 @@ class Liquity(EthereumModule):
 
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
         info = self.get_positions([address])
-        return [info[address]['trove'].collateral, info[address]['stake'].staked]  # type: ignore
+        result = []
+        if address in info:
+            if 'trove' in info[address]:
+                result.append(info[address]['trove'].collateral)  # type: ignore
+            if 'stake' in info[address]:
+                result.append(info[address]['stake'].staked)  # type: ignore
+        return result
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         pass
